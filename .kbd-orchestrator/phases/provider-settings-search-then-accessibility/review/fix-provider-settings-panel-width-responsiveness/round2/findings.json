@@ -1,0 +1,46 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "frontend/e2e/provider-settings-responsive.spec.ts",
+      "line": 29,
+      "claim": "The zero-durable-write assertion only observes writes to single-segment settings paths, so a write to a nested settings path (e.g., /api/uar/settings/provider/{key}) would bypass interception, escape the durableSettingsWrites ledger, and fall through to the real server \u2014 silently passing the 'no durable write occurs' assertion.",
+      "evidence": "The route regex is `/\\/api\\/uar\\/settings\\/(?:types|[a-z-]+)(?:\\?.*)?$/` \u2014 `[a-z-]+` cannot match a path segment containing `/`, and `page.route` handlers that don't match fall through to the network without failing the test. Constraint `keyboard-and-draft-preservation` names \"zero-write assertions\" as its validation method, and the final `expect(durableSettingsWrites).toEqual([])` is the sole enforcement.",
+      "suggested_fix": "Broaden the pattern to cover the whole settings namespace (e.g., `/\\/api\\/uar\\/settings(?:\\/.*)?$/`) and/or add a catch-all `page.route(/\\/api\\//, route => route.abort())` so any unmocked API request \u2014 especially any mutation \u2014 fails loudly instead of passing through."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/e2e/provider-settings-responsive.spec.ts",
+      "line": 160,
+      "claim": "The visible-focus assertion can false-pass: it accepts any computed `boxShadow !== \"none\"` on the control without comparing pre-focus versus post-focus styles, so a control with a static decorative box-shadow and no focus treatment would satisfy the \"visible focus\" requirement of constraint `keyboard-and-draft-preservation`.",
+      "evidence": "`expectVisibleKeyboardFocus` computes `hasOutline || focusStyle.boxShadow !== \"none\"` from a single post-focus snapshot; there is no baseline capture of the control's box-shadow/outline before focus to prove the indicator is focus-triggered.",
+      "suggested_fix": "Capture the control's computed outline/box-shadow before focusing, then assert a measurable change after focus (or assert the `:focus-visible`-specific ring token), so the assertion demonstrates a focus indicator rather than ambient styling."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": ".refiner/artifacts/fix-provider-settings-panel-width-responsiveness/dist/verification-summary.md",
+      "line": 3,
+      "claim": "The artifact header records \"Generated: 2026-08-27T07:53:29Z\" (the iteration-1 timestamp) while the body reports iteration-2 outcomes (old-layout negative control, strengthened Tier 3 pass at 3.5s, iteration-1 review disposition), so the provenance timestamp misstates when the documented evidence was assembled.",
+      "evidence": "`state.json` records iteration 2 at 2026-08-27T08:06:06Z and `refinement_log.md` iteration 2 describes the negative control and strengthened Playwright run that the summary documents, yet the summary's \"Generated\" line predates them. Constraint `truthful-phase-evidence` governs accurate recording of receipts.",
+      "suggested_fix": "Regenerate or re-date the summary at the iteration-2 timestamp (or add an explicit \"Updated\" line) so the artifact's provenance matches its contents."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": ".kbd-orchestrator/phases/provider-settings-search-then-accessibility/execution.md",
+      "claim": "The \"Verification requirements\" section contains a dangling numbered list (items 1\u201311) appended after the per-task evidence paragraphs rather than preceding them as requirements, indicating a paste/assembly artifact that obscures which statements are requirements versus recorded results.",
+      "evidence": "In the execution.md hunk, the \"## Verification requirements\" section first carries dated Task 1.1\u20133.3 evidence paragraphs and then a bare `1.`\u2013`11.` imperative list (e.g., \"Before React edits, record the required Impeccable...\", \"Run `pnpm typecheck`...\") with no heading separation.",
+      "suggested_fix": "Reorder so the numbered requirements precede the dated evidence, or move the numbered items under their own heading."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

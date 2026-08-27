@@ -786,3 +786,23 @@ cleanup and requires rollback or operator intervention.
 **Deployment corollary.** A stricter startup invariant can break preserved native configs even when the current packaged default is correct. Native config migration must add missing loopback defaults without overwriting explicit operator values.
 
 **Limit.** The repository MV3 entity-explorer submodule currently references three missing icon assets and therefore does not register its service worker when loaded exactly as checked in. Temporary restoration proved its connect/disconnect relay behavior, but the pinned submodule needs a separate upstream packaging change before exact-package extension certification can pass.
+
+## 2026-08-26 — KBD apply positional IDs can duplicate pre-registered semantic tasks
+
+**Observed behavior.** OpenSpec reported task `1.1` complete out of nine, while the canonical KBD projection reported ten tasks: the pre-registered semantic task `1.1` plus a new completed positional task `1` created by `kbd-apply begin-task`.
+
+**Root cause.** The OpenSpec adapter emits positional IDs (`1`, `2`, …), but this change's KBD tasks were registered with section IDs (`1.1`, `1.2`, …). The apply driver treats a missing positional ID as a new canonical task and append-only runtime history has no task deletion command.
+
+**Working rule.** When KBD tasks already use semantic OpenSpec section IDs, pass those semantic IDs to `begin-task` and `end-task`; the OpenSpec adapter's non-numeric fallback marks the matching checkbox text while the runtime transitions the existing task. Compare the OpenSpec task count with the canonical projection after the first boundary.
+
+**Limit.** The extra completed task `1` in `fix-provider-settings-panel-width-responsiveness` cannot be removed through the typed runtime. OpenSpec remains 1/9 after task 1.1; the KBD projection is permanently offset at 2/10 for this change unless the runtime later gains an append-only supersession mechanism.
+
+## 2026-08-27 — Adversarial packets need a change-owned inventory, not the ambient dirty tree
+
+**Observed behavior.** The diff packet builder included unrelated tracked worktree changes, emitted no acceptance criteria, and omitted the new Playwright file, nested OpenSpec spec delta, and refinement artifacts. A judge could therefore review a large but incomplete candidate.
+
+**Root cause.** Packet assembly used the ambient tracked Git diff and top-level change discovery. Ordinary untracked files and nested OpenSpec deltas were not part of that input model.
+
+**Working rule.** Before dispatch, enumerate every change-owned tracked and new file, compare that list with the packet's `diff --git` headers, and inject the full proposal, design, tasks, nested spec, and blocking constraints. Reject a packet with unrelated files or empty acceptance criteria.
+
+**Limit.** Mechanical packet correction is an auditable workaround, not a repair to the builder. A separate orchestration-tool change is required to make discovery correct by default.

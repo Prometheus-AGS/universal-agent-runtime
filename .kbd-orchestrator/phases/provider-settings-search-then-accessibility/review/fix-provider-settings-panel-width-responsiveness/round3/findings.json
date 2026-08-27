@@ -1,0 +1,38 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": ".refiner/artifacts/fix-provider-settings-panel-width-responsiveness/refinement_log.md",
+      "claim": "The persisted refinement log lists `.refiner/registry.json` as a file modified in iteration 1, but that file is absent from the diff, so the scoped diff inventory and referenced-file integrity claims cannot be verified from this packet.",
+      "evidence": "refinement_log.md Iteration 1 'Files Modified' includes `.refiner/registry.json`; no hunk for `.refiner/registry.json` exists anywhere in the diff. Constraints `minimal-change-scope` (validation: 'Scoped diff inventory') and termination condition 'Manifest, constraints, referenced files, iteration history, strict OpenSpec, and diff integrity validate' both depend on the diff inventory being complete against the persisted evidence.",
+      "suggested_fix": "Either include the `.refiner/registry.json` delta in the packet or correct the refinement log so the persisted 'Files Modified' list matches the actual scoped diff."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/e2e/provider-settings-responsive.spec.ts",
+      "line": 195,
+      "claim": "Keyboard reachability of the Enable control is proven only via programmatic `controls[0].focus()`, so the test never demonstrates that Enable is reachable by keyboard Tab from a preceding element.",
+      "evidence": "Constraint `keyboard-and-draft-preservation` requires that 'Enable, Base URL, Protocol, API Key, reveal, and Default Model remain mechanically keyboard reachable'; `expectKeyboardPath` begins with `await controls[0].focus()` and only the subsequent five transitions are driven by `page.keyboard.press(\"Tab\")`. If Enable were, e.g., given `tabIndex={-1}` or rendered unfocusable in the tab order, the test would still pass.",
+      "suggested_fix": "Focus a focusable element before the provider card (or the document body entry point) and press Tab until Enable is reached, asserting it lands on Enable before continuing the traversal."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/e2e/provider-settings-responsive.spec.ts",
+      "line": 278,
+      "claim": "The exact 36rem boundary is never exercised: the spec contract requires two columns 'at or above' the boundary, but the test only checks boundaryPx - 1 and boundaryPx + 1.",
+      "evidence": "spec.md scenario: 'WHEN the available provider-panel inline size is at or above the 36rem desktop-composition boundary THEN provider fields render in exactly two columns'. The test asserts tracks at `boundary - 1` (1 track) and `boundary + 1` (2 tracks) but never at `boundary` itself, so an off-by-epsilon implementation (e.g., a query matching strictly greater than 36rem) would pass undetected.",
+      "suggested_fix": "Add a `setContentBoxWidth(providerList, boundary)` state asserting exactly two computed tracks, or document why the \u00b11px sampling is sufficient."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

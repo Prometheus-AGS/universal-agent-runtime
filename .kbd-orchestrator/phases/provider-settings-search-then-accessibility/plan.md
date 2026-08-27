@@ -1,57 +1,103 @@
 # PLAN: provider-settings-search-then-accessibility
 
 Project: universal-agent-runtime
-Date: 2026-08-25
+Date: 2026-08-26
 OpenSpec available: YES
-Changes to implement: 2
+Changes to implement: 1
+Model routing: `.kbd-orchestrator/project.json` has no `model_policy`; the required fallback is frontier.
 
-## CHANGE LIST (ordered)
+## Historical completion boundary
 
-1. `provider-model-search`: Add adaptive search to large provider model inventories
-   - Scope: UI
-   - Depends on: NONE
+The canonical implementation ledger remains 2/2 complete for
+`provider-model-search` and `provider-settings-accessibility-dirty-state`.
+This plan does not reopen, rename, or relabel either archived change. It adds
+one follow-up slice for the responsive-width non-conformance observed during
+reassessment.
+
+The phase's reflection supplies four prose goals but no stable goal IDs:
+
+- Deliver searchable large provider model inventories first — remains met and is outside this change.
+- Deliver provider accessibility and dirty-state protection second — the responsive-width portion has the observed follow-up gap.
+- Preserve the existing provider settings architecture — remains a hard constraint.
+- Apply the requested design-review standard — remains a required execution and certification gate.
+
+## Change list (ordered)
+
+1. `fix-provider-settings-panel-width-responsiveness`: Make Provider Overrides respond to its panel width and certify the behavior
+   - Scope: UI classes | focused component contract | focused browser contract | OpenSpec/KBD evidence
+   - Depends on: NONE; the two predecessor changes are already complete
    - Recommended agent: Codex
-   - Est. complexity: M
-   - Customer value: HIGH
-   - Files: `frontend/src/features/settings/ui/panels/ai-settings-panels.tsx`; `frontend/src/features/settings/ui/settings-primitives.tsx` or a narrowly owned sibling primitive; `frontend/src/features/settings/ui/panels/ai-settings-panels.test.tsx`; focused primitive tests if the shared wrapper changes.
-   - Details: Keep the simple shadcn select for one through seven enabled models and use the installed Base UI Combobox for eight or more. Search display labels and raw IDs with trimmed, case-insensitive literal matching while preserving provider order and the existing bounded settings draft.
-   - Acceptance: The 7/8 boundary, label/id filtering, no-match state, duplicate-label disambiguation, pointer/Enter selection, popup closure, and invalid-value rejection have focused evidence. Existing empty and stale states remain intact.
-   - Trade-off / scope cut: no fuzzy ranking, virtualization, catalog fetch, dependency, free-form model creation, or visual redesign.
+   - Est. implementation time: M (1–4 agent hours)
+   - Complexity score: High
+   - Model class: frontier
+   - Routing rationale: the time estimate and routing classifier use different scales. The OpenSpec change has nine tasks, so KBD classifies it High and routes it to frontier even though the production edit is class-only.
+   - Libraries: `cand-001` — adopt installed Tailwind CSS 4.3.3 native container queries; `cand-002` — adopt installed Playwright Test 1.62.1. Add no dependency.
+   - Files: `frontend/src/features/settings/ui/panels/ai-settings-panels.tsx`; `frontend/src/features/settings/ui/panels/ai-settings-panels.test.tsx`; new `frontend/e2e/provider-settings-responsive.spec.ts`; the owning OpenSpec/KBD evidence only.
+   - Details: Add `@container/provider-panel` to the existing provider-list body, retain `grid-cols-1` as the base field layout, and replace viewport `lg:grid-cols-2` with `@xl/provider-panel:grid-cols-2`. Preserve `useSettings("provider")`, the draft cache, save/reload behavior, provider compatibility, and realtime reconciliation; introduce no width state, ResizeObserver, transport, entity, or dependency change.
+   - Browser fixture: use a 1440×900 viewport for both states. Apply an explicit below-576px inline-size constraint to the actual named provider container for the one-column state. Remove that constraint for the desktop state, use the natural panel width, and assert its measured content box is at least 36rem before checking layout.
+   - Acceptance: assert the computed provider grid has exactly one track below 36rem and exactly two tracks at or above 36rem; comparing only two adjacent controls is insufficient. Assert document, provider-card, and visible-control overflow bounds; keyboard reachability and visible focus; and preservation of the edited value and modified indicator while crossing the boundary.
+   - Negative control: the focused component contract must fail against `lg:grid-cols-2` before the production class edit, then pass only for the named container and `@xl/provider-panel:grid-cols-2` contract.
+   - Archive gate: Playwright discovery may run during ordinary implementation, but behavior execution is Tier 3. Before any archive request, obtain explicit operator authorization for a milestone or release, run the focused Playwright spec, and require it to pass. Without authorization or a passing receipt, keep the OpenSpec change open and report the responsive behavior as uncertified.
+   - Trade-off / scope cut: do not add native unload-dialog copy checks, a discard workflow, state restructuring, provider compatibility work, realtime changes, dependency work, baseline repairs, or unrelated visual redesign.
 
-2. `provider-settings-accessibility-dirty-state`: Complete provider accessibility and protect dirty drafts
-   - Scope: UI | settings hook presentation state
-   - Depends on: `provider-model-search`
-   - Recommended agent: Codex
-   - Est. complexity: M
-   - Customer value: HIGH
-   - Files: `frontend/src/features/settings/ui/panels/ai-settings-panels.tsx`; `frontend/src/features/settings/ui/settings-primitives.tsx`; `frontend/src/features/settings/model/use-settings.ts` only if actual background-loading state is not already exposed; focused provider and primitive tests.
-   - Details: Associate every repeated provider control and hint, add live status/error semantics, derive visible modified state from the existing dirty map, disable Save while clean, disable Refresh while dirty/busy with explanatory text, and install a dirty-only browser-unload guard. Stack provider fields at narrow widths while retaining the desktop two-column layout.
-   - Acceptance: Provider-specific names/descriptions, stale-model association, status/alert behavior, clean/dirty/save failure states, protected Refresh, beforeunload cancellation, and responsive structure have focused evidence; shared primitive consumers remain compatible.
-   - Trade-off / scope cut: no discard dialog, field-level merge, structural draft reconciliation, persistence change, or unrelated settings redesign. Refresh is disabled while dirty because current `reload()` preserves drafts and can otherwise move the remote baseline underneath a whole-provider draft.
+## Execution round order
 
-## EXECUTION ROUND ORDER
+Round 1 (sequential): `fix-provider-settings-panel-width-responsiveness`
 
-Round 1 (sequential): `provider-model-search`
+Within the change, execute one task and its prescribed cheap check before the
+next task. Add the focused contracts first, preserve the negative control, then
+make the two class-string edits. Do not start an extraction merely because the
+panel is near its structure limit; stop and re-plan if class-only implementation
+is insufficient.
 
-Round 2 (sequential, after Round 1 verification): `provider-settings-accessibility-dirty-state`
+## Verification order
 
-## VERIFICATION ORDER
+1. Workflow gate: record the task-specific UI/React/entity guidance summary before React edits.
+2. Browser-contract discovery: `pnpm -C frontend exec playwright test --list e2e/provider-settings-responsive.spec.ts`; this proves discovery only, not behavior.
+3. Tier 0 after each edit: `pnpm typecheck` and `pnpm lint`.
+4. Structure: `pnpm -C frontend settings:structure`; the existing 600-line panel limit remains binding.
+5. Tier 1 after the unit is complete: `pnpm -C frontend test src/features/settings/ui/panels/ai-settings-panels.test.tsx`.
+6. OpenSpec: `openspec validate fix-provider-settings-panel-width-responsiveness --strict --no-interactive`.
+7. Tier 2 at phase completion: `pnpm build` and `pnpm test`; record the observed full-suite result and distinguish unchanged baseline failures from regressions.
+8. Tier 3 only after explicit milestone/release authorization: `pnpm -C frontend exec playwright test e2e/provider-settings-responsive.spec.ts`; this passing receipt is mandatory before archival.
+9. Certification: deterministic artifact-refiner validation, then isolated diff-mode adversarial review with a judge distinct from the producer, then OpenSpec verification and archival if every required tier is satisfied.
 
-1. B focused: provider panel and affected shared primitive Vitest files.
-2. B cheap gates: frontend typecheck, lint, and settings structure.
-3. B completion: strict OpenSpec validation, frontend build, and full frontend tests before A starts.
-4. A focused: provider panel and affected shared primitive Vitest files.
-5. A cheap gates: frontend typecheck, lint, and settings structure.
-6. Phase completion: both strict OpenSpec validations, frontend build, full frontend tests, one final Impeccable detector, and fresh-context adversarial review.
+## Evidence carried into Execute
 
-## COMMANDS TO RUN
+Canonical progress is `{ "completed": 2, "total": 2, "status": "COMPLETE" }`
+for the historical changes. The follow-up is additional work and must be
+registered without rewriting those completed entries.
 
-OpenSpec changes already exist and are strictly valid:
+Quoted local Tailwind container precedents:
 
-`/opsx:apply provider-model-search`
+- `frontend/src/components/assistant-ui/enhanced-thread.tsx:110`: `className="aui-root aui-thread-root @container flex min-h-0 flex-1 flex-col bg-background"`
+- `frontend/src/components/ui/card.tsx:28`: `group/card-header @container/card-header grid`
+- `frontend/src/components/ui/field.tsx:44`: `group/field-group @container/field-group flex`
 
-Then, only after it verifies:
+Quoted local Playwright precedents:
 
-`/opsx:apply provider-settings-accessibility-dirty-state`
+- `frontend/e2e/a11y-responsive-certification.spec.ts:65`: `await page.setViewportSize({ width, height: 900 });`
+- `frontend/e2e/a11y-responsive-certification.spec.ts:96-99`: reads `document.documentElement.scrollWidth` and `window.innerWidth`, then requires document width to be no greater than viewport width.
 
-## PLAN COMPLETE
+Research-process disclosure: Analyze Tier 1 used 9 requests against the cap of
+8 because four repository metadata calls were bundled before the count was
+checked. It stopped immediately afterward. This lowers process confidence but
+does not change the adopt decisions, which also rely on official Tier 2 docs
+and installed-stack inspection.
+
+## OpenSpec dispatch
+
+The OpenSpec change already exists and all four planning artifacts are complete;
+do not run `/opsx:new` again. Execute through the KBD-owned apply driver so task
+hooks, progress, and waypoint state remain coherent:
+
+`/kbd-apply fix-provider-settings-panel-width-responsiveness`
+
+## Uncomfortable constraint
+
+The source change can be implemented and pass Tiers 0–2 while the requirement
+still lacks real-browser certification. That is not completion. If Tier 3 is not
+authorized, the correct result is implemented but uncertified and unarchived,
+not a fabricated PASS or a weaker component-only substitute.
+
+## Plan complete

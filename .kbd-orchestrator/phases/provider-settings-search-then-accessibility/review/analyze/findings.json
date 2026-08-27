@@ -1,0 +1,36 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "claim": "The decisive 'existing browser convention' evidence cites a spec file that is not verified anywhere in the packet, so the judge cannot confirm the claimed viewport/scrollWidth pattern exists.",
+      "evidence": "analysis.md states: \"Existing browser convention: `a11y-responsive-certification.spec.ts:65,96-99` sets a viewport and compares document `scrollWidth` with `window.innerWidth`\", but `cited_paths` contains no EXISTS entry for `a11y-responsive-certification.spec.ts`, and the file_tree lists only `./frontend/e2e` (unexpanded) and `./frontend/playwright.accessibility.config.ts` \u2014 the spec file itself never appears. This is the same evidence-invisibility defect class the artifact itself flags as `gap-review-packet-evidence-integrity`.",
+      "suggested_fix": "Add an EXISTS check for `a11y-responsive-certification.spec.ts` and quote the actual lines 65 and 96-99 (setViewportSize call and scrollWidth/innerWidth assertion) into the 'Evidence excerpts supplied to review' section."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "claim": "The claim that three existing components use Tailwind `@container` classes is supported only by file-existence checks, not by any quoted source, so the 'established local convention' premise of the ADOPT verdict for cand-001 is unverifiable in-packet.",
+      "evidence": "analysis.md asserts: \"`frontend/src/components/assistant-ui/enhanced-thread.tsx:110`, `frontend/src/components/ui/card.tsx:28`, and `frontend/src/components/ui/field.tsx:44` already use Tailwind `@container` classes.\" `cited_paths` proves only that the three files exist; no excerpt of the alleged `@container` class usage is quoted, unlike the `ai-settings-panels.tsx:184` line which is quoted in full.",
+      "suggested_fix": "Quote the exact class strings from each of the three files at the cited line numbers, mirroring the treatment given to `ai-settings-panels.tsx:184`."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "library-candidates.json",
+      "claim": "cand-005's Tier 2 evidence cites the wrong documentation page for the claim it supports.",
+      "evidence": "cand-005 evidence entry uses `source_url: \".../src/docs/place-content.mdx\"` with the claim \"Official Tailwind documentation demonstrates arbitrary grid-template column values using grid-cols-[repeat(...)]\" \u2014 `place-content` documents content placement, not `grid-cols` arbitrary values; the supporting doc would be the grid-template-columns page.",
+      "suggested_fix": "Re-cite the Tailwind `grid-template-columns` documentation (grid-cols.mdx) for the arbitrary grid template claim, or correct the claim to match what place-content.mdx actually documents."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

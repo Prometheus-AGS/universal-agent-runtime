@@ -1,0 +1,12 @@
+{
+  "stage": "execute",
+  "completedAt": "2026-08-26T23:37:12Z",
+  "outputs": [
+    "execution.md",
+    "progress.json"
+  ],
+  "nextStage": "reflect",
+  "summaryForNext": "OpenSpec backend selected; Codex dispatches the single pending fix-provider-settings-panel-width-responsiveness change through /kbd-apply with nine typed tasks and frontier routing. Canonical revision 866 records implementation/evidence/certification/publication at 2/3 and exact next work /kbd-apply; the historical terminal phase-status field is immutable, so apply must stop for a successor phase if it rejects the pending change transition. Tier 3 authorization remains the archive gate.",
+  "skipped": false,
+  "skipReason": null
+}

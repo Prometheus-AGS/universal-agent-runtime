@@ -1,72 +1,65 @@
 # ASSESSMENT: provider-settings-search-then-accessibility
 
-Project: universal-agent-runtime
-Date: 2026-08-25
-Current phase: Spec
-Requested order: B (searchable provider model inventories), then A (accessibility and dirty-state protection)
+Project: Universal Agent Runtime
+Date: 2026-08-26
+Codebase baseline: Both phase changes are implemented and archived, with current focused checks passing against the synced frontend configuration specification; this reassessment finds one residual conformance gap that requires a follow-up change.
+Cross-tool progress: 2 canonical changes remain complete in `.kbd-orchestrator/phases/provider-settings-search-then-accessibility/progress.json`; no new cross-tool implementation or blockers were recorded after the 2026-08-25 reflection.
 
 ## IMPLEMENTATION STATUS
 
-- B — searchable model inventories: **PARTIAL**. `ProviderPanel` already derives a bounded, deduplicated list of enabled models from each provider and renders the existing shadcn/Base UI `SettingSelect`. Large inventories have no search path.
-- B — inventory validity: **DONE**. `getProviderModelOptions` rejects malformed and disabled entries, preserves provider order, falls back to the model id for blank labels, and deduplicates by id.
-- B — empty and stale states: **DONE**. Zero-option and unavailable-current-model states already have explicit visual treatment.
-- A — programmatic labels: **PARTIAL**. The Default Model select has a provider-specific accessible name, but visible `Field` labels are not associated with controls; provider switches and API-key reveal buttons are not provider-specific.
-- A — status semantics: **PARTIAL**. Loading, saved, and error copy is visible but lacks consistent live-region semantics.
-- A — dirty-state protection: **PARTIAL**. `useSettings("provider")` exposes a durable in-session dirty map and preserves it across `reload()`, but the provider Save action is enabled while clean and the page gives no visible unsaved-state feedback or browser-unload protection.
-- A — responsive provider cards: **PARTIAL**. The provider editor uses an unconditional two-column grid instead of stacking at narrow widths.
+- Adaptive provider model selection: **DONE** — `frontend/src/features/settings/ui/settings-primitives.tsx:217` fixes the threshold at eight; lines 253–268 preserve the simple path below it and lines 270–349 use the bounded Base UI Combobox. Lines 286–293 trim and lowercase the literal query and match both label and raw id.
+- Provider model inventory validity: **DONE** — `getProviderModelOptions` excludes malformed, disabled, empty-id, and duplicate-id entries while retaining provider order and display-name fallback. Empty and stale current-value states remain explicit.
+- Provider control accessibility: **DONE** — provider cards are named groups; Base URL, Protocol, API Key, Default Model, Enabled, and reveal controls have stable associations or provider-specific names; recovery guidance is connected through `aria-describedby`.
+- Async outcomes: **DONE** — loading and successful saves use status semantics; failures use alert semantics; rejected saves do not emit success and the settings cache retains dirty drafts.
+- Dirty-draft protection: **DONE at component/unit level; browser confirmation UI unverified** — Save is disabled while clean, Refresh is disabled while dirty or busy, modified providers are identified, failed saves preserve drafts, and `frontend/src/features/settings/ui/panels/ai-settings-panels.tsx:65-74` installs `beforeunload` cancellation only while dirty. The focused test proves event cancellation, not the browser-owned confirmation UI.
+- Narrow-panel responsiveness: **PARTIAL** — `frontend/src/features/settings/ui/panels/ai-settings-panels.tsx:184` uses `grid-cols-1 lg:grid-cols-2`, which responds to viewport width rather than the available provider-panel width required by `openspec/specs/frontend-configuration-surfaces/spec.md:239-245`. A constrained panel inside a large viewport can remain two-column. The focused test asserts class presence but does not exercise a real constrained panel, clipping, or keyboard focus in a browser.
+- Settings architecture: **DONE** — the provider panel continues through `useSettings("provider")`; dirty drafts remain presentation-cache state and persistence I/O remains owned by the settings store.
 
-## DESIGN ASSESSMENT
+## CROSS-TOOL PROGRESS
 
-- Preserve the simple select for one through seven enabled models and use a dedicated searchable shadcn/Base UI Combobox for eight or more. Eight is the first inventory size beyond the 5–7 recognition boundary cited by the Impeccable critique, and the named threshold keeps the policy testable.
-- Search must match both display label and raw model id with case-insensitive, trimmed literal substring matching. Configuration order remains authoritative and free-form values remain impossible.
-- The searchable and simple controls must share the same closed-state dimensions, label, invalid state, placeholder, and provider-owned value path.
-- A must follow B so programmatic labels, descriptions, keyboard semantics, and responsive constraints can cover both control variants once.
-- Refresh currently preserves unsaved drafts. A confirmation that claims Refresh discards edits would be false unless a new explicit discard operation is introduced. The minimum honest protection is visible dirty state, Save disabled while clean, browser-unload protection while dirty, and Refresh copy that does not imply discard.
-- Shared primitive extensions must be optional so existing settings panels keep their current API and behavior.
+- `provider-model-search`: COMPLETE (5/5 tasks; originally completed by Codex, reconciled by kbd-runtime).
+- `provider-settings-accessibility-dirty-state`: COMPLETE (7/7 tasks; originally completed by Codex, reconciled by kbd-runtime).
+- Blockers: NONE recorded in `.kbd-orchestrator/phases/provider-settings-search-then-accessibility/progress.json`.
 
-## SPEC GAPS
+## SPEC GAP SUMMARY
 
-- `frontend-configuration-surfaces` does not define when a provider model inventory becomes searchable, what fields are searched, or the 7/8 behavior boundary.
-- It does not require every provider control to have a programmatic label and associated help/error description.
-- It does not require loading/save/error announcements or visible provider dirty state.
-- It does not require browser-unload protection for unsaved provider edits or a responsive single-column layout at narrow widths.
-
-## ACCEPTANCE BOUNDARY
-
-### B — provider-model-search
-
-- Seven enabled models render the simple shadcn select; eight render the searchable shadcn/Base UI combobox.
-- Search matches label and id case-insensitively after trimming query whitespace, preserves provider order, treats punctuation literally, and shows `No matching models` when empty.
-- Pointer and Enter selection write exactly one valid provider model id through the existing settings draft, close the popup, and do not permit arbitrary text.
-- Disabled, malformed, empty-id, and duplicate-id models remain unavailable; duplicate labels expose the raw id for disambiguation.
-- Existing zero-option and stale-model behavior remains intact.
-
-### A — provider-settings-accessibility-dirty-state
-
-- Provider cards and every Base URL, Protocol, API Key, Default Model, and Enabled control have stable programmatic names; help and invalid text is referenced with `aria-describedby`.
-- API-key reveal buttons and switches include provider context.
-- Loading and save success use polite status semantics; errors use alert semantics.
-- Save is disabled while clean, enabled while provider drafts exist, and disabled again after successful save. Dirty providers receive visible text feedback.
-- Browser unload is prevented while provider drafts exist and allowed while clean. Refresh continues to preserve drafts and therefore does not present a discard confirmation.
-- Provider fields stack at narrow widths and retain the incumbent two-column desktop composition.
+- Responsive width contract: `openspec/specs/frontend-configuration-surfaces/spec.md:243-245` requires one-column stacking when the available provider-panel width cannot support the desktop composition. The shipped `lg:` class at `frontend/src/features/settings/ui/panels/ai-settings-panels.tsx:184` is viewport-based. A width-aware mechanism such as a container query, or another implementation proven against the panel's actual width, is required; the assessment does not prescribe which mechanism plan must choose.
+- Browser evidence: no current real-browser proof covers constrained-panel stacking, horizontal clipping, focus visibility, or browser-provided unload confirmation behavior.
+- Other phase requirements: no additional implementation gap was found in the inspected source and focused tests.
 
 ## BUILD HEALTH
 
-- Focused Vitest baseline: **PASS** — 2 files, 5 tests.
-- Frontend typecheck: **PASS**.
-- Frontend lint: **PASS**.
-- Settings structure gate: **PASS** — 11 modules; largest 549/600; 29 keys preserved.
-- Browser-level responsive and focus behavior: **UNVERIFIED** until implementation is complete and the built provider panel is exercised at narrow and desktop widths.
+- Focused provider test: **PASS** — `pnpm exec vitest run src/features/settings/ui/panels/ai-settings-panels.test.tsx`; 1 file and 11 tests passed.
+- TypeScript: **PASS** — `pnpm typecheck`; `tsc -b` exited 0.
+- Targeted lint: **PASS** — ESLint over the provider panel, its test, model-option helper, settings primitives, and settings hook exited 0.
+- Settings structure: **PASS** — 11 modules; largest panel 599/600 lines; 29 navigation and panel keys preserved.
+- Production build: **PASS** — `pnpm build`; Vite transformed 8,396 modules and completed in 5.47s. Existing PGlite direct-`eval` dependency warnings were emitted.
+- Canonical spec: **PASS** — `openspec validate frontend-configuration-surfaces --type spec --strict --no-interactive`.
+- Known violations: NONE in the inspected phase-owned source.
+- Test coverage: **PARTIAL** — component behavior is covered, but the responsive panel-width and native browser behaviors above are not browser-certified in this reassessment.
 
-## RISKS AND SCOPE CUTS
+## CONSTRAINT CHECK
 
-- P1: a generic Command/Popover composition can lose form-combobox semantics. Use the repository's Base UI Combobox wrapper and test keyboard selection and accessible roles.
-- P1: incompatible shared primitive changes could regress other settings panels. Add optional props and run focused primitive plus provider tests.
-- P2: search by label alone hides raw-id workflows and duplicate labels. Search both and render id metadata when useful.
-- P2: whole-provider dirty drafts can remain dirty after a user manually returns every field to its original value. Structural draft reconciliation is not required by the request and is deferred unless the existing hook exposes a small, verified path.
-- P2: live inventory changes can cross the 7/8 threshold while focused. Do not auto-select or save; preserve the bounded current value and cover the threshold statically in tests.
-- Scope cut: no catalog fetch, virtualization, fuzzy ranking, new entity state, new dependency, or visual redesign.
+- AGENTS.md violations: NONE observed in the phase-owned source. Components use the existing settings hook rather than importing graph stores or transports directly.
+- constraints.md violations: N/A — no phase-specific constraints file exists.
+- Scope discipline: the implementation adds no catalog fetch, fuzzy ranking, virtualization, free-form model creation, persistence redesign, or discard workflow.
+
+## GOAL PROGRESS
+
+- Deliver searchable large provider model inventories first: **MET** — the exact 7/8 boundary, label/id search, bounded selection, duplicate-label disambiguation, and empty/stale behavior are present and the focused test passes.
+- Deliver provider accessibility and dirty-state protection second: **PARTIAL** — accessible context, live outcomes, draft protection, and unload cancellation are present, but the same change's responsive requirement is viewport-based rather than panel-width-aware and lacks browser proof.
+- Preserve existing provider settings architecture: **MET** — the authoritative hook, draft cache, store actions, and entity-backed read path remain in place.
+- Apply the requested design-review standard: **MET** — the checked-in execution and reflection record Impeccable review, isolated critiques, and distinct-model adversarial review; this reassessment did not find evidence contradicting those receipts.
 
 ## ASSESSMENT COMPLETE
 
-The minimum coherent delivery is two ordered OpenSpec changes: first an adaptive bounded model picker for large provider inventories, then provider-panel accessibility, live status, dirty-state visibility/unload protection, and responsive layout. The uncomfortable case is a Refresh confirmation that promises data loss even though current code preserves drafts; this phase will keep Refresh honest instead of inventing a discard workflow outside the user's request.
+Reassessed verdict: the canonical implementation counter remains 2/2 complete, but `provider-settings-accessibility-dirty-state` is non-conformant on its responsive-width requirement. A narrow follow-up OpenSpec change is required for panel-width-aware layout and browser certification. The archived implementation remains complete as recorded; the follow-up should close the newly observed conformance gap rather than relabel completed work as an implementation gap.
+
+## UNRESOLVED ADVERSARIAL REVIEW FINDINGS
+
+The distinct K3 judge returned **BLOCK** on the permitted second review round (2 CRITICAL, 2 WARNING, 0 SUGGESTION). The anti-sycophancy screen passed with score 0.0. These findings remain open for the next planning or assessment pass:
+
+- **CRITICAL — canonical goals were absent from the review packet.** The packet supplied `goals: null`, so the judge could not verify that the four prose goals in this assessment are the authoritative phase goals. A future packet must include stable goal identifiers and map each to evidence, a gap, or an explicit non-applicability decision.
+- **CRITICAL — canonical progress evidence was omitted from the review packet.** The assessment cites `.kbd-orchestrator/phases/provider-settings-search-then-accessibility/progress.json`, but the packet did not include that file or its relevant entries. A future packet must carry those entries and explicitly reconcile archived task completion with the newly observed responsive-width non-conformance.
+- **WARNING — line-specific source claims lacked source excerpts in the packet.** A future packet should attach the cited ranges or focused diffs for the threshold, filtering, accessibility, dirty-state, and responsive-layout determinations.
+- **WARNING — browser evidence gaps were grouped too broadly.** A future assessment should split constrained-panel stacking, horizontal clipping, focus visibility, and native unload confirmation into separate evidence items, each tied to a governing requirement or marked as non-required supporting evidence.

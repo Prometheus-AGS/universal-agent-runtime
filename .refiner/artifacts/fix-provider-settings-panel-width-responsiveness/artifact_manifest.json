@@ -1,0 +1,30 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-27T08:47:07Z",
+  "variants": [
+    {
+      "name": "provider-settings-responsive-verification",
+      "file": ".refiner/artifacts/fix-provider-settings-panel-width-responsiveness/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic responsive-layout, keyboard, dirty-state, scope, and validation receipt"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "The production source delta is class-only: one named container and one container-query grid variant.",
+      "The focused component suite passes 11/11 and the authorized production-bundle Playwright contract passes 1/1.",
+      "Typecheck, lint, settings structure, build, and strict OpenSpec validation pass.",
+      "The full frontend suite retains 12 recorded failures in unrelated provider-store mocks and A2UI stories; no baseline repair was attempted.",
+      "Five verified-distinct review rounds passed; the final iteration-5 review returned zero critical findings, two warnings, and two suggestions, with anti-theater score 0.0.",
+      "Preview is not required for this direct content receipt, so preview.runs is intentionally empty; the schema-supported preview_status value records the passing non-preview validation aggregate."
+    ]
+  }
+}

@@ -1,10 +1,10 @@
 {
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 851,
-  "derivedRevision": 851,
+  "sourceRevision": 890,
+  "derivedRevision": 890,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 459,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 498,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -32,10 +32,10 @@
   "currentTask": null,
   "status": "ready",
   "completionMetric": "implementation",
-  "implementationCompleted": 6,
-  "implementationTotal": 6,
+  "implementationCompleted": 7,
+  "implementationTotal": 7,
   "planRevision": 2,
-  "revision": 851,
-  "exactNextCommand": "/kbd-assess provider-settings-search-then-accessibility",
-  "updatedAt": "2026-08-25T15:42:53.346722Z"
+  "revision": 890,
+  "exactNextCommand": "/kbd-apply fix-provider-settings-panel-width-responsiveness",
+  "updatedAt": "2026-08-27T08:54:34.745703Z"
 }

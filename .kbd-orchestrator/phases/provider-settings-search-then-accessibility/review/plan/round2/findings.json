@@ -1,0 +1,29 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The one-column browser fixture conflates 576px with 36rem without pinning the root font size, so the negative assertion can fail or silently pass for the wrong reason.",
+      "evidence": "Browser fixture: 'Apply an explicit below-576px inline-size constraint to the actual named provider container for the one-column state.' Acceptance: 'assert the computed provider grid has exactly one track below 36rem and exactly two tracks at or above 36rem'. Tailwind container breakpoints are rem-based; 36rem equals 576px only when the document root font-size is 16px, which the plan never asserts or fixes. If the app's root font-size differs (e.g., 14px or 62.5% tricks), a 575px container is at or above 36rem and the 'one track below 36rem' assertion contradicts the fixture.",
+      "suggested_fix": "Either set/assert `document.documentElement` computed font-size (or fix it to 16px in the fixture) before applying the inline-size constraint, or express the fixture constraint in rem and derive the px value from the measured root font-size at runtime."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "claim": "The keyboard/focus acceptance clause is under-specified relative to the otherwise concrete grid-track assertions.",
+      "evidence": "Acceptance: 'Assert document, provider-card, and visible-control overflow bounds; keyboard reachability and visible focus; and preservation of the edited value and modified indicator while crossing the boundary.' No traversal order, expected tabbable element count, or focus-visible selector is named, leaving 'keyboard reachability and visible focus' open to implementer interpretation in the Tier 3 receipt that gates archival.",
+      "suggested_fix": "Name the assertion mechanically, e.g., 'Tab from the first provider control reaches every visible interactive control without leaving the panel, and the focused element exposes a visible focus indicator (non-zero outline/ring computed style).'"
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

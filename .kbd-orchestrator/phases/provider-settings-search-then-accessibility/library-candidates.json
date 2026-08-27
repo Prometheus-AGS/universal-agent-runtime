@@ -1,0 +1,217 @@
+{
+  "phase": "provider-settings-search-then-accessibility",
+  "generated_at": "2026-08-26T18:40:29Z",
+  "research_budget": {
+    "max_queries_per_tier": 8,
+    "max_minutes": 20,
+    "queries_used": {
+      "tier_1": 9,
+      "tier_2": 5,
+      "tier_3": 5,
+      "tier_4": 0
+    }
+  },
+  "gaps_addressed": [
+    "gap-responsive-provider-panel-width",
+    "gap-browser-responsive-certification",
+    "gap-review-packet-evidence-integrity"
+  ],
+  "candidates": [
+    {
+      "id": "cand-001",
+      "name": "Tailwind CSS v4 built-in container queries",
+      "kind": "framework",
+      "repo_url": "https://github.com/tailwindlabs/tailwindcss",
+      "registry": "npm",
+      "fit_for_gap": "gap-responsive-provider-panel-width",
+      "verdict": "adopt",
+      "coverage_estimate": 0.95,
+      "license": "MIT",
+      "maintenance": {
+        "last_release": "2026-08-14T19:54:08.797Z",
+        "stars": 97335,
+        "open_issues": 59,
+        "installed_version": "4.3.3"
+      },
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/tailwindlabs/tailwindcss",
+          "claim": "The official repository is active and is the source of the installed Tailwind framework."
+        },
+        {
+          "tier": 2,
+          "source_url": "https://github.com/tailwindlabs/tailwindcss.com/blob/main/src/blog/tailwindcss-v4/index.mdx",
+          "claim": "Official v4 documentation demonstrates @container with container breakpoint and @max-* variants for grid composition."
+        },
+        {
+          "tier": 3,
+          "source_url": "https://www.npmjs.com/package/tailwindcss/v/4.3.3",
+          "claim": "The installed 4.3.3 release is MIT-licensed and current in the project lockfile."
+        }
+      ],
+      "risks": [
+        "An arbitrary container breakpoint could preserve clipping or switch columns too early.",
+        "The query container must wrap the width-constrained provider composition rather than an unconstrained ancestor."
+      ],
+      "decision_rationale": "Native container variants directly match the panel-width requirement, are already installed, and follow an existing repository convention without adding React state or a dependency."
+    },
+    {
+      "id": "cand-002",
+      "name": "Playwright Test",
+      "kind": "framework",
+      "repo_url": "https://github.com/microsoft/playwright",
+      "registry": "npm",
+      "fit_for_gap": "gap-browser-responsive-certification",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "Apache-2.0",
+      "maintenance": {
+        "last_release": "2026-08-26T06:14:54.049Z",
+        "stars": 95168,
+        "open_issues": 176,
+        "installed_version": "1.62.1"
+      },
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/microsoft/playwright",
+          "claim": "The official repository is active and backs the project's installed browser-test framework."
+        },
+        {
+          "tier": 2,
+          "source_url": "https://github.com/microsoft/playwright/blob/main/docs/src/test-api/class-testoptions.md",
+          "claim": "Official documentation supports explicit viewport dimensions for responsive tests."
+        },
+        {
+          "tier": 2,
+          "source_url": "https://github.com/microsoft/playwright/blob/main/docs/src/api/class-locatorassertions.md",
+          "claim": "Playwright Test provides retrying locator assertions and element screenshot assertions."
+        },
+        {
+          "tier": 3,
+          "source_url": "https://www.npmjs.com/package/@playwright/test/v/1.62.1",
+          "claim": "The project-installed 1.62.1 release is Apache-2.0 licensed."
+        }
+      ],
+      "risks": [
+        "A narrow viewport alone does not prove response to a constrained provider panel inside a wide viewport.",
+        "Screenshot-only evidence can miss semantic keyboard regressions unless paired with functional assertions."
+      ],
+      "decision_rationale": "The existing runner can prove layout geometry, overflow, and keyboard access in a real browser; no new test framework is needed."
+    },
+    {
+      "id": "cand-003",
+      "name": "@tailwindcss/container-queries",
+      "kind": "library",
+      "repo_url": "https://github.com/tailwindlabs/tailwindcss-container-queries",
+      "registry": "npm",
+      "fit_for_gap": "gap-responsive-provider-panel-width",
+      "verdict": "reject",
+      "coverage_estimate": 0.8,
+      "license": "MIT",
+      "maintenance": {
+        "last_release": "2026-05-12T14:51:53.587Z",
+        "stars": 1434,
+        "open_issues": 0,
+        "latest_version": "0.1.1"
+      },
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/tailwindlabs/tailwindcss-container-queries",
+          "claim": "The official plugin describes itself as container-query utilities for Tailwind CSS v3.2+."
+        },
+        {
+          "tier": 2,
+          "source_url": "https://github.com/tailwindlabs/tailwindcss.com/blob/main/src/blog/tailwindcss-v4/index.mdx",
+          "claim": "Tailwind CSS v4 documents the required container variants as built-in framework behavior."
+        },
+        {
+          "tier": 3,
+          "source_url": "https://www.npmjs.com/package/@tailwindcss/container-queries/v/0.1.1",
+          "claim": "The separate plugin remains available as version 0.1.1 under MIT."
+        }
+      ],
+      "risks": [
+        "Adds a redundant dependency to a Tailwind v4 project.",
+        "Creates ambiguity between legacy plugin guidance and native v4 syntax."
+      ],
+      "decision_rationale": "The installed Tailwind version already includes the feature, so the plugin provides no needed capability."
+    },
+    {
+      "id": "cand-004",
+      "name": "use-resize-observer",
+      "kind": "library",
+      "repo_url": "https://github.com/ZeeCoder/use-resize-observer",
+      "registry": "npm",
+      "fit_for_gap": "gap-responsive-provider-panel-width",
+      "verdict": "reject",
+      "coverage_estimate": 0.75,
+      "license": "MIT",
+      "maintenance": {
+        "last_release": "2026-07-31T11:13:05.785Z",
+        "stars": 682,
+        "open_issues": 0,
+        "latest_version": "10.0.0"
+      },
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/ZeeCoder/use-resize-observer",
+          "claim": "The repository is active and provides the published React measurement hook."
+        },
+        {
+          "tier": 3,
+          "source_url": "https://www.npmjs.com/package/use-resize-observer/v/10.0.0",
+          "claim": "Registry metadata describes a React hook that measures element size with ResizeObserver; version 10.0.0 is MIT-licensed."
+        }
+      ],
+      "risks": [
+        "Introduces resize-driven component state and rerenders for presentation-only layout.",
+        "Requires JavaScript before the layout can adapt even though CSS container queries are available."
+      ],
+      "decision_rationale": "Measurement is technically viable but adds runtime complexity that the existing CSS framework avoids."
+    },
+    {
+      "id": "cand-005",
+      "name": "Intrinsic CSS Grid auto-fit/minmax pattern",
+      "kind": "pattern",
+      "registry": "none",
+      "fit_for_gap": "gap-responsive-provider-panel-width",
+      "verdict": "reference",
+      "coverage_estimate": 0.8,
+      "license": "N/A — web-platform pattern",
+      "maintenance": {},
+      "evidence": [
+        {
+          "tier": 2,
+          "source_url": "https://github.com/tailwindlabs/tailwindcss.com/blob/main/src/docs/place-content.mdx",
+          "claim": "Official Tailwind documentation demonstrates arbitrary grid-template column values using grid-cols-[repeat(...)], which can express intrinsic CSS grid templates."
+        }
+      ],
+      "risks": [
+        "A general auto-fit template can create more than two columns at large widths, violating the explicit desktop two-column composition.",
+        "Preventing a third column requires an additional maximum width or template constraint, reducing the breakpoint-free advantage."
+      ],
+      "decision_rationale": "This is a valid no-dependency responsive pattern and should remain a planning reference, but native container variants map more directly to the contract's exact one-column versus two-column states."
+    }
+  ],
+  "build_required": [
+    {
+      "need": "Provider-specific container boundary, breakpoint, and grid classes",
+      "why_no_candidate": "Tailwind supplies the primitive, but the application must identify the constrained provider ancestor and select a breakpoint that preserves the incumbent field minimums and padding.",
+      "capability_gap_id": "gap-responsive-provider-panel-width"
+    },
+    {
+      "need": "Focused browser fixture and assertions for constrained and desktop provider-panel widths",
+      "why_no_candidate": "Playwright supplies the runner and APIs, but deterministic provider data, panel constraint setup, layout geometry, overflow, and keyboard assertions are application-specific.",
+      "capability_gap_id": "gap-browser-responsive-certification"
+    },
+    {
+      "need": "Review packet inclusion check for goals, progress, source excerpts, and focused evidence",
+      "why_no_candidate": "This is a local KBD artifact-construction requirement inherited from the assessment judge, not a missing external library.",
+      "capability_gap_id": "gap-review-packet-evidence-integrity"
+    }
+  ]
+}

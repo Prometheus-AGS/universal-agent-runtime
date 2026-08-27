@@ -145,6 +145,13 @@
       "content_type": "direct:content",
       "updated_at": "2026-08-23T17:06:30Z",
       "finalized_at": "2026-08-23T17:06:30Z"
+    },
+    "fix-provider-settings-panel-width-responsiveness": {
+      "path": ".refiner/artifacts/fix-provider-settings-panel-width-responsiveness",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-27T08:47:07Z",
+      "finalized_at": "2026-08-27T08:47:07Z"
     }
   }
 }

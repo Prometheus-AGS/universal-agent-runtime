@@ -861,3 +861,23 @@ no repository-wide certification claim.
 **Security boundary.** Remote/admin deployments require an exact constant-time `settings_admin_key`; generic settings reads cannot bypass the protected prompt-caching namespace. The loopback-only macOS package retains its explicit mutation-auth-disabled default, and the installer now adds that default to legacy configs only when the key is absent.
 
 **Uncomfortable constraint.** OpenAI automatic caching cannot be disabled by UAR, the provider-default ephemeral TTL is not configurable, and no Anthropic credential was available for a supplemental live cache creation/read. Stub upstream bodies and provider-usage fixtures are the authoritative evidence for this delivery.
+
+---
+
+## 2026-08-26 — Use native container queries for provider-panel width
+
+**Decision.** Retain the installed Tailwind CSS v4 and Playwright stack. Use a Tailwind native container query for the provider field grid and focused Playwright proof for constrained-panel and desktop states. Add no plugin or resize-observer hook.
+
+**Rationale.** The requirement switches between exactly one and two columns according to available provider-panel width. Native container variants express that state transition directly; Playwright already supplies browser geometry, overflow, and keyboard assertions. Intrinsic `auto-fit/minmax` remains a reference but can exceed two columns without another cap.
+
+**Uncomfortable constraint.** Analyze exceeded its Tier 1 research cap by one request because a bundled metadata command was counted after dispatch. The result uses official documentation and installed-stack evidence, but future research must reserve budget before batching calls.
+
+---
+
+## 2026-08-27 — Certify provider responsiveness from the production bundle without dependency scope expansion
+
+**Decision.** Keep the provider-width repair class-only and certify the already-passing production bundle with Playwright after the normal Vite development server failed before rendering on the optional `loro-crdt` peer. Do not add or change a dependency, optimizer configuration, state authority, or runtime transport to route around that environment defect.
+
+**Rationale.** The Tier 2 production build is the deliverable artifact and exercises the same final responsive classes. Its preview supports deterministic container geometry, keyboard operation, draft preservation, popup positioning, and zero-write assertions without confusing an unrelated development optimizer limitation with a product-source requirement.
+
+**Uncomfortable constraint.** Production-bundle certification does not repair the normal development path. The optional-peer root-resolution defect remains explicit in the phase reflection and needs a separately authorized maintenance change if it is to be fixed.

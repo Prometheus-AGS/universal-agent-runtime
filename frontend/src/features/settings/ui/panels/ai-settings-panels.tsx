@@ -87,7 +87,7 @@ export function ProviderPanel() {
         onSave={() => void handleSave()}
         onReload={() => void reload()}
       />
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+      <div className="@container/provider-panel flex-1 overflow-y-auto px-6 py-5 space-y-4">
         {loading && (
           <div
             role="status"
@@ -181,7 +181,7 @@ export function ProviderPanel() {
                   />
                 </div>
               </div>
-              <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2">
+              <div className="grid min-w-0 grid-cols-1 gap-3 @xl/provider-panel:grid-cols-2">
                 <Field label="Base URL" htmlFor={baseUrlId}>
                   <Input
                     id={baseUrlId}

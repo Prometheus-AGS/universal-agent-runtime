@@ -1011,3 +1011,28 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - Built the `server-full` macOS release and installed it through `packaging/native/macos/upgrade.sh`. Release and installed SHA-256 both equal `4af63ceafb720276f5709d02236d973d9ff71fad7b6235943283ddc6fa5ac319`. The LaunchAgent runs `/Users/gqadonis/.uar/bin/universal-agent-runtime` at PID 37874 on port 1906; health, readiness, prompt-caching GET, and exact empty 204 agent-config checks passed.
 - Extension-free installed Playwright passed the Prompt Caching settings route in 2.3 seconds and real Session Configuration Inherit→On persistence/source resolution in 2.9 seconds, with no targeted 404, page error, or app console error. The broader legacy completion scenario was blocked by an expired token in the separate local OpenAI proxy.
 - The checked-in MV3 submodule package did not load because its manifest icon assets are absent. With temporary copies of the repository brand icons, the exact background relay delivered one connected event and dropped the post-disconnect event. The temporary files were removed; upstream submodule packaging remains required before exact-package certification.
+
+## 2026-08-26 — Provider responsive-gap analysis completed
+
+- Researched five in-stack candidates for the reassessed provider-panel width and browser-certification gaps. Adopted existing Tailwind CSS v4 container queries and Playwright Test; rejected the legacy Tailwind plugin and `use-resize-observer`; retained intrinsic CSS Grid as a reference alternative.
+- Added no dependency or product code. Wrote the Analyze narrative, schema-valid candidate contract, and append-only decision record.
+- Context7 confirmed current Tailwind and Playwright APIs; npm and GitHub metadata supplied maintenance evidence. Tier 4 was unnecessary.
+- Distinct K3 review of GPT-5-produced artifacts passed twice. The final result was 0 critical, 2 warnings, and 1 suggestion; anti-sycophancy screening passed at 0.0. Remaining warnings concern source excerpts omitted by the review packet and are carried into the handoff.
+- The Tier 1 query counter reached 9 against a cap of 8 because a four-request metadata batch was counted after dispatch. Research stopped immediately; this process defect is explicit in the artifacts and handoff.
+
+## 2026-08-26 — Provider width follow-up task 1.1 completed
+
+- Recorded the required Impeccable, frontend-design, UI/UX Pro Max, Vercel React/composition, and Prometheus entity-boundary guidance in KBD execution evidence; `ux-designer` was unavailable and no product source changed.
+- Dual-agent Impeccable review scored the provider panel 29/40 with one in-scope P1 responsive-layout defect and zero deterministic detector findings. The snapshot trend is 25/40 → 29/40.
+- Fresh adversarial review found and removed a false browser oracle that rejected legitimate internal input scrolling. Round two had zero critical findings; eight warnings and two suggestions carry into the browser-contract task.
+- Strict OpenSpec validation and diff whitespace checks passed. OpenSpec is 1/9 complete and next is task 1.2.
+- `kbd-apply` created a positional task `1` beside the pre-registered semantic task `1.1`. The semantic task was completed through typed commands at runtime revision 871; the immutable canonical projection is therefore offset at 2/10, with the next task label correctly pointing to the responsive browser contract.
+
+## 2026-08-27 — Provider settings responsive follow-up and phase closeout completed
+
+- Added exactly two production class substitutions: the provider-list body is a named `provider-panel` container and the field grid uses the `@xl/provider-panel` two-column variant instead of a viewport `lg:` variant. No dependency, state authority, provider data, service, store, transport, realtime, unload-dialog, or baseline repair changed.
+- Added focused class-contract and Playwright coverage. The old viewport layout failed the browser negative control with two tracks where one was required. The final production-bundle scenario passed 1/1 in 4.3 seconds across below, exact, above, restored, and reverse container-width states, with all six controls keyboard-reachable and operable, both portaled listboxes inside the viewport, dirty draft preservation, and zero durable writes.
+- TypeScript, ESLint, settings structure, focused Vitest 11/11, production build, strict OpenSpec, change verification, diff integrity, and the canonical synced spec passed. The full frontend suite remains at 73/76 files and 350/362 tests because of 12 unrelated provider-store and A2UI/ChoicePicker baseline failures.
+- Artifact-refiner converged at iteration 5/5 with 5/5 constraints. The final verified-distinct `k3` review of `gpt-5` output passed with 0 critical, 2 warnings, and 2 suggestions; anti-theater score was 0.0. The installed adapter's missing canonical schemas and the packet builder's dirty-tree/nested-file defects are disclosed.
+- Verified and archived `fix-provider-settings-panel-width-responsiveness` as `openspec/changes/archive/2026-08-27-fix-provider-settings-panel-width-responsiveness`, synced `frontend-configuration-surfaces`, replaced the stale phase reflection, and completed implementation, evidence, certification, and publication at 3/3 through typed KBD runtime events.
+- The control plane at `127.0.0.1:7892` remained unavailable, so the canonical runtime committed signed local transitions. Phase and Reflect status are complete, but the generated exact-next projection still renders the archived `/kbd-apply` command; no successor phase was created.

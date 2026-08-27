@@ -1,0 +1,29 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The plan's model-routing claim asserts \"project.json has no model_policy\" without identifying which project.json was inspected, and the packet shows no root-level project.json exists while 10 files match that name.",
+      "evidence": "Plan header: \"Model routing: `project.json` has no `model_policy`; the required fallback is frontier.\" cited_paths: \"EXISTS project.json -> 10 matches (.kbd-orchestrator/project.json, .prometheus/project.json, crates/prometheus-skill-system/.prometheus/project.json)\". The file tree contains no `./project.json`; the claim is unverifiable as written and the frontier fallback may rest on the wrong file.",
+      "suggested_fix": "Cite the exact path inspected (e.g. `.kbd-orchestrator/project.json`) and confirm that file, not an unrelated namesake, is the routing authority; otherwise state the fallback is assumed because no governing file was located."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "claim": "The change's complexity is labeled inconsistently (\"Est. complexity: M\" vs \"Complexity score: High\"), and the routing rationale's phrasing (\"exceeds the model-routing threshold for medium\") conflates the two scales, which can mislead downstream executor routing.",
+      "evidence": "Change 1 lists \"Est. complexity: M\" immediately followed by \"Complexity score: High\", then \"Routing rationale: the OpenSpec change has nine tasks, which exceeds the model-routing threshold for medium even though the production edit is class-only.\" A reader cannot tell whether the change is medium or high.",
+      "suggested_fix": "Pick one scale (e.g. M / task-count 9) and state the routing consequence directly: \"Model class: frontier because task count 9 exceeds the threshold for non-frontier routing.\""
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

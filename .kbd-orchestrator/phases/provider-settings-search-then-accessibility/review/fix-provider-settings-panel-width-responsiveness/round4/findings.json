@@ -1,0 +1,55 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "frontend/e2e/provider-settings-responsive.spec.ts",
+      "line": 85,
+      "claim": "The zero-durable-write proof has an unmonitored hole: the `/api/config/persistence` route fulfills HTTP 204 (success) for every method without recording non-GET requests, so a durable write through that endpoint would be silently accepted and the final `expect(durableSettingsWrites).toEqual([])` would still pass.",
+      "evidence": "Hunk: `await page.route(/\\/api\\/config\\/persistence(?:\\?.*)?$/, async (route) => { await route.fulfill({ status: 204 }); });` \u2014 contrast with the settings-namespace route which records and 409-rejects all non-GET requests. Constraint `keyboard-and-draft-preservation` requires \"no durable write occurs\" validated by \"zero-write assertions\"; iteration 3 of the refinement log claims route coverage was made fail-closed, but this endpoint (named 'persistence') remains open to unrecorded writes.",
+      "suggested_fix": "Record non-GET requests in `durableSettingsWrites` (or a sibling array) inside the `/api/config/persistence` handler and reject them with a non-2xx status, matching the fail-closed pattern used for the settings namespace."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/e2e/provider-settings-responsive.spec.ts",
+      "line": 315,
+      "claim": "The exact-36rem state assertion is subpixel-flaky: the width poll tolerates \u00b10.5px (`toBeCloseTo(width, 0)`) at exactly the value where the container query flips, so a measured content box of e.g. 575.6px passes the poll but yields one track where the test expects two.",
+      "evidence": "`setContentBoxWidth` asserts `expect.poll(() => contentBoxWidth(locator)).toBeCloseTo(width, 0)` (|diff| < 0.5), then the test calls `await setContentBoxWidth(providerList, boundary); expect(await computedTrackCount(grid)).toBe(2);`. `contentBoxWidth` derives from integer `clientWidth` minus parsed float padding, so fractional rounding from zoom/DPI/scrollbar environments can land inside the tolerance band but below the 36rem flip point.",
+      "suggested_fix": "For the exact-boundary state, poll with a strict equality on the rounded content-box width (e.g. assert `Math.round(width) === boundary` after setting) or offset the exact-boundary check by a subpixel-safe epsilon that still satisfies the at-or-above spec clause deterministically."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/fix-provider-settings-panel-width-responsiveness/specs/frontend-configuration-surfaces/spec.md",
+      "line": 9,
+      "claim": "The accepted spec scenario requires every visible provider control to remain \"fully reachable and operable by keyboard\", but the browser contract only proves reachability, focus visibility, and geometry \u2014 no control is ever operated via keyboard.",
+      "evidence": "spec.md scenario: \"- **AND** each visible provider control remains fully reachable and operable by keyboard\". In `provider-settings-responsive.spec.ts`, `expectKeyboardPath` only presses Tab and asserts focus/style; `baseUrl.fill(dirtyValue)` is a programmatic fill, and no Space/Enter/typing interaction exercises the Enable switch, reveal button, Protocol select, or Default Model combobox.",
+      "suggested_fix": "Add keyboard-operation assertions (e.g. Space toggles Enable and preserves the dirty Base URL, Enter/Space on reveal toggles visibility, typing into Base URL updates the draft) or narrow the scenario wording to match the reachable-with-visible-focus evidence."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".refiner/registry.json",
+      "line": 149,
+      "claim": "The new registry entry omits `finalized_at`, which every sibling entry in the same object carries; if the registry schema requires that field per entry, the manifest/schema-validation termination condition cannot pass.",
+      "evidence": "Diff hunk: the added `fix-provider-settings-panel-width-responsiveness` entry has only `path`, `artifact_type`, `content_type`, `updated_at`, while the visible sibling entries (e.g. the 2026-08-23 entry directly above) all include `finalized_at`. Termination conditions require \"Manifest, constraints, referenced files, iteration history, strict OpenSpec, and diff integrity validate.\"",
+      "suggested_fix": "Confirm against the registry schema whether `finalized_at` is optional for in-flight refinements; if required, either add it on finalization before claiming validation, or record the schema's optionality explicitly in the artifact evidence."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/e2e/provider-settings-responsive.spec.ts",
+      "line": 207,
+      "claim": "`expectKeyboardPath` permanently clobbers any pre-existing `tabindex` on `document.body` because cleanup unconditionally calls `removeAttribute(\"tabindex\")` rather than restoring the prior value.",
+      "evidence": "`page.evaluate(() => { document.body.tabIndex = -1; document.body.focus(); })` followed by `finally { await page.evaluate(() => document.body.removeAttribute(\"tabindex\")); }` \u2014 if the shell ever sets a body tabindex, this test silently removes it for the remainder of the session.",
+      "suggested_fix": "Capture the original attribute (`document.body.getAttribute(\"tabindex\")`) and restore it in the `finally` block, mirroring the pattern already used for `originalStyle` on the provider list."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

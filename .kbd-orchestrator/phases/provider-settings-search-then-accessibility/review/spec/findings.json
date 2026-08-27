@@ -1,0 +1,44 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The only real behavioral proof of the spec's core requirement is deferred to an undefined future event, so the change can be implemented, reviewed, and merged with every THEN clause of the modified requirement unverified.",
+      "evidence": "tasks.md item 8: \"At the next authorized Tier 3 milestone or release, run the focused Playwright behavior test and require every responsive, overflow, keyboard, and draft-preservation assertion before completing the task or archiving the change\" \u2014 no milestone, owner, or trigger is identified, and task 2 explicitly states \"behavioral execution remains pending Tier 3.\" The \"Uncomfortable constraint\" section discloses this but does not resolve it.",
+      "suggested_fix": "Bind the Tier 3 execution to a concrete, scheduled gate (named release checklist entry, CI job, or dated milestone) and state in tasks.md what blocks archival if that gate never runs; otherwise the change can sit unarchived indefinitely with the responsive requirement uncertified."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "Scenario 3's pass/fail condition is undecidable from the spec alone because the layout boundary it references is never defined in the spec delta.",
+      "evidence": "specs/frontend-configuration-surfaces/spec.md: \"WHEN the available provider-panel width changes across the supported desktop-composition boundary\" \u2014 the boundary value (36rem / Tailwind `@xl`) appears only in design.md Decision 1 (\"Tailwind's standard `@xl` container token is 36rem (576px)\"), not in the requirement or scenarios. A reviewer validating the implementation against the spec cannot tell whether 32rem, 36rem, or 42rem satisfies it.",
+      "suggested_fix": "State the boundary in the requirement or scenario (e.g., \"the desktop-composition boundary at 36rem panel inline size\") or add a spec note that the boundary is defined in design.md and normative."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "claim": "The overflow/keyboard MUST clause is only exercised by scenarios in the one-column state; no spec scenario asserts absence of horizontal overflow or clipped focus in the two-column desktop state.",
+      "evidence": "The requirement says \"Controls and long provider content MUST remain within the available page width without horizontal page scrolling or clipped keyboard focus\" unconditionally, but Scenario 1 (the only scenario with overflow/keyboard THEN clauses) is conditioned on \"the available provider-panel width cannot support the desktop field composition,\" and Scenario 2 asserts only \"provider fields render in exactly two columns.\" design.md Decision 2 plans overflow assertions \"for each state,\" so the test plan exceeds the spec \u2014 the spec is weaker than the intended verification.",
+      "suggested_fix": "Add an AND clause to Scenario 2 (no horizontal page scrolling, controls within available width) so the spec matches the designed test contract."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "claim": "The 36rem threshold is justified by an unverified arithmetic claim about per-column width with no criterion for whether that width is actually sufficient for the widest provider controls.",
+      "evidence": "design.md Decision 1: \"after card padding and the grid gap this leaves about 265px per field column\" \u2014 no evidence in the packet that 265px accommodates the longest provider inputs (e.g., Base URL fields with long values) without internal clipping, and no task measures control-level (as opposed to page/card-level) overflow.",
+      "suggested_fix": "Add a per-control overflow assertion (scrollWidth <= clientWidth on inputs) to the Decision 2 test contract, or record a measured worst-case control width supporting the 265px figure."
+    }
+  ],
+  "checked_classes": [],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

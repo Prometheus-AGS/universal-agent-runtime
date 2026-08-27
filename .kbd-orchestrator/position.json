@@ -1,10 +1,10 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 851,
-  "derivedRevision": 851,
+  "sourceRevision": 890,
+  "derivedRevision": 890,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 459,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 498,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -17,18 +17,17 @@
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-25T15:42:53.346722Z",
+  "updatedAt": "2026-08-27T08:54:34.745703Z",
   "cursor": [
-    "provider-settings-search-then-accessibility",
-    "reflect"
+    "provider-settings-search-then-accessibility"
   ],
   "root": {
     "type": "phase",
     "id": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
     "status": "ready",
     "progress": {
-      "done": 6,
-      "total": 6
+      "done": 7,
+      "total": 7
     },
     "children": [
       {
@@ -125,8 +124,8 @@
         "canonicalId": "provider-settings-search-then-accessibility",
         "status": "COMPLETE",
         "progress": {
-          "done": 2,
-          "total": 2
+          "done": 3,
+          "total": 3
         },
         "children": [
           {
@@ -145,6 +144,15 @@
             "progress": {
               "done": 7,
               "total": 7
+            }
+          },
+          {
+            "type": "change",
+            "id": "fix-provider-settings-panel-width-responsiveness",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 10,
+              "total": 10
             }
           }
         ],

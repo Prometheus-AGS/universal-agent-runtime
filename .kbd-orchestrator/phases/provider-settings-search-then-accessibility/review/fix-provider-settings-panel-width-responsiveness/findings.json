@@ -1,0 +1,58 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/provider-settings-search-then-accessibility/execution.md",
+      "claim": "The KBD execution ledger contradicts itself on the Tier 3 certification gate: the Verification-requirements section records an explicitly operator-authorized, passing Tier 3 production-bundle run (Task 3.3 evidence, 2026-08-27), while the Blockers section states 'Tier 3 authorization is pending and blocks certification and archival.'",
+      "evidence": "execution.md Task 3.3: 'The operator explicitly authorized the Tier 3 milestone run... The authorized production-bundle rerun exited 0 with 1/1 test passing' vs. '## Blockers \u2014 Tier 3 authorization is pending and blocks certification and archival, not Tiers 0\u20132 implementation.' Constraint 'truthful-phase-evidence' requires results be recorded without misrepresentation; the ledger simultaneously records the gate as satisfied and as pending.",
+      "suggested_fix": "Update the Blockers section to reflect that Tier 3 authorization was granted and the receipt exists, leaving only task 3.4 (adversarial review/archival) as open."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/e2e/provider-settings-responsive.spec.ts",
+      "claim": "The browser spec was never behaviorally executed against the pre-change (viewport-breakpoint) implementation, so the design-mandated negative control proving the test fails on the old code is unevidenced.",
+      "evidence": "design.md Migration Plan step 1: 'Add the focused browser test... and confirm the geometry assertion fails against the viewport-based grid rather than because a future container class is absent.' execution.md Task 1.2 records only `playwright test --list` discovery and states 'Behavioral execution remains pending Tier 3 and was not run at this task boundary'; the first recorded behavioral run is Task 3.3, after the production class change in Task 2.2. design.md is named acceptance authority by the global rules.",
+      "suggested_fix": "Run the spec once against a stash/revert of the two production class strings (or document a prior failing run) and record the receipt in the execution evidence."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/e2e/provider-settings-responsive.spec.ts",
+      "claim": "The spec omits assertions the design requires for each layout state: the Base URL/Protocol bounding-box geometry comparison is entirely absent, per-control containment is not asserted in the restored-desktop state, and the keyboard traversal with visible-focus checks is executed only in the narrow state.",
+      "evidence": "design.md Decision 2, 'For each state:' bullet list requires (a) 'compare the Base URL and Protocol control bounding boxes to prove vertical stacking or same-row two-column geometry,' (b) 'assert every visible provider control's rendered bounding box remains within the provider card,' and (c) 'focus the Enable toggle, then Tab through... after each Tab, assert the expected active element... and a computed visible focus indicator.' The shipped spec contains no baseUrl-vs-protocol box comparison anywhere, drops the per-control `expectInside(control, providerCard)` loop after the style restore, and runs the Tab traversal only before the boundary+1 transition.",
+      "suggested_fix": "Add the Base URL/Protocol y- and same-row assertions per state, repeat the control-containment loop after the desktop restore, and either repeat the focus traversal in the wide state or amend design.md to scope it to the narrow state."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/e2e/provider-settings-responsive.spec.ts",
+      "line": 79,
+      "claim": "contentBoxWidth measures border-box minus padding/border, which includes any vertical scrollbar width, while container queries evaluate against the true content box that excludes the scrollbar \u2014 so the boundary\u00b11px track assertions are off by the scrollbar width whenever the `overflow-y-auto` list actually scrolls.",
+      "evidence": "contentBoxWidth computes `element.getBoundingClientRect().width - (paddingLeft+paddingRight+borderLeft+borderRight)`; getBoundingClientRect includes the scrollbar, and the container element is the `overflow-y-auto` provider-list body. With a non-overlay scrollbar (e.g., Linux CI) and overflowing content, a measured contentBoxWidth of `boundary + 1` corresponds to a queried content box of roughly `boundary + 1 - 15px`, i.e. below 36rem, making the two-track assertion fail spuriously (and the fixture's width pinning via expect.poll silently validates the wrong box).",
+      "suggested_fix": "Compute the queried box as `element.clientWidth - paddingLeft - paddingRight` (clientWidth excludes the scrollbar) in both contentBoxWidth and setContentBoxWidth."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/e2e/provider-settings-responsive.spec.ts",
+      "claim": "The dirty Base URL value is never carried across the wide\u2192narrow boundary crossing; dirty preservation is only verified for narrow\u2192wide and a wide\u2192wide restore, while the spec delta's third scenario covers any crossing of the boundary.",
+      "evidence": "The test sets `baseUrl.fill(dirtyValue)` only after `setContentBoxWidth(providerList, boundary - 1)`; the initial desktop\u2192narrow crossing happens before any dirty state exists, and the final restore goes from `boundary + 1` to a wider desktop width (no crossing). spec.md Scenario 'Available provider-panel width crosses the layout boundary' is direction-agnostic.",
+      "suggested_fix": "After the restore assertions, narrow the panel once more below the boundary and assert the dirty value and Modified indicator survive the wide\u2192narrow crossing."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/e2e/provider-settings-responsive.spec.ts",
+      "claim": "The track-count target is located via `providerCard.locator(\".grid\").first()`, which silently selects whatever grid happens to be first in the card DOM; if another `.grid` is ever added earlier (e.g., a model-inventory row), the test would assert tracks on the wrong element and could pass or fail vacuously.",
+      "evidence": "`const grid = providerCard.locator(\".grid\").first();` \u2014 no scoping to the field grid; the same ambiguity class already produced one locator defect in this change (the `getByLabel(\"API Key\")` collision recorded in execution.md Task 3.3).",
+      "suggested_fix": "Locate the grid relative to a stable child, e.g. `providerCard.locator(\"div:has(> label:text('Base URL'))\")` or `baseUrl.locator(\"xpath=ancestor::div[contains(@class,'grid')][1]\")`."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

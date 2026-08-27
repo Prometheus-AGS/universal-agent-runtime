@@ -1,0 +1,44 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/features/settings/ui/panels/ai-settings-panels.tsx",
+      "line": 90,
+      "claim": "Adding `@container/provider-panel` applies `container-type: inline-size`, which imposes layout and style containment on the scrolling body, and no test verifies the resulting side effects on positioned or overlay descendants.",
+      "evidence": "Hunk: `<div className=\"@container/provider-panel flex-1 overflow-y-auto px-6 py-5 space-y-4\">`. Layout containment makes this element a containing block for absolutely positioned descendants and zeroes its intrinsic inline-size contribution; combined with `overflow-y-auto`, any non-portaled popup anchored above this element would re-anchor or clip. The e2e spec opens the Protocol and Default Model popups in `expectKeyboardOperability` but asserts only `aria-expanded` \u2014 never popup geometry or position \u2014 so a positioning/clipping regression in those overlays would pass the entire gate suite undetected.",
+      "suggested_fix": "In `expectKeyboardOperability` (or a dedicated block), after opening the Protocol/Default Model popup, assert the popup's bounding box is non-empty and within the viewport, or confirm and document that the installed Base UI popups are portaled to body and therefore unaffected by the new containment context."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".refiner/artifacts/fix-provider-settings-panel-width-responsiveness/state.json",
+      "claim": "The refinement artifact has reached `max_iterations: 5` with `convergence_status: \"running\"` and an iteration-5 decision of \"continue\", so the planned finalization after one more review would exceed the declared iteration cap without amending it.",
+      "evidence": "state.json: `\"current_iteration\": 5, \"max_iterations\": 5, \"convergence_status\": \"running\"` and iteration 5 `\"decision\": \"continue\"`; decisions.md iteration 5: \"continue to one final exact-candidate review, then terminate if no critical finding remains.\" artifact_manifest.json likewise defers convergence (\"one final exact-candidate review remains the convergence condition\"). The recorded plan therefore requires a sixth review/finalization cycle that the persisted `max_iterations` does not authorize, which undermines the `truthful-phase-evidence` termination bookkeeping (\"Manifest, constraints, referenced files, iteration history ... validate\").",
+      "suggested_fix": "Either treat this review as the iteration-5 gate and finalize within it (recording the receipt in the same iteration), or explicitly raise `max_iterations` with a recorded rationale before performing any further continue cycle."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/e2e/provider-settings-responsive.spec.ts",
+      "claim": "The exact-boundary check uses strict float equality (`expect.poll(() => contentBoxWidth(providerList)).toBe(boundary)`) while the adjacent setter uses `toBeCloseTo(width, 0)`, creating a poll-until-timeout flake risk if padding or root font size ever becomes fractional.",
+      "evidence": "`setContentBoxWidth` asserts `toBeCloseTo(width, 0)` (tolerance \u00b10.5px), but the boundary state then asserts `toBe(boundary)` where `boundary = rootFontSize * 36` may be non-integer (e.g., 16.5px root) while `clientWidth` is always an integer, making exact equality unreachable and burning the full poll timeout before failing.",
+      "suggested_fix": "Use `toBeCloseTo(boundary, 0)` for the exact-boundary poll, or round `boundary` before use, keeping the one-pixel epsilon semantics intentional."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": ".refiner/artifacts/fix-provider-settings-panel-width-responsiveness/artifact_manifest.json",
+      "claim": "`validation.preview_status` is recorded as \"pass\" while `preview.runs` is empty and `preview.required` is false, representing a check that never ran as passed.",
+      "evidence": "artifact_manifest.json: `\"preview\": { \"required\": false, \"runs\": [] }` together with `\"validation\": { \"preview_status\": \"pass\", ... }`. For a `direct:content` artifact with zero preview executions, \"pass\" overstates the evidence; a \"not_required\"/\"skipped\" style value would be truthful under the `truthful-phase-evidence` constraint's rule against representing unperformed checks as passes.",
+      "suggested_fix": "If the schema permits, record preview as not-applicable/skipped; otherwise add a note in `validation.notes` stating the preview status is a schema default with zero runs."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

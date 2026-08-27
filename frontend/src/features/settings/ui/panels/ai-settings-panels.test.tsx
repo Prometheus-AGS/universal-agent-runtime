@@ -371,10 +371,13 @@ describe("ProviderPanel", () => {
       "Refreshing settings…",
     );
     const example = screen.getByRole("group", { name: "Example AI" });
-    expect(example.querySelector(".grid")).toHaveClass(
+    expect(example.parentElement).toHaveClass("@container/provider-panel");
+    const fieldGrid = example.querySelector(".grid");
+    expect(fieldGrid).toHaveClass(
       "grid-cols-1",
-      "lg:grid-cols-2",
+      "@xl/provider-panel:grid-cols-2",
     );
+    expect(fieldGrid).not.toHaveClass("lg:grid-cols-2");
   });
 
   test("disables provider actions while a save is in flight", () => {

@@ -3,7 +3,9 @@
 ## Purpose
 
 Define feature ownership, layering, behavior-preservation, semantic-token, shared-UI, and verification contracts for the React frontend's production configuration surfaces.
+
 ## Requirements
+
 ### Requirement: Configuration pages have explicit feature ownership
 The agents, auth, compiler, cost, credentials, knowledge, memory, models, providers, runtime-console, settings, skills, and tools production pages SHALL reside in matching feature slices under `frontend/src/features/` and SHALL be imported by the admin composition root through each feature's public entry point.
 
@@ -237,16 +239,22 @@ The Provider Overrides surface SHALL derive its modified state from the authorit
 - **THEN** the dirty indicators remain and Refresh stays disabled
 
 ### Requirement: Provider settings remain usable at narrow widths
-The Provider Overrides editor SHALL stack provider fields in one column at narrow widths and SHALL retain its two-column composition at desktop widths. Controls and long provider content MUST remain within the available viewport without clipping keyboard focus.
+The Provider Overrides editor SHALL choose its provider-field composition from the available width of the provider panel rather than from the browser viewport width. It SHALL stack provider fields in one column when that panel cannot support the desktop composition and SHALL render exactly two columns when the panel can support it. Controls and long provider content MUST remain within the available page width without horizontal page scrolling or clipped keyboard focus.
 
 #### Scenario: Provider settings are viewed in a narrow viewport
-- **WHEN** the available provider-panel width cannot support the desktop field composition
-- **THEN** fields stack into one column without horizontal page scrolling
-- **AND** controls remain fully keyboard accessible
+- **WHEN** the available provider-panel inline size is below the 36rem desktop-composition boundary, including when the browser viewport itself remains wide
+- **THEN** provider fields stack into one column without horizontal page scrolling
+- **AND** each visible provider control remains fully reachable and operable by keyboard
 
 #### Scenario: Provider settings are viewed at desktop width
-- **WHEN** the available provider-panel width supports the incumbent desktop composition
-- **THEN** provider fields render in two columns
+- **WHEN** the available provider-panel inline size is at or above the 36rem desktop-composition boundary
+- **THEN** provider fields render in exactly two columns
+- **AND** long provider content causes neither horizontal page scrolling nor clipped keyboard focus
+
+#### Scenario: Available provider-panel width crosses the layout boundary
+- **WHEN** the available provider-panel inline size changes across the 36rem desktop-composition boundary without unloading Provider Overrides
+- **THEN** the provider fields switch between the one-column and two-column compositions according to the new panel width
+- **AND** the current provider values and unsaved draft state remain unchanged
 
 ### Requirement: Sensitive setting masks preserve secret length
 Settings API responses SHALL obscure every character of a stored API key with one mask character and SHALL NOT return any plaintext character from the stored key.

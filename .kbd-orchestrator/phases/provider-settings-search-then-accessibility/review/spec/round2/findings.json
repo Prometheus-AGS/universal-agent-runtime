@@ -1,0 +1,50 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "spec.md",
+      "claim": "The Spec stage drops both carry-forward items the analyze handoff explicitly required: the missing quoted browser/@container source excerpts and the disclosed Tier 1 9/8 post-hoc budget overrun.",
+      "evidence": "analyze.handoff.json summaryForNext: \"carry forward missing quoted browser/@container source excerpts; also preserve the disclosed Tier 1 9/8 post-hoc budget overrun.\" The spec's 'Adopted candidate evidence' section lists only \"cand-001: installed Tailwind CSS 4.3.3 built-in container queries\" and \"cand-002: installed Playwright Test 1.62.1\" with no quoted source excerpts, and neither the budget overrun nor the excerpts appear anywhere in proposal, design, tasks, or verification sections.",
+      "suggested_fix": "Add the quoted Tailwind @container and Playwright locator source excerpts to the design's candidate-evidence section, and record the Tier 1 9/8 budget overrun in the verification/evidence section so the next stage inherits it."
+    },
+    {
+      "severity": "WARNING",
+      "file": "spec.md",
+      "claim": "The browser-test method cannot prove the normative 'exactly two columns' requirement: comparing the geometry of only two fields (Base URL and Protocol) is also satisfied by a three-or-more-column grid in which those two fields happen to be adjacent.",
+      "evidence": "The spec requirement states \"provider fields render in exactly two columns\", but design Decision 2 says only \"For each state, compare Base URL and Protocol geometry\" \u2014 two elements sharing a row is consistent with grid-cols-3 or any N>=2 layout, so the planned test would pass a grid that violates the requirement.",
+      "suggested_fix": "Assert the computed grid-template-columns track count (e.g., getComputedStyle(grid).gridTemplateColumns.split(' ').length === 2) or compare the row offsets of at least three fields to prove the track count is exactly two."
+    },
+    {
+      "severity": "WARNING",
+      "file": "spec.md",
+      "claim": "Decision 2 does not specify how the above-boundary (two-column) state is produced in the browser fixture, leaving the key certification scenario's setup ambiguous.",
+      "evidence": "\"use a 1440\u00d7900 viewport for both states, constrain the actual provider-panel content box below and above 36rem\" \u2014 'constrain ... above 36rem' is contradictory phrasing (constraining implies an upper bound); it never states whether the two-column state uses the panel's natural width at 1440px (and how that is verified to exceed 36rem) or an explicit widened fixture. The mitigation 'measure the queried content box first' presupposes the state is reachable but does not define how.",
+      "suggested_fix": "State explicitly: one state applies a max-width/style below 576px to the named container; the other leaves the panel at natural width and asserts the measured content box is >= 36rem before asserting two columns."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "spec.md",
+      "claim": "The 'about 265px per field column' arithmetic is unverifiable and does not reconcile with the stated 36rem boundary under typical spacing values.",
+      "evidence": "\"Tailwind's standard @xl container token is 36rem (576px); after card padding and the grid gap this leaves about 265px per field column\" \u2014 with common values (e.g., 24px padding each side and a 16px gap) the result is (576-48-16)/2 = 256px, not 265; no padding/gap values are given, so the number cannot be checked and does not drive any acceptance criterion.",
+      "suggested_fix": "Either cite the actual padding and gap values used in the derivation or drop the per-column pixel figure and keep only the 36rem boundary, which is what the scenarios and tests assert."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "spec.md",
+      "claim": "The normative scenarios hardcode the numeric 36rem boundary, coupling the requirement text to the current value of a Tailwind container token.",
+      "evidence": "All three scenarios say \"the 36rem desktop-composition boundary\"; Decision 1 notes this equals Tailwind's @xl token. If the project's Tailwind theme later remaps @xl, the implementation can remain class-correct while the spec text becomes false.",
+      "suggested_fix": "Define the boundary once as 'the desktop-composition boundary (currently the @xl container token, 36rem)' in the requirement and reference it symbolically in the scenarios."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

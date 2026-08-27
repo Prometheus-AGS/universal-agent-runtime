@@ -1,0 +1,66 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "container-width-layout-contract",
+      "description": "The provider fields use one track below the measured 36rem provider-panel boundary and two tracks above it and at restored desktop width without viewport-breakpoint coupling or horizontal overflow.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused class contract plus authorized Playwright computed-track and bounding-box assertions"
+      }
+    },
+    {
+      "id": "keyboard-and-draft-preservation",
+      "description": "Enable, Base URL, Protocol, API Key, reveal, and Default Model remain mechanically keyboard reachable with visible focus, while a dirty Base URL survives all layout transitions and no durable write occurs.",
+      "severity": "blocking",
+      "type": "accessibility",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Authorized Playwright focus, dirty-value, scroll-viewport, and zero-write assertions"
+      }
+    },
+    {
+      "id": "existing-state-boundary",
+      "description": "The change preserves the existing settings hook and draft cache and adds no width state, effect, subscription, provider data mutation, service, store, transport, realtime, or unload behavior.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Exact production diff and changed-file scope inspection"
+      }
+    },
+    {
+      "id": "truthful-phase-evidence",
+      "description": "Tier 0 through Tier 3 results, the development-optimizer limitation, full-suite baseline failures, OpenSpec delta, and artifact limitations are recorded without representing unrelated failures as passes.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Command receipts, strict OpenSpec validation, artifact schema validation, manifest integrity, and KBD execution evidence"
+      }
+    },
+    {
+      "id": "minimal-change-scope",
+      "description": "No unrequested production source, dependency, provider compatibility, realtime, unload-dialog, state-authority, or unrelated baseline-repair work belongs to this change.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Scoped diff inventory, exact production hunk inspection, and independent diff-mode adversarial review"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the OpenSpec proposal, delta, design, and tasks as acceptance authority.",
+    "Keep the production edit class-only and retain incumbent tokens, markup, copy, state, and behavior.",
+    "Do not repair unrelated full-suite, Vite optimizer, dependency, provider, realtime, or unload behavior in this change.",
+    "Do not claim the development-server attempt passed; certification is the authorized production-bundle Playwright pass."
+  ],
+  "termination_conditions": [
+    "All five blocking constraints have observed deterministic evidence.",
+    "Manifest, constraints, referenced files, iteration history, strict OpenSpec, and diff integrity validate.",
+    "Fresh isolated diff-mode adversarial review has no critical finding and passes the anti-theater gate."
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "stage": "spec",
+  "completedAt": "2026-08-26T21:05:26Z",
+  "outputs": [
+    "openspec/changes/fix-provider-settings-panel-width-responsiveness/specs/frontend-configuration-surfaces/spec.md"
+  ],
+  "nextStage": "plan",
+  "summaryForNext": "1 OpenSpec change created; ZeeSpec: n/a; strict validation PASS; K3 round 2 PASS 0 critical/3 warnings/2 suggestions with verified-distinct producer. Carry forward: preserve Analyze's missing quoted Tailwind @container and Playwright/browser source excerpts plus disclosed Tier 1 9/8 post-hoc budget overrun; make Execute's browser proof assert exactly two computed grid tracks; use an explicit below-576px fixture and natural-width >=36rem fixture; Tier 3 behavior remains uncertified and is a hard archive blocker until explicitly authorized and passed. No product source changed in Spec.",
+  "skipped": false,
+  "skipReason": null
+}

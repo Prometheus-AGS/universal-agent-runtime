@@ -1,0 +1,47 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "assessment.md",
+      "line": 49,
+      "claim": "The assessment assigns MET/PARTIAL status to four goals even though the packet supplies no canonical goals, making requirement coverage unverifiable and potentially substituting assessment-invented goals for the actual phase goals.",
+      "evidence": "The packet contains `\"goals\": null`, while the artifact asserts statuses for \u201cDeliver searchable large provider model inventories first,\u201d \u201cDeliver provider accessibility and dirty-state protection second,\u201d \u201cPreserve existing provider settings architecture,\u201d and \u201cApply the requested design-review standard\u201d without goal IDs or sources.",
+      "suggested_fix": "Provide the canonical goal list with stable IDs and map each goal to assessed evidence, a gap, or an explicit non-applicability decision."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "assessment.md",
+      "line": 20,
+      "claim": "The central 2/2-complete conclusion relies on a progress file that is neither present in the supplied file tree nor included in the cited evidence.",
+      "evidence": "The artifact states that \u201c2 canonical changes remain complete in `.kbd-orchestrator/phases/provider-settings-search-then-accessibility/progress.json`\u201d and that \u201cBlockers: NONE recorded\u201d there, but the file tree contains only `.kbd-orchestrator/phases` and no `progress.json`; `cited_paths` lists only two frontend source files and one spec file.",
+      "suggested_fix": "Include the relevant progress.json entries or another verifiable handoff record, and separately reconcile archived task completion with the newly reported spec non-conformance."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 10,
+      "claim": "The core DONE/PARTIAL determinations depend on line-specific source assertions that cannot be verified from the supplied packet.",
+      "evidence": "Examples include \u201c`settings-primitives.tsx:217` fixes the threshold at eight; lines 253\u2013268 preserve the simple path\u201d and \u201c`ai-settings-panels.tsx:65-74` installs `beforeunload` cancellation,\u201d while `cited_paths` provides only `EXISTS` markers and no source excerpts.",
+      "suggested_fix": "Attach the relevant source excerpts, diff ranges, or focused test output for each completion determination, especially for the boundary, filtering, accessibility, dirty-state, and responsive-layout claims."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 27,
+      "claim": "The browser-evidence gap bundles four behaviors without linking three of them to any requirement or acceptance criterion, creating scope risk for the follow-up plan.",
+      "evidence": "The artifact says there is no browser proof for \u201cconstrained-panel stacking, horizontal clipping, focus visibility, or browser-provided unload confirmation behavior,\u201d but only panel stacking is tied to `spec.md:243-245`; no cited requirement establishes browser tests for clipping, focus visibility, or native unload confirmation.",
+      "suggested_fix": "Split the evidence gap into separate items and cite the governing goal, spec clause, or acceptance criterion for each required browser behavior."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

@@ -1,10 +1,10 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 851,
-  "derivedRevision": 851,
+  "sourceRevision": 890,
+  "derivedRevision": 890,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 459,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 498,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -20,32 +20,32 @@
   "phase": "provider-settings-search-then-accessibility",
   "phaseId": "provider-settings-search-then-accessibility",
   "parentPhase": null,
-  "last_updated": "2026-08-25T15:42:53.346722Z",
+  "last_updated": "2026-08-27T08:54:34.745703Z",
   "last_updated_by": "kbd-runtime",
-  "changes_total": 2,
-  "changes_completed": 2,
-  "implementation_total": 2,
-  "implementation_completed": 2,
+  "changes_total": 3,
+  "changes_completed": 3,
+  "implementation_total": 3,
+  "implementation_completed": 3,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 2,
-      "total": 2,
+      "completed": 3,
+      "total": 3,
       "status": "COMPLETE"
     },
     "evidence": {
       "status": "COMPLETE",
-      "summary": "Merged source, installed digests/routes/provider continuity, worktree audits, rollback assets, and physical cleanup evidence recorded.",
+      "summary": "All three changes have recorded execution evidence; responsive width includes finalized artifact-refiner state and verified-distinct review receipt.",
       "blockers": []
     },
     "certification": {
       "status": "COMPLETE",
-      "summary": "Targeted strict OpenSpec/archive validation, typecheck, lint, frontend/static builds, server-full release build, health/readiness, route checks, and Playwright 1/1 completed; baseline failures disclosed.",
+      "summary": "All three changes are certified; responsive width passed Tier 0-2 and the operator-authorized Tier 3 production-bundle Playwright contract.",
       "blockers": []
     },
     "publication": {
       "status": "COMPLETE",
-      "summary": "PRs #271-#273 and upstream #67-#68 merged; main synchronized; completed branches/worktrees removed; release installed and issue #265 remains closed.",
+      "summary": "All three OpenSpec changes are verified and archived; the responsive-width delta is synced into the canonical frontend configuration surface spec.",
       "blockers": []
     }
   },
@@ -69,6 +69,17 @@
       "tasks_total": 7,
       "tasks_done": 7,
       "last_task_completed": "Run phase completion review",
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "fix-provider-settings-panel-width-responsiveness",
+      "title": "Make Provider Overrides respond to panel width and certify the behavior",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 10,
+      "tasks_done": 10,
+      "last_task_completed": "Run final refinement adversarial review and scope audit",
       "next_task_pending": null,
       "blockers": []
     }
