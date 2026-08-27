@@ -208,7 +208,33 @@ async fn tool_loop_round_trip() {
 #[tokio::test]
 #[serial]
 async fn agent_selection_resolves_both_builtin_agents() {
-    let stub = start_stub_llm(content_fixture("hello", "hi there")).await;
+    const ROUTER_REQUEST: &str = concat!(
+        "Route Rust implementation, correctness, or safety questions to rust-reviewer. ",
+        "Route all other questions to general-purpose.\n\n",
+        "User request:\nhello\n\n",
+        "You MUST respond with exactly one of the following options (no extra text): ",
+        "general-purpose, rust-reviewer"
+    );
+    let fixtures = content_fixture("hello", "hi there")
+        .with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: ROUTER_REQUEST.to_string(),
+                has_tools: false,
+                has_tool_result: false,
+            },
+            FixtureResponse::Content("general-purpose".to_string()),
+        )
+        .with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: "hello".to_string(),
+                has_tools: false,
+                has_tool_result: false,
+            },
+            FixtureResponse::Content("hi there".to_string()),
+        );
+    let stub = start_stub_llm(fixtures).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
     let client = reqwest::Client::new();
 
