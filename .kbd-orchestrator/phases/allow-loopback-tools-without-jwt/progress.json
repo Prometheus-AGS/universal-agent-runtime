@@ -1,10 +1,10 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 933,
-  "derivedRevision": 933,
+  "sourceRevision": 934,
+  "derivedRevision": 934,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 541,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 542,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -20,7 +20,7 @@
   "phase": "allow-loopback-tools-without-jwt",
   "phaseId": "allow-loopback-tools-without-jwt",
   "parentPhase": null,
-  "last_updated": "2026-08-27T14:51:32.776140Z",
+  "last_updated": "2026-08-27T14:54:05.787156Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 1,
   "changes_completed": 0,
@@ -47,8 +47,10 @@
     },
     "publication": {
       "status": "IN_PROGRESS",
-      "summary": "Scoped commit and main push are being prepared; OpenSpec cannot be archived or reflected while certification tasks remain open.",
-      "blockers": []
+      "summary": "Scoped governance commit 9092e68c and prior main commit 01287e4e were pushed to origin/main; no PR is required because the only affected repository was already on main. OpenSpec archive and Reflect remain gated on incomplete certification.",
+      "blockers": [
+        "OpenSpec archive and KBD Reflect require task group 8 certification to complete."
+      ]
     }
   },
   "changes": [
