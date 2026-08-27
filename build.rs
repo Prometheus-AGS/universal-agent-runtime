@@ -6,6 +6,14 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=proto/a2a.proto");
 
+    // The macOS debug test image exceeds Apple's 16 MiB __eh_frame compact-
+    // unwind offset range. Keep compact unwind enabled, but suppress only that
+    // documented informational diagnostic for test targets. Release links and
+    // every other linker warning remain unchanged.
+    if env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos") {
+        println!("cargo:rustc-link-arg-tests=-Wl,-no_warn_eh_frame_too_large");
+    }
+
     // -------------------------------------------------------------------------
     // gRPC Proto Compilation (A2A v0.3)
     // -------------------------------------------------------------------------
