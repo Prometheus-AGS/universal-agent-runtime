@@ -19,7 +19,7 @@ use tracing::warn;
 use super::engine::GovernanceEngine;
 use super::runtime_control::GovernanceGateHandle;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct GovernanceMiddlewareState {
     engine: Arc<GovernanceEngine>,
     gate: GovernanceGateHandle,
