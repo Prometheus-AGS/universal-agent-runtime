@@ -177,12 +177,12 @@ mod tests {
         let plan = mutation.preference_plan(Some(false)).expect("preference");
         mutation.finalize_preference(&plan).expect("finalize Off");
 
-        let state = GovernanceMiddlewareState::new(
-            Arc::new(GovernanceEngine::new()),
-            gate,
-        );
+        let state = GovernanceMiddlewareState::new(Arc::new(GovernanceEngine::new()), gate);
         let app = Router::new()
-            .route("/api/tools/web_search/execute", post(|| async { StatusCode::OK }))
+            .route(
+                "/api/tools/web_search/execute",
+                post(|| async { StatusCode::OK }),
+            )
             .layer(axum::middleware::from_fn_with_state(
                 state,
                 governance_layer,

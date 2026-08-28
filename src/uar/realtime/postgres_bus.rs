@@ -102,10 +102,7 @@ impl RealtimeBus for PostgresNotifyBus {
             .map_or(0, broadcast::Sender::receiver_count)
     }
 
-    fn publish(
-        &self,
-        event: LiveEvent,
-    ) -> std::result::Result<(), RealtimePublishError> {
+    fn publish(&self, event: LiveEvent) -> std::result::Result<(), RealtimePublishError> {
         let sender = self
             .senders
             .get(&event.topic)
