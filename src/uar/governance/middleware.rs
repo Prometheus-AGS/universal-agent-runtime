@@ -152,7 +152,7 @@ fn extract_resource(request: &Request<Body>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::{Router, body::Body, http::Request, routing::post};
+    use axum::{Router, routing::post};
     use tower::ServiceExt;
 
     #[test]
