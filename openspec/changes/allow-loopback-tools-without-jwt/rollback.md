@@ -14,10 +14,10 @@ bypass tool governance.
 - Rollback branch: `codex/governance-rollback`
 - Rollback implementation commit: `ec21b0aba68a048c0ac51a5ecf56eb0d5730e870`
 - Supported downgrade target: the fail-closed rollback commit above
-- Forward release-candidate commit: `8b5ac5ea563e2c3eef03f55df2347b93e18942b8`
-- Rollback release-candidate commit: `4582ed3aec793f5bc4d45097604fb761889295ea`
-- Forward `server-full` release-candidate digest: `0030737d255770c03d75e8f80faa51ebb436d25f02e646c33a96e8423ba24bff`
-- Rollback `server-full` release-candidate digest: `f725a77fc1fd24763bb55d2137fcaa90f8e5c4baaf4831a3515ac7500d525189`
+- Forward release-candidate commit: `171cbf8531534c7c56fd72aea2a9c815172e85dd`
+- Rollback release-candidate commit: `0f97859f56bf9f097ba8ecc78b24daff6612145a`
+- Forward `server-full` release-candidate digest: `b6fe01c4f3e68e02ce5967da48d70d980880e01261a7c9d64bf8619e89450de2`
+- Rollback `server-full` release-candidate digest: `4ff9e1157a139a30c7cc988e56afbe82e07907bf746293ae38ba32e05c5cbdcd`
 
 The rollback commit is derived from the forward source commit and changes only
 governance bootstrap finalization: it initializes the runtime to On and marks
@@ -90,7 +90,8 @@ To restore the forward build:
 - Verification state: `COMPLETE — OPERATOR AUTHORIZED TIER 3`
 - Rollback build and focused behavior: `PASS` — effective On,
   `mutation_available=false`, reason `persistence_unavailable`, and an Off
-  mutation returned `validation_rejected` without changing status.
+  mutation returned `governance mutation is unavailable` without changing
+  status.
 - Forward UI against rollback backend: `PASS` — the Governance route loaded,
   the truthful locked projection remained readable, and mutation was rejected.
 - Prior UI/backend compatibility: `PASS` — the status API addition is additive;
@@ -108,5 +109,9 @@ To restore the forward build:
   and the isolated seed-owned round trip restored Off through the forward API
   at revision 11 after observing the known normalization.
 - Rollback candidate built before forward installation: `PASS` — rollback
-  `server-full` digest `f725a77f...5189` was built and retained in the backup
-  directory before forward digest `0030737d...4bff` was installed.
+  `server-full` digest `4ff9e115...bdcd` was built before forward digest
+  `b6fe01c4...0de2` was installed. Both full digests and source commits are
+  recorded in `evidence/release-matrix.json`. The corrected candidates are
+  retained as `forward-171cbf85-server-full-universal-agent-runtime` and
+  `rollback-0f97859f-server-full-universal-agent-runtime` in the documented
+  recovery directory; the unqualified older filenames are superseded.

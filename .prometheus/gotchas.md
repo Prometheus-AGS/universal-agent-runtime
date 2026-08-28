@@ -826,3 +826,57 @@ cleanup and requires rollback or operator intervention.
 **Working rule.** Finish production code, test code, fixtures, dependency reconciliation, rollback source, recovery procedure, and candidate commits first. Then run the complete ordered verification sequence once. If verification exposes a defect, stop the sequence, repair and refreeze both affected candidates, and restart the required gate from its beginning. Partial output from an interrupted command is never a receipt.
 
 **Limit.** Read-only source inspection, candidate inventory, and artifact authoring are not verification. This rule does not permit skipping the final Tier 0–3, rollback, deployment, reflection, or archive evidence.
+
+## 2026-08-28 — Database-live settings events can race runtime publication
+
+**Observed behavior.** Independent final review found that a successful
+Governance setting write could emit its database-live notification before the
+coherent runtime gate published the accepted revision.
+
+**Root cause.** The generic settings bus treated database mutation as the
+notification boundary, but Governance authorization also has an in-process
+publication boundary after persistence and cache update.
+
+**Working rule.** For settings that control a live authorization gate, suppress
+the generic database event and emit one explicit event only after the runtime
+authority is published. Test both event ordering and the post-commit delivery
+failure path.
+
+**Limit.** This rule applies to live authorization/control-plane settings with
+multiple publication boundaries. It does not require replacing ordinary
+database-live notifications for unrelated settings.
+## 2026-08-28 — A fail-closed rollback may normalize a durable Off preference
+
+**Observed behavior.** A shared SurrealKV database with a seed-owned default row
+booted Off under the forward candidate, On with mutation unavailable under
+rollback, and still On after the forward candidate returned.
+
+**Root cause.** The supported rollback candidate seeds/normalizes configuration-
+owned values to its fail-closed On posture. API-owned rows carry `updated_at`
+and are preserved; retaining the schema alone does not distinguish those cases.
+
+**Rule.** Export and checksum the complete `governance.enabled` row before
+downgrade. On return to forward, compare the ownership marker and value. Restore
+only a seed-owned export when the current row is the known rollback
+normalization; preserve API-owned or concurrent values.
+
+## 2026-08-28 — Completion projections must not lead irreversible work
+
+**Observed behavior.** The KBD plan claimed all 42 OpenSpec tasks were complete
+while reflection, publication, verification, and archive were still unchecked.
+Its progress projection also retained an obsolete certification blocker and a
+false conclusion that no PR was required.
+
+**Root cause.** Completion prose was updated from the intended terminal outcome
+before the corresponding append-only lifecycle events and external publication
+artifacts existed.
+
+**Working rule.** Reconcile prose against the authoritative OpenSpec checkbox
+count and remote branch/PR state at each phase boundary. Describe the observed
+count, never the expected terminal count. Publication is complete only after
+the remote refs and PR URL are observable; archive is complete only after the
+change has moved to the dated archive path and strict validation passes.
+
+**Limit.** Generated projections can still lag until the typed KBD transition
+runs. A stale projection must be corrected before it is offered to a critic or
+used as completion evidence.

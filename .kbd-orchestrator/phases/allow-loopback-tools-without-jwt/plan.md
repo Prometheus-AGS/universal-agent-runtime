@@ -39,7 +39,7 @@ The rounds are sequential because settings publication consumes the runtime auth
 8. Phase/release/deployment verification — run exact Rust/frontend Tier 2, rollback compatibility, authorized Tier 3, release build, install, restart, and live trust-boundary proof.
 9. Completion and handoff — append memory/evidence, reflect, commit/push/PR only affected repositories not on main, verify and archive OpenSpec, and report remaining risk.
 
-The authoritative implementation checklist is `openspec/changes/allow-loopback-tools-without-jwt/tasks.md`; its 42 checkboxes are completed and verified individually. KBD tracks the nine cohesive work packages above so cross-tool progress does not replace OpenSpec task-level evidence.
+The authoritative implementation checklist is `openspec/changes/allow-loopback-tools-without-jwt/tasks.md`. At the end of Execute certification, 39 of its 42 checkboxes are complete; reflection, publication, and verification/archive remain pending. KBD tracks the nine cohesive work packages above so cross-tool progress does not replace OpenSpec task-level evidence.
 
 ## ACCEPTANCE AND VERIFICATION
 

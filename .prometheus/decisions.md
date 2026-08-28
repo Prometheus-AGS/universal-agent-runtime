@@ -893,3 +893,48 @@ no repository-wide certification claim.
 **Operational boundary.** The process emits one stable `governance.inactive_local_mode` warning after its first finalized Off transition. Operators can turn enforcement On or Off live only while the boot posture remains eligible; Required and mutation-unavailable states are truthful, reachable UI states rather than disabled-looking booleans.
 
 **Uncomfortable constraint.** The forward release was installed before the planned rollback artifact was built. The staged fail-closed variant and the locally available prior binary both passed isolated compatibility checks, but no committed pre-deployment rollback deliverable exists, so rollback certification remains incomplete.
+
+---
+
+## 2026-08-28 — Treat rollback normalization as a recoverable state migration
+
+**Decision.** The supported fail-closed rollback candidate may normalize a
+seed-owned `governance.enabled=false` default to On, while an API-owned row with
+a durable `updated_at` marker is preserved. Before downgrade, retain the complete
+typed row and checksum with both candidate binaries. After returning forward,
+restore the exported Off preference only when the row was seed-owned and the
+known rollback normalization is the only change.
+
+**Rationale.** The live shared-database exercise disproved the earlier
+row-preservation assumption: rollback correctly enforced On and rejected
+mutation, but forward subsequently read On until the operator preference was
+restored. Treating this as a named state migration keeps rollback fail-closed
+without silently losing operator intent.
+
+**Stop condition.** If the current row differs from both the exported value and
+the known normalized On value, preserve it and require operator resolution; do
+not overwrite a possible concurrent change.
+
+**Uncomfortable constraint.** Fail-closed rollback is not transparent for a
+seed-owned default. API-owned preference remains durable, but a never-edited
+local default needs an ownership-aware recovery check.
+
+---
+
+## 2026-08-28 — Publish governance settings only after runtime authority
+
+**Decision.** Suppress implicit database notifications for
+`governance.enabled`. After durable write, cache update, and coherent runtime
+publication succeed, publish one explicit settings realtime event containing
+the accepted boot instance and revision. Notification delivery failure is
+observable but non-transactional.
+
+**Rationale.** A database-live event can arrive before the in-process authority
+publishes its new revision, causing clients to refetch stale effective state.
+The explicit event makes the notification an after-commit observation of the
+same authority returned by the mutation response.
+
+**Uncomfortable constraint.** A failed realtime publish can still delay another
+client's observation until focus, reconnect, Refresh, or bounded revalidation.
+The durable value and runtime authority remain committed; delivery is not
+misreported as a rolled-back mutation.

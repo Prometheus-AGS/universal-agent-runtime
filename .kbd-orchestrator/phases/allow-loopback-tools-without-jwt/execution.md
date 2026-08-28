@@ -140,3 +140,108 @@ Isolated pre-edit critique receipts:
 - Forward release-candidate source is `44fc519c7d65e0f125b812caf992121cf51c38ad`. Rollback release-candidate source is `ce712ee4a969d15d9c73533ae5be4266abdaea1f` on `codex/governance-rollback`. Each candidate includes the fail-closed rollback contract; the rollback production tree differs from forward only in `src/server.rs`, where startup forces governance On and publishes mutation unavailable.
 - A source-only audit found no `TODO`, `FIXME`, `todo!`, or `unimplemented!` marker in the change-owned governance production paths. The remaining `PENDING` entries are evidence slots in `rollback.md` plus canonical work packages 8–9; they are not unfinished product branches.
 - No OpenSpec verification checkbox was advanced from the aborted run. Binary digests, rollback compatibility, final Tier 0–3 receipts, installation, reflection, archive, publication, and PR evidence remain pending.
+
+## FINAL CERTIFICATION — 2026-08-28
+
+- The operator authorized the end-of-work Tier 3 gate. The consolidated forward
+  candidate is `8b5ac5ea563e2c3eef03f55df2347b93e18942b8`; the fail-closed rollback
+  candidate is `4582ed3aec793f5bc4d45097604fb761889295ea`.
+- Exact Rust Tier 0 and Tier 2 passed with zero compiler warnings. The locked
+  `server-full` suite passed 665 library tests with one ignored, 9/9 BDD
+  scenarios and 49/49 steps, 93 integration tests with one ignored, 44 settings
+  tests, one skill-pack test, nine UAR integration tests, and 17 doctests with
+  17 ignored.
+- Frontend Tier 2 passed: 80 files and 406 tests, typecheck, lint, production
+  build, and GitHub Actions policy validation. Strict OpenSpec validation passed.
+- Tier 3 passed: the focused Governance browser matrix was 5/5, the support
+  matrix reported 23 features and nine provider tiers, release-local contracts
+  passed with six MCP negative controls, and exact default-profile forward and
+  rollback `cargo build --release` builds passed.
+- The installer-profile `server-full` SHA-256 values are forward
+  `0030737d255770c03d75e8f80faa51ebb436d25f02e646c33a96e8423ba24bff`
+  and rollback
+  `f725a77fc1fd24763bb55d2137fcaa90f8e5c4baaf4831a3515ac7500d525189`.
+  The installed binary matches the forward digest exactly.
+- The LaunchAgent is running the installed binary. Health and readiness pass.
+  The installed authoritative status is Off at revision 12, JWT-disabled,
+  loopback-only, and mutable. Live On→Off transitions passed, and the inactive
+  warning occurred exactly once for the boot.
+- Installed configured-tool execution passed with `native__memory_list` while
+  governance was Off. The installed registry has no search MCP; search-specific
+  bypass is therefore certified by the deterministic `web_search` integration
+  regression, not misreported as a live third-party search call.
+- Live non-local and JWT-required processes remained Required/On with exact
+  reasons and no inactive warning. The rollback candidate remained On and
+  mutation-unavailable.
+- The shared-database downgrade exercise found that rollback normalizes an Off
+  preference to On. Returning forward retains On until the exported preference
+  is restored. This observed behavior supersedes the earlier row-preservation
+  assumption and is now explicit in `rollback.md` and `certification.md`.
+
+## CORRECTED FINAL CERTIFICATION — 2026-08-28
+
+- The first isolated final-artifact review returned FAIL. It identified a stale
+  rollback ownership claim, an implicit settings-notification race, missing
+  direct-HTTP Cedar bypass coverage, stale progress, and no durable installed
+  tool receipt. Those findings supersede the earlier candidate receipts above.
+- The corrected settings path now commits durable storage, cache, and coherent
+  runtime state before publishing one explicit realtime event. Implicit database
+  Governance notifications are suppressed; delivery failure is logged after
+  commitment and does not roll back the accepted setting.
+- The direct HTTP tool middleware now consumes the same coherent Governance gate
+  as `RunManager`. Focused tests prove Off bypass with `X-Agent-Id` and prove On
+  still returns HTTP 403 through Cedar.
+- Corrected focused gates passed with zero compiler warnings: 25 Governance
+  library tests and eight Governance persistence/publication tests. The complete
+  locked `server-full` suite passed 669 library tests with one ignored, 9/9 BDD
+  scenarios and 49/49 steps, 93 integration tests with one ignored, 47 settings
+  tests, one skill-pack test, nine UAR integration tests, and 17 doctests with
+  17 ignored.
+- Frontend production build, 80 files/406 tests, typecheck, lint, GitHub Actions
+  policy validation, strict OpenSpec, the 5/5 Governance Playwright matrix,
+  support-matrix validation, and release-local contracts all passed.
+- Final build identities are forward source `5753cb19eacb2c562320a5bd941c330c2c9cb789`
+  with default SHA-256 `9ad253b4e2b99b4cbdfeb1bd3dcf9b502a5217abc8e692c27055c211e871e0c1`
+  and installer SHA-256 `901317098d77bdd8c9858e4751728e221f474ed0f3fe93f5600ffb7ac4dcbbe9`;
+  rollback source `4e6fc087224975b6c5993c5386d3c3c7b20e24cd` with default SHA-256
+  `56bad97f0d1abd674e24d171e9793d4725f5ebf30d2ba0165fb52c27f23fb84b`
+  and installer SHA-256 `3959dc3d1fed7b4d9a31d59a4d8839816e7d992e235553454417890a29434b96`.
+- The installed LaunchAgent runs the corrected forward digest at PID 15007.
+  Health and readiness returned HTTP 200. Boot
+  `18193a24-42a1-4276-ae72-26d29d2db5db` advanced Off 10 → On 11 → Off 12,
+  warned exactly once, and executed `native__memory_list` successfully with an
+  agent identity while Off. Current-source non-loopback and JWT-required live
+  processes remained Required/On; the current rollback remained On and rejected
+  mutation. Machine-readable receipts are under the change's `evidence/` folder.
+
+## FINAL POST-CRITIC-2 CERTIFICATION — 2026-08-28
+
+- A second fresh isolated critic found that the initial HTTP Cedar correction
+  bypassed every action behind the application-wide middleware while Off, and
+  that the recovery directory still held only superseded binaries. Both were
+  release blockers; the earlier corrected-final identities are superseded.
+- The final middleware bypass is restricted to POST `/api/tools/*/execute`.
+  Off direct-tool execution passes; the same tool is denied while On; actor
+  creation with an agent identity remains Cedar-governed and denied while Off.
+  The three focused regressions passed, and the full required gate restarted.
+- Final exact Rust results: zero-warning check, 26/26 focused Governance tests,
+  8/8 focused persistence/publication tests, 670 library tests passed with one
+  ignored, 9/9 BDD scenarios and 49/49 steps, 93 integration tests passed with
+  one ignored, 47 settings tests, one skill-pack test, nine UAR integration
+  tests, and 17 doctests passed with 17 ignored.
+- Final frontend/release results: production build, 80 files/406 tests,
+  typecheck, lint, policy validator, strict OpenSpec, Playwright 5/5, 23-feature
+  and nine-provider support matrix, ten disabled dependency boundaries, and
+  release-local contracts with six MCP negative controls all passed.
+- Final forward source is `171cbf8531534c7c56fd72aea2a9c815172e85dd`:
+  default SHA-256 `e5e1690de5e92a9c3b49f3ab15820cd073c1b78e86b6f082f2f8170ca3881f14`,
+  installer SHA-256 `b6fe01c4f3e68e02ce5967da48d70d980880e01261a7c9d64bf8619e89450de2`.
+  Final rollback source is `0f97859f56bf9f097ba8ecc78b24daff6612145a`:
+  default SHA-256 `d3975af6e8fb068404a990e0a598f7241a1d5a5ddea0ff3affe7c5c959f8a0ca`,
+  installer SHA-256 `4ff9e1157a139a30c7cc988e56afbe82e07907bf746293ae38ba32e05c5cbdcd`.
+- Commit-qualified forward and rollback binaries are retained in the recovery
+  directory. The installed LaunchAgent runs the final forward digest at PID
+  45385. Boot `586bdaff-c660-43f2-a9d4-9c2e86119593` is healthy, ready, Off at
+  revision 12 after On→Off, and warned once. The final rollback boot
+  `d953564f-c0b7-4950-8e73-ce17cc92e6ba` remained On, mutation-unavailable,
+  and rejected Off without changing revision 10.

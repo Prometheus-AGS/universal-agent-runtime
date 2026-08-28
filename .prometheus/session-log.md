@@ -1052,3 +1052,99 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - Completed and committed the tracked fail-closed rollback contract. Froze forward candidate `44fc519c7d65e0f125b812caf992121cf51c38ad` and rollback candidate `ce712ee4a969d15d9c73533ae5be4266abdaea1f` on `codex/governance-rollback`.
 - Confirmed by source comparison that rollback changes exactly one production file relative to forward: `src/server.rs` forces effective governance On and mutation unavailable while retaining the settings schema and status endpoint.
 - Source-only inspection found no unfinished marker in the change-owned governance production paths. Verification, binary digests, rollback compatibility, release installation, live matrix, reflection, archive, publication, and PR evidence remain pending until the operator reauthorizes the single end-of-work gate.
+
+## 2026-08-28 — Loopback governance release certified and installed
+
+- Repaired only observed certification failures: pinned Zod, Vitest, and
+  `loro-crdt` exactly; aligned recursive JSON and checkpoint contracts; made the
+  skill-pack integration fixture reproducible from the pinned commit; corrected
+  the authoritative provider-store mock; and unified the disabled-telemetry
+  `init` facade so the exact default release profile builds.
+- Exact Rust and frontend Tier 2 passed, including 665 library tests, 9/9 BDD
+  scenarios, 93 integration tests, 80 frontend files, and 406 frontend tests.
+  The Governance Playwright matrix passed 5/5; support-matrix and local-release
+  certification passed; strict OpenSpec and GitHub Actions policy checks passed.
+- Frozen `server-full` candidates are forward `8b5ac5ea` / SHA-256
+  `0030737d255770c03d75e8f80faa51ebb436d25f02e646c33a96e8423ba24bff`
+  and rollback `4582ed3a` / SHA-256
+  `f725a77fc1fd24763bb55d2137fcaa90f8e5c4baaf4831a3515ac7500d525189`.
+- Installed the forward candidate through the native macOS installer and
+  restarted `com.prometheus.universal-agent-runtime`. Health/readiness passed;
+  authoritative governance was Off at revision 12 after a live On→Off cycle;
+  the inactive warning remained exactly once; and a configured native memory
+  tool executed successfully while Off.
+- Live non-local and JWT-required startup remained fail-closed Required/On. The
+  rollback candidate remained On with mutation unavailable.
+- The shared-database downgrade showed that rollback normalizes a seed-owned Off
+  default to On; a focused regression now proves API-owned false is preserved
+  and forward restart recovers Off. The isolated seed-owned restore succeeded at
+  revision 11. The prior row, prior binary, and both candidates are recoverable under
+  `/Users/gqadonis/.prometheus/backups/uar/governance-release-20260828T.HtRDLE`.
+- Remaining environmental limit: the installed MCP registry contains six
+  native memory tools and no search MCP. Live configured-tool execution is
+  proven; live third-party search is not claimed. Search bypass is covered by
+  the deterministic `web_search` integration regression.
+
+## 2026-08-28 — Governance certification corrected after independent review
+
+- The isolated artifact critic failed the first release candidate on rollback
+  ownership wording, realtime ordering, direct HTTP Cedar coverage, stale KBD
+  projection, and missing durable installed-tool evidence.
+- Corrected the realtime boundary, shared the coherent gate with HTTP Cedar,
+  added failure/order and On/Off middleware regressions, and rewrote rollback
+  evidence around the seed-owned/API-owned distinction.
+- Re-ran the authorized Tier 3 sequence from the corrected source. Rust passed
+  669 library tests with one ignored, 9/9 BDD scenarios, 93 integration tests
+  with one ignored, 47 settings tests, nine UAR integration tests, and 17
+  doctests with 17 ignored. Frontend passed 80 files/406 tests plus build,
+  typecheck, lint, browser 5/5, support, release-local, policy, and strict
+  OpenSpec gates.
+- Built forward `5753cb19` / `901317098d77bdd8c9858e4751728e221f474ed0f3fe93f5600ffb7ac4dcbbe9`
+  and rollback `4e6fc087` / `3959dc3d1fed7b4d9a31d59a4d8839816e7d992e235553454417890a29434b96`
+  installer-profile artifacts. Installed the forward digest through the native
+  macOS path; LaunchAgent PID 15007 is healthy, ready, loopback-only, JWT-off,
+  and authoritative Off at revision 12 after a live On→Off cycle.
+- Current-source non-loopback, JWT-required, rollback-mutation, installed-tool,
+  and one-warning live receipts passed. Machine-readable receipts now live in
+  the OpenSpec change evidence directory. A live third-party search call remains
+  unverified because no search MCP is configured; deterministic `web_search`
+  coverage proves the search-specific governance bypass.
+
+## 2026-08-28 — Final governance HTTP scope and recovery blockers closed
+
+- A second isolated critic found the coherent Off gate was applied before route
+  classification in application-wide Cedar middleware. This unintentionally
+  bypassed collaboration, messaging, and actor actions in addition to direct
+  configured-tool execution. It also found the recovery directory retained only
+  superseded forward and rollback binaries.
+- Restricted the HTTP bypass to POST `/api/tools/*/execute` and added explicit
+  Off-tool, On-tool, and Off-non-tool regressions. The installed final binary
+  returned HTTP 200 for direct `native__memory_list` and HTTP 403
+  `GOVERNANCE_DENIED` for actor creation with the same agent identity while Off.
+- Restarted the complete gate from final source. Rust passed 670 library tests
+  with one ignored, 9/9 BDD, 93 integration tests with one ignored, 47 settings
+  tests, nine UAR integration tests, and 17 doctests with 17 ignored. Frontend,
+  browser, strict OpenSpec, support, policy, and release-local gates passed.
+- Final forward is `171cbf85` / `b6fe01c4f3e68e02ce5967da48d70d980880e01261a7c9d64bf8619e89450de2`;
+  final rollback is `0f97859f` / `4ff9e1157a139a30c7cc988e56afbe82e07907bf746293ae38ba32e05c5cbdcd`.
+  Commit-qualified binaries with those exact hashes are retained in the release
+  recovery directory; the older unqualified binaries are explicitly superseded.
+- The LaunchAgent runs final forward PID 45385, healthy and ready, authoritative
+  Off at revision 12 with one warning. Final rollback live status remained On
+  with mutation unavailable and rejected an Off request.
+
+## 2026-08-28 — Governance reflection accepted after state reconciliation
+
+- The delivery delta is two production corrections and two complete
+  certification restarts after isolated critics exposed authority-boundary,
+  notification-order, rollback-ownership, bypass-scope, and recovery-artifact
+  defects. The final isolated review returned PASS.
+- Corrected premature KBD claims: Execute ended at 39/42 OpenSpec tasks, the
+  certification blocker was obsolete, and the forward and rollback branches
+  still required publication with a forward PR.
+- The strict Reflect sycophancy analyzer returned score 0.0 with no S-08
+  inversion. Its correction-mode response failed schema validation, so the
+  successful detection result and the failed-call text are retained beside the
+  reflection.
+- Reflection is complete. Publication, final 42/42 reconciliation, OpenSpec
+  archive, and handoff remain pending and are not claimed here.
