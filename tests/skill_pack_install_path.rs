@@ -37,9 +37,23 @@ chmod +x "$CARGO_TARGET_DIR/release/prometheus"
 
     let home = temp.path().join("home");
     let prefix = home.join(".config/uar/skills");
+    let source_checkout = root.join("crates/prometheus-skill-system");
+    let pinned_source = temp.path().join("pinned-skill-pack-source");
+    let materialized =
+        Command::new(root.join("scripts/tests/materialize-pinned-skill-pack-source.sh"))
+            .arg(&source_checkout)
+            .arg(&pinned_source)
+            .output()
+            .expect("pinned source materializer starts");
+    assert!(
+        materialized.status.success(),
+        "source materializer failed: {}",
+        String::from_utf8_lossy(&materialized.stderr)
+    );
+
     let output = Command::new(root.join("scripts/install-uar-skill-pack.sh"))
         .arg("--source-dir")
-        .arg(root.join("crates/prometheus-skill-system"))
+        .arg(&pinned_source)
         .arg("--prefix")
         .arg(&prefix)
         .env("CARGO", &fake_cargo)
