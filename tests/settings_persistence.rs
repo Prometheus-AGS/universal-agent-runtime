@@ -40,9 +40,7 @@ use universal_agent_runtime::{
     },
     uar::{
         persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider},
-        realtime::{
-            EntityTopic, LiveEvent, RealtimeBus, RealtimePublishError,
-        },
+        realtime::{EntityTopic, LiveEvent, RealtimeBus, RealtimePublishError},
         settings::{
             manager::SettingsManager,
             schema::{SettingSource, Settings, SettingsType},
@@ -1204,7 +1202,9 @@ async fn api_owned_off_survives_fail_closed_rollback_and_forward_restart() -> Re
         .await?;
     forward_mutation.finalize_preference(&plan)?;
     forward.set_value("governance.enabled", json!(true)).await?;
-    forward.set_value("governance.enabled", json!(false)).await?;
+    forward
+        .set_value("governance.enabled", json!(false))
+        .await?;
 
     let (rollback_mutation, rollback_gate, rollback_status) =
         sealed_governance("localhost", "127.0.0.1:1906", false);

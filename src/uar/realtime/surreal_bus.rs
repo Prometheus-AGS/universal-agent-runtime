@@ -122,10 +122,7 @@ impl RealtimeBus for LiveQueryBus {
         LiveQueryBus::subscriber_count(self, topic)
     }
 
-    fn publish(
-        &self,
-        event: LiveEvent,
-    ) -> std::result::Result<(), RealtimePublishError> {
+    fn publish(&self, event: LiveEvent) -> std::result::Result<(), RealtimePublishError> {
         let sender = self
             .senders
             .get(&event.topic)

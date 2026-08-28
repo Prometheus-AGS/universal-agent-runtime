@@ -900,10 +900,7 @@ async fn run_server_with_listener(
         if let Some(p) = &persistence {
             let mgr = Arc::new(
                 crate::uar::settings::manager::SettingsManager::new(Arc::clone(p))
-                    .with_governance_runtime(
-                        governance_mutation.clone(),
-                        governance_status.clone(),
-                    )
+                    .with_governance_runtime(governance_mutation.clone(), governance_status.clone())
                     .with_realtime_bus(live_bus.clone()),
             );
             let governance_bootstrap = async {
@@ -944,10 +941,7 @@ async fn run_server_with_listener(
                         tracing::error!(error = ?e, "Failed to hydrate MCP registry from settings database");
                     }
                 }
-                Err(error) => finalize_failed_governance_bootstrap(
-                    &governance_mutation,
-                    &error,
-                )?,
+                Err(error) => finalize_failed_governance_bootstrap(&governance_mutation, &error)?,
             }
             Some(mgr)
         } else {
