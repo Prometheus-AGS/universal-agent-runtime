@@ -1,8 +1,8 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 941,
-  "derivedRevision": 941,
+  "sourceRevision": 946,
+  "derivedRevision": 946,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 542,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
@@ -12,7 +12,7 @@
     "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
     "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
     "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
-    "97ebf967-3be8-4123-a4ac-06a0caeede59": 7,
+    "97ebf967-3be8-4123-a4ac-06a0caeede59": 12,
     "af186a6c-4b8c-4fba-bf44-abcabf91ec8a": 22,
     "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
@@ -21,18 +21,18 @@
   "phase": "allow-loopback-tools-without-jwt",
   "phaseId": "allow-loopback-tools-without-jwt",
   "parentPhase": null,
-  "last_updated": "2026-08-28T03:32:15.278174Z",
+  "last_updated": "2026-08-28T03:37:02.892027Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 1,
-  "changes_completed": 0,
+  "changes_completed": 1,
   "implementation_total": 1,
-  "implementation_completed": 0,
+  "implementation_completed": 1,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 0,
+      "completed": 1,
       "total": 1,
-      "status": "PENDING"
+      "status": "COMPLETE"
     },
     "evidence": {
       "status": "COMPLETE",
@@ -45,23 +45,21 @@
       "blockers": []
     },
     "publication": {
-      "status": "IN_PROGRESS",
-      "summary": "Scoped governance commit 9092e68c and prior main commit 01287e4e were pushed to origin/main; no PR is required because the only affected repository was already on main. OpenSpec archive and Reflect remain gated on incomplete certification.",
-      "blockers": [
-        "OpenSpec archive and KBD Reflect require task group 8 certification to complete."
-      ]
+      "status": "COMPLETE",
+      "summary": "Origin carries forward and fail-closed rollback branches; PR 274 is open; OpenSpec archived at 42/42 with canonical specs synchronized.",
+      "blockers": []
     }
   },
   "changes": [
     {
       "id": "allow-loopback-tools-without-jwt",
       "title": "Allow verified local runtimes to disable governance",
-      "status": "IN_PROGRESS",
-      "implementation_status": "IN_PROGRESS",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 9,
-      "tasks_done": 8,
-      "last_task_completed": "Phase milestone release and deployment verification",
-      "next_task_pending": "Completion version control and handoff",
+      "tasks_done": 9,
+      "last_task_completed": "Completion version control and handoff",
+      "next_task_pending": null,
       "blockers": []
     }
   ],

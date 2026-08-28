@@ -8,7 +8,7 @@ Rollback candidate: `0f97859f56bf9f097ba8ecc78b24daff6612145a`
 
 The implementation satisfies the change's 10 added requirements and 55 scenarios. Local verification passed after the final production correction. The final isolated artifact critic returned PASS after the production, recovery, evidence, and KBD consistency corrections.
 
-This verification does not mark publication or archive complete. Those OpenSpec tasks remain pending until the branches are pushed, the forward PR exists, and this change is archived.
+Publication and archive are observed. Forward commit `c7d384a77c57cecee08ba7445fb7c39cad8b222e` and rollback commit `0f97859f56bf9f097ba8ecc78b24daff6612145a` are reachable on their origin branches, and the forward change is [PR #274](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/274). OpenSpec synchronized 10 added requirements into the canonical specs and archived this change as `openspec/changes/archive/2026-08-27-allow-loopback-tools-without-jwt` with all 42 tasks checked.
 
 ## Requirement Evidence
 
@@ -37,6 +37,7 @@ This verification does not mark publication or archive complete. Those OpenSpec 
 - `pnpm support-matrix:validate`: 23 features, 9 provider tiers, 10 disabled direct dependencies.
 - `pnpm release-local-contracts:validate`: all contracts and six negative controls passed.
 - `openspec validate allow-loopback-tools-without-jwt --strict --no-interactive`: passed.
+- Post-archive strict validation passed for canonical `jwt-hardening` (7 requirements, 32 scenarios) and `runtime-console-governance-certification` (12 requirements, 48 scenarios).
 - Forward and rollback release builds and SHA-256 identities match `certification.md`.
 - Installed health, readiness, status, toggling, warning cardinality, tool execution, and non-tool denial match the machine-readable evidence.
 
@@ -49,3 +50,4 @@ The review sequence was FAIL, FAIL, PASS. The first two reviews exposed concrete
 - No third-party search MCP is installed, so no live external search call is claimed. Search-specific behavior is deterministic integration evidence; installed live execution uses a configured native tool.
 - Non-loopback and JWT live receipts were captured on the immediately preceding source. The final delta only narrowed direct HTTP bypass to the tool-execution route, and exact-final-source regression coverage includes eligible/ineligible authority plus tool/non-tool middleware behavior.
 - Existing PGlite direct-eval build warnings remain unrelated to this change.
+- Repository-wide OpenSpec validation still reports unrelated historical invalid changes (163 passed, 120 failed); the two synchronized canonical specs pass strict validation.

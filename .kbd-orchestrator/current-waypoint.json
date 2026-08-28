@@ -1,8 +1,8 @@
 {
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 941,
-  "derivedRevision": 941,
+  "sourceRevision": 946,
+  "derivedRevision": 946,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 542,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
@@ -12,7 +12,7 @@
     "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
     "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
     "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
-    "97ebf967-3be8-4123-a4ac-06a0caeede59": 7,
+    "97ebf967-3be8-4123-a4ac-06a0caeede59": 12,
     "af186a6c-4b8c-4fba-bf44-abcabf91ec8a": 22,
     "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
@@ -33,10 +33,10 @@
   "currentTask": null,
   "status": "ready",
   "completionMetric": "implementation",
-  "implementationCompleted": 7,
-  "implementationTotal": 8,
+  "implementationCompleted": 1,
+  "implementationTotal": 1,
   "planRevision": 5,
-  "revision": 941,
+  "revision": 946,
   "exactNextCommand": "/kbd-apply allow-loopback-tools-without-jwt task 2.1",
-  "updatedAt": "2026-08-28T03:32:15.278174Z"
+  "updatedAt": "2026-08-28T03:37:02.892027Z"
 }

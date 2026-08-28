@@ -1148,3 +1148,29 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   reflection.
 - Reflection is complete. Publication, final 42/42 reconciliation, OpenSpec
   archive, and handoff remain pending and are not claimed here.
+
+## 2026-08-28 — Loopback governance phase published and archived
+
+- Pushed `codex/governance-rollback` at `0f97859f` and
+  `codex/allow-loopback-governance-certification` at `c7d384a7`, then opened
+  Prometheus-AGS/universal-agent-runtime PR #274 against `main`.
+- Completed all 42 OpenSpec tasks. Archive synchronized 10 added requirements
+  and 55 scenarios, then moved the change to
+  `openspec/changes/archive/2026-08-27-allow-loopback-tools-without-jwt`.
+  The resulting canonical `jwt-hardening` and
+  `runtime-console-governance-certification` specs pass strict validation.
+- Completed KBD Execute and Reflect, all nine work packages, the phase, and all
+  four completion dimensions through typed local-runtime events at revision
+  946. The control plane remained unavailable; the signed canonical local
+  runtime accepted the events. Its legacy `exactNextWork` string still points
+  at completed task 2.1 even though the phase, change, stages, tasks, and
+  completion dimensions are all Complete; no successor phase was invented to
+  force that projection to change.
+- Final installed verification observed LaunchAgent PID 45385 running
+  `/Users/gqadonis/.uar/bin/universal-agent-runtime`, SHA-256
+  `b6fe01c4f3e68e02ce5967da48d70d980880e01261a7c9d64bf8619e89450de2`,
+  health/readiness HTTP 200 with six MCP tools, and authoritative local
+  Governance Off at revision 12.
+- Repository-wide OpenSpec validation remains non-green because 120 unrelated
+  historical changes are invalid; 163 items pass. This archived change and
+  both synchronized canonical specs validate strictly.
