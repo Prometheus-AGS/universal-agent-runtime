@@ -1231,7 +1231,8 @@ async fn api_owned_off_survives_fail_closed_rollback_and_forward_restart() -> Re
     );
     let persisted = restored
         .load_optional_persisted_value("governance.enabled")
-        .await?;
+        .await?
+        .map(|value| value.as_bool().expect("stored governance value is boolean"));
     let plan = restored_mutation.preference_plan(persisted)?;
     restored.apply_governance_preference_plan(&plan).await?;
     restored
