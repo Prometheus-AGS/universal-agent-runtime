@@ -15,8 +15,8 @@ impl DisabledTelemetryProvider {
 
 /// Initialize no exporters. Structured `tracing` calls remain compiled.
 #[must_use]
-pub fn init(_log_format: &LogFormat) -> Option<DisabledTelemetryProvider> {
-    None
+pub fn init(_log_format: &LogFormat) -> anyhow::Result<Option<DisabledTelemetryProvider>> {
+    Ok(None)
 }
 
 /// No-op metrics facade preserving instrumentation call sites.
