@@ -6,7 +6,15 @@
 created = "2026-08-09"
 
 [pins]
-# name = "x.y.z"
+# Vitest rejects mixed runtime/browser package versions; keep the runner,
+# browser provider, coverage, and UI packages on the tested 4.1.10 set.
+vitest = "4.1.10"
+# @a2ui/web_core and the UAR catalog exchange schema objects; mixed Zod 3/4
+# instances fail catalog validation, so the boundary stays on tested Zod 3.
+zod = "3.25.76"
+# Vite resolves entity-graph-core's optional Loro import during browser startup;
+# 1.13.9 is the entity package's tested peer version.
+loro_crdt = "1.13.9"
 
 [decisions]
 # id = "rationale"

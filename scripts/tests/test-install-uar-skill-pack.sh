@@ -26,14 +26,18 @@ EOF
 chmod +x "$fake_cargo"
 
 prefix="$work/home/.config/uar/skills"
+source_checkout="$root/crates/prometheus-skill-system"
+pinned_source="$work/pinned-skill-pack-source"
+"$root/scripts/tests/materialize-pinned-skill-pack-source.sh" \
+    "$source_checkout" "$pinned_source" >/dev/null
 CARGO="$fake_cargo" \
 UAR_SKILL_PACK_CARGO_LOG="$cargo_log" \
     "$root/scripts/install-uar-skill-pack.sh" \
-    --source-dir "$root/crates/prometheus-skill-system" \
+    --source-dir "$pinned_source" \
     --prefix "$prefix"
 
 version="$(awk -F'"' '/"version"[[:space:]]*:/ { print $4; exit }' \
-    "$root/crates/prometheus-skill-system/.claude-plugin/plugin.json")"
+    "$pinned_source/.claude-plugin/plugin.json")"
 installed="$prefix/prometheus-skill-pack/$version"
 
 [[ -d "$installed/skills" ]]
@@ -43,14 +47,14 @@ installed="$prefix/prometheus-skill-pack/$version"
 grep -q -- '--locked --release' "$cargo_log"
 grep -q -- '-p prometheus-cli' "$cargo_log"
 
-source_count="$(find "$root/crates/prometheus-skill-system/skills" -name SKILL.md -type f | wc -l | tr -d ' ')"
+source_count="$(find "$pinned_source/skills" -name SKILL.md -type f | wc -l | tr -d ' ')"
 installed_count="$(find "$installed/skills" -name SKILL.md -type f | wc -l | tr -d ' ')"
 [[ "$installed_count" == "$source_count" ]]
 
 printf 'clean-prefix install PASS: version=%s skills=%s\n' "$version" "$installed_count"
 
 wrong_source="$work/wrong-source"
-git clone --quiet --no-local "$root/crates/prometheus-skill-system" "$wrong_source"
+git clone --quiet --no-local "$pinned_source" "$wrong_source"
 git -C "$wrong_source" config user.email test@example.invalid
 git -C "$wrong_source" config user.name "Skill pack installer test"
 printf 'wrong commit\n' >"$wrong_source/INSTALLER_NEGATIVE_CONTROL"
@@ -74,7 +78,7 @@ EOF
 chmod +x "$failing_cargo"
 if CARGO="$failing_cargo" \
     "$root/scripts/install-uar-skill-pack.sh" \
-    --source-dir "$root/crates/prometheus-skill-system" \
+    --source-dir "$pinned_source" \
     --prefix "$work/failed-build-prefix" >"$work/build.out" 2>&1; then
     printf 'failed-build control unexpectedly passed\n' >&2
     exit 1

@@ -10,6 +10,17 @@ const dynamicString = z.union([z.string().max(16_384), dataPath]);
 const dynamicBoolean = z.union([z.boolean(), dataPath]);
 const dynamicStringList = z.union([z.array(z.string().max(1024)).max(100), dataPath]);
 const childList = z.array(identifier).max(200);
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(jsonValueSchema),
+    z.record(z.string(), jsonValueSchema),
+  ]),
+);
 
 const textComponent = z.object({
   id: identifier,
@@ -21,7 +32,7 @@ const textComponent = z.object({
 const action = z.object({
   event: z.object({
     name: identifier,
-    context: z.record(z.string(), z.json()).optional(),
+    context: z.record(z.string(), jsonValueSchema).optional(),
   }).strict(),
 }).strict();
 
@@ -125,7 +136,7 @@ export const a2uiMessageSchema = z.union([
     updateDataModel: z.object({
       surfaceId: identifier,
       path: z.string().startsWith("/").max(512),
-      value: z.json(),
+      value: jsonValueSchema,
     }).strict(),
   }).strict(),
   z.object({

@@ -75,6 +75,23 @@ describe("run trace API", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/uar/runs/run%2Fone/checkpoints");
   });
 
+  test("rejects a checkpoint that omits its required state", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({
+      run_id: "run-1",
+      checkpoints: [{
+        id: "checkpoint-1",
+        run_id: "run-1",
+        thread_id: "thread-1",
+        node_id: "node-1",
+        iteration: 2,
+        messages: [],
+        created_at: "2026-08-07T20:00:00.000Z",
+      }],
+    })));
+
+    await expect(fetchRunCheckpoints("run-1")).rejects.toThrow("invalid response");
+  });
+
   test("posts the complete artifact and session context to latest resume", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
       resumed_from_run_id: "run/one",

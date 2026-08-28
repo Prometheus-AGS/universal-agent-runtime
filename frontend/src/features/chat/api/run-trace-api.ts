@@ -12,6 +12,7 @@ import type {
   PersistedRunSnapshotSubscription,
 } from "@/platform/pglite/run-event-repository";
 import type {
+  RunCheckpoint,
   ResumeRunInput,
   ResumeRunResponse,
   RunCheckpointListResponse,
@@ -30,7 +31,19 @@ const checkpointSchema = z.object({
   state: z.unknown(),
   messages: z.array(z.unknown()),
   created_at: z.string(),
-}).strict();
+}).strict().refine(
+  (checkpoint) => Object.prototype.hasOwnProperty.call(checkpoint, "state"),
+  { path: ["state"], message: "Required" },
+).transform((checkpoint): RunCheckpoint => ({
+  id: checkpoint.id,
+  run_id: checkpoint.run_id,
+  thread_id: checkpoint.thread_id,
+  node_id: checkpoint.node_id,
+  iteration: checkpoint.iteration,
+  state: checkpoint.state,
+  messages: checkpoint.messages,
+  created_at: checkpoint.created_at,
+}));
 
 const checkpointListSchema = z.object({
   run_id: z.string(),
@@ -64,7 +77,11 @@ const runtimeAgentArtifactSchema = z.object({
   extensions: jsonObject,
 });
 
-function parseResponse<T>(schema: z.ZodType<T>, value: unknown, label: string): T {
+function parseResponse<Output, Input>(
+  schema: z.ZodType<Output, z.ZodTypeDef, Input>,
+  value: unknown,
+  label: string,
+): Output {
   const parsed = schema.safeParse(value);
   if (!parsed.success) {
     throw new Error(`${label} returned an invalid response`);

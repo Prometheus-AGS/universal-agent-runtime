@@ -104,6 +104,9 @@ describe("providers store", () => {
 
   test("configures a provider and reconciles the authoritative graph", async () => {
     primeLoads(false);
+    vi.mocked(fetchConfiguredProviders)
+      .mockResolvedValueOnce({ providers: [] })
+      .mockResolvedValueOnce({ providers: [configuredProvider] });
     vi.mocked(createProvider).mockResolvedValue(new Response(null, { status: 201 }));
 
     await useProvidersStore.getState().configure({
