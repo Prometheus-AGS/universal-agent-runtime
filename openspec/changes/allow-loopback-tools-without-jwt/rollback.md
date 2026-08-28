@@ -14,10 +14,10 @@ bypass tool governance.
 - Rollback branch: `codex/governance-rollback`
 - Rollback implementation commit: `ec21b0aba68a048c0ac51a5ecf56eb0d5730e870`
 - Supported downgrade target: the fail-closed rollback commit above
-- Forward release-candidate commit: `44fc519c7d65e0f125b812caf992121cf51c38ad`
-- Rollback release-candidate commit: `ce712ee4a969d15d9c73533ae5be4266abdaea1f`
-- Forward release-candidate digest: `PENDING`
-- Rollback release-candidate digest: `PENDING`
+- Forward release-candidate commit: `8b5ac5ea563e2c3eef03f55df2347b93e18942b8`
+- Rollback release-candidate commit: `4582ed3aec793f5bc4d45097604fb761889295ea`
+- Forward `server-full` release-candidate digest: `0030737d255770c03d75e8f80faa51ebb436d25f02e646c33a96e8423ba24bff`
+- Rollback `server-full` release-candidate digest: `f725a77fc1fd24763bb55d2137fcaa90f8e5c4baaf4831a3515ac7500d525189`
 
 The rollback commit is derived from the forward source commit and changes only
 governance bootstrap finalization: it initializes the runtime to On and marks
@@ -48,7 +48,7 @@ order. A source change after verification restarts the sequence.
 | Forward | Forward | Authoritative On/Off status and serialized mutation |
 | Rollback | Forward | Truthful On status; mutation unavailable; Off cannot be saved |
 | Forward | Prior | Unknown governance fields remain additive; backend stays authoritative |
-| Rollback | Prior | Unknown persisted row is tolerated; runtime remains fail-closed On |
+| Rollback | Prior | API-owned persisted Off is preserved while effective runtime stays fail-closed On; a seed-owned Off default can be normalized to On |
 
 Observed receipts will be appended only after all implementation and artifacts
 are complete and the operator reauthorizes the end-of-work verification phase.
@@ -76,18 +76,37 @@ To restore the forward build:
 
 1. Stop the rollback process.
 2. Reinstall the verified forward binary.
-3. Restore the exported row only when its current database value is absent;
-   otherwise preserve the current row and record the conflict for operator
-   resolution.
+3. Compare the current row with the export. The supported rollback candidate
+   preserves API-owned rows (identified by their durable `updated_at` marker)
+   but can normalize a seed-owned Off default to On. Restore the exported typed
+   value through the forward settings API only when the export was seed-owned
+   and the current row is the known normalized On value. If the row has another
+   unexpected concurrent change, preserve it and stop for operator resolution.
 4. Start the forward process and confirm the restored value through the
    authoritative governance status endpoint before accepting tool traffic.
 
 ## Verification receipts
 
-- Verification state: `PAUSED BY OPERATOR — IMPLEMENTATION/ARTIFACTS FIRST`
-- Rollback build and focused behavior: `PENDING`
-- Forward UI against rollback backend: `PENDING`
-- Prior UI/backend compatibility: `PENDING`
-- Unknown-row downgrade behavior: `PENDING`
-- Export/remove/restore exercise: `PENDING`
-- Rollback candidate built before forward installation: `PENDING`
+- Verification state: `COMPLETE — OPERATOR AUTHORIZED TIER 3`
+- Rollback build and focused behavior: `PASS` — effective On,
+  `mutation_available=false`, reason `persistence_unavailable`, and an Off
+  mutation returned `validation_rejected` without changing status.
+- Forward UI against rollback backend: `PASS` — the Governance route loaded,
+  the truthful locked projection remained readable, and mutation was rejected.
+- Prior UI/backend compatibility: `PASS` — the status API addition is additive;
+  the new UI's missing-status test and Unknown/Refresh browser scenario cover a
+  prior backend, while the rollback build retains the route and schema.
+- Persisted-row downgrade behavior: `PASS WITH OWNERSHIP DISTINCTION` — the
+  isolated live round trip began from a seed-owned default Off row, which the
+  rollback candidate normalized to On. The focused API-owned-row regression
+  preserves durable false while rollback enforces effective On, and forward
+  restart then recovers effective Off without a restore write.
+- Export/remove/restore exercise: `PASS` — the complete pre-install row was
+  exported to
+  `/Users/gqadonis/.prometheus/backups/uar/governance-release-20260828T.HtRDLE/governance.enabled.json`
+  (SHA-256 `5154022f9c6b7a1891b742b51952d3167c6a98b6164320fadbcd6ff716873a3f`),
+  and the isolated seed-owned round trip restored Off through the forward API
+  at revision 11 after observing the known normalization.
+- Rollback candidate built before forward installation: `PASS` — rollback
+  `server-full` digest `f725a77f...5189` was built and retained in the backup
+  directory before forward digest `0030737d...4bff` was installed.

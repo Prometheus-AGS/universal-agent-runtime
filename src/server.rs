@@ -78,6 +78,18 @@ type ShutdownCleanup = Arc<dyn Fn() + Send + Sync + 'static>;
 type ShutdownAsyncCleanup =
     Arc<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> + Send + Sync + 'static>;
 
+fn finalize_failed_governance_bootstrap(
+    governance_mutation: &crate::uar::governance::runtime_control::GovernanceMutationHandle,
+    error: &anyhow::Error,
+) -> anyhow::Result<()> {
+    tracing::error!(
+        %error,
+        "Governance/settings bootstrap failed — governance remains enabled and mutation unavailable"
+    );
+    governance_mutation.finalize_mutation_unavailable()?;
+    Ok(())
+}
+
 #[cfg(windows)]
 mod windows_service;
 
@@ -891,7 +903,8 @@ async fn run_server_with_listener(
                     .with_governance_runtime(
                         governance_mutation.clone(),
                         governance_status.clone(),
-                    ),
+                    )
+                    .with_realtime_bus(live_bus.clone()),
             );
             let governance_bootstrap = async {
                 let persisted = mgr
@@ -940,13 +953,10 @@ async fn run_server_with_listener(
                         tracing::error!(error = ?e, "Failed to hydrate MCP registry from settings database");
                     }
                 }
-                Err(error) => {
-                    tracing::error!(
-                        %error,
-                        "Governance/settings bootstrap failed — governance remains enabled and mutation unavailable"
-                    );
-                    governance_mutation.finalize_mutation_unavailable()?;
-                }
+                Err(error) => finalize_failed_governance_bootstrap(
+                    &governance_mutation,
+                    &error,
+                )?,
             }
             Some(mgr)
         } else {
@@ -1524,7 +1534,10 @@ async fn run_server_with_listener(
         // loaded policy set (permit-all by default; anonymous requests pass
         // through). Previously defined but never mounted.
         .layer(axum::middleware::from_fn_with_state(
-            Arc::clone(&state.governance_engine),
+            uar::governance::middleware::GovernanceMiddlewareState::new(
+                Arc::clone(&state.governance_engine),
+                governance_gate.clone(),
+            ),
             uar::governance::middleware::governance_layer,
         ))
         // Apply Timeout Layer if not disabled
@@ -5775,6 +5788,30 @@ mod tests {
     use std::time::Instant;
 
     const SHUTDOWN_CHILD_ENV: &str = "UAR_SHUTDOWN_TEST_CHILD";
+
+    #[test]
+    fn governance_bootstrap_error_finalizes_fail_closed() {
+        let (mutation, gate, status) =
+            crate::uar::governance::runtime_control::governance_runtime_handles("localhost");
+        mutation.record_installed_authentication(false);
+        mutation.declare_ingress("primary-http").expect("declare");
+        let proof = mutation
+            .register_bound_ingress("primary-http", "127.0.0.1:1906".parse().expect("address"))
+            .expect("register");
+        mutation
+            .seal_ingress_inventory(&[proof])
+            .expect("seal inventory");
+
+        finalize_failed_governance_bootstrap(&mutation, &anyhow::anyhow!("seed failed"))
+            .expect("failure finalization succeeds");
+
+        let snapshot = status.snapshot();
+        assert!(gate.effective_enabled());
+        assert!(!snapshot.mutation_available);
+        assert!(snapshot.reasons.contains(
+            &crate::uar::governance::runtime_control::GovernanceStatusReason::PersistenceUnavailable
+        ));
+    }
     const SHUTDOWN_MCP_FIXTURE: &str = r#"
 import json
 import pathlib

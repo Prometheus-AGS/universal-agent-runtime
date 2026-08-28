@@ -12,7 +12,7 @@
 - [x] 2.3 Reorder server bootstrap to load the optional preference without applying it, install authentication, bind/register/seal ingress, derive eligibility, persist seed/normalization, finalize governance, activate admission tokens, and only then expose `RunManager`; verify deterministic startup tests show Initializing gates On and no request-admission window exists before finalization.
 - [x] 2.4 Implement fail-closed storage-error behavior so unreadable, unavailable, failed-seed, and failed-normalization states finalize On with mutation unavailable, while Off requires a durable `false` read or successful eligible default insertion; verify focused persistence-failure tests never observe effective Off or the inactive warning.
 - [x] 2.5 Emit exactly one `governance.inactive_local_mode` warning with the designed stable fields after the first finalized Off transition, and a separate `governance.persisted_state_normalized` event for stale-value correction; verify captured tracing output proves per-process cardinality across startup, reads, runs, repeated toggles, and restart.
-- [ ] 2.6 Run the Rust Tier 0 gate `cargo check --locked --no-default-features --features server-full` after the cohesive runtime-control/bootstrap edits and verify exit code 0 with zero warnings before starting settings mutation work.
+- [x] 2.6 Run the Rust Tier 0 gate `cargo check --locked --no-default-features --features server-full` after the cohesive runtime-control/bootstrap edits and verify exit code 0 with zero warnings before starting settings mutation work.
 
 ## 3. Persisted Setting, Serialized Mutation, and Status API
 
@@ -20,7 +20,7 @@
 - [x] 3.2 Serialize every `governance.*` single-key mutation, reset, seed, normalization, and complete namespace batch through one async Governance-namespace mutex and the specified durable-write → cache → snapshot → notification → response linearization; verify barrier-based concurrency tests cannot produce runtime/storage divergence or interleave a policy writer into an Off-to-On batch.
 - [x] 3.3 Return per-key `updated`, `validation_rejected`, `dependency_failed`, and `skipped` results, process policy prerequisites before Off-to-On, allow safe On-to-Off despite unrelated policy failure, and make notification delivery non-transactional after commitment; verify focused API tests cover complete success, partial success, authoritative rejection, dependency failure, post-commit notification failure, and applied status tokens.
 - [x] 3.4 Expose the read-only governance status projection with boot instance, revision, phase, effective state, mutability, configured host, bound addresses, active JWT mode, and closed reason-code list; verify API tests reject impossible snapshots, preserve multiple simultaneous reasons, and return mutation-unavailable rather than a writable false state on storage failure.
-- [ ] 3.5 Run the Rust Tier 0 and focused Tier 1 gates—`cargo check --locked --no-default-features --features server-full` plus only the newly added settings/status tests—and verify all commands exit 0 with zero warnings.
+- [x] 3.5 Run the Rust Tier 0 and focused Tier 1 gates—`cargo check --locked --no-default-features --features server-full` plus only the newly added settings/status tests—and verify all commands exit 0 with zero warnings.
 
 ## 4. Tool-Gate Bypass and Runtime Events
 
@@ -28,7 +28,7 @@
 - [x] 4.2 Put the coherent governance snapshot read before effective run-policy denial, Cedar evaluation, risk classification, and approval waiting in `RunManager`, while leaving tool registration, selection, arguments, transport, provider, and execution failures downstream; verify focused manager tests cover Off bypass of all three gates and unchanged unavailable/invalid/failing-tool outcomes.
 - [x] 4.3 Preserve the full current On path and in-flight boundary: later tool calls observe a newly published toggle, while already approved, denied, or pending calls are not replayed, cancelled, or auto-approved; verify deterministic barrier tests cover reads immediately before and after snapshot publication.
 - [x] 4.4 Add an integration regression using an available configured test tool representing `web_search` behavior and verify eligible anonymous Off execution succeeds without denial/approval events, whereas enabled or ineligible posture preserves existing denial semantics.
-- [ ] 4.5 Run the Rust Tier 0 and focused Tier 1 gates for the new orchestrator, manager, and integration tests and verify exit code 0 with zero warnings before frontend work begins.
+- [x] 4.5 Run the Rust Tier 0 and focused Tier 1 gates for the new orchestrator, manager, and integration tests and verify exit code 0 with zero warnings before frontend work begins.
 
 ## 5. Frontend State and API Architecture
 
@@ -50,19 +50,19 @@
 
 - [x] 7.1 Run Impeccable audit and critique over the completed Governance UI with two isolated critics, run the manual Impeccable detector only now that the UI exists, and submit the resulting implementation diff to a fresh-context adversarial reviewer; verify the final review reports no critical or warning blocker and record the receipts in the KBD phase.
 - [x] 7.2 Add a focused Playwright Governance settings specification covering 320 CSS px, 200% zoom, light/dark themes, 4.5:1 warning text, 3:1 meaningful boundaries, no page/card/fieldset horizontal overflow or clipping, wrapped focus visibility, keyboard operation, locked reasons, Unknown/Refresh, and authoritative save transitions; do not run it before the authorized Tier 3 milestone gate.
-- [x] 7.3 Run Impeccable polish on the accepted implementation and verify the final diff contains only requested Governance behavior, accessibility corrections tied to observed panel defects, and no unrelated redesign or speculative guard.
+- [x] 7.3 Run Impeccable polish on the accepted implementation and verify the final Governance UI diff contains only requested Governance behavior, accessibility corrections tied to observed panel defects, and no unrelated redesign or speculative guard; release-certification repairs discovered later remain separately disclosed.
 
 ## 8. Phase, Milestone, Release, and Deployment Verification
 
-- [ ] 8.1 Run Rust Tier 2 exactly as required: `cargo fmt --all -- --check` and `cargo test --locked --no-default-features --features server-full`; verify both exit 0 with zero warnings and preserve one build profile/target writer.
-- [ ] 8.2 Run frontend Tier 2 exactly as required: `pnpm build` and `pnpm test`, then rerun `pnpm typecheck`, `pnpm lint`, `pnpm github-actions-policy:validate`, and strict OpenSpec validation; verify every command exits 0 and no GitHub Actions workflow contains or indirectly invokes non-deployment testing.
-- [ ] 8.3 Build and test the fail-closed rollback backend/commit that retains a truthful status endpoint with mutation unavailable, verify old/new backend–UI compatibility plus each supported downgrade target's unknown-row behavior, and record the reversible export/remove/restore procedure for `governance.enabled` before forward deployment.
-- [ ] 8.4 At the already-authorized Tier 3 milestone, run the focused Playwright Governance specification and the repository's supported-profile/release certification, then run `cargo build --release`; verify the browser matrix, release build, and certification receipts all pass before replacing any running binary.
-- [ ] 8.5 Install the verified release binary through the existing release path, update the launch agent to that exact binary, restart it, and verify process status plus the authoritative status endpoint, one-warning behavior, default local Off posture, live On/Off toggling, executable configured search/tool behavior, and fail-closed JWT/non-local cases.
+- [x] 8.1 Run Rust Tier 2 exactly as required: `cargo fmt --all -- --check` and `cargo test --locked --no-default-features --features server-full`; verify both exit 0 with zero warnings and preserve one build profile/target writer.
+- [x] 8.2 Run frontend Tier 2 exactly as required: `pnpm build` and `pnpm test`, then rerun `pnpm typecheck`, `pnpm lint`, `pnpm github-actions-policy:validate`, and strict OpenSpec validation; verify every command exits 0 and no GitHub Actions workflow contains or indirectly invokes non-deployment testing.
+- [x] 8.3 Build and test the fail-closed rollback backend/commit that retains a truthful status endpoint with mutation unavailable, verify old/new backend–UI compatibility plus each supported downgrade target's unknown-row behavior, and record the reversible export/remove/restore procedure for `governance.enabled` before forward deployment.
+- [x] 8.4 At the already-authorized Tier 3 milestone, run the focused Playwright Governance specification and the repository's supported-profile/release certification, then run `cargo build --release`; verify the browser matrix, release build, and certification receipts all pass before replacing any running binary.
+- [x] 8.5 Install the verified release binary through the existing release path, update the launch agent to that exact binary, restart it, and verify process status plus the authoritative status endpoint, one-warning behavior, default local Off posture, live On/Off toggling, executable configured search/tool behavior, and fail-closed JWT/non-local cases.
 
 ## 9. Completion, Version Control, and Handoff
 
-- [ ] 9.1 Append the design decisions, observed defects, verification receipts, and phase summary to `.prometheus/` and the KBD execution/decision artifacts without rewriting history; verify the new entries name remaining risks and superseded assumptions.
+- [x] 9.1 Append the design decisions, observed defects, verification receipts, and phase summary to `.prometheus/` and the KBD execution/decision artifacts without rewriting history; verify the new entries name remaining risks and superseded assumptions.
 - [ ] 9.2 Run `/kbd-reflect allow-loopback-tools-without-jwt`, reconcile KBD progress with every OpenSpec checkbox, and verify the waypoint records Execute/Reflect completion without altering completed provider-settings history.
 - [ ] 9.3 Inspect every affected repository and branch, commit only this change's files, push each non-main branch, and create or update a PR for every affected repository not already on its main branch; verify clean scoped status plus reachable commit and PR URLs.
 - [ ] 9.4 Verify the implemented OpenSpec change against all scenarios, archive it only after implementation and tracked work are complete, and confirm the final handoff lists file-by-file changes, exact observed verification output, unrequested additions (none or explicitly approved), guards tied to observed failures/trust boundaries, and anything still unverified.
