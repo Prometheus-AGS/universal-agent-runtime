@@ -67,7 +67,7 @@ pub async fn governance_layer(
     // In verified local Off mode, direct configured-tool execution must not be
     // denied before it reaches the ordinary registration/argument/transport
     // boundaries.
-    if !state.gate.effective_enabled() {
+    if !state.gate.effective_enabled() && is_direct_tool_execution(&request) {
         return next.run(request).await;
     }
 
@@ -135,6 +135,11 @@ fn extract_action(request: &Request<Body>) -> String {
 
     // Fallback to method-based action
     format!("http_{}", method.to_lowercase())
+}
+
+fn is_direct_tool_execution(request: &Request<Body>) -> bool {
+    let path = request.uri().path();
+    request.method() == "POST" && path.starts_with("/api/tools/") && path.ends_with("/execute")
 }
 
 /// Extract a resource name from the request path.
@@ -232,6 +237,43 @@ mod tests {
                 Request::builder()
                     .method("POST")
                     .uri("/api/tools/web_search/execute")
+                    .header("X-Agent-Id", "local-agent")
+                    .body(Body::empty())
+                    .expect("request"),
+            )
+            .await
+            .expect("response");
+
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    }
+
+    #[tokio::test]
+    async fn governance_off_preserves_cedar_for_non_tool_actions() {
+        let (mutation, gate, _) =
+            crate::uar::governance::runtime_control::governance_runtime_handles("localhost");
+        mutation.record_installed_authentication(false);
+        mutation.declare_ingress("primary-http").expect("declare");
+        let proof = mutation
+            .register_bound_ingress("primary-http", "127.0.0.1:1906".parse().expect("address"))
+            .expect("register");
+        mutation
+            .seal_ingress_inventory(&[proof])
+            .expect("seal inventory");
+        let plan = mutation.preference_plan(Some(false)).expect("preference");
+        mutation.finalize_preference(&plan).expect("finalize Off");
+
+        let state = GovernanceMiddlewareState::new(Arc::new(GovernanceEngine::new()), gate);
+        let app = Router::new()
+            .route("/api/actors", post(|| async { StatusCode::OK }))
+            .layer(axum::middleware::from_fn_with_state(
+                state,
+                governance_layer,
+            ));
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/actors")
                     .header("X-Agent-Id", "local-agent")
                     .body(Body::empty())
                     .expect("request"),
