@@ -74,6 +74,7 @@ pub struct SettingsManager {
     cache: RwLock<HashMap<String, CacheEntry>>,
     governance_mutation: Option<GovernanceMutationHandle>,
     governance_status: Option<GovernanceStatusHandle>,
+    realtime_bus: Option<Arc<dyn crate::uar::realtime::RealtimeBus>>,
     governance_mutation_lock: Mutex<()>,
 }
 
@@ -85,6 +86,7 @@ impl SettingsManager {
             cache: RwLock::new(HashMap::new()),
             governance_mutation: None,
             governance_status: None,
+            realtime_bus: None,
             governance_mutation_lock: Mutex::new(()),
         }
     }
@@ -98,6 +100,17 @@ impl SettingsManager {
     ) -> Self {
         self.governance_mutation = Some(mutation);
         self.governance_status = Some(status);
+        self
+    }
+
+    /// Attach the runtime realtime bus used to schedule the Governance status
+    /// refetch signal after coherent runtime publication.
+    #[must_use]
+    pub fn with_realtime_bus(
+        mut self,
+        realtime_bus: Option<Arc<dyn crate::uar::realtime::RealtimeBus>>,
+    ) -> Self {
+        self.realtime_bus = realtime_bus;
         self
     }
 
@@ -475,6 +488,32 @@ impl SettingsManager {
                 .unwrap_or_else(|error| {
                     panic!("committed governance preference failed runtime publication: {error}")
                 });
+
+            if let Some(realtime_bus) = self.realtime_bus.as_ref() {
+                let status = self
+                    .governance_status
+                    .as_ref()
+                    .expect("validated governance authority must have a status handle")
+                    .snapshot();
+                let event = crate::uar::realtime::LiveEvent {
+                    action: crate::uar::realtime::LiveAction::Update,
+                    topic: crate::uar::realtime::EntityTopic::Settings,
+                    id: "governance.enabled".to_string(),
+                    data: serde_json::json!({
+                        "key": "governance.enabled",
+                        "data": enabled,
+                        "boot_instance_id": status.boot_instance_id,
+                        "revision": status.revision,
+                    }),
+                };
+                if let Err(error) = realtime_bus.publish(event) {
+                    tracing::warn!(
+                        event = "governance.notification_delivery_failed",
+                        %error,
+                        "Committed governance status notification could not be scheduled"
+                    );
+                }
+            }
         }
         Ok(())
     }

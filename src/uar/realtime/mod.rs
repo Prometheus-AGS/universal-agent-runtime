@@ -29,6 +29,17 @@ pub trait RealtimeBus: Send + Sync + std::fmt::Debug {
 
     /// Number of active subscribers on a topic (for observability).
     fn subscriber_count(&self, topic: EntityTopic) -> usize;
+
+    /// Publish an application-ordered event after the authoritative runtime
+    /// state has been updated. A missing topic is a scheduling failure; having
+    /// no active subscribers is not.
+    fn publish(&self, event: LiveEvent) -> Result<(), RealtimePublishError>;
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum RealtimePublishError {
+    #[error("realtime topic is unavailable: {0}")]
+    TopicUnavailable(EntityTopic),
 }
 
 /// Topics enrolled with the bus at startup. Each topic backs one Surreal
@@ -140,4 +151,12 @@ pub struct LiveEvent {
     pub topic: EntityTopic,
     pub id: String,
     pub data: serde_json::Value,
+}
+
+pub(crate) fn is_governance_enabled_event(event: &LiveEvent) -> bool {
+    event.topic == EntityTopic::Settings
+        && (event.id == "governance.enabled"
+            || event.id.ends_with("governance_enabled")
+            || event.data.get("key").and_then(serde_json::Value::as_str)
+                == Some("governance.enabled"))
 }

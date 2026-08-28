@@ -27,7 +27,10 @@ use sqlx::postgres::PgListener;
 use tokio::sync::broadcast;
 use tracing::{debug, info, warn};
 
-use super::{EntityTopic, LiveAction, LiveEvent, RealtimeBus};
+use super::{
+    EntityTopic, LiveAction, LiveEvent, RealtimeBus, RealtimePublishError,
+    is_governance_enabled_event,
+};
 
 /// Broadcast channel capacity per topic. Matches the `SurrealDB` bus: slow
 /// consumers get a `Lagged` error but the publisher never blocks.
@@ -97,6 +100,18 @@ impl RealtimeBus for PostgresNotifyBus {
         self.senders
             .get(&topic)
             .map_or(0, broadcast::Sender::receiver_count)
+    }
+
+    fn publish(
+        &self,
+        event: LiveEvent,
+    ) -> std::result::Result<(), RealtimePublishError> {
+        let sender = self
+            .senders
+            .get(&event.topic)
+            .ok_or(RealtimePublishError::TopicUnavailable(event.topic))?;
+        let _ = sender.send(event);
+        Ok(())
     }
 }
 
@@ -168,6 +183,10 @@ async fn run_listener(
             id: payload.id,
             data: payload.data.unwrap_or(serde_json::Value::Null),
         };
+
+        if is_governance_enabled_event(&event) {
+            continue;
+        }
 
         if let Some(tx) = senders.get(&topic) {
             // `send` only errors when there are no subscribers — that's fine.

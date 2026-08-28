@@ -17,6 +17,19 @@ use serde::Serialize;
 use tracing::warn;
 
 use super::engine::GovernanceEngine;
+use super::runtime_control::GovernanceGateHandle;
+
+#[derive(Clone)]
+pub struct GovernanceMiddlewareState {
+    engine: Arc<GovernanceEngine>,
+    gate: GovernanceGateHandle,
+}
+
+impl GovernanceMiddlewareState {
+    pub fn new(engine: Arc<GovernanceEngine>, gate: GovernanceGateHandle) -> Self {
+        Self { engine, gate }
+    }
+}
 
 /// JSON error body returned when governance denies a request.
 #[derive(Serialize)]
@@ -46,10 +59,18 @@ struct GovernanceDenied {
 ///     ));
 /// ```
 pub async fn governance_layer(
-    State(engine): State<Arc<GovernanceEngine>>,
+    State(state): State<GovernanceMiddlewareState>,
     request: Request<Body>,
     next: Next,
 ) -> Response {
+    // The HTTP Cedar boundary consumes the same coherent gate as RunManager.
+    // In verified local Off mode, direct configured-tool execution must not be
+    // denied before it reaches the ordinary registration/argument/transport
+    // boundaries.
+    if !state.gate.effective_enabled() {
+        return next.run(request).await;
+    }
+
     // Extract agent ID from request header (optional)
     let agent_id = request
         .headers()
@@ -67,7 +88,7 @@ pub async fn governance_layer(
     let resource = extract_resource(&request);
 
     // Evaluate governance policy
-    if !engine.is_allowed(&agent_id, &action, &resource).await {
+    if !state.engine.is_allowed(&agent_id, &action, &resource).await {
         warn!(
             agent_id = %agent_id,
             action = %action,
@@ -131,6 +152,55 @@ fn extract_resource(request: &Request<Body>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::{Router, body::Body, http::Request, routing::post};
+    use tower::ServiceExt;
+
+    #[test]
+    fn initializing_governance_does_not_bypass_http_cedar() {
+        let (_, gate, _) =
+            crate::uar::governance::runtime_control::governance_runtime_handles("localhost");
+        assert!(gate.effective_enabled());
+    }
+
+    #[tokio::test]
+    async fn governance_off_bypasses_direct_tool_http_cedar() {
+        let (mutation, gate, _) =
+            crate::uar::governance::runtime_control::governance_runtime_handles("localhost");
+        mutation.record_installed_authentication(false);
+        mutation.declare_ingress("primary-http").expect("declare");
+        let proof = mutation
+            .register_bound_ingress("primary-http", "127.0.0.1:1906".parse().expect("address"))
+            .expect("register");
+        mutation
+            .seal_ingress_inventory(&[proof])
+            .expect("seal inventory");
+        let plan = mutation.preference_plan(Some(false)).expect("preference");
+        mutation.finalize_preference(&plan).expect("finalize Off");
+
+        let state = GovernanceMiddlewareState::new(
+            Arc::new(GovernanceEngine::new()),
+            gate,
+        );
+        let app = Router::new()
+            .route("/api/tools/web_search/execute", post(|| async { StatusCode::OK }))
+            .layer(axum::middleware::from_fn_with_state(
+                state,
+                governance_layer,
+            ));
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/tools/web_search/execute")
+                    .header("X-Agent-Id", "local-agent")
+                    .body(Body::empty())
+                    .expect("request"),
+            )
+            .await
+            .expect("response");
+
+        assert_eq!(response.status(), StatusCode::OK);
+    }
 
     #[test]
     fn direct_tool_execution_uses_governed_action() {
