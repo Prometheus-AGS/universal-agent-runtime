@@ -6,6 +6,9 @@
     { "id": "minimal", "status": "stable", "default": true, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features minimal" },
     { "id": "server-full", "status": "stable", "default": false, "platforms": ["linux", "macos"], "conflicts": [], "gate": "cargo check --lib --features server-full plus full BDD and release-artifact certification" },
     { "id": "desktop-full", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features desktop-full" },
+    { "id": "embedded-mobile", "status": "experimental", "default": false, "platforms": ["android", "ios"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features embedded-mobile" },
+    { "id": "host-persistence", "status": "internal", "default": false, "platforms": ["linux", "macos", "windows", "android", "ios"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features host-persistence" },
+    { "id": "server", "status": "internal", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features server" },
     { "id": "surreal-backend", "status": "stable", "default": true, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib" },
     { "id": "in-memory-backend", "status": "development-only", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --no-default-features --features in-memory-backend" },
     { "id": "postgres-backend", "status": "preview", "default": false, "platforms": ["linux", "macos"], "conflicts": [], "gate": "cargo test --features postgres-backend" },
@@ -18,14 +21,17 @@
     { "id": "api-docs", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features api-docs" },
     { "id": "cedar-governance", "status": "stable", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features cedar-governance" },
     { "id": "telemetry", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features telemetry" },
+    { "id": "sentry", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features server-full,sentry" },
     { "id": "a2a-transport", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features a2a-transport" },
     { "id": "wasm-runtime", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --features wasm-runtime" },
-    { "id": "tauri", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --features tauri" }
+    { "id": "tauri", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --features tauri" },
+    { "id": "vault", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features server-full,vault" }
   ],
   "bundles": [
     { "id": "minimal", "status": "stable", "license": "MIT", "features": ["surreal-backend"], "gate": "cargo test --lib --features minimal" },
     { "id": "server-full", "status": "stable", "distribution": true, "license": "MIT", "features": ["minimal", "a2a-transport", "local-models", "cedar-governance", "response-quality", "document-intelligence", "telemetry", "api-docs", "admin-ui", "wasm-runtime"], "gate": "cargo check --lib --features server-full plus full BDD and release-artifact certification" },
     { "id": "desktop-full", "status": "preview", "license": "MIT", "features": ["server-full", "tauri"], "gate": "cargo check --lib --features desktop-full" },
+    { "id": "embedded-mobile", "status": "experimental", "license": "MIT", "features": ["host-persistence"], "gate": "cargo check --locked --no-default-features --features embedded-mobile" },
     { "id": "server-postgres", "status": "preview", "license": "MIT", "features": ["postgres-backend"], "gate": "cargo test --features postgres-backend" },
     { "id": "in-memory-development", "status": "development-only", "license": "MIT", "features": ["in-memory-backend"], "gate": "cargo test --lib --no-default-features --features in-memory-backend" }
   ],

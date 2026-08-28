@@ -55,6 +55,7 @@ impl ModelRouter {
                 continue;
             }
             for model in provider.models.iter().filter(|model| model.enabled) {
+                let catalog_model = self.catalog.model(&provider.id, &model.id);
                 let model = ModelInfo {
                     id: model.id.clone(),
                     name: model
@@ -81,6 +82,7 @@ impl ModelRouter {
                         context_window: model.context_window.map_or(0, u64::from),
                         max_output: model.max_output_tokens.map_or(0, u64::from),
                     },
+                    cost: catalog_model.and_then(|model| model.cost.clone()),
                     open_weights: provider.api_key.is_none() && provider.base_url.is_empty(),
                     ..ModelInfo::default()
                 };
@@ -122,8 +124,12 @@ impl ModelRouter {
 
         // Apply cost filter
         if let Some(max_cost) = requirements.max_cost_per_1m_input {
-            candidates
-                .retain(|(_, model)| model.cost.as_ref().map_or(true, |c| c.input <= max_cost));
+            candidates.retain(|(_, model)| {
+                model
+                    .cost
+                    .as_ref()
+                    .is_some_and(|cost| cost.input <= max_cost)
+            });
         }
 
         // Prefer the requested provider if specified

@@ -5,7 +5,7 @@
 //! include several whose constructors are non-obvious — see
 //! `openspec/changes/live-integration-baseline-coverage/appstate-field-plan.md`
 //! for that research), this harness calls the actual public
-//! `universal_agent_runtime::server::start_server_sidecar` entry point against
+//! `universal_agent_runtime::server::start_server_sidecar_with_listeners` entry point against
 //! a config built entirely from an
 //! explicit temp YAML file. This is both simpler and a stronger proof: the
 //! baseline cases exercise the real sidecar boot path, not a hand-approximated
@@ -21,7 +21,7 @@ use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 use universal_agent_runtime::config::Cli;
 use universal_agent_runtime::config_manager::ConfigManager;
-use universal_agent_runtime::server::start_server_sidecar;
+use universal_agent_runtime::server::start_server_sidecar_with_listeners;
 
 static TRACING_INIT: Once = Once::new();
 static SCRATCH_SWEEP: Once = Once::new();
@@ -429,6 +429,15 @@ async fn boot_test_server_inner(
         .local_addr()
         .expect("harness listener address")
         .port();
+    let grpc_listener =
+        std::net::TcpListener::bind("127.0.0.1:0").expect("bind ephemeral harness gRPC listener");
+    grpc_listener
+        .set_nonblocking(true)
+        .expect("set harness gRPC listener nonblocking");
+    let grpc_port = grpc_listener
+        .local_addr()
+        .expect("harness gRPC listener address")
+        .port();
 
     let memory_yaml = if needs.memory {
         let memory_path = unique_temp_path("memory");
@@ -451,12 +460,16 @@ async fn boot_test_server_inner(
          acp:\n  enabled: true\n  path: \"/acp\"\n  auth_required: true\n\
          llm:\n  model: \"{llm_model}\"\n  base_url: \"{llm_base_url}\"\n\
          server:\n  host: \"127.0.0.1\"\n  port: {port}\n  shutdown_timeout_secs: 1\n\
+  grpc_port: {grpc_port}\n\
          {memory_yaml}",
         persistence_path.display(),
     );
 
     let config_path = unique_temp_path("config").with_extension("yaml");
     std::fs::write(&config_path, yaml).expect("write temp harness config");
+    let mcp_config_path = unique_temp_path("mcp").with_extension("json");
+    std::fs::write(&mcp_config_path, r#"{"mcpServers":{}}"#)
+        .expect("write empty harness MCP config");
 
     let cli = Cli {
         env_file: None,
@@ -503,8 +516,17 @@ async fn boot_test_server_inner(
         rt.block_on(async move {
             let listener = tokio::net::TcpListener::from_std(listener)
                 .expect("register harness listener with Tokio");
-            let result =
-                start_server_sidecar(config, listener, ready_tx, Some(thread_shutdown)).await;
+            let grpc_listener = tokio::net::TcpListener::from_std(grpc_listener)
+                .expect("register harness gRPC listener with Tokio");
+            let result = start_server_sidecar_with_listeners(
+                config,
+                listener,
+                grpc_listener,
+                Some(mcp_config_path),
+                ready_tx,
+                Some(thread_shutdown),
+            )
+            .await;
             if let Err(error) = &result {
                 eprintln!("start_server_sidecar exited with error: {error:?}");
             }

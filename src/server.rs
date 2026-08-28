@@ -78,6 +78,18 @@ type ShutdownCleanup = Arc<dyn Fn() + Send + Sync + 'static>;
 type ShutdownAsyncCleanup =
     Arc<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> + Send + Sync + 'static>;
 
+fn finalize_failed_governance_bootstrap(
+    governance_mutation: &crate::uar::governance::runtime_control::GovernanceMutationHandle,
+    error: &anyhow::Error,
+) -> anyhow::Result<()> {
+    tracing::error!(
+        %error,
+        "Governance/settings bootstrap failed — governance remains enabled and mutation unavailable"
+    );
+    governance_mutation.finalize_mutation_unavailable()?;
+    Ok(())
+}
+
 #[cfg(windows)]
 mod windows_service;
 
@@ -263,7 +275,7 @@ async fn request_span_layer(request: Request, next: Next) -> Response {
 
 /// Start the Axum server with the provided configuration manager.
 pub async fn start_server(config_manager: Arc<ConfigManager>) -> anyhow::Result<()> {
-    start_server_with_listener(config_manager, None, None, None, None).await
+    start_server_with_listener(config_manager, None, None, None, None, None, None).await
 }
 
 #[cfg(windows)]
@@ -271,12 +283,23 @@ pub(crate) async fn start_server_with_shutdown(
     config_manager: Arc<ConfigManager>,
     process_shutdown: tokio_util::sync::CancellationToken,
 ) -> anyhow::Result<()> {
-    start_server_with_listener(config_manager, None, None, None, Some(process_shutdown)).await
+    start_server_with_listener(
+        config_manager,
+        None,
+        None,
+        None,
+        None,
+        None,
+        Some(process_shutdown),
+    )
+    .await
 }
 
 async fn start_server_with_listener(
     config_manager: Arc<ConfigManager>,
     listener: Option<tokio::net::TcpListener>,
+    a2a_grpc_listener: Option<tokio::net::TcpListener>,
+    mcp_config_path: Option<std::path::PathBuf>,
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
     process_shutdown: Option<tokio_util::sync::CancellationToken>,
@@ -290,6 +313,8 @@ async fn start_server_with_listener(
     let result = run_server_with_listener(
         config_manager,
         listener,
+        a2a_grpc_listener,
+        mcp_config_path,
         ready,
         http_shutdown,
         process_shutdown,
@@ -359,6 +384,8 @@ async fn wait_for_surrealkv_lock_release(lock_path: &std::path::Path) {
 async fn run_server_with_listener(
     config_manager: Arc<ConfigManager>,
     listener: Option<tokio::net::TcpListener>,
+    _a2a_grpc_listener: Option<tokio::net::TcpListener>,
+    mcp_config_path: Option<std::path::PathBuf>,
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
     process_shutdown: Option<tokio_util::sync::CancellationToken>,
@@ -420,17 +447,22 @@ async fn run_server_with_listener(
     #[cfg(feature = "a2a-transport")]
     let a2a_grpc_listener = {
         governance_mutation.declare_ingress("a2a-grpc")?;
-        let grpc_addr =
-            tokio::net::lookup_host((config.server.host.as_str(), config.server.grpc_port))
-                .await?
-                .next()
-                .ok_or_else(|| {
-                    anyhow::anyhow!(
-                        "server.host '{}' did not resolve for A2A gRPC",
-                        config.server.host
-                    )
-                })?;
-        let listener = tokio::net::TcpListener::bind(grpc_addr).await?;
+        let listener = match _a2a_grpc_listener {
+            Some(listener) => listener,
+            None => {
+                let grpc_addr =
+                    tokio::net::lookup_host((config.server.host.as_str(), config.server.grpc_port))
+                        .await?
+                        .next()
+                        .ok_or_else(|| {
+                            anyhow::anyhow!(
+                                "server.host '{}' did not resolve for A2A gRPC",
+                                config.server.host
+                            )
+                        })?;
+                tokio::net::TcpListener::bind(grpc_addr).await?
+            }
+        };
         ingress_proofs
             .push(governance_mutation.register_bound_ingress("a2a-grpc", listener.local_addr()?)?);
         listener
@@ -701,17 +733,22 @@ async fn run_server_with_listener(
 
     // MCP: connect once at startup
     // We update this to include native tools if persistence is present
-    let mut mcp_registry = match McpRegistry::load_from_file("mcp.json").await {
-        Ok(registry) => registry,
-        Err(e) => {
-            tracing::warn!(
-                error = %e,
-                "Could not load mcp.json — starting with empty MCP registry. \
-                 Tools from mcp.json will not be available until the file is created."
-            );
-            McpRegistry::empty()
-        }
-    };
+    let mcp_config_path = mcp_config_path
+        .as_deref()
+        .unwrap_or_else(|| std::path::Path::new("mcp.json"));
+    let mut mcp_registry =
+        match McpRegistry::load_from_file(mcp_config_path.to_string_lossy().as_ref()).await {
+            Ok(registry) => registry,
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    path = %mcp_config_path.display(),
+                    "Could not load MCP config — starting with empty MCP registry. \
+                     Tools from the configured file will not be available until it is created."
+                );
+                McpRegistry::empty()
+            }
+        };
 
     // Register memory tools — live service if enabled, no-op shims otherwise.
     let save_tool = Arc::new(crate::uar::tools::memory::MemorySaveTool::new(
@@ -863,10 +900,8 @@ async fn run_server_with_listener(
         if let Some(p) = &persistence {
             let mgr = Arc::new(
                 crate::uar::settings::manager::SettingsManager::new(Arc::clone(p))
-                    .with_governance_runtime(
-                        governance_mutation.clone(),
-                        governance_status.clone(),
-                    ),
+                    .with_governance_runtime(governance_mutation.clone(), governance_status.clone())
+                    .with_realtime_bus(live_bus.clone()),
             );
             let governance_bootstrap = async {
                 let persisted = mgr
@@ -915,13 +950,7 @@ async fn run_server_with_listener(
                         tracing::error!(error = ?e, "Failed to hydrate MCP registry from settings database");
                     }
                 }
-                Err(error) => {
-                    tracing::error!(
-                        %error,
-                        "Governance/settings bootstrap failed — governance remains enabled and mutation unavailable"
-                    );
-                    governance_mutation.finalize_mutation_unavailable()?;
-                }
+                Err(error) => finalize_failed_governance_bootstrap(&governance_mutation, &error)?,
             }
             Some(mgr)
         } else {
@@ -1499,7 +1528,10 @@ async fn run_server_with_listener(
         // loaded policy set (permit-all by default; anonymous requests pass
         // through). Previously defined but never mounted.
         .layer(axum::middleware::from_fn_with_state(
-            Arc::clone(&state.governance_engine),
+            uar::governance::middleware::GovernanceMiddlewareState::new(
+                Arc::clone(&state.governance_engine),
+                governance_gate.clone(),
+            ),
             uar::governance::middleware::governance_layer,
         ))
         // Apply Timeout Layer if not disabled
@@ -1763,6 +1795,38 @@ pub async fn start_server_sidecar(
     start_server_with_listener(
         config_manager,
         Some(listener),
+        None,
+        None,
+        Some(ready),
+        http_shutdown,
+        None,
+    )
+    .await
+}
+
+/// Start the server with caller-provided, already-bound HTTP and A2A gRPC listeners.
+///
+/// This preserves both socket reservations across configuration loading and server
+/// startup. It is intended for supervisors and integration harnesses that need
+/// collision-free ephemeral ports for every ingress.
+///
+/// # Errors
+///
+/// Returns an error when runtime initialization or serving fails, or when the
+/// supervising process drops the readiness receiver before startup completes.
+pub async fn start_server_sidecar_with_listeners(
+    config_manager: Arc<ConfigManager>,
+    listener: tokio::net::TcpListener,
+    a2a_grpc_listener: tokio::net::TcpListener,
+    mcp_config_path: Option<std::path::PathBuf>,
+    ready: tokio::sync::oneshot::Sender<std::net::SocketAddr>,
+    http_shutdown: Option<tokio_util::sync::CancellationToken>,
+) -> anyhow::Result<()> {
+    start_server_with_listener(
+        config_manager,
+        Some(listener),
+        Some(a2a_grpc_listener),
+        mcp_config_path,
         Some(ready),
         http_shutdown,
         None,
@@ -5718,6 +5782,30 @@ mod tests {
     use std::time::Instant;
 
     const SHUTDOWN_CHILD_ENV: &str = "UAR_SHUTDOWN_TEST_CHILD";
+
+    #[test]
+    fn governance_bootstrap_error_finalizes_fail_closed() {
+        let (mutation, gate, status) =
+            crate::uar::governance::runtime_control::governance_runtime_handles("localhost");
+        mutation.record_installed_authentication(false);
+        mutation.declare_ingress("primary-http").expect("declare");
+        let proof = mutation
+            .register_bound_ingress("primary-http", "127.0.0.1:1906".parse().expect("address"))
+            .expect("register");
+        mutation
+            .seal_ingress_inventory(&[proof])
+            .expect("seal inventory");
+
+        finalize_failed_governance_bootstrap(&mutation, &anyhow::anyhow!("seed failed"))
+            .expect("failure finalization succeeds");
+
+        let snapshot = status.snapshot();
+        assert!(gate.effective_enabled());
+        assert!(!snapshot.mutation_available);
+        assert!(snapshot.reasons.contains(
+            &crate::uar::governance::runtime_control::GovernanceStatusReason::PersistenceUnavailable
+        ));
+    }
     const SHUTDOWN_MCP_FIXTURE: &str = r#"
 import json
 import pathlib

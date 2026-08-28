@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-28T03:16:00Z",
+  "forward": {
+    "source_commit": "171cbf8531534c7c56fd72aea2a9c815172e85dd",
+    "default_release_sha256": "e5e1690de5e92a9c3b49f3ab15820cd073c1b78e86b6f082f2f8170ca3881f14",
+    "server_full_release_sha256": "b6fe01c4f3e68e02ce5967da48d70d980880e01261a7c9d64bf8619e89450de2",
+    "installed": {
+      "health_http_status": 200,
+      "ready_http_status": 200,
+      "ready_mcp_tools": 6,
+      "boot_instance_id": "586bdaff-c660-43f2-a9d4-9c2e86119593",
+      "initial_revision": 10,
+      "on_revision": 11,
+      "final_off_revision": 12,
+      "inactive_warning_count_for_boot": 1
+    },
+    "http_scope_control": {
+      "governance_off_direct_tool_http_status": 200,
+      "governance_off_non_tool_actor_http_status": 403,
+      "non_tool_action": "spawn_agent",
+      "non_tool_code": "GOVERNANCE_DENIED"
+    },
+    "non_loopback": {
+      "configured_host": "0.0.0.0",
+      "effective_state": "required",
+      "effective_enabled": true,
+      "may_disable": false,
+      "reasons": [
+        "configured_host_not_allowed",
+        "bound_ingress_not_loopback"
+      ]
+    },
+    "jwt_required": {
+      "unauthenticated_http_status": 401,
+      "authenticated_http_status": 200,
+      "effective_state": "required",
+      "effective_enabled": true,
+      "may_disable": false,
+      "reasons": [
+        "jwt_required"
+      ]
+    }
+  },
+  "rollback": {
+    "source_commit": "0f97859f56bf9f097ba8ecc78b24daff6612145a",
+    "default_release_sha256": "d3975af6e8fb068404a990e0a598f7241a1d5a5ddea0ff3affe7c5c959f8a0ca",
+    "server_full_release_sha256": "4ff9e1157a139a30c7cc988e56afbe82e07907bf746293ae38ba32e05c5cbdcd",
+    "live": {
+      "boot_instance_id": "d953564f-c0b7-4950-8e73-ce17cc92e6ba",
+      "revision": 10,
+      "effective_state": "on",
+      "effective_enabled": true,
+      "mutation_available": false,
+      "reasons": [
+        "persistence_unavailable"
+      ],
+      "off_mutation_http_status": 500,
+      "off_mutation_error": "governance mutation is unavailable",
+      "status_after_rejection": "on"
+    }
+  }
+}

@@ -87,6 +87,7 @@ export const ChoicePickerMultiSelect: Story = {
           { label: "Cheese", value: "cheese" },
           { label: "Olives", value: "olives" },
         ],
+        value: [],
       },
     ]),
 };
@@ -129,7 +130,7 @@ export const HighContrastLongTranslation: Story = {
       { id: "root", component: "Column", children: ["heading", "field", "choice"] },
       { id: "heading", component: "Text", variant: "h2", text: "アクセシビリティ設定を確認してください" },
       { id: "field", component: "TextField", label: "共同作業者に表示する名前", variant: "longText" },
-      { id: "choice", component: "ChoicePicker", options: [{ label: "標準", value: "standard" }, { label: "緊急", value: "urgent" }] },
+      { id: "choice", component: "ChoicePicker", options: [{ label: "標準", value: "standard" }, { label: "緊急", value: "urgent" }], value: [] },
     ], {}, { theme: "high-contrast", locale: "ja", direction: "rtl" });
     return <div className="max-w-sm">{surface}</div>;
   },

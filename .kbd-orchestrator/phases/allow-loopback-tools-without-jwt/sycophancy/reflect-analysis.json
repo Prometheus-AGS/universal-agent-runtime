@@ -1,0 +1,14 @@
+{
+  "tool": "sycophancy-correction/analyze_reflect_phase",
+  "strictness": "strict",
+  "correction_attempt": {
+    "completed": false,
+    "error": "Validation failed: corrected_artifact is required when correction mode rewrites the artifact"
+  },
+  "detection_result": {
+    "corrected_reflect": null,
+    "delta_summary": "No changes needed: score below clean threshold and no sycophancy patterns were detected.",
+    "s08_detected": false,
+    "sycophancy_score": 0.0
+  }
+}

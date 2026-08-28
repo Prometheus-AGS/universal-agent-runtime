@@ -19,7 +19,10 @@ use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, info, warn};
 
-use super::{EntityTopic, LiveAction, LiveEvent, RealtimeBus};
+use super::{
+    EntityTopic, LiveAction, LiveEvent, RealtimeBus, RealtimePublishError,
+    is_governance_enabled_event,
+};
 
 /// Broadcast channel capacity per topic. Slow consumers get a `Lagged` error
 /// but the publisher never blocks.
@@ -118,6 +121,15 @@ impl RealtimeBus for LiveQueryBus {
     fn subscriber_count(&self, topic: EntityTopic) -> usize {
         LiveQueryBus::subscriber_count(self, topic)
     }
+
+    fn publish(&self, event: LiveEvent) -> std::result::Result<(), RealtimePublishError> {
+        let sender = self
+            .senders
+            .get(&event.topic)
+            .ok_or(RealtimePublishError::TopicUnavailable(event.topic))?;
+        let _ = sender.send(event);
+        Ok(())
+    }
 }
 
 async fn supervise_topic(db: Surreal<Any>, topic: EntityTopic, tx: broadcast::Sender<LiveEvent>) {
@@ -202,6 +214,14 @@ async fn run_live_stream(
             id,
             data: json,
         };
+
+        // Governance publishes this event explicitly only after the coherent
+        // runtime snapshot has advanced. Forwarding the database notification
+        // here could make clients refetch the old snapshot in the write→publish
+        // interval.
+        if is_governance_enabled_event(&event) {
+            continue;
+        }
 
         // `send` only errors when there are no subscribers — that's fine, just
         // means nobody is listening yet.

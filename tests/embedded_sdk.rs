@@ -16,9 +16,12 @@
 //! test ever needs a runtime-internal type to do its job, the facade is
 //! incomplete.
 
+#[cfg(feature = "in-memory-backend")]
 use std::sync::Arc;
 
+#[cfg(feature = "in-memory-backend")]
 use universal_agent_runtime::embedded::EmbeddedRuntime;
+#[cfg(feature = "in-memory-backend")]
 use universal_agent_runtime::uar::domain::skills::{Skill, SkillOrigin};
 
 /// Build a runtime the way an embedded host does: no server, no network.
@@ -77,6 +80,7 @@ async fn embedded_runtime() -> EmbeddedRuntime {
         .expect("an embedded runtime must build with no network services")
 }
 
+#[cfg(feature = "in-memory-backend")]
 fn skill(id: &str, title: &str) -> Skill {
     let mut s = Skill::default();
     s.skill_id = id.to_string();

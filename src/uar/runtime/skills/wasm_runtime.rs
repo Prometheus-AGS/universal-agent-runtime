@@ -51,6 +51,14 @@ pub struct WasmHostState {
     kv: std::collections::HashMap<String, String>,
 }
 
+impl std::fmt::Debug for WasmHostState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WasmHostState")
+            .field("kv_entries", &self.kv.len())
+            .finish_non_exhaustive()
+    }
+}
+
 impl Default for WasmHostState {
     fn default() -> Self {
         Self {

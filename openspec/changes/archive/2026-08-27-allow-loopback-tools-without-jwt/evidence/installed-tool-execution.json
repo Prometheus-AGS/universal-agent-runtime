@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-28T03:14:21Z",
+  "source_commit": "171cbf8531534c7c56fd72aea2a9c815172e85dd",
+  "installed_binary": {
+    "path": "/Users/gqadonis/.uar/bin/universal-agent-runtime",
+    "sha256": "b6fe01c4f3e68e02ce5967da48d70d980880e01261a7c9d64bf8619e89450de2",
+    "launch_agent": "com.prometheus.universal-agent-runtime",
+    "pid": 45385
+  },
+  "request": {
+    "method": "POST",
+    "endpoint": "http://127.0.0.1:1906/api/tools/native__memory_list/execute",
+    "headers": [
+      "Content-Type: application/json",
+      "X-Agent-Id: local-agent"
+    ],
+    "body": {
+      "arguments": {
+        "limit": 1
+      }
+    }
+  },
+  "governance_status": {
+    "boot_instance_id": "586bdaff-c660-43f2-a9d4-9c2e86119593",
+    "revision": 12,
+    "phase": "off",
+    "effective_state": "off",
+    "effective_enabled": false,
+    "may_disable": true,
+    "mutation_available": true,
+    "configured_host": "127.0.0.1",
+    "jwt_required": false,
+    "reasons": []
+  },
+  "response": {
+    "success": true,
+    "duration_ms": 0,
+    "result": {
+      "memories": [],
+      "message": "Memory system not enabled"
+    }
+  },
+  "non_tool_control": {
+    "method": "POST",
+    "endpoint": "http://127.0.0.1:1906/api/uar/actors",
+    "agent_id": "local-agent",
+    "http_status": 403,
+    "code": "GOVERNANCE_DENIED",
+    "action": "spawn_agent"
+  },
+  "inactive_warning_count_for_boot": 1
+}

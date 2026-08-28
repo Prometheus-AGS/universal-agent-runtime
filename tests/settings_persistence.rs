@@ -28,7 +28,7 @@ use anyhow::Result;
 use serde_json::{Value, json};
 use std::{
     collections::{HashMap, HashSet},
-    sync::Arc,
+    sync::{Arc, Mutex as StdMutex},
 };
 use uuid::Uuid;
 
@@ -40,12 +40,47 @@ use universal_agent_runtime::{
     },
     uar::{
         persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider},
+        realtime::{EntityTopic, LiveEvent, RealtimeBus, RealtimePublishError},
         settings::{
             manager::SettingsManager,
             schema::{SettingSource, Settings, SettingsType},
         },
     },
 };
+
+#[derive(Debug)]
+struct GovernanceRealtimeProbe {
+    status: universal_agent_runtime::uar::governance::runtime_control::GovernanceStatusHandle,
+    events: StdMutex<Vec<LiveEvent>>,
+    fail_publish: bool,
+}
+
+impl RealtimeBus for GovernanceRealtimeProbe {
+    fn subscribe(
+        &self,
+        _topic: EntityTopic,
+    ) -> Option<tokio::sync::broadcast::Receiver<LiveEvent>> {
+        None
+    }
+
+    fn subscriber_count(&self, _topic: EntityTopic) -> usize {
+        0
+    }
+
+    fn publish(&self, event: LiveEvent) -> std::result::Result<(), RealtimePublishError> {
+        if self.fail_publish {
+            return Err(RealtimePublishError::TopicUnavailable(event.topic));
+        }
+        let current = self.status.snapshot();
+        assert_eq!(
+            event.data.get("revision").and_then(Value::as_u64),
+            Some(current.revision),
+            "notification must be scheduled only after runtime publication"
+        );
+        self.events.lock().expect("events lock").push(event);
+        Ok(())
+    }
+}
 
 fn sealed_governance(
     configured_host: &str,
@@ -558,6 +593,12 @@ async fn mgr_schema_generated_namespace_values_round_trip() -> Result<()> {
         }
         namespaces_checked += 1;
         for row in rows {
+            // governance.enabled is a runtime-control mutation, not a generic
+            // schema write. Dedicated governance tests above exercise it with
+            // a sealed runtime authority.
+            if row.setting.key == "governance.enabled" {
+                continue;
+            }
             let original = row.setting.data.clone();
             mgr.set_value(&row.setting.key, original.clone()).await?;
             assert_eq!(
@@ -1142,6 +1183,129 @@ async fn governance_preference_defaults_off_toggles_resets_and_survives_restart(
         Some(true)
     );
     assert!(restart_gate.effective_enabled());
+    Ok(())
+}
+
+#[tokio::test]
+async fn api_owned_off_survives_fail_closed_rollback_and_forward_restart() -> Result<()> {
+    let (provider, _dir) = make_surreal().await;
+    let (forward_mutation, _, forward_status) =
+        sealed_governance("localhost", "127.0.0.1:1906", false);
+    let forward = Arc::new(
+        SettingsManager::new(Arc::clone(&provider))
+            .with_governance_runtime(forward_mutation.clone(), forward_status),
+    );
+    let plan = forward_mutation.preference_plan(None)?;
+    forward.apply_governance_preference_plan(&plan).await?;
+    forward
+        .initialize_with_governance_default(&minimal_config(), plan.target_enabled)
+        .await?;
+    forward_mutation.finalize_preference(&plan)?;
+    forward.set_value("governance.enabled", json!(true)).await?;
+    forward
+        .set_value("governance.enabled", json!(false))
+        .await?;
+
+    let (rollback_mutation, rollback_gate, rollback_status) =
+        sealed_governance("localhost", "127.0.0.1:1906", false);
+    let rollback = Arc::new(
+        SettingsManager::new(Arc::clone(&provider))
+            .with_governance_runtime(rollback_mutation.clone(), rollback_status),
+    );
+    rollback
+        .initialize_with_governance_default(&minimal_config(), true)
+        .await?;
+    rollback_mutation.finalize_mutation_unavailable()?;
+    assert!(rollback_gate.effective_enabled());
+    assert_eq!(
+        rollback.get_typed::<bool>("governance.enabled").await?,
+        Some(false),
+        "rollback must preserve an API-owned preference while enforcing On"
+    );
+
+    let (restored_mutation, restored_gate, restored_status) =
+        sealed_governance("localhost", "127.0.0.1:1906", false);
+    let restored = Arc::new(
+        SettingsManager::new(provider)
+            .with_governance_runtime(restored_mutation.clone(), restored_status),
+    );
+    let persisted = restored
+        .load_optional_persisted_value("governance.enabled")
+        .await?
+        .map(|value| value.as_bool().expect("stored governance value is boolean"));
+    let plan = restored_mutation.preference_plan(persisted)?;
+    restored.apply_governance_preference_plan(&plan).await?;
+    restored
+        .initialize_with_governance_default(&minimal_config(), plan.target_enabled)
+        .await?;
+    restored_mutation.finalize_preference(&plan)?;
+    assert!(!restored_gate.effective_enabled());
+    assert_eq!(
+        restored.get_typed::<bool>("governance.enabled").await?,
+        Some(false)
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn governance_notification_is_scheduled_after_runtime_publication() -> Result<()> {
+    let (provider, _dir) = make_surreal().await;
+    let (mutation, gate, status) = sealed_governance("localhost", "127.0.0.1:1906", false);
+    let probe = Arc::new(GovernanceRealtimeProbe {
+        status: status.clone(),
+        events: StdMutex::new(Vec::new()),
+        fail_publish: false,
+    });
+    let manager = Arc::new(
+        SettingsManager::new(provider)
+            .with_governance_runtime(mutation.clone(), status)
+            .with_realtime_bus(Some(Arc::clone(&probe) as Arc<dyn RealtimeBus>)),
+    );
+    let plan = mutation.preference_plan(None)?;
+    manager.apply_governance_preference_plan(&plan).await?;
+    manager
+        .initialize_with_governance_default(&minimal_config(), plan.target_enabled)
+        .await?;
+    mutation.finalize_preference(&plan)?;
+
+    manager.set_value("governance.enabled", json!(true)).await?;
+
+    assert!(gate.effective_enabled());
+    let events = probe.events.lock().expect("events lock");
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].data["key"], "governance.enabled");
+    assert_eq!(events[0].data["data"], true);
+    Ok(())
+}
+
+#[tokio::test]
+async fn governance_notification_failure_does_not_rollback_commit() -> Result<()> {
+    let (provider, _dir) = make_surreal().await;
+    let (mutation, gate, status) = sealed_governance("localhost", "127.0.0.1:1906", false);
+    let probe = Arc::new(GovernanceRealtimeProbe {
+        status: status.clone(),
+        events: StdMutex::new(Vec::new()),
+        fail_publish: true,
+    });
+    let manager = Arc::new(
+        SettingsManager::new(provider)
+            .with_governance_runtime(mutation.clone(), status)
+            .with_realtime_bus(Some(probe as Arc<dyn RealtimeBus>)),
+    );
+    let plan = mutation.preference_plan(None)?;
+    manager.apply_governance_preference_plan(&plan).await?;
+    manager
+        .initialize_with_governance_default(&minimal_config(), plan.target_enabled)
+        .await?;
+    mutation.finalize_preference(&plan)?;
+
+    manager.set_value("governance.enabled", json!(true)).await?;
+
+    assert!(gate.effective_enabled());
+    assert_eq!(
+        manager.get_typed::<bool>("governance.enabled").await?,
+        Some(true)
+    );
     Ok(())
 }
 
