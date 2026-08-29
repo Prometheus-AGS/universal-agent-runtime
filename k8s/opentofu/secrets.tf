@@ -57,14 +57,14 @@ resource "kubernetes_secret" "uar_app_secrets" {
   type = "Opaque"
 
   data = {
-    LLM_API_KEY              = var.llm_api_key
-    UAR_SECURITY__JWT_SECRET = var.jwt_secret
-    TAVILY_API_KEY           = var.tavily_api_key
+    LLM_API_KEY               = var.llm_api_key
+    UAR_SECURITY__JWT_SECRET  = var.jwt_secret
+    TAVILY_API_KEY            = var.tavily_api_key
     UAR_UNSTRUCTURED__API_KEY = var.unstructured_api_key
     # Used by the memory embedding service; falls back to OPENAI_API_KEY env var
-    OPENAI_API_KEY           = var.openai_api_key
+    OPENAI_API_KEY = var.openai_api_key
     # Redis DSN — the Redis Service is defined in redis.tf
-    REDIS_URL                = "redis://redis-svc.uar.svc.cluster.local:6379"
+    REDIS_URL = "redis://redis-svc.uar.svc.cluster.local:6379"
     # SurrealDB password — read by UAR memory service as UAR_MEMORY__SURREAL_PASS
     UAR_MEMORY__SURREAL_PASS = var.surreal_pass
   }

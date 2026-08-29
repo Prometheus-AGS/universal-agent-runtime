@@ -938,3 +938,44 @@ same authority returned by the mutation response.
 client's observation until focus, reconnect, Refresh, or bounded revalidation.
 The durable value and runtime authority remain committed; delivery is not
 misreported as a rolled-back mutation.
+
+---
+
+## 2026-08-28 — Record dependency releases by accepted source commit
+
+**Decision.** Pin Liter 1.18.2 at `c5c6caac`, Surreal Memory at `432eaa1e`,
+the Skill System parent at `ad5c82c6`, SurrealDB crates/server at 3.2.4, and the
+SurrealDB container by the exact 3.2.4 tag plus immutable OCI digest. Preserve
+UAR's standalone Surreal Memory manifest adaptations while copying reviewed
+implementation files byte-for-byte from the accepted leaf.
+
+**Rationale.** Exact source and image identities make the recursive source
+archive, local native release, and rendered deployment inputs independently
+auditable. Recording the source commits rather than only merge commits keeps
+the reviewed trees usable as gitlinks while remote-main reachability proves
+publication.
+
+**Uncomfortable constraint.** The canonical offline acceptance profile is
+`minimal`; the `server-full` profile links ONNX Runtime and cannot reconstruct
+that native dependency without network access. `server-full` remains the local
+Tier 3 binary profile and is not claimed as the offline archive profile.
+
+---
+
+## 2026-08-28 — Render chat artifacts with production A2UI v0.9.1
+
+**Decision.** Treat A2UI v0.9.1 as the production chat-artifact protocol. Emit
+effective-policy artifacts as `createSurface`, `updateComponents`, and
+`updateDataModel` messages using the certified UAR catalog; process them with
+`@prometheus-ags/a2ui-core` and render them with `@prometheus-ags/a2ui-uar`.
+Keep v1.0 candidate content unsupported until it becomes the production line.
+
+**Rationale.** The official A2UI specification identifies v0.9.1 as Current
+Production and v1.0 as Candidate. Rendering through the canonical processor and
+catalog preserves protocol validation and component allowlisting instead of
+turning serialized messages into an unstructured text surface.
+
+**Uncomfortable constraint.** Invalid and over-budget artifacts cannot retain
+unbounded original frames in the render path. They expose a bounded diagnostic
+source excerpt and remain visibly invalid rather than attempting a partial or
+unsafe render.

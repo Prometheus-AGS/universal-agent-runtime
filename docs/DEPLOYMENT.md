@@ -168,6 +168,55 @@ Key `values.yaml` knobs:
 | `hpa.enabled` | `true`, `2`–`10` replicas | Horizontal Pod Autoscaler |
 | `networkPolicies.enabled` | `true` | Namespace-scoped `NetworkPolicy` resources |
 
+## SurrealDB 2.x to 3.2.4 migration gate
+
+Every checked-in Compose, Kustomize, Helm, and OpenTofu SurrealDB workload is
+pinned to
+`surrealdb/surrealdb:v3.2.4@sha256:51baed8709f57f67dcf04b30e3177db846803fa9342dae2be58c6fa5f8d59843`.
+That pin is safe for a new datastore. It does **not** make an existing 2.x data
+directory readable by 3.x. The uncomfortable failure mode is an operator
+replacing the image first and discovering only then that the 3.x server cannot
+open the 2.x store.
+
+Use the official
+[SurrealDB 2.x-to-3.x procedure](https://github.com/surrealdb/docs.surrealdb.com/blob/main/src/content/build/migrating/from-old-surrealdb-versions/2x-to-3x.mdx)
+before applying these manifests to a 2.x-backed environment:
+
+1. Quiesce application writes, capture a restorable backup of the 2.x volume,
+   and record representative namespace/database counts and queries. Resolve the
+   migration diagnostics, including every item that requires manual changes.
+2. Keep the 2.x server running against its original volume. From the SurrealDB
+   3.2.4 CLI, create a v3-compatible export:
+
+   ```bash
+   surreal v2 export --v3 \
+     --namespace <namespace> \
+     --database <database> \
+     --token <v2-token> \
+     v2-export-for-v3.surql
+   ```
+
+3. Start an empty 3.2.4 target on a different endpoint and a new volume. Import
+   the export; never point the 3.x process at the 2.x data directory:
+
+   ```bash
+   surreal import \
+     --namespace <namespace> \
+     --database <database> \
+     --endpoint <v3-endpoint> \
+     --token <v3-token> \
+     v2-export-for-v3.surql
+   ```
+
+4. Repeat the recorded counts and representative queries against the 3.2.4
+   target, then prove an authenticated create/read/query cycle before changing
+   the application endpoint. Keep the 2.x volume and manifest available for
+   rollback until the 3.2.4 verification window closes.
+
+Rehearse the same sequence against disposable representative data before a
+production window. A rehearsal proves the command path and catches schema
+incompatibilities; it is not permission to migrate or delete production state.
+
 ## Configuration reference
 
 Both paths ultimately configure the same binary via `UAR_*` environment

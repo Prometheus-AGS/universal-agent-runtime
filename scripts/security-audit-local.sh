@@ -4,8 +4,131 @@ set -euo pipefail
 # Run release-blocking security checks locally and retain a source-bound receipt.
 # GitHub Actions are reserved for deployment execution and validation.
 
-output_directory="${1:?usage: security-audit-local.sh <output-directory>}"
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+check_documentation_image_inputs() {
+  local -a documentation_inputs=()
+  local candidate
+  local affected_input
+  local mime_type
+
+  for candidate in \
+    "$root/docs/adr" \
+    "$root/website/docs" \
+    "$root/website/src" \
+    "$root/website/static"; do
+    [[ -d "$candidate" ]] && documentation_inputs+=("$candidate")
+  done
+
+  affected_input="$(find "${documentation_inputs[@]}" -type f \
+    \( -iname '*.icns' -o -iname '*.jxl' -o -iname '*.heif' -o \
+       -iname '*.heic' -o -iname '*.avif' \) -print -quit)"
+  if [[ -n "$affected_input" ]]; then
+    echo "unsupported documentation image input: $affected_input" >&2
+    echo "ICNS, JXL, HEIF, HEIC, and AVIF are blocked while image-size has no patched release" >&2
+    return 1
+  fi
+
+  command -v file >/dev/null || {
+    echo "missing command required for documentation image content inspection: file" >&2
+    return 1
+  }
+  while IFS= read -r -d '' candidate; do
+    if ! mime_type="$(file --brief --mime-type -- "$candidate")"; then
+      echo "could not inspect documentation image input: $candidate" >&2
+      return 1
+    fi
+    case "$mime_type" in
+      image/icns | image/x-icns | image/jxl | image/heif | image/heic | image/avif)
+        echo "unsupported documentation image content ($mime_type): $candidate" >&2
+        echo "ICNS, JXL, HEIF, HEIC, and AVIF are blocked while image-size has no patched release" >&2
+        return 1
+        ;;
+    esac
+  done < <(find "${documentation_inputs[@]}" -type f -print0)
+}
+
+check_rkyv_advisory_inactive() {
+  local metadata
+  local inverse_tree
+
+  for command in cargo jq; do
+    command -v "$command" >/dev/null || {
+      echo "missing command required for rkyv advisory inspection: $command" >&2
+      return 1
+    }
+  done
+
+  if ! metadata="$(cargo metadata --manifest-path "$root/Cargo.toml" --locked --format-version 1)"; then
+    echo "could not resolve the locked Cargo graph for the rkyv advisory check" >&2
+    return 1
+  fi
+  if ! jq -e '.packages[] | select(.name == "rkyv" and .version == "0.7.46")' \
+    <<<"$metadata" >/dev/null; then
+    echo "rkyv 0.7.46 is absent from locked package metadata; no advisory exception is active."
+    return 0
+  fi
+
+  if ! inverse_tree="$(cargo tree --manifest-path "$root/Cargo.toml" \
+    --locked --all-features --target all --edges all -i rkyv@0.7.46)"; then
+    echo "could not inspect reverse dependencies for rkyv 0.7.46" >&2
+    return 1
+  fi
+  if [[ -n "$inverse_tree" ]]; then
+    echo "$inverse_tree" >&2
+    echo "RUSTSEC-2026-0235 may be ignored only while rkyv 0.7.46 is inactive for every supported target and feature" >&2
+    return 1
+  fi
+
+  echo "rkyv 0.7.46 is lockfile-only and inactive for all targets and feature edges."
+}
+
+audit_website_dependencies() {
+  local audit_json
+  local audit_status=0
+
+  audit_json="$(mktemp "${TMPDIR:-/tmp}/uar-website-audit.XXXXXX")"
+  npm --prefix "$root/website" audit --json >"$audit_json" 2>&1 || audit_status=$?
+
+  if jq -e '
+    ([.vulnerabilities[]?.via[]? | objects | .source] | sort | unique) as $sources
+    | (($sources == []) and (.metadata.vulnerabilities.total == 0))
+      or (($sources == [1138808, 1138809])
+          and (.vulnerabilities["image-size"].fixAvailable == false))
+  ' "$audit_json" >/dev/null; then
+    cat "$audit_json"
+    if [[ "$audit_status" -ne 0 ]]; then
+      echo "Only the two approved, unpatched image-size build-input advisories remain."
+    fi
+    rm -f "$audit_json"
+    return 0
+  fi
+
+  cat "$audit_json" >&2
+  rm -f "$audit_json"
+  echo "website dependency audit contains an advisory outside the bounded image-size exception" >&2
+  return 1
+}
+
+if [[ "${1:-}" == "--check-doc-image-inputs-only" ]]; then
+  check_documentation_image_inputs
+  echo "Documentation image inputs passed the image-size advisory gate."
+  exit 0
+fi
+
+if [[ "${1:-}" == "--check-website-audit-only" ]]; then
+  audit_website_dependencies
+  echo "Website dependencies contain no unaccepted advisories."
+  exit 0
+fi
+
+if [[ "${1:-}" == "--check-rkyv-advisory-only" ]]; then
+  check_rkyv_advisory_inactive
+  echo "The rkyv advisory exception is mechanically bounded to an inactive lockfile entry."
+  exit 0
+fi
+
+output_directory="${1:?usage: security-audit-local.sh <output-directory> | --check-doc-image-inputs-only | --check-website-audit-only | --check-rkyv-advisory-only}"
 repository="${GITHUB_REPOSITORY:-Prometheus-AGS/universal-agent-runtime}"
 image="${UAR_SECURITY_IMAGE:?UAR_SECURITY_IMAGE must be a digest-addressed candidate image}"
 
@@ -41,13 +164,17 @@ run_check() {
   fi
 }
 
+run_check rkyv-0.7-inactive check_rkyv_advisory_inactive
 run_check cargo-audit cargo audit \
   --ignore RUSTSEC-2026-0194 \
   --ignore RUSTSEC-2026-0195 \
+  --ignore RUSTSEC-2026-0235 \
   --ignore RUSTSEC-2023-0071
 run_check pnpm-root-audit pnpm audit
 run_check pnpm-frontend-audit pnpm -C frontend audit
+run_check npm-website-audit audit_website_dependencies
 run_check npm-typescript-sdk-audit npm --prefix sdks/typescript audit
+run_check documentation-image-inputs check_documentation_image_inputs
 run_check osv-source-scan osv-scanner --recursive --skip-git "$root"
 run_check grype-image-scan grype "$image" --fail-on high
 

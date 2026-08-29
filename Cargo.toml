@@ -411,15 +411,9 @@ schemars = "1"
 arc-swap = "1.6"
 # Optional HashiCorp Vault KV-v2 source, gated behind the `vault` feature.
 vaultrs = { version = "0.8", optional = true }
-## Pinned to =3.2.0 (exact) so UAR, librefang, and surreal-memory all link
-## the same SurrealDB client crate. See Phase 4b of the
-## librefang `surrealdb-storage-swap` plan for the matching workspace pin.
-## Bumped from =3.0.5 (uar-security-deps-and-hygiene, 2026-07-04): resolves
-## every open surrealdb Dependabot alert (highest requirement was <3.1.5;
-## 3.2.0 is the actual crates.io latest, chosen over the more conservative
-## 3.1.5 dedicated security-patch release per explicit user direction).
-## surreal-memory's own pin (surrealdb = "3.0.5", a caret range) is
-## satisfied by 3.2.0 without needing a change in that repo.
+## Pinned to =3.2.4 (exact) so UAR, librefang, surreal-memory, and the deployed
+## SurrealDB server remain on the same verified release baseline. The curated
+## surreal-memory manifest carries the matching exact SDK and schema-type pins.
 surrealdb = { version = "=3.2.4", optional = true, features = ["kv-surrealkv"] }
 jsonschema = { version = "0.49.4", default-features = false }
 governor = { version = "0.10.4", features = ["std", "jitter", "quanta"] }

@@ -1,8 +1,22 @@
 import { CheckCircle2Icon, Loader2Icon, PanelTopOpenIcon } from "lucide-react";
 import { type FC, useMemo, useState } from "react";
+import { A2uiMessageSchema, MessageProcessor } from "@prometheus-ags/a2ui-core/v0_9";
+import { UarSurface, uarBasicCatalog } from "@prometheus-ags/a2ui-uar";
 
-import type { A2uiComponent } from "@/features/a2ui/a2ui-protocol";
+import {
+  A2UI_PROFILE,
+  A2UI_VERSION,
+  type A2uiComponent,
+} from "@/features/a2ui/a2ui-protocol";
+import {
+  MAX_A2UI_COMPONENTS,
+  MAX_A2UI_MESSAGES,
+  MAX_A2UI_SOURCE_BYTES,
+  MAX_A2UI_SURFACES,
+} from "@/features/a2ui/a2ui-rendering-limits";
 import { A2uiSurfaceRenderer } from "@/features/a2ui/a2ui-surface-renderer";
+import { JsonSource } from "@/features/chat/ui/chunks/chunk-surface";
+import { useTheme } from "@/hooks/use-theme";
 import { useToolApprovalActions } from "@/hooks/use-tool-approval";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -187,22 +201,163 @@ interface A2uiDisplayBlockProps {
   title: string;
   content: string;
   language?: string;
+  profile?: string;
+  validation?: "valid" | "invalid" | "unknown-component";
+  validationError?: string;
 }
 
-export const A2uiDisplayBlock: FC<A2uiDisplayBlockProps> = ({ artifactType, title, content, language }) => {
-  const components: A2uiComponent[] = [
-    { id: "title", component: "Text", text: title || "Artifact", variant: "h2" },
-    { id: "content", component: "Text", text: content, variant: "body" },
-    { id: "root", component: "Column", children: ["title", "content"] },
-  ];
+function parseMessageSource(content: string): unknown[] {
+  if (new TextEncoder().encode(content).byteLength > MAX_A2UI_SOURCE_BYTES) {
+    throw new Error(`A2UI source exceeds the ${MAX_A2UI_SOURCE_BYTES / 1024} KiB rendering limit.`);
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    const lines = content.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (lines.length === 0) throw new Error("The artifact contains no A2UI messages.");
+    parsed = lines.map((line) => JSON.parse(line) as unknown);
+  }
+
+  const messages = Array.isArray(parsed)
+    ? parsed
+    : isRecord(parsed) && Array.isArray(parsed.messages)
+      ? parsed.messages
+      : [parsed];
+  if (messages.length > MAX_A2UI_MESSAGES) {
+    throw new Error(`A2UI source exceeds the ${MAX_A2UI_MESSAGES}-message rendering limit.`);
+  }
+  return messages;
+}
+
+function boundedDiagnosticSource(content: string): string {
+  const encoder = new TextEncoder();
+  const sourceBytes = encoder.encode(content);
+  if (sourceBytes.byteLength <= MAX_A2UI_SOURCE_BYTES) return content;
+
+  const notice = `\n\n[A2UI source truncated at ${MAX_A2UI_SOURCE_BYTES / 1024} KiB.]`;
+  const noticeBytes = encoder.encode(notice);
+  const excerptBytes = sourceBytes.slice(0, MAX_A2UI_SOURCE_BYTES - noticeBytes.byteLength - 4);
+  return `${new TextDecoder().decode(excerptBytes)}${notice}`;
+}
+
+function validateMessage(raw: unknown) {
+  if (!isRecord(raw)) throw new Error("Each A2UI message must be a JSON object.");
+  const { profile, ...message } = raw;
+  if (profile !== undefined && profile !== A2UI_PROFILE) {
+    throw new Error(`Unsupported A2UI profile: ${String(profile)}`);
+  }
+  if (message.version !== A2UI_VERSION) {
+    throw new Error(`Unsupported A2UI version: ${String(message.version ?? "missing")}. Expected ${A2UI_VERSION}.`);
+  }
+  const parsed = A2uiMessageSchema.parse(message);
+  if ("updateComponents" in parsed) {
+    for (const component of parsed.updateComponents.components) {
+      if (component.component && !uarBasicCatalog.components.has(component.component)) {
+        throw new Error(`Unapproved A2UI component: ${component.component}`);
+      }
+    }
+  }
+  return parsed;
+}
+
+function processA2uiDisplayContent(content: string) {
+  const processor = new MessageProcessor(
+    [uarBasicCatalog],
+    undefined,
+    { version: A2UI_VERSION },
+  );
+  const messages = parseMessageSource(content).map(validateMessage);
+  if (messages.length === 0) throw new Error("The artifact contains no A2UI messages.");
+  const componentCount = messages.reduce((count, message) => (
+    "updateComponents" in message
+      ? count + message.updateComponents.components.length
+      : count
+  ), 0);
+  if (componentCount > MAX_A2UI_COMPONENTS) {
+    throw new Error(`A2UI source exceeds the ${MAX_A2UI_COMPONENTS}-component rendering limit.`);
+  }
+  processor.processMessages(messages);
+  const surfaces = [...processor.model.surfacesMap.values()];
+  if (surfaces.length > MAX_A2UI_SURFACES) {
+    throw new Error(`A2UI source exceeds the ${MAX_A2UI_SURFACES}-surface rendering limit.`);
+  }
+  const deleted = surfaces.length === 0 && messages.some((message) => "deleteSurface" in message);
+  if (surfaces.length === 0 && !deleted) throw new Error("The artifact did not create an A2UI surface.");
+  return { surfaces, deleted };
+}
+
+export const A2uiDisplayBlock: FC<A2uiDisplayBlockProps> = ({
+  artifactType,
+  title,
+  content,
+  language,
+  profile,
+  validation = "valid",
+  validationError,
+}) => {
+  const { resolved: theme } = useTheme();
+  const diagnosticSource = useMemo(() => boundedDiagnosticSource(content), [content]);
+  const rendered = useMemo(() => {
+    if (validation !== "valid") {
+      return { surfaces: [], error: validationError ?? "The A2UI artifact failed validation." };
+    }
+    if (profile !== A2UI_PROFILE) {
+      return {
+        surfaces: [],
+        error: profile
+          ? `Unsupported A2UI profile: ${profile}`
+          : "The artifact is missing its required UAR A2UI profile.",
+      };
+    }
+    try {
+      return { ...processA2uiDisplayContent(content), error: null };
+    } catch (error) {
+      return {
+        surfaces: [],
+        deleted: false,
+        error: error instanceof Error ? error.message : "The A2UI artifact could not be rendered.",
+      };
+    }
+  }, [content, profile, validation, validationError]);
+
+  const renderedSuccessfully = rendered.error === null;
   return (
     <section className="my-2 rounded-xl bg-card px-3 py-3" aria-label="A2UI display artifact">
-      <div className="mb-3 flex items-center gap-2">
+      <div className="mb-3 flex min-w-0 items-center gap-2">
         <PanelTopOpenIcon size={14} className="text-primary" aria-hidden="true" />
         <span className="eyebrow">Artifact</span>
-        <span className="ml-auto font-mono text-[10px] text-fg-faint">{artifactType}{language ? ` · ${language}` : ""}</span>
+        <span className="ml-auto truncate font-mono text-[10px] text-fg-faint">
+          {renderedSuccessfully ? `A2UI ${A2UI_VERSION} · ${rendered.deleted ? "removed" : "rendered"}` : "Invalid surface"}
+          {artifactType ? ` · ${artifactType}` : ""}
+          {language && language !== "a2ui" ? ` · ${language}` : ""}
+        </span>
       </div>
-      <A2uiSurfaceRenderer components={components} data={{}} onDataChange={() => undefined} onAction={() => undefined} />
+      {renderedSuccessfully && rendered.deleted ? (
+        <p className="rounded-lg bg-surface px-3 py-3 text-sm text-fg-sub" role="status">Surface removed.</p>
+      ) : renderedSuccessfully ? (
+        <div className="space-y-3">
+          {rendered.surfaces.map((surface) => (
+            <UarSurface
+              key={surface.id}
+              surface={surface}
+              theme={theme}
+              resetKey={`${surface.id}:${content.length}`}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div role="alert" className="rounded-lg bg-destructive/10 px-3 py-2">
+            <p className="text-sm font-medium text-destructive">{title || "Artifact"} could not be rendered.</p>
+            <p className="mt-1 break-words text-xs text-fg-sub">{rendered.error}</p>
+          </div>
+          <details className="rounded-lg bg-surface px-3 py-2 text-sm [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
+            <summary className="min-h-11 cursor-pointer py-3 font-medium text-fg-sub">View A2UI source</summary>
+            <JsonSource value={diagnosticSource} label={`${title || "Artifact"} A2UI source`} />
+          </details>
+        </div>
+      )}
     </section>
   );
 };

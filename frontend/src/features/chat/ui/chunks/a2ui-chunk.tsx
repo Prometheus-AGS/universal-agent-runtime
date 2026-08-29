@@ -26,6 +26,10 @@ export function A2uiChunkView({ chunk }: { chunk: A2uiDisplayChunk | A2uiInputCh
       artifactType={chunk.component}
       title={typeof payload.title === "string" ? payload.title : "Generated surface"}
       content={typeof payload.content === "string" ? payload.content : JSON.stringify(payload)}
+      language={typeof payload.language === "string" ? payload.language : undefined}
+      profile={chunk.profile}
+      validation={chunk.validation}
+      validationError={chunk.validationError}
     />
   );
 }

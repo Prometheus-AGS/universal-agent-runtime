@@ -50,6 +50,13 @@ Update `catalog/SNAPSHOT.md` with the date, digest, entry count, and both source
 commits only after reviewing the provider/model diff and running the bounded
 catalog/routing checks required by the active phase.
 
+The current reviewed runtime-input baseline is also recorded in
+`versions.toml`: Liter 1.18.2 at
+`c5c6caac617eb931cd5009146a70831422ec236c`, the curated Surreal Memory source
+at `432eaa1ebbef66fc02b9bb1a1e63cc2fdb2149e8`, and the Skill System parent at
+`ad5c82c6c16145637c589a3ddfa06e0f20d603e7`. Each commit is reachable from its
+authoritative remote `main` branch before UAR records it.
+
 Local model refresh is similarly explicit:
 
 ```bash

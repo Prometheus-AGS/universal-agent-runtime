@@ -64,7 +64,7 @@ services:
       - uar-network
 
   surreal:
-    image: surrealdb/surrealdb:latest
+    image: surrealdb/surrealdb:v3.2.4@sha256:51baed8709f57f67dcf04b30e3177db846803fa9342dae2be58c6fa5f8d59843
     ports:
       - "8000:8000"
     command: start --log trace --user root --pass root --bind 0.0.0.0:8000 file://data/surreal.db

@@ -9,8 +9,15 @@ import type {
   StreamingState,
   ToolCallContentBlock,
 } from "@/types/chat-content";
-import type { Chunk, SkillActivationChunk } from "@/features/chat/model/chunk";
+import type { A2uiDisplayChunk, Chunk, SkillActivationChunk } from "@/features/chat/model/chunk";
 import { toChunks } from "@/features/chat/model/to-chunks";
+import { A2UI_PROFILE } from "@/features/a2ui/a2ui-protocol";
+
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
 
 /** Per-message metadata surfaced in the action bar (agent that answered, model, usage). */
 export interface MessageMeta {
@@ -293,14 +300,17 @@ export const useChatMessageStore = create<ChatMessageStore>()(
           return;
         }
         if (toolCall.toolName === "__a2ui_input__") {
-          const inputChunk = { ...base, kind: "a2ui-input" as const, toolCallId: toolCall.toolCallId, profile: "a2ui/v0.9", component: String(toolCall.args.artifactType ?? "input"), requestId: String(toolCall.args.runId ?? toolCall.toolCallId), payload: toolCall.args, status: "awaiting" as const };
+          const inputChunk = { ...base, kind: "a2ui-input" as const, toolCallId: toolCall.toolCallId, profile: A2UI_PROFILE, component: String(toolCall.args.artifactType ?? "input"), requestId: String(toolCall.args.runId ?? toolCall.toolCallId), payload: toolCall.args, status: "awaiting" as const };
           message.content.push({ type: "artifact", id: toolCall.toolCallId, kind: "application/vnd.uar.a2ui-input+json", content: JSON.stringify({ profile: inputChunk.profile, component: inputChunk.component, requestId: inputChunk.requestId, payload: inputChunk.payload, status: inputChunk.status }) });
           chunks.push(inputChunk);
           return;
         }
         if (toolCall.toolName === "__a2ui_display__") {
-          const displayChunk = { ...base, kind: "a2ui-display" as const, toolCallId: toolCall.toolCallId, profile: "a2ui/v0.9", component: String(toolCall.args.artifactType ?? "surface"), payload: { ...toolCall.args, content: toolCall.result }, validation: "valid" as const };
-          message.content.push({ type: "artifact", id: toolCall.toolCallId, kind: "application/vnd.uar.a2ui+json", content: JSON.stringify({ profile: displayChunk.profile, component: displayChunk.component, payload: displayChunk.payload, validation: displayChunk.validation }) });
+          const metadata = record(toolCall.args.metadata);
+          const declaredValidation = toolCall.args.validation;
+          const validation: A2uiDisplayChunk["validation"] = declaredValidation === "invalid" || declaredValidation === "unknown-component" ? declaredValidation : "valid";
+          const displayChunk = { ...base, kind: "a2ui-display" as const, toolCallId: toolCall.toolCallId, profile: typeof metadata.profile === "string" ? metadata.profile : "", version: typeof metadata.protocol_version === "string" ? metadata.protocol_version : undefined, component: String(toolCall.args.artifactType ?? "surface"), payload: { ...toolCall.args, content: toolCall.result }, validation, validationError: typeof toolCall.args.validationError === "string" ? toolCall.args.validationError : undefined };
+          message.content.push({ type: "artifact", id: toolCall.toolCallId, kind: "application/vnd.uar.a2ui+json", content: JSON.stringify({ profile: displayChunk.profile, component: displayChunk.component, payload: displayChunk.payload, validation: displayChunk.validation, validationError: displayChunk.validationError }) });
           chunks.push(displayChunk);
           return;
         }
@@ -357,12 +367,17 @@ export const useChatMessageStore = create<ChatMessageStore>()(
             return;
           }
           if (chunk?.kind === "a2ui-display" && update.result !== undefined) {
+            const updateArgs = record(update.args);
             const payload = chunk.payload && typeof chunk.payload === "object" && !Array.isArray(chunk.payload)
               ? chunk.payload as Record<string, unknown>
               : {};
             chunk.payload = { ...payload, content: update.result };
+            if (updateArgs.validation === "invalid" || updateArgs.validation === "unknown-component") {
+              chunk.validation = updateArgs.validation;
+              chunk.validationError = typeof updateArgs.validationError === "string" ? updateArgs.validationError : undefined;
+            }
             const artifact = msg.content.find((block) => block.type === "artifact" && block.id === toolCallId);
-            if (artifact?.type === "artifact") artifact.content = JSON.stringify({ profile: chunk.profile, component: chunk.component, payload: chunk.payload, validation: chunk.validation });
+            if (artifact?.type === "artifact") artifact.content = JSON.stringify({ profile: chunk.profile, component: chunk.component, payload: chunk.payload, validation: chunk.validation, validationError: chunk.validationError });
             return;
           }
         }

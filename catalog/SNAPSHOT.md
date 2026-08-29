@@ -1,12 +1,12 @@
 # Provider catalog snapshot
 
 - File: `provider_catalog.json`
-- Snapshot date: 2026-08-23
-- SHA-256: `c4704316b380e40c9b2d093eb4c1704a2574d4a13ecc0d5b5d1943bc5ded1bb6`
-- Entries: 316 providers
+- Snapshot date: 2026-08-28
+- SHA-256: `898786703b804218bd4acc54a624a85832f16bc2ae16ab4cddd5fa7c59babca3`
+- Entries: 322 providers
 - Sources:
   - Know-Me-Tools `models.dev` catalog, commit `f97df19af40bc322ccbffc91138f360154940a63`
-  - liter-llm provider and catalog schemas, commit `788877f7ad238eaef4173bea2481b1731b0bbe12`
+  - liter-llm provider and catalog schemas, commit `c5c6caac617eb931cd5009146a70831422ec236c`
 
 The file is the reviewed merged output previously produced by the UAR catalog
 builder. Release builds copy it verbatim and perform no network access. Refresh

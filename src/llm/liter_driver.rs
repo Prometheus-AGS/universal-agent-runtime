@@ -8,7 +8,7 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use futures::{Stream, StreamExt};
+use futures::Stream;
 use liter_llm::{
     ChatCompletionChunk, ChatCompletionRequest, ClientConfig, DefaultClient, FinishReason,
     LlmClient, StreamOptions, ToolChoice, ToolChoiceMode,
@@ -118,6 +118,15 @@ fn build_chat_request(
     Ok(chat_req)
 }
 
+fn record_call_latency(model: &str, call_start: std::time::Instant) {
+    let (provider, model_name) = model.split_once('/').unwrap_or(("unknown", model));
+    telemetry_metrics::record_llm_call_latency(
+        provider,
+        model_name,
+        call_start.elapsed().as_secs_f64(),
+    );
+}
+
 #[async_trait::async_trait]
 impl LlmDriver for LiterLlmDriver {
     #[tracing::instrument(
@@ -132,41 +141,39 @@ impl LlmDriver for LiterLlmDriver {
     {
         let chat_req = build_chat_request(&self.model, self.parallel_tool_calls, &req)?;
 
-        // Collect chunks eagerly into a Vec, then stream owned events.
-        // This is necessary because liter-llm's BoxStream borrows from the client
-        // and cannot be moved into a 'static stream directly.
+        // liter-llm returns an owned `'static` chunk stream. Return the normalized
+        // stream immediately so the orchestrator's stream-start timeout covers
+        // only request establishment, not the full model completion.
         let metrics_model = self.model.clone();
 
-        // Time the full LLM call (request → all chunks collected) and record it as
-        // a per-call latency histogram.
+        // Time the full LLM call (request → stream completion) and record it as
+        // a per-call latency histogram when the returned stream finishes.
         let call_start = std::time::Instant::now();
-        let chunk_stream = self.client.chat_stream(chat_req).await?;
-        let chunks: Vec<Result<ChatCompletionChunk, _>> = chunk_stream.collect().await;
-        {
-            let (provider, model_name) = metrics_model
-                .split_once('/')
-                .unwrap_or(("unknown", &metrics_model));
-            telemetry_metrics::record_llm_call_latency(
-                provider,
-                model_name,
-                call_start.elapsed().as_secs_f64(),
-            );
-        }
+        let call_span = tracing::Span::current();
+        let mut chunk_stream = self.client.chat_stream(chat_req).await?;
 
         let out = async_stream::stream! {
             let mut tool_accum: BTreeMap<u32, ToolAccum> = BTreeMap::new();
             let mut chunk_count: u64 = 0;
             let mut event_count: u64 = 0;
 
-            for chunk_result in chunks {
+            loop {
+                let next_chunk = futures::future::poll_fn(|cx| {
+                    call_span.in_scope(|| chunk_stream.as_mut().poll_next(cx))
+                })
+                .await;
+                let Some(chunk_result) = next_chunk else {
+                    break;
+                };
                 let chunk: ChatCompletionChunk = match chunk_result {
                     Ok(c) => c,
                     Err(e) => {
+                        record_call_latency(&metrics_model, call_start);
                         yield Ok(NormalizedEvent::Error {
                             message: e.to_string(),
                             code: Some("liter_llm_stream_error".to_string()),
                         });
-                        break;
+                        return;
                     }
                 };
 
@@ -266,11 +273,15 @@ impl LlmDriver for LiterLlmDriver {
                 }
             }
 
-            tracing::info!(
-                total_chunks = chunk_count,
-                total_events = event_count,
-                "liter-llm stream complete"
-            );
+            record_call_latency(&metrics_model, call_start);
+
+            call_span.in_scope(|| {
+                tracing::info!(
+                    total_chunks = chunk_count,
+                    total_events = event_count,
+                    "liter-llm stream complete"
+                );
+            });
 
             yield Ok(NormalizedEvent::Done);
         };
@@ -283,6 +294,8 @@ impl LlmDriver for LiterLlmDriver {
 mod prompt_caching_tests {
     use super::*;
     use crate::llm::anthropic_cache::CacheStrategy;
+    use futures::StreamExt;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     fn request(cache_strategy: Option<CacheStrategy>) -> LlmRequest {
         LlmRequest {
@@ -311,6 +324,162 @@ mod prompt_caching_tests {
             serde_json::to_value(disabled).expect("serialize disabled request"),
             "UAR prompt-caching policy must not alter OpenAI-compatible bodies"
         );
+    }
+
+    #[tokio::test]
+    async fn driver_returns_before_provider_stream_finishes() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind mock provider");
+        let address = listener.local_addr().expect("mock provider address");
+
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.expect("accept request");
+            let mut request_bytes = Vec::new();
+            let mut buffer = [0_u8; 1024];
+            while !request_bytes.windows(4).any(|window| window == b"\r\n\r\n") {
+                let read = socket.read(&mut buffer).await.expect("read request");
+                assert!(read > 0, "provider request ended before its headers");
+                request_bytes.extend_from_slice(&buffer[..read]);
+            }
+
+            socket
+                .write_all(
+                    b"HTTP/1.1 200 OK\r\n\
+                      Content-Type: text/event-stream\r\n\
+                      Transfer-Encoding: chunked\r\n\
+                      Connection: close\r\n\r\n",
+                )
+                .await
+                .expect("write response headers");
+
+            let first = concat!(
+                "data: {\"id\":\"stream-test\",\"object\":\"chat.completion.chunk\",",
+                "\"created\":0,\"model\":\"test\",\"choices\":[{\"index\":0,",
+                "\"delta\":{\"content\":\"hello\"},\"finish_reason\":null}]}\n\n"
+            );
+            let first_frame = format!("{:X}\r\n{first}\r\n", first.len());
+            socket
+                .write_all(first_frame.as_bytes())
+                .await
+                .expect("write first stream chunk");
+            socket.flush().await.expect("flush first stream chunk");
+
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            let done = "data: [DONE]\n\n";
+            let done_frame = format!("{:X}\r\n{done}\r\n0\r\n\r\n", done.len());
+            socket
+                .write_all(done_frame.as_bytes())
+                .await
+                .expect("finish provider stream");
+        });
+
+        let config = liter_llm::ClientConfigBuilder::new("test-key")
+            .base_url(format!("http://{address}/v1"))
+            .max_retries(0)
+            .build();
+        let driver = LiterLlmDriver::new(config, "openai/test".to_string(), Some(false))
+            .expect("build Liter driver");
+
+        let mut stream = tokio::time::timeout(
+            std::time::Duration::from_secs(1),
+            driver.stream(request(None)),
+        )
+        .await
+        .expect("driver must return after the upstream stream is established")
+        .expect("create normalized stream");
+
+        let first_event = tokio::time::timeout(std::time::Duration::from_secs(1), stream.next())
+            .await
+            .expect("first upstream chunk must be forwarded without full-response buffering")
+            .expect("normalized event")
+            .expect("successful normalized event");
+        assert!(
+            matches!(first_event, NormalizedEvent::MessageDelta { ref text } if text == "hello"),
+            "unexpected first normalized event: {first_event:?}"
+        );
+
+        server.await.expect("mock provider task");
+    }
+
+    #[tokio::test]
+    async fn failed_provider_stream_records_latency_before_error_is_yielded() {
+        telemetry_metrics::init();
+        let model = "metric-error-test";
+        let metric_count = || {
+            telemetry_metrics::metrics_handle()
+                .render()
+                .lines()
+                .find(|line| {
+                    line.starts_with("uar_llm_call_duration_seconds_count")
+                        && line.contains("provider=\"openai\"")
+                        && line.contains(&format!("model=\"{model}\""))
+                })
+                .and_then(|line| line.split_whitespace().last())
+                .and_then(|value| value.parse::<u64>().ok())
+                .unwrap_or(0)
+        };
+        let count_before = metric_count();
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind mock provider");
+        let address = listener.local_addr().expect("mock provider address");
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.expect("accept request");
+            let mut request_bytes = Vec::new();
+            let mut buffer = [0_u8; 1024];
+            while !request_bytes.windows(4).any(|window| window == b"\r\n\r\n") {
+                let read = socket.read(&mut buffer).await.expect("read request");
+                assert!(read > 0, "provider request ended before its headers");
+                request_bytes.extend_from_slice(&buffer[..read]);
+            }
+
+            socket
+                .write_all(
+                    b"HTTP/1.1 200 OK\r\n\
+                      Content-Type: text/event-stream\r\n\
+                      Transfer-Encoding: chunked\r\n\
+                      Connection: close\r\n\r\n",
+                )
+                .await
+                .expect("write response headers");
+            let invalid = "data: not-json\n\n";
+            let invalid_frame = format!("{:X}\r\n{invalid}\r\n0\r\n\r\n", invalid.len());
+            socket
+                .write_all(invalid_frame.as_bytes())
+                .await
+                .expect("write invalid stream chunk");
+        });
+
+        let config = liter_llm::ClientConfigBuilder::new("test-key")
+            .base_url(format!("http://{address}/v1"))
+            .max_retries(0)
+            .build();
+        let driver = LiterLlmDriver::new(config, format!("openai/{model}"), Some(false))
+            .expect("build Liter driver");
+        let mut stream = driver
+            .stream(request(None))
+            .await
+            .expect("create normalized stream");
+
+        let event = tokio::time::timeout(std::time::Duration::from_secs(1), stream.next())
+            .await
+            .expect("invalid provider chunk must produce an event")
+            .expect("normalized event")
+            .expect("stream errors are normalized events");
+        assert!(
+            matches!(event, NormalizedEvent::Error { ref code, .. } if code.as_deref() == Some("liter_llm_stream_error")),
+            "unexpected normalized event: {event:?}"
+        );
+        drop(stream);
+
+        assert_eq!(
+            metric_count(),
+            count_before + 1,
+            "failed streams must record latency before consumers can drop the normalized stream"
+        );
+        server.await.expect("mock provider task");
     }
 }
 

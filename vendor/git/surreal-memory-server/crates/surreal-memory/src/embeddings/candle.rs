@@ -1,19 +1,16 @@
-use super::{Embedding, EmbeddingService};
+use super::{Embedding, EmbeddingPlanPart, EmbeddingService};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use candle_core::{DType, Device, Tensor};
 use candle_nn::VarBuilder;
 use candle_transformers::models::bert::{BertModel, Config as BertConfig};
-use hf_hub::{Repo, RepoType, api::tokio::Api};
+use hf_hub::{Repo, RepoType, api::tokio::ApiBuilder};
+use sha2::{Digest, Sha256};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 use tokenizers::Tokenizer;
 use tokio::sync::{Mutex, OnceCell};
-
-/// Upper bound on a cold-cache HuggingFace model download. Exceeding it yields a
-/// typed error instead of an open-ended hang on the write path.
-const MODEL_DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(300);
 
 /// Inner struct that holds the actual loaded model
 /// The mutex protects all GPU operations to prevent Metal command buffer conflicts
@@ -23,6 +20,7 @@ struct CandleEmbeddingsInner {
     device: Device,
     #[allow(dead_code)] // Kept for potential future use in dimension validation
     dimensions: usize,
+    max_input_tokens: usize,
 }
 
 /// Thread-safe wrapper that serializes all GPU operations.
@@ -33,6 +31,7 @@ struct CandleEmbeddingsInner {
 pub struct CandleEmbeddings {
     inner: OnceCell<Arc<Mutex<CandleEmbeddingsInner>>>,
     model_id: String,
+    model_revision: String,
     cache_dir: String,
     expected_dimensions: usize,
 }
@@ -54,6 +53,8 @@ impl CandleEmbeddings {
         Ok(Self {
             inner: OnceCell::new(),
             model_id: model_id.to_string(),
+            model_revision: std::env::var("LOCAL_EMBEDDING_MODEL_REVISION")
+                .unwrap_or_else(|_| "main".to_string()),
             cache_dir: cache_dir.to_string(),
             expected_dimensions,
         })
@@ -75,34 +76,34 @@ impl CandleEmbeddings {
     /// Ensures the model is loaded, downloading if necessary.
     /// This is called lazily on first embed request.
     ///
-    /// The HuggingFace download is bounded by `MODEL_DOWNLOAD_TIMEOUT` so a cold
-    /// cache or unreachable network fails fast with a typed error rather than
-    /// hanging the write path. The CPU-heavy model build runs on a blocking
-    /// thread (`spawn_blocking`) so it never starves the async runtime.
+    /// Download and model construction run outside the durable operation
+    /// acceptance boundary. Production inference is supervised by the executor
+    /// process; elapsed time never determines whether an operation succeeded.
     async fn ensure_loaded(&self) -> Result<&Arc<Mutex<CandleEmbeddingsInner>>> {
         self.inner
             .get_or_try_init(|| async {
                 tracing::info!("Loading Candle embeddings model: {}", self.model_id);
 
-                // Determine device (CUDA > Metal > CPU)
-                let device = Self::get_device().context("Failed to get compute device")?;
+                // Determine device (CUDA > Metal > CPU).
+                //
+                // `Device::new_metal`/`new_cuda` initialize the GPU stack through
+                // synchronous FFI that can occupy the thread for tens of seconds
+                // on a cold start. Called directly in this async block it blocked
+                // a runtime worker, starved the executor's 250ms heartbeat, and
+                // let the supervisor's watchdog declare the child nonresponsive
+                // and SIGKILL it mid-initialization — 24 such restarts across 23
+                // generations in production logs, each one immediately after the
+                // "Metal available, using GPU" line. Offload it.
+                let device = tokio::task::spawn_blocking(Self::get_device)
+                    .await
+                    .context("Embedding device selection task panicked")?
+                    .context("Failed to get compute device")?;
                 tracing::info!("Using device: {:?}", device);
 
-                // Download model files — bounded so a cold cache or network
-                // failure surfaces as a clear error instead of an open hang.
-                let (config_path, tokenizer_path, weights_path) = tokio::time::timeout(
-                    MODEL_DOWNLOAD_TIMEOUT,
-                    Self::download_model(&self.model_id, &self.cache_dir),
-                )
-                .await
-                .with_context(|| {
-                    format!(
-                        "Embedding model download exceeded {}s timeout for '{}'",
-                        MODEL_DOWNLOAD_TIMEOUT.as_secs(),
-                        self.model_id
-                    )
-                })?
-                .context("Failed to download model files")?;
+                let (config_path, tokenizer_path, weights_path) =
+                    Self::download_model(&self.model_id, &self.model_revision, &self.cache_dir)
+                        .await
+                        .context("Failed to download model files")?;
 
                 tracing::debug!("Config path: {:?}", config_path);
                 tracing::debug!("Tokenizer path: {:?}", tokenizer_path);
@@ -161,6 +162,7 @@ impl CandleEmbeddings {
         .context("Failed to parse config.json")?;
 
         let dimensions = config.hidden_size;
+        let max_input_tokens = config.max_position_embeddings;
         tracing::info!("Model config loaded: {} dimensions", dimensions);
 
         tracing::info!("Loading model weights from: {:?}", weights_path);
@@ -191,10 +193,17 @@ impl CandleEmbeddings {
             tokenizer,
             device,
             dimensions,
+            max_input_tokens,
         })
     }
 
     fn get_device() -> Result<Device> {
+        let device_preference = std::env::var("LOCAL_EMBEDDING_DEVICE").ok();
+        if force_cpu(device_preference.as_deref())? {
+            tracing::warn!("LOCAL_EMBEDDING_DEVICE=cpu: using the explicit degraded CPU backend");
+            return Ok(Device::Cpu);
+        }
+
         #[cfg(feature = "cuda")]
         {
             if candle_core::utils::cuda_is_available() {
@@ -215,17 +224,61 @@ impl CandleEmbeddings {
         Ok(Device::Cpu)
     }
 
+    /// Resolve the directory hf-hub should treat as its cache root.
+    ///
+    /// `MODEL_CACHE_DIR` names the HuggingFace *home*; hf-hub stores repos in a
+    /// `hub` subdirectory beneath it. Appending here keeps `MODEL_CACHE_DIR`
+    /// meaning the same thing it means to every other HF tool, and keeps the
+    /// Docker bind mount (`.../huggingface/hub`) valid.
+    ///
+    /// Idempotent: a path that already ends in `hub` is returned unchanged, so
+    /// operators who point the variable straight at the hub directory (as the
+    /// interim production fix did) are not sent to `.../hub/hub`.
+    fn hub_cache_dir(cache_dir: &str) -> PathBuf {
+        const HF_HUB_SUBDIR: &str = "hub";
+        let path = PathBuf::from(cache_dir);
+        if path.file_name().and_then(|name| name.to_str()) == Some(HF_HUB_SUBDIR) {
+            path
+        } else {
+            path.join(HF_HUB_SUBDIR)
+        }
+    }
+
     async fn download_model(
         model_id: &str,
+        model_revision: &str,
         cache_dir: &str,
     ) -> Result<(PathBuf, PathBuf, PathBuf)> {
-        tracing::info!("Downloading model from Hugging Face: {}", model_id);
+        // hf-hub keeps repositories under `<hf-home>/hub`: both
+        // `Cache::default()` (hf-hub-0.5.0 src/lib.rs:203-207) and
+        // `Cache::from_env()` (src/lib.rs:42-49) append this component. But
+        // `with_cache_dir` stores the path verbatim (`Cache::new`,
+        // src/lib.rs:36-38), so the caller must append it. Passing
+        // `MODEL_CACHE_DIR` unmodified pointed hf-hub one level *above* its own
+        // data, orphaning an already-populated cache and re-downloading every
+        // weight. It also broke credential lookup, since `token_path`
+        // (src/lib.rs:59-64) derives the token file by popping this component.
+        let hub_dir = Self::hub_cache_dir(cache_dir);
 
-        let api = Api::new()?;
-        let repo = api.repo(Repo::new(model_id.to_string(), RepoType::Model));
+        tracing::info!(
+            "Resolving model from Hugging Face: {}@{} (cache: {})",
+            model_id,
+            model_revision,
+            hub_dir.display()
+        );
 
-        // Set cache directory
-        std::fs::create_dir_all(cache_dir)?;
+        std::fs::create_dir_all(&hub_dir)
+            .with_context(|| format!("create model cache directory {}", hub_dir.display()))?;
+
+        let api = ApiBuilder::new()
+            .with_cache_dir(hub_dir)
+            .build()
+            .context("build Hugging Face API client")?;
+        let repo = api.repo(Repo::with_revision(
+            model_id.to_string(),
+            RepoType::Model,
+            model_revision.to_string(),
+        ));
 
         // Download config, tokenizer, and weights concurrently. The weights
         // future tries safetensors first and falls back to the PyTorch file.
@@ -241,15 +294,45 @@ impl CandleEmbeddings {
             }
         };
 
-        let (config_path, tokenizer_path, weights_path) = tokio::try_join!(
-            async { config_fut.await.map_err(anyhow::Error::from) },
-            async { tokenizer_fut.await.map_err(anyhow::Error::from) },
-            weights_fut
-        )?;
+        // hf-hub 0.5 builds its reqwest client with no connect or read timeout,
+        // so a stalled transfer waits forever. Bound the whole download here:
+        // without this the caller's watchdog is the only limit, and it kills the
+        // process rather than returning a diagnosable error.
+        let downloads = async {
+            tokio::try_join!(
+                async { config_fut.await.map_err(anyhow::Error::from) },
+                async { tokenizer_fut.await.map_err(anyhow::Error::from) },
+                weights_fut
+            )
+        };
+
+        let (config_path, tokenizer_path, weights_path) =
+            match tokio::time::timeout(Self::download_timeout(), downloads).await {
+                Ok(result) => result?,
+                Err(_) => anyhow::bail!(
+                    "timed out after {:?} downloading model '{model_id}'; \
+                     set MODEL_DOWNLOAD_TIMEOUT_SECS to allow longer, or pre-populate {cache_dir}",
+                    Self::download_timeout()
+                ),
+            };
 
         tracing::info!("Model files downloaded successfully");
 
         Ok((config_path, tokenizer_path, weights_path))
+    }
+
+    /// Ceiling on a cold model download. Generous by default — a first pull of
+    /// several hundred MB on a slow link is legitimate — but finite, so a
+    /// stalled transfer fails with a clear error instead of hanging forever.
+    fn download_timeout() -> Duration {
+        const DEFAULT_DOWNLOAD_TIMEOUT_SECS: u64 = 600;
+        Duration::from_secs(
+            std::env::var("MODEL_DOWNLOAD_TIMEOUT_SECS")
+                .ok()
+                .and_then(|value| value.parse().ok())
+                .filter(|secs| *secs > 0)
+                .unwrap_or(DEFAULT_DOWNLOAD_TIMEOUT_SECS),
+        )
     }
 
     fn mean_pooling(embeddings: &Tensor, attention_mask: &Tensor) -> Result<Tensor> {
@@ -312,6 +395,7 @@ impl CandleEmbeddings {
             .map_err(|e| anyhow::anyhow!("Tokenization failed: {}", e))?;
 
         let tokens = encoding.get_ids();
+        validate_model_input_len(tokens.len(), inner.max_input_tokens)?;
         let attention_mask = encoding.get_attention_mask();
         tracing::debug!("Tokenized into {} tokens", tokens.len());
 
@@ -375,6 +459,14 @@ impl CandleEmbeddings {
     }
 }
 
+fn force_cpu(value: Option<&str>) -> Result<bool> {
+    match value.unwrap_or("auto").trim().to_ascii_lowercase().as_str() {
+        "auto" => Ok(false),
+        "cpu" => Ok(true),
+        other => anyhow::bail!("LOCAL_EMBEDDING_DEVICE must be 'auto' or 'cpu', got '{other}'"),
+    }
+}
+
 #[async_trait]
 impl EmbeddingService for CandleEmbeddings {
     async fn embed(&self, text: &str) -> Result<Embedding> {
@@ -399,14 +491,157 @@ impl EmbeddingService for CandleEmbeddings {
         self.expected_dimensions
     }
 
+    async fn plan(&self, text: &str) -> Result<Vec<EmbeddingPlanPart>> {
+        let inner = Arc::clone(self.ensure_loaded().await?);
+        let text = text.to_owned();
+        tokio::task::spawn_blocking(move || {
+            let inner = inner.blocking_lock();
+            plan_token_windows(&inner.tokenizer, inner.max_input_tokens, &text)
+        })
+        .await
+        .context("Embedding token planner task panicked")?
+    }
+
     fn is_ready(&self) -> bool {
         self.is_loaded()
+    }
+}
+
+fn validate_model_input_len(actual: usize, maximum: usize) -> Result<()> {
+    if actual > maximum {
+        anyhow::bail!(
+            "input_too_long: tokenizer produced {actual} tokens for model capacity {maximum}"
+        );
+    }
+    Ok(())
+}
+
+fn plan_token_windows(
+    tokenizer: &Tokenizer,
+    max_input_tokens: usize,
+    text: &str,
+) -> Result<Vec<EmbeddingPlanPart>> {
+    let with_special = tokenizer
+        .encode("", true)
+        .map_err(|error| anyhow::anyhow!("Tokenization failed: {error}"))?;
+    let special_tokens = with_special.len();
+    let usable = max_input_tokens
+        .checked_sub(special_tokens)
+        .filter(|value| *value > 0)
+        .context("embedding model capacity does not leave room for content tokens")?;
+    let source = tokenizer
+        .encode(text, false)
+        .map_err(|error| anyhow::anyhow!("Tokenization failed: {error}"))?;
+    let ids = source.get_ids();
+    if ids.len() + special_tokens <= max_input_tokens {
+        return Ok(vec![plan_part(0, 0, ids.len(), ids, text.to_owned())]);
+    }
+
+    // The overlap is a fixed token-domain constant, not a timing heuristic.
+    // It preserves boundary context while every encoded part is proven below
+    // to fit the active model's exact capacity.
+    let overlap = 32usize.min(usable.saturating_sub(1));
+    let step = usable - overlap;
+    let mut parts = Vec::new();
+    let mut start = 0usize;
+    while start < ids.len() {
+        let mut end = (start + usable).min(ids.len());
+        let mut content = tokenizer
+            .decode(&ids[start..end], true)
+            .map_err(|error| anyhow::anyhow!("Token decode failed: {error}"))?;
+
+        // Decoding and encoding can normalize whitespace differently for some
+        // tokenizers. Shrink deterministically until the actual model input,
+        // including special tokens, is within capacity.
+        loop {
+            let verified = tokenizer
+                .encode(content.as_str(), true)
+                .map_err(|error| anyhow::anyhow!("Token verification failed: {error}"))?;
+            if verified.len() <= max_input_tokens {
+                break;
+            }
+            end = end
+                .checked_sub(1)
+                .filter(|candidate| *candidate > start)
+                .context("unable to construct a model-safe token window")?;
+            content = tokenizer
+                .decode(&ids[start..end], true)
+                .map_err(|error| anyhow::anyhow!("Token decode failed: {error}"))?;
+        }
+
+        parts.push(plan_part(
+            parts.len(),
+            start,
+            end,
+            &ids[start..end],
+            content,
+        ));
+        if end == ids.len() {
+            break;
+        }
+        start = start.saturating_add(step).min(end);
+    }
+    Ok(parts)
+}
+
+fn plan_part(
+    part_index: usize,
+    token_start: usize,
+    token_end: usize,
+    ids: &[u32],
+    content: String,
+) -> EmbeddingPlanPart {
+    let mut bytes = Vec::with_capacity(std::mem::size_of_val(ids));
+    for id in ids {
+        bytes.extend_from_slice(&id.to_le_bytes());
+    }
+    EmbeddingPlanPart {
+        part_index,
+        token_start,
+        token_end,
+        token_count: token_end.saturating_sub(token_start),
+        token_hash: Sha256::digest(bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect(),
+        content,
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokenizers::{
+        models::wordlevel::WordLevel, pre_tokenizers::whitespace::Whitespace,
+        processors::template::TemplateProcessing,
+    };
+
+    fn boundary_tokenizer() -> Tokenizer {
+        let vocab = [
+            ("[UNK]".to_owned(), 0),
+            ("[CLS]".to_owned(), 1),
+            ("[SEP]".to_owned(), 2),
+            ("word".to_owned(), 3),
+        ]
+        .into_iter()
+        .collect();
+        let model = WordLevel::builder()
+            .vocab(vocab)
+            .unk_token("[UNK]".to_owned())
+            .build()
+            .unwrap();
+        let mut tokenizer = Tokenizer::new(model);
+        tokenizer.with_pre_tokenizer(Some(Whitespace));
+        tokenizer.with_post_processor(Some(
+            TemplateProcessing::builder()
+                .try_single("[CLS] $A [SEP]")
+                .unwrap()
+                .special_tokens(vec![("[CLS]", 1), ("[SEP]", 2)])
+                .build()
+                .unwrap(),
+        ));
+        tokenizer
+    }
 
     #[test]
     fn new_does_not_load_model_eagerly() {
@@ -419,44 +654,6 @@ mod tests {
         assert_eq!(embedder.dimensions(), 384);
     }
 
-    #[test]
-    fn download_timeout_is_bounded() {
-        // A cold-cache download must be bounded so the write path cannot hang
-        // open-endedly. The bound is enforced via tokio::time::timeout in
-        // ensure_loaded; this guards against the constant being removed.
-        assert!(MODEL_DOWNLOAD_TIMEOUT.as_secs() > 0);
-        assert!(MODEL_DOWNLOAD_TIMEOUT.as_secs() <= 600);
-    }
-
-    #[tokio::test]
-    async fn warmup_with_unresolvable_model_fails_bounded() {
-        // An unresolvable model id must surface a typed error within the
-        // download bound — never an open-ended hang.
-        let embedder = CandleEmbeddings::new(
-            "surreal-memory-test/definitely-not-a-real-model",
-            &std::env::temp_dir()
-                .join("candle-warmup-test")
-                .to_string_lossy(),
-        )
-        .expect("construct lazy embedder");
-
-        let result = tokio::time::timeout(
-            MODEL_DOWNLOAD_TIMEOUT + Duration::from_secs(5),
-            embedder.warmup(),
-        )
-        .await;
-
-        assert!(
-            result.is_ok(),
-            "warmup must return within the bounded download timeout"
-        );
-        assert!(
-            result.unwrap().is_err(),
-            "warmup with an unresolvable model must return a typed error"
-        );
-        assert!(!embedder.is_loaded(), "failed warmup must not mark loaded");
-    }
-
     fn estimate(model_id: &str) -> usize {
         CandleEmbeddings::estimate_dimensions(model_id)
     }
@@ -467,5 +664,132 @@ mod tests {
         assert_eq!(estimate("BAAI/bge-base-en-v1.5"), 768);
         assert_eq!(estimate("BAAI/bge-large-en-v1.5"), 1024);
         assert_eq!(estimate("sentence-transformers/all-MiniLM-L6-v2"), 384);
+    }
+
+    #[test]
+    fn device_preference_is_explicit_and_fail_closed() {
+        assert!(!force_cpu(None).unwrap());
+        assert!(!force_cpu(Some("auto")).unwrap());
+        assert!(force_cpu(Some("CPU")).unwrap());
+        assert!(force_cpu(Some("metal")).is_err());
+    }
+
+    #[test]
+    fn model_boundary_guard_accepts_below_and_at_capacity_only() {
+        assert!(validate_model_input_len(510, 512).is_ok());
+        assert!(validate_model_input_len(512, 512).is_ok());
+        assert!(validate_model_input_len(513, 512).is_err());
+    }
+
+    #[test]
+    fn planner_uses_exact_special_token_capacity_and_stable_token_windows() {
+        let tokenizer = boundary_tokenizer();
+        let below = plan_token_windows(&tokenizer, 6, "word word word").unwrap();
+        let at = plan_token_windows(&tokenizer, 6, "word word word word").unwrap();
+        let above = plan_token_windows(&tokenizer, 6, "word word word word word").unwrap();
+
+        assert_eq!(below.len(), 1);
+        assert_eq!(below[0].token_count, 3);
+        assert_eq!(at.len(), 1);
+        assert_eq!(at[0].token_count, 4);
+        assert!(above.len() > 1);
+        assert_eq!(above.first().unwrap().token_start, 0);
+        assert_eq!(above.last().unwrap().token_end, 5);
+        assert!(
+            above
+                .windows(2)
+                .all(|pair| pair[1].token_start <= pair[0].token_end)
+        );
+        assert!(above.iter().all(|part| {
+            tokenizer
+                .encode(part.content.as_str(), true)
+                .map(|encoding| encoding.len() <= 6)
+                .unwrap_or(false)
+        }));
+        assert_eq!(
+            above,
+            plan_token_windows(&tokenizer, 6, "word word word word word").unwrap()
+        );
+    }
+
+    /// Certification test for the authored tokenizer and model config. It is
+    /// ignored in the hermetic unit suite because the model files are installed
+    /// artifacts, then run explicitly on the target host before activation.
+    #[test]
+    #[ignore = "requires SURREAL_REAL_TOKENIZER and SURREAL_REAL_MODEL_CONFIG"]
+    fn real_tokenizer_proves_below_at_and_above_model_capacity() {
+        let tokenizer_path = std::env::var("SURREAL_REAL_TOKENIZER")
+            .expect("SURREAL_REAL_TOKENIZER must name the installed tokenizer.json");
+        let config_path = std::env::var("SURREAL_REAL_MODEL_CONFIG")
+            .expect("SURREAL_REAL_MODEL_CONFIG must name the installed config.json");
+        let tokenizer = Tokenizer::from_file(tokenizer_path).expect("load authored tokenizer");
+        let config: serde_json::Value = serde_json::from_reader(
+            std::fs::File::open(config_path).expect("open authored model config"),
+        )
+        .expect("parse authored model config");
+        let maximum = config["max_position_embeddings"]
+            .as_u64()
+            .expect("model config max_position_embeddings") as usize;
+        let special_tokens = tokenizer.encode("", true).unwrap().len();
+        let usable = maximum - special_tokens;
+
+        fn repeated_word_tokens(tokenizer: &Tokenizer, count: usize) -> String {
+            let text = std::iter::repeat_n("word", count)
+                .collect::<Vec<_>>()
+                .join(" ");
+            assert_eq!(tokenizer.encode(text.as_str(), false).unwrap().len(), count);
+            text
+        }
+
+        let below = repeated_word_tokens(&tokenizer, usable - 1);
+        let at = repeated_word_tokens(&tokenizer, usable);
+        let above = repeated_word_tokens(&tokenizer, usable + 1);
+        let below_plan = plan_token_windows(&tokenizer, maximum, &below).unwrap();
+        let at_plan = plan_token_windows(&tokenizer, maximum, &at).unwrap();
+        let above_plan = plan_token_windows(&tokenizer, maximum, &above).unwrap();
+
+        assert_eq!(below_plan.len(), 1);
+        assert_eq!(below_plan[0].token_count, usable - 1);
+        assert_eq!(at_plan.len(), 1);
+        assert_eq!(at_plan[0].token_count, usable);
+        assert!(above_plan.len() > 1);
+        assert_eq!(above_plan.first().unwrap().token_start, 0);
+        assert_eq!(above_plan.last().unwrap().token_end, usable + 1);
+        assert!(above_plan.iter().all(|part| {
+            tokenizer
+                .encode(part.content.as_str(), true)
+                .map(|encoded| encoded.len() <= maximum)
+                .unwrap_or(false)
+        }));
+    }
+
+    #[test]
+    fn hub_cache_dir_appends_the_hf_hub_subdirectory() {
+        // MODEL_CACHE_DIR names the HF home; hf-hub stores repos under <home>/hub.
+        // Passing the home verbatim orphaned a populated cache in production and
+        // triggered a full re-download of the weights.
+        assert_eq!(
+            CandleEmbeddings::hub_cache_dir("/Users/someone/.cache/huggingface"),
+            std::path::PathBuf::from("/Users/someone/.cache/huggingface/hub")
+        );
+    }
+
+    #[test]
+    fn hub_cache_dir_is_idempotent_when_already_pointed_at_hub() {
+        // Operators (and the interim production hotfix) may point the variable
+        // straight at the hub directory. That must not resolve to `.../hub/hub`.
+        assert_eq!(
+            CandleEmbeddings::hub_cache_dir("/Users/someone/.cache/huggingface/hub"),
+            std::path::PathBuf::from("/Users/someone/.cache/huggingface/hub")
+        );
+    }
+
+    #[test]
+    fn hub_cache_dir_handles_a_relative_configured_path() {
+        // `.env.example` ships MODEL_CACHE_DIR=./models.
+        assert_eq!(
+            CandleEmbeddings::hub_cache_dir("./models"),
+            std::path::PathBuf::from("./models/hub")
+        );
     }
 }

@@ -9,7 +9,8 @@ UAR uses several crates sourced directly from Git repositories rather than crate
 | Crate | Repository | Reason |
 |-------|-----------|--------|
 | `rmcp` | `modelcontextprotocol/rust-sdk` | MCP Rust SDK is pre-release; no stable crates.io version |
-| `surreal-memory` | `Prometheus-AGS/surreal-memory-server` | Internal library, not published |
+| `surreal-memory` | `Prometheus-AGS/surreal-memory-server` | Internal library, stored as a curated source snapshot |
+| `liter-llm` | `GQAdonis/liter-llm` | Internal provider runtime, stored as an exact gitlink |
 | `kreuzberg` | `kreuzberg-dev/kreuzberg` | Default local document intelligence provider; pinned to a release tag (not a branch) |
 | `prometheus_parking_lot` | `Prometheus-AGS/prometheus-parking-lot-rs` | Internal library, not published |
 
@@ -23,7 +24,8 @@ Most git dependencies are **pinned to a specific commit SHA** via `rev = "..."` 
 
 ```toml
 rmcp          = rev "26b65b6b88c5552447905923f683b6e4720a5600"
-surreal-memory = rev "f9ab1c29944b86d44c23ea0e6192fa3d39acbde8"
+surreal-memory = curated snapshot "432eaa1ebbef66fc02b9bb1a1e63cc2fdb2149e8"
+liter-llm     = gitlink "c5c6caac617eb931cd5009146a70831422ec236c" (1.18.2)
 kreuzberg     = tag "v4.9.8" on kreuzberg-dev/kreuzberg
 prometheus_parking_lot = rev "ebb7c3ce02f7b925bc2e1b45c87ce8abf402b1f0"
 ```
@@ -34,11 +36,11 @@ drifted out of sync with `Cargo.toml` on 3 of its 4 entries (`rmcp` and
 this table being updated; `surreal-memory` previously showed a `rev`
 value here even though `Cargo.toml` actually had `branch = "main"` at the
 time — this table was aspirational, not descriptive, on that line). All 4
-values above are re-verified directly against live `Cargo.toml` state as
-of this correction. `surreal-memory` is genuinely `rev`-pinned now (see
-below) — the table's claim finally matches reality. Re-verify this table
-against `Cargo.toml` whenever a pinned dependency is bumped, rather than
-assuming it's already correct.
+values above were re-verified directly against live dependency state when that
+correction was written. As of 2026-08-28, `surreal-memory` is a curated path
+dependency whose immutable upstream provenance is recorded in
+`vendor/git/README.md` and `versions.toml`; `liter-llm` is an exact gitlink.
+Re-verify this table against those authorities whenever either input moves.
 
 ## Upgrade SOP
 
@@ -434,3 +436,37 @@ GitHub's own GHSA database for the same crate. Check
 `gh api repos/<org>/<repo>/dependabot/alerts?state=open` directly,
 especially right after a push, rather than relying on `cargo audit`
 exclusively.
+
+### Bounded `image-size` documentation-build exception
+
+The website's Docusaurus dependency graph currently carries `image-size`
+advisories 1138808 and 1138809 without a compatible patched release. The
+exposure is limited to trusted, tracked repository assets during a local
+documentation build. `scripts/security-audit-local.sh` rejects ICNS, JXL,
+HEIF, HEIC, and AVIF inputs before that build is accepted by checking both
+filename extensions and content MIME types, so renaming affected content does
+not bypass the gate.
+
+- Owner: repository security maintainers.
+- Review due: 2026-11-24.
+- Reopen immediately if untrusted image ingestion is introduced or a compatible
+  fixed `image-size` release becomes available.
+- Do not broaden the exception to any other advisory or package root.
+
+### Lockfile-only `rkyv` 0.7 advisory disposition
+
+The 2026-08-28 release audit reported `RUSTSEC-2026-0235` for `rkyv`
+0.7.46. The entry is an optional dependency declared by `rust_decimal`
+1.42.0, which is required by SurrealDB 3.2.4. It is present in Cargo's
+resolved lock metadata but is not activated by any supported target or
+feature: `cargo tree --locked --all-features --target all --edges all -i rkyv@0.7.46`
+returns no reverse dependency. The vulnerable archive-validation code is
+therefore absent from the UAR build and release binary.
+
+`scripts/security-audit-local.sh` ignores only this advisory ID and first
+re-resolves the locked metadata plus all-target/all-edge inverse graph. The
+audit fails before applying the ignore if `rkyv` 0.7.46 has any active reverse
+dependency. Remove the exception when SurrealDB's dependency graph no longer
+records `rkyv` 0.7, or immediately if a supported UAR feature begins activating
+it. The same audit found `RUSTSEC-2026-0258` in `h2` 0.4.14; that finding was
+fixed rather than accepted by updating the lockfile to `h2` 0.4.16.

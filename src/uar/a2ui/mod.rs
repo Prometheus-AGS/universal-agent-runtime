@@ -12,6 +12,7 @@
 //! - [`routes`] — REST endpoints for schema listing and user response ingestion
 
 pub mod design_systems;
+pub(crate) mod policy_surface;
 pub(crate) mod protocol;
 pub mod realtime;
 pub mod registry;

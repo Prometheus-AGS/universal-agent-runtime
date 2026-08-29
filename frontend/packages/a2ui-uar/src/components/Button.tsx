@@ -30,7 +30,7 @@ export const UarButton: FC<{ props: ButtonProps; buildChild: BuildChild }> = ({ 
       aria-invalid={props.isValid === false || undefined}
       aria-label={resolvedText(props.accessibility?.label)}
       title={resolvedText(props.accessibility?.description)}
-      onClick={() => props.action()}
+      onClick={props.action}
       style={props.weight ? { flexGrow: props.weight } : undefined}
     >
       {buildChild(props.child)}
