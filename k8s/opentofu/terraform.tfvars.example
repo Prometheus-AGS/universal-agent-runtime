@@ -27,7 +27,7 @@ tavily_api_key       = ""   # required for web-search MCP tool
 unstructured_api_key = ""   # required for document ingestion
 
 # ── SurrealDB ────────────────────────────────────────────────────────────────
-surreal_image = "surrealdb/surrealdb:v3"
+surreal_image = "surrealdb/surrealdb:v3.2.4@sha256:51baed8709f57f67dcf04b30e3177db846803fa9342dae2be58c6fa5f8d59843"
 surreal_user  = "root"
 surreal_pass  = ""   # required — choose a strong password
 

@@ -15,6 +15,7 @@ import { ingestAgUiEvent, ingestRuntimeEvent } from "@/entities/runtime-ingest";
 import { UarAguiAdapter } from "@/platform/agui/agui-adapter";
 import { getDbInstance } from "@/platform/pglite/client";
 import { RunEventPersistence } from "@/platform/pglite/run-event-persistence";
+import { A2uiStreamAccumulator } from "@/features/a2ui/a2ui-stream-accumulator";
 
 export interface UarChatPayload {
   message: string;
@@ -217,6 +218,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function extractA2uiEnvelope(value: unknown): Record<string, unknown> | null {
   if (!isRecord(value)) return null;
   const directKeys = [
+    "createSurface",
+    "updateComponents",
+    "updateDataModel",
     "surfaceUpdate",
     "dataModelUpdate",
     "beginRendering",
@@ -714,6 +718,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
 
     const runId = `run-${Date.now()}`;
     const pendingArgs = new Map<string, string>();
+    const a2uiAccumulator = new A2uiStreamAccumulator();
     const aguiAdapter = new UarAguiAdapter();
     useChatMessageStore.getState().beginStream(threadId, runId);
     const retryPolicy = await loadStreamRetryPolicy();
@@ -740,6 +745,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
       let streamStartTimedOut = false;
       let runPersistence: RunEventPersistence | null = null;
       pendingArgs.clear();
+      a2uiAccumulator.clear();
       const streamStartTimer = setTimeout(() => {
         if (!sawFirstStreamChunk) {
           streamStartTimedOut = true;
@@ -1106,8 +1112,50 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                 case "agui.raw": {
                   const envelope = extractA2uiEnvelope(agui);
                   if (!envelope) break;
+                  const current = a2uiAccumulator.advance(envelope);
+                  if (current) {
+                    const toolCallId = `a2ui-surface-${durableRunId}-${current.surfaceId}-${current.generation}`;
+                    const displaySource = current.action === "reject"
+                      ? current.diagnosticSource ?? JSON.stringify(current.messages)
+                      : JSON.stringify(current.messages);
+                    const validationArgs = current.error
+                      ? { validation: "invalid", validationError: current.error }
+                      : {};
+                    if (current.action === "update" || (current.action === "reject" && current.displayed)) {
+                      store.updateToolCall(threadId, toolCallId, {
+                        args: validationArgs,
+                        result: displaySource,
+                        status: current.action === "reject" ? "failed" : "complete",
+                      });
+                    } else if (current.action === "create" || current.action === "reject") {
+                      store.addToolCall(threadId, runId, {
+                        type: "tool-call",
+                        toolCallId,
+                        toolName: "__a2ui_display__",
+                        args: {
+                          artifactType: "a2ui/surface",
+                          title: `A2UI surface ${current.surfaceId}`,
+                          language: "a2ui",
+                          metadata: {
+                            profile: current.profile,
+                            protocol_version: current.version,
+                          },
+                          ...validationArgs,
+                        },
+                        result: displaySource,
+                        status: current.action === "reject" ? "failed" : "complete",
+                      });
+                    }
+                    break;
+                  }
                   const envelopeType =
-                    "surfaceUpdate" in envelope
+                    "createSurface" in envelope
+                      ? "createSurface"
+                      : "updateComponents" in envelope
+                        ? "updateComponents"
+                        : "updateDataModel" in envelope
+                          ? "updateDataModel"
+                          : "surfaceUpdate" in envelope
                       ? "surfaceUpdate"
                       : "dataModelUpdate" in envelope
                         ? "dataModelUpdate"

@@ -46,6 +46,22 @@ updates:
       - "javascript"
       - "frontend"
 
+  # Documentation site (separate npm project, own lockfile).
+  - package-ecosystem: "npm"
+    directory: "/website"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      npm-website-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "documentation"
+
   # GitHub Actions used across the workflows in .github/workflows/.
   - package-ecosystem: "github-actions"
     directory: "/"

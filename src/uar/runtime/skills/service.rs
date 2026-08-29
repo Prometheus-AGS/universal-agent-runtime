@@ -88,6 +88,15 @@ pub struct SkillUpdate {
     pub execution_config: Option<crate::uar::domain::skills::SkillExecutionConfig>,
 }
 
+/// Outcome of one standard-directory startup reconciliation.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub(crate) struct AgentSkillReconciliationReport {
+    pub discovered: usize,
+    pub added: usize,
+    pub updated: usize,
+    pub unchanged: usize,
+}
+
 /// Central skill service coordinating storage + matching.
 ///
 /// When a [`GovernanceEngine`] is attached, all skill mutations (updates,
@@ -298,6 +307,86 @@ impl SkillService {
         }
 
         Ok(())
+    }
+
+    /// Upsert new or changed skills from the standard `~/.agents/skills`
+    /// provider. Source absence never implies deletion for this provider.
+    /// Reconciliation never waits for embedding inference.
+    pub(crate) async fn reconcile_standard_agent_skills(
+        &self,
+    ) -> anyhow::Result<AgentSkillReconciliationReport> {
+        let Some(agent_provider) = self
+            .providers
+            .iter()
+            .find(|provider| provider.id() == "agent-skills")
+        else {
+            return Ok(AgentSkillReconciliationReport::default());
+        };
+        let discovered_skills = agent_provider
+            .list_skills()
+            .await?
+            .into_iter()
+            .filter(|skill| skill.provider_id == "agent-skills")
+            .collect::<Vec<_>>();
+        let stored_skills = self.registry.read().await.list_persisted().await?;
+        let stored_by_id = stored_skills
+            .iter()
+            .map(|skill| (skill.skill_id.clone(), skill))
+            .collect::<HashMap<_, _>>();
+
+        let mut report = AgentSkillReconciliationReport {
+            discovered: discovered_skills.len(),
+            ..Default::default()
+        };
+        let mut changed_skills = Vec::new();
+        for mut discovered in discovered_skills {
+            if let Some(existing) = stored_by_id.get(&discovered.skill_id) {
+                if existing.provider_id != "agent-skills" {
+                    warn!(
+                        skill_id = %discovered.skill_id,
+                        stored_provider_id = %existing.provider_id,
+                        "standard agent skill identity conflicts with another source; preserving stored skill"
+                    );
+                    report.unchanged += 1;
+                    continue;
+                }
+                discovered.enabled = existing.enabled;
+                discovered.scoped_config.clone_from(&existing.scoped_config);
+            }
+            discovered.tombstoned = false;
+
+            match stored_by_id.get(&discovered.skill_id) {
+                Some(existing)
+                    if serde_json::to_value(existing)? == serde_json::to_value(&discovered)? =>
+                {
+                    report.unchanged += 1;
+                }
+                Some(_) => {
+                    report.updated += 1;
+                    changed_skills.push(discovered);
+                }
+                None => {
+                    report.added += 1;
+                    changed_skills.push(discovered);
+                }
+            }
+        }
+
+        self.registry
+            .write()
+            .await
+            .register_checked_batch_without_embeddings(changed_skills)
+            .await?;
+        info!(
+            name: "skills.standard.reconciled",
+            provider = "agent-skills",
+            discovered = report.discovered,
+            added = report.added,
+            updated = report.updated,
+            unchanged = report.unchanged,
+            "reconciled standard agent skills"
+        );
+        Ok(report)
     }
 
     /// Get all skills from all providers.
@@ -831,6 +920,35 @@ mod tests {
     const B5_CHILD_MODE: &str = "UAR_B5_RECONCILIATION_CHILD_MODE";
     const B5_CHILD_ENDPOINT: &str = "UAR_B5_RECONCILIATION_ENDPOINT";
     const B5_CHILD_SKILLS_DIR: &str = "UAR_B5_RECONCILIATION_SKILLS_DIR";
+    const STANDARD_CHILD_MODE: &str = "UAR_STANDARD_SKILL_CHILD_MODE";
+    const STANDARD_CHILD_ENDPOINT: &str = "UAR_STANDARD_SKILL_CHILD_ENDPOINT";
+    const STANDARD_CHILD_SKILLS_DIR: &str = "UAR_STANDARD_SKILL_CHILD_SKILLS_DIR";
+
+    #[cfg(feature = "local-models")]
+    #[derive(Debug)]
+    struct RecordingEmbeddingBackend {
+        batch_sizes: Arc<std::sync::Mutex<Vec<usize>>>,
+    }
+
+    #[cfg(feature = "local-models")]
+    #[async_trait::async_trait]
+    impl crate::uar::rag::embeddings::EmbeddingBackend for RecordingEmbeddingBackend {
+        fn backend_name(&self) -> &str {
+            "recording"
+        }
+
+        fn vector_dimension(&self) -> usize {
+            1
+        }
+
+        async fn embed(
+            &self,
+            texts: &[&str],
+        ) -> Result<Vec<Vec<f32>>, crate::uar::rag::embeddings::EmbeddingError> {
+            self.batch_sizes.lock().unwrap().push(texts.len());
+            Ok(vec![vec![1.0]; texts.len()])
+        }
+    }
 
     fn test_skill() -> Skill {
         Skill {
@@ -882,6 +1000,331 @@ mod tests {
             persistence,
         )));
         service
+    }
+
+    fn standard_reconciliation_service(
+        persistence: Arc<dyn PersistenceLayer>,
+        skills_root: &std::path::Path,
+    ) -> SkillService {
+        let mut service = SkillService::new(Some(Arc::clone(&persistence)), None);
+        service.add_provider(Arc::new(
+            FilesystemStorageProvider::standard_agent_directory(skills_root),
+        ));
+        service.add_provider(Arc::new(DatabaseStorageProvider::new(
+            "db-skills",
+            "Database skills",
+            persistence,
+        )));
+        service
+    }
+
+    async fn write_standard_skill(
+        root: &std::path::Path,
+        relative_directory: &str,
+        name: &str,
+        description: &str,
+    ) {
+        let skill_directory = root.join(relative_directory);
+        tokio::fs::create_dir_all(&skill_directory).await.unwrap();
+        tokio::fs::write(
+            skill_directory.join("SKILL.md"),
+            format!("---\nname: {name}\ndescription: {description}\n---\n\n# {name}\n"),
+        )
+        .await
+        .unwrap();
+    }
+
+    #[cfg(feature = "local-models")]
+    #[tokio::test]
+    async fn standard_skill_reconciliation_does_not_invoke_embeddings() {
+        let batch_sizes = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let backend = Arc::new(RecordingEmbeddingBackend {
+            batch_sizes: Arc::clone(&batch_sizes),
+        });
+        let matcher = Arc::new(VectorMatcher::new(backend, 0.75));
+        let database_directory = tempfile::tempdir().unwrap();
+        let endpoint = format!(
+            "surrealkv://{}",
+            database_directory.path().join("skills.db").display()
+        );
+        let persistence: Arc<dyn PersistenceLayer> = Arc::new(
+            SurrealDbProvider::new(
+                &endpoint,
+                None,
+                None,
+                Some("agent-skills"),
+                Some("no-embedding"),
+            )
+            .await
+            .unwrap(),
+        );
+        let skills_directory = tempfile::tempdir().unwrap();
+        write_standard_skill(
+            skills_directory.path(),
+            "alpha",
+            "alpha-skill",
+            "first alpha",
+        )
+        .await;
+        let mut service = SkillService::new(Some(Arc::clone(&persistence)), Some(matcher));
+        service.add_provider(Arc::new(
+            FilesystemStorageProvider::standard_agent_directory(skills_directory.path()),
+        ));
+        service.initialize().await.unwrap();
+
+        let report = service.reconcile_standard_agent_skills().await.unwrap();
+
+        assert_eq!(
+            report,
+            AgentSkillReconciliationReport {
+                discovered: 1,
+                added: 1,
+                updated: 0,
+                unchanged: 0,
+            }
+        );
+        assert!(batch_sizes.lock().unwrap().is_empty());
+        assert!(
+            persistence
+                .list_skills()
+                .await
+                .unwrap()
+                .iter()
+                .any(|skill| skill.skill_id == "agents::alpha")
+        );
+    }
+
+    #[tokio::test]
+    async fn startup_standard_reconciliation_upserts_changes_preserves_scope_and_never_removes() {
+        let database_directory = tempfile::tempdir().unwrap();
+        let skills_directory = tempfile::tempdir().unwrap();
+        let endpoint = format!(
+            "surrealkv://{}",
+            database_directory.path().join("skills.db").display()
+        );
+        let persistence: Arc<dyn PersistenceLayer> = Arc::new(
+            SurrealDbProvider::new(
+                &endpoint,
+                None,
+                None,
+                Some("agent-skills"),
+                Some("reconcile"),
+            )
+            .await
+            .unwrap(),
+        );
+        write_standard_skill(
+            skills_directory.path(),
+            "alpha",
+            "alpha-skill",
+            "first alpha",
+        )
+        .await;
+        write_standard_skill(
+            skills_directory.path(),
+            "removed",
+            "removed-skill",
+            "retained after source removal",
+        )
+        .await;
+
+        let first =
+            standard_reconciliation_service(Arc::clone(&persistence), skills_directory.path());
+        first.initialize().await.unwrap();
+        let first_report = first.reconcile_standard_agent_skills().await.unwrap();
+        assert_eq!(
+            first_report,
+            AgentSkillReconciliationReport {
+                discovered: 2,
+                added: 2,
+                updated: 0,
+                unchanged: 0,
+            }
+        );
+        assert!(
+            first
+                .set_scoped_enabled(
+                    "agents::alpha",
+                    SkillScope::Agent("agent-a".to_string()),
+                    false,
+                )
+                .await
+        );
+        drop(first);
+
+        write_standard_skill(
+            skills_directory.path(),
+            "alpha",
+            "alpha-skill",
+            "changed alpha",
+        )
+        .await;
+        tokio::fs::remove_dir_all(skills_directory.path().join("removed"))
+            .await
+            .unwrap();
+        write_standard_skill(skills_directory.path(), "beta", "beta-skill", "new beta").await;
+
+        let changed =
+            standard_reconciliation_service(Arc::clone(&persistence), skills_directory.path());
+        changed.initialize().await.unwrap();
+        let changed_report = changed.reconcile_standard_agent_skills().await.unwrap();
+        assert_eq!(
+            changed_report,
+            AgentSkillReconciliationReport {
+                discovered: 2,
+                added: 1,
+                updated: 1,
+                unchanged: 0,
+            }
+        );
+        let stored = persistence.list_skills().await.unwrap();
+        let alpha = stored
+            .iter()
+            .find(|skill| skill.skill_id == "agents::alpha")
+            .unwrap();
+        assert_eq!(alpha.description, "changed alpha");
+        assert!(alpha.scoped_config.iter().any(|config| {
+            matches!(&config.scope, SkillScope::Agent(id) if id == "agent-a") && !config.enabled
+        }));
+        assert!(
+            stored
+                .iter()
+                .any(|skill| { skill.skill_id == "agents::removed" && !skill.tombstoned })
+        );
+        assert!(stored.iter().any(|skill| skill.skill_id == "agents::beta"));
+
+        let unchanged =
+            standard_reconciliation_service(Arc::clone(&persistence), skills_directory.path());
+        unchanged.initialize().await.unwrap();
+        let unchanged_report = unchanged.reconcile_standard_agent_skills().await.unwrap();
+        assert_eq!(
+            unchanged_report,
+            AgentSkillReconciliationReport {
+                discovered: 2,
+                added: 0,
+                updated: 0,
+                unchanged: 2,
+            }
+        );
+    }
+
+    #[tokio::test]
+    async fn standard_reconciliation_survives_cold_process_restarts() {
+        if let Ok(mode) = std::env::var(STANDARD_CHILD_MODE) {
+            let endpoint = std::env::var(STANDARD_CHILD_ENDPOINT).unwrap();
+            let skills_directory =
+                std::path::PathBuf::from(std::env::var(STANDARD_CHILD_SKILLS_DIR).unwrap());
+            let persistence: Arc<dyn PersistenceLayer> = Arc::new(
+                SurrealDbProvider::new(
+                    &endpoint,
+                    None,
+                    None,
+                    Some("agent-skills-cold"),
+                    Some("agent-skills-cold"),
+                )
+                .await
+                .unwrap(),
+            );
+            let service =
+                standard_reconciliation_service(Arc::clone(&persistence), &skills_directory);
+            service.initialize().await.unwrap();
+            let report = service.reconcile_standard_agent_skills().await.unwrap();
+
+            match mode.as_str() {
+                "seed" => {
+                    assert_eq!(report.added, 2);
+                    assert!(
+                        service
+                            .set_scoped_enabled(
+                                "agents::alpha",
+                                SkillScope::Agent("agent-a".to_string()),
+                                false,
+                            )
+                            .await
+                    );
+                }
+                "change" => {
+                    assert_eq!(report.added, 1);
+                    assert_eq!(report.updated, 1);
+                    let stored = persistence.list_skills().await.unwrap();
+                    let alpha = stored
+                        .iter()
+                        .find(|skill| skill.skill_id == "agents::alpha")
+                        .unwrap();
+                    assert_eq!(alpha.description, "changed alpha after restart");
+                    assert!(alpha.scoped_config.iter().any(|config| {
+                        matches!(&config.scope, SkillScope::Agent(id) if id == "agent-a")
+                            && !config.enabled
+                    }));
+                    assert!(
+                        stored.iter().any(|skill| {
+                            skill.skill_id == "agents::removed" && !skill.tombstoned
+                        })
+                    );
+                }
+                "unchanged" => {
+                    assert_eq!(report.unchanged, 2);
+                }
+                _ => panic!("unknown standard skill child mode: {mode}"),
+            }
+            return;
+        }
+
+        let directory = tempfile::tempdir().unwrap();
+        let endpoint = format!(
+            "surrealkv://{}",
+            directory.path().join("standard-skills.db").display()
+        );
+        let skills_directory = directory.path().join("skills");
+        write_standard_skill(&skills_directory, "alpha", "alpha-skill", "first alpha").await;
+        write_standard_skill(
+            &skills_directory,
+            "removed",
+            "removed-skill",
+            "retained after source removal",
+        )
+        .await;
+        run_standard_skill_child("seed", &endpoint, &skills_directory);
+
+        write_standard_skill(
+            &skills_directory,
+            "alpha",
+            "alpha-skill",
+            "changed alpha after restart",
+        )
+        .await;
+        tokio::fs::remove_dir_all(skills_directory.join("removed"))
+            .await
+            .unwrap();
+        write_standard_skill(
+            &skills_directory,
+            "beta",
+            "beta-skill",
+            "new beta after restart",
+        )
+        .await;
+        run_standard_skill_child("change", &endpoint, &skills_directory);
+        run_standard_skill_child("unchanged", &endpoint, &skills_directory);
+    }
+
+    fn run_standard_skill_child(mode: &str, endpoint: &str, skills_directory: &std::path::Path) {
+        let output = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "uar::runtime::skills::service::tests::standard_reconciliation_survives_cold_process_restarts",
+                "--test-threads=1",
+            ])
+            .env(STANDARD_CHILD_MODE, mode)
+            .env(STANDARD_CHILD_ENDPOINT, endpoint)
+            .env(STANDARD_CHILD_SKILLS_DIR, skills_directory)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "standard skill {mode} child failed\nstdout:\n{}\nstderr:\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     #[tokio::test]

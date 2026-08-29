@@ -15,6 +15,30 @@ zod = "3.25.76"
 # Vite resolves entity-graph-core's optional Loro import during browser startup;
 # 1.13.9 is the entity package's tested peer version.
 loro_crdt = "1.13.9"
+# Liter 1.18.2 is the provider/model routing baseline. The accepted remote head
+# adds only generated knowledge records after the 1.18.2 source release.
+liter_llm = "1.18.2"
+liter_llm_commit = "c5c6caac617eb931cd5009146a70831422ec236c"
+# Surreal Memory is pinned to the exact dependency commit rebased on the
+# reviewed documentation and native-MLX remote head.
+surreal_memory_server_base_commit = "e5f48916048a8e26d3ace83c44746b8105f0696c"
+surreal_memory_server_commit = "432eaa1ebbef66fc02b9bb1a1e63cc2fdb2149e8"
+# The Skill System accepted head already contains the reviewed Liter and
+# Surreal Memory pointer refresh; its final UAR pin is recorded after the
+# exact-pin pointer commit is created.
+prometheus_skill_system_base_commit = "f0df1e0121d176c9467e5c71022737b845af6a20"
+prometheus_skill_system_commit = "ad5c82c6c16145637c589a3ddfa06e0f20d603e7"
+# Keep the SDK, schema types, native server, and deployed container in lockstep.
+surrealdb = "3.2.4"
+surrealdb_types = "3.2.4"
+surrealdb_server = "3.2.4"
+surrealdb_image = "surrealdb/surrealdb:v3.2.4@sha256:51baed8709f57f67dcf04b30e3177db846803fa9342dae2be58c6fa5f8d59843"
+# JavaScript advisory closure is lockfile-scoped across the root, frontend,
+# and documentation package roots.
+dompurify = "3.4.14"
+js_yaml_v3 = "3.15.1"
+js_yaml_v4 = "4.3.1"
+nanoid = "3.3.18"
 
 [decisions]
 # id = "rationale"

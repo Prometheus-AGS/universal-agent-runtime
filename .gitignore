@@ -60,6 +60,7 @@ sdks/typescript/dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+!openspec/changes/refresh-liter-surreal-dependencies/evidence/verification/*.log
 
 # OS
 Thumbs.db

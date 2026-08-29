@@ -1174,3 +1174,150 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - Repository-wide OpenSpec validation remains non-green because 120 unrelated
   historical changes are invalid; 163 items pass. This archived change and
   both synchronized canonical specs validate strictly.
+
+## 2026-08-28 — Dependency refresh release candidate completed
+
+- Merged Surreal Memory PRs #13 and #14 and Skill System PRs #74 and #75. The
+  accepted source heads are Liter `c5c6caac`, Surreal Memory `432eaa1e`, and
+  Skill System `ad5c82c6`; each is reachable from its remote `main`.
+- Regenerated the 322-provider catalog twice with identical SHA-256
+  `898786703b804218bd4acc54a624a85832f16bc2ae16ab4cddd5fa7c59babca3`.
+  Pinned all SurrealDB runtime and rendered deployment inputs to 3.2.4 and OCI
+  digest `sha256:51baed8709f57f67dcf04b30e3177db846803fa9342dae2be58c6fa5f8d59843`.
+- Local Tier 2 passed: Rust 670 library tests (one ignored), 9 BDD scenarios / 49
+  steps, 93 integration tests (one ignored), all remaining integration targets,
+  and 17 doctests (17 ignored); frontend typecheck/lint/build and 406 tests;
+  website typecheck/security/build; Compose, Kustomize, Helm, and OpenTofu
+  render/validate/plan. Website prose lint exited zero but reported Vale absent,
+  so no separate Vale-result claim is made.
+- Tier 3 release hashes before exact-commit deployment were UAR `b5c401e6`,
+  Liter `2ca89b43`, Surreal Memory `a5efa4e6`, and MLX executor `dd36733d`.
+  All were linker-signed ad hoc and passed strict code-signature verification.
+- Final offline source archive SHA-256 is `aa0af789`; a fresh empty-`CARGO_HOME`
+  extraction built with `CARGO_NET_OFFLINE=true --locked --offline --features
+  minimal`, producing acceptance binary SHA-256 `316a07cc`. Its disposable
+  extraction was removed.
+- Captured pre-deployment binaries and LaunchAgents under
+  `/Users/gqadonis/.prometheus/backups/refresh-liter-surreal-dependencies-20260828T1135Z`.
+  Installed Liter and both Surreal Memory binary copies with source-equal hashes
+  and verified signatures. Liter reported 1.18.2 and completed an MCP stdio
+  initialize exchange as server `liter-llm` 1.18.2.
+- Exact-commit UAR installation, dependency-ordered live verification,
+  Dependabot disposition, OpenSpec archive, and final repository cleanup remain
+  pending and are not claimed complete here.
+
+## 2026-08-28 — Dependency refresh final-audit correction
+
+- The frozen-install rerun exposed one omitted package root: `sdks/typescript`
+  still locked `nanoid` 3.3.16 and failed its npm audit.
+- Refreshed only that SDK lockfile to `nanoid` 3.3.18 within PostCSS's existing
+  range. The SDK then passed `npm ci`, a zero-vulnerability audit, 4/4 tests,
+  and CJS, ESM, and declaration builds.
+- OpenSpec strict validation and the evidence secret-prefix scan passed after
+  the correction. Commit-bound deployment, advisory disposition, archive, and
+  final cleanup remain pending and are not claimed complete here.
+
+## 2026-08-28 — Offline package input boundary corrected
+
+- Final receipt binding exposed that `scripts/package-offline-source.sh` copied
+  the whole checkout, which could include ignored `.env` and OpenTofu private
+  variable files.
+- Restricted archive inputs to tracked root and recursive-submodule files, with
+  registry crates still generated inside the isolated stage. Added the named
+  credential-boundary scenario to the offline reproducibility delta.
+- A fresh archive and isolated offline build are required after this correction;
+  they remain pending and are not claimed complete here.
+- The first boundary assertion also identified package-owned registry test
+  `.env` content and two tracked nested `.claude/settings.local.json` files.
+  Registry package content remains checksum-bound source; nested tool-local
+  settings were removed from the tracked input selection at every depth.
+
+## 2026-08-28 — Post-tool Liter stream timeout diagnosis and correction
+
+- The reported `web_fetch` run executed the native tool successfully in 698 ms
+  with local-governance bypass active. Its next Liter model call timed out while
+  creating UAR's normalized stream; this was separate from the later graceful
+  shutdown that caused browser `/api/live` connection refusals.
+- Source inspection showed that `LiterLlmDriver::stream` eagerly collected the
+  entire upstream completion before returning. The 15-second stream-start guard
+  was consequently applied to full completion latency.
+- Updated the adapter to normalize Liter's owned `'static` stream incrementally
+  and added a delayed mock-provider regression that distinguishes response
+  establishment from completion. The focused `server-full` unit run passed
+  1/1 after the first invocation's `--exact` filter matched no module-qualified
+  test and was corrected to a `--lib` invocation. Broader verification and
+  redeployment remain pending.
+- Rust Tier 0 passed with `cargo check --locked --no-default-features --features
+  server-full`; formatting and strict OpenSpec validation passed. Tier 2 then
+  completed with 671 library tests passed (one ignored), 9/9 BDD scenarios and
+  49/49 steps passed, 93 integration tests passed (one ignored), every remaining
+  integration binary green, and 17 doctests passed (17 ignored). Release build,
+  exact-binary deployment, and live provider/tool-loop proof remain pending.
+
+## 2026-08-28 — Production A2UI artifact rendering phase completed
+
+- Confirmed from the official A2UI specification that v0.9.1 is Current
+  Production and v1.0 remains Candidate.
+- Replaced the effective-policy JSON dump with a structured v0.9.1 surface and
+  routed chat artifacts through the canonical `MessageProcessor` and
+  `UarSurface` packages.
+- Added ordered per-surface stream accumulation, lifecycle-safe identities,
+  production profile/version/catalog validation, rendering budgets, accessible
+  invalid states, and bounded source diagnostics.
+- Two isolated UI critiques and the fresh-context adversarial critic completed;
+  the final critic verdict was PASS. Impeccable detector output was `[]`.
+- Frontend verification passed: typecheck, lint, production build, 82 test files,
+  and 416 tests. Rust formatting and `server-full` check passed. The first full
+  Rust run exposed one nondeterministic RAG tracing-capture failure; its isolated
+  rerun passed, then the complete rerun passed 673 library tests (one ignored),
+  9/9 BDD scenarios, 93/94 integration cases with one documented ignore, all
+  remaining integration binaries, and 17 doctests with 17 ignored.
+
+## 2026-08-29 — Standard agent skills startup reconciliation certified
+
+- Added and strictly validated OpenSpec change
+  `load-standard-agent-skills-on-startup`. The final isolated artifact critics
+  passed after the real `~/.agents/skills` layout exposed that plugin `current`
+  selectors must be allowed in alias-target ancestor components.
+- Focused checks passed: 15/15 shared-manifest parser tests, 6/6 standard-tree
+  discovery tests, 2/2 durable reconciliation tests, the no-embedding test, and
+  the targeted server-readiness BDD scenario with 5/5 steps.
+- Rust Tier 0 passed with `cargo check --locked --no-default-features --features
+  server-full`. Tier 2 passed with 688 library tests (one ignored), 9/9 BDD
+  scenarios and 49/49 steps, 93 integration tests (one ignored), every remaining
+  integration target, and 17 doctests (17 ignored). Formatting, diff checks,
+  and strict OpenSpec validation passed.
+- Rebuilt the production frontend and the locked `server-full` release. Installed
+  UAR SHA-256 is
+  `d8ebe7a7120e32b07f946c59986987deb0d0d0a6f065ca85760b8b1719bc5a1a`;
+  installed Surreal Memory SHA-256 is
+  `e06958d6e3eff72da54ae35ef3c417241de87bd69405b35c81be3510a4ce3880`.
+  Both installed binaries passed strict code-signature verification. The prior
+  binaries are recoverable under
+  `/Users/gqadonis/.prometheus/backups/runtime-refresh-20260829T050042Z`.
+- Dependency-ordered live verification passed. Surreal Memory 1.7.0 reported all
+  readiness capabilities, a certification memory survived its LaunchAgent
+  restart, and UAR health/readiness passed from the installed LaunchAgent binary.
+- The first UAR boot added 1,038 `agent-skills` records; the controlled restart
+  reported 1,038 unchanged with zero additions or updates, and the API returned
+  the same 1,038 records including `agents::a2ui-surface-contract`.
+- Live loopback governance emitted exactly one inactive warning for the current
+  boot. A streaming Kimi tool loop executed `web_fetch` against example.com,
+  received HTTP 200, and ended with `agui.done` without an agent error. Browser
+  inspection confirmed the installed UI exposes an accessible `A2UI display
+  artifact` with structured sections and no raw JSON.
+
+## 2026-08-29 — Integrated runtime branch published
+
+- Committed the standard-skill startup implementation as `cc780302`, rebuilt
+  the locked `server-full` release at that exact commit, and reproduced SHA-256
+  `d8ebe7a7120e32b07f946c59986987deb0d0d0a6f065ca85760b8b1719bc5a1a`.
+- Reinstalled that digest through the native macOS installer. The LaunchAgent
+  runs `/Users/gqadonis/.uar/bin/universal-agent-runtime`; installed hash and
+  strict code-signature verification passed.
+- Pushed `codex/refresh-liter-surreal-dependencies` without force and opened
+  Prometheus-AGS/universal-agent-runtime PR #275 against `main`.
+- The eight patched Dependabot alerts still describe default `main`, so neither
+  they nor bounded `image-size` alerts #210/#211 were closed before the guarded
+  branch merged. The dependency OpenSpec remains active for that disposition,
+  clean-log closure, merge, archive, and final branch/worktree cleanup.

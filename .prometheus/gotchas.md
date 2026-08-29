@@ -880,3 +880,141 @@ change has moved to the dated archive path and strict validation passes.
 **Limit.** Generated projections can still lag until the typed KBD transition
 runs. A stale projection must be corrected before it is offered to a critic or
 used as completion evidence.
+
+## 2026-08-28 — Parent branch switches can silently reset a nested gitlink checkout
+
+**Observed behavior.** The first Skill System follow-up PR recorded Surreal
+Memory commit `f671111` instead of the patched `432eaa1`, even though the leaf
+remediation had already been built and merged.
+
+**Root cause.** Switching the parent worktree from its prior branch to
+`origin/main` reset the shared nested submodule checkout to the gitlink recorded
+by that parent commit. A subsequent parent commit therefore captured the reset
+leaf without re-verifying its exact HEAD.
+
+**Working rule.** Immediately before every parent gitlink commit, resolve and
+print the nested repository HEAD, compare it with the accepted pin, and inspect
+the remote PR's aggregate compare patch. A previously verified nested checkout
+does not remain authoritative across a parent branch switch.
+
+**Limit.** This concerns nested checkout state, not the accepted leaf commit.
+The stale pointer was corrected by a normal follow-up commit before PR #75 was
+merged and never reached parent `main`.
+
+## 2026-08-28 — Offline extraction builds need bounded local build storage
+
+**Observed behavior.** A fresh offline archive build reached final compilation
+and failed with `No space left on device` while the global Cargo build cache and
+sccache cache occupied the nearly full data volume.
+
+**Working rule.** For archive acceptance, use a disposable empty `CARGO_HOME`
+from inside the extraction so machine-global build configuration cannot redirect
+intermediates into a shared cache. Check free space first and remove only the
+task-created extraction after recording the artifact hash.
+
+**Limit.** Disk exhaustion is not a source failure. The identical archive
+subsequently built offline after the regenerable compiler cache was cleared.
+
+## 2026-08-28 — A workspace audit does not cover an independently locked SDK
+
+**Observed behavior.** Root and frontend pnpm audits were clean, but the final
+`sdks/typescript` npm audit still resolved `nanoid` 3.3.16 through PostCSS and
+reported GHSA-2v37-7h3g-55p8.
+
+**Root cause.** The TypeScript SDK owns a separate npm lockfile, so the root and
+frontend lock refreshes did not update its transitive dependency graph.
+
+**Working rule.** Dependency-refresh certification must enumerate and audit
+every independently locked package root. A root workspace audit is evidence for
+that lockfile only, not for sibling npm projects.
+
+**Resolution.** Refreshed the SDK lock within PostCSS's existing semver range to
+`nanoid` 3.3.18, then observed a zero-vulnerability audit, four passing tests,
+and successful CJS, ESM, and declaration builds.
+
+## 2026-08-28 — Whole-worktree source packaging crosses the credential boundary
+
+**Observed behavior.** The offline packager selected the entire working
+directory and excluded only a short path list. A checkout containing ignored
+`.env` or OpenTofu `terraform.tfvars` files would therefore copy them into the
+release staging directory.
+
+**Root cause.** Filesystem-wide selection treated tracked source and
+operator-local state as the same packaging domain.
+
+**Working rule.** Source archives must derive their input set from Git's tracked
+index, including recursive submodule files, and then add generated vendored
+dependencies inside the isolated staging directory. Never package a checkout by
+enumerating everything and trying to blacklist every possible credential file.
+
+**Resolution.** Changed the offline packager to consume the NUL-delimited
+`git ls-files --recurse-submodules` set while retaining the existing explicit
+exclusion for root `.claude/settings.local.json`.
+
+## 2026-08-28 — Liter stream establishment is not completion collection
+
+**Observed behavior.** A native `web_fetch` completed successfully, then the
+second model call in the tool loop failed with `LLM stream start timed out after
+15000 ms`. The provider had established the first response stream in about
+seven seconds, while the post-tool completion exceeded the 15-second limit.
+
+**Root cause.** UAR's Liter adapter collected every upstream chunk into a
+`Vec` before returning the normalized stream. The orchestrator's stream-start
+timeout therefore measured the whole completion rather than response-stream
+establishment.
+
+**Working rule.** Preserve an upstream owned stream through adapter boundaries.
+Normalize and emit chunks incrementally; never collect a provider stream merely
+to satisfy an ownership assumption without checking the dependency's current
+lifetime contract.
+
+**Resolution.** Liter 1.18.2 exposes a `'static` chunk stream. UAR now moves
+that stream into its normalized wrapper and records full-call latency when the
+upstream stream completes.
+
+## 2026-08-28 — A2UI metadata is not proof of an A2UI surface
+
+**Observed behavior.** Chat labeled an effective-policy artifact as an A2UI
+surface while rendering the complete serialized policy JSON as one text node.
+
+**Root cause.** The message store fabricated an A2UI profile, the custom-event
+route handled individual frames without retaining surface lifecycle state, and
+the display component manufactured a local Text/Column surface instead of
+processing the supplied protocol messages.
+
+**Working rule.** A display artifact is renderable A2UI only when it carries the
+declared UAR profile, passes the production-version schema and catalog checks,
+and is processed as an ordered, bounded surface lifecycle. Metadata labels must
+never substitute for protocol validation.
+
+**Resolution.** Runtime policy artifacts now emit production v0.9.1 messages;
+the frontend accumulates bounded per-surface lifecycles and renders them through
+the canonical processor and UAR surface package. Invalid source is disclosed in
+a bounded diagnostic panel.
+
+## 2026-08-28 — Tracing capture test can race under the full Rust suite
+
+**Observed behavior.** The first full `server-full` run failed only
+`retrieval_emits_decision_audit_event`; the exact isolated rerun passed, and a
+complete rerun passed all enabled tests.
+
+**Root cause.** The test's subscriber-local captured event can be affected by
+parallel tracing tests. No A2UI code participates in this path.
+
+**Working rule.** When this single capture assertion fails in a parallel run,
+run it exactly once in isolation and then rerun the complete tier. Do not patch
+unrelated RAG behavior unless the isolated test or full rerun fails.
+
+## 2026-08-29 — Standard skill aliases may contain a selector in an ancestor
+
+**Observed behavior.** The real `~/.agents/skills` tree contains top-level aliases
+whose declared target is below a plugin path such as `.../current/skills/name`,
+where `current` is itself a version selector symlink. Rejecting every symlink in
+the target's ancestor chain discarded valid installed skills even though the
+bounded target surface contained no followed links.
+
+**Working rule.** For standard-skill top-level aliases, reject a direct final
+target symlink and never follow links within the resolved target, but allow a
+literal ancestor selector to resolve during canonicalization. Keep the scan
+bounded to the root manifest, conventional `skills/` subtree, or immediate
+manifest-bearing children of a flat collection.

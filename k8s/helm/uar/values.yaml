@@ -73,7 +73,8 @@ surrealdb:
   enabled: true
   image:
     repository: surrealdb/surrealdb
-    tag: v3
+    tag: v3.2.4
+    digest: sha256:51baed8709f57f67dcf04b30e3177db846803fa9342dae2be58c6fa5f8d59843
   storage:
     size: 10Gi
   resources:

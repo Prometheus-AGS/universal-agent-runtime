@@ -95,6 +95,8 @@ static MIGRATIONS: &[Migration] = &[
     Migration::sql(17, "dynamic_embedding_index_metadata", MIGRATION_V17_SQL),
     Migration::sql(18, "task_stream_scope_unique_index", MIGRATION_V18_SQL),
     Migration::sql(19, "task_step_table", MIGRATION_V19_SQL),
+    Migration::sql(20, "durable_operation_ledger", MIGRATION_V20_SQL),
+    Migration::sql(21, "embedding_executor_journal", MIGRATION_V21_SQL),
 ];
 
 // ── v1: Baseline entity + relation schema ─────────────────────────────────────
@@ -407,6 +409,82 @@ DEFINE FIELD IF NOT EXISTS completed_at ON task_step TYPE option<datetime>;
 DEFINE FIELD IF NOT EXISTS created_at ON task_step TYPE datetime;
 DEFINE INDEX IF NOT EXISTS task_step_stream_ordinal ON task_step FIELDS task_stream_id, ordinal;
 DEFINE INDEX IF NOT EXISTS task_step_idempotency_key ON task_step FIELDS idempotency_key UNIQUE;
+";
+
+// ── v20: Durable operation ledger ───────────────────────────────────────────
+//
+// The operation id is supplied by the caller and is the transport-level
+// idempotency boundary.  An accepted row exists before any model inference or
+// semantic lookup starts.  The payload is deliberately retained verbatim so a
+// coordinator can resume after a crash without asking the caller to resend it.
+// State changes are also copied to an append-only event table.  Timestamps are
+// audit data only; no transition is inferred from elapsed wall-clock time.
+
+const MIGRATION_V20_SQL: &str = "
+DEFINE TABLE IF NOT EXISTS memory_operation SCHEMAFULL;
+DEFINE FIELD IF NOT EXISTS operation_id ON memory_operation TYPE string;
+DEFINE FIELD IF NOT EXISTS schema_version ON memory_operation TYPE int;
+DEFINE FIELD IF NOT EXISTS kind ON memory_operation TYPE string;
+DEFINE FIELD IF NOT EXISTS dependencies ON memory_operation TYPE array<string> DEFAULT [];
+DEFINE FIELD IF NOT EXISTS dependencies.* ON memory_operation TYPE string;
+DEFINE FIELD IF NOT EXISTS payload_hash ON memory_operation TYPE string;
+DEFINE FIELD IF NOT EXISTS payload ON memory_operation TYPE object FLEXIBLE;
+DEFINE FIELD IF NOT EXISTS state ON memory_operation TYPE string;
+DEFINE FIELD IF NOT EXISTS blocked_by ON memory_operation TYPE array<string> DEFAULT [];
+DEFINE FIELD IF NOT EXISTS blocked_by.* ON memory_operation TYPE string;
+DEFINE FIELD IF NOT EXISTS result ON memory_operation TYPE option<object> FLEXIBLE;
+DEFINE FIELD IF NOT EXISTS error ON memory_operation TYPE option<string>;
+DEFINE FIELD IF NOT EXISTS executor_generation ON memory_operation TYPE int DEFAULT 0;
+DEFINE FIELD IF NOT EXISTS progress_seq ON memory_operation TYPE int DEFAULT 0;
+DEFINE FIELD IF NOT EXISTS created_at ON memory_operation TYPE datetime;
+DEFINE FIELD IF NOT EXISTS updated_at ON memory_operation TYPE datetime;
+DEFINE INDEX IF NOT EXISTS memory_operation_id ON memory_operation FIELDS operation_id UNIQUE;
+DEFINE INDEX IF NOT EXISTS memory_operation_state ON memory_operation FIELDS state;
+
+DEFINE TABLE IF NOT EXISTS memory_operation_event SCHEMAFULL;
+DEFINE FIELD IF NOT EXISTS operation_id ON memory_operation_event TYPE string;
+DEFINE FIELD IF NOT EXISTS sequence ON memory_operation_event TYPE int;
+DEFINE FIELD IF NOT EXISTS from_state ON memory_operation_event TYPE option<string>;
+DEFINE FIELD IF NOT EXISTS to_state ON memory_operation_event TYPE string;
+DEFINE FIELD IF NOT EXISTS detail ON memory_operation_event TYPE option<object> FLEXIBLE;
+DEFINE FIELD IF NOT EXISTS executor_generation ON memory_operation_event TYPE int DEFAULT 0;
+DEFINE FIELD IF NOT EXISTS occurred_at ON memory_operation_event TYPE datetime;
+DEFINE INDEX IF NOT EXISTS memory_operation_event_sequence
+  ON memory_operation_event FIELDS operation_id, sequence UNIQUE;
+
+DEFINE TABLE IF NOT EXISTS memory_operation_part SCHEMAFULL;
+DEFINE FIELD IF NOT EXISTS operation_id ON memory_operation_part TYPE string;
+DEFINE FIELD IF NOT EXISTS part_index ON memory_operation_part TYPE int;
+DEFINE FIELD IF NOT EXISTS token_start ON memory_operation_part TYPE int;
+DEFINE FIELD IF NOT EXISTS token_end ON memory_operation_part TYPE int;
+DEFINE FIELD IF NOT EXISTS token_count ON memory_operation_part TYPE int;
+DEFINE FIELD IF NOT EXISTS token_hash ON memory_operation_part TYPE string;
+DEFINE FIELD IF NOT EXISTS content ON memory_operation_part TYPE string;
+DEFINE FIELD IF NOT EXISTS state ON memory_operation_part TYPE string;
+DEFINE FIELD IF NOT EXISTS embedding ON memory_operation_part TYPE option<array<float>>;
+DEFINE FIELD IF NOT EXISTS embedding.* ON memory_operation_part TYPE float;
+DEFINE FIELD IF NOT EXISTS updated_at ON memory_operation_part TYPE datetime;
+DEFINE INDEX IF NOT EXISTS memory_operation_part_identity
+  ON memory_operation_part FIELDS operation_id, part_index UNIQUE;
+";
+
+// ── v21: Supervised embedding executor journal ──────────────────────────────
+
+const MIGRATION_V21_SQL: &str = "
+DEFINE FIELD IF NOT EXISTS executor_progress_seq ON memory_operation TYPE int DEFAULT 0;
+DEFINE FIELD IF NOT EXISTS executor_exit_count ON memory_operation TYPE int DEFAULT 0;
+DEFINE FIELD IF NOT EXISTS executor_last_exit ON memory_operation TYPE option<string>;
+DEFINE FIELD IF NOT EXISTS executor_error ON memory_operation TYPE option<string>;
+
+DEFINE TABLE IF NOT EXISTS memory_executor_event SCHEMAFULL;
+DEFINE FIELD IF NOT EXISTS operation_id ON memory_executor_event TYPE string;
+DEFINE FIELD IF NOT EXISTS generation ON memory_executor_event TYPE int;
+DEFINE FIELD IF NOT EXISTS progress_seq ON memory_executor_event TYPE int;
+DEFINE FIELD IF NOT EXISTS kind ON memory_executor_event TYPE string;
+DEFINE FIELD IF NOT EXISTS message ON memory_executor_event TYPE option<string>;
+DEFINE FIELD IF NOT EXISTS occurred_at ON memory_executor_event TYPE datetime;
+DEFINE INDEX IF NOT EXISTS memory_executor_event_identity
+  ON memory_executor_event FIELDS operation_id, generation, progress_seq UNIQUE;
 ";
 
 #[derive(Debug, Clone)]
@@ -751,9 +829,10 @@ struct SchemaVersion {
 mod tests {
     use super::{
         MIGRATION_V11_SQL, MIGRATION_V12_SQL, MIGRATION_V13_SQL, MIGRATION_V15_SQL,
-        MIGRATION_V16_SQL, MIGRATION_V17_SQL, MIGRATION_V18_SQL, MIGRATION_V19_SQL, MIGRATIONS,
-        RawMemoryEnumRecord, RawMindMapEnumRecord, RawTaskStreamEnumRecord, apply_migration,
-        inspect_legacy_enum_data, normalize_enum_value,
+        MIGRATION_V16_SQL, MIGRATION_V17_SQL, MIGRATION_V18_SQL, MIGRATION_V19_SQL,
+        MIGRATION_V20_SQL, MIGRATION_V21_SQL, MIGRATIONS, RawMemoryEnumRecord,
+        RawMindMapEnumRecord, RawTaskStreamEnumRecord, apply_migration, inspect_legacy_enum_data,
+        normalize_enum_value,
     };
     use crate::{MapType, TaskStreamStatus};
     use surrealdb::Surreal;
@@ -764,9 +843,9 @@ mod tests {
     #[test]
     fn migration_v15_is_registered() {
         let last = MIGRATIONS.last().expect("at least one migration");
-        assert_eq!(last.version, 19);
-        assert_eq!(last.name, "task_step_table");
-        assert_eq!(last.sql, MIGRATION_V19_SQL);
+        assert_eq!(last.version, 21);
+        assert_eq!(last.name, "embedding_executor_journal");
+        assert_eq!(last.sql, MIGRATION_V21_SQL);
 
         let v18 = MIGRATIONS
             .iter()
@@ -862,6 +941,32 @@ mod tests {
         assert!(MIGRATION_V19_SQL.contains("task_step_stream_ordinal"));
         assert!(MIGRATION_V19_SQL
             .contains("DEFINE INDEX IF NOT EXISTS task_step_idempotency_key ON task_step FIELDS idempotency_key UNIQUE"));
+    }
+
+    #[test]
+    fn migration_v20_defines_idempotent_operation_ledger() {
+        assert!(MIGRATION_V20_SQL.contains("DEFINE TABLE IF NOT EXISTS memory_operation"));
+        assert!(MIGRATION_V20_SQL.contains(
+            "DEFINE INDEX IF NOT EXISTS memory_operation_id ON memory_operation FIELDS operation_id UNIQUE"
+        ));
+        assert!(MIGRATION_V20_SQL.contains("memory_operation_event_sequence"));
+        assert!(MIGRATION_V20_SQL.contains("memory_operation_part_identity"));
+    }
+
+    #[test]
+    fn migration_v21_persists_executor_lifecycle() {
+        for field in [
+            "executor_progress_seq",
+            "executor_exit_count",
+            "executor_last_exit",
+            "executor_error",
+        ] {
+            assert!(MIGRATION_V21_SQL.contains(&format!(
+                "DEFINE FIELD IF NOT EXISTS {field} ON memory_operation"
+            )));
+        }
+        assert!(MIGRATION_V21_SQL.contains("DEFINE TABLE IF NOT EXISTS memory_executor_event"));
+        assert!(MIGRATION_V21_SQL.contains("memory_executor_event_identity"));
     }
 
     #[test]

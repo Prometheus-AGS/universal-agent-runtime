@@ -11,6 +11,13 @@ use std::sync::Arc;
 use tokio::fs;
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
+use walkdir::WalkDir;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum FilesystemDiscoveryMode {
+    Project,
+    StandardAgentDirectory,
+}
 
 /// Discovers skills from a local filesystem directory.
 #[derive(Debug)]
@@ -19,6 +26,8 @@ pub struct FilesystemStorageProvider {
     name: String,
     path: PathBuf,
     enabled: bool,
+    discovery_mode: FilesystemDiscoveryMode,
+    writable_dynamic: bool,
     skills_cache: Arc<RwLock<HashMap<String, Skill>>>,
 }
 
@@ -30,6 +39,21 @@ impl FilesystemStorageProvider {
             name: name.into(),
             path: path.into(),
             enabled: true,
+            discovery_mode: FilesystemDiscoveryMode::Project,
+            writable_dynamic: true,
+            skills_cache: Arc::new(RwLock::new(HashMap::new())),
+        }
+    }
+
+    /// Create the read-only provider for the cross-agent standard directory.
+    pub fn standard_agent_directory(path: impl Into<PathBuf>) -> Self {
+        Self {
+            id: "agent-skills".to_string(),
+            name: "Standard Agent Skills".to_string(),
+            path: path.into(),
+            enabled: true,
+            discovery_mode: FilesystemDiscoveryMode::StandardAgentDirectory,
+            writable_dynamic: false,
             skills_cache: Arc::new(RwLock::new(HashMap::new())),
         }
     }
@@ -127,6 +151,402 @@ impl FilesystemStorageProvider {
         info!("Loaded skill from filesystem: {}", skill.title);
         Ok(skill)
     }
+
+    fn scan_standard_tree(
+        scan_root: &Path,
+        identity_prefix: Option<&Path>,
+        max_depth: Option<usize>,
+        provider_id: &str,
+        discovered: &mut Vec<(PathBuf, Skill)>,
+        rejected: &mut usize,
+    ) {
+        let mut walker = WalkDir::new(scan_root)
+            .follow_links(false)
+            .follow_root_links(false)
+            .sort_by_file_name();
+        if let Some(max_depth) = max_depth {
+            walker = walker.max_depth(max_depth);
+        }
+        for entry in walker.into_iter() {
+            let entry = match entry {
+                Ok(entry) => entry,
+                Err(scan_error) => {
+                    *rejected += 1;
+                    warn!(
+                        path = scan_error
+                            .path()
+                            .map_or_else(|| "<unknown>".to_string(), |path| path.display().to_string()),
+                        error = %scan_error,
+                        "could not traverse standard agent skill path"
+                    );
+                    continue;
+                }
+            };
+            if !entry.file_type().is_file() || entry.file_name() != "SKILL.md" {
+                continue;
+            }
+
+            let manifest_path = entry.path();
+            let relative = match manifest_path.strip_prefix(scan_root) {
+                Ok(relative) => relative,
+                Err(strip_error) => {
+                    *rejected += 1;
+                    warn!(
+                        path = %manifest_path.display(),
+                        error = %strip_error,
+                        "standard agent skill path escaped its source root"
+                    );
+                    continue;
+                }
+            };
+            let tree_directory = relative.parent().unwrap_or_else(|| Path::new(""));
+            let relative_directory = identity_prefix.map_or_else(
+                || tree_directory.to_path_buf(),
+                |prefix| {
+                    if tree_directory.as_os_str().is_empty() {
+                        prefix.to_path_buf()
+                    } else {
+                        prefix.join(tree_directory)
+                    }
+                },
+            );
+            let normalized_directory = if relative_directory.as_os_str().is_empty() {
+                ".".to_string()
+            } else if let Some(relative_text) = relative_directory.to_str() {
+                relative_text.replace(std::path::MAIN_SEPARATOR, "/")
+            } else {
+                *rejected += 1;
+                warn!(
+                    path = %manifest_path.display(),
+                    "standard agent skill path is not valid UTF-8"
+                );
+                continue;
+            };
+            let skill_id = format!("agents::{normalized_directory}");
+            match crate::uar::runtime::skills::builtin_loader::load_external_manifest(
+                manifest_path,
+                skill_id,
+                provider_id,
+            ) {
+                Ok(skill) => discovered.push((relative_directory, skill)),
+                Err(parse_error) => {
+                    *rejected += 1;
+                    warn!(
+                        path = %manifest_path.display(),
+                        error_kind = if parse_error.downcast_ref::<std::io::Error>().is_some() {
+                            "io"
+                        } else {
+                            "invalid-manifest"
+                        },
+                        "failed to load standard agent skill manifest"
+                    );
+                }
+            }
+        }
+    }
+
+    fn scan_standard_agent_directory(root: &Path, provider_id: &str) -> anyhow::Result<Vec<Skill>> {
+        match std::fs::symlink_metadata(root) {
+            Ok(_) => {}
+            Err(root_error) if root_error.kind() == std::io::ErrorKind::NotFound => {
+                warn!(
+                    path = %root.display(),
+                    "standard agent skills directory not found; preserving durable skills"
+                );
+                info!(
+                    name: "skills.standard.scan",
+                    source = %root.display(),
+                    discovered = 0,
+                    rejected = 0,
+                    "scanned standard agent skills directory"
+                );
+                return Ok(Vec::new());
+            }
+            Err(root_error) => {
+                warn!(
+                    path = %root.display(),
+                    error_kind = ?root_error.kind(),
+                    "standard agent skills directory is unreadable; preserving durable skills"
+                );
+                info!(
+                    name: "skills.standard.scan",
+                    source = %root.display(),
+                    discovered = 0,
+                    rejected = 1,
+                    "scanned standard agent skills directory"
+                );
+                return Ok(Vec::new());
+            }
+        }
+
+        let canonical_root = match std::fs::canonicalize(root) {
+            Ok(canonical_root) => canonical_root,
+            Err(root_error) => {
+                warn!(
+                    path = %root.display(),
+                    error_kind = ?root_error.kind(),
+                    "standard agent skills directory is unreadable; preserving durable skills"
+                );
+                info!(
+                    name: "skills.standard.scan",
+                    source = %root.display(),
+                    discovered = 0,
+                    rejected = 1,
+                    "scanned standard agent skills directory"
+                );
+                return Ok(Vec::new());
+            }
+        };
+
+        let mut discovered = Vec::<(PathBuf, Skill)>::new();
+        let mut rejected = 0usize;
+        Self::scan_standard_tree(
+            &canonical_root,
+            None,
+            None,
+            provider_id,
+            &mut discovered,
+            &mut rejected,
+        );
+
+        match std::fs::read_dir(&canonical_root) {
+            Ok(entries) => {
+                for entry_result in entries {
+                    let entry = match entry_result {
+                        Ok(entry) => entry,
+                        Err(entry_error) => {
+                            rejected += 1;
+                            warn!(
+                                path = %canonical_root.display(),
+                                error_kind = ?entry_error.kind(),
+                                "could not inspect a standard agent skill directory entry"
+                            );
+                            continue;
+                        }
+                    };
+                    let alias_path = entry.path();
+                    let Ok(metadata) = std::fs::symlink_metadata(&alias_path) else {
+                        rejected += 1;
+                        warn!(
+                            path = %alias_path.display(),
+                            "could not inspect standard agent skill alias"
+                        );
+                        continue;
+                    };
+                    if !metadata.file_type().is_symlink() {
+                        continue;
+                    }
+                    let linked_target = match std::fs::read_link(&alias_path) {
+                        Ok(linked_target) => linked_target,
+                        Err(alias_error) => {
+                            rejected += 1;
+                            warn!(
+                                path = %alias_path.display(),
+                                error_kind = ?alias_error.kind(),
+                                "could not read standard agent skill alias"
+                            );
+                            continue;
+                        }
+                    };
+                    let one_hop_target = if linked_target.is_absolute() {
+                        linked_target
+                    } else {
+                        alias_path
+                            .parent()
+                            .unwrap_or_else(|| Path::new(""))
+                            .join(linked_target)
+                    };
+                    let one_hop_metadata = match std::fs::symlink_metadata(&one_hop_target) {
+                        Ok(one_hop_metadata) => one_hop_metadata,
+                        Err(alias_error) => {
+                            rejected += 1;
+                            warn!(
+                                path = %alias_path.display(),
+                                error_kind = ?alias_error.kind(),
+                                "could not inspect standard agent skill alias target"
+                            );
+                            continue;
+                        }
+                    };
+                    if one_hop_metadata.file_type().is_symlink() {
+                        rejected += 1;
+                        warn!(
+                            path = %alias_path.display(),
+                            "standard agent skill alias chaining is not allowed"
+                        );
+                        continue;
+                    }
+                    if !one_hop_metadata.is_dir() {
+                        continue;
+                    }
+                    let alias_target = match std::fs::canonicalize(&one_hop_target) {
+                        Ok(alias_target) => alias_target,
+                        Err(alias_error) => {
+                            rejected += 1;
+                            warn!(
+                                path = %alias_path.display(),
+                                error_kind = ?alias_error.kind(),
+                                "could not resolve standard agent skill alias target"
+                            );
+                            continue;
+                        }
+                    };
+                    if alias_target == canonical_root || canonical_root.starts_with(&alias_target) {
+                        rejected += 1;
+                        warn!(
+                            path = %alias_path.display(),
+                            "standard agent skill alias resolves to the source root or its ancestor"
+                        );
+                        continue;
+                    }
+                    let alias_prefix = PathBuf::from(entry.file_name());
+                    let root_manifest = alias_target.join("SKILL.md");
+                    if root_manifest.is_file() {
+                        Self::scan_standard_tree(
+                            &alias_target,
+                            Some(&alias_prefix),
+                            Some(1),
+                            provider_id,
+                            &mut discovered,
+                            &mut rejected,
+                        );
+                    }
+
+                    let nested_skills = alias_target.join("skills");
+                    if nested_skills.is_dir() {
+                        let nested_prefix = alias_prefix.join("skills");
+                        Self::scan_standard_tree(
+                            &nested_skills,
+                            Some(&nested_prefix),
+                            None,
+                            provider_id,
+                            &mut discovered,
+                            &mut rejected,
+                        );
+                    } else if !root_manifest.is_file() {
+                        match std::fs::read_dir(&alias_target) {
+                            Ok(collection_entries) => {
+                                for collection_result in collection_entries {
+                                    let collection_entry = match collection_result {
+                                        Ok(collection_entry) => collection_entry,
+                                        Err(collection_error) => {
+                                            rejected += 1;
+                                            warn!(
+                                                path = %alias_path.display(),
+                                                error_kind = ?collection_error.kind(),
+                                                "could not inspect a standard agent skill collection entry"
+                                            );
+                                            continue;
+                                        }
+                                    };
+                                    let collection_type = match collection_entry.file_type() {
+                                        Ok(collection_type) => collection_type,
+                                        Err(collection_error) => {
+                                            rejected += 1;
+                                            warn!(
+                                                path = %collection_entry.path().display(),
+                                                error_kind = ?collection_error.kind(),
+                                                "could not inspect a standard agent skill collection child"
+                                            );
+                                            continue;
+                                        }
+                                    };
+                                    if !collection_type.is_dir() {
+                                        continue;
+                                    }
+                                    let collection_path = collection_entry.path();
+                                    if !collection_path.join("SKILL.md").is_file() {
+                                        continue;
+                                    }
+                                    let collection_prefix =
+                                        alias_prefix.join(collection_entry.file_name());
+                                    Self::scan_standard_tree(
+                                        &collection_path,
+                                        Some(&collection_prefix),
+                                        Some(1),
+                                        provider_id,
+                                        &mut discovered,
+                                        &mut rejected,
+                                    );
+                                    let collection_skills = collection_path.join("skills");
+                                    if collection_skills.is_dir() {
+                                        let collection_skills_prefix =
+                                            collection_prefix.join("skills");
+                                        Self::scan_standard_tree(
+                                            &collection_skills,
+                                            Some(&collection_skills_prefix),
+                                            None,
+                                            provider_id,
+                                            &mut discovered,
+                                            &mut rejected,
+                                        );
+                                    }
+                                }
+                            }
+                            Err(collection_error) => {
+                                rejected += 1;
+                                warn!(
+                                    path = %alias_path.display(),
+                                    error_kind = ?collection_error.kind(),
+                                    "could not enumerate standard agent skill collection alias"
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            Err(read_error) => {
+                rejected += 1;
+                warn!(
+                    path = %canonical_root.display(),
+                    error_kind = ?read_error.kind(),
+                    "could not enumerate standard agent skill aliases"
+                );
+            }
+        }
+
+        for current_index in 0..discovered.len() {
+            let current_directory = discovered[current_index].0.clone();
+            let mut closest_parent: Option<(usize, String)> = None;
+            for (candidate_directory, candidate_skill) in &discovered {
+                if candidate_directory == &current_directory
+                    || !current_directory.starts_with(candidate_directory)
+                {
+                    continue;
+                }
+                let depth = candidate_directory.components().count();
+                if closest_parent
+                    .as_ref()
+                    .is_none_or(|(closest_depth, _)| depth > *closest_depth)
+                {
+                    closest_parent = Some((depth, candidate_skill.skill_id.clone()));
+                }
+            }
+            discovered[current_index].1.parent_skill_id = closest_parent.map(|(_, id)| id);
+        }
+
+        let skills = discovered
+            .into_iter()
+            .map(|(_, skill)| skill)
+            .collect::<Vec<_>>();
+        info!(
+            name: "skills.standard.scan",
+            source = %root.display(),
+            discovered = skills.len(),
+            rejected,
+            "scanned standard agent skills directory"
+        );
+        Ok(skills)
+    }
+}
+
+/// Resolve the standard cross-agent skill directory for the current user.
+pub fn standard_agent_skills_dir() -> Option<PathBuf> {
+    dirs::home_dir().map(|home| standard_agent_skills_dir_for_home(&home))
+}
+
+fn standard_agent_skills_dir_for_home(home: &Path) -> PathBuf {
+    home.join(".agents").join("skills")
 }
 
 /// Parse a SKILL.md file into manifest (YAML frontmatter) and body (markdown).
@@ -196,7 +616,17 @@ impl SkillStorageProvider for FilesystemStorageProvider {
     }
 
     async fn refresh(&self) -> anyhow::Result<Vec<Skill>> {
-        let discovered = self.scan_directory(&self.path).await?;
+        let discovered = match self.discovery_mode {
+            FilesystemDiscoveryMode::Project => self.scan_directory(&self.path).await?,
+            FilesystemDiscoveryMode::StandardAgentDirectory => {
+                let path = self.path.clone();
+                let provider_id = self.id.clone();
+                tokio::task::spawn_blocking(move || {
+                    Self::scan_standard_agent_directory(&path, &provider_id)
+                })
+                .await??
+            }
+        };
 
         let mut cache = self.skills_cache.write().await;
         cache.clear();
@@ -234,6 +664,11 @@ impl SkillStorageProvider for FilesystemStorageProvider {
 
     async fn save_skill(&self, skill: &Skill) -> anyhow::Result<()> {
         anyhow::ensure!(
+            self.writable_dynamic,
+            "filesystem provider '{}' is read-only",
+            self.id
+        );
+        anyhow::ensure!(
             skill.provider_id == "api",
             "filesystem dynamic storage accepts only API-managed skills"
         );
@@ -255,6 +690,10 @@ impl SkillStorageProvider for FilesystemStorageProvider {
     }
 
     async fn delete_skill(&self, id: &str) -> anyhow::Result<()> {
+        if !self.writable_dynamic {
+            self.skills_cache.write().await.remove(id);
+            return Ok(());
+        }
         let skill_dir = self.path.join("dynamic").join(id);
         if skill_dir.exists() {
             fs::remove_dir_all(&skill_dir).await?;
@@ -272,6 +711,256 @@ impl SkillStorageProvider for FilesystemStorageProvider {
 mod tests {
     use super::*;
     use crate::uar::domain::skills::SkillScope;
+
+    async fn write_agent_manifest(directory: &Path, name: &str, description: &str) {
+        fs::create_dir_all(directory).await.unwrap();
+        fs::write(
+            directory.join("SKILL.md"),
+            format!("---\nname: {name}\ndescription: {description}\n---\n\n# {name}\n"),
+        )
+        .await
+        .unwrap();
+    }
+
+    #[test]
+    fn standard_directory_is_resolved_below_the_supplied_home() {
+        assert_eq!(
+            standard_agent_skills_dir_for_home(Path::new("/operator")),
+            PathBuf::from("/operator/.agents/skills")
+        );
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn standard_directory_follows_root_link_and_keeps_nested_duplicate_names() {
+        use std::os::unix::fs::symlink;
+
+        let source = tempfile::tempdir().unwrap();
+        let link_parent = tempfile::tempdir().unwrap();
+        let linked_root = link_parent.path().join("skills");
+        symlink(source.path(), &linked_root).unwrap();
+
+        write_agent_manifest(&source.path().join("first"), "duplicate", "first source").await;
+        write_agent_manifest(&source.path().join("second"), "duplicate", "second source").await;
+        write_agent_manifest(&source.path().join("pack"), "parent", "parent source").await;
+        write_agent_manifest(
+            &source.path().join("pack/skills/child"),
+            "child",
+            "nested source",
+        )
+        .await;
+        let invalid_directory = source.path().join("invalid");
+        fs::create_dir_all(&invalid_directory).await.unwrap();
+        fs::write(invalid_directory.join("SKILL.md"), "not frontmatter")
+            .await
+            .unwrap();
+
+        let provider = FilesystemStorageProvider::standard_agent_directory(&linked_root);
+        let mut loaded = provider.refresh().await.unwrap();
+        loaded.sort_by(|left, right| left.skill_id.cmp(&right.skill_id));
+
+        assert_eq!(loaded.len(), 4);
+        assert!(
+            loaded
+                .iter()
+                .all(|skill| skill.provider_id == "agent-skills")
+        );
+        assert!(loaded.iter().all(|skill| skill.version == "0.0.0"));
+        assert!(loaded.iter().any(|skill| {
+            skill.skill_id == "agents::first"
+                && skill.title == "duplicate"
+                && skill.description == "first source"
+        }));
+        assert!(loaded.iter().any(|skill| {
+            skill.skill_id == "agents::second"
+                && skill.title == "duplicate"
+                && skill.description == "second source"
+        }));
+        let child = loaded
+            .iter()
+            .find(|skill| skill.skill_id == "agents::pack/skills/child")
+            .unwrap();
+        assert_eq!(child.parent_skill_id.as_deref(), Some("agents::pack"));
+    }
+
+    #[tokio::test]
+    async fn standard_directory_assigns_distinct_ids_to_root_and_named_root_directory() {
+        let source = tempfile::tempdir().unwrap();
+        write_agent_manifest(source.path(), "source-root", "root source").await;
+        write_agent_manifest(
+            &source.path().join("__root__"),
+            "named-root",
+            "named directory source",
+        )
+        .await;
+
+        let provider = FilesystemStorageProvider::standard_agent_directory(source.path());
+        let loaded = provider.refresh().await.unwrap();
+
+        assert_eq!(loaded.len(), 2);
+        assert!(loaded.iter().any(|skill| skill.skill_id == "agents::."));
+        assert!(
+            loaded
+                .iter()
+                .any(|skill| skill.skill_id == "agents::__root__")
+        );
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn standard_directory_follows_top_level_aliases_without_chaining_or_cycles() {
+        use std::os::unix::fs::symlink;
+
+        let source = tempfile::tempdir().unwrap();
+        let aliased_skill = tempfile::tempdir().unwrap();
+        let chained_skill = tempfile::tempdir().unwrap();
+        let chain_holder = tempfile::tempdir().unwrap();
+        let intermediate_chain = tempfile::tempdir().unwrap();
+        let linked_pack = tempfile::tempdir().unwrap();
+        let linked_pack_skills = tempfile::tempdir().unwrap();
+        write_agent_manifest(&source.path().join("inside"), "inside", "inside source").await;
+        write_agent_manifest(aliased_skill.path(), "aliased", "explicit alias source").await;
+        write_agent_manifest(chained_skill.path(), "chained", "chained source").await;
+        write_agent_manifest(
+            &intermediate_chain.path().join("skills/child"),
+            "intermediate-chain",
+            "intermediate symlink source",
+        )
+        .await;
+        write_agent_manifest(linked_pack.path(), "linked-pack", "linked pack root").await;
+        write_agent_manifest(
+            &linked_pack_skills.path().join("child"),
+            "linked-pack-child",
+            "must not follow linked skills root",
+        )
+        .await;
+        symlink(
+            chained_skill.path(),
+            aliased_skill.path().join("chained-link"),
+        )
+        .unwrap();
+        let chained_alias_target = chain_holder.path().join("alias-hop");
+        symlink(
+            std::fs::canonicalize(chained_skill.path()).unwrap(),
+            &chained_alias_target,
+        )
+        .unwrap();
+        symlink(&chained_alias_target, source.path().join("top-level-chain")).unwrap();
+        let intermediate_hop = chain_holder.path().join("current");
+        symlink(
+            std::fs::canonicalize(intermediate_chain.path()).unwrap(),
+            &intermediate_hop,
+        )
+        .unwrap();
+        symlink(
+            intermediate_hop.join("skills/child"),
+            source.path().join("intermediate-component-chain"),
+        )
+        .unwrap();
+        symlink(
+            std::fs::canonicalize(linked_pack_skills.path()).unwrap(),
+            linked_pack.path().join("skills"),
+        )
+        .unwrap();
+        symlink(
+            std::fs::canonicalize(aliased_skill.path()).unwrap(),
+            source.path().join("linked-skill"),
+        )
+        .unwrap();
+        symlink(
+            std::fs::canonicalize(linked_pack.path()).unwrap(),
+            source.path().join("linked-pack"),
+        )
+        .unwrap();
+        symlink(source.path(), source.path().join("cycle")).unwrap();
+
+        let provider = FilesystemStorageProvider::standard_agent_directory(source.path());
+        let mut loaded = provider.refresh().await.unwrap();
+        loaded.sort_by(|left, right| left.skill_id.cmp(&right.skill_id));
+
+        assert_eq!(loaded.len(), 4);
+        assert_eq!(loaded[0].skill_id, "agents::inside");
+        assert_eq!(loaded[0].title, "inside");
+        assert_eq!(loaded[1].skill_id, "agents::intermediate-component-chain");
+        assert_eq!(loaded[1].title, "intermediate-chain");
+        assert_eq!(loaded[2].skill_id, "agents::linked-pack");
+        assert_eq!(loaded[2].title, "linked-pack");
+        assert_eq!(loaded[3].skill_id, "agents::linked-skill");
+        assert_eq!(loaded[3].title, "aliased");
+        assert!(loaded.iter().all(|skill| skill.title != "chained"));
+        assert!(
+            loaded
+                .iter()
+                .all(|skill| skill.title != "linked-pack-child")
+        );
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn standard_directory_aliases_scan_only_declared_skill_surfaces() {
+        use std::os::unix::fs::symlink;
+
+        let source = tempfile::tempdir().unwrap();
+        let pack = tempfile::tempdir().unwrap();
+        let collection = tempfile::tempdir().unwrap();
+        write_agent_manifest(
+            &pack.path().join("skills/child"),
+            "pack-child",
+            "declared pack skill",
+        )
+        .await;
+        write_agent_manifest(
+            &pack.path().join(".build/checkouts/dependency"),
+            "build-dependency",
+            "not a declared pack skill",
+        )
+        .await;
+        write_agent_manifest(
+            &collection.path().join("direct"),
+            "collection-child",
+            "declared collection skill",
+        )
+        .await;
+        write_agent_manifest(
+            &collection.path().join("unrelated/deep"),
+            "deep-unrelated",
+            "not an immediate collection skill",
+        )
+        .await;
+        symlink(
+            std::fs::canonicalize(pack.path()).unwrap(),
+            source.path().join("pack"),
+        )
+        .unwrap();
+        symlink(
+            std::fs::canonicalize(collection.path()).unwrap(),
+            source.path().join("collection"),
+        )
+        .unwrap();
+
+        let provider = FilesystemStorageProvider::standard_agent_directory(source.path());
+        let mut loaded = provider.refresh().await.unwrap();
+        loaded.sort_by(|left, right| left.skill_id.cmp(&right.skill_id));
+
+        assert_eq!(loaded.len(), 2);
+        assert_eq!(loaded[0].skill_id, "agents::collection/direct");
+        assert_eq!(loaded[1].skill_id, "agents::pack/skills/child");
+        assert!(loaded.iter().all(|skill| skill.title != "build-dependency"));
+        assert!(loaded.iter().all(|skill| skill.title != "deep-unrelated"));
+    }
+
+    #[tokio::test]
+    async fn standard_directory_provider_is_read_only_and_missing_source_is_nonfatal() {
+        let missing_root = tempfile::tempdir().unwrap().path().join("missing");
+        let provider = FilesystemStorageProvider::standard_agent_directory(&missing_root);
+
+        assert!(provider.refresh().await.unwrap().is_empty());
+        let mut skill = Skill::default();
+        skill.skill_id = "agents::cannot-write".to_string();
+        skill.provider_id = "api".to_string();
+        let error = provider.save_skill(&skill).await.unwrap_err();
+        assert!(error.to_string().contains("read-only"));
+    }
 
     #[test]
     fn scoped_config_round_trips_through_skill_markdown() {

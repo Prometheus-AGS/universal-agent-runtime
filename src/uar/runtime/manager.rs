@@ -3,6 +3,7 @@ use crate::llm::{LlmDriver, Message, MessageRole, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::session::SessionStore;
 use crate::uar::a2ui::realtime::A2uiReplayBackbone;
+use crate::uar::a2ui::{policy_surface::effective_policy_surface, protocol};
 use crate::uar::domain::{
     artifact::AgentArtifact,
     context::ContextConfig,
@@ -1192,10 +1193,12 @@ impl RunManager {
                     artifact_id: format!("run-policy-{run_id}"),
                     artifact_type: "effective_run_policy".to_string(),
                     title: "Effective run policy".to_string(),
-                    content: serde_json::to_string(&effective_policy)
-                        .unwrap_or_else(|_| "{}".to_string()),
-                    language: Some("json".to_string()),
+                    content: effective_policy_surface(&run_id, &effective_policy).to_string(),
+                    language: Some("a2ui".to_string()),
                     metadata: serde_json::json!({
+                        "profile": protocol::PROFILE,
+                        "protocol_version": protocol::VERSION,
+                        "catalog_id": protocol::CATALOG_ID,
                         "version": effective_policy.version,
                         "warnings": effective_policy.warnings,
                     }),

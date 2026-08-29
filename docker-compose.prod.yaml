@@ -95,7 +95,7 @@ services:
       - uar-prod-net
 
   surreal:
-    image: surrealdb/surrealdb:v2
+    image: surrealdb/surrealdb:v3.2.4@sha256:51baed8709f57f67dcf04b30e3177db846803fa9342dae2be58c6fa5f8d59843
     restart: always
     env_file: .env
     ports:

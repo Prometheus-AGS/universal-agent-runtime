@@ -98,7 +98,11 @@ describe("chat-message-store streaming", () => {
       type: "tool-call",
       toolCallId: "display-1",
       toolName: "__a2ui_display__",
-      args: { artifactType: "Card", title: "Result" },
+      args: {
+        artifactType: "Card",
+        title: "Result",
+        metadata: { profile: "uar.a2ui/1", protocol_version: "v0.9.1" },
+      },
       status: "running",
     });
     store.updateToolCall(THREAD_ID, "display-1", { result: "Rendered content", status: "complete" });
@@ -111,6 +115,8 @@ describe("chat-message-store streaming", () => {
     });
     expect(message?.chunks?.find(({ kind }) => kind === "a2ui-display")).toMatchObject({
       toolCallId: "display-1",
+      profile: "uar.a2ui/1",
+      version: "v0.9.1",
       payload: expect.objectContaining({ content: "Rendered content" }),
     });
     expect(message?.content.find((block) => block.type === "artifact" && block.id === "display-1")).toMatchObject({

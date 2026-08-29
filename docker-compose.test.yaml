@@ -85,7 +85,7 @@ services:
           cpus: '0.5'
 
   surreal:
-    image: surrealdb/surrealdb:latest
+    image: surrealdb/surrealdb:v3.2.4@sha256:51baed8709f57f67dcf04b30e3177db846803fa9342dae2be58c6fa5f8d59843
     command: start --log warn --user root --pass root --bind 0.0.0.0:8000 memory
     ports:
       - "8001:8000"

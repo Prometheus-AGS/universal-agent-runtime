@@ -79,6 +79,19 @@ const OPERATION_RECONNECT_ATTEMPTS: u32 = 2;
 /// `SURREAL_EMBEDDED_MAX_INFLIGHT`.
 const DEFAULT_EMBEDDED_MAX_INFLIGHT: usize = 16;
 
+/// Attempt cap for a transaction that keeps losing to write conflicts. A
+/// conflicting transaction is safe to resubmit, but resubmitting without a
+/// bound turns a conflict that never clears into a hang, and resubmitting
+/// without a delay spins hot against the contention it is waiting on.
+const MAX_TRANSACTION_CONFLICT_RETRIES: u32 = 16;
+
+/// Backoff before resubmitting a conflicted transaction: exponential from
+/// 1ms, capped at 100ms so a busy stream still makes progress promptly.
+fn transaction_conflict_backoff(attempt: u32) -> Duration {
+    let millis = 1u64 << attempt.min(6);
+    Duration::from_millis(millis.min(100))
+}
+
 /// Build the embedded-mode in-flight semaphore from the active config. Returns
 /// `None` in server mode (the remote DB handles its own scheduling).
 fn make_embedded_semaphore(config: &SurrealConfig) -> Option<Arc<tokio::sync::Semaphore>> {
@@ -902,6 +915,57 @@ DEFINE INDEX IF NOT EXISTS memory_embedding_hnsw
     /// `Reconnecting` or `Failed` state.
     pub fn db(&self) -> Result<Surreal<Any>> {
         self.live_db()
+    }
+
+    /// Persist a fully planned and embedded logical memory under a stable key.
+    ///
+    /// The durable-operation coordinator derives `record_key` from its caller
+    /// supplied operation id. Replaying after a crash therefore returns the
+    /// same row instead of creating a duplicate. Semantic similarity is not
+    /// consulted here: transport identity and semantic relatedness are
+    /// intentionally separate concerns.
+    pub async fn store_indexed_memory(
+        &self,
+        record_key: &str,
+        mut memory: Memory,
+        embedding: Vec<f32>,
+        token_count: Option<u32>,
+    ) -> Result<Memory> {
+        if let Some(existing) = self.get_memory(record_key).await? {
+            return Ok(existing);
+        }
+
+        let now = Datetime::default();
+        memory.embedding = Some(embedding);
+        memory.token_count = token_count;
+        memory.created_at = now;
+        memory.updated_at = now;
+        memory.version = 1;
+        let payload = DbMemory::from(memory);
+        let db = self.live_db()?;
+        let response = db
+            .query(
+                "BEGIN TRANSACTION;\n\
+                 CREATE type::record('memory', $key) CONTENT $memory;\n\
+                 CREATE type::record('memory_history', $history_key) CONTENT { memory_id: type::record('memory', $key), version: 1, old_content: NONE, new_content: $content, changed_at: $now, change_type: 'created' };\n\
+                 COMMIT TRANSACTION;",
+            )
+            .bind(("key", record_key.to_owned()))
+            .bind(("memory", payload.clone()))
+            .bind(("history_key", format!("operation-{record_key}")))
+            .bind(("content", payload.content.clone()))
+            .bind(("now", now))
+            .await
+            .context("store_indexed_memory transaction failed")?;
+        if let Err(error) = response.check() {
+            if let Some(existing) = self.get_memory(record_key).await? {
+                return Ok(existing);
+            }
+            return Err(error.into());
+        }
+        self.get_memory(record_key)
+            .await?
+            .context("indexed memory disappeared after commit")
     }
 
     /// Return the namespace and database this storage instance is connected to.
@@ -1756,19 +1820,34 @@ impl MemoryStorage for SurrealStorage {
 
     async fn delete_memory(&self, id: &str) -> Result<()> {
         let db = self.live_db()?;
+        let (table, key) = Self::parse_record_id_str(id, "memory")?;
+
+        // The audit row and the delete must land together. Issued as two
+        // separate statements they can interleave under concurrent load, so a
+        // reader can still observe the memory after `delete_memory` returned,
+        // and a failure between them leaves a 'deleted' history row behind a
+        // still-live memory.
         if let Some(mem) = self.get_memory(id).await?
             && let Some(mem_id) = &mem.id
         {
             db.query(
-                "INSERT INTO memory_history { memory_id: $mid, version: $v, old_content: $old, new_content: $old, changed_at: $now, change_type: 'deleted' }"
+                "BEGIN TRANSACTION;\n\
+                 INSERT INTO memory_history { memory_id: $mid, version: $v, old_content: $old, new_content: $old, changed_at: $now, change_type: 'deleted' };\n\
+                 DELETE type::record($table, $key);\n\
+                 COMMIT TRANSACTION;",
             )
             .bind(("mid", mem_id.clone()))
             .bind(("v", mem.version + 1))
             .bind(("old", mem.content))
             .bind(("now", Datetime::default()))
-            .await?;
+            .bind(("table", table))
+            .bind(("key", key))
+            .await?
+            .check()
+            .context("delete_memory transaction failed")?;
+            return Ok(());
         }
-        let (table, key) = Self::parse_record_id_str(id, "memory")?;
+
         db.query("DELETE type::record($table, $key)")
             .bind(("table", table))
             .bind(("key", key))
@@ -1867,9 +1946,18 @@ impl MemoryStorage for SurrealStorage {
 
     async fn get_memory_history(&self, memory_id: &str) -> Result<Vec<MemoryHistory>> {
         let db = self.live_db()?;
+        // `memory_history.memory_id` is a record link, not a string. Binding a
+        // string here compares `record` against `string`, which is never equal
+        // in SurrealQL, so the query silently returned zero rows for every
+        // caller. Rebuild the record id before comparing.
+        let (table, key) = Self::parse_record_id_str(memory_id, "memory")?;
         let results: Vec<MemoryHistory> = db
-            .query("SELECT * FROM memory_history WHERE memory_id = $mid ORDER BY version ASC")
-            .bind(("mid", memory_id.to_string()))
+            .query(
+                "SELECT * FROM memory_history \
+                 WHERE memory_id = type::record($table, $key) ORDER BY version ASC",
+            )
+            .bind(("table", table))
+            .bind(("key", key))
             .await?
             .take(0)?;
         Ok(results)
@@ -2016,27 +2104,74 @@ impl MemoryStorage for SurrealStorage {
         }
         txn_sql.push_str(";\nCOMMIT TRANSACTION;");
 
-        let mut txn_q = db
-            .query(txn_sql)
-            .bind(("mkey", memory_key.clone()))
-            .bind(("memory", db_memory.clone()))
-            .bind(("content", db_memory.content.clone()))
-            .bind(("tokens", added_tokens))
-            .bind(("now", now))
-            .bind(("name", stream_name.to_string()));
-        if let Some(v) = user_id {
-            txn_q = txn_q.bind(("uid", v.to_string()));
+        let mut conflict_attempts: u32 = 0;
+        loop {
+            let mut txn_q = db
+                .query(txn_sql.clone())
+                .bind(("mkey", memory_key.clone()))
+                .bind(("memory", db_memory.clone()))
+                .bind(("content", db_memory.content.clone()))
+                .bind(("tokens", added_tokens))
+                .bind(("now", now))
+                .bind(("name", stream_name.to_string()));
+            if let Some(v) = user_id {
+                txn_q = txn_q.bind(("uid", v.to_string()));
+            }
+            if let Some(v) = agent_id {
+                txn_q = txn_q.bind(("aid", v.to_string()));
+            }
+            let mut response = txn_q
+                .await
+                .context("add_to_task_stream transaction failed")?;
+            let errors = response.take_errors();
+            if errors.is_empty() {
+                break;
+            }
+            let transaction_conflict = errors.values().any(|error| {
+                matches!(
+                    error.query_details(),
+                    Some(surrealdb_types::QueryError::TransactionConflict)
+                ) || error.to_string().contains("Transaction conflict")
+            });
+            let transaction_abort_only = errors.values().all(|error| {
+                matches!(
+                    error.query_details(),
+                    Some(
+                        surrealdb_types::QueryError::TransactionConflict
+                            | surrealdb_types::QueryError::NotExecuted
+                    )
+                ) || error.to_string().contains("Transaction conflict")
+                    || error.to_string().contains("failed transaction")
+            });
+            if !transaction_conflict || !transaction_abort_only {
+                let error = errors
+                    .into_values()
+                    .next()
+                    .context("transaction response reported an error without details")?;
+                return Err(error).context("add_to_task_stream transaction was rejected");
+            }
+
+            // The database authoritatively rejected the entire transaction,
+            // so the stable memory key is absent and the same write can be
+            // resubmitted safely. A bare `yield_now` re-submits immediately,
+            // which under sustained contention spins hot against the very
+            // conflict it is waiting on. Back off, and bound the attempts so a
+            // conflict that never clears surfaces as an error instead of
+            // hanging the caller forever.
+            conflict_attempts += 1;
+            if conflict_attempts >= MAX_TRANSACTION_CONFLICT_RETRIES {
+                let error = errors
+                    .into_values()
+                    .next()
+                    .context("transaction response reported an error without details")?;
+                return Err(error).with_context(|| {
+                    format!(
+                        "add_to_task_stream still conflicting after {MAX_TRANSACTION_CONFLICT_RETRIES} attempts"
+                    )
+                });
+            }
+            tokio::time::sleep(transaction_conflict_backoff(conflict_attempts)).await;
         }
-        if let Some(v) = agent_id {
-            txn_q = txn_q.bind(("aid", v.to_string()));
-        }
-        let res = txn_q
-            .await
-            .context("add_to_task_stream transaction failed")?;
-        // `.check()` surfaces any per-statement error so a rejected transaction
-        // fails loudly rather than silently dropping the write.
-        res.check()
-            .context("add_to_task_stream transaction was rejected")?;
 
         // Index-stability: whether BEGIN/COMMIT occupy result-set slots is
         // driver-dependent, so we do NOT rely on a hardcoded statement index

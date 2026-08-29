@@ -7,15 +7,16 @@ stage="$(mktemp -d)"
 trap 'rm -rf "$stage"' EXIT
 
 mkdir -p "$stage/source" "$(dirname "$output")"
-tar \
-  --exclude=.git \
-  --exclude=.claude/settings.local.json \
-  --exclude=target \
-  --exclude=node_modules \
-  --exclude=website/node_modules \
-  --exclude=frontend/node_modules \
-  --exclude=dist \
-  -cf - -C "$root" . | tar -xf - -C "$stage/source"
+(
+  cd "$root"
+  git ls-files --recurse-submodules -z \
+    | while IFS= read -r -d '' source_path; do
+        [[ "$source_path" == ".claude/settings.local.json" \
+          || "$source_path" == */.claude/settings.local.json ]] && continue
+        printf '%s\0' "$source_path"
+      done \
+    | tar --null -T - -cf -
+) | tar -xf - -C "$stage/source"
 
 mkdir -p "$stage/source/.cargo"
 (

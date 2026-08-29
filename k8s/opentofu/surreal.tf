@@ -109,8 +109,8 @@ resource "kubernetes_stateful_set" "surreal" {
           # ── Health checks ─────────────────────────────────────────────────
           liveness_probe {
             http_get {
-              path   = "/health"
-              port   = 8000
+              path = "/health"
+              port = 8000
             }
             initial_delay_seconds = 30
             period_seconds        = 15
@@ -120,8 +120,8 @@ resource "kubernetes_stateful_set" "surreal" {
 
           readiness_probe {
             http_get {
-              path   = "/health"
-              port   = 8000
+              path = "/health"
+              port = 8000
             }
             initial_delay_seconds = 10
             period_seconds        = 10
