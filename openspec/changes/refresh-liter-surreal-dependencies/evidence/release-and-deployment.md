@@ -125,8 +125,14 @@ installed that same digest and relaunched the UAR LaunchAgent. The branch was
 pushed without force and opened as
 `https://github.com/Prometheus-AGS/universal-agent-runtime/pull/275`.
 
-The eight patched dependency alerts remain open against default `main`; the
-two bounded `image-size` exceptions also remain open. No alert was dismissed
-before the branch guard reached `main`. Dependabot disposition, clean-log
-closure, merge-to-main, OpenSpec archive, and final branch/worktree cleanup
-remain pending.
+PR #275 merged to `main` as `c5f83b13cf2c27d4f211a33e2b4ee6ecd48c0a06`.
+After GitHub refreshed the default-branch dependency graph, alerts #199, #200,
+#204, #205, #208, #213, #214, and #216 were `fixed`. The tracked
+`scripts/security-audit-local.sh` guard was confirmed on `origin/main` before
+alerts #210 and #211 were dismissed as `tolerable_risk`. Both dismissal
+comments identify repository security maintainers as owner, set review date
+2026-11-24, and require reopening for untrusted image ingestion or a compatible
+fixed release. A final authoritative `state=open` query returned zero alerts.
+
+Clean-log closure, OpenSpec archive, and final branch/worktree cleanup remain
+pending.

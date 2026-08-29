@@ -44,9 +44,9 @@
 
 ## 7. Commit, Advisory Closure, and Archive
 
-- [ ] 7.1 Append decisions, commands, hashes, deployment evidence, alert dispositions, and the session summary to tracked `.prometheus` history
+- [x] 7.1 Append decisions, commands, hashes, deployment evidence, alert dispositions, and the session summary to tracked `.prometheus` history
 - [x] 7.2 Obtain an artifact-only adversarial review of the implementation and correct any blocking finding before commit
-- [ ] 7.3 Commit the verified UAR implementation, deploy from that exact commit, and push `main` without force
-- [ ] 7.4 Poll the eight patched Dependabot alert IDs, dismiss only #210 and #211 with the approved bounded rationale, and verify the authoritative open-alert response is empty
+- [x] 7.3 Commit the verified UAR implementation, deploy from that exact commit, and push `main` without force
+- [x] 7.4 Poll the eight patched Dependabot alert IDs, dismiss only #210 and #211 with the approved bounded rationale, and verify the authoritative open-alert response is empty
 - [ ] 7.5 Mark tasks complete, archive the OpenSpec change, validate canonical specs, commit and push the archive/evidence update
 - [ ] 7.6 Verify root `main` equals `origin/main`, recursive submodules are clean and reachable, only the root worktree and root local `main` branch remain, and no task-created temporary resource remains

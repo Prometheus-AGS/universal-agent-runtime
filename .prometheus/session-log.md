@@ -1321,3 +1321,19 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   they nor bounded `image-size` alerts #210/#211 were closed before the guarded
   branch merged. The dependency OpenSpec remains active for that disposition,
   clean-log closure, merge, archive, and final branch/worktree cleanup.
+
+## 2026-08-29 — Integrated runtime merged and security alerts reconciled
+
+- PR #275 merged to `main` as `c5f83b13`. GitHub then marked scoped alerts
+  #199, #200, #204, #205, #208, #213, #214, and #216 fixed.
+- Confirmed `scripts/security-audit-local.sh` was present on `origin/main` and
+  rejected ICNS, JXL, HEIF, HEIC, and AVIF by extension and MIME type before
+  dismissing only #210 and #211 as `tolerable_risk`.
+- Both dismissal receipts name repository security maintainers as owner, set
+  review date 2026-11-24, and require reopening for untrusted image ingestion
+  or a compatible fixed release. The final authoritative open-alert query
+  returned zero results.
+- The dependency change remains active only because the current UAR operator
+  configuration logs optional degraded integrations during startup. Those
+  user-owned Tavily, time-server, and internal-memory settings were not removed
+  merely to manufacture an empty log.
