@@ -1337,3 +1337,14 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   configuration logs optional degraded integrations during startup. Those
   user-owned Tavily, time-server, and internal-memory settings were not removed
   merely to manufacture an empty log.
+
+## 2026-08-29 — Legacy release worktree evidence recovered
+
+- Before worktree cleanup, found one unique untracked Playwright JSON receipt
+  under the old governance frontend-certification checkout. It recorded the
+  already-certified Governance settings result: five expected, zero skipped,
+  zero unexpected, zero flaky.
+- Preserved the raw receipt as
+  `openspec/changes/archive/2026-08-27-allow-loopback-tools-without-jwt/evidence/governance-playwright.json`.
+  The remaining dirty worktree files were either byte-identical to `main` or
+  superseded generated static manifests; no unique source edit was discarded.
