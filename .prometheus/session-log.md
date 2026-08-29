@@ -1361,3 +1361,20 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   process was active, reclaiming 1,690,492,928 bytes. Also removed the obsolete
   630 MiB offline archive. The installed release and rollback backups were not
   touched.
+
+## 2026-08-29 — Loopback governance phase reflected
+
+- Reconciled the `allow-loopback-tools-without-jwt` reflection with the merged
+  PR #274 and archived 42/42 OpenSpec evidence. The phase is complete at 100%.
+- Recorded the delivery delta: two material production-correction rounds, two
+  full certification restarts, and a final KBD state-accounting correction
+  before the isolated critic returned PASS.
+- Backfilled the phase's missing execution handoff from existing completion and
+  certification receipts so the current reflect gate could validate the older
+  phase without repeating implementation or tests.
+- The strict Reflect analyzer found no S-08 inversion; its only finding was a
+  low-severity length warning with score 0.01785714365541935.
+- The required Reflect hooks completed, but the optional memory-writeback hook
+  resolved a missing external script path and the knowledge ingestion hook
+  recorded an empty-source document. The project session record remains the
+  authoritative fallback; the external hook package needs separate repair.

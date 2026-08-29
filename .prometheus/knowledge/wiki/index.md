@@ -2,6 +2,7 @@
 
 ## Reference
 
+* [Empty Source Document](/empty-source-document.md)
 * [KnowMe embedded-mobile build fixed by gating auto-discovered bins](/knowme-embedded-mobile-build-fixed-by-gating-auto-discovered-bins.md)
 * [KnowMe embedded-mobile Cargo gating scope assessment](/knowme-embedded-mobile-cargo-gating-scope-assessment.md)
 * [liter-llm MCP provider metadata resources in UAR phase](/liter-llm-mcp-provider-metadata-resources-in-uar-phase.md)
@@ -100,7 +101,6 @@
 * [Karpathy session 043322a4f475](/karpathy-session-043322a4f47522c9.md)
 * [Karpathy session 04bcfa756ad4](/karpathy-session-04bcfa756ad45bde.md)
 * [Karpathy session 04dcbe96de0a](/karpathy-session-04dcbe96de0acbb4.md)
-* [Karpathy session 0d34b7325ddd](/karpathy-session-0d34b7325ddd1f7b.md)
 * [Karpathy session 07208eb3fe6e](/karpathy-session-07208eb3fe6e3a78.md)
 * [Karpathy session 083911a7d0c8](/karpathy-session-083911a7d0c885c2.md)
 * [Karpathy session 08895223646f](/karpathy-session-08895223646ffbfa.md)
@@ -112,6 +112,7 @@
 * [Karpathy session 0a945106074f](/karpathy-session-0a945106074fa703.md)
 * [Karpathy session 0b25fc033398](/karpathy-session-0b25fc033398c14b.md)
 * [Karpathy session 0ce6f54a3519](/karpathy-session-0ce6f54a3519273d.md)
+* [Karpathy session 0d34b7325ddd](/karpathy-session-0d34b7325ddd1f7b.md)
 * [Karpathy session 0e81a448f512](/karpathy-session-0e81a448f5129197.md)
 * [Karpathy session 0f67a328e78b](/karpathy-session-0f67a328e78b4cb5.md)
 * [Karpathy session 0fb43bcf5b2f](/karpathy-session-0fb43bcf5b2f8a43.md)

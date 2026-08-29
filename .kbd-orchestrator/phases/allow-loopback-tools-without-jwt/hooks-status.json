@@ -1,0 +1,1 @@
+{"totalRuns":8,"failedRuns":0,"lastRun":{"ts":"2026-08-29T06:01:40Z","kind":"phase","edge":"after","name":"allow-loopback-tools-without-jwt","hookId":"legacy-phase-complete","layer":"builtin","mode":"augment","status":0},"lastFailure":null}

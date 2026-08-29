@@ -1,0 +1,13 @@
+{
+  "stage": "execute",
+  "completedAt": "2026-08-29T05:59:12Z",
+  "outputs": [
+    ".kbd-orchestrator/phases/allow-loopback-tools-without-jwt/progress.json",
+    "openspec/changes/archive/2026-08-27-allow-loopback-tools-without-jwt/verification.md",
+    "openspec/changes/archive/2026-08-27-allow-loopback-tools-without-jwt/certification.md"
+  ],
+  "nextStage": "reflect",
+  "summaryForNext": "Implementation, Tier 3 certification, publication, and archive completed; 42/42 OpenSpec tasks and 9/9 KBD work packages are evidenced.",
+  "skipped": false,
+  "skipReason": null
+}
