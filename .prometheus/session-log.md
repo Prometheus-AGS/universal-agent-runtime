@@ -1306,3 +1306,18 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   received HTTP 200, and ended with `agui.done` without an agent error. Browser
   inspection confirmed the installed UI exposes an accessible `A2UI display
   artifact` with structured sections and no raw JSON.
+
+## 2026-08-29 — Integrated runtime branch published
+
+- Committed the standard-skill startup implementation as `cc780302`, rebuilt
+  the locked `server-full` release at that exact commit, and reproduced SHA-256
+  `d8ebe7a7120e32b07f946c59986987deb0d0d0a6f065ca85760b8b1719bc5a1a`.
+- Reinstalled that digest through the native macOS installer. The LaunchAgent
+  runs `/Users/gqadonis/.uar/bin/universal-agent-runtime`; installed hash and
+  strict code-signature verification passed.
+- Pushed `codex/refresh-liter-surreal-dependencies` without force and opened
+  Prometheus-AGS/universal-agent-runtime PR #275 against `main`.
+- The eight patched Dependabot alerts still describe default `main`, so neither
+  they nor bounded `image-size` alerts #210/#211 were closed before the guarded
+  branch merged. The dependency OpenSpec remains active for that disposition,
+  clean-log closure, merge, archive, and final branch/worktree cleanup.

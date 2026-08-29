@@ -119,5 +119,14 @@ Two isolated artifact critics passed after the standard-skills implementation
 was corrected to allow a plugin selector symlink in an alias target's ancestor
 path while continuing to reject a symlink as the final manifest target.
 
-Exact-commit publication, Dependabot disposition, clean-log closure, OpenSpec
-archive, and final repository cleanup remain pending.
+Commit `cc780302e374a6cdb7fa809e2a026d6b109898c5` reproduced the certified UAR
+SHA-256 in an exact-commit locked release invocation. The macOS installer then
+installed that same digest and relaunched the UAR LaunchAgent. The branch was
+pushed without force and opened as
+`https://github.com/Prometheus-AGS/universal-agent-runtime/pull/275`.
+
+The eight patched dependency alerts remain open against default `main`; the
+two bounded `image-size` exceptions also remain open. No alert was dismissed
+before the branch guard reached `main`. Dependabot disposition, clean-log
+closure, merge-to-main, OpenSpec archive, and final branch/worktree cleanup
+remain pending.
