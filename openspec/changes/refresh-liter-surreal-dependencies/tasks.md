@@ -49,4 +49,4 @@
 - [x] 7.3 Commit the verified UAR implementation, deploy from that exact commit, and push `main` without force
 - [x] 7.4 Poll the eight patched Dependabot alert IDs, dismiss only #210 and #211 with the approved bounded rationale, and verify the authoritative open-alert response is empty
 - [ ] 7.5 Mark tasks complete, archive the OpenSpec change, validate canonical specs, commit and push the archive/evidence update
-- [ ] 7.6 Verify root `main` equals `origin/main`, recursive submodules are clean and reachable, only the root worktree and root local `main` branch remain, and no task-created temporary resource remains
+- [x] 7.6 Verify root `main` equals `origin/main`, recursive submodules are clean and reachable, only the root worktree and root local `main` branch remain, and no task-created temporary resource remains

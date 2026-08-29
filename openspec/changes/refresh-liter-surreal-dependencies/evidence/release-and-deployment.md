@@ -134,5 +134,11 @@ comments identify repository security maintainers as owner, set review date
 2026-11-24, and require reopening for untrusted image ingestion or a compatible
 fixed release. A final authoritative `state=open` query returned zero alerts.
 
-Clean-log closure, OpenSpec archive, and final branch/worktree cleanup remain
-pending.
+Final cleanup retained one previously untracked Governance Playwright receipt in
+the archived governance change, then removed four legacy worktrees. The two
+merged remote feature branches were deleted; the rollback remote branch was
+retained as the recovery source. Local state now contains only the root
+worktree and local `main`; recursive submodules are clean and reachable. The
+generated UAR `target` directory and obsolete offline archive were removed.
+
+Clean-log closure and OpenSpec archive remain pending.

@@ -1348,3 +1348,16 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   `openspec/changes/archive/2026-08-27-allow-loopback-tools-without-jwt/evidence/governance-playwright.json`.
   The remaining dirty worktree files were either byte-identical to `main` or
   superseded generated static manifests; no unique source edit was discarded.
+
+## 2026-08-29 — Runtime repository cleanup completed
+
+- Removed four legacy worktrees after verifying tracked/untracked state,
+  `.prometheus` uniqueness, and remote reachability. Preserved the clean
+  rollback commit on `origin/codex/governance-rollback`.
+- Deleted merged remote branches `codex/allow-loopback-governance-certification`
+  and `codex/refresh-liter-surreal-dependencies`, and removed all local topic
+  branches. Only the root worktree and local `main` remain.
+- Removed the generated UAR `target` tree after confirming no Cargo or `rustc`
+  process was active, reclaiming 1,690,492,928 bytes. Also removed the obsolete
+  630 MiB offline archive. The installed release and rollback backups were not
+  touched.
