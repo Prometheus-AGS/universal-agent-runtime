@@ -1272,3 +1272,37 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   rerun passed, then the complete rerun passed 673 library tests (one ignored),
   9/9 BDD scenarios, 93/94 integration cases with one documented ignore, all
   remaining integration binaries, and 17 doctests with 17 ignored.
+
+## 2026-08-29 — Standard agent skills startup reconciliation certified
+
+- Added and strictly validated OpenSpec change
+  `load-standard-agent-skills-on-startup`. The final isolated artifact critics
+  passed after the real `~/.agents/skills` layout exposed that plugin `current`
+  selectors must be allowed in alias-target ancestor components.
+- Focused checks passed: 15/15 shared-manifest parser tests, 6/6 standard-tree
+  discovery tests, 2/2 durable reconciliation tests, the no-embedding test, and
+  the targeted server-readiness BDD scenario with 5/5 steps.
+- Rust Tier 0 passed with `cargo check --locked --no-default-features --features
+  server-full`. Tier 2 passed with 688 library tests (one ignored), 9/9 BDD
+  scenarios and 49/49 steps, 93 integration tests (one ignored), every remaining
+  integration target, and 17 doctests (17 ignored). Formatting, diff checks,
+  and strict OpenSpec validation passed.
+- Rebuilt the production frontend and the locked `server-full` release. Installed
+  UAR SHA-256 is
+  `d8ebe7a7120e32b07f946c59986987deb0d0d0a6f065ca85760b8b1719bc5a1a`;
+  installed Surreal Memory SHA-256 is
+  `e06958d6e3eff72da54ae35ef3c417241de87bd69405b35c81be3510a4ce3880`.
+  Both installed binaries passed strict code-signature verification. The prior
+  binaries are recoverable under
+  `/Users/gqadonis/.prometheus/backups/runtime-refresh-20260829T050042Z`.
+- Dependency-ordered live verification passed. Surreal Memory 1.7.0 reported all
+  readiness capabilities, a certification memory survived its LaunchAgent
+  restart, and UAR health/readiness passed from the installed LaunchAgent binary.
+- The first UAR boot added 1,038 `agent-skills` records; the controlled restart
+  reported 1,038 unchanged with zero additions or updates, and the API returned
+  the same 1,038 records including `agents::a2ui-surface-contract`.
+- Live loopback governance emitted exactly one inactive warning for the current
+  boot. A streaming Kimi tool loop executed `web_fetch` against example.com,
+  received HTTP 200, and ended with `agui.done` without an agent error. Browser
+  inspection confirmed the installed UI exposes an accessible `A2UI display
+  artifact` with structured sections and no raw JSON.

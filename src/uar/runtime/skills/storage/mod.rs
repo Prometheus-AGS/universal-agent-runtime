@@ -57,4 +57,4 @@ pub trait SkillStorageProvider: Send + Sync + std::fmt::Debug {
 
 pub use builtin::BuiltInStorageProvider;
 pub use database::DatabaseStorageProvider;
-pub use filesystem::FilesystemStorageProvider;
+pub use filesystem::{FilesystemStorageProvider, standard_agent_skills_dir};

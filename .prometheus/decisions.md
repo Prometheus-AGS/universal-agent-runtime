@@ -979,3 +979,30 @@ turning serialized messages into an unstructured text surface.
 unbounded original frames in the render path. They expose a bounded diagnostic
 source excerpt and remain visibly invalid rather than attempting a partial or
 unsafe render.
+
+---
+
+## 2026-08-29 — Reconcile the standard agent skill library as startup metadata
+
+**Decision.** Resolve the current user's `~/.agents/skills` directory on every
+server boot, recursively load physical `SKILL.md` manifests without following
+descendant links, and support bounded top-level alias surfaces. Persist new or
+semantically changed definitions under the `agent-skills` provider while
+preserving operator enabled/scoped state and retaining records whose source is
+temporarily absent.
+
+**Rationale.** Startup reconciliation makes the cross-agent standard directory
+immediately available to UAR and gives every restart a deterministic new/change
+check. Metadata-only persistence keeps readiness independent of embedding-model
+latency; changed definitions clear stale vectors and remain available through
+the default keyword matcher.
+
+**Boundary.** A literal alias target may contain an ancestor selector such as a
+plugin's `current` symlink, but the target entry itself and links below the
+resolved target are not followed. Durable reconciliation failures stop startup;
+missing or unreadable optional sources are counted and remain non-fatal.
+
+**Uncomfortable constraint.** The standard tree can publish the same physical
+manifest through both its physical path and supported alias entrypoints. Those
+entrypoints retain distinct path-derived identities; this host currently
+publishes 1,038 `agent-skills` records rather than collapsing aliases by inode.

@@ -82,5 +82,42 @@ removed. Starting stdio without an authentication binding was also observed to
 fail closed with the expected requirement for `mcp.stdio_key_id` or
 `mcp.stdio_trust_local = true`.
 
-Exact-commit UAR installation and dependency-ordered restart evidence remain
-pending.
+## Final integrated runtime candidate
+
+The integrated UAR candidate at
+`target/release/universal-agent-runtime` had SHA-256
+`d8ebe7a7120e32b07f946c59986987deb0d0d0a6f065ca85760b8b1719bc5a1a`.
+It was installed through `packaging/native/macos/install.sh`; the installed
+`/Users/gqadonis/.uar/bin/universal-agent-runtime` had the same SHA-256 and
+passed `codesign --verify --strict --verbose=2`. Its static entrypoint served
+`assets/index-DO4ve2ts.js`.
+
+A dependency-ordered restart produced SurrealDB PID 5272 at
+`/opt/homebrew/bin/surreal`, Surreal Memory PID 5292 at
+`/usr/local/bin/surreal-memory-server`, and UAR PID 5337 at
+`/Users/gqadonis/.uar/bin/universal-agent-runtime`. The post-restart receipts
+were:
+
+- an authenticated SurrealDB query returned status `OK` and
+  `{ "certified": true }`;
+- Surreal Memory `/health` returned version 1.7.0 and status `ok`; the earlier
+  certification record survived its controlled restart;
+- UAR `/healthz` returned `ok`, `/readyz` returned `ready` with six MCP tools,
+  and the installed static entrypoint was reachable;
+- startup reconciliation discovered 1,038 standard agent skills and reported
+  all 1,038 unchanged on the controlled restart.
+
+The post-offset SurrealDB, Surreal Memory, and UAR stderr segments contained no
+`error`, `fatal`, or `panic` match. The UAR operational log did record degraded
+optional configuration: internal OpenAI-backed memory lacked a key, Tavily had
+an unresolved key placeholder, `npx` was absent for the optional time server,
+and an empty configuration-skill source was refused for tombstoning. Because
+the milestone asks for clean-log evidence, task 6.4 remains open even though
+the required services are healthy and ready.
+
+Two isolated artifact critics passed after the standard-skills implementation
+was corrected to allow a plugin selector symlink in an alias target's ancestor
+path while continuing to reject a symlink as the final manifest target.
+
+Exact-commit publication, Dependabot disposition, clean-log closure, OpenSpec
+archive, and final repository cleanup remain pending.

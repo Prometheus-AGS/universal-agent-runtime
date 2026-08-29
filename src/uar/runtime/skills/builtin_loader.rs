@@ -38,6 +38,7 @@
 //!   CH-08 skill-activation-metrics.
 
 use std::collections::{HashMap, HashSet};
+use std::io::Read as _;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
@@ -46,11 +47,13 @@ use tracing::{debug, info, warn};
 use walkdir::WalkDir;
 
 use crate::uar::domain::skills::{
-    Skill, SkillConstraints, SkillExecutionConfig, SkillKind, SkillModelRouting, SkillOrigin,
-    SkillTriggers,
+    ScopedSkillConfig, Skill, SkillConstraints, SkillExecutionConfig, SkillKind, SkillModelRouting,
+    SkillOrigin, SkillTriggers,
 };
 
 use super::pack_detection::{self, PackProvenance};
+
+const MAX_SKILL_MANIFEST_BYTES: u64 = 1024 * 1024;
 
 /// Frontmatter shape we pull out of `SKILL.md`. Skill-system uses several
 /// optional fields beyond these; unrecognized ones are ignored (`serde`
@@ -64,7 +67,13 @@ struct Frontmatter {
     #[serde(default)]
     triggers: Option<TriggersFrontmatter>,
     #[serde(default, rename = "allowed-tools")]
-    allowed_tools: Option<String>,
+    allowed_tools: Option<AllowedToolsFrontmatter>,
+    #[serde(default)]
+    tools: Vec<String>,
+    #[serde(default = "frontmatter_enabled")]
+    enabled: bool,
+    #[serde(default)]
+    scoped_config: Vec<ScopedSkillConfig>,
     #[serde(default)]
     license: Option<String>,
     #[serde(default)]
@@ -77,6 +86,61 @@ struct Frontmatter {
     metadata: Option<MetadataFrontmatter>,
     #[serde(default)]
     model_routing: Option<ModelRoutingFrontmatter>,
+}
+
+fn frontmatter_enabled() -> bool {
+    true
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum AllowedToolsFrontmatter {
+    String(String),
+    List(Vec<String>),
+}
+
+impl AllowedToolsFrontmatter {
+    fn into_tools(self) -> Vec<String> {
+        match self {
+            Self::String(tools) => parse_allowed_tools_string(&tools),
+            Self::List(tools) => tools,
+        }
+    }
+}
+
+fn parse_allowed_tools_string(tools: &str) -> Vec<String> {
+    let mut parsed = Vec::new();
+    let mut current = String::new();
+    let mut parenthesis_depth = 0usize;
+    for character in tools.chars() {
+        match character {
+            '(' => {
+                parenthesis_depth += 1;
+                current.push(character);
+            }
+            ')' => {
+                parenthesis_depth = parenthesis_depth.saturating_sub(1);
+                current.push(character);
+            }
+            ',' if parenthesis_depth == 0 => {
+                if !current.trim().is_empty() {
+                    parsed.push(current.trim().to_string());
+                }
+                current.clear();
+            }
+            whitespace if whitespace.is_whitespace() && parenthesis_depth == 0 => {
+                if !current.trim().is_empty() {
+                    parsed.push(current.trim().to_string());
+                }
+                current.clear();
+            }
+            _ => current.push(character),
+        }
+    }
+    if !current.trim().is_empty() {
+        parsed.push(current.trim().to_string());
+    }
+    parsed
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -344,24 +408,33 @@ fn resolve_nested_parents(
     }
 }
 
-fn load_one(path: &Path) -> Result<Skill> {
-    let raw =
-        std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+fn parse_manifest(path: &Path) -> Result<Skill> {
+    let file = std::fs::File::open(path).with_context(|| format!("opening {}", path.display()))?;
+    let mut bytes = Vec::new();
+    file.take(MAX_SKILL_MANIFEST_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .with_context(|| format!("reading {}", path.display()))?;
+    if bytes.len() as u64 > MAX_SKILL_MANIFEST_BYTES {
+        anyhow::bail!(
+            "skill manifest exceeds {} byte limit: {}",
+            MAX_SKILL_MANIFEST_BYTES,
+            path.display()
+        );
+    }
+    let raw = String::from_utf8(bytes)
+        .with_context(|| format!("skill manifest is not UTF-8: {}", path.display()))?;
     let (frontmatter, body) = split_frontmatter(&raw)
         .with_context(|| format!("splitting frontmatter in {}", path.display()))?;
     let meta: Frontmatter = serde_yaml::from_str(frontmatter)
         .with_context(|| format!("parsing yaml in {}", path.display()))?;
 
-    let skill_id = format!("builtin::{}", meta.name);
-    let preferred_tools = meta
+    let mut preferred_tools = meta
         .allowed_tools
-        .as_deref()
-        .map(|s| {
-            s.split_whitespace()
-                .map(|t| t.to_string())
-                .collect::<Vec<_>>()
-        })
+        .map(AllowedToolsFrontmatter::into_tools)
         .unwrap_or_default();
+    preferred_tools.extend(meta.tools);
+    let mut seen_tools = HashSet::new();
+    preferred_tools.retain(|tool| seen_tools.insert(tool.clone()));
 
     let triggers = meta
         .triggers
@@ -379,7 +452,7 @@ fn load_one(path: &Path) -> Result<Skill> {
     });
 
     Ok(Skill {
-        skill_id,
+        skill_id: String::new(),
         version: meta.version.unwrap_or_else(|| "0.0.0".to_string()),
         title: meta.name,
         description: meta.description,
@@ -388,13 +461,13 @@ fn load_one(path: &Path) -> Result<Skill> {
         preferred_tools,
         mcp_config: None,
         constraints: SkillConstraints::default(),
-        enabled: true,
-        scoped_config: Vec::new(),
+        enabled: meta.enabled,
+        scoped_config: meta.scoped_config,
         tombstoned: false,
-        provider_id: "builtin".to_string(),
+        provider_id: String::new(),
         execution_config: SkillExecutionConfig::default(),
         kind: SkillKind::Manifest,
-        origin: SkillOrigin::Builtin,
+        origin: SkillOrigin::User,
         license: meta.license,
         authors: meta.authors,
         language: meta.language,
@@ -410,17 +483,48 @@ fn load_one(path: &Path) -> Result<Skill> {
     })
 }
 
+/// Load one agentskills-compatible manifest for a non-built-in source.
+pub(crate) fn load_external_manifest(
+    path: &Path,
+    skill_id: String,
+    provider_id: &str,
+) -> Result<Skill> {
+    let mut skill = parse_manifest(path)?;
+    skill.skill_id = skill_id;
+    skill.provider_id = provider_id.to_string();
+    Ok(skill)
+}
+
+fn load_one(path: &Path) -> Result<Skill> {
+    let mut skill = parse_manifest(path)?;
+    skill.skill_id = format!("builtin::{}", skill.title);
+    skill.provider_id = "builtin".to_string();
+    skill.origin = SkillOrigin::Builtin;
+    // Built-in enablement remains operator-owned and is restored from durable
+    // state by register_builtins; source manifests do not disable built-ins.
+    skill.enabled = true;
+    skill.scoped_config.clear();
+    Ok(skill)
+}
+
 fn split_frontmatter(raw: &str) -> Result<(&str, &str)> {
-    let body = raw
-        .strip_prefix("---\n")
+    let (body, line_ending) = raw
+        .strip_prefix("---\r\n")
+        .map(|body| (body, "\r\n"))
+        .or_else(|| raw.strip_prefix("---\n").map(|body| (body, "\n")))
         .ok_or_else(|| anyhow::anyhow!("SKILL.md missing leading `---` frontmatter delimiter"))?;
+    let trailing_delimiter = format!("{line_ending}---");
     let end = body
-        .find("\n---")
+        .match_indices(&trailing_delimiter)
+        .find_map(|(index, _)| {
+            let after = &body[index + trailing_delimiter.len()..];
+            (after.is_empty() || after.starts_with(line_ending)).then_some(index)
+        })
         .ok_or_else(|| anyhow::anyhow!("SKILL.md missing trailing `---` frontmatter delimiter"))?;
     let yaml = &body[..end];
-    let rest = body[end..]
-        .trim_start_matches("\n---")
-        .trim_start_matches('\n');
+    let rest = body[end + trailing_delimiter.len()..]
+        .strip_prefix(line_ending)
+        .unwrap_or(&body[end + trailing_delimiter.len()..]);
     Ok((yaml, rest))
 }
 
@@ -438,6 +542,124 @@ mod tests {
         let (yaml, body) = split_frontmatter(raw).unwrap();
         assert!(yaml.contains("name: foo"));
         assert_eq!(body, "body text");
+    }
+
+    #[test]
+    fn split_frontmatter_accepts_crlf() {
+        let raw = "---\r\nname: foo\r\ndescription: bar\r\n---\r\nbody text";
+        let (yaml, body) = split_frontmatter(raw).unwrap();
+        assert!(yaml.contains("name: foo"));
+        assert_eq!(body, "body text");
+    }
+
+    #[test]
+    fn split_frontmatter_rejects_non_delimiter_prefix() {
+        let raw = "---\nname: foo\ndescription: bar\n---junk\nbody text";
+        assert!(split_frontmatter(raw).is_err());
+    }
+
+    #[test]
+    fn external_manifest_accepts_optional_version_and_rich_metadata() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("SKILL.md");
+        fs::write(
+            &path,
+            r#"---
+name: portable-skill
+description: portable agentskills manifest
+allowed-tools: web_fetch file_read
+tools: [native_echo, web_fetch]
+enabled: false
+license: MIT
+authors: [Operator]
+language: rust
+compatibility:
+  platforms: [macos]
+metadata:
+  tags: [portable]
+  category: runtime
+model_routing:
+  phases:
+    execute: frontier
+---
+portable body"#,
+        )
+        .unwrap();
+
+        let skill =
+            load_external_manifest(&path, "agents::portable-skill".to_string(), "agent-skills")
+                .unwrap();
+
+        assert_eq!(skill.skill_id, "agents::portable-skill");
+        assert_eq!(skill.provider_id, "agent-skills");
+        assert_eq!(skill.origin, SkillOrigin::User);
+        assert_eq!(skill.version, "0.0.0");
+        assert!(!skill.enabled);
+        assert_eq!(
+            skill.preferred_tools,
+            vec!["web_fetch", "file_read", "native_echo"]
+        );
+        assert_eq!(skill.license.as_deref(), Some("MIT"));
+        assert_eq!(skill.authors, vec!["Operator"]);
+        assert_eq!(skill.language.as_deref(), Some("rust"));
+        assert_eq!(skill.metadata_tags, vec!["portable"]);
+        assert_eq!(skill.metadata_category.as_deref(), Some("runtime"));
+        assert_eq!(skill.prompt_overlay, "portable body");
+    }
+
+    #[test]
+    fn external_manifest_rejects_content_above_the_read_limit() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("SKILL.md");
+        fs::write(&path, vec![b'x'; MAX_SKILL_MANIFEST_BYTES as usize + 1]).unwrap();
+
+        let error =
+            load_external_manifest(&path, "agents::large".to_string(), "agent-skills").unwrap_err();
+
+        assert!(error.to_string().contains("exceeds"));
+    }
+
+    #[test]
+    fn external_manifest_accepts_list_form_allowed_tools() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("SKILL.md");
+        fs::write(
+            &path,
+            r#"---
+name: list-tools
+description: agentskills list-form tools
+allowed-tools:
+  - Read
+  - Write
+  - Read
+---
+list body"#,
+        )
+        .unwrap();
+
+        let skill = load_external_manifest(&path, "agents::list-tools".to_string(), "agent-skills")
+            .unwrap();
+
+        assert_eq!(skill.preferred_tools, vec!["Read", "Write"]);
+    }
+
+    #[test]
+    fn string_form_allowed_tools_preserves_parenthesized_matchers_with_spaces() {
+        assert_eq!(
+            parse_allowed_tools_string(
+                "Read, Bash(infsh *), Bash(npx agent-browser:*), Bash(agent-browser:*)"
+            ),
+            vec![
+                "Read",
+                "Bash(infsh *)",
+                "Bash(npx agent-browser:*)",
+                "Bash(agent-browser:*)",
+            ]
+        );
+        assert_eq!(
+            parse_allowed_tools_string("web_fetch file_read Bash(git:*)"),
+            vec!["web_fetch", "file_read", "Bash(git:*)"]
+        );
     }
 
     #[test]

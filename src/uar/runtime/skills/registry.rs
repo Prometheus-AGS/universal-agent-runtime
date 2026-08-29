@@ -90,6 +90,23 @@ impl SkillRegistry {
         Ok(())
     }
 
+    /// Register and persist changed skills without waiting for optional vector
+    /// enrichment. Startup reconciliation must finish before readiness even
+    /// when the standard directory contains hundreds of skills and the local
+    /// embedding model needs a cold start.
+    pub(crate) async fn register_checked_batch_without_embeddings(
+        &mut self,
+        skills: Vec<Skill>,
+    ) -> anyhow::Result<()> {
+        for skill in skills {
+            if let Some(db) = &self.persistence {
+                db.save_skill(&skill, &[]).await?;
+            }
+            self.skills.insert(skill.skill_id.clone(), skill);
+        }
+        Ok(())
+    }
+
     /// Read every durable skill, including tombstoned records.
     pub(crate) async fn list_persisted(&self) -> anyhow::Result<Vec<Skill>> {
         match &self.persistence {

@@ -1004,3 +1004,17 @@ parallel tracing tests. No A2UI code participates in this path.
 **Working rule.** When this single capture assertion fails in a parallel run,
 run it exactly once in isolation and then rerun the complete tier. Do not patch
 unrelated RAG behavior unless the isolated test or full rerun fails.
+
+## 2026-08-29 — Standard skill aliases may contain a selector in an ancestor
+
+**Observed behavior.** The real `~/.agents/skills` tree contains top-level aliases
+whose declared target is below a plugin path such as `.../current/skills/name`,
+where `current` is itself a version selector symlink. Rejecting every symlink in
+the target's ancestor chain discarded valid installed skills even though the
+bounded target surface contained no followed links.
+
+**Working rule.** For standard-skill top-level aliases, reject a direct final
+target symlink and never follow links within the resolved target, but allow a
+literal ancestor selector to resolve during canonicalization. Keep the scan
+bounded to the root manifest, conventional `skills/` subtree, or immediate
+manifest-bearing children of a flat collection.

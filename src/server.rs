@@ -65,7 +65,10 @@ use crate::uar::{
         native_skill::NativeSkillRegistry,
         skills::{
             SkillService,
-            storage::{DatabaseStorageProvider, FilesystemStorageProvider, SkillStorageProvider},
+            storage::{
+                DatabaseStorageProvider, FilesystemStorageProvider, SkillStorageProvider,
+                standard_agent_skills_dir,
+            },
         },
     },
     security::{
@@ -819,6 +822,21 @@ async fn run_server_with_listener(
         "skills",
     ));
     skill_service.add_provider(fs_provider);
+    if let Some(agent_skills_path) = standard_agent_skills_dir() {
+        info!(
+            name: "skills.standard.configured",
+            source = %agent_skills_path.display(),
+            "Configured standard agent skills source"
+        );
+        let agent_skills_provider: Arc<dyn SkillStorageProvider> = Arc::new(
+            FilesystemStorageProvider::standard_agent_directory(agent_skills_path),
+        );
+        skill_service.add_provider(agent_skills_provider);
+    } else {
+        tracing::warn!(
+            "Could not resolve the current user home; standard agent skills source is unavailable"
+        );
+    }
     // Register the database provider so skills pushed via the API are reloaded
     // after a restart. The DB provider is added after the filesystem provider
     // so API-pushed skills (provider_id = "api") take precedence on name conflict.
@@ -835,6 +853,12 @@ async fn run_server_with_listener(
             if let Err(error) = skill_service.reconcile_config_skills().await {
                 tracing::error!(?error, "Failed to reconcile configuration skills");
             }
+            skill_service
+                .reconcile_standard_agent_skills()
+                .await
+                .map_err(|error| {
+                    anyhow::anyhow!("failed to reconcile standard agent skills: {error:#}")
+                })?;
         }
         Err(error) => {
             eprintln!("Warning: Failed to initialize skills: {error:?}");

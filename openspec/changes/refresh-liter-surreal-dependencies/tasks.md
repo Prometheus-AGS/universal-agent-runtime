@@ -39,13 +39,13 @@
 
 - [x] 6.1 Capture rollback copies, hashes, executable identities, and current loaded state for UAR, Surreal Memory, and SurrealDB before replacement
 - [x] 6.2 Install Liter and both Surreal Memory binary copies, verify installed hash equality and signing, and prove Liter CLI/MCP initialization
-- [ ] 6.3 Install UAR through the macOS upgrade path and verify source/installed hashes and signing
+- [x] 6.3 Install UAR through the macOS upgrade path and verify source/installed hashes and signing
 - [ ] 6.4 Restart SurrealDB, Surreal Memory, and UAR in dependency order and capture SurrealDB authenticated query, Surreal Memory write/restart/read, UAR health/API/static asset, listener, PID, executable, and clean-log evidence
 
 ## 7. Commit, Advisory Closure, and Archive
 
 - [ ] 7.1 Append decisions, commands, hashes, deployment evidence, alert dispositions, and the session summary to tracked `.prometheus` history
-- [ ] 7.2 Obtain an artifact-only adversarial review of the implementation and correct any blocking finding before commit
+- [x] 7.2 Obtain an artifact-only adversarial review of the implementation and correct any blocking finding before commit
 - [ ] 7.3 Commit the verified UAR implementation, deploy from that exact commit, and push `main` without force
 - [ ] 7.4 Poll the eight patched Dependabot alert IDs, dismiss only #210 and #211 with the approved bounded rationale, and verify the authoritative open-alert response is empty
 - [ ] 7.5 Mark tasks complete, archive the OpenSpec change, validate canonical specs, commit and push the archive/evidence update
