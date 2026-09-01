@@ -21,6 +21,35 @@ use std::{
 use tokio::process::Command;
 use url::Url;
 
+/// How long one MCP server gets to complete its handshake before it is
+/// skipped.
+///
+/// **No MCP server may prevent the runtime from serving prompts.** This is a
+/// hard invariant, not a tuning knob: an agent runtime whose startup can be
+/// blocked by a third-party tool process is one bad `npx` package away from
+/// total unavailability, and the failure is silent — ports bind, nothing
+/// answers, and no log names the cause.
+///
+/// 20s is generous for a local process handshake (a cold `npx` fetch is the
+/// slow case) while bounding worst-case startup at
+/// `servers × MCP_CONNECT_TIMEOUT` rather than infinity.
+const MCP_CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
+
+/// How long a connected server gets to answer `tools/list`.
+///
+/// Separate from the connect budget because the failures differ: a handshake
+/// hangs on process startup, `tools/list` hangs on a server that connected and
+/// then stopped responding. Shorter, because the connection is already proven.
+const MCP_LIST_TOOLS_TIMEOUT: Duration = Duration::from_secs(10);
+
+/// How long any single tool call gets — MCP or native — before it is failed.
+///
+/// A tool that hangs mid-turn must surface as a failed tool result the model
+/// can react to, never as a run that never ends. This was already applied to
+/// MCP tool calls as a bare `30` and is now named and shared, so the native
+/// path cannot silently diverge from it again.
+const MCP_TOOL_CALL_TIMEOUT: Duration = Duration::from_secs(30);
+
 #[async_trait]
 pub trait NativeTool: Send + Sync + std::fmt::Debug {
     fn name(&self) -> &'static str;
@@ -254,9 +283,30 @@ impl McpRegistry {
         let mut services: HashMap<String, SharedClientService> = HashMap::new();
 
         for (name, entry) in &cfg.mcp_servers {
-            let svc = match Self::connect_configured_server(name, entry).await {
-                Ok(svc) => svc,
-                Err(e) => {
+            // A server that never completes its handshake must not be able to
+            // hang startup. Observed 2026-09-01: a stdio server printed
+            // "running on stdio" and neither side ever finished, so the
+            // process bound its ports and then served nothing, forever, with
+            // no log line naming the cause. Error handling below was already
+            // correct — a failure is skipped and the registry continues — but
+            // "never answers" is not an error, so it never reached it.
+            let svc = match tokio::time::timeout(
+                MCP_CONNECT_TIMEOUT,
+                Self::connect_configured_server(name, entry),
+            )
+            .await
+            {
+                Err(_elapsed) => {
+                    crate::uar::telemetry::metrics::set_mcp_server_status(name, false);
+                    tracing::warn!(
+                        server = %name,
+                        timeout_secs = MCP_CONNECT_TIMEOUT.as_secs(),
+                        "MCP server did not complete its handshake in time; skipping it, registry continues without it"
+                    );
+                    continue;
+                }
+                Ok(Ok(svc)) => svc,
+                Ok(Err(e)) => {
                     crate::uar::telemetry::metrics::set_mcp_server_status(name, false);
                     tracing::warn!(server = %name, error = ?e, "MCP server failed to connect; skipping it, registry continues without it");
                     continue;
@@ -273,9 +323,22 @@ impl McpRegistry {
         for (server_name, service_slot) in &services {
             let svc = current_service(service_slot);
             // list_tools exists on the rmcp running service in examples
-            let result = match svc.list_tools(Default::default()).await {
-                Ok(result) => result,
-                Err(e) => {
+            let result = match tokio::time::timeout(
+                MCP_LIST_TOOLS_TIMEOUT,
+                svc.list_tools(Default::default()),
+            )
+            .await
+            {
+                Err(_elapsed) => {
+                    tracing::warn!(
+                        server = %server_name,
+                        timeout_secs = MCP_LIST_TOOLS_TIMEOUT.as_secs(),
+                        "tools/list timed out for MCP server; skipping its tools, registry continues without them"
+                    );
+                    continue;
+                }
+                Ok(Ok(result)) => result,
+                Ok(Err(e)) => {
                     tracing::warn!(server = %server_name, error = ?e, "tools/list failed for MCP server; skipping its tools, registry continues without them");
                     continue;
                 }
@@ -813,7 +876,18 @@ impl McpRegistry {
         }
 
         if let Some(tool) = self.native_tools.get(namespaced_tool) {
-            return tool.call(arguments).await;
+            // Native tools were the one execution path with no time bound;
+            // MCP tools have had one (30s, below) all along. A native tool
+            // that never returns held the whole run open with no way to
+            // recover, which is the same class of failure as a hung MCP
+            // handshake — just later in the turn.
+            return match tokio::time::timeout(MCP_TOOL_CALL_TIMEOUT, tool.call(arguments)).await {
+                Ok(result) => result,
+                Err(_elapsed) => Err(anyhow!(
+                    "native tool {namespaced_tool} timed out after {}s",
+                    MCP_TOOL_CALL_TIMEOUT.as_secs()
+                )),
+            };
         }
 
         // 1. Lookup server + raw_tool_name
@@ -853,7 +927,7 @@ impl McpRegistry {
         if let Some(args) = args_obj {
             call_params = call_params.with_arguments(args);
         }
-        let res = tokio::time::timeout(Duration::from_secs(30), service.call_tool(call_params))
+        let res = tokio::time::timeout(MCP_TOOL_CALL_TIMEOUT, service.call_tool(call_params))
             .await
             .map_err(|_| {
                 anyhow!("tools/call timed out after 30 seconds for {server_name}::{raw_tool_name}")

@@ -10,9 +10,9 @@
 //! ```json
 //! {
 //!   "mcpServers": {
-//!     "time": {
-//!       "command": "npx",
-//!       "args": ["-y", "@mcpcentral/mcp-time"]
+//!     "kreuzberg": {
+//!       "command": "kreuzberg",
+//!       "args": ["mcp", "--transport", "stdio"]
 //!     },
 //!     "tavily": {
 //!       "url": "https://mcp.tavily.com/mcp/",

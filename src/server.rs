@@ -423,6 +423,7 @@ async fn run_server_with_listener(
     // Establish and seal every tool-capable network ingress before constructing
     // RunManager. Bound sockets are inert until governance finalization activates
     // their admission tokens below.
+    info!(name: "startup.step", step = 1, stage = "governance_preflight", "UAR startup progress");
     let (governance_mutation, governance_gate, governance_status) =
         uar::governance::runtime_control::governance_runtime_handles(&config.server.host);
     governance_mutation.record_installed_authentication(config.security.jwt_required);
@@ -434,10 +435,12 @@ async fn run_server_with_listener(
             tokio::net::TcpListener::bind(&addr).await?
         }
     };
+    info!(name: "startup.step", step = 2, stage = "primary_listener_bound", "UAR startup progress");
     let primary_addr = listener.local_addr()?;
     let mut ingress_proofs =
         vec![governance_mutation.register_bound_ingress("primary-http", primary_addr)?];
 
+    info!(name: "startup.step", step = 3, stage = "companion_listener", "UAR startup progress");
     let companion = bind_companion_listener(&config.server.host, primary_addr.port()).await;
     if let Some(companion_listener) = &companion {
         governance_mutation.declare_ingress("companion-http")?;
@@ -448,6 +451,7 @@ async fn run_server_with_listener(
     }
 
     #[cfg(feature = "a2a-transport")]
+    info!(name: "startup.step", step = 4, stage = "a2a_grpc_listener", "UAR startup progress");
     let a2a_grpc_listener = {
         governance_mutation.declare_ingress("a2a-grpc")?;
         let listener = match _a2a_grpc_listener {
@@ -848,6 +852,7 @@ async fn run_server_with_listener(
         ));
         skill_service.add_provider(db_provider);
     }
+    info!(name: "startup.step", step = 6, stage = "skill_service_init", "UAR startup progress");
     match skill_service.initialize().await {
         Ok(()) => {
             if let Err(error) = skill_service.reconcile_config_skills().await {
@@ -889,6 +894,7 @@ async fn run_server_with_listener(
 
     // Initialize Provider Registry
     let provider_registry = Arc::new(crate::llm::ProviderRegistry::new());
+    info!(name: "startup.step", step = 7, stage = "provider_registry_seed", "UAR startup progress");
     provider_registry.seed_from_llm_config(&llm_config).await;
     if !config.providers.is_empty() {
         provider_registry
@@ -994,6 +1000,7 @@ async fn run_server_with_listener(
 
     // Initialize Governance Policy Engine (before RunManager so it can gate the
     // orchestrator tool loop in addition to the HTTP governance layer).
+    info!(name: "startup.step", step = 5, stage = "governance_engine", "UAR startup progress");
     let governance_engine = match GovernanceEngine::load_from_dir("policies").await {
         Ok(engine) => {
             info!(
@@ -1953,6 +1960,7 @@ async fn serve_on_listener(
         }
     };
 
+    info!(name: "startup.step", step = 8, stage = "serving_http", "UAR startup progress");
     let primary = axum::serve(listener, app.clone().into_make_service())
         .with_graceful_shutdown(shutdown_future(true));
 

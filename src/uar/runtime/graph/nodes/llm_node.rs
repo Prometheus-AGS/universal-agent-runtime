@@ -81,7 +81,21 @@ impl GraphNode for LlmNode {
 
         let req = LlmRequest {
             messages,
-            tools: Vec::new(), // Graph nodes don't handle tool calls directly
+            // The MCP registry's tools, in OpenAI shape.
+            //
+            // This was `Vec::new()` with the comment "Graph nodes don't
+            // handle tool calls directly". The effect was that NO tools
+            // reached any provider: the model saw tool names only if they
+            // appeared in prompt text, invented a call from that, and the
+            // provider had no schema to validate it against — so the call
+            // came back as prose and nothing executed. Observed 2026-09-01
+            // against a local ferrox sidecar, where the model correctly
+            // named `file_read` and `time__current_time` and neither ran.
+            //
+            // `openai_tools_json` already existed on the registry, and the
+            // registry is already on `GraphContext`; only the wiring was
+            // missing.
+            tools: ctx.mcp.openai_tools_json(),
             cache_strategy: ctx.cache_strategy.clone(),
             thinking_config: None,
             anthropic_system: None,
