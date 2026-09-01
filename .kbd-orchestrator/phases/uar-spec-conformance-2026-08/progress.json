@@ -1,13 +1,29 @@
 {
   "schemaVersion": "2",
-  "generatedBy": "agent-seeded",
-  "note": "Seeded by an agent during phase authoring, NOT by kbd-runtime. sourceRevision/derivedRevision/frontier are absent deliberately \u2014 this file carries no runtime provenance and the runtime should overwrite it on first canonical transition.",
-  "conflictCount": 0,
+  "generatedBy": "kbd-runtime",
+  "projectionContractVersion": 2,
+  "sourceRevision": 1258,
+  "derivedRevision": 1258,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 854,
+    "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
+    "525ede94-ad4e-4580-84da-627cba8991cb": 27,
+    "80130eb1-95f8-4039-8976-71bdce23779c": 61,
+    "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
+    "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
+    "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
+    "97ebf967-3be8-4123-a4ac-06a0caeede59": 12,
+    "af186a6c-4b8c-4fba-bf44-abcabf91ec8a": 22,
+    "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
+    "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
+  },
+  "conflictCount": 4,
   "phase": "uar-spec-conformance-2026-08",
   "phaseId": "uar-spec-conformance-2026-08",
   "parentPhase": null,
-  "last_updated": "2026-08-11T07:00:00Z",
-  "last_updated_by": "agent-seeded",
+  "last_updated": "2026-09-01T07:24:26.269798Z",
+  "last_updated_by": "kbd-runtime",
   "changes_total": 6,
   "changes_completed": 6,
   "implementation_total": 6,
@@ -21,57 +37,88 @@
     },
     "evidence": {
       "status": "COMPLETE",
-      "summary": "Independently re-run on main at 38d41a42, not read from the executor's artifacts: 29 passed, 0 failed, 264.16s, exit 0. Command: UAR_LIVE_INTEGRATION_BACKEND=recorded cargo test --locked --no-default-features --features server-full --test integration live::capability_cases -- --test-threads=1. All 27 capabilities covered. Evidence distribution: 1 L4, 14 L3, 4 L2, 1 shape-only, 3 absent, 6 excluded. Per-capability table with stated limits in verification.md.",
+      "summary": "OpenSpec certification, rollback normalization/recovery, KBD execution, and append-only memory receipts recorded.",
       "blockers": []
     },
     "certification": {
-      "status": "PENDING",
-      "summary": null,
+      "status": "COMPLETE",
+      "summary": "Authorized Tier 3 certification and installed live matrix passed; search-specific bypass is deterministic because no search MCP is installed.",
       "blockers": []
     },
     "publication": {
-      "status": "PENDING",
-      "summary": null,
+      "status": "COMPLETE",
+      "summary": "Origin carries forward and fail-closed rollback branches; PR 274 is open; OpenSpec archived at 42/42 with canonical specs synchronized.",
       "blockers": []
     }
   },
   "changes": [
     {
       "id": "C-01",
-      "name": "run-and-publish-baseline",
+      "title": "C-01",
       "status": "DONE",
-      "note": "baseline-2026-08-09.md \u2014 18 passed / 2 failed / 194.70s, backend=recorded, server-full"
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
     },
     {
       "id": "C-01b",
-      "name": "correct-miscalibrated-assertions",
+      "title": "C-01b",
       "status": "DONE",
-      "note": "l3_c04 must send a token or assert 401; shape_only_c13 must assert legacy_route_disabled"
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
     },
     {
       "id": "C-02",
-      "name": "blocking-ci-gate",
+      "title": "C-02",
       "status": "DONE",
-      "note": "dedicated job, continue-on-error false; proof must name the failing case"
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
     },
     {
       "id": "C-03",
-      "name": "close-eight-capability-hole",
+      "title": "C-03",
       "status": "DONE",
-      "note": "C-16,18,19,21,24,25,26,27 with per-capability target evidence level; Codex"
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
     },
     {
       "id": "C-04",
-      "name": "define-and-apply-label-taxonomy",
+      "title": "C-04",
       "status": "DONE",
-      "note": "l1_/l2_/l3_/l4_/shape_only_/absent_/excluded_ defined before relabelling; Codex"
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
     },
     {
       "id": "C-05",
-      "name": "l4-persistence",
+      "title": "C-05",
       "status": "DONE",
-      "note": "Graceful shutdown already exists (server.rs:1386 token, 1388-1420 signal handler, 1425-1438 drain, 1441/1453 wired). Seam is a caller-supplied CancellationToken on start_server_sidecar, which already takes a caller-supplied oneshot::Sender. All of C-05 to Codex; the earlier separate-scoping note is refuted."
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
     }
   ],
-  "children": []
+  "children": {},
+  "migrationStatus": null
 }

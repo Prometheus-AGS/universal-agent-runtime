@@ -1,10 +1,11 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 650,
-  "derivedRevision": 650,
+  "projectionContractVersion": 2,
+  "sourceRevision": 1258,
+  "derivedRevision": 1258,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 258,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 854,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -12,15 +13,16 @@
     "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
     "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
     "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
+    "97ebf967-3be8-4123-a4ac-06a0caeede59": 12,
     "af186a6c-4b8c-4fba-bf44-abcabf91ec8a": 22,
     "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
-  "conflictCount": 0,
+  "conflictCount": 4,
   "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "phaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "parentPhase": null,
-  "last_updated": "2026-08-24T14:21:21.297428Z",
+  "last_updated": "2026-09-01T07:24:26.269798Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 14,
   "changes_completed": 10,
@@ -35,17 +37,17 @@
     },
     "evidence": {
       "status": "COMPLETE",
-      "summary": "Five genuine model-backed functional paths passed through both API and shipped UI under local server-full; results and limits are in functional-verification.md.",
+      "summary": "OpenSpec certification, rollback normalization/recovery, KBD execution, and append-only memory receipts recorded.",
       "blockers": []
     },
     "certification": {
-      "status": "SKIPPED",
-      "summary": "Operational soak, supply-chain, and RC certification were superseded and cancelled; no certification claim is made.",
+      "status": "COMPLETE",
+      "summary": "Authorized Tier 3 certification and installed live matrix passed; search-specific bypass is deterministic because no search MCP is installed.",
       "blockers": []
     },
     "publication": {
-      "status": "SKIPPED",
-      "summary": "GA publication was superseded and cancelled; no tag or publication was performed.",
+      "status": "COMPLETE",
+      "summary": "Origin carries forward and fail-closed rollback branches; PR 274 is open; OpenSpec archived at 42/42 with canonical specs synchronized.",
       "blockers": []
     }
   },
@@ -163,8 +165,8 @@
     {
       "id": "certify-operational-resilience",
       "title": "certify-operational-resilience",
-      "status": "SKIPPED",
-      "implementation_status": "SKIPPED",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,
@@ -174,8 +176,8 @@
     {
       "id": "produce-supply-chain-artifacts",
       "title": "produce-supply-chain-artifacts",
-      "status": "SKIPPED",
-      "implementation_status": "SKIPPED",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,
@@ -185,8 +187,8 @@
     {
       "id": "certify-release-candidate",
       "title": "certify-release-candidate",
-      "status": "SKIPPED",
-      "implementation_status": "SKIPPED",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,
@@ -196,8 +198,8 @@
     {
       "id": "release-1-0-0",
       "title": "release-1-0-0",
-      "status": "SKIPPED",
-      "implementation_status": "SKIPPED",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,
@@ -207,7 +209,7 @@
   ],
   "children": {
     "fix-container-rust-toolchain-pin-consistency": {
-      "status": "DONE",
+      "status": "PENDING",
       "changes_completed": 1,
       "changes_total": 1,
       "implementation_completed": 1,
@@ -217,7 +219,7 @@
       "completed_at": null
     },
     "fix-embedded-sse-offline-reconnect": {
-      "status": "DONE",
+      "status": "PENDING",
       "changes_completed": 1,
       "changes_total": 1,
       "implementation_completed": 1,
@@ -227,7 +229,7 @@
       "completed_at": null
     },
     "fix-frontend-pnpm-lock-consistency": {
-      "status": "DONE",
+      "status": "PENDING",
       "changes_completed": 1,
       "changes_total": 1,
       "implementation_completed": 1,
@@ -237,7 +239,7 @@
       "completed_at": null
     },
     "fix-graceful-shutdown-deadline-semantics": {
-      "status": "DONE",
+      "status": "PENDING",
       "changes_completed": 1,
       "changes_total": 1,
       "implementation_completed": 1,
@@ -247,7 +249,7 @@
       "completed_at": null
     },
     "fix-mcp-reconnect-shared-service-state": {
-      "status": "DONE",
+      "status": "PENDING",
       "changes_completed": 1,
       "changes_total": 1,
       "implementation_completed": 1,
@@ -257,7 +259,7 @@
       "completed_at": null
     },
     "fix-pnpm-lock-submodule-consistency": {
-      "status": "DONE",
+      "status": "PENDING",
       "changes_completed": 1,
       "changes_total": 1,
       "implementation_completed": 1,
@@ -267,7 +269,7 @@
       "completed_at": null
     },
     "fix-provider-default-settings-consistency": {
-      "status": "DONE",
+      "status": "PENDING",
       "changes_completed": 1,
       "changes_total": 1,
       "implementation_completed": 1,

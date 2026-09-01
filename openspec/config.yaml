@@ -15,10 +15,23 @@ context: |
 
   Frontend layering rules:
   - Components render only and call hooks.
-  - Hooks subscribe to stores and expose store actions.
-  - Stores own state and call services.
-  - Services are thin HTTP/SSE/stream wrappers.
-  - Components and hooks must not import service modules directly.
+  - Persistent, shared, server-confirmed, or domain-meaningful records live in
+    the normalized entity graph and reach components through typed platform
+    domain hooks exported by @/platform/entities.
+  - Domain actions own mutation sequencing; transports own HTTP/SSE/stream I/O.
+  - Components and feature hooks must not import entity-management internals,
+    graph stores, services, or transports directly.
+  - Transient UI-local state may remain in React or Zustand when it does not
+    duplicate a graph-owned business entity.
+
+  Project conventions:
+  - Rust uses 4-space indentation, snake_case functions/modules, CamelCase
+    types, anyhow for application errors, and tracing for structured logs.
+  - TypeScript uses 2-space indentation and semicolons.
+  - Prefer existing local components, hooks, domain actions, transports, and
+    entity helpers over new abstraction families.
+  - Use short-lived feature branches and never revert user changes.
+  - Maintain compatibility with Codex, Claude Code, Cursor, and OpenCode.
 
   Product direction:
   - The frontend should become a compact live runtime operations console inspired by
