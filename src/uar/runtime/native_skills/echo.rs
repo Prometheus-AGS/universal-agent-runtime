@@ -4,6 +4,7 @@
 //! verifying that arguments are correctly round-tripped.
 
 use crate::uar::runtime::native_skill::NativeSkill;
+use crate::uar::tools::descriptor::{ToolEffect, ToolSource};
 
 /// A simple echo skill that returns its input unchanged.
 #[derive(Debug)]
@@ -30,6 +31,14 @@ impl NativeSkill for EchoSkill {
             },
             "required": ["message"]
         })
+    }
+
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ReadOnly
+    }
+
+    fn source(&self) -> ToolSource {
+        ToolSource::BuiltIn
     }
 
     async fn execute(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {

@@ -777,12 +777,12 @@ async fn run_server_with_listener(
         memory_service.clone(),
     ));
     mcp_registry = mcp_registry
-        .with_native_tool(save_tool)
-        .with_native_tool(recall_tool)
-        .with_native_tool(list_tool)
-        .with_native_tool(delete_tool)
-        .with_native_tool(update_tool)
-        .with_native_tool(history_tool);
+        .with_native_tool(save_tool)?
+        .with_native_tool(recall_tool)?
+        .with_native_tool(list_tool)?
+        .with_native_tool(delete_tool)?
+        .with_native_tool(update_tool)?
+        .with_native_tool(history_tool)?;
     info!(
         "Native tools (memory_save, memory_recall, memory_list, memory_delete_by_id, memory_update_by_id, memory_history) registered — active={}",
         memory_service.is_some()
@@ -801,7 +801,7 @@ async fn run_server_with_listener(
         &config.native_tools,
         persistence.clone(),
     )
-    .await;
+    .await?;
     info!(
         "Native skill registry initialized with {} skills",
         native_skill_registry.len().await

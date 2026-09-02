@@ -10,6 +10,7 @@
 //! multi-scope, hybrid-search, and knowledge-graph capabilities.
 
 use crate::mcp::registry::NativeTool;
+use crate::uar::tools::descriptor::ToolEffect;
 use async_trait::async_trait;
 use serde_json::json;
 use std::sync::Arc;
@@ -62,6 +63,10 @@ impl NativeTool for MemorySaveTool {
             },
             "required": ["content"]
         })
+    }
+
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ExternalMutation
     }
 
     async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
@@ -153,6 +158,10 @@ impl NativeTool for MemoryListTool {
         })
     }
 
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ReadOnly
+    }
+
     async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
         let Some(svc) = &self.memory_service else {
             return Ok(json!({ "memories": [], "message": "Memory system not enabled" }));
@@ -233,6 +242,10 @@ impl NativeTool for MemoryDeleteTool {
         })
     }
 
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ExternalMutation
+    }
+
     async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
         let Some(svc) = &self.memory_service else {
             return Ok(json!({ "status": "disabled", "message": "Memory system not enabled" }));
@@ -288,6 +301,10 @@ impl NativeTool for MemoryUpdateTool {
             },
             "required": ["memory_id", "content"]
         })
+    }
+
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ExternalMutation
     }
 
     async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
@@ -360,6 +377,10 @@ impl NativeTool for MemoryHistoryTool {
             },
             "required": ["memory_id"]
         })
+    }
+
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ReadOnly
     }
 
     async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
@@ -441,6 +462,10 @@ impl NativeTool for MemoryRecallTool {
             },
             "required": ["query"]
         })
+    }
+
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ReadOnly
     }
 
     async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {

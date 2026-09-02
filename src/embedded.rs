@@ -988,7 +988,8 @@ mod tests {
             .register(DeleteNoteSkill {
                 executed: Arc::clone(&executed),
             })
-            .await;
+            .await
+            .expect("delete-note descriptor registers");
         let runtime = build_runtime(
             driver,
             Arc::new(InMemoryProvider::new()),

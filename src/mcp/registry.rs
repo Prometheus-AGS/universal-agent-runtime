@@ -5,12 +5,13 @@ use crate::mcp::config::{
 use anyhow::{Context, anyhow};
 use async_trait::async_trait;
 use rmcp::{
-    model::{CallToolRequestParams, Tool},
+    model::{CallToolRequestParams, Tool, ToolAnnotations},
     service::ServiceExt,
     transport::{StreamableHttpClientTransport, TokioChildProcess},
 };
+use serde_json::Value;
 use std::{
-    collections::HashMap,
+    collections::{BTreeMap, HashMap},
     path::{Path, PathBuf},
     sync::{
         Arc, RwLock,
@@ -20,6 +21,13 @@ use std::{
 };
 use tokio::process::Command;
 use url::Url;
+
+use crate::uar::runtime::context::truncate::TruncationPolicy;
+use crate::uar::tools::descriptor::{
+    ApprovalClass, Exposure, ToolAssemblyError, ToolCollision, ToolDescriptor, ToolEffect,
+    ToolSource,
+};
+use crate::uar::tools::validate::ValidatorCompiler;
 
 /// How long one MCP server gets to complete its handshake before it is
 /// skipped.
@@ -55,7 +63,106 @@ pub trait NativeTool: Send + Sync + std::fmt::Debug {
     fn name(&self) -> &'static str;
     fn description(&self) -> &'static str;
     fn schema(&self) -> serde_json::Value;
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::Unknown
+    }
+    fn approval_class(&self) -> ApprovalClass {
+        match self.effect() {
+            ToolEffect::ReadOnly => ApprovalClass::NotRequired,
+            ToolEffect::ExternalMutation | ToolEffect::CodeExecution | ToolEffect::Unknown => {
+                ApprovalClass::Required
+            }
+        }
+    }
+    fn sandbox_required(&self) -> bool {
+        false
+    }
+    fn concurrency_key(&self) -> Option<&str> {
+        None
+    }
+    fn exposure(&self) -> Exposure {
+        Exposure::Eager
+    }
+    fn output_limit(&self) -> Option<TruncationPolicy> {
+        None
+    }
     async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value>;
+}
+
+fn insert_descriptor(
+    descriptors: &mut BTreeMap<String, Arc<ToolDescriptor>>,
+    descriptor: Arc<ToolDescriptor>,
+) -> Result<(), ToolAssemblyError> {
+    if let Some(existing) = descriptors.get(&descriptor.provider_name) {
+        if existing.equivalent_to(&descriptor) {
+            return Ok(());
+        }
+        return Err(ToolCollision {
+            provider_name: descriptor.provider_name.clone(),
+        }
+        .into());
+    }
+    descriptors.insert(descriptor.provider_name.clone(), descriptor);
+    Ok(())
+}
+
+fn mcp_descriptor(
+    compiler: &ValidatorCompiler,
+    server: &str,
+    provider_name: &str,
+    tool: &Tool,
+) -> Result<Arc<ToolDescriptor>, ToolAssemblyError> {
+    let input_schema = Value::Object((*tool.input_schema).clone());
+    let validator = compiler.compile(provider_name, &input_schema)?;
+    let effect = if tool
+        .annotations
+        .as_ref()
+        .is_some_and(|annotations| annotations.read_only_hint == Some(true))
+    {
+        ToolEffect::ReadOnly
+    } else {
+        ToolEffect::Unknown
+    };
+    Ok(Arc::new(ToolDescriptor {
+        id: format!("{server}::{}", tool.name),
+        provider_name: provider_name.to_string(),
+        description: tool.description.as_deref().unwrap_or_default().to_string(),
+        source: ToolSource::Mcp,
+        server: Some(server.to_string()),
+        input_schema,
+        validator,
+        effect,
+        // MCP annotations are untrusted. readOnlyHint affects scheduling only.
+        approval_class: ApprovalClass::Required,
+        sandbox_required: false,
+        concurrency_key: None,
+        exposure: Exposure::Eager,
+        output_limit: None,
+    }))
+}
+
+fn native_tool_descriptor(
+    compiler: &ValidatorCompiler,
+    provider_name: &str,
+    tool: &dyn NativeTool,
+) -> Result<Arc<ToolDescriptor>, ToolAssemblyError> {
+    let input_schema = tool.schema();
+    let validator = compiler.compile(provider_name, &input_schema)?;
+    Ok(Arc::new(ToolDescriptor {
+        id: tool.name().to_string(),
+        provider_name: provider_name.to_string(),
+        description: tool.description().to_string(),
+        source: ToolSource::BuiltIn,
+        server: None,
+        input_schema,
+        validator,
+        effect: tool.effect(),
+        approval_class: tool.approval_class(),
+        sandbox_required: tool.sandbox_required(),
+        concurrency_key: tool.concurrency_key().map(str::to_owned),
+        exposure: tool.exposure(),
+        output_limit: tool.output_limit(),
+    }))
 }
 
 type DynClientService = rmcp::service::RunningService<rmcp::service::RoleClient, ()>;
@@ -231,6 +338,8 @@ pub struct McpRegistry {
     // namespaced_tool_name -> (server_name, tool_name)
     tool_index: Arc<RwLock<HashMap<String, (String, String)>>>,
     tools: Arc<RwLock<Vec<(String, Tool)>>>, // (namespaced_name, Tool)
+    descriptors: Arc<RwLock<BTreeMap<String, Arc<ToolDescriptor>>>>,
+    validator_compiler: Arc<ValidatorCompiler>,
     // namespaced_tool_name -> NativeTool
     native_tools: Arc<HashMap<String, Arc<dyn NativeTool>>>,
 }
@@ -262,12 +371,15 @@ impl std::fmt::Debug for McpRegistry {
 impl McpRegistry {
     /// Create an empty registry with no MCP servers or tools.
     pub fn empty() -> Self {
+        let validator_compiler = Arc::new(ValidatorCompiler::default());
         Self {
             services: Arc::new(RwLock::new(HashMap::new())),
             shutting_down: Arc::new(AtomicBool::new(false)),
             server_config: Arc::new(RwLock::new(HashMap::new())),
             tool_index: Arc::new(RwLock::new(HashMap::new())),
             tools: Arc::new(RwLock::new(Vec::new())),
+            descriptors: Arc::new(RwLock::new(BTreeMap::new())),
+            validator_compiler,
             native_tools: Arc::new(HashMap::new()),
         }
     }
@@ -319,6 +431,8 @@ impl McpRegistry {
         // 2) list tools + build index
         let mut all_tools: Vec<(String, Tool)> = Vec::new();
         let mut tool_index: HashMap<String, (String, String)> = HashMap::new();
+        let mut descriptors = BTreeMap::new();
+        let validator_compiler = Arc::new(ValidatorCompiler::default());
 
         for (server_name, service_slot) in &services {
             let svc = current_service(service_slot);
@@ -350,6 +464,10 @@ impl McpRegistry {
                 // OpenAI requires: ^[a-zA-Z0-9_-]+$ (no colons, dots, or special chars)
                 // Replace :: with __ for namespacing, and sanitize any other invalid chars
                 let ns_name = Self::sanitize_tool_name(&format!("{server_name}__{tool_name}"));
+                insert_descriptor(
+                    &mut descriptors,
+                    mcp_descriptor(&validator_compiler, server_name, &ns_name, &t)?,
+                )?;
                 tool_index.insert(ns_name.clone(), (server_name.clone(), tool_name));
                 all_tools.push((ns_name, t));
             }
@@ -361,6 +479,8 @@ impl McpRegistry {
             server_config: Arc::new(RwLock::new(cfg.mcp_servers.clone())),
             tool_index: Arc::new(RwLock::new(tool_index)),
             tools: Arc::new(RwLock::new(all_tools)),
+            descriptors: Arc::new(RwLock::new(descriptors)),
+            validator_compiler,
             native_tools: Arc::new(HashMap::new()),
         })
     }
@@ -448,19 +568,42 @@ impl McpRegistry {
 
     /// Creates an empty registry for testing.
     pub fn new_empty() -> Self {
-        Self {
-            services: Arc::new(RwLock::new(HashMap::new())),
-            shutting_down: Arc::new(AtomicBool::new(false)),
-            server_config: Arc::new(RwLock::new(HashMap::new())),
-            tool_index: Arc::new(RwLock::new(HashMap::new())),
-            tools: Arc::new(RwLock::new(Vec::new())),
-            native_tools: Arc::new(HashMap::new()),
-        }
+        Self::empty()
     }
 
     /// Creates a registry with a single test tool.
     pub fn new_with_test_tool(name: &str, description: &str) -> Self {
-        let ns_name = Self::sanitize_tool_name(&format!("test__{name}"));
+        Self::new_with_test_tool_annotations(name, description, ToolAnnotations::new())
+            .expect("the static test tool schema is valid")
+    }
+
+    /// Creates a registry with one annotated test tool.
+    ///
+    /// # Errors
+    ///
+    /// Returns an assembly error if the static schema or generated descriptor
+    /// is invalid.
+    pub fn new_with_test_tool_annotations(
+        name: &str,
+        description: &str,
+        annotations: ToolAnnotations,
+    ) -> Result<Self, ToolAssemblyError> {
+        Self::new_with_test_tool_for_server("test", name, description, annotations)
+    }
+
+    /// Creates a registry with one annotated test tool under `server`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an assembly error if the static schema or generated descriptor
+    /// is invalid.
+    pub fn new_with_test_tool_for_server(
+        server: &str,
+        name: &str,
+        description: &str,
+        annotations: ToolAnnotations,
+    ) -> Result<Self, ToolAssemblyError> {
+        let ns_name = Self::sanitize_tool_name(&format!("{server}__{name}"));
         // rmcp 1.8: Tool is #[non_exhaustive] -- struct-literal syntax (even
         // with ..Default::default()) is rejected cross-crate; use Tool::new.
         let tool = Tool::new(
@@ -476,20 +619,26 @@ impl McpRegistry {
             .as_object()
             .unwrap()
             .clone(),
-        );
+        )
+        .with_annotations(annotations);
 
+        let validator_compiler = Arc::new(ValidatorCompiler::default());
+        let descriptor = mcp_descriptor(&validator_compiler, server, &ns_name, &tool)?;
         let tools = vec![(ns_name.clone(), tool)];
         let mut tool_index = HashMap::new();
-        tool_index.insert(ns_name, ("test".to_string(), name.to_string()));
+        tool_index.insert(ns_name.clone(), (server.to_string(), name.to_string()));
+        let descriptors = BTreeMap::from([(ns_name, descriptor)]);
 
-        Self {
+        Ok(Self {
             services: Arc::new(RwLock::new(HashMap::new())),
             shutting_down: Arc::new(AtomicBool::new(false)),
             server_config: Arc::new(RwLock::new(HashMap::new())),
             tool_index: Arc::new(RwLock::new(tool_index)),
             tools: Arc::new(RwLock::new(tools)),
+            descriptors: Arc::new(RwLock::new(descriptors)),
+            validator_compiler,
             native_tools: Arc::new(HashMap::new()),
-        }
+        })
     }
 
     /// Sanitize tool names for `OpenAI` API compatibility.
@@ -512,6 +661,32 @@ impl McpRegistry {
             .read()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone()
+    }
+
+    fn descriptor_map(&self) -> BTreeMap<String, Arc<ToolDescriptor>> {
+        self.descriptors
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+    }
+
+    /// Return compiled descriptors in provider-name order.
+    pub fn descriptors(&self) -> Vec<Arc<ToolDescriptor>> {
+        self.descriptors
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .values()
+            .cloned()
+            .collect()
+    }
+
+    /// Look up one compiled descriptor by provider-visible name.
+    pub fn descriptor(&self, provider_name: &str) -> Option<Arc<ToolDescriptor>> {
+        self.descriptors
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get(provider_name)
+            .cloned()
     }
 
     /// Return configured MCP server names.
@@ -569,11 +744,29 @@ impl McpRegistry {
 
         let mut discovered = Vec::new();
         let mut indexed = Vec::new();
+        let mut discovered_descriptors = Vec::new();
         for tool in result.tools {
             let raw_name = tool.name.to_string();
             let namespaced = Self::sanitize_tool_name(&format!("{name}__{raw_name}"));
+            discovered_descriptors.push(mcp_descriptor(
+                &self.validator_compiler,
+                &name,
+                &namespaced,
+                &tool,
+            )?);
             indexed.push((namespaced.clone(), (name.clone(), raw_name)));
             discovered.push((namespaced, tool));
+        }
+
+        let mut next_descriptors = self
+            .descriptors
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone();
+        next_descriptors
+            .retain(|_, descriptor| descriptor.server.as_deref() != Some(name.as_str()));
+        for descriptor in discovered_descriptors {
+            insert_descriptor(&mut next_descriptors, descriptor)?;
         }
 
         if self.shutting_down.load(Ordering::Acquire) {
@@ -631,6 +824,10 @@ impl McpRegistry {
             });
             tools.extend(discovered);
         }
+        *self
+            .descriptors
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = next_descriptors;
         crate::uar::telemetry::metrics::set_mcp_server_status(&name, true);
         Ok(())
     }
@@ -664,6 +861,10 @@ impl McpRegistry {
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .retain(|(tool, _)| !removed_names.contains(tool));
+        self.descriptors
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .retain(|_, descriptor| descriptor.server.as_deref() != Some(name));
         crate::uar::telemetry::metrics::set_mcp_server_status(name, false);
         removed
     }
@@ -697,10 +898,27 @@ impl McpRegistry {
         }
     }
 
-    /// Merge another registry into this one, returning a new registry.
+    /// Merge another registry into this one, returning a deduplicated registry.
     /// This is used to combine global tools with skill-specific tools.
-    #[must_use]
-    pub fn merge(&self, other: &McpRegistry) -> Self {
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ToolCollision`] when non-identical descriptors share a
+    /// provider-visible name.
+    pub fn merge(&self, other: &McpRegistry) -> Result<Self, ToolCollision> {
+        let mut descriptors = self.descriptor_map();
+        for descriptor in other.descriptors() {
+            if let Some(existing) = descriptors.get(&descriptor.provider_name) {
+                if !existing.equivalent_to(&descriptor) {
+                    return Err(ToolCollision {
+                        provider_name: descriptor.provider_name.clone(),
+                    });
+                }
+            } else {
+                descriptors.insert(descriptor.provider_name.clone(), descriptor);
+            }
+        }
+
         let mut services = self
             .services
             .read()
@@ -722,21 +940,31 @@ impl McpRegistry {
             .read()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone();
-        tool_index.extend(
-            other
-                .tool_index
-                .read()
-                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                .clone(),
-        );
+        for (name, target) in other
+            .tool_index
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .iter()
+        {
+            tool_index
+                .entry(name.clone())
+                .or_insert_with(|| target.clone());
+        }
 
-        let mut tools = self.tools();
-        tools.extend(other.tools());
+        let mut tools = self.tools().into_iter().collect::<BTreeMap<_, _>>();
+        for (name, tool) in other.tools() {
+            tools.entry(name).or_insert(tool);
+        }
+        let tools = tools.into_iter().collect();
 
         let mut native_tools = (*self.native_tools).clone();
-        native_tools.extend((*other.native_tools).clone());
+        for (name, tool) in other.native_tools.iter() {
+            native_tools
+                .entry(name.clone())
+                .or_insert_with(|| Arc::clone(tool));
+        }
 
-        Self {
+        Ok(Self {
             services: Arc::new(RwLock::new(services)),
             shutting_down: Arc::new(AtomicBool::new(
                 self.shutting_down.load(Ordering::Acquire)
@@ -745,8 +973,10 @@ impl McpRegistry {
             server_config: Arc::new(RwLock::new(server_config)),
             tool_index: Arc::new(RwLock::new(tool_index)),
             tools: Arc::new(RwLock::new(tools)),
+            descriptors: Arc::new(RwLock::new(descriptors)),
+            validator_compiler: Arc::clone(&self.validator_compiler),
             native_tools: Arc::new(native_tools),
-        }
+        })
     }
 
     /// Return a registry narrowed to the server and tool sets allowed by the
@@ -793,13 +1023,23 @@ impl McpRegistry {
             .filter(|(name, _)| tool_allowed(name))
             .map(|(name, tool)| (name.clone(), Arc::clone(tool)))
             .collect::<HashMap<_, _>>();
-        let tools = self
+        let tools: Vec<(String, Tool)> = self
             .tools()
             .into_iter()
             .filter(|(name, _)| {
                 tool_allowed(name)
                     && (native_tools.contains_key(name) || tool_index.contains_key(name))
             })
+            .collect();
+        let retained_names = tools
+            .iter()
+            .map(|(name, _)| name.clone())
+            .collect::<std::collections::HashSet<_>>();
+        let descriptors = self
+            .descriptors()
+            .into_iter()
+            .filter(|descriptor| retained_names.contains(&descriptor.provider_name))
+            .map(|descriptor| (descriptor.provider_name.clone(), descriptor))
             .collect();
 
         Self {
@@ -808,13 +1048,23 @@ impl McpRegistry {
             server_config: Arc::new(RwLock::new(server_config)),
             tool_index: Arc::new(RwLock::new(tool_index)),
             tools: Arc::new(RwLock::new(tools)),
+            descriptors: Arc::new(RwLock::new(descriptors)),
+            validator_compiler: Arc::clone(&self.validator_compiler),
             native_tools: Arc::new(native_tools),
         }
     }
 
-    #[must_use]
-    pub fn with_native_tool(self, tool: Arc<dyn NativeTool>) -> Self {
+    /// Add an in-process runtime tool and its compiled descriptor.
+    ///
+    /// # Errors
+    ///
+    /// Returns an assembly error for an invalid schema or a provider-name
+    /// collision.
+    pub fn with_native_tool(self, tool: Arc<dyn NativeTool>) -> Result<Self, ToolAssemblyError> {
         let ns_name = Self::sanitize_tool_name(&format!("native__{}", tool.name()));
+        let descriptor = native_tool_descriptor(&self.validator_compiler, &ns_name, tool.as_ref())?;
+        let mut descriptors = self.descriptor_map();
+        insert_descriptor(&mut descriptors, descriptor)?;
 
         let mut tools = self.tools();
         let mcp_tool = Tool::new(
@@ -830,33 +1080,23 @@ impl McpRegistry {
         let mut native_tools = (*self.native_tools).clone();
         native_tools.insert(ns_name, tool);
 
-        Self {
+        Ok(Self {
             services: self.services, // Keep ref
             shutting_down: self.shutting_down,
             server_config: self.server_config,
             tool_index: self.tool_index, // Keep ref
             tools: Arc::new(RwLock::new(tools)),
+            descriptors: Arc::new(RwLock::new(descriptors)),
+            validator_compiler: self.validator_compiler,
             native_tools: Arc::new(native_tools),
-        }
+        })
     }
 
     pub fn openai_tools_json(&self) -> Vec<serde_json::Value> {
-        self.tools()
+        self.descriptors()
             .into_iter()
-            .map(|(ns_name, t)| {
-                // rmcp Tool uses input_schema as an Arc<JsonObject>; convert to serde_json.
-                let params = serde_json::to_value(&*t.input_schema)
-                    .unwrap_or_else(|_| serde_json::json!({"type":"object","properties":{}}));
-
-                serde_json::json!({
-                    "type": "function",
-                    "function": {
-                        "name": ns_name,
-                        "description": t.description.as_deref().unwrap_or(""),
-                        "parameters": params
-                    }
-                })
-            })
+            .filter(|descriptor| descriptor.exposure == Exposure::Eager)
+            .map(|descriptor| descriptor.openai_tool_json())
             .collect()
     }
 
@@ -1155,7 +1395,9 @@ with open(trace_path, "a", encoding="utf-8") as trace:
         let allowed_tools = HashSet::from(["resilience__echo".to_string()]);
         let first_view = registry.filtered(Some(&allowed_servers), Some(&allowed_tools));
         let second_view = registry.filtered(Some(&allowed_servers), Some(&allowed_tools));
-        let merged_view = McpRegistry::empty().merge(&registry);
+        let merged_view = McpRegistry::empty()
+            .merge(&registry)
+            .expect("descriptors do not collide");
         let denied_server_view = registry.filtered(Some(&HashSet::new()), None);
         let denied_tool_view = registry.filtered(Some(&allowed_servers), Some(&HashSet::new()));
 

@@ -23,6 +23,7 @@ use crate::uar::compiler::pipeline;
 use crate::uar::compiler::registries::{InMemoryEndpointRegistry, InMemorySchemaRegistry};
 use crate::uar::compiler::signing::KeyProvider;
 use crate::uar::runtime::native_skill::NativeSkill;
+use crate::uar::tools::descriptor::{ToolEffect, ToolSource};
 
 /// A [`NativeSkill`] that compiles a complete UAR-AGENT-MD Markdown document
 /// through the 8-stage pipeline and returns a signed descriptor.
@@ -60,6 +61,14 @@ impl NativeSkill for CompilerAgentSkill {
                 }
             }
         })
+    }
+
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ReadOnly
+    }
+
+    fn source(&self) -> ToolSource {
+        ToolSource::BuiltIn
     }
 
     async fn execute(&self, args: Value) -> anyhow::Result<Value> {

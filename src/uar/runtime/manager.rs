@@ -357,15 +357,6 @@ fn memory_mutation_from_tool_end(evt: &NormalizedEvent, run_id: &str) -> Option<
     })
 }
 
-/// Simple heuristic to determine if a tool call requires user approval before execution.
-/// Tools whose names contain destructive or write-oriented keywords are flagged.
-/// This will be replaced by Cedar policy evaluation in a future milestone.
-fn tool_requires_approval(tool_name: &str) -> bool {
-    let lower = tool_name.to_lowercase();
-    const RISKY_KEYWORDS: &[&str] = &["delete", "remove", "write", "drop", "truncate", "destroy"];
-    RISKY_KEYWORDS.iter().any(|kw| lower.contains(kw))
-}
-
 fn governance_bypass_decision(
     gate: Option<&crate::uar::governance::runtime_control::GovernanceGateHandle>,
 ) -> Option<crate::llm::ToolApprovalResult> {
@@ -1682,7 +1673,29 @@ impl RunManager {
         // Merge registries
         let mut final_mcp = (*self.global_mcp).clone();
         for reg in registries_to_merge {
-            final_mcp = final_mcp.merge(&reg);
+            final_mcp = match final_mcp.merge(&reg) {
+                Ok(merged) => merged,
+                Err(error) => {
+                    tracing::error!(run_id = %run_id, %error, "Tool descriptor assembly failed");
+                    if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                        state.run.status = RunStatus::Error;
+                    }
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: run_id.clone(),
+                            code: "tool_collision".to_string(),
+                            message: error.to_string(),
+                        })
+                        .await;
+                    emitter
+                        .emit(NormalizedEvent::RunDone {
+                            run_id: run_id.clone(),
+                        })
+                        .await;
+                    self.run_cancellations.write().await.remove(&run_id);
+                    return run_id;
+                }
+            };
         }
         let selected_servers = effective_policy
             .mcp_servers
@@ -1781,7 +1794,7 @@ impl RunManager {
                 let approval_governance_gate = self.governance_gate.clone();
                 let effective_tool_approval = effective_policy.tool_approval;
                 let gate: crate::llm::ToolApprovalGate = Arc::new(
-                    move |tool_call_id, tool_name, arguments_json, call_index| {
+                    move |tool_call_id, tool_name, approval_class, arguments_json, call_index| {
                         let run_id = approval_run_id.clone();
                         let emitter = approval_emitter.clone();
                         let pending = Arc::clone(&approval_pending);
@@ -1815,13 +1828,15 @@ impl RunManager {
                                     .await;
                                 return crate::llm::ToolApprovalResult::Rejected { reason };
                             }
-                            let heuristic_flag = effective_tool_approval == ToolApprovalPolicy::Ask
-                                || tool_requires_approval(&tool_name);
+                            let approval_required = effective_tool_approval
+                                == ToolApprovalPolicy::Ask
+                                || approval_class
+                                    == crate::uar::tools::descriptor::ApprovalClass::Required;
                             let decision = match &governance {
                                 Some(engine) => engine
-                                    .tool_decision(&agent_id, &tool_name, heuristic_flag)
+                                    .tool_decision(&agent_id, &tool_name, approval_required)
                                     .await,
-                                None if heuristic_flag => crate::uar::governance::engine::ToolGovernanceDecision::RequireApproval,
+                                None if approval_required => crate::uar::governance::engine::ToolGovernanceDecision::RequireApproval,
                                 None => crate::uar::governance::engine::ToolGovernanceDecision::Allow,
                             };
                             match decision {
@@ -1841,9 +1856,14 @@ impl RunManager {
                                 }
                                 crate::uar::governance::engine::ToolGovernanceDecision::RequireApproval => {}
                             }
-                            let risk_reason = format!(
-                                "Tool '{tool_name}' may perform a destructive or write operation"
-                            );
+                            let risk_reason = if effective_tool_approval == ToolApprovalPolicy::Ask
+                            {
+                                format!(
+                                    "Tool '{tool_name}' requires approval under the effective run policy"
+                                )
+                            } else {
+                                format!("Tool '{tool_name}' requires approval under its descriptor")
+                            };
                             // Emit approval-required event to the client
                             emitter
                                 .emit(NormalizedEvent::ToolCallApprovalRequired {

@@ -1,6 +1,7 @@
 //! Native web_fetch tool — performs HTTP GET/POST requests on behalf of the agent.
 
 use crate::uar::runtime::native_skill::NativeSkill;
+use crate::uar::tools::descriptor::{ToolEffect, ToolSource};
 use async_trait::async_trait;
 use serde_json::{Value, json};
 use std::time::Duration;
@@ -159,6 +160,12 @@ impl NativeSkill for WebFetchTool {
                 "raw": { "type": "boolean" }
             }
         })
+    }
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ExternalMutation
+    }
+    fn source(&self) -> ToolSource {
+        ToolSource::BuiltIn
     }
     async fn execute(&self, args: Value) -> anyhow::Result<Value> {
         let url = match args.get("url").and_then(Value::as_str) {
@@ -356,7 +363,10 @@ mod guard_wiring_tests {
         use std::collections::HashSet;
 
         let registry = NativeSkillRegistry::new();
-        registry.register(tool()).await;
+        registry
+            .register(tool())
+            .await
+            .expect("web-fetch descriptor registers");
         assert!(
             registry.contains("web_fetch").await,
             "precondition: the tool is registered"

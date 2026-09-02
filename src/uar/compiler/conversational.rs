@@ -24,6 +24,7 @@ use crate::uar::compiler::registries::{InMemoryEndpointRegistry, InMemorySchemaR
 use crate::uar::compiler::session::{CompilerSession, SessionStatus, TurnRole};
 use crate::uar::compiler::signing::KeyProvider;
 use crate::uar::runtime::native_skill::NativeSkill;
+use crate::uar::tools::descriptor::{ToolEffect, ToolSource};
 
 /// Thread-safe session store for conversational compilation.
 #[derive(Debug, Clone)]
@@ -118,6 +119,14 @@ impl NativeSkill for UpdateSectionTool {
                 }
             }
         })
+    }
+
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ExternalMutation
+    }
+
+    fn source(&self) -> ToolSource {
+        ToolSource::BuiltIn
     }
 
     async fn execute(&self, args: Value) -> anyhow::Result<Value> {
@@ -258,6 +267,14 @@ impl NativeSkill for CheckCompletenessTool {
         })
     }
 
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ReadOnly
+    }
+
+    fn source(&self) -> ToolSource {
+        ToolSource::BuiltIn
+    }
+
     async fn execute(&self, args: Value) -> anyhow::Result<Value> {
         let session_id = args
             .get("session_id")
@@ -330,6 +347,14 @@ impl NativeSkill for CompileSessionTool {
                 }
             }
         })
+    }
+
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ExternalMutation
+    }
+
+    fn source(&self) -> ToolSource {
+        ToolSource::BuiltIn
     }
 
     async fn execute(&self, args: Value) -> anyhow::Result<Value> {

@@ -12,6 +12,7 @@ use serde_json::json;
 use super::session_manager::SessionManager;
 use super::types::{ExecutionMode, ExecutionRequest, Language, SandboxConfig};
 use crate::mcp::registry::NativeTool;
+use crate::uar::tools::descriptor::ToolEffect;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -86,6 +87,10 @@ impl NativeTool for SandboxCodeExecTool {
             },
             "required": ["language", "code"]
         })
+    }
+
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::CodeExecution
     }
 
     async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
@@ -200,6 +205,10 @@ impl NativeTool for SandboxShellExecTool {
         })
     }
 
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::CodeExecution
+    }
+
     async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
         let command = args
             .get("command")
@@ -302,6 +311,10 @@ impl NativeTool for SandboxFileReadTool {
         })
     }
 
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ReadOnly
+    }
+
     async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
         let session_id = args
             .get("session_id")
@@ -386,6 +399,10 @@ impl NativeTool for SandboxFileWriteTool {
             },
             "required": ["session_id", "path", "content"]
         })
+    }
+
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ExternalMutation
     }
 
     async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {

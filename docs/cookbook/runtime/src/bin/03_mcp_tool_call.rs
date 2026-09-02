@@ -33,7 +33,7 @@ impl NativeTool for EchoTool {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let registry = McpRegistry::empty().with_native_tool(Arc::new(EchoTool));
+    let registry = McpRegistry::empty().with_native_tool(Arc::new(EchoTool))?;
     let result = registry
         .call_namespaced_tool("native__echo", serde_json::json!({"message": "Hello, UAR"}))
         .await?;

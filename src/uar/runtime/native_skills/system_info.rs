@@ -4,6 +4,7 @@
 //! requiring any external tools or MCP servers.
 
 use crate::uar::runtime::native_skill::NativeSkill;
+use crate::uar::tools::descriptor::{ToolEffect, ToolSource};
 
 /// Returns basic host system information.
 #[derive(Debug)]
@@ -25,6 +26,14 @@ impl NativeSkill for SystemInfoSkill {
             "properties": {},
             "additionalProperties": false
         })
+    }
+
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ReadOnly
+    }
+
+    fn source(&self) -> ToolSource {
+        ToolSource::BuiltIn
     }
 
     async fn execute(&self, _args: serde_json::Value) -> anyhow::Result<serde_json::Value> {

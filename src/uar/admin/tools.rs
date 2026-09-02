@@ -111,7 +111,10 @@ mod tests {
     #[tokio::test]
     async fn lists_native_tools_with_their_source() {
         let native = Arc::new(NativeSkillRegistry::new());
-        native.register(StubTool).await;
+        native
+            .register(StubTool)
+            .await
+            .expect("stub descriptor registers");
         let mcp = Arc::new(McpRegistry::new_empty());
 
         let listed = list(&native, &mcp).await;

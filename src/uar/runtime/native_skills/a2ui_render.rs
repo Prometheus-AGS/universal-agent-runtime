@@ -2,6 +2,7 @@
 
 use crate::uar::a2ui::protocol::parse_message;
 use crate::uar::runtime::native_skill::NativeSkill;
+use crate::uar::tools::descriptor::{ToolEffect, ToolSource};
 
 #[derive(Debug)]
 pub struct A2uiRenderSkill;
@@ -137,6 +138,14 @@ impl NativeSkill for A2uiRenderSkill {
             },
             "additionalProperties": false
         })
+    }
+
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ReadOnly
+    }
+
+    fn source(&self) -> ToolSource {
+        ToolSource::BuiltIn
     }
 
     async fn execute(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {

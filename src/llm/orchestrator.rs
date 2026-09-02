@@ -34,6 +34,10 @@ use crate::config::{FailoverConfig, FallbackModel, LlmConfig};
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::{NormalizedEvent, RuntimeStepKind};
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
+use crate::uar::tools::descriptor::{
+    ApprovalClass, Exposure, ToolCollision, ToolDescriptor, ToolEffect,
+};
+use crate::uar::tools::validate;
 
 use super::{
     LlmDriver, LlmRequest, Message, MessageContent, MessageRole, ToolCall, ToolCallFunction,
@@ -91,6 +95,7 @@ pub type ToolApprovalGate = Arc<
     dyn Fn(
             String, // tool_call_id
             String, // tool_name
+            crate::uar::tools::descriptor::ApprovalClass,
             String, // arguments_json
             usize,  // call_index
         ) -> Pin<Box<dyn Future<Output = ToolApprovalResult> + Send>>
@@ -107,44 +112,6 @@ struct ToolCallAccumulator {
     id: Option<String>,
     name: Option<String>,
     arguments: String,
-}
-
-/// Returns `true` if the tool name looks like a code-execution tool.
-///
-/// Used by the `Auto` execution mode to decide whether to sandbox a tool call.
-fn is_code_execution_tool(name: &str) -> bool {
-    let n = name.to_lowercase();
-    // Strip namespace prefix (e.g. "mcp::execute_code" → "execute_code")
-    let local = n.rsplit("::").next().unwrap_or(&n);
-    matches!(
-        local,
-        "execute_code"
-            | "run_code"
-            | "eval_code"
-            | "code_interpreter"
-            | "python_repl"
-            | "bash"
-            | "shell"
-            | "run_bash"
-            | "run_python"
-            | "run_script"
-            | "computer"
-    ) || local.starts_with("execute_")
-        || local.ends_with("_repl")
-}
-
-/// Conservative allowlist for parallel execution. Unknown and mutating tools
-/// remain sequential because their side effects may depend on call order.
-fn is_parallel_safe_tool(name: &str) -> bool {
-    let local = name
-        .rsplit_once("__")
-        .map_or(name, |(_, local)| local)
-        .to_ascii_lowercase();
-    [
-        "get_", "list_", "read_", "search_", "query_", "fetch_", "lookup_", "status_", "health_",
-    ]
-    .iter()
-    .any(|prefix| local.starts_with(prefix))
 }
 
 fn is_retryable_provider_error(
@@ -301,6 +268,32 @@ impl std::fmt::Debug for Orchestrator {
 }
 
 impl Orchestrator {
+    async fn execute_direct_tool(
+        &self,
+        provider_name: &str,
+        arguments: &serde_json::Value,
+        output_policy: crate::uar::runtime::context::truncate::TruncationPolicy,
+    ) -> anyhow::Result<String> {
+        if let Some(native) = self.native_skills.get(provider_name).await {
+            native
+                .execute(arguments.clone())
+                .await
+                .map(|value| native.format_result(&value, output_policy, &self.llm_config.model))
+        } else {
+            self.mcp
+                .call_namespaced_tool(provider_name, arguments.clone())
+                .await
+                .map(|value| serde_json::to_string(&value).unwrap_or_default())
+                .map(|content| {
+                    crate::uar::runtime::context::truncate::formatted_truncate_for_model(
+                        &content,
+                        output_policy,
+                        &self.llm_config.model,
+                    )
+                })
+        }
+    }
+
     /// Create a new orchestrator with the given LLM config, MCP registry, and native skill registry.
     ///
     /// Uses `LiterLlmDriver` backed by liter-llm's `DefaultClient` for all
@@ -509,21 +502,26 @@ impl Orchestrator {
         messages: Vec<Message>,
     ) -> anyhow::Result<impl Stream<Item = NormalizedEvent> + Send + 'static> {
         let request_id = Uuid::new_v4().to_string();
-        let mut tools = self.mcp.openai_tools_json();
-        // Native skills execute in the same governed tool loop as MCP tools,
-        // so they must also be declared to the model. Previously they were
-        // executable only if a model somehow guessed their names, leaving
-        // registered tools such as `a2ui_render` impossible to call.
-        for native_tool in self.native_skills.openai_tools_json().await {
-            let native_name = native_tool["function"]["name"].as_str();
-            tools.retain(|tool| tool["function"]["name"].as_str() != native_name);
-            tools.push(native_tool);
+        let mut descriptors = BTreeMap::<String, Arc<ToolDescriptor>>::new();
+        let native_descriptors = self.native_skills.descriptors().await;
+        for descriptor in self.mcp.descriptors().into_iter().chain(native_descriptors) {
+            if let Some(existing) = descriptors.get(&descriptor.provider_name) {
+                if !existing.equivalent_to(&descriptor) {
+                    return Err(ToolCollision {
+                        provider_name: descriptor.provider_name.clone(),
+                    }
+                    .into());
+                }
+            } else {
+                descriptors.insert(descriptor.provider_name.clone(), descriptor);
+            }
         }
-        tools.sort_by(|left, right| {
-            left["function"]["name"]
-                .as_str()
-                .cmp(&right["function"]["name"].as_str())
-        });
+        let tools = descriptors
+            .values()
+            .filter(|descriptor| descriptor.exposure == Exposure::Eager)
+            .map(|descriptor| descriptor.openai_tool_json())
+            .collect::<Vec<_>>();
+        let descriptors = Arc::new(descriptors);
 
         tracing::info!(
             request_id = %request_id,
@@ -1000,52 +998,97 @@ impl Orchestrator {
                     "Added assistant message with tool calls to history"
                 );
 
-                // Read-only calls can execute concurrently. `buffered` bounds
-                // concurrency while preserving input order, which keeps tool
-                // result message ordering deterministic for the next LLM turn.
+                let batch_descriptors = tool_calls
+                    .iter()
+                    .map(|call| descriptors.get(&call.function.name).cloned())
+                    .collect::<Option<Vec<_>>>();
+                let schedulable = batch_descriptors.as_ref().is_some_and(|descriptors| {
+                    descriptors.iter().all(|descriptor| {
+                        descriptor.approval_class == ApprovalClass::NotRequired
+                            && !descriptor.sandbox_required
+                    })
+                });
                 if orchestrator.llm_config.parallel_tool_calls == Some(true)
                     && tool_calls.len() > 1
                     && orchestrator.tool_approval_gate.is_none()
                     && orchestrator.sandbox_runner.is_none()
-                    && tool_calls
-                        .iter()
-                        .all(|call| is_parallel_safe_tool(&call.function.name))
+                    && schedulable
                 {
-                    let executions = futures::stream::iter(tool_calls.iter().cloned().map(|call| {
+                    let batch_descriptors = Arc::new(
+                        batch_descriptors.expect("schedulable batches have one descriptor per call"),
+                    );
+                    // Read-only descriptors share the global read lock. Every
+                    // mutating, code-executing, or unknown descriptor takes the
+                    // write lock and therefore runs alone. Equal read keys also
+                    // share a FIFO mutex; distinct or absent keys may overlap.
+                    let execution_gate = Arc::new(tokio::sync::RwLock::new(()));
+                    let key_gates = Arc::new(
+                        batch_descriptors
+                            .iter()
+                            .filter(|descriptor| descriptor.effect == ToolEffect::ReadOnly)
+                            .filter_map(|descriptor| descriptor.concurrency_key.clone())
+                            .map(|key| (key, Arc::new(tokio::sync::Mutex::new(()))))
+                            .collect::<BTreeMap<_, _>>(),
+                    );
+                    let executions = futures::stream::iter(tool_calls.iter().cloned().zip(
+                        batch_descriptors.iter().cloned(),
+                    ).map(|(call, descriptor)| {
                         let orchestrator = orchestrator.clone();
+                        let execution_gate = Arc::clone(&execution_gate);
+                        let key_gates = Arc::clone(&key_gates);
                         async move {
-                            let arguments = serde_json::from_str(&call.function.arguments)
-                                .unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new()));
-                            let outcome = if let Some(native) =
-                                orchestrator.native_skills.get(&call.function.name).await
-                            {
-                                native.execute(arguments).await.map(|value| {
-                                    native.format_result(
-                                        &value,
-                                        orchestrator.tool_output_policy,
-                                        &orchestrator.llm_config.model,
-                                    )
-                                })
-                            } else {
-                                orchestrator
-                                    .mcp
-                                    .call_namespaced_tool(&call.function.name, arguments)
-                                    .await
-                                    .map(|value| serde_json::to_string(&value).unwrap_or_default())
-                                    .map(|content| {
-                                        crate::uar::runtime::context::truncate::formatted_truncate_for_model(
-                                            &content,
-                                            orchestrator.tool_output_policy,
-                                            &orchestrator.llm_config.model,
+                            let arguments = match validate::validate(
+                                &descriptor.validator,
+                                &call.function.arguments,
+                            ) {
+                                Ok(arguments) => arguments,
+                                Err(error) => {
+                                    return (call, error.model_result().to_string(), false);
+                                }
+                            };
+                            let output_policy = descriptor
+                                .output_limit
+                                .unwrap_or(orchestrator.tool_output_policy);
+                            let outcome = if descriptor.effect == ToolEffect::ReadOnly {
+                                let _read = execution_gate.read().await;
+                                if let Some(key_gate) = descriptor
+                                    .concurrency_key
+                                    .as_ref()
+                                    .and_then(|key| key_gates.get(key))
+                                {
+                                    let _key = key_gate.lock().await;
+                                    orchestrator
+                                        .execute_direct_tool(
+                                            &call.function.name,
+                                            &arguments,
+                                            output_policy,
                                         )
-                                    })
+                                        .await
+                                } else {
+                                    orchestrator
+                                        .execute_direct_tool(
+                                            &call.function.name,
+                                            &arguments,
+                                            output_policy,
+                                        )
+                                        .await
+                                }
+                            } else {
+                                let _write = execution_gate.write().await;
+                                orchestrator
+                                    .execute_direct_tool(
+                                        &call.function.name,
+                                        &arguments,
+                                        output_policy,
+                                    )
+                                    .await
                             };
                             let (content, success) = match outcome {
                                 Ok(content) => (content, true),
                                 Err(error) => (
                                     crate::uar::runtime::context::truncate::formatted_truncate_for_model(
                                         &format!("Error: {error}"),
-                                        orchestrator.tool_output_policy,
+                                        output_policy,
                                         &orchestrator.llm_config.model,
                                     ),
                                     false,
@@ -1082,8 +1125,46 @@ impl Orchestrator {
                 // sequentially to preserve policy and side-effect ordering.
                 for (idx, tool_call) in tool_calls.iter().enumerate() {
                     let tool_name = &tool_call.function.name;
-                    let arguments: serde_json::Value = serde_json::from_str(&tool_call.function.arguments)
-                        .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
+                    let Some(descriptor) = descriptors.get(tool_name) else {
+                        let content =
+                            "Error: no descriptor exists for the requested tool".to_string();
+                        yield NormalizedEvent::ToolResult {
+                            id: tool_call.id.clone(),
+                            name: tool_name.clone(),
+                            content: content.clone(),
+                            success: false,
+                        };
+                        message_json.push(serde_json::json!({
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "content": content
+                        }));
+                        continue;
+                    };
+                    let arguments = match validate::validate(
+                        &descriptor.validator,
+                        &tool_call.function.arguments,
+                    ) {
+                        Ok(arguments) => arguments,
+                        Err(error) => {
+                            let content = error.model_result().to_string();
+                            yield NormalizedEvent::ToolResult {
+                                id: tool_call.id.clone(),
+                                name: tool_name.clone(),
+                                content: content.clone(),
+                                success: false,
+                            };
+                            message_json.push(serde_json::json!({
+                                "role": "tool",
+                                "tool_call_id": tool_call.id,
+                                "content": content
+                            }));
+                            continue;
+                        }
+                    };
+                    let output_policy = descriptor
+                        .output_limit
+                        .unwrap_or(orchestrator.tool_output_policy);
 
                     tracing::info!(
                         request_id = %request_id,
@@ -1099,6 +1180,7 @@ impl Orchestrator {
                         let result = gate(
                             tool_call.id.clone(),
                             tool_name.clone(),
+                            descriptor.approval_class,
                             tool_call.function.arguments.clone(),
                             idx,
                         ).await;
@@ -1132,7 +1214,8 @@ impl Orchestrator {
                         let should_sandbox = match &orchestrator.tool_execution_mode {
                             ToolExecutionMode::Direct => false,
                             ToolExecutionMode::Sandboxed | ToolExecutionMode::Auto => {
-                                is_code_execution_tool(tool_name)
+                                descriptor.effect == ToolEffect::CodeExecution
+                                    || descriptor.sandbox_required
                             }
                         };
                         if should_sandbox {
@@ -1253,7 +1336,7 @@ impl Orchestrator {
                                 Ok(result) => {
                                     let content = native_skill.format_result(
                                         &result,
-                                        orchestrator.tool_output_policy,
+                                        output_policy,
                                         &orchestrator.llm_config.model,
                                     );
                                     tracing::info!(
@@ -1268,7 +1351,7 @@ impl Orchestrator {
                                 Err(e) => {
                                     let error_msg = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
                                         &format!("Native skill error: {e}"),
-                                        orchestrator.tool_output_policy,
+                                        output_policy,
                                         &orchestrator.llm_config.model,
                                     );
                                     tracing::error!(
@@ -1287,7 +1370,7 @@ impl Orchestrator {
                                     let content = serde_json::to_string(&result).unwrap_or_default();
                                     let content = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
                                         &content,
-                                        orchestrator.tool_output_policy,
+                                        output_policy,
                                         &orchestrator.llm_config.model,
                                     );
                                     tracing::info!(
@@ -1309,7 +1392,7 @@ impl Orchestrator {
                                 Err(e) => {
                                     let error_msg = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
                                         &format!("Error: {e}"),
-                                        orchestrator.tool_output_policy,
+                                        output_policy,
                                         &orchestrator.llm_config.model,
                                     );
                                     tracing::error!(
@@ -1325,6 +1408,12 @@ impl Orchestrator {
                             }
                         }
                     };
+                    let content =
+                        crate::uar::runtime::context::truncate::formatted_truncate_for_model(
+                            &content,
+                            output_policy,
+                            &orchestrator.llm_config.model,
+                        );
 
                     // Emit tool result event
                     yield NormalizedEvent::ToolResult {
@@ -1560,7 +1649,10 @@ mod tests {
     async fn declares_registered_native_skills_to_the_model() {
         let driver = Arc::new(MockLlmDriver::echo());
         let native_skills = Arc::new(NativeSkillRegistry::new());
-        native_skills.register(RenderSkill).await;
+        native_skills
+            .register(RenderSkill)
+            .await
+            .expect("render descriptor registers");
         let orchestrator = Orchestrator::from_driver(
             LlmConfig::default(),
             Arc::new(McpRegistry::empty()),
@@ -1633,7 +1725,10 @@ mod tests {
             ],
         ]));
         let native_skills = Arc::new(NativeSkillRegistry::new());
-        native_skills.register(RenderSkill).await;
+        native_skills
+            .register(RenderSkill)
+            .await
+            .expect("render descriptor registers");
         let orchestrator = Orchestrator::from_driver(
             LlmConfig::default(),
             Arc::new(McpRegistry::empty()),
@@ -1686,9 +1781,10 @@ mod tests {
             .register(SearchSkill {
                 calls: Arc::clone(&calls),
             })
-            .await;
+            .await
+            .expect("search descriptor registers");
         let gate: ToolApprovalGate =
-            Arc::new(|_, _, _, _| Box::pin(async { ToolApprovalResult::GovernanceBypassed }));
+            Arc::new(|_, _, _, _, _| Box::pin(async { ToolApprovalResult::GovernanceBypassed }));
         let orchestrator = Orchestrator::from_driver(
             LlmConfig::default(),
             Arc::new(McpRegistry::empty()),

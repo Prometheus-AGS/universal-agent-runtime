@@ -1,6 +1,7 @@
 //! Native terminal_exec tool — run shell commands in the configured sandbox.
 
 use crate::uar::runtime::native_skill::NativeSkill;
+use crate::uar::tools::descriptor::{ToolEffect, ToolSource};
 use async_trait::async_trait;
 use serde_json::{Value, json};
 use std::time::Duration;
@@ -36,6 +37,18 @@ impl NativeSkill for TerminalExecTool {
                 "timeout_secs": { "type": "integer", "minimum": 1 }
             }
         })
+    }
+
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::CodeExecution
+    }
+
+    fn sandbox_required(&self) -> bool {
+        self.use_sandbox
+    }
+
+    fn source(&self) -> ToolSource {
+        ToolSource::BuiltIn
     }
 
     fn format_result(

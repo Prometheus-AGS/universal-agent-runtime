@@ -19,20 +19,26 @@ use crate::config::NativeToolsConfig;
 use crate::uar::compiler::conversational::CompilerSessionStore;
 use crate::uar::compiler::signing::{KeyProvider, LocalKeyProvider};
 use crate::uar::persistence::PersistenceLayer;
+use crate::uar::tools::descriptor::ToolAssemblyError;
 
 /// Register all built-in native skills into the given registry.
 ///
 /// `native_cfg` controls which optional tool categories are activated.
 /// `persistence` is required for `session_search`; pass `None` to skip it.
+///
+/// # Errors
+///
+/// Returns the first invalid schema or provider-name collision encountered
+/// while assembling a built-in descriptor.
 pub async fn register_builtins(
     registry: &NativeSkillRegistry,
     native_cfg: &NativeToolsConfig,
     persistence: Option<Arc<dyn PersistenceLayer>>,
-) {
+) -> Result<(), ToolAssemblyError> {
     // ── Core always-on skills ─────────────────────────────────────────────
-    registry.register(echo::EchoSkill).await;
-    registry.register(system_info::SystemInfoSkill).await;
-    registry.register(a2ui_render::A2uiRenderSkill).await;
+    registry.register(echo::EchoSkill).await?;
+    registry.register(system_info::SystemInfoSkill).await?;
+    registry.register(a2ui_render::A2uiRenderSkill).await?;
 
     // ── Compiler skills ───────────────────────────────────────────────────
     let key_provider: Arc<dyn KeyProvider> = Arc::new(LocalKeyProvider::ephemeral());
@@ -41,23 +47,23 @@ pub async fn register_builtins(
         .register(crate::uar::compiler::CompilerAgentSkill::new(Arc::clone(
             &key_provider,
         )))
-        .await;
+        .await?;
     registry
         .register(crate::uar::compiler::UpdateSectionTool::new(
             session_store.clone(),
         ))
-        .await;
+        .await?;
     registry
         .register(crate::uar::compiler::CheckCompletenessTool::new(
             session_store.clone(),
         ))
-        .await;
+        .await?;
     registry
         .register(crate::uar::compiler::CompileSessionTool::new(
             session_store,
             key_provider,
         ))
-        .await;
+        .await?;
 
     // ── File system tools ─────────────────────────────────────────────────
     if native_cfg.file_tools_enabled {
@@ -68,19 +74,19 @@ pub async fn register_builtins(
                 allowed_paths: native_cfg.file_allowed_paths.clone(),
                 max_size_kb: native_cfg.file_max_size_kb,
             })
-            .await;
+            .await?;
         registry
             .register(FileWriteTool {
                 allowed_paths: native_cfg.file_allowed_paths.clone(),
                 max_size_kb: native_cfg.file_write_max_kb,
             })
-            .await;
+            .await?;
         registry
             .register(FilePatchTool {
                 allowed_paths: native_cfg.file_allowed_paths.clone(),
                 max_size_kb: native_cfg.file_max_size_kb,
             })
-            .await;
+            .await?;
         tracing::info!(
             allowed_paths = ?native_cfg.file_allowed_paths,
             "Registered file native tools (file_read, file_write, file_patch)"
@@ -96,7 +102,7 @@ pub async fn register_builtins(
                 max_size_kb: native_cfg.web_fetch_max_size_kb,
                 allowed_domains: native_cfg.web_fetch_allowed_domains.clone(),
             })
-            .await;
+            .await?;
         tracing::info!("Registered web_fetch native tool");
     }
 
@@ -109,7 +115,7 @@ pub async fn register_builtins(
                 timeout_secs: native_cfg.terminal_timeout_secs,
                 use_sandbox: native_cfg.terminal_use_sandbox,
             })
-            .await;
+            .await?;
         tracing::info!(
             shell = %native_cfg.terminal_shell,
             use_sandbox = native_cfg.terminal_use_sandbox,
@@ -126,7 +132,7 @@ pub async fn register_builtins(
                     persistence: db,
                     max_results: native_cfg.session_search_max_results,
                 })
-                .await;
+                .await?;
             tracing::info!("Registered session_search native tool");
         } else {
             tracing::debug!(
@@ -136,4 +142,5 @@ pub async fn register_builtins(
     }
 
     tracing::info!("Built-in native skills registration complete");
+    Ok(())
 }

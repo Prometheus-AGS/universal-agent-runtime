@@ -558,7 +558,8 @@ async fn oversized_tool_output_is_truncated_middle_out_with_warning_header() {
             timeout_secs: 10,
             use_sandbox: false,
         })
-        .await;
+        .await
+        .expect("terminal descriptor registers");
     let policy = TruncationPolicy::Bytes(4_096);
     let orchestrator = Orchestrator::from_driver(
         LlmConfig {

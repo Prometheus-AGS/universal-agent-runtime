@@ -31,13 +31,20 @@
 //! }
 //!
 //! let registry = NativeSkillRegistry::new();
-//! registry.register(MyTool);
+//! registry.register(MyTool).await?;
 //! ```
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 use std::sync::Arc;
 
 use tokio::sync::RwLock;
+
+use crate::uar::runtime::context::truncate::TruncationPolicy;
+use crate::uar::tools::descriptor::{
+    ApprovalClass, Exposure, ToolAssemblyError, ToolCollision, ToolDescriptor, ToolEffect,
+    ToolSource,
+};
+use crate::uar::tools::validate::ValidatorCompiler;
 
 /// Trait for embedding high-performance Rust tool implementations directly
 /// into the runtime binary.
@@ -55,6 +62,47 @@ pub trait NativeSkill: Send + Sync {
 
     /// JSON Schema describing the expected input parameters.
     fn parameters_schema(&self) -> serde_json::Value;
+
+    /// Declared effect used for scheduling. Undeclared legacy skills fail
+    /// closed to [`ToolEffect::Unknown`].
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::Unknown
+    }
+
+    /// Descriptor-level approval classification.
+    fn approval_class(&self) -> ApprovalClass {
+        match self.effect() {
+            ToolEffect::ReadOnly => ApprovalClass::NotRequired,
+            ToolEffect::ExternalMutation | ToolEffect::CodeExecution | ToolEffect::Unknown => {
+                ApprovalClass::Required
+            }
+        }
+    }
+
+    /// Whether this skill must execute in a sandbox.
+    fn sandbox_required(&self) -> bool {
+        false
+    }
+
+    /// Optional key used to serialize conflicting read-only operations.
+    fn concurrency_key(&self) -> Option<&str> {
+        None
+    }
+
+    /// Model and host exposure class.
+    fn exposure(&self) -> Exposure {
+        Exposure::Eager
+    }
+
+    /// Descriptor-specific model-visible output bound.
+    fn output_limit(&self) -> Option<TruncationPolicy> {
+        None
+    }
+
+    /// Registration source. Built-in runtime tools override this value.
+    fn source(&self) -> ToolSource {
+        ToolSource::NativeSkill
+    }
 
     /// Execute the tool with the given arguments and return the result.
     async fn execute(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value>;
@@ -81,7 +129,14 @@ pub trait NativeSkill: Send + Sync {
 ///
 /// Thread-safe for concurrent reads and writes via [`tokio::sync::RwLock`].
 pub struct NativeSkillRegistry {
-    skills: RwLock<HashMap<String, Arc<dyn NativeSkill>>>,
+    skills: RwLock<BTreeMap<String, RegisteredNativeSkill>>,
+    validator_compiler: Arc<ValidatorCompiler>,
+}
+
+#[derive(Clone)]
+struct RegisteredNativeSkill {
+    implementation: Arc<dyn NativeSkill>,
+    descriptor: Arc<ToolDescriptor>,
 }
 
 impl std::fmt::Debug for NativeSkillRegistry {
@@ -116,34 +171,90 @@ impl NativeSkillRegistry {
     /// Create an empty registry.
     #[must_use]
     pub fn new() -> Self {
+        Self::with_validator_compiler(Arc::new(ValidatorCompiler::default()))
+    }
+
+    /// Create an empty registry using an observable schema compiler.
+    #[must_use]
+    pub fn with_validator_compiler(validator_compiler: Arc<ValidatorCompiler>) -> Self {
         Self {
-            skills: RwLock::new(HashMap::new()),
+            skills: RwLock::new(BTreeMap::new()),
+            validator_compiler,
         }
     }
 
-    /// Register a native skill. Replaces any existing skill with the same name.
-    pub async fn register<S: NativeSkill + 'static>(&self, skill: S) {
-        let name = skill.name().to_owned();
-        tracing::info!(skill_name = %name, "Registering native skill");
-        self.skills.write().await.insert(name, Arc::new(skill));
+    /// Register a native skill after compiling its descriptor.
+    ///
+    /// # Errors
+    ///
+    /// Returns an assembly error for an invalid schema or a conflicting
+    /// provider-visible name. An identical descriptor is deduplicated.
+    pub async fn register<S: NativeSkill + 'static>(
+        &self,
+        skill: S,
+    ) -> Result<(), ToolAssemblyError> {
+        self.register_arc(Arc::new(skill)).await
     }
 
-    /// Register a native skill from an `Arc`. Replaces any existing skill with the same name.
-    pub async fn register_arc(&self, skill: Arc<dyn NativeSkill>) {
-        let name = skill.name().to_owned();
-        tracing::info!(skill_name = %name, "Registering native skill (Arc)");
-        self.skills.write().await.insert(name, skill);
+    /// Register a native skill from an [`Arc`] after compiling its descriptor.
+    ///
+    /// # Errors
+    ///
+    /// Returns an assembly error for an invalid schema or a conflicting
+    /// provider-visible name. An identical descriptor is deduplicated.
+    pub async fn register_arc(&self, skill: Arc<dyn NativeSkill>) -> Result<(), ToolAssemblyError> {
+        let id = skill.name().to_owned();
+        let provider_name = Self::provider_tool_name(&id);
+        let input_schema = skill.parameters_schema();
+        let validator = self
+            .validator_compiler
+            .compile(&provider_name, &input_schema)?;
+        let descriptor = Arc::new(ToolDescriptor {
+            id,
+            provider_name: provider_name.clone(),
+            description: skill.description().to_owned(),
+            source: skill.source(),
+            server: None,
+            input_schema,
+            validator,
+            effect: skill.effect(),
+            approval_class: skill.approval_class(),
+            sandbox_required: skill.sandbox_required(),
+            concurrency_key: skill.concurrency_key().map(str::to_owned),
+            exposure: skill.exposure(),
+            output_limit: skill.output_limit(),
+        });
+
+        let mut skills = self.skills.write().await;
+        if let Some(existing) = skills.get(&provider_name) {
+            if existing.descriptor.equivalent_to(&descriptor) {
+                return Ok(());
+            }
+            return Err(ToolCollision { provider_name }.into());
+        }
+        tracing::info!(skill_name = %descriptor.id, "Registering native skill");
+        skills.insert(
+            provider_name,
+            RegisteredNativeSkill {
+                implementation: skill,
+                descriptor,
+            },
+        );
+        Ok(())
     }
 
     /// Look up a native skill by name.
     pub async fn get(&self, name: &str) -> Option<Arc<dyn NativeSkill>> {
         let skills = self.skills.read().await;
-        skills.get(name).cloned().or_else(|| {
-            skills
-                .iter()
-                .find(|(registered_name, _)| Self::provider_tool_name(registered_name) == name)
-                .map(|(_, skill)| Arc::clone(skill))
-        })
+        skills
+            .get(name)
+            .map(|registered| Arc::clone(&registered.implementation))
+            .or_else(|| {
+                skills
+                    .values()
+                    .find(|registered| registered.descriptor.id == name)
+                    .map(|registered| Arc::clone(&registered.implementation))
+            })
     }
 
     /// Check whether a native skill is registered for the given name.
@@ -151,13 +262,18 @@ impl NativeSkillRegistry {
         let skills = self.skills.read().await;
         skills.contains_key(name)
             || skills
-                .keys()
-                .any(|registered_name| Self::provider_tool_name(registered_name) == name)
+                .values()
+                .any(|registered| registered.descriptor.id == name)
     }
 
     /// Return a snapshot of all registered skill names.
     pub async fn names(&self) -> Vec<String> {
-        self.skills.read().await.keys().cloned().collect()
+        self.skills
+            .read()
+            .await
+            .values()
+            .map(|registered| registered.descriptor.id.clone())
+            .collect()
     }
 
     /// Return the number of registered native skills.
@@ -179,12 +295,41 @@ impl NativeSkillRegistry {
         let skills = self.skills.read().await;
         let filtered = skills
             .iter()
-            .filter(|(name, _)| allowed.is_none_or(|names| names.contains(*name)))
-            .map(|(name, skill)| (name.clone(), Arc::clone(skill)))
+            .filter(|(provider_name, registered)| {
+                allowed.is_none_or(|names| {
+                    names.contains(*provider_name) || names.contains(&registered.descriptor.id)
+                })
+            })
+            .map(|(name, registered)| (name.clone(), registered.clone()))
             .collect();
         Self {
             skills: RwLock::new(filtered),
+            validator_compiler: Arc::clone(&self.validator_compiler),
         }
+    }
+
+    /// Return the compiled descriptors in provider-name order.
+    pub async fn descriptors(&self) -> Vec<Arc<ToolDescriptor>> {
+        self.skills
+            .read()
+            .await
+            .values()
+            .map(|registered| Arc::clone(&registered.descriptor))
+            .collect()
+    }
+
+    /// Look up one compiled descriptor by source-local or provider-visible name.
+    pub async fn descriptor(&self, name: &str) -> Option<Arc<ToolDescriptor>> {
+        let skills = self.skills.read().await;
+        skills
+            .get(name)
+            .map(|registered| Arc::clone(&registered.descriptor))
+            .or_else(|| {
+                skills
+                    .values()
+                    .find(|registered| registered.descriptor.id == name)
+                    .map(|registered| Arc::clone(&registered.descriptor))
+            })
     }
 
     /// Generate OpenAI-compatible tool definitions for all registered native skills.
@@ -192,25 +337,11 @@ impl NativeSkillRegistry {
     /// This allows native skills to be announced to the LLM alongside MCP tools.
     pub async fn openai_tools_json(&self) -> Vec<serde_json::Value> {
         let skills = self.skills.read().await;
-        let mut tools = skills
+        skills
             .values()
-            .map(|skill| {
-                serde_json::json!({
-                    "type": "function",
-                    "function": {
-                        "name": Self::provider_tool_name(skill.name()),
-                        "description": skill.description(),
-                        "parameters": skill.parameters_schema()
-                    }
-                })
-            })
-            .collect::<Vec<_>>();
-        tools.sort_by(|left, right| {
-            left["function"]["name"]
-                .as_str()
-                .cmp(&right["function"]["name"].as_str())
-        });
-        tools
+            .filter(|registered| registered.descriptor.exposure == Exposure::Eager)
+            .map(|registered| registered.descriptor.openai_tool_json())
+            .collect()
     }
 }
 
@@ -245,7 +376,7 @@ mod tests {
     #[tokio::test]
     async fn test_register_and_get() {
         let registry = NativeSkillRegistry::new();
-        registry.register(EchoSkill).await;
+        registry.register(EchoSkill).await.unwrap();
 
         assert!(registry.contains("echo").await);
         assert!(!registry.contains("nonexistent").await);
@@ -264,7 +395,7 @@ mod tests {
     #[tokio::test]
     async fn test_names() {
         let registry = NativeSkillRegistry::new();
-        registry.register(EchoSkill).await;
+        registry.register(EchoSkill).await.unwrap();
 
         let names = registry.names().await;
         assert_eq!(names, vec!["echo".to_string()]);
@@ -273,7 +404,7 @@ mod tests {
     #[tokio::test]
     async fn test_openai_tools_json() {
         let registry = NativeSkillRegistry::new();
-        registry.register(EchoSkill).await;
+        registry.register(EchoSkill).await.unwrap();
 
         let tools = registry.openai_tools_json().await;
         assert_eq!(tools.len(), 1);

@@ -1,6 +1,7 @@
 //! Native file-system tools: file_read and file_write.
 
 use crate::uar::runtime::native_skill::NativeSkill;
+use crate::uar::tools::descriptor::{ToolEffect, ToolSource};
 use async_trait::async_trait;
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
@@ -46,6 +47,12 @@ impl NativeSkill for FileReadTool {
                 "limit_lines": { "type": "integer", "minimum": 1 }
             }
         })
+    }
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ReadOnly
+    }
+    fn source(&self) -> ToolSource {
+        ToolSource::BuiltIn
     }
     async fn execute(&self, args: Value) -> anyhow::Result<Value> {
         let path_str = match args.get("path").and_then(Value::as_str) {
@@ -133,6 +140,12 @@ impl NativeSkill for FileWriteTool {
                 "append": { "type": "boolean" }
             }
         })
+    }
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ExternalMutation
+    }
+    fn source(&self) -> ToolSource {
+        ToolSource::BuiltIn
     }
     async fn execute(&self, args: Value) -> anyhow::Result<Value> {
         let path_str = match args.get("path").and_then(Value::as_str) {

@@ -6,6 +6,7 @@
 
 use crate::uar::persistence::PersistenceLayer;
 use crate::uar::runtime::native_skill::NativeSkill;
+use crate::uar::tools::descriptor::{ToolEffect, ToolSource};
 use async_trait::async_trait;
 use serde_json::{Value, json};
 use std::sync::Arc;
@@ -49,6 +50,14 @@ impl NativeSkill for SessionSearchTool {
                 }
             }
         })
+    }
+
+    fn effect(&self) -> ToolEffect {
+        ToolEffect::ReadOnly
+    }
+
+    fn source(&self) -> ToolSource {
+        ToolSource::BuiltIn
     }
 
     async fn execute(&self, args: Value) -> anyhow::Result<Value> {
