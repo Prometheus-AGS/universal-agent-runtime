@@ -402,6 +402,16 @@ mod prompt_caching_tests {
         server.await.expect("mock provider task");
     }
 
+    /// Asserts a Prometheus counter incremented, so it needs a real recorder.
+    ///
+    /// `metrics_handle` returns `&'static PrometheusHandle`, a type that only
+    /// exists with the metrics-exporter dependency, so the no-telemetry facade
+    /// (`telemetry_disabled.rs`) cannot offer it and deliberately does not.
+    /// Ungated, this one test made the WHOLE default-feature test binary fail
+    /// to compile -- `cargo test` was broken for the entire crate, while
+    /// `cargo check` passed, so nothing surfaced it until someone ran the
+    /// tests. Gated the same way `api_metrics` is in server.rs.
+    #[cfg(feature = "telemetry")]
     #[tokio::test]
     async fn failed_provider_stream_records_latency_before_error_is_yielded() {
         telemetry_metrics::init();
