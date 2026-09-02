@@ -1,0 +1,45 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "kbd-judge",
+  "producer_model": "claude-fable-5-1",
+  "isolation_mode": "rest-gateway:http://localhost:8181/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "progressive-skill-runtime/spec.md",
+      "claim": "The skill-runtime spec is internally inconsistent about whether implicit matching can activate or inject skill bodies.",
+      "evidence": "The explicit-activation requirement says: \"The runtime SHALL load a skill's full body only when a client attaches it on the run request or the model activates it through a model-only tool\". The implicit-matching requirement then says the runtime must \"score implicit skill matches, enforce the configured threshold and margin, respect the artifact's `max_active` limit and `prefer` order\" and its scenario asserts that below-threshold matches produce \"no injected body,\" implying above-threshold implicit matches may inject bodies.",
+      "suggested_fix": "State explicitly whether implicit matching only ranks/catalogs candidates without loading bodies, or whether above-threshold implicit matches are a third activation path; update requirements, scenarios, and tasks consistently."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "project-instructions-world-state/spec.md",
+      "claim": "The world-state diff requirement is contradictory because current time is a tracked section but an unchanged turn is expected to render nothing.",
+      "evidence": "The requirement says world state includes stable sections for \"environment, current time, permissions, and active project instructions\" and renders \"only a merge-patch diff of changed sections\" after the first turn. The scenario says: \"WHEN no section changed since the last turn THEN no world-state fragment is added to history.\" Since current time normally changes between turns, the unchanged-turn scenario is undefined or impossible without a time granularity, frozen clock, or resend policy.",
+      "suggested_fix": "Define current-time update semantics, such as fixed granularity, render-on-demand, render-on-turn-start with a mockable clock, or exclude time from ordinary diff comparisons unless a configured threshold is crossed."
+    },
+    {
+      "severity": "WARNING",
+      "file": "model-path-resiliency/verification.md",
+      "claim": "The jitter acceptance test is probabilistic and can fail for a correct implementation.",
+      "evidence": "Task 1.1 requires: \"with `retry_jitter_mode: full`, ten retries never produce two identical delays.\" A random full-jitter implementation may legitimately produce repeated delays, especially if delays are rounded to milliseconds.",
+      "suggested_fix": "Use a seeded/mock RNG and assert exact expected delays, or assert statistical bounds and at least one variation rather than requiring no duplicates."
+    },
+    {
+      "severity": "WARNING",
+      "file": "progressive-skill-runtime/spec.md",
+      "claim": "Skill cost attribution is underspecified when multiple skills are active.",
+      "evidence": "The spec says telemetry should make \"`uar_llm_tokens_total` and `uar_llm_cost_usd` gain a `skill` label when a skill is active for the request\" and the requirement says metrics should be labeled \"with the active skill\". The same spec allows multiple active skills via `max_active` and scenarios such as \"With `max_active: 2`, a third activation is refused,\" but it never defines how a singular `skill` label behaves for two active skills.",
+      "suggested_fix": "Define whether metrics are emitted once per active skill, use a normalized multi-skill label, attribute only the triggering skill, or split cost/token attribution by another rule; add a multi-active-skill scenario."
+    },
+    {
+      "severity": "WARNING",
+      "file": "fail-closed-tool-arguments/verification.md",
+      "claim": "The concurrency-key test relies on an undefined compatibility rule.",
+      "evidence": "The requirement permits concurrency only when calls have \"a compatible concurrency key,\" but task 1.3 asserts: \"Two `ReadOnly` descriptors with distinct concurrency keys execute concurrently; one `Unknown` descriptor serializes against both.\" The spec never defines whether distinct keys are compatible by default, incompatible by default, or compared through a resource-lock hierarchy.",
+      "suggested_fix": "Define concurrency-key semantics explicitly, e.g. same key conflicts, distinct keys are compatible, and a global/write key conflicts with all; then align the test with that rule."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "stage": "analyze",
+  "completedAt": "2026-09-02T03:53:49Z",
+  "outputs": [
+    "analysis.md",
+    "library-candidates.json"
+  ],
+  "nextStage": "spec",
+  "summaryForNext": "Eleven gaps analyzed with build-vs-adopt verdicts (28 candidates). Adopt: jsonschema 0.49.4 (already pinned) for fail-closed tool arguments; backon 1.6.0 (already transitive) for retry, jitter, Retry-After; wiremock + insta as dev-deps. Port from Codex (Apache-2.0): history pairing invariants, output truncation, two-variant tool error, RwLock parallelism. Build from design: prompt fragments and world-state diff, typed turn/step assembly with contributor traits, projected MCP lifecycle, thread-native subagents with Codex governance rules as requirements, AGENTS.md discovery, turn manifest and log/trace redaction. Keep rmcp 3.1.2 (has V_2026_07_28, negotiates 2025-11-25), tiktoken-rs 0.12 model-keyed. Defer: circuit breaker (no named failure), rmcp bump, MCP Apps, A2A v1.0.1, AG-UI vocabulary retirement, each with a trigger. Ranking: G1 context integrity, G2 fail-closed tools, G3 deterministic prompt, G4 skill runtime, G5 resiliency immediate; G6 typed assembly, G7 MCP projection, G8 subagents, G9 project instructions structural; G11 observability cross-cutting; G10 protocols later. Open questions for spec: liter-llm typed errors and Retry-After; liter base-URL override for wiremock; which ContextStrategy enum survives; approval class per ToolEffect; guardian reviewer deferred; port Codex sandboxing for stdio MCP or document inert flag; versions.toml entries (operator-edited) for jsonschema, rmcp, tiktoken-rs, wasmtime, tonic, A2A, AG-UI. Review WARNINGs carried: wiremock maintenance (last push 2025-08-24); round-2 fixes (G11, maintenance table) not re-vetted; Codex citations verifiable only via the excerpt appendix.",
+  "skipped": false,
+  "skipReason": null
+}

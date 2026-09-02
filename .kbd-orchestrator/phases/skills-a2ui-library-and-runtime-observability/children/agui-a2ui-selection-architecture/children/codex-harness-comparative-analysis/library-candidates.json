@@ -1,0 +1,165 @@
+{
+  "schemaVersion": "1",
+  "schemaNote": "The kbd-analyze skill references references/schemas/library-candidates.schema.json, which is not installed at ~/.claude/skills/kbd-analyze/ or in the plugin cache. This file follows the field set described in the skill text; spec and plan should treat it as the contract.",
+  "phase": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::codex-harness-comparative-analysis",
+  "generatedAt": "2026-09-02T03:20:00Z",
+  "mode": "stack-specified",
+  "stack": "rust/tokio/axum/liter-llm/rmcp/cedar",
+  "baselines": {
+    "uar": "dce44e78d13b8cf031ea7b4ee116c4a74c0da9b2",
+    "codex": "986ff1cc7ced0081ec5014b700a376333d87f869",
+    "codexLicense": "Apache-2.0"
+  },
+  "budget": {
+    "tier1Used": 8, "tier1Cap": 8,
+    "tier2Used": 6, "tier2Cap": 8, "tier2Failed": 6,
+    "tier3Used": 13, "tier3Cap": 8, "tier3OverCap": true,
+    "tier4Used": 0, "tier4Cap": 8
+  },
+  "gaps": [
+    {
+      "id": "G1", "title": "Context history integrity", "rank": 1, "tier": "immediate",
+      "defects": ["src/uar/context/strategy.rs:119,135,298,331", "src/uar/runtime/manager.rs:1471,1517", "src/uar/runtime/context/manager.rs:193-198", "src/uar/tools/terminal_exec.rs:75-81", "src/llm/orchestrator.rs:1010-1021"],
+      "candidates": [
+        {"name": "codex normalize_history (port)", "kind": "port", "source": "core/src/context_manager/normalize.rs:21-138", "verdict": "port", "confidence": "high", "notes": "call/output pairing invariants; ~120 lines; no crate equivalent"},
+        {"name": "codex output-truncation (port)", "kind": "port", "source": "utils/output-truncation/src/lib.rs (209 lines)", "verdict": "port", "confidence": "high", "notes": "middle-out truncation with warning header; deps replaceable with String helpers"},
+        {"name": "tiktoken-rs", "kind": "crate", "version": "0.12.0", "pinned": "Cargo.toml:378", "cratesIo": "0.12.0", "verdict": "keep", "confidence": "high", "notes": "get_bpe_from_model + o200k_base_singleton exist (registry src/api.rs:270, src/singleton.rs:55); model-keyed with cl100k fallback; no upgrade available"},
+        {"name": "tokenizers", "kind": "crate", "version": "0.23", "pinned": "Cargo.toml:377 (optional)", "verdict": "keep-optional", "confidence": "high"}
+      ]
+    },
+    {
+      "id": "G2", "title": "Fail-closed tool arguments and effect classification", "rank": 2, "tier": "immediate",
+      "defects": ["src/llm/orchestrator.rs:982-983,1032-1033,138-148,115-134", "src/uar/runtime/manager.rs:366-370", "src/uar/runtime/native_skill.rs:49-61", "src/mcp/registry.rs:733-734"],
+      "candidates": [
+        {"name": "jsonschema", "kind": "crate", "version": "0.49.4", "pinned": "Cargo.toml:418 (caret, default-features=false)", "cratesIo": "0.52.1", "inVersionsToml": false, "verdict": "adopt", "confidence": "high", "notes": "validator_for compile-once (registry src/lib.rs:1346), validate/iter_errors/is_valid (src/validator.rs:482-500); record pin in versions.toml; do not upgrade in this phase"},
+        {"name": "codex FunctionCallError shape (port)", "kind": "port", "source": "tools/src/function_call_error.rs:5-10; core/src/tools/handlers/mod.rs:83-90; core/src/tools/parallel.rs:219-243", "verdict": "port", "confidence": "high"},
+        {"name": "codex RwLock parallelism (port)", "kind": "port", "source": "core/src/tools/parallel.rs:42-62,155-159; tools/src/tool_executor.rs:122-124", "verdict": "port", "confidence": "high"},
+        {"name": "MCP readOnlyHint mapping", "kind": "protocol", "source": "core/src/tools/handlers/mcp.rs:128-139; MCP 2026-07-28 tools spec (annotations untrusted)", "verdict": "adopt-with-limit", "confidence": "medium", "notes": "annotation unlocks parallelism only, never approval bypass"}
+      ]
+    },
+    {
+      "id": "G3", "title": "Deterministic prompt assembly and provenance", "rank": 3, "tier": "immediate",
+      "defects": ["src/uar/runtime/skills/registry.rs:16,209-215", "src/llm/anthropic_cache.rs:55-73", "src/uar/domain/artifact.rs:118-122", "src/uar/compiler/to_artifact.rs:148"],
+      "candidates": [
+        {"name": "codex context-fragments (design reference)", "kind": "design", "source": "context-fragments/src/fragment.rs:58-119 (346 lines total)", "verdict": "build-from-design", "confidence": "high", "notes": "depends on codex protocol types; port the trait shape, not the code"},
+        {"name": "indexmap", "kind": "crate", "version": "2.14.1", "cratesIo": "2.14.1", "inDirectDeps": false, "verdict": "optional", "confidence": "medium", "notes": "ordered world-state sections; Vec with sort keys acceptable"},
+        {"name": "arc-swap", "kind": "crate", "version": "1.6", "pinned": "Cargo.toml:411", "verdict": "keep", "confidence": "high", "notes": "next-step settings swap as in codex turn_context.rs:211"},
+        {"name": "prompt_dialect predicates", "kind": "inhouse", "source": "src/llm/prompt_dialect.rs:64,71", "verdict": "wire", "confidence": "high", "notes": "prefers_xml_envelope and markdown_averse have no callers"}
+      ]
+    },
+    {
+      "id": "G4", "title": "Progressive skill runtime", "rank": 4, "tier": "immediate",
+      "defects": ["src/uar/runtime/manager.rs:1383-1394,1441-1454,1457", "src/uar/runtime/skills/service.rs:638-643,698", "src/uar/domain/artifact.rs:96-105"],
+      "candidates": [
+        {"name": "agentskills.io conventions", "kind": "spec", "source": "decision 2026-08-29 (~/.agents/skills loader); survey manifest agentskills.io/specification", "verdict": "adopt", "confidence": "high"},
+        {"name": "codex catalog budgets (constants)", "kind": "design", "source": "ext/skills/src/render.rs:17-22,127-153,325-366,408-447", "verdict": "adopt-as-defaults", "confidence": "high", "notes": "2% of window, 10k cap, 8k chars fallback, 1024/desc, 8000-byte body"},
+        {"name": "activate_skill model tool + skill_attachments API", "kind": "inhouse", "source": "Gemini CLI activate_skill; OpenCode skill tool (survey)", "verdict": "build", "confidence": "high"},
+        {"name": "compaction re-attachment budget", "kind": "design", "source": "Claude Code context-window docs (5,000/skill, 25,000 total) vs codex droppable fragment (ext/skills/src/lib.rs:50-54)", "verdict": "spec-decision", "confidence": "medium"},
+        {"name": "shadow skill selector", "kind": "design", "source": "ext/skills/src/shadow_selection_experiment/mod.rs:1", "verdict": "shadow-only", "confidence": "high"}
+      ]
+    },
+    {
+      "id": "G5", "title": "Model-path resiliency", "rank": 5, "tier": "immediate",
+      "defects": ["src/llm/orchestrator.rs:150-175,628,640-643,712-765,858-864", "src/uar/settings/resilience_policy.rs:39,97-100", "src/uar/runtime/manager.rs:1584-1607,1665-1690,2397-2399", "src/server.rs:5019"],
+      "candidates": [
+        {"name": "backon", "kind": "crate", "version": "1.6.0", "cratesIo": "1.6.0", "inDependencyGraph": "transitive via redis <- opendal-service-redis", "verdict": "adopt", "confidence": "high", "notes": "ExponentialBuilder with_jitter/with_max_delay/with_total_delay/with_max_times; Retry::adjust (registry src/retry.rs:329) for Retry-After"},
+        {"name": "typed provider error classification", "kind": "inhouse", "source": "liter-llm 1.18.2 error type (unverified)", "verdict": "build", "confidence": "low", "notes": "open question 1"},
+        {"name": "ModelRouter on hot path", "kind": "inhouse", "source": "src/llm/router.rs:54,119; src/llm/health.rs:69-94", "verdict": "wire", "confidence": "high"},
+        {"name": "failsafe", "kind": "crate", "version": "1.3.0", "cratesIo": "1.3.0", "github": "dmexe/failsafe-rs 207 stars, updated 2026-08-19", "verdict": "defer", "confidence": "medium", "notes": "no named failure; health monitor already does consecutive-failure cooldown"},
+        {"name": "recloser", "kind": "crate", "github": "lerouxrgd/recloser 130 stars, updated 2026-08-21", "verdict": "defer", "confidence": "low"}
+      ]
+    },
+    {
+      "id": "G6", "title": "Typed turn and step assembly with contributors", "rank": 6, "tier": "structural",
+      "defects": ["src/uar/runtime/manager.rs:1094-2604", "src/llm/orchestrator.rs:498-512,601", "src/uar/runtime/wasm/plugin_loader.rs:108-109"],
+      "candidates": [
+        {"name": "codex TurnContext/StepContext (design)", "kind": "design", "source": "core/src/session/turn_context.rs:194-246; core/src/session/step_context.rs:15-34", "verdict": "build-from-design", "confidence": "medium"},
+        {"name": "codex contributor traits (design)", "kind": "design", "source": "ext/extension-api/src/contributors.rs:77-380", "verdict": "build-from-design", "confidence": "medium", "notes": "seven of twelve needed now"},
+        {"name": "WIT plugin ABI", "kind": "inhouse", "source": "wit/uar-plugin.wit; plugin-loader-wit-contract", "verdict": "out-of-scope", "confidence": "high"},
+        {"name": "parking-lot HookBus", "kind": "inhouse", "verdict": "reject", "confidence": "high", "notes": "killed in uar-harness-parity; do not resurrect"}
+      ]
+    },
+    {
+      "id": "G7", "title": "Projected MCP runtime", "rank": 7, "tier": "structural",
+      "defects": ["src/uar/runtime/manager.rs:1457,1556-1583", "src/mcp/config.rs:21", "src/mcp/registry.rs:423-428,733-734"],
+      "candidates": [
+        {"name": "rmcp", "kind": "crate", "version": "3.1.2", "pinned": "Cargo.toml:286 (=3.1.2)", "registryAlso": "3.1.4", "cratesIo": "3.2.0", "codexPin": "=3.1.3", "inVersionsToml": false, "verdict": "keep", "confidence": "high", "notes": "V_2026_07_28 defined, LATEST=V_2025_11_25 (registry rmcp-3.1.2/src/model.rs:170-175); stateless default for >=2026-07-28 with legacy_session_mode (Context7); bump is its own later change"},
+        {"name": "codex lazy startup / reuse / exposure (design)", "kind": "design", "source": "codex-mcp/src/connection_manager.rs:94-129,258-259,559-576; core/src/mcp_tool_exposure.rs:75-147; core/src/tools/spec_plan.rs:196-268,371-406", "verdict": "build-from-design", "confidence": "high"},
+        {"name": "codex sandboxing crate (port)", "kind": "port", "source": "sandboxing/src/manager.rs:36-75 + seatbelt/landlock/bwrap", "verdict": "evaluate-in-spec", "confidence": "medium", "notes": "only credible path to a real stdio sandbox after microsandbox removal (src/sandbox/mod.rs:1-6)"}
+      ]
+    },
+    {
+      "id": "G8", "title": "Thread-native subagents", "rank": 8, "tier": "structural",
+      "defects": ["src/uar/runtime/actor/agent_actor.rs:115,201-209", "src/uar/runtime/graph/nodes/agent_node.rs:99-118,200-235", "src/uar/api/a2a/handler.rs:41-47", "src/uar/runtime/manager.rs:1864-1868,1975-1988,2054", "src/uar/runtime/cost_budget.rs:130-139", "src/uar/api/actors.rs:22-50"],
+      "candidates": [
+        {"name": "codex agent-graph-store (design)", "kind": "design", "source": "agent-graph-store/src/store.rs:17-59", "verdict": "build-from-design", "confidence": "high"},
+        {"name": "codex governance rules (requirements)", "kind": "design", "source": "core/src/agent/role.rs:1-4; multi_agents_common.rs:235-262; protocol/src/permission_profile_intersection.rs:31-68; core/src/agent/control/user_authorization.rs:22-94; protocol/src/protocol.rs:803-819", "verdict": "adopt-as-requirements", "confidence": "high"},
+        {"name": "tokio-util CancellationToken", "kind": "crate", "version": "0.7", "pinned": "Cargo.toml:234", "verdict": "keep", "confidence": "high"},
+        {"name": "ag-ui-rs / ag-ui / agui-rs", "kind": "crate", "versions": "0.3.1 / 0.1.0 / github 5 stars", "verdict": "reject", "confidence": "medium", "notes": "immature; UAR self-hosts uar.agui/1"},
+        {"name": "a2a-core / a2a-agents", "kind": "crate", "versions": "0.0.0 / 0.7.0", "verdict": "reject", "confidence": "medium", "notes": "UAR has its own JSON-RPC + gRPC; v1.0.1 alignment later"},
+        {"name": "codex agent-identity", "kind": "design", "verdict": "reject", "confidence": "high", "notes": "vendor backend identity"}
+      ]
+    },
+    {
+      "id": "G9", "title": "Project instructions and world state", "rank": 9, "tier": "structural",
+      "defects": ["no hits for AGENTS.md/CLAUDE.md/cwd/time/environment in src/"],
+      "candidates": [
+        {"name": "codex agents_md discovery (design)", "kind": "design", "source": "core/src/agents_md.rs:1-64", "verdict": "build-from-design", "confidence": "high"},
+        {"name": "walkdir", "kind": "crate", "version": "2.5.0", "pinned": "Cargo.toml:397", "verdict": "keep", "confidence": "high"},
+        {"name": "codex world_state merge patch (design)", "kind": "design", "source": "core/src/context/world_state/mod.rs:228-348", "verdict": "build-from-design", "confidence": "high"},
+        {"name": "json-patch", "kind": "crate", "version": "3.0.1 (registry) / 4.2.0 (crates.io)", "inDirectDeps": false, "verdict": "reject", "confidence": "high", "notes": "has merge apply (src/lib.rs:661) but no merge-patch generator; generator is <50 lines"}
+      ]
+    },
+    {
+      "id": "G10", "title": "Protocol alignment: MCP 2026-07-28, MCP Apps, A2A v1.0.1, AG-UI vocabulary", "rank": 10, "tier": "later",
+      "candidates": [
+        {"name": "@modelcontextprotocol/ext-apps", "kind": "npm", "version": "1.7.5", "verdict": "defer", "confidence": "high", "notes": "no Rust SDK; frontend adoption; Rust needs ui:// passthrough + extension capability"},
+        {"name": "mcp-preview", "kind": "crate", "version": "0.3.1", "verdict": "reject", "confidence": "low", "notes": "preview server, not a client SDK"},
+        {"name": "A2UI v1.0 candidate", "kind": "protocol", "verdict": "defer", "confidence": "high", "notes": "decision 2026-08-28 keeps v0.9.1"},
+        {"name": "A2A v1.0.1 alignment", "kind": "protocol", "current": "RC v1.0 JSON-RPC + gRPC v0.3 (src/uar/api/a2a/mod.rs:1; openspec/specs/a2a-grpc)", "upstream": "v1.0.1 2026-05-28 (a2a-protocol.org; tasks/list, OAuth, canceled state)", "verdict": "defer", "trigger": "G8 maps A2A task/status/cancel/result onto the thread service; today both transports front the compiler (src/uar/api/a2a/handler.rs:41-47)", "evidenceNeeded": "upstream spec diff vs openspec/specs/a2a-grpc/spec.md; one external A2A client exercising message/send and tasks/cancel", "confidence": "high"},
+        {"name": "AG-UI legacy vocabulary retirement", "kind": "protocol", "current": "uar.agui/1 dual vocabulary (src/uar/api/adapters.rs:68; src/uar/api/sse.rs:295,345-444)", "upstream": "ag-ui events incl. SubagentStarted/Finished/Error (docs.ag-ui.com, packages dated 2026-08-31)", "verdict": "defer", "trigger": "G8 merged so subagent events are emittable", "evidenceNeeded": "one release of dual emission with agui_spec defaulting to official names and no client regression in frontend/src/platform/agui/", "confidence": "high"},
+        {"name": "MCP 2026-07-28 alignment", "kind": "protocol", "current": "rmcp =3.1.2 negotiating 2025-11-25", "upstream": "spec 2026-07-28 (stateless, MRTR, DCR deprecated)", "verdict": "defer", "trigger": "a real server UAR needs speaks 2026-07-28, or rmcp LATEST moves", "evidenceNeeded": "rmcp changelog for the LATEST bump; UAR's configured servers' negotiated versions from set_mcp_server_status", "confidence": "high"}
+      ]
+    }
+  ],
+  "crossCutting": [
+    {
+      "id": "G11", "title": "Runtime observability", "tier": "cross-cutting", "deliveredWith": ["G3", "G4", "G7", "G8"],
+      "defects": ["src/uar/runtime/manager.rs:1993-2009 (fabricated RuntimeStep)", "src/uar/runtime/manager.rs:136-151,1441-1445 (no skill attribution for overlay-only skills)", "uar-harness-parity/reflection.md:71 (dead sandbox and MCP-status recorders)"],
+      "candidates": [
+        {"name": "redacted TurnManifest artifact", "kind": "inhouse", "verdict": "build", "confidence": "high", "notes": "identifiers, fragment hashes, counts, budgets, provenance; never bodies"},
+        {"name": "codex log/trace redaction boundary (rule)", "kind": "design", "source": "otel/src/events/session_telemetry.rs:585-596,1053-1072; core/src/agent_communication.rs:59-62", "verdict": "adopt-as-rule", "confidence": "high"},
+        {"name": "skill-tagged token/cost metrics", "kind": "design", "source": "core/src/skills.rs:64-75; Claude Code monitoring-usage skill.name (survey)", "verdict": "build", "confidence": "high"},
+        {"name": "live RuntimeStep + subagent lifecycle events", "kind": "inhouse", "source": "emit-runtime-step-events carry-over; AG-UI Subagent* events", "verdict": "build", "confidence": "high"},
+        {"name": "codex analytics crate", "kind": "design", "verdict": "reject", "confidence": "high", "notes": "product analytics channel, not a runtime need"}
+      ]
+    }
+  ],
+  "testing": [
+    {"name": "wiremock", "kind": "crate", "version": "0.6.5", "cratesIo": "0.6.5", "codexPin": "0.6", "verdict": "adopt-dev", "confidence": "medium", "notes": "open question 2: liter-llm base-URL override"},
+    {"name": "insta", "kind": "crate", "version": "1.48.0", "cratesIo": "1.48.0", "codexPin": "1.46.3", "verdict": "adopt-dev", "confidence": "high", "notes": "request-diff snapshots for prefix stability"},
+    {"name": "codex orphan validator inside mock (practice)", "kind": "practice", "source": "core/tests/common/responses.rs:711,1675-1740", "verdict": "adopt", "confidence": "high"}
+  ],
+  "maintenance": {
+    "checkedAt": "2026-09-02", "source": "GitHub REST API repos/{owner}/{repo} and releases/latest",
+    "backon": {"repo": "Xuanwo/backon", "stars": 1052, "pushedAt": "2026-06-19", "openIssues": 25, "license": "Apache-2.0", "archived": false, "latestRelease": "1.6.0 on crates.io"},
+    "jsonschema": {"repo": "Stranger6667/jsonschema", "stars": 811, "pushedAt": "2026-09-01", "openIssues": 12, "license": "MIT", "archived": false, "latestRelease": "rust-v0.52.1 2026-08-30"},
+    "wiremock": {"repo": "LukeMathWalker/wiremock-rs", "stars": 798, "pushedAt": "2025-08-24", "openIssues": 31, "license": "Apache-2.0", "archived": false, "latestRelease": "none on GitHub; 0.6.5 on crates.io", "concern": "more than a year without a push; dev-only; fallback httpmock unresearched"},
+    "insta": {"repo": "mitsuhiko/insta", "stars": 2952, "pushedAt": "2026-08-17", "openIssues": 73, "license": "Apache-2.0", "archived": false, "latestRelease": "1.48.0 2026-06-11"},
+    "rmcp": {"repo": "modelcontextprotocol/rust-sdk", "stars": 3863, "pushedAt": "2026-09-02", "openIssues": 55, "license": "not asserted by GitHub API; Apache-2.0 on crates.io", "archived": false, "latestRelease": "3.2.0 on crates.io"},
+    "failsafe": {"repo": "dmexe/failsafe-rs", "stars": 207, "pushedAt": "2026-08-19", "verdict": "deferred"}
+  },
+  "review": {
+    "rounds": 2, "round1": "1 CRITICAL (external Codex paths), 2 WARNING (A2A, AG-UI entries) — all addressed",
+    "round2": "1 CRITICAL (observability gap), 1 WARNING (maintenance evidence) — addressed after the two-round cap, not re-vetted"
+  },
+  "openQuestions": [
+    "liter-llm 1.18.2 typed error with status and Retry-After?",
+    "liter-llm client base-URL override for wiremock?",
+    "which ContextStrategy enum survives; progressive-summarization spec as sole compaction requirement set?",
+    "approval class per ToolEffect under ToolApprovalPolicy::Auto?",
+    "guardian-style model reviewer as optional tier behind Cedar: not this phase",
+    "port codex sandboxing for stdio MCP or document sandboxed as inert?",
+    "versions.toml entries for jsonschema, rmcp, tiktoken-rs, wasmtime, tonic, A2A, AG-UI (operator-edited)"
+  ]
+}

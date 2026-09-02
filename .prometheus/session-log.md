@@ -1378,3 +1378,26 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   resolved a missing external script path and the knowledge ingestion hook
   recorded an empty-source document. The project session record remains the
   authoritative fallback; the external hook package needs separate repair.
+
+## 2026-09-02 — codex-harness-comparative-analysis: assess complete
+
+Phase `skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::codex-harness-comparative-analysis`, stage assess → complete.
+
+- Compared UAR `dce44e78` with codex-rs `986ff1cc` across harness assembly, prompts, skill activation and use, MCP, tools, context, subagents, resiliency, extensions, observability, testing, and UI protocols; six read-only explorers, one web survey (14 harnesses, 4 protocols, source manifest with credibility ratings).
+- Verified the operator-supplied "Codex-Derived UAR Runtime Kernel" analysis claim by claim: 11 TRUE (one understated), 1 FALSE (tool registries merge early and freeze), 1 PARTIAL (jsonschema pin).
+- Tier 0 `cargo check --locked --no-default-features --features server-full` PASS (7m 52s). No tests run at assess.
+- Sycophancy detect score 0.02. Adversarial review two rounds: round 1 two CRITICALs fixed (inline Codex citations, goal-3 framing); round 2 one CRITICAL accepted as packet-tooling limit (external repo paths), two WARNINGs carried in the handoff.
+- Deep-research server job `job-1788315697-4d2c6a17` never left initialization; worker pid 1022 defunct. Survey evidence stands in with its own manifest.
+- Artifacts: `assessment.md`, `evidence/*.md` (7 files), `review/assess/`, `sycophancy/`, `handoffs/assess.handoff.json` under the child phase dir.
+
+## 2026-09-02 — codex-harness-comparative-analysis: analyze complete
+
+Stage analyze → complete. Artifacts: analysis.md (11 gaps, filter of four tests, verified Codex excerpt appendix, unresolved review findings), library-candidates.json (28 candidates + maintenance block), decision-log.md. Research: Tier 1 8/8, Tier 2 3+3 via Context7 after docfork failed six times, Tier 3 13 (over cap by 5, batched), local registry reads for rmcp/jsonschema/tiktoken-rs/backon/json-patch. Adversarial review two rounds, both BLOCK; all findings addressed, round-2 fixes not re-vetted. Next: /kbd-spec.
+
+## 2026-09-02 — codex-harness-comparative-analysis: spec complete
+
+Stage spec → complete. Ten OpenSpec changes under openspec/changes/ (five immediate, five structural including the split-out typed-turn-default-flip), all `openspec validate --strict` valid, 8 new capabilities and 3 MODIFIED deltas. Adversarial review two rounds (both BLOCK, all findings addressed; round-2 fixes not re-vetted). Review mirror generated under the agui child phase's changes/ for the packet builder (README marks it generated). Notes in spec-review-notes.md. Next: /kbd-plan.
+
+## 2026-09-02 — codex-harness-comparative-analysis: plan complete
+
+Stage plan → complete. plan.md orders ten OpenSpec changes in five rounds with four blocking gates (versions.toml jsonschema; liter-llm error typing; sandbox decision; parity + live smoke). Changes and tasks registered with the KBD runtime under semantic task ids. Adversarial review round 1 BLOCK → fixed, round 2 PASS. Next: /kbd-apply context-history-integrity.

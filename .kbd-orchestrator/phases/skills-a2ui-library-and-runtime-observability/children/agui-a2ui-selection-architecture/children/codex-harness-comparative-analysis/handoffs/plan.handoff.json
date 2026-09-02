@@ -1,0 +1,11 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-09-02T04:29:56Z",
+  "outputs": [
+    "plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "Ten changes in five rounds, 182 tasks registered with semantic ids. Round 1 parallel: context-history-integrity, fail-closed-tool-arguments, deterministic-prompt-assembly (manager.rs boundary at :1477/:1478; merge 3 then 1 then 2). Round 2: model-path-resiliency, progressive-skill-runtime. Round 3: typed-turn-assembly. Round 4: projected-mcp-runtime, thread-native-subagents, project-instructions-world-state. Round 5: typed-turn-default-flip. Four blocking gates: operator records jsonschema in versions.toml before change 2; liter-llm error-type read before change 4 (also decides wiremock); sandbox decision before change 7; parity report plus live smoke before change 10. First change to apply: context-history-integrity via /kbd-apply with semantic task ids (1.1, 1.2, ...) per the 2026-08-26 gotcha. Review: round 1 BLOCK fixed, round 2 PASS with zero findings while the anti-theater gate was skipped (sycophancy.sh lib absent); the spec-stage round-2 fixes remain un-revetted and execute should re-read those four specs before starting them.",
+  "skipped": false,
+  "skipReason": null
+}

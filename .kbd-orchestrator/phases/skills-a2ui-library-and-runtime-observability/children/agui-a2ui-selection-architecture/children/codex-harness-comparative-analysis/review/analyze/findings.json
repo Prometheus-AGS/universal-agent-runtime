@@ -1,0 +1,26 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "kbd-judge",
+  "producer_model": "claude-fable-5-1",
+  "isolation_mode": "rest-gateway:http://localhost:8181/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "The analysis omits a build-vs-adopt decision for runtime observability despite the phase scope and prior assessment including observability.",
+      "evidence": "The phase is `skills-a2ui-library-and-runtime-observability`, and the prior handoff says the assessment covered `observability`, but the artifact's gap list is only `G1 Context history integrity` through `G10 MCP Apps and other protocol alignment`; there is no observability-specific gap, candidate evaluation, verdict, or deferred trigger.",
+      "suggested_fix": "Add an observability gap covering the assessment's observability findings, evaluate build-vs-adopt options for runtime telemetry/tracing/metrics/event correlation, and rank or explicitly defer it with triggers."
+    },
+    {
+      "severity": "WARNING",
+      "file": "library-candidates.json",
+      "line": 0,
+      "claim": "Adopted crates are recommended without a maintenance check.",
+      "evidence": "The analysis states the candidate filter is only `Provider neutrality`, `Existing seam`, and `Named failure`; adopted candidates such as `backon` (`\"verdict\": \"adopt\"`), `jsonschema` (`\"verdict\": \"adopt\"`), `wiremock` (`\"verdict\": \"adopt-dev\"`), and `insta` (`\"verdict\": \"adopt-dev\"`) include version notes but no maintenance fields such as repository activity, release cadence, issue health, downloads, or ownership. By contrast, deferred `failsafe` includes `github\": \"dmexe/failsafe-rs 207 stars, updated 2026-08-19\"`, showing this check was possible but not applied to adopted crates.",
+      "suggested_fix": "Add a maintenance criterion to the candidate filter and record maintenance evidence for every adopted dependency before the spec/plan relies on it."
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "kbd-judge",
+  "producer_model": "claude-fable-5-1",
+  "isolation_mode": "rest-gateway:http://localhost:8181/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The assessment does not satisfy the phase goal to rank findings and write an ordered implementation plan.",
+      "evidence": "Goals require: \"Rank findings by immediate value to UAR and write an ordered implementation plan for the immediately-valuable set, with each change scoped to a spec delta\"; assessment states: \"Goal 3, rank findings and write an ordered plan with spec deltas: NOT MET by design \u2014 assess is fact-finding; ranking belongs to analyze and the ordered change list to plan.\"",
+      "suggested_fix": "Either include the ranked findings and ordered spec-scoped implementation plan in this artifact, or revise the phase goal/target so downstream stages are not missing required planning input."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The assessment claims the source-citation goal is met while the artifact itself does not cite concrete codex-rs source files for the Codex features it compares against.",
+      "evidence": "Goal requires: \"Produce a gap analysis that cites concrete source files in both repos for every codex-rs feature or practice applicable to UAR\". The assessment's Codex comparisons are uncited prose such as \"Codex reference: a turn-frozen `TurnContext` and a step-frozen `StepContext` capture settings...\" and \"Codex reference: every prompt section is a `ContextualUserFragment`...\" without codex-rs file paths or line citations. It then asserts: \"Goal 2... MET \u2014 evidence files cover...\", but the submitted artifact does not contain those citations.",
+      "suggested_fix": "Add concrete codex-rs file paths and line citations next to each Codex reference claim in assessment.md, or include the cited evidence files in the reviewed artifact packet and make the assessment's claims traceable to them."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The assessment makes an unsupported constraints-file claim contradicted by the packet contents.",
+      "evidence": "The packet has \"constraints\": null and the provided file_tree does not list a constraints.md file, but the assessment states: \"constraints.md violations: N/A, file is empty.\"",
+      "suggested_fix": "Replace the claim with the packet-supported statement that no constraints were provided, or cite the actual constraints.md path if it exists outside the supplied packet."
+    }
+  ]
+}

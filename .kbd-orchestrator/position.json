@@ -2,10 +2,10 @@
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 1262,
-  "derivedRevision": 1262,
+  "sourceRevision": 1514,
+  "derivedRevision": 1514,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 858,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 1110,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -19,11 +19,11 @@
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
   "conflictCount": 0,
-  "updatedAt": "2026-09-01T07:32:22.883395Z",
+  "updatedAt": "2026-09-02T09:01:26.291007Z",
   "cursor": [
     "skills-a2ui-library-and-runtime-observability",
     "agui-a2ui-selection-architecture",
-    "execute"
+    "codex-harness-comparative-analysis"
   ],
   "root": {
     "type": "phase",
@@ -31,7 +31,7 @@
     "status": "ready",
     "progress": {
       "done": 101,
-      "total": 110
+      "total": 120
     },
     "children": [
       {
@@ -613,6 +613,109 @@
               "total": 3
             },
             "children": [
+              {
+                "type": "phase",
+                "id": "codex-harness-comparative-analysis",
+                "canonicalId": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::codex-harness-comparative-analysis",
+                "status": "IN_PROGRESS",
+                "progress": {
+                  "done": 0,
+                  "total": 10
+                },
+                "children": [
+                  {
+                    "type": "change",
+                    "id": "context-history-integrity",
+                    "status": "IN_PROGRESS",
+                    "progress": {
+                      "done": 10,
+                      "total": 19
+                    }
+                  },
+                  {
+                    "type": "change",
+                    "id": "fail-closed-tool-arguments",
+                    "status": "PENDING",
+                    "progress": {
+                      "done": 0,
+                      "total": 19
+                    }
+                  },
+                  {
+                    "type": "change",
+                    "id": "deterministic-prompt-assembly",
+                    "status": "PENDING",
+                    "progress": {
+                      "done": 0,
+                      "total": 18
+                    }
+                  },
+                  {
+                    "type": "change",
+                    "id": "model-path-resiliency",
+                    "status": "PENDING",
+                    "progress": {
+                      "done": 0,
+                      "total": 21
+                    }
+                  },
+                  {
+                    "type": "change",
+                    "id": "progressive-skill-runtime",
+                    "status": "PENDING",
+                    "progress": {
+                      "done": 0,
+                      "total": 19
+                    }
+                  },
+                  {
+                    "type": "change",
+                    "id": "typed-turn-assembly",
+                    "status": "PENDING",
+                    "progress": {
+                      "done": 0,
+                      "total": 17
+                    }
+                  },
+                  {
+                    "type": "change",
+                    "id": "projected-mcp-runtime",
+                    "status": "PENDING",
+                    "progress": {
+                      "done": 0,
+                      "total": 22
+                    }
+                  },
+                  {
+                    "type": "change",
+                    "id": "thread-native-subagents",
+                    "status": "PENDING",
+                    "progress": {
+                      "done": 0,
+                      "total": 25
+                    }
+                  },
+                  {
+                    "type": "change",
+                    "id": "project-instructions-world-state",
+                    "status": "PENDING",
+                    "progress": {
+                      "done": 0,
+                      "total": 14
+                    }
+                  },
+                  {
+                    "type": "change",
+                    "id": "typed-turn-default-flip",
+                    "status": "PENDING",
+                    "progress": {
+                      "done": 0,
+                      "total": 8
+                    }
+                  }
+                ],
+                "annotations": []
+              },
               {
                 "type": "change",
                 "id": "establish-presentation-catalog-workspace",

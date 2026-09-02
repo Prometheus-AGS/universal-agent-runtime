@@ -1,0 +1,1 @@
+Generated review mirror. The authoritative change specs are OpenSpec changes under openspec/changes/<id>/. This directory exists only so the adversarial-review packet builder (which reads the native-kbd layout) can review the whole change set. Regenerate; do not edit.

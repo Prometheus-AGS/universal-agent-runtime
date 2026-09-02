@@ -2,10 +2,10 @@
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 1262,
-  "derivedRevision": 1262,
+  "sourceRevision": 1514,
+  "derivedRevision": 1514,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 858,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 1110,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -23,23 +23,25 @@
   "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
   "path": [
     "skills-a2ui-library-and-runtime-observability",
-    "agui-a2ui-selection-architecture"
+    "agui-a2ui-selection-architecture",
+    "codex-harness-comparative-analysis"
   ],
   "phaseIds": [
     "skills-a2ui-library-and-runtime-observability",
-    "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture"
+    "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture",
+    "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::codex-harness-comparative-analysis"
   ],
-  "activePhaseId": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture",
+  "activePhaseId": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::codex-harness-comparative-analysis",
   "phase": "skills-a2ui-library-and-runtime-observability",
-  "childPointer": "agui-a2ui-selection-architecture",
+  "childPointer": "codex-harness-comparative-analysis",
   "change": null,
   "currentTask": null,
   "status": "ready",
   "completionMetric": "implementation",
   "implementationCompleted": 101,
-  "implementationTotal": 110,
+  "implementationTotal": 120,
   "planRevision": 5,
-  "revision": 1262,
-  "exactNextCommand": "/opsx:apply select-and-observe-presentations",
-  "updatedAt": "2026-09-01T07:32:22.883395Z"
+  "revision": 1514,
+  "exactNextCommand": "/kbd-apply context-history-integrity",
+  "updatedAt": "2026-09-02T09:01:26.291007Z"
 }

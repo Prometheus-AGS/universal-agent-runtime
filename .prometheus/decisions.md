@@ -1006,3 +1006,35 @@ missing or unreadable optional sources are counted and remain non-fatal.
 manifest through both its physical path and supported alias entrypoints. Those
 entrypoints retain distinct path-derived identities; this host currently
 publishes 1,038 `agent-skills` records rather than collapsing aliases by inode.
+
+## 2026-09-02 — Adopt Codex reliability patterns, not Codex
+
+**Decision.** The codex-harness comparison treats codex-rs as a source of
+reliability patterns to adapt behind UAR's provider-neutral seams, not as an
+architecture to port. Explicitly excluded: Responses-API `previous_response_id`
+resumption and sticky routing, ChatGPT-auth gating and vendor agent identity,
+unsandboxed MCP child processes, the shadow skill selector as a correctness
+gate, and vendor-catalog base instructions. A guardian-style model reviewer is
+to be evaluated as a tier behind Cedar, never in front of it.
+
+**Rationale.** UAR's mission is a universal runtime; every surveyed harness
+with a single provider is free to bind to that provider's transport. UAR's
+equivalents must live behind liter-llm and the driver trait so a pattern that
+improves one provider does not regress the other 140.
+
+**Evidence correction.** The supplied prior analysis said native and MCP tool
+registries are combined late. They are combined early and frozen for the run
+(`src/llm/orchestrator.rs:498-512`, `:601`). The correct fix is per-step
+re-projection of the tool set, not an earlier merge.
+
+**Uncomfortable constraint.** The 1,510-line `start_run_with_policy_and_history`
+has no seams to shadow behind, so the shadow-mode migration the analysis
+requires must first cut seams into the monolith, which is itself a risky change.
+
+## 2026-09-02 — Harness change set: seams before structure
+
+**Decision.** The Codex-informed harness work ships as ten OpenSpec changes ordered so that five correctness changes (history integrity, fail-closed tool arguments, deterministic prompt assembly, progressive skill runtime, model-path resiliency) land before typed turn assembly, MCP projection, thread-native subagents, and project instructions. Flipping the harness default to the typed path is its own change gated on a recorded parity report and live smoke evidence.
+
+**Rationale.** The 1,510-line run entry point has no seams to shadow behind. Each correctness change extracts a pure function that the typed assembler later composes, so shadow parity compares against a legacy path that already has deterministic ordering and validated tools. An intentional-delta allowlist, each entry naming the change that introduces it, keeps "intentional" from becoming a place to hide regressions.
+
+**Uncomfortable constraint.** Two adversarial rounds still ended in BLOCK; the round-2 fixes were applied after the cap and go to the plan stage un-vetted. `versions.toml` entries for jsonschema and the other pins are operator actions that block execution of change 2 until done.

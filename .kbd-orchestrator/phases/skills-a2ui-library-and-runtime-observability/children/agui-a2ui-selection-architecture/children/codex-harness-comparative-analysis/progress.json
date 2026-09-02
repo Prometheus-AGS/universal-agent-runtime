@@ -1,0 +1,168 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "projectionContractVersion": 2,
+  "sourceRevision": 1513,
+  "derivedRevision": 1513,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 1109,
+    "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
+    "525ede94-ad4e-4580-84da-627cba8991cb": 27,
+    "80130eb1-95f8-4039-8976-71bdce23779c": 61,
+    "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
+    "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
+    "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
+    "97ebf967-3be8-4123-a4ac-06a0caeede59": 12,
+    "af186a6c-4b8c-4fba-bf44-abcabf91ec8a": 22,
+    "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
+    "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
+  },
+  "conflictCount": 0,
+  "phase": "codex-harness-comparative-analysis",
+  "phaseId": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::codex-harness-comparative-analysis",
+  "parentPhase": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture",
+  "last_updated": "2026-09-02T09:00:17.613609Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 10,
+  "changes_completed": 0,
+  "implementation_total": 10,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 10,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "COMPLETE",
+      "summary": "OpenSpec certification, rollback normalization/recovery, KBD execution, and append-only memory receipts recorded.",
+      "blockers": []
+    },
+    "certification": {
+      "status": "COMPLETE",
+      "summary": "Authorized Tier 3 certification and installed live matrix passed; search-specific bypass is deterministic because no search MCP is installed.",
+      "blockers": []
+    },
+    "publication": {
+      "status": "COMPLETE",
+      "summary": "Origin carries forward and fail-closed rollback branches; PR 274 is open; OpenSpec archived at 42/42 with canonical specs synchronized.",
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "context-history-integrity",
+      "title": "context-history-integrity",
+      "status": "IN_PROGRESS",
+      "implementation_status": "IN_PROGRESS",
+      "tasks_total": 19,
+      "tasks_done": 10,
+      "last_task_completed": "Apply truncation at the three ingest sites: MCP results, native results, terminal stdout/stderr",
+      "next_task_pending": "Make `uar::domain::context::ContextStrategy` the only enum; map `TruncateMiddle` to `KeepFirstLast` and `Hierarchical` to `ProgressiveSummar",
+      "blockers": []
+    },
+    {
+      "id": "fail-closed-tool-arguments",
+      "title": "fail-closed-tool-arguments",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 19,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "Verify `versions.toml` contains a `jsonschema` entry at `0.49.4` (operator-edited, outside this change's scope); if absent, stop and ask the",
+      "blockers": []
+    },
+    {
+      "id": "deterministic-prompt-assembly",
+      "title": "deterministic-prompt-assembly",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 18,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "`tests/prompt_assembly.rs`: assembling the same artifact, three matched skills inserted in different registry orders, and the same RAG hits ",
+      "blockers": []
+    },
+    {
+      "id": "model-path-resiliency",
+      "title": "model-path-resiliency",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 21,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "Read the vendored liter-llm 1.18.2 error type and record in this file and the phase decision log whether HTTP status and `Retry-After` are e",
+      "blockers": []
+    },
+    {
+      "id": "progressive-skill-runtime",
+      "title": "progressive-skill-runtime",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 19,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "`tests/skill_activation_runtime.rs`: 2,000 synthetic skills render a catalog within `min(2% window, 10,000 tokens)` with every skill id pres",
+      "blockers": []
+    },
+    {
+      "id": "typed-turn-assembly",
+      "title": "typed-turn-assembly",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 17,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "`tests/typed_turn_assembly.rs`: a `RunExecutionRequest` built from the legacy positional arguments resolves to a `ResolvedTurn` whose fragme",
+      "blockers": []
+    },
+    {
+      "id": "projected-mcp-runtime",
+      "title": "projected-mcp-runtime",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 22,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "Evaluate porting Codex `sandboxing` (Seatbelt, Landlock, bwrap) for stdio children; record the decision and, if not ported, implement reject",
+      "blockers": []
+    },
+    {
+      "id": "thread-native-subagents",
+      "title": "thread-native-subagents",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 25,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "`tests/agent_threads.rs`: a spawned child persists an `AgentThread` and `AgentEdge` in memory, SurrealDB, and PostgreSQL providers with iden",
+      "blockers": []
+    },
+    {
+      "id": "project-instructions-world-state",
+      "title": "project-instructions-world-state",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 14,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "`tests/project_instructions.rs`: a tree with `AGENTS.md` at root and in `crates/a/` yields root-then-subdir concatenation with the separator",
+      "blockers": []
+    },
+    {
+      "id": "typed-turn-default-flip",
+      "title": "typed-turn-default-flip",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 8,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "Attach `parity-report.json` from typed-turn-assembly showing zero unexpected differences across the corpus; record corpus size",
+      "blockers": []
+    }
+  ],
+  "children": {},
+  "migrationStatus": null
+}

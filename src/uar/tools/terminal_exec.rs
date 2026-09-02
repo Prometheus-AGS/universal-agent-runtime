@@ -72,8 +72,24 @@ impl NativeSkill for TerminalExecTool {
         let result = timeout(Duration::from_secs(cmd_timeout), async {
             match cmd.output().await {
                 Ok(output) => {
-                    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-                    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+                    // Bound each stream once at ingest so one verbose command
+                    // cannot fill the context window; the head and tail are
+                    // kept and a warning header states what was removed.
+                    // Each stream gets a slice of the run-wide result budget
+                    // so the serialized JSON stays under it without a second
+                    // cut that could split the JSON.
+                    const TERMINAL_STREAM_BYTE_BUDGET: usize = 12_000;
+                    let stream_policy = crate::uar::runtime::context::truncate::TruncationPolicy::Bytes(
+                        TERMINAL_STREAM_BYTE_BUDGET,
+                    );
+                    let stdout = crate::uar::runtime::context::truncate::formatted_truncate(
+                        &String::from_utf8_lossy(&output.stdout),
+                        stream_policy,
+                    );
+                    let stderr = crate::uar::runtime::context::truncate::formatted_truncate(
+                        &String::from_utf8_lossy(&output.stderr),
+                        stream_policy,
+                    );
                     let exit_code = output.status.code().unwrap_or(-1);
                     Ok(json!({
                         "ok": exit_code == 0,

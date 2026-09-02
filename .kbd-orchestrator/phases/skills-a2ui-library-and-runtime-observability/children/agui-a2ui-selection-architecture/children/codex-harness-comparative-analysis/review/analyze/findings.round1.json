@@ -1,0 +1,31 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "kbd-judge",
+  "producer_model": "claude-fable-5-1",
+  "isolation_mode": "rest-gateway:http://localhost:8181/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "claim": "Multiple build-versus-port decisions depend on Codex source files that are not present or packet-verifiable.",
+      "evidence": "The artifact states that `core/`, `tools/`, `ext/`, `utils/`, `context-fragments/`, `sandboxing/`, `codex-mcp/` are from an external Codex workspace at `/Users/gqadonis/Projects/references/codex`, then bases decisions on paths such as `core/src/context_manager/normalize.rs:21-138`, `context-fragments/src/fragment.rs`, `core/src/tools/parallel.rs`, and `core/src/session/turn_context.rs`; `cited_paths` marks key cited paths as `MISSING`, including `core/src/context_manager/normalize.rs`, `context-fragments/src/fragment.rs`, `core/src/tools/parallel.rs`, `core/src/session/turn_context.rs`, `core/src/session/step_context.rs`, and `tools/src/function_call_error.rs`.",
+      "suggested_fix": "Include the referenced Codex source excerpts/evidence files in the packet or downgrade all decisions that depend on missing external paths to unverifiable open questions rather than plan-driving recommendations."
+    },
+    {
+      "severity": "WARNING",
+      "file": "library-candidates.json",
+      "claim": "G10 claims to cover A2A v1.0.1 and AG-UI vocabulary alignment but the candidate list omits explicit candidates/verdicts for both.",
+      "evidence": "G10 is titled `Protocol alignment: MCP 2026-07-28, MCP Apps, A2A v1.0.1, AG-UI vocabulary`, but its `candidates` array contains only `@modelcontextprotocol/ext-apps`, `mcp-preview`, and `A2UI v1.0 candidate`; there is no A2A v1.0.1 entry and no AG-UI vocabulary/deprecation entry.",
+      "suggested_fix": "Add explicit G10 candidate records for A2A v1.0.1 alignment and AG-UI vocabulary retirement with verdicts, triggers, confidence, and evidence."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "claim": "The G10 deferral says all four protocol alignments have explicit triggers, but A2A v1.0.1 has no trigger or evaluation in the prose.",
+      "evidence": "The artifact says `Decision: DEFER all four to their own changes with explicit triggers`, then gives bullets for MCP Apps (`Trigger: an operator need for an MCP server that ships an app`), A2UI (`until v1.0 leaves candidate status`), and AG-UI (`retire the legacy dotted vocabulary on a deprecation schedule once the subagent events land`), but no bullet or trigger for `A2A at RC v1.0 versus upstream v1.0.1`.",
+      "suggested_fix": "Add an A2A v1.0.1 deferral bullet naming the required trigger and the evidence needed before alignment proceeds."
+    }
+  ]
+}

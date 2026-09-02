@@ -1,0 +1,34 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "kbd-judge",
+  "producer_model": "claude-fable-5-1",
+  "isolation_mode": "rest-gateway:http://localhost:8181/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The assessment bases many Codex-side conclusions on source paths that are not present or verifiable in the packet.",
+      "evidence": "The artifact repeatedly cites Codex files as evidence, e.g. \"Codex reference: a turn-frozen `TurnContext` (`core/src/session/turn_context.rs:194-246`)\" and \"lazy startup gated on a cached, model-visible catalog (`codex-mcp/src/connection_manager.rs:258-259`...)\"; the packet's cited_paths marks those same paths as missing: \"MISSING  core/src/session/turn_context.rs\" and \"MISSING  codex-mcp/src/connection_manager.rs\".",
+      "suggested_fix": "Attach the external codex-rs file tree/evidence excerpts for all Codex citations, or replace unsupported Codex claims with only citations that are present and verifiable in the packet."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The assessment uses cross-harness survey claims as gap evidence despite admitting that the survey did not pass the project's credibility pipeline.",
+      "evidence": "The artifact makes downstream-relevant claims such as \"catalog-then-load is universal across the surveyed harnesses\" and \"Claude Code turned tool search on by default and reports an 85% token reduction\"; later it states, \"The research-server job for the deep-research pipeline never left initialization... it did not pass the pipeline's credibility scoring or Feynman gate.\"",
+      "suggested_fix": "Separate verified primary-source survey findings from unverified survey notes, and do not use unverified cross-harness claims to justify ranked gaps or planned work unless the cited primary sources are included."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The assessment does not satisfy the stated phase goal to produce an ordered implementation plan with each change scoped to a spec delta.",
+      "evidence": "The goals require: \"Rank findings by immediate value to UAR and write an ordered implementation plan for the immediately-valuable set, with each change scoped to a spec delta\"; the artifact explicitly reports: \"Goal 3... PARTIAL at this stage\" and says \"the ordered change list with spec deltas is the plan stage's artifact.\"",
+      "suggested_fix": "Either revise the phase goal/stage contract so assessment is only required to rank gaps, or add the missing ordered implementation-plan gap analysis and per-change spec-delta mapping needed by later stages."
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "stage": "spec",
+  "completedAt": "2026-09-02T04:15:37Z",
+  "outputs": [
+    "openspec/changes/context-history-integrity/proposal.md"
+  ],
+  "nextStage": "plan",
+  "summaryForNext": "Ten OpenSpec changes created and strict-valid: context-history-integrity, fail-closed-tool-arguments, deterministic-prompt-assembly, progressive-skill-runtime, model-path-resiliency (immediate); typed-turn-assembly, typed-turn-default-flip, projected-mcp-runtime, thread-native-subagents, project-instructions-world-state (structural). Each has a proposal with scope and dependencies, a task list starting with failing tests, and at least one spec delta (8 new capabilities, 3 MODIFIED: tiktoken-estimation, tool-approval-workflow, multi-agent-orchestration). zeespec: n/a. Adversarial review two rounds, both BLOCK; round-1 findings fixed (parity against post-dependency legacy with intentional-delta allowlist, default flip split out, versions.toml scope, Codex excerpt pointers, checkpoint evidence); round-2 findings fixed after the cap and not re-vetted (skill_activation_mode semantics, time-section granularity, seeded jitter test, per-skill attribution counters, concurrency-key rule). See spec-review-notes.md. Plan must order by the dependency table there and must hold change 2 until the operator records jsonschema in versions.toml.",
+  "skipped": false,
+  "skipReason": null
+}

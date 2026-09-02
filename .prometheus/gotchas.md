@@ -1018,3 +1018,18 @@ target symlink and never follow links within the resolved target, but allow a
 literal ancestor selector to resolve during canonicalization. Keep the scan
 bounded to the root manifest, conventional `skills/` subtree, or immediate
 manifest-bearing children of a flat collection.
+
+## 2026-09-02 — kbd-new-child: runtime branch and file branch disagree on the parent
+
+When the waypoint is in the "selected but not entered" state (path[] tail equals
+childPointer), `kbd-new-child.sh` computes the parent as the grandparent for its
+file writes (sibling add) but the runtime-authority branch passes
+`activePath.phaseId` (the selected child) as `--parent`. Result: `progress.json`
+is projected at depth N+1 while `goals.md`, `handoff-in.md`, `scope.json` land at
+depth N. Observed creating `codex-harness-comparative-analysis`: runtime put it
+under `agui-a2ui-selection-architecture`, files went under the top-level phase.
+
+Fix applied: moved the three script-written files to the runtime's directory and
+rewrote `scope.json.allowedWritePaths`. The runtime is authoritative for position.
+Root cause is in `~/.claude/skills/kbd-new-child/kbd-new-child.sh` lines 60–66
+versus 145–150; not fixed here because it lives outside this repo.

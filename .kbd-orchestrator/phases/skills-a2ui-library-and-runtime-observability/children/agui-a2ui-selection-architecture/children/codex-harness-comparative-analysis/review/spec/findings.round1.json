@@ -1,0 +1,50 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "kbd-judge",
+  "producer_model": "claude-fable-5-1",
+  "isolation_mode": "rest-gateway:http://localhost:8181/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "typed-turn-assembly/verification.md",
+      "line": 0,
+      "claim": "The typed-turn migration requires zero-difference shadow parity against legacy even though its dependencies intentionally change legacy behavior, making the acceptance gate internally impossible or forcing implementers to preserve known defects.",
+      "evidence": "typed-turn-assembly/spec.md says it depends on behavior-changing changes: \"Dependencies: context-history-integrity, fail-closed-tool-arguments, deterministic-prompt-assembly, progressive-skill-runtime, model-path-resiliency.\" Its verification then requires \"tests/turn_shadow_parity.rs: in `shadow` mode, every request in the corpus reports zero hash, order, tool-eligibility, and context-count differences\". But dependency specs intentionally change those exact dimensions, e.g. deterministic-prompt-assembly changes ordering via \"Fixed section order\" and progressive-skill-runtime changes tool eligibility via \"The tool set and active skills are re-projected per step\" / \"Explicit activation\".",
+      "suggested_fix": "Change shadow parity to compare against an explicit expected typed baseline or restrict zero-difference checks to unaffected corpus cases; record intentional deltas separately instead of requiring zero differences across hash, order, tool eligibility, and context counts."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "typed-turn-assembly/verification.md",
+      "line": 0,
+      "claim": "The default-flip task is ordered inside the same change that requires shadow evidence, but the evidence can only exist after the typed path is implemented and exercised.",
+      "evidence": "typed-turn-assembly/verification.md puts both in one task list: \"4.2 Run the parity corpus at Tier 2 and in the live smoke set; record the zero-difference evidence in the decision log\" followed by \"4.3 Flip default to `typed`; keep `legacy` for one minor release\". The spec says \"The default SHALL change to `typed` only after a recorded zero-difference result over the parity corpus\", so flipping inside the same implementation change risks proceeding before external/live evidence exists.",
+      "suggested_fix": "Split the default flip into a separate follow-up spec/change gated on recorded parity and live-smoke evidence; keep this change limited to adding legacy/shadow/typed modes and producing reports."
+    },
+    {
+      "severity": "WARNING",
+      "file": "fail-closed-tool-arguments/spec.md",
+      "line": 0,
+      "claim": "The spec contradicts itself on whether `versions.toml` is in scope or an external precondition.",
+      "evidence": "fail-closed-tool-arguments/spec.md Scope includes \"`versions.toml` (operator adds `jsonschema = \\\"0.49.4\\\"`)\" and What changes says \"`jsonschema` is recorded in `versions.toml` ... before this change merges.\" But fail-closed-tool-arguments/verification.md says under Precondition: \"Operator records `jsonschema = \\\"0.49.4\\\"` in `versions.toml`; this change does not edit that file\".",
+      "suggested_fix": "Make `versions.toml` unambiguously either an implementation task in this change or an external precondition that blocks starting/merging, and remove it from Scope if it is not edited."
+    },
+    {
+      "severity": "WARNING",
+      "file": "spec.md",
+      "line": 0,
+      "claim": "Multiple requirements rely on Codex source citations that the packet marks as missing, so downstream implementers cannot verify the ported behavior from the packet.",
+      "evidence": "The artifact cites Codex paths such as \"core/src/context_manager/history.rs:563-581\", \"context-fragments/src/fragment.rs:56-119\", \"core/src/session/turn_context.rs:194-246\", and \"codex-mcp/src/connection_manager.rs:258-259\". The packet's cited_paths marks these as \"MISSING core/src/context_manager/history.rs\", \"MISSING context-fragments/src/fragment.rs\", \"MISSING core/src/session/turn_context.rs\", and \"MISSING codex-mcp/src/connection_manager.rs\".",
+      "suggested_fix": "Include the relevant Codex excerpts or an evidence appendix in the spec packet, or downgrade these from concrete porting claims to design requirements not dependent on unverifiable line citations."
+    },
+    {
+      "severity": "WARNING",
+      "file": "context-history-integrity/spec.md",
+      "line": 0,
+      "claim": "Checkpoint resume is included as a requirement without any corresponding Codex comparison or gap evidence in the spec's Why section.",
+      "evidence": "context-history-integrity/spec.md Why discusses reducers, tool-call pairs, tokenizers, and tool output: \"Two independent context reducers run back to back...\", \"Tool output enters history unbounded...\". The What changes then adds unrelated scope: \"Checkpoint resume uses `restore_state`; the endpoint no longer starts a fresh run with a prose input\" and the Spec delta adds \"Requirement: Checkpoint resume restores checkpoint state\".",
+      "suggested_fix": "Add the missing assessment/analysis evidence and Codex comparison for checkpoint resume, or move checkpoint resume to its own spec delta/change if it is a separate defect."
+    }
+  ]
+}

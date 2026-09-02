@@ -1,0 +1,42 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "kbd-judge",
+  "producer_model": "claude-fable-5-1",
+  "isolation_mode": "rest-gateway:http://localhost:8181/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "Round 1 is planned as parallel work while the plan's own line ranges show overlapping edits in the same file.",
+      "evidence": "The plan says: \"Round 1 (parallel, three isolated worktrees): context-history-integrity, fail-closed-tool-arguments ... deterministic-prompt-assembly\" and then claims they touch \"different blocks\", but the cited ranges overlap: \"context `:1471-1538`\" and \"prompt `:1229-1477`\" both include lines 1471-1477 in `src/uar/runtime/manager.rs`.",
+      "suggested_fix": "Do not describe these as independent parallel edits, or split/reorder the overlapping `manager.rs` work so the context and prompt changes have a defined merge boundary before parallel execution."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The unresolved liter-llm error-typing decision blocks model-path-resiliency, but the execution order has no corresponding blocking operator action or pre-Round-2 gate.",
+      "evidence": "Change 4 says: \"Depends on: deterministic-prompt-assembly ... task 0.1 must settle liter-llm error typing first\" and its complexity note says \"task 0.1 is an unresolved decision until the liter-llm error type is read\". However, the only blocking operator actions are for `jsonschema` and projected MCP sandboxing: \"Record `jsonschema = \\\"0.49.4\\\"` ...\" and \"Decide task 0.1 of projected-mcp-runtime ... before Round 4.\" Round 2 still schedules \"model-path-resiliency\" without a gate.",
+      "suggested_fix": "Add an explicit blocking action before Round 2 to settle liter-llm error typing and Retry-After handling, or move model-path-resiliency after that decision is complete."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The plan omits adopted test-support libraries that the analysis handoff says should be adopted.",
+      "evidence": "The plan states: \"Library annotations follow `library-candidates.json` (adopt verdicts become reuse tasks, never rebuilds).\" The analyze handoff says: \"Adopt: jsonschema 0.49.4 ... backon 1.6.0 ... wiremock + insta as dev-deps.\" The plan includes `jsonschema` and `backon` but contains no `wiremock` or `insta` task, dependency note, or verification use.",
+      "suggested_fix": "Add the `wiremock` and `insta` dev-dependency adoption to the relevant resiliency/provider test changes, or explicitly reject/defer them with the reason and trigger."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The jsonschema dependency state is internally contradictory, which can cause implementers to either skip or duplicate the required version pin.",
+      "evidence": "Change 2 says it is \"blocked until the operator records `jsonschema = \\\"0.49.4\\\"` in `versions.toml`\", but the same change's library line says: \"adopt `jsonschema` 0.49.4 already pinned\". The assess handoff clarifies the actual state was \"jsonschema caret-pinned, not in versions.toml, unused on tool path\".",
+      "suggested_fix": "Rewrite the dependency note to distinguish the existing Cargo dependency from the missing central `versions.toml` pin, e.g. \"jsonschema exists in Cargo but must be pinned in versions.toml before implementation.\""
+    }
+  ]
+}

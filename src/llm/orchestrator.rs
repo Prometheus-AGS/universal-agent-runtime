@@ -283,6 +283,9 @@ pub struct Orchestrator {
     /// Controls which tool calls are routed to the sandbox runner.
     tool_execution_mode: crate::uar::domain::artifact::ToolExecutionMode,
     resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy,
+    /// Bound applied once to every tool result when it is recorded into the
+    /// model-visible history (MCP, native, and terminal results alike).
+    tool_output_policy: crate::uar::runtime::context::truncate::TruncationPolicy,
     /// Per-run cache strategy copied into every policy-bearing tool-loop request.
     cache_strategy: Option<CacheStrategy>,
 }
@@ -342,6 +345,7 @@ impl Orchestrator {
             sandbox_runner: None,
             tool_execution_mode: crate::uar::domain::artifact::ToolExecutionMode::default(),
             resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy::default(),
+            tool_output_policy: crate::uar::runtime::context::truncate::TruncationPolicy::default(),
             cache_strategy: None,
         }
     }
@@ -452,6 +456,16 @@ impl Orchestrator {
         policy: crate::uar::settings::resilience_policy::ResiliencePolicy,
     ) -> Self {
         self.resilience_policy = policy;
+        self
+    }
+
+    /// Set the bound applied to every recorded tool result.
+    #[must_use]
+    pub fn with_tool_output_policy(
+        mut self,
+        policy: crate::uar::runtime::context::truncate::TruncationPolicy,
+    ) -> Self {
+        self.tool_output_policy = policy;
         self
     }
 
@@ -1002,6 +1016,12 @@ impl Orchestrator {
                                 Ok(content) => (content, true),
                                 Err(error) => (format!("Error: {error}"), false),
                             };
+                            // Bound once, at ingest; the same bounded text is
+                            // what the event carries and what history records.
+                            let content = crate::uar::runtime::context::truncate::formatted_truncate(
+                                &content,
+                                orchestrator.tool_output_policy,
+                            );
                             (call, content, success)
                         }
                     }))
@@ -1259,6 +1279,13 @@ impl Orchestrator {
                             }
                         }
                     };
+
+                    // Bound once, at ingest; the same bounded text is what the
+                    // event carries and what history records.
+                    let content = crate::uar::runtime::context::truncate::formatted_truncate(
+                        &content,
+                        orchestrator.tool_output_policy,
+                    );
 
                     // Emit tool result event
                     yield NormalizedEvent::ToolResult {
