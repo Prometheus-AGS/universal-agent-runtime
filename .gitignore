@@ -74,6 +74,9 @@ config.yaml
 tests/coverage/
 test-results/
 playwright-report/
+# Playwright MCP scratch: timestamped page snapshots and console logs
+# written per browser session. Not test output anyone reads twice.
+.playwright-mcp/
 .features-gen/
 tests/bdd/cucumber-report.json
 coverage/
