@@ -8,9 +8,28 @@ use crate::uar::domain::policy::{EffectiveResourceSelection, EffectiveRunPolicy}
 use super::protocol::{CATALOG_ID, VERSION};
 
 fn label<T: Serialize>(value: &T) -> String {
+    // Two serde shapes reach here, and only one is a bare string.
+    //
+    // `SelectionMode`, `PolicyScope`, `ChatMode` and `ToolApprovalPolicy` are
+    // externally tagged, so they serialize to `"sliding_window"`. But
+    // `ContextStrategy` carries `#[serde(tag = "type")]`, so EVERY one of its
+    // variants -- unit variants included -- serializes to an object
+    // `{"type": "sliding_window", ...}`. Reading only `as_str()` therefore
+    // rendered "Context · unknown" for all six strategies, on a surface whose
+    // entire job is telling an operator what is in force.
+    //
+    // Falling back to the `type` tag covers the internally-tagged case without
+    // touching the string case. "unknown" now means genuinely unlabelable.
     serde_json::to_value(value)
         .ok()
-        .and_then(|value| value.as_str().map(str::to_owned))
+        .and_then(|value| match value {
+            serde_json::Value::String(text) => Some(text),
+            serde_json::Value::Object(map) => map
+                .get("type")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned),
+            _ => None,
+        })
         .unwrap_or_else(|| "unknown".to_string())
         .replace('_', " ")
 }
@@ -148,5 +167,67 @@ mod tests {
             "Tools · auto · 2 available · legacy scope"
         );
         assert!(!surface.to_string().contains("web_fetch"));
+    }
+}
+
+#[cfg(test)]
+mod label_tests {
+    use super::label;
+    use crate::uar::context::ContextStrategy;
+    use crate::uar::domain::policy::{ChatMode, PolicyScope, SelectionMode, ToolApprovalPolicy};
+
+    /// `ContextStrategy` is internally tagged, so every variant -- including
+    /// the unit ones -- serializes to an object. All six read "unknown" before
+    /// this fix, not just the ones carrying fields.
+    #[test]
+    fn every_context_strategy_has_a_label() {
+        let cases = [
+            (ContextStrategy::None, "none"),
+            (ContextStrategy::Auto, "auto"),
+            (ContextStrategy::SlidingWindow { max_messages: 50 }, "sliding window"),
+            (
+                ContextStrategy::Summarize {
+                    threshold: 100,
+                    summary_max_tokens: 512,
+                    model: None,
+                },
+                "summarize",
+            ),
+            (
+                ContextStrategy::TruncateMiddle { keep_first: 5, keep_last: 20 },
+                "truncate middle",
+            ),
+            (
+                ContextStrategy::Hierarchical {
+                    short_term_turns: 10,
+                    mid_term_summary_tokens: 512,
+                    long_term_facts_tokens: 256,
+                },
+                "hierarchical",
+            ),
+        ];
+        for (strategy, expected) in cases {
+            let rendered = label(&strategy);
+            assert_eq!(rendered, expected, "{strategy:?} mislabelled");
+            assert_ne!(rendered, "unknown", "{strategy:?} still unknown");
+        }
+    }
+
+    /// The externally-tagged enums already worked. This asserts the fix did
+    /// not regress them, which is the risk of touching a shared helper.
+    #[test]
+    fn externally_tagged_enums_are_unchanged() {
+        assert_eq!(label(&SelectionMode::Selected), "selected");
+        assert_eq!(label(&SelectionMode::None), "none");
+        assert_eq!(label(&PolicyScope::Agent), "agent");
+        assert_eq!(label(&ChatMode::Uar), "uar");
+        assert_eq!(label(&ToolApprovalPolicy::Inherit), "inherit");
+    }
+
+    /// "unknown" must still mean something: a value with no label at all.
+    #[test]
+    fn genuinely_unlabelable_values_are_still_unknown() {
+        assert_eq!(label(&42_u32), "unknown");
+        assert_eq!(label(&serde_json::json!({"no_type_key": 1})), "unknown");
     }
 }
