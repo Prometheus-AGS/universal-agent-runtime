@@ -45,6 +45,7 @@ impl LlmDriver for ToolNormalizerDriver {
         &self,
         mut req: LlmRequest,
     ) -> anyhow::Result<Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>> {
+        crate::uar::runtime::context::normalize::normalize_provider_messages(&mut req.messages)?;
         match self.profile.tool_call_capability {
             ToolCallCapability::Native => {
                 // Pass through — model speaks tool calls natively

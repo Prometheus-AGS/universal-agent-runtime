@@ -184,7 +184,10 @@ mod label_tests {
         let cases = [
             (ContextStrategy::None, "none"),
             (ContextStrategy::Auto, "auto"),
-            (ContextStrategy::SlidingWindow { max_messages: 50 }, "sliding window"),
+            (
+                ContextStrategy::SlidingWindow { max_messages: 50 },
+                "sliding window",
+            ),
             (
                 ContextStrategy::Summarize {
                     threshold: 100,
@@ -194,7 +197,10 @@ mod label_tests {
                 "summarize",
             ),
             (
-                ContextStrategy::TruncateMiddle { keep_first: 5, keep_last: 20 },
+                ContextStrategy::TruncateMiddle {
+                    keep_first: 5,
+                    keep_last: 20,
+                },
                 "truncate middle",
             ),
             (

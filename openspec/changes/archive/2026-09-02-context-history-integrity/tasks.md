@@ -1,6 +1,6 @@
 # Tasks — context-history-integrity
 
-scope: src/uar/context/strategy.rs, src/uar/runtime/context/**, src/uar/domain/context.rs, src/uar/runtime/manager.rs (1471-1538), src/llm/orchestrator.rs (result ingest), src/uar/tools/terminal_exec.rs, src/uar/runtime/checkpoint.rs, src/uar/api/routes.rs (checkpoint resume), tests/context_history_integrity.rs
+scope: src/uar/context/strategy.rs, src/uar/runtime/context/**, src/uar/domain/context.rs, src/uar/runtime/manager.rs (context reduction and checkpoint seeding), src/llm/orchestrator.rs, src/llm/tool_normalizer.rs, src/uar/runtime/graph/nodes/**, src/server.rs and src/uar/api/providers.rs (provider dispatch boundaries), src/uar/tools/terminal_exec.rs, src/uar/runtime/checkpoint.rs, src/uar/api/routes.rs (checkpoint resume), tests/context_history_integrity.rs
 
 ## 1. Failing tests first
 
@@ -24,7 +24,7 @@ scope: src/uar/context/strategy.rs, src/uar/runtime/context/**, src/uar/domain/c
 - [x] 3.2 Delete `estimate_tokens` (`strategy.rs:100-103`); route every count through `TokenService`
 - [x] 3.3 Pin the system message: reducers receive `(system, history)` and return `history` only
 - [x] 3.4 Remove the content-equality dedup in `apply_keep_first_last`
-- [x] 3.5 Call `normalize_history` once, after reduction and before the orchestrator is built (`manager.rs` block)
+- [x] 3.5 Normalize around reduction and at every provider-dispatch boundary, including each iterative tool-loop request and direct orchestrator calls
 
 ## 4. Checkpoint resume
 
@@ -32,6 +32,6 @@ scope: src/uar/context/strategy.rs, src/uar/runtime/context/**, src/uar/domain/c
 
 ## 5. Verification
 
-- [ ] 5.1 Tier 1: `cargo test --locked --no-default-features --features server-full --test context_history_integrity`
-- [ ] 5.2 Tier 2: `cargo fmt --all -- --check` and full `cargo test --locked --no-default-features --features server-full`
-- [ ] 5.3 `openspec validate context-history-integrity --strict`
+- [x] 5.1 Tier 1: `cargo test --locked --no-default-features --features server-full --test context_history_integrity`
+- [x] 5.2 Tier 2: `cargo fmt --all -- --check` and full `cargo test --locked --no-default-features --features server-full`
+- [x] 5.3 `openspec validate context-history-integrity --strict`

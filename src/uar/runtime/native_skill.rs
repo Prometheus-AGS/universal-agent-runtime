@@ -58,6 +58,23 @@ pub trait NativeSkill: Send + Sync {
 
     /// Execute the tool with the given arguments and return the result.
     async fn execute(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value>;
+
+    /// Format one successful result for model-visible history.
+    ///
+    /// The default preserves the existing JSON representation and applies the
+    /// run's output policy at the single history-ingest boundary. Native tools
+    /// whose raw output needs format-aware truncation may override this method.
+    fn format_result(
+        &self,
+        result: &serde_json::Value,
+        policy: crate::uar::runtime::context::truncate::TruncationPolicy,
+        model: &str,
+    ) -> String {
+        let content = serde_json::to_string(result).unwrap_or_default();
+        crate::uar::runtime::context::truncate::formatted_truncate_for_model(
+            &content, policy, model,
+        )
+    }
 }
 
 /// Registry holding all registered native skills, keyed by their name.

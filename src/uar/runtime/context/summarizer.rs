@@ -33,7 +33,7 @@ pub async fn summarize_messages(messages: &[Message], driver: &dyn LlmDriver) ->
     }
 
     // Build request as JSON values matching LlmRequest.messages format
-    let request = LlmRequest {
+    let mut request = LlmRequest {
         messages: vec![
             serde_json::json!({
                 "role": "system",
@@ -50,6 +50,7 @@ pub async fn summarize_messages(messages: &[Message], driver: &dyn LlmDriver) ->
         anthropic_system: None,
         extra_params: None,
     };
+    super::normalize::normalize_provider_messages(&mut request.messages)?;
 
     let mut stream = driver.stream(request).await?;
     let mut summary = String::new();

@@ -2,10 +2,10 @@
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 1537,
-  "derivedRevision": 1537,
+  "sourceRevision": 1550,
+  "derivedRevision": 1550,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 1133,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 1146,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -22,18 +22,18 @@
   "phase": "codex-harness-comparative-analysis",
   "phaseId": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::codex-harness-comparative-analysis",
   "parentPhase": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture",
-  "last_updated": "2026-09-02T09:16:06.615923Z",
+  "last_updated": "2026-09-02T13:12:56.295395Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 10,
-  "changes_completed": 0,
+  "changes_completed": 1,
   "implementation_total": 10,
-  "implementation_completed": 0,
+  "implementation_completed": 1,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 0,
+      "completed": 1,
       "total": 10,
-      "status": "PENDING"
+      "status": "IN_PROGRESS"
     },
     "evidence": {
       "status": "COMPLETE",
@@ -55,12 +55,12 @@
     {
       "id": "context-history-integrity",
       "title": "context-history-integrity",
-      "status": "IN_PROGRESS",
-      "implementation_status": "IN_PROGRESS",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 19,
-      "tasks_done": 15,
-      "last_task_completed": "`resume_run_from_checkpoint` calls `Checkpoint::restore_state` and seeds the run's history; a deserialization failure is an error, not `unwr",
-      "next_task_pending": "Make `uar::domain::context::ContextStrategy` the only enum; map `TruncateMiddle` to `KeepFirstLast` and `Hierarchical` to `ProgressiveSummar",
+      "tasks_done": 19,
+      "last_task_completed": "`openspec validate context-history-integrity --strict`",
+      "next_task_pending": null,
       "blockers": []
     },
     {

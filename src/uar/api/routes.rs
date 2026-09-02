@@ -391,32 +391,18 @@ async fn resume_run_from_checkpoint(
                 .into_response();
         }
     };
-    let seed_history: Vec<crate::uar::runtime::manager::SeedMessage> = history
-        .iter()
-        .map(|m| crate::uar::runtime::manager::SeedMessage {
-            role: match m.role {
-                crate::llm::MessageRole::System => "system".to_string(),
-                crate::llm::MessageRole::Assistant => "assistant".to_string(),
-                crate::llm::MessageRole::Tool => "tool".to_string(),
-                crate::llm::MessageRole::User => "user".to_string(),
-            },
-            content: m.content.as_text().unwrap_or_default().to_string(),
-            tool_call_id: m.tool_call_id.clone(),
-        })
-        .collect();
-
-    // The caller may supply the next turn; without one the run continues from
-    // the restored history alone.
-    let input = req.input.unwrap_or_default();
+    let restored_state_keys = restored.data.len();
+    let restored_messages = history.len();
 
     let new_run_id = manager
-        .start_run_with_history(
+        .start_run_from_checkpoint(
             req.artifact,
-            input,
+            req.input,
             req.session_id,
             Some(user.user_id),
             vec![],
-            seed_history,
+            history,
+            restored,
         )
         .await;
 
@@ -425,8 +411,8 @@ async fn resume_run_from_checkpoint(
         "checkpoint_id": checkpoint_id,
         "checkpoint_node_id": checkpoint.node_id,
         "checkpoint_iteration": checkpoint.iteration,
-        "restored_messages": history.len(),
-        "restored_state_keys": restored.data.len(),
+        "restored_messages": restored_messages,
+        "restored_state_keys": restored_state_keys,
         "run_id": new_run_id,
         "stream_url": format!("/api/uar/runs/{new_run_id}/stream"),
     }))

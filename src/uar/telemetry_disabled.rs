@@ -18,10 +18,10 @@
 //! feature surface.
 
 use crate::config::LogFormat;
+use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::writer::BoxMakeWriter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::EnvFilter;
 
 /// Placeholder matching the exporter shutdown contract.
 #[derive(Debug)]

@@ -3654,7 +3654,7 @@ async fn api_messages(
 
     let openai_messages = convert_anthropic_messages_to_openai(&req);
 
-    let llm_request = crate::llm::LlmRequest {
+    let mut llm_request = crate::llm::LlmRequest {
         messages: openai_messages,
         tools: convert_anthropic_tools_to_openai(&req.tools),
         cache_strategy: effective_caching
@@ -3664,6 +3664,15 @@ async fn api_messages(
         anthropic_system: None,
         extra_params: None,
     };
+    if let Err(err) = crate::uar::runtime::context::normalize::normalize_provider_messages(
+        &mut llm_request.messages,
+    ) {
+        tracing::warn!(error = %err, "Anthropic adapter received invalid conversation history");
+        return anthropic_error_response(
+            StatusCode::BAD_REQUEST,
+            "Conversation history violates the provider message contract",
+        );
+    }
 
     let driver = match crate::llm::orchestrator::build_driver(&resolved_llm_config) {
         Ok(driver) => driver,

@@ -9,7 +9,7 @@
 * [Mistral.rs fork upstream sync PR and repository cleanup](/mistral-rs-fork-upstream-sync-pr-and-repository-cleanup.md)
 * [Sansaba web scaffold phase and Cedar C-29 gate status](/sansaba-web-scaffold-phase-and-cedar-c-29-gate-status.md)
 * [Skill installer renamed on collision and reported success; 19 skills unreachable](/karpathy-progress-20260814T003220Z-uar-1-0-readiness.md)
-* [Skills A2UI observability executor session complete](/skills-a2ui-library-runtime-observability-executor-session-complete.md)
+* [Skills A2UI observability executor session status](/skills-a2ui-library-runtime-observability-executor-session-complete.md)
 * [SSR frontend merge deploy and workflow validation status](/ssr-frontend-merge-deploy-and-workflow-validation-status.md)
 * [UAR desktop sidecar runtime OpenSpec draft status](/uar-desktop-sidecar-runtime-openspec-draft-status.md)
 * [UAR desktop stable port executor session completion](/uar-desktop-stable-port-executor-session-completion.md)

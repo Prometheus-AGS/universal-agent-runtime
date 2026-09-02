@@ -37,6 +37,34 @@ impl NativeSkill for TerminalExecTool {
             }
         })
     }
+
+    fn format_result(
+        &self,
+        result: &Value,
+        policy: crate::uar::runtime::context::truncate::TruncationPolicy,
+        model: &str,
+    ) -> String {
+        use crate::uar::runtime::context::truncate::formatted_truncate_for_model;
+
+        let serialized = serde_json::to_string(result).unwrap_or_default();
+        if formatted_truncate_for_model(&serialized, policy, model) == serialized {
+            return serialized;
+        }
+
+        let stdout = result.get("stdout").and_then(Value::as_str).unwrap_or("");
+        let stderr = result.get("stderr").and_then(Value::as_str).unwrap_or("");
+        let exit_code = result
+            .get("exit_code")
+            .and_then(Value::as_i64)
+            .unwrap_or(-1);
+        let ok = result.get("ok").and_then(Value::as_bool).unwrap_or(false);
+        let command = result.get("command").and_then(Value::as_str).unwrap_or("");
+        let transcript = format!(
+            "stdout:\n{stdout}\nstderr:\n{stderr}\nexit_code: {exit_code}\nok: {ok}\ncommand: {command}"
+        );
+        formatted_truncate_for_model(&transcript, policy, model)
+    }
+
     async fn execute(&self, args: Value) -> anyhow::Result<Value> {
         let command = match args.get("command").and_then(Value::as_str) {
             Some(c) => c.to_string(),
@@ -72,24 +100,8 @@ impl NativeSkill for TerminalExecTool {
         let result = timeout(Duration::from_secs(cmd_timeout), async {
             match cmd.output().await {
                 Ok(output) => {
-                    // Bound each stream once at ingest so one verbose command
-                    // cannot fill the context window; the head and tail are
-                    // kept and a warning header states what was removed.
-                    // Each stream gets a slice of the run-wide result budget
-                    // so the serialized JSON stays under it without a second
-                    // cut that could split the JSON.
-                    const TERMINAL_STREAM_BYTE_BUDGET: usize = 12_000;
-                    let stream_policy = crate::uar::runtime::context::truncate::TruncationPolicy::Bytes(
-                        TERMINAL_STREAM_BYTE_BUDGET,
-                    );
-                    let stdout = crate::uar::runtime::context::truncate::formatted_truncate(
-                        &String::from_utf8_lossy(&output.stdout),
-                        stream_policy,
-                    );
-                    let stderr = crate::uar::runtime::context::truncate::formatted_truncate(
-                        &String::from_utf8_lossy(&output.stderr),
-                        stream_policy,
-                    );
+                    let stdout = String::from_utf8_lossy(&output.stdout);
+                    let stderr = String::from_utf8_lossy(&output.stderr);
                     let exit_code = output.status.code().unwrap_or(-1);
                     Ok(json!({
                         "ok": exit_code == 0,

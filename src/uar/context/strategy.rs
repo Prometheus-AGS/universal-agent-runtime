@@ -193,7 +193,10 @@ fn prepend_pinned(system: Option<Message>, rest: Vec<Message>) -> Vec<Message> {
 /// ```
 #[must_use]
 pub fn split_pinned_system(mut messages: Vec<Message>) -> (Option<Message>, Vec<Message>) {
-    if messages.first().is_some_and(|m| m.role == MessageRole::System) {
+    if messages
+        .first()
+        .is_some_and(|m| m.role == MessageRole::System)
+    {
         let system = messages.remove(0);
         (Some(system), messages)
     } else {

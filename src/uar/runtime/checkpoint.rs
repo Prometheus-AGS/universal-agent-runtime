@@ -56,10 +56,7 @@ impl Checkpoint {
     /// resume while discarding everything the checkpoint recorded.
     pub fn try_restore_state(&self) -> anyhow::Result<crate::uar::runtime::graph::GraphState> {
         let data = serde_json::from_value(self.state.clone()).map_err(|e| {
-            anyhow::anyhow!(
-                "checkpoint {} has an unreadable state bag: {e}",
-                self.id
-            )
+            anyhow::anyhow!("checkpoint {} has an unreadable state bag: {e}", self.id)
         })?;
         Ok(crate::uar::runtime::graph::GraphState {
             data,
@@ -91,7 +88,9 @@ impl Checkpoint {
 /// # Errors
 ///
 /// Returns an error when any recorded message cannot be deserialized.
-pub fn history_from_checkpoint(checkpoint: &Checkpoint) -> anyhow::Result<Vec<crate::llm::Message>> {
+pub fn history_from_checkpoint(
+    checkpoint: &Checkpoint,
+) -> anyhow::Result<Vec<crate::llm::Message>> {
     checkpoint
         .messages
         .iter()

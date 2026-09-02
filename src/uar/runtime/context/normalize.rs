@@ -17,6 +17,8 @@
 
 use std::collections::HashSet;
 
+use anyhow::Context as _;
+
 use crate::llm::{Message, MessageContent, MessageRole};
 
 /// Substring present in every synthetic cancelled result body.
@@ -114,27 +116,48 @@ pub fn synthetic_tool_result(call_id: &str, reason: &SyntheticReason) -> Message
 pub fn normalize_history(messages: &mut Vec<Message>) -> NormalizeReport {
     let mut report = NormalizeReport::default();
 
-    let call_ids: HashSet<String> = messages
-        .iter()
-        .filter(|m| m.role == MessageRole::Assistant)
-        .flat_map(|m| m.tool_calls.iter().flatten())
-        .map(|call| call.id.clone())
-        .collect();
-
-    // Invariant 2: remove results that no call produced.
-    messages.retain(|m| {
-        if m.role != MessageRole::Tool {
-            return true;
+    // A result belongs to a call only when it is in the contiguous tool-result
+    // block immediately following that assistant message. Global id matching is
+    // insufficient: a late result would otherwise survive and a second result
+    // would be synthesized beside the call.
+    let mut valid_result_indices = HashSet::new();
+    for (assistant_index, message) in messages.iter().enumerate() {
+        if message.role != MessageRole::Assistant {
+            continue;
         }
-        let keep = m
-            .tool_call_id
-            .as_deref()
-            .is_some_and(|id| call_ids.contains(id));
+        let owned_ids: HashSet<&str> = message
+            .tool_calls
+            .iter()
+            .flatten()
+            .map(|call| call.id.as_str())
+            .collect();
+        if owned_ids.is_empty() {
+            continue;
+        }
+
+        let mut seen = HashSet::new();
+        let mut result_index = assistant_index + 1;
+        while result_index < messages.len() && messages[result_index].role == MessageRole::Tool {
+            if let Some(id) = messages[result_index].tool_call_id.as_deref()
+                && owned_ids.contains(id)
+                && seen.insert(id)
+            {
+                valid_result_indices.insert(result_index);
+            }
+            result_index += 1;
+        }
+    }
+
+    // Invariant 2: remove orphaned, misplaced, and duplicate results.
+    let mut original_index = 0;
+    messages.retain(|m| {
+        let keep = m.role != MessageRole::Tool || valid_result_indices.contains(&original_index);
         if !keep {
             report
                 .removed
                 .push(m.tool_call_id.clone().unwrap_or_default());
         }
+        original_index += 1;
         keep
     });
 
@@ -168,25 +191,6 @@ pub fn normalize_history(messages: &mut Vec<Message>) -> NormalizeReport {
             .filter_map(|m| m.tool_call_id.clone())
             .collect();
 
-        // Duplicate results for one id: keep the first, drop the rest.
-        let mut seen: HashSet<String> = HashSet::new();
-        let mut j = i + 1;
-        while j < block_end {
-            let dup = messages[j]
-                .tool_call_id
-                .as_deref()
-                .is_some_and(|id| !seen.insert(id.to_string()));
-            if dup {
-                report
-                    .removed
-                    .push(messages[j].tool_call_id.clone().unwrap_or_default());
-                messages.remove(j);
-                block_end -= 1;
-            } else {
-                j += 1;
-            }
-        }
-
         let mut insert_at = block_end;
         let mut this_block: Vec<String> = Vec::new();
         for id in ids.iter().filter(|id| !present.contains(id.as_str())) {
@@ -203,6 +207,37 @@ pub fn normalize_history(messages: &mut Vec<Message>) -> NormalizeReport {
     report.synthesized = synthesized;
 
     report
+}
+
+/// Normalize the JSON message vector immediately before an [`LlmDriver`]
+/// request. Runtime call sites use this boundary helper so direct graph and
+/// protocol-adapter dispatches receive the same invariant enforcement as the
+/// orchestrator tool loop.
+///
+/// [`LlmDriver`]: crate::llm::LlmDriver
+pub fn normalize_provider_messages(
+    messages: &mut Vec<serde_json::Value>,
+) -> anyhow::Result<NormalizeReport> {
+    let mut typed: Vec<Message> = messages
+        .iter()
+        .cloned()
+        .map(serde_json::from_value)
+        .collect::<Result<_, _>>()
+        .context("provider history contains a message outside UAR's typed message contract")?;
+    let report = normalize_history(&mut typed);
+    *messages = typed
+        .iter()
+        .map(serde_json::to_value)
+        .collect::<Result<_, _>>()
+        .context("failed to serialize normalized provider history")?;
+    if !report.is_clean() {
+        tracing::warn!(
+            synthesized = report.synthesized.len(),
+            removed = report.removed.len(),
+            "Normalized tool-call history before provider dispatch"
+        );
+    }
+    Ok(report)
 }
 
 #[cfg(test)]

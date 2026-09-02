@@ -2,10 +2,10 @@
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 1537,
-  "derivedRevision": 1537,
+  "sourceRevision": 1551,
+  "derivedRevision": 1551,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 1133,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 1147,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -38,10 +38,10 @@
   "currentTask": null,
   "status": "ready",
   "completionMetric": "implementation",
-  "implementationCompleted": 101,
+  "implementationCompleted": 102,
   "implementationTotal": 120,
   "planRevision": 5,
-  "revision": 1537,
-  "exactNextCommand": "/kbd-apply context-history-integrity",
-  "updatedAt": "2026-09-02T09:16:06.615923Z"
+  "revision": 1551,
+  "exactNextCommand": "/kbd-apply fail-closed-tool-arguments",
+  "updatedAt": "2026-09-02T13:13:31.630228Z"
 }

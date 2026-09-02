@@ -1,5 +1,5 @@
 use crate::llm::Message;
-use tiktoken_rs::{CoreBPE, cl100k_base_singleton, bpe_for_model, o200k_base_singleton};
+use tiktoken_rs::{CoreBPE, bpe_for_model, cl100k_base_singleton, o200k_base_singleton};
 
 /// Which tiktoken encoding a model resolves to.
 ///
@@ -57,7 +57,7 @@ impl TokenService {
     #[must_use]
     pub fn encoding_for(model: &str) -> TokenEncoding {
         let bare = model.rsplit('/').next().unwrap_or(model);
-        match bpe_for_model(bare) {
+        let encoding = match bpe_for_model(bare) {
             Ok(bpe) => {
                 // `bpe_for_model` returns the singleton for the model's
                 // encoding, so pointer identity names it without a second table.
@@ -72,7 +72,15 @@ impl TokenService {
                 }
             }
             Err(_) => TokenEncoding::Cl100kFallback,
-        }
+        };
+        tracing::debug!(
+            name: "context.token.estimate",
+            model = model,
+            token_encoding = ?encoding,
+            token_estimate_fallback = encoding.is_fallback(),
+            "Resolved token estimate encoding"
+        );
+        encoding
     }
 
     /// Count tokens in `content` with `model`'s encoding.

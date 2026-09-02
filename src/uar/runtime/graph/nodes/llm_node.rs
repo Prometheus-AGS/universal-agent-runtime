@@ -79,7 +79,7 @@ impl GraphNode for LlmNode {
             return NodeResult::Error(state, "LlmNode: no messages to send".to_string());
         }
 
-        let req = LlmRequest {
+        let mut req = LlmRequest {
             messages,
             // The MCP registry's tools, in OpenAI shape.
             //
@@ -101,6 +101,11 @@ impl GraphNode for LlmNode {
             anthropic_system: None,
             extra_params: None,
         };
+        if let Err(error) =
+            crate::uar::runtime::context::normalize::normalize_provider_messages(&mut req.messages)
+        {
+            return NodeResult::Error(state, format!("LlmNode history error: {error}"));
+        }
 
         let stream = match ctx.driver.stream(req).await {
             Ok(s) => s,

@@ -1096,6 +1096,63 @@ impl RunManager {
         resolved_policy: Option<EffectiveRunPolicy>,
         seed_history: Vec<SeedMessage>,
     ) -> String {
+        self.start_seeded_run(
+            artifact,
+            Some(input),
+            session_id,
+            user_id,
+            memory_hits,
+            resolved_policy,
+            seed_history,
+            None,
+            None,
+        )
+        .await
+    }
+
+    /// Start a run from a checkpoint's exact graph state and conversation
+    /// history. Unlike an ordinary run, an absent input does not append an
+    /// empty user turn to the restored history.
+    #[allow(clippy::too_many_arguments)]
+    pub async fn start_run_from_checkpoint(
+        &self,
+        artifact: AgentArtifact,
+        input: Option<String>,
+        session_id: Option<String>,
+        user_id: Option<String>,
+        memory_hits: Vec<MemoryItem>,
+        restored_history: Vec<Message>,
+        restored_state: crate::uar::runtime::graph::GraphState,
+    ) -> String {
+        self.start_seeded_run(
+            artifact,
+            input,
+            session_id,
+            user_id,
+            memory_hits,
+            None,
+            Vec::new(),
+            Some(restored_state),
+            Some(restored_history),
+        )
+        .await
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    async fn start_seeded_run(
+        &self,
+        artifact: AgentArtifact,
+        input: Option<String>,
+        session_id: Option<String>,
+        user_id: Option<String>,
+        memory_hits: Vec<MemoryItem>,
+        resolved_policy: Option<EffectiveRunPolicy>,
+        seed_history: Vec<SeedMessage>,
+        restored_state: Option<crate::uar::runtime::graph::GraphState>,
+        checkpoint_history: Option<Vec<Message>>,
+    ) -> String {
+        let append_input = input.is_some();
+        let input = input.unwrap_or_default();
         let run_id = Uuid::new_v4().to_string();
         tracing::Span::current().record("run_id", &run_id);
         tracing::info!("Starting new run");
@@ -1125,7 +1182,17 @@ impl RunManager {
         // the host-supplied history so the model receives prior context rather
         // than only the current message. Only seed when empty so warm sessions
         // (which already accumulated their turns) are never duplicated.
-        if session.message_count() == 0 {
+        if let Some(history) = &checkpoint_history {
+            // Resuming creates a branch from the named checkpoint. Replace a
+            // warm in-process session rather than silently keeping messages
+            // that occurred after that checkpoint.
+            session.clear();
+            for message in history {
+                if message.role != MessageRole::System {
+                    session.add_message(message.clone());
+                }
+            }
+        } else if session.message_count() == 0 {
             for message in &seed_history {
                 match message.role.as_str() {
                     "assistant" => session.add_assistant_message(&message.content),
@@ -1150,7 +1217,9 @@ impl RunManager {
         self.backfill_effective_model(&mut effective_policy).await;
 
         // 2. Add User Message
-        session.add_user_message(&input);
+        if append_input {
+            session.add_user_message(&input);
+        }
 
         // Capture identity for credential resolution before `user_id` is moved
         // into the Run record and the resolved session id is the source of truth.
@@ -1464,45 +1533,102 @@ impl RunManager {
             }
         }
 
-        messages.push(Message {
-            role: MessageRole::System,
-            content: crate::llm::MessageContent::text(system_prompt),
-            tool_call_id: None,
-            tool_calls: None,
-        });
-        messages.extend(session.messages());
-
-        // Message-count context strategy (trim history before token-budget management).
-        //
-        // CH-05: `Auto` resolves against this deployment's default model's
-        // cataloged context window (an approximation — the per-agent-resolved
-        // model isn't known yet at this point in the pipeline). Real
-        // Summarize/Hierarchical behavior needs an LLM call, so a lightweight
-        // driver is built from the same default config only when the
-        // resolved strategy actually needs one.
-        let effective_strategy = {
-            let (provider_id, model_id) = effective_policy
-                .model
-                .as_ref()
-                .map(|route| (route.provider_id.clone(), route.model_id.clone()))
-                .unwrap_or_else(|| {
-                    crate::llm::registry::split_model_string_pub(&self.llm_config.model)
+        if let Some(restored_history) = checkpoint_history {
+            messages = restored_history;
+            if append_input {
+                messages.push(Message {
+                    role: MessageRole::User,
+                    content: crate::llm::MessageContent::text(input.clone()),
+                    tool_call_id: None,
+                    tool_calls: None,
                 });
+            }
+        } else {
+            messages.push(Message {
+                role: MessageRole::System,
+                content: crate::llm::MessageContent::text(system_prompt),
+                tool_call_id: None,
+                tool_calls: None,
+            });
+            messages.extend(session.messages());
+        }
+
+        // Resolve the model that will actually receive this run before applying
+        // any model-keyed context budget. This includes provider-registry and
+        // first-matched-skill overrides.
+        let run_llm_config = if let Some(ref registry) = self.provider_registry {
+            let mut provider_policy = artifact.policy.provider.clone();
+            if let Some(route) = &effective_policy.model {
+                provider_policy.default.provider = route.provider_id.clone();
+                provider_policy.default.model = route.model_id.clone();
+            }
+            match registry
+                .resolve_llm_config_from_policy(&provider_policy)
+                .await
+            {
+                Some(resolved) => {
+                    tracing::info!(
+                        provider = %provider_policy.default.provider,
+                        model = %provider_policy.default.model,
+                        "Using per-agent provider settings"
+                    );
+                    resolved
+                }
+                None => {
+                    tracing::debug!("No provider match for agent policy, using global settings");
+                    self.llm_config.clone()
+                }
+            }
+        } else {
+            self.llm_config.clone()
+        };
+        let run_llm_config = {
+            let mut cfg = run_llm_config;
+            for skill in &matched_skills {
+                let ec = &skill.execution_config;
+                if let Some(ref model) = ec.preferred_model {
+                    tracing::info!(
+                        skill_id = %skill.skill_id,
+                        model = %model,
+                        "Skill overrides LLM model"
+                    );
+                    cfg.model = model.clone();
+                    break;
+                }
+            }
+            cfg
+        };
+        let run_llm_config = apply_credential_layer(
+            run_llm_config,
+            self.provider_service.as_ref(),
+            user_id_for_creds.as_deref(),
+            session_id_for_creds.as_deref(),
+            artifact.id.as_str(),
+        )
+        .await;
+
+        // Message-count context strategy followed by model-token budgeting.
+        let (effective_strategy, context_model) = {
+            let (provider_id, model_id) =
+                crate::llm::registry::split_model_string_pub(&run_llm_config.model);
             let effective_context_tokens = crate::llm::catalog::ModelCatalog::global()
                 .model(&provider_id, &model_id)
                 .map(|m| (m.limits.context_window as f64 * 0.7) as u32);
-            crate::uar::context::resolve_effective_strategy(
-                &effective_policy.context_strategy,
-                effective_context_tokens,
+            (
+                crate::uar::context::resolve_effective_strategy(
+                    &effective_policy.context_strategy,
+                    effective_context_tokens,
+                ),
+                format!("{provider_id}/{model_id}"),
             )
         };
         let summarization_driver: Option<crate::llm::LiterLlmDriver> = match &effective_strategy {
             crate::uar::context::ContextStrategy::Summarize { .. }
             | crate::uar::context::ContextStrategy::Hierarchical { .. } => {
                 crate::llm::LiterLlmDriver::new(
-                    crate::config::build_client_config(&self.llm_config),
-                    self.llm_config.model.clone(),
-                    self.llm_config.parallel_tool_calls,
+                    crate::config::build_client_config(&run_llm_config),
+                    run_llm_config.model.clone(),
+                    run_llm_config.parallel_tool_calls,
                 )
                 .ok()
             }
@@ -1512,18 +1638,16 @@ impl RunManager {
         // tool-call normalization, with the system message pinned throughout
         // (`uar::runtime::context::reduce`). The operator-declared strategy
         // drives both stages, so a run reduces once against one tokenizer.
-        let context_limit = effective_policy
-            .model
-            .as_ref()
-            .and_then(|route| {
-                crate::llm::catalog::ModelCatalog::global()
-                    .model(&route.provider_id, &route.model_id)
-                    .map(|model| model.limits.context_window as usize)
-            })
+        let (context_provider, context_model_id) =
+            crate::llm::registry::split_model_string_pub(&run_llm_config.model);
+        let context_limit = crate::llm::catalog::ModelCatalog::global()
+            .model(&context_provider, &context_model_id)
+            .map(|model| model.limits.context_window as usize)
             .unwrap_or(8_192);
         let (messages, reduce_report) = crate::uar::runtime::context::reduce::reduce_history(
             messages,
             &effective_strategy,
+            &context_model,
             context_limit,
             summarization_driver
                 .as_ref()
@@ -1531,7 +1655,7 @@ impl RunManager {
         )
         .await;
         if !reduce_report.normalize.is_clean() {
-            tracing::info!(
+            tracing::warn!(
                 run_id = %run_id,
                 synthesized = reduce_report.normalize.synthesized.len(),
                 removed = reduce_report.normalize.removed.len(),
@@ -1584,65 +1708,6 @@ impl RunManager {
         .then_some(&selected_tools);
         let mcp = Arc::new(final_mcp.filtered(server_filter, tool_filter));
         let native_skills = Arc::new(self.native_skills.filtered(tool_filter).await);
-
-        // Resolve per-agent LLM config via provider registry, falling back to global
-        let run_llm_config = if let Some(ref registry) = self.provider_registry {
-            let mut provider_policy = artifact.policy.provider.clone();
-            if let Some(route) = &effective_policy.model {
-                provider_policy.default.provider = route.provider_id.clone();
-                provider_policy.default.model = route.model_id.clone();
-            }
-            match registry
-                .resolve_llm_config_from_policy(&provider_policy)
-                .await
-            {
-                Some(resolved) => {
-                    tracing::info!(
-                        provider = %provider_policy.default.provider,
-                        model = %provider_policy.default.model,
-                        "Using per-agent provider settings"
-                    );
-                    resolved
-                }
-                None => {
-                    tracing::debug!("No provider match for agent policy, using global settings");
-                    self.llm_config.clone()
-                }
-            }
-        } else {
-            self.llm_config.clone()
-        };
-
-        // Apply per-skill LLM execution overrides (first matched skill wins).
-        let run_llm_config = {
-            let mut cfg = run_llm_config;
-            for skill in &matched_skills {
-                let ec = &skill.execution_config;
-                if let Some(ref model) = ec.preferred_model {
-                    tracing::info!(
-                        skill_id = %skill.skill_id,
-                        model = %model,
-                        "Skill overrides LLM model"
-                    );
-                    cfg.model = model.clone();
-                    break;
-                }
-            }
-            cfg
-        };
-
-        // Apply the multi-tenant credential layer (first match wins:
-        // session → agent → user → system). When no ProviderService is
-        // configured, or no per-scope credential exists, the env/config key on
-        // `cfg.api_key` is left untouched — i.e. single-tenant behavior.
-        let run_llm_config = apply_credential_layer(
-            run_llm_config,
-            self.provider_service.as_ref(),
-            user_id_for_creds.as_deref(),
-            session_id_for_creds.as_deref(),
-            artifact.id.as_str(),
-        )
-        .await;
 
         // Clone for graph context before values are moved into Orchestrator
         let llm_config_for_graph = run_llm_config.clone();
@@ -1967,13 +2032,13 @@ impl RunManager {
                     persistence: persistence_for_run.clone(),
                 };
 
-                let mut initial_state = crate::uar::runtime::graph::GraphState::default();
-                // Seed state with the incoming messages so LlmNode can use them.
-                for msg in &messages {
-                    initial_state
-                        .messages
-                        .push(serde_json::to_value(msg).unwrap_or_default());
-                }
+                let mut initial_state = restored_state.unwrap_or_default();
+                // Preserve the checkpoint's data bag and iteration while using
+                // the fully assembled, normalized history for the resumed call.
+                initial_state.messages = messages
+                    .iter()
+                    .map(|msg| serde_json::to_value(msg).unwrap_or_default())
+                    .collect();
 
                 let final_state = tokio::select! {
                     biased;

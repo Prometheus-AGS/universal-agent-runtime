@@ -96,7 +96,7 @@ impl AgentNode {
         ctx: &GraphContext,
         input_text: &str,
     ) -> NodeResult {
-        let request = LlmRequest {
+        let mut request = LlmRequest {
             messages: vec![
                 serde_json::json!({
                     "role": MessageRole::System,
@@ -116,6 +116,14 @@ impl AgentNode {
             anthropic_system: None,
             extra_params: None,
         };
+        if let Err(error) = crate::uar::runtime::context::normalize::normalize_provider_messages(
+            &mut request.messages,
+        ) {
+            return NodeResult::Error(
+                state,
+                format!("AgentNode '{}' history error: {error}", self.id),
+            );
+        }
         let stream = match ctx.driver.stream(request).await {
             Ok(stream) => stream,
             Err(error) => {

@@ -7,11 +7,30 @@ use tracing::{info, warn};
 #[derive(Debug)]
 pub struct ContextManager {
     config: ContextConfig,
+    model: String,
 }
 
 impl ContextManager {
     pub fn new(config: ContextConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            model: String::new(),
+        }
+    }
+
+    /// Create a context manager whose budgets use the resolved model's
+    /// tokenizer.
+    pub fn for_model(config: ContextConfig, model: impl Into<String>) -> Self {
+        let model = model.into();
+        Self { config, model }
+    }
+
+    fn count_string(&self, content: &str) -> usize {
+        TokenService::count(&self.model, content)
+    }
+
+    fn count_messages(&self, messages: &[Message]) -> usize {
+        TokenService::count_messages(&self.model, messages)
     }
 
     /// Check if context management is needed and apply the configured strategy.
@@ -35,7 +54,7 @@ impl ContextManager {
         model_token_limit: usize,
         driver: Option<&dyn LlmDriver>,
     ) -> (Vec<Message>, Option<ContextAction>) {
-        let current_tokens = TokenService::estimate_messages(&messages);
+        let current_tokens = self.count_messages(&messages);
         // Use configured max or model limit - buffer (e.g. 1000 tokens for output)
         let effective_max = self
             .config
@@ -99,7 +118,7 @@ impl ContextManager {
             .cloned();
 
         if let Some(sys) = &system_msg {
-            let t = TokenService::estimate_string(sys.content.as_text().unwrap_or("")) + 3;
+            let t = self.count_string(sys.content.as_text().unwrap_or("")) + 3;
             budget = budget.saturating_sub(t);
             final_list.push(sys.clone());
         }
@@ -112,7 +131,7 @@ impl ContextManager {
                 continue;
             }
 
-            let t = TokenService::estimate_string(msg.content.as_text().unwrap_or("")) + 3;
+            let t = self.count_string(msg.content.as_text().unwrap_or("")) + 3;
             if t <= budget {
                 tail.push(msg.clone());
                 budget -= t;
@@ -125,8 +144,7 @@ impl ContextManager {
 
         let new_len = final_list.len();
         let removed_count = messages.len() - new_len;
-        let tokens_saved =
-            original_tokens.saturating_sub(TokenService::estimate_messages(&final_list));
+        let tokens_saved = original_tokens.saturating_sub(self.count_messages(&final_list));
 
         (
             final_list,
@@ -159,7 +177,7 @@ impl ContextManager {
         let mut head_end = 0;
 
         for (idx, msg) in messages.iter().enumerate() {
-            let t = TokenService::estimate_string(msg.content.as_text().unwrap_or("")) + 3;
+            let t = self.count_string(msg.content.as_text().unwrap_or("")) + 3;
             let is_system = msg.role == MessageRole::System;
             if t < budget {
                 head.push(msg.clone());
@@ -175,7 +193,7 @@ impl ContextManager {
         // Keep last messages, never walking back into the head.
         let mut tail = Vec::new();
         for msg in messages[head_end..].iter().rev() {
-            let t = TokenService::estimate_string(msg.content.as_text().unwrap_or("")) + 3;
+            let t = self.count_string(msg.content.as_text().unwrap_or("")) + 3;
             if t <= budget {
                 tail.push(msg.clone());
                 budget -= t;
@@ -190,8 +208,7 @@ impl ContextManager {
 
         let new_len = final_list.len();
         let removed_count = messages.len() - new_len;
-        let tokens_saved =
-            original_tokens.saturating_sub(TokenService::estimate_messages(&final_list));
+        let tokens_saved = original_tokens.saturating_sub(self.count_messages(&final_list));
 
         (
             final_list,
@@ -219,7 +236,7 @@ impl ContextManager {
         // 1. Preserve system messages
         for msg in &messages {
             if msg.role == MessageRole::System {
-                let t = TokenService::estimate_string(msg.content.as_text().unwrap_or("")) + 3;
+                let t = self.count_string(msg.content.as_text().unwrap_or("")) + 3;
                 if t < budget {
                     head.push(msg.clone());
                     budget -= t;
@@ -243,7 +260,7 @@ impl ContextManager {
         let mut tail = Vec::new();
         let mut tail_used = 0;
         for msg in non_system.iter().rev() {
-            let t = TokenService::estimate_string(msg.content.as_text().unwrap_or("")) + 3;
+            let t = self.count_string(msg.content.as_text().unwrap_or("")) + 3;
             if tail_used + t <= tail_budget {
                 tail.push((*msg).clone());
                 tail_used += t;
@@ -290,7 +307,7 @@ impl ContextManager {
         head.extend(tail);
 
         let removed_count = messages.len() - head.len();
-        let tokens_saved = original_tokens.saturating_sub(TokenService::estimate_messages(&head));
+        let tokens_saved = original_tokens.saturating_sub(self.count_messages(&head));
 
         (
             head,

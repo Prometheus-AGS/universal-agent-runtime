@@ -597,6 +597,24 @@ impl Orchestrator {
                     "Starting tool loop iteration"
                 );
 
+                let normalize_report = match crate::uar::runtime::context::normalize::normalize_provider_messages(&mut message_json) {
+                    Ok(report) => report,
+                    Err(error) => {
+                        tracing::error!(
+                            request_id = %request_id,
+                            iteration,
+                            error = %error,
+                            "Provider history normalization failed"
+                        );
+                        yield NormalizedEvent::Error {
+                            message: error.to_string(),
+                            code: Some("HISTORY_NORMALIZATION_FAILED".to_string()),
+                        };
+                        break;
+                    }
+                };
+                let _ = normalize_report;
+
                 // CH-04: per-model dialect params (extended-thinking budgets,
                 // reasoning-persistence toggles) keyed off the model id.
                 // `thinking_budget` doubles as the "this deployment wants
@@ -963,7 +981,7 @@ impl Orchestrator {
                 // Add assistant message with tool calls to history
                 message_json.push(serde_json::json!({
                     "role": "assistant",
-                    "content": if assistant_text.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(assistant_text.clone()) },
+                    "content": assistant_text,
                     "tool_calls": tool_calls.iter().map(|tc| {
                         serde_json::json!({
                             "id": tc.id,
@@ -1001,27 +1019,38 @@ impl Orchestrator {
                             let outcome = if let Some(native) =
                                 orchestrator.native_skills.get(&call.function.name).await
                             {
-                                native
-                                    .execute(arguments)
-                                    .await
-                                    .map(|value| serde_json::to_string(&value).unwrap_or_default())
+                                native.execute(arguments).await.map(|value| {
+                                    native.format_result(
+                                        &value,
+                                        orchestrator.tool_output_policy,
+                                        &orchestrator.llm_config.model,
+                                    )
+                                })
                             } else {
                                 orchestrator
                                     .mcp
                                     .call_namespaced_tool(&call.function.name, arguments)
                                     .await
                                     .map(|value| serde_json::to_string(&value).unwrap_or_default())
+                                    .map(|content| {
+                                        crate::uar::runtime::context::truncate::formatted_truncate_for_model(
+                                            &content,
+                                            orchestrator.tool_output_policy,
+                                            &orchestrator.llm_config.model,
+                                        )
+                                    })
                             };
                             let (content, success) = match outcome {
                                 Ok(content) => (content, true),
-                                Err(error) => (format!("Error: {error}"), false),
+                                Err(error) => (
+                                    crate::uar::runtime::context::truncate::formatted_truncate_for_model(
+                                        &format!("Error: {error}"),
+                                        orchestrator.tool_output_policy,
+                                        &orchestrator.llm_config.model,
+                                    ),
+                                    false,
+                                ),
                             };
-                            // Bound once, at ingest; the same bounded text is
-                            // what the event carries and what history records.
-                            let content = crate::uar::runtime::context::truncate::formatted_truncate(
-                                &content,
-                                orchestrator.tool_output_policy,
-                            );
                             (call, content, success)
                         }
                     }))
@@ -1222,7 +1251,11 @@ impl Orchestrator {
                             );
                             match native_skill.execute(arguments.clone()).await {
                                 Ok(result) => {
-                                    let content = serde_json::to_string(&result).unwrap_or_default();
+                                    let content = native_skill.format_result(
+                                        &result,
+                                        orchestrator.tool_output_policy,
+                                        &orchestrator.llm_config.model,
+                                    );
                                     tracing::info!(
                                         request_id = %request_id,
                                         tool_id = %tool_call.id,
@@ -1233,7 +1266,11 @@ impl Orchestrator {
                                     (content, true)
                                 }
                                 Err(e) => {
-                                    let error_msg = format!("Native skill error: {e}");
+                                    let error_msg = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
+                                        &format!("Native skill error: {e}"),
+                                        orchestrator.tool_output_policy,
+                                        &orchestrator.llm_config.model,
+                                    );
                                     tracing::error!(
                                         request_id = %request_id,
                                         tool_id = %tool_call.id,
@@ -1248,6 +1285,11 @@ impl Orchestrator {
                             match orchestrator.mcp.call_namespaced_tool(tool_name, arguments.clone()).await {
                                 Ok(result) => {
                                     let content = serde_json::to_string(&result).unwrap_or_default();
+                                    let content = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
+                                        &content,
+                                        orchestrator.tool_output_policy,
+                                        &orchestrator.llm_config.model,
+                                    );
                                     tracing::info!(
                                         request_id = %request_id,
                                         iteration = iteration,
@@ -1265,7 +1307,11 @@ impl Orchestrator {
                                     (content, true)
                                 }
                                 Err(e) => {
-                                    let error_msg = format!("Error: {e}");
+                                    let error_msg = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
+                                        &format!("Error: {e}"),
+                                        orchestrator.tool_output_policy,
+                                        &orchestrator.llm_config.model,
+                                    );
                                     tracing::error!(
                                         request_id = %request_id,
                                         iteration = iteration,
@@ -1279,13 +1325,6 @@ impl Orchestrator {
                             }
                         }
                     };
-
-                    // Bound once, at ingest; the same bounded text is what the
-                    // event carries and what history records.
-                    let content = crate::uar::runtime::context::truncate::formatted_truncate(
-                        &content,
-                        orchestrator.tool_output_policy,
-                    );
 
                     // Emit tool result event
                     yield NormalizedEvent::ToolResult {
@@ -1343,10 +1382,11 @@ impl Orchestrator {
             "Starting non-streaming chat"
         );
 
-        let message_json: Vec<serde_json::Value> = messages
+        let mut message_json: Vec<serde_json::Value> = messages
             .iter()
             .map(|m| serde_json::to_value(m).unwrap_or_default())
             .collect();
+        crate::uar::runtime::context::normalize::normalize_provider_messages(&mut message_json)?;
 
         let req = LlmRequest {
             messages: message_json,

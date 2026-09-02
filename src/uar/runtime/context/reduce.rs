@@ -19,14 +19,79 @@
 
 use crate::llm::{LlmDriver, Message};
 use crate::uar::context::{
-    split_pinned_system, trim_history_with_summarization, ContextStrategy as DeclaredStrategy,
+    ContextStrategy as DeclaredStrategy, split_pinned_system, trim_history_with_summarization,
 };
 use crate::uar::domain::context::{
     ContextAction, ContextConfig, ContextStrategy as BudgetStrategy,
 };
 
 use super::manager::ContextManager;
-use super::normalize::{normalize_history, NormalizeReport};
+use super::normalize::{NormalizeReport, normalize_history};
+
+fn merge_normalize_report(target: &mut NormalizeReport, mut source: NormalizeReport) {
+    target.synthesized.append(&mut source.synthesized);
+    target.removed.append(&mut source.removed);
+}
+
+/// Drop any tool-call group that a reducer only partially retained. The input
+/// has already been normalized, so each assistant call group is complete before
+/// reduction. Dropping a partial group keeps the token/window bound intact;
+/// restoring its missing half could exceed the budget that caused the cut.
+fn drop_severed_tool_groups(original: &[Message], reduced: &mut Vec<Message>) {
+    let groups: Vec<Vec<String>> = original
+        .iter()
+        .filter_map(|message| {
+            let ids: Vec<String> = message
+                .tool_calls
+                .iter()
+                .flatten()
+                .map(|call| call.id.clone())
+                .collect();
+            (!ids.is_empty()).then_some(ids)
+        })
+        .collect();
+
+    for ids in groups {
+        let assistant_index = reduced.iter().position(|message| {
+            let present: Vec<&str> = message
+                .tool_calls
+                .iter()
+                .flatten()
+                .map(|call| call.id.as_str())
+                .collect();
+            present.len() == ids.len() && ids.iter().all(|id| present.contains(&id.as_str()))
+        });
+
+        let complete = assistant_index.is_some_and(|index| {
+            let mut present = Vec::new();
+            let mut result_index = index + 1;
+            while result_index < reduced.len()
+                && reduced[result_index].role == crate::llm::MessageRole::Tool
+            {
+                if let Some(id) = reduced[result_index].tool_call_id.as_deref() {
+                    present.push(id);
+                }
+                result_index += 1;
+            }
+            present.len() == ids.len() && ids.iter().all(|id| present.contains(&id.as_str()))
+        });
+
+        if !complete {
+            reduced.retain(|message| {
+                let is_group_assistant = message
+                    .tool_calls
+                    .iter()
+                    .flatten()
+                    .any(|call| ids.contains(&call.id));
+                let is_group_result = message
+                    .tool_call_id
+                    .as_ref()
+                    .is_some_and(|id| ids.contains(id));
+                !is_group_assistant && !is_group_result
+            });
+        }
+    }
+}
 
 /// What [`reduce_history`] did to a run's history.
 #[derive(Debug, Clone, Default)]
@@ -101,25 +166,30 @@ fn budget_config(declared: &DeclaredStrategy, context_limit: usize) -> ContextCo
 pub async fn reduce_history(
     messages: Vec<Message>,
     declared: &DeclaredStrategy,
+    model: &str,
     context_limit: usize,
     driver: Option<&dyn LlmDriver>,
 ) -> (Vec<Message>, ReduceReport) {
-    let (system, history) = split_pinned_system(messages);
+    let mut normalized_messages = messages;
+    let mut normalize = normalize_history(&mut normalized_messages);
+    let normalized_original = normalized_messages.clone();
+    let (system, history) = split_pinned_system(normalized_messages);
 
     // Stage 1, structural: message-count trimming and LLM summarization.
-    let after_structural =
-        trim_history_with_summarization(system, history, declared, driver).await;
+    let after_structural = trim_history_with_summarization(system, history, declared, driver).await;
 
     // Stage 2, token budget: enforce the model's window. The manager preserves
     // system messages itself, so the pinned message can travel with the list.
-    let manager = ContextManager::new(budget_config(declared, context_limit));
+    let manager = ContextManager::for_model(budget_config(declared, context_limit), model);
     let (after_budget, context_action) = manager
         .apply_with_driver(after_structural, context_limit, driver)
         .await;
 
-    // Stage 3: repair any tool-call pair the reduction severed.
+    // Stage 3: drop any tool-call group the reducers only partly retained,
+    // then enforce the provider-facing invariants once more.
     let mut final_messages = after_budget;
-    let normalize = normalize_history(&mut final_messages);
+    drop_severed_tool_groups(&normalized_original, &mut final_messages);
+    merge_normalize_report(&mut normalize, normalize_history(&mut final_messages));
 
     (
         final_messages,
@@ -174,6 +244,7 @@ mod tests {
         let (out, _report) = reduce_history(
             messages,
             &DeclaredStrategy::SlidingWindow { max_messages: 20 },
+            "openai/gpt-4o",
             4_000,
             None,
         )
@@ -209,6 +280,7 @@ mod tests {
         let (out, report) = reduce_history(
             messages,
             &DeclaredStrategy::SlidingWindow { max_messages: 5 },
+            "openai/gpt-4o",
             4_000,
             None,
         )

@@ -383,37 +383,46 @@ async fn test_provider(
         )
     })?;
     let started = Instant::now();
-    let stream = tokio::time::timeout(
-        Duration::from_secs(30),
-        driver.stream(LlmRequest {
-            messages: vec![serde_json::json!({
-                "role": "user",
-                "content": "Reply with OK."
-            })],
-            tools: Vec::new(),
-            cache_strategy: None,
-            thinking_config: None,
-            anthropic_system: None,
-            extra_params: None,
-        }),
+    let mut validation_request = LlmRequest {
+        messages: vec![serde_json::json!({
+            "role": "user",
+            "content": "Reply with OK."
+        })],
+        tools: Vec::new(),
+        cache_strategy: None,
+        thinking_config: None,
+        anthropic_system: None,
+        extra_params: None,
+    };
+    crate::uar::runtime::context::normalize::normalize_provider_messages(
+        &mut validation_request.messages,
     )
-    .await
-    .map_err(|_| {
-        (
-            StatusCode::GATEWAY_TIMEOUT,
-            Json(ErrorResponse {
-                error: "Provider validation timed out".to_string(),
-            }),
-        )
-    })?
     .map_err(|error| {
         (
-            StatusCode::BAD_GATEWAY,
+            StatusCode::INTERNAL_SERVER_ERROR,
             Json(ErrorResponse {
-                error: format!("Provider validation failed: {error}"),
+                error: format!("Provider validation history failed: {error}"),
             }),
         )
     })?;
+    let stream = tokio::time::timeout(Duration::from_secs(30), driver.stream(validation_request))
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::GATEWAY_TIMEOUT,
+                Json(ErrorResponse {
+                    error: "Provider validation timed out".to_string(),
+                }),
+            )
+        })?
+        .map_err(|error| {
+            (
+                StatusCode::BAD_GATEWAY,
+                Json(ErrorResponse {
+                    error: format!("Provider validation failed: {error}"),
+                }),
+            )
+        })?;
     let events = stream.collect::<Vec<_>>().await;
     let received_text = events.into_iter().any(|event| {
         matches!(

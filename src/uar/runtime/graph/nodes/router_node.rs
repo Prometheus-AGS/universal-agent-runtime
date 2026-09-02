@@ -97,7 +97,7 @@ impl GraphNode for RouterNode {
             }),
         ];
 
-        let req = LlmRequest {
+        let mut req = LlmRequest {
             messages,
             tools: Vec::new(),
             cache_strategy: ctx.cache_strategy.clone(),
@@ -105,6 +105,11 @@ impl GraphNode for RouterNode {
             anthropic_system: None,
             extra_params: None,
         };
+        if let Err(error) =
+            crate::uar::runtime::context::normalize::normalize_provider_messages(&mut req.messages)
+        {
+            return NodeResult::Error(state, format!("RouterNode history error: {error}"));
+        }
 
         let stream = match ctx.driver.stream(req).await {
             Ok(s) => s,

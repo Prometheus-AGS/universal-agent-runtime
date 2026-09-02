@@ -15,7 +15,7 @@ Codex enforces three history invariants before every request (`core/src/context_
 - One `HistoryNormalizer` applied before provider dispatch: every assistant tool call has exactly one tool result, every tool result has a call, missing results become typed `cancelled` or `error` results, dangling outputs are removed.
 - The system message is pinned: no reducer may drop or reorder index 0.
 - Identical repeated user messages are preserved.
-- One `TokenService` keyed by model: `o200k_base` or `cl100k_base` via `tiktoken-rs` `get_bpe_from_model`, `cl100k_base` as the documented fallback; the `len/4` estimator is deleted. The two `ContextStrategy` enums collapse to one; the survivor is the `uar::domain::context` enum because `progressive-summarization` and `per-model-context-strategy` specs bind to it.
+- One `TokenService` keyed by the final resolved model: `o200k_base` or `cl100k_base` via `tiktoken-rs`, with `cl100k_base` as the documented fallback; the `len/4` estimator is deleted. The operator-facing `uar::context::ContextStrategy` remains the single persisted declaration. The token-budget stage derives its internal strategy from that declaration in the unified reduction path; removing the internal compatibility enum is deferred to `typed-turn-assembly`, which owns the policy-surface migration.
 - Tool output truncation applied once at ingest for MCP, native, and terminal results, middle-out, with the original token count and line count in a warning header, under a per-tool byte or token policy with a global default.
 - Checkpoint resume uses `restore_state`; the endpoint no longer starts a fresh run with a prose input.
 
@@ -26,6 +26,7 @@ Codex enforces three history invariants before every request (`core/src/context_
 - `src/uar/domain/context.rs`
 - `src/uar/runtime/manager.rs` (the reducer block `:1478-1538` only; the system-message push at `:1471-1477` belongs to deterministic-prompt-assembly, and this change receives the system message as a pinned input)
 - `src/llm/orchestrator.rs` (result ingest at `:1010-1023`, `:1272-1276`)
+- provider dispatch boundaries in `src/llm/tool_normalizer.rs`, `src/server.rs`, `src/uar/api/providers.rs`, `src/uar/runtime/context/summarizer.rs`, and `src/uar/runtime/graph/nodes/`
 - `src/uar/tools/terminal_exec.rs`
 - `src/uar/runtime/checkpoint.rs`, `src/uar/api/routes.rs` (`:346-395`)
 - new: `src/uar/runtime/context/normalize.rs`, `src/uar/runtime/context/truncate.rs`
@@ -43,4 +44,4 @@ Tier 0 per edit: `cargo check --locked --no-default-features --features server-f
 
 ## The uncomfortable thing
 
-Collapsing the two enums changes the config surface: `ContextStrategy::TruncateMiddle` and `Hierarchical` have persisted settings readers. The change must map them, not delete them, and the spec delta says which names survive.
+The two Rust enums still exist during this change because deleting the operator-facing type would break persisted `TruncateMiddle` and `Hierarchical` settings. The uncomfortable compromise is explicit: there is one persisted declaration and one reduction path now, but the internal compatibility enum remains until `typed-turn-assembly` can migrate the policy surface safely.

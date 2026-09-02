@@ -29,20 +29,8 @@ pub const DEFAULT_OUTPUT_BYTE_BUDGET: usize = 32_000;
 pub enum TruncationPolicy {
     /// Keep at most this many bytes, header included.
     Bytes(usize),
-    /// Keep roughly this many tokens, header included (approximated as four
-    /// bytes per token before counting).
+    /// Keep at most this many tokens, header included.
     Tokens(usize),
-}
-
-impl TruncationPolicy {
-    /// The byte budget this policy allows for the recorded result.
-    #[must_use]
-    pub fn byte_budget(self) -> usize {
-        match self {
-            Self::Bytes(b) => b,
-            Self::Tokens(t) => t.saturating_mul(4),
-        }
-    }
 }
 
 impl Default for TruncationPolicy {
@@ -70,22 +58,81 @@ impl Default for TruncationPolicy {
 /// ```
 #[must_use]
 pub fn formatted_truncate(content: &str, policy: TruncationPolicy) -> String {
-    let budget = policy.byte_budget();
-    if content.len() <= budget {
-        return content.to_string();
-    }
+    formatted_truncate_for_model(content, policy, "")
+}
 
-    let original_token_count = TokenService::estimate_string(content);
+/// Truncate tool output against the resolved model's tokenizer. An empty or
+/// unknown model uses [`TokenService`]'s documented `cl100k_base` fallback.
+#[must_use]
+pub fn formatted_truncate_for_model(
+    content: &str,
+    policy: TruncationPolicy,
+    model: &str,
+) -> String {
+    let original_token_count = TokenService::count(model, content);
     let total_lines = content.lines().count();
     let header = format!(
         "{WARNING_HEADER_PREFIX}{original_token_count})\nTotal output lines: {total_lines}\n\n"
     );
-    if header.len() >= budget {
-        // The budget cannot even hold the header; keep as much of it as fits.
-        return truncate_at_char_boundary(&header, budget).to_string();
+
+    match policy {
+        TruncationPolicy::Bytes(budget) => {
+            if content.len() <= budget {
+                return content.to_string();
+            }
+            if header.len() >= budget {
+                return truncate_at_char_boundary(&header, budget).to_string();
+            }
+            let body = truncate_middle(content, budget - header.len());
+            format!("{header}{body}")
+        }
+        TruncationPolicy::Tokens(budget) => {
+            if original_token_count <= budget {
+                return content.to_string();
+            }
+            truncate_to_token_budget(content, &header, budget, model)
+        }
     }
-    let body = truncate_middle(content, budget - header.len());
-    format!("{header}{body}")
+}
+
+fn truncate_to_token_budget(content: &str, header: &str, budget: usize, model: &str) -> String {
+    if TokenService::count(model, header) >= budget {
+        return prefix_within_token_budget(header, budget, model);
+    }
+
+    let mut body_byte_budget = content.len();
+    loop {
+        let body = truncate_middle(content, body_byte_budget);
+        let output = format!("{header}{body}");
+        let used = TokenService::count(model, &output);
+        if used <= budget {
+            return output;
+        }
+
+        let shrink = used.saturating_sub(budget).saturating_mul(4).max(1);
+        let next = body_byte_budget.saturating_sub(shrink);
+        if next == body_byte_budget {
+            return prefix_within_token_budget(header, budget, model);
+        }
+        body_byte_budget = next;
+    }
+}
+
+fn prefix_within_token_budget(content: &str, budget: usize, model: &str) -> String {
+    if budget == 0 {
+        return String::new();
+    }
+
+    let mut byte_budget = content.len();
+    loop {
+        let candidate = truncate_at_char_boundary(content, byte_budget);
+        let used = TokenService::count(model, candidate);
+        if used <= budget {
+            return candidate.to_string();
+        }
+        let shrink = used.saturating_sub(budget).saturating_mul(4).max(1);
+        byte_budget = byte_budget.saturating_sub(shrink);
+    }
 }
 
 /// Keep the head and tail of `content` within `byte_budget` bytes, replacing
