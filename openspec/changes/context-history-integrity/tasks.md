@@ -20,15 +20,15 @@ scope: src/uar/context/strategy.rs, src/uar/runtime/context/**, src/uar/domain/c
 
 ## 3. One reducer, one token service
 
-- [ ] 3.1 DEVIATION, recorded during execution. The task as written ("make `uar::domain::context::ContextStrategy` the only enum") is wrong in the opposite direction and would break persisted state. Evidence: `uar::context::ContextStrategy` is the operator-facing type. It is serialized in `AgentPolicy.context_strategy` and `EffectiveRunPolicy.context_strategy` (`src/uar/domain/policy.rs:186`, `:394`, `:419`), mirrored variant-for-variant by the compiler IR whose conformance harness checks it against the runtime (`src/uar/compiler/ir.rs:805-820`), rendered on the A2UI policy surface (`src/uar/a2ui/policy_surface.rs:176-205`), published in the settings schema (`src/uar/settings/manager.rs:1833`), and read from config (`src/config.rs:232`). `uar::domain::context::ContextStrategy` is internal: it is constructed only from `ContextConfig::default()` (`src/uar/runtime/manager.rs:495`) and never persisted. Implemented instead: the operator-facing enum survives as the single declared strategy, and the two reducer *paths* collapse into one by making `ContextManager` a token-budget stage driven from the same declared strategy, so a run reduces once. Collapsing the types is deferred to `typed-turn-assembly`, which owns the policy surface change.
-- [ ] 3.2 Delete `estimate_tokens` (`strategy.rs:100-103`); route every count through `TokenService`
-- [ ] 3.3 Pin the system message: reducers receive `(system, history)` and return `history` only
-- [ ] 3.4 Remove the content-equality dedup in `apply_keep_first_last`
-- [ ] 3.5 Call `normalize_history` once, after reduction and before the orchestrator is built (`manager.rs` block)
+- [x] 3.1 DEVIATION, recorded during execution. The task as written ("make `uar::domain::context::ContextStrategy` the only enum") is wrong in the opposite direction and would break persisted state. Evidence: `uar::context::ContextStrategy` is the operator-facing type. It is serialized in `AgentPolicy.context_strategy` and `EffectiveRunPolicy.context_strategy` (`src/uar/domain/policy.rs:186`, `:394`, `:419`), mirrored variant-for-variant by the compiler IR whose conformance harness checks it against the runtime (`src/uar/compiler/ir.rs:805-820`), rendered on the A2UI policy surface (`src/uar/a2ui/policy_surface.rs:176-205`), published in the settings schema (`src/uar/settings/manager.rs:1833`), and read from config (`src/config.rs:232`). `uar::domain::context::ContextStrategy` is internal: it is constructed only from `ContextConfig::default()` (`src/uar/runtime/manager.rs:495`) and never persisted. Implemented instead: the operator-facing enum survives as the single declared strategy, and the two reducer *paths* collapse into one by making `ContextManager` a token-budget stage driven from the same declared strategy, so a run reduces once. Collapsing the types is deferred to `typed-turn-assembly`, which owns the policy surface change.
+- [x] 3.2 Delete `estimate_tokens` (`strategy.rs:100-103`); route every count through `TokenService`
+- [x] 3.3 Pin the system message: reducers receive `(system, history)` and return `history` only
+- [x] 3.4 Remove the content-equality dedup in `apply_keep_first_last`
+- [x] 3.5 Call `normalize_history` once, after reduction and before the orchestrator is built (`manager.rs` block)
 
 ## 4. Checkpoint resume
 
-- [ ] 4.1 `resume_run_from_checkpoint` calls `Checkpoint::restore_state` and seeds the run's history; a deserialization failure is an error, not `unwrap_or_default`
+- [x] 4.1 `resume_run_from_checkpoint` calls `Checkpoint::restore_state` and seeds the run's history; a deserialization failure is an error, not `unwrap_or_default`
 
 ## 5. Verification
 

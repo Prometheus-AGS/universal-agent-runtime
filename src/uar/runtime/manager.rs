@@ -6,7 +6,6 @@ use crate::uar::a2ui::realtime::A2uiReplayBackbone;
 use crate::uar::a2ui::{policy_surface::effective_policy_surface, protocol};
 use crate::uar::domain::{
     artifact::AgentArtifact,
-    context::ContextConfig,
     events::{ArtifactPayload, CitationSource, MemoryItem, NormalizedEvent, StatePatchOp},
     policy::{
         ChatMode, ConversationPolicyRecord, EffectiveRunPolicy, ModelRoute,
@@ -20,7 +19,6 @@ use crate::uar::rag::{
     citation_stream::CitationStream,
     pipeline::{RagRetrievalPipeline, RetrievalBackend},
 };
-use crate::uar::runtime::context::manager::ContextManager;
 use crate::uar::runtime::matching::{ClassifierConfig, IntentClassifier, create_classifier};
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
 use crate::uar::runtime::skills::SkillRegistry;
@@ -162,7 +160,6 @@ pub struct RunManager {
     skills: Arc<RwLock<SkillRegistry>>,
     vector_matcher: Arc<crate::uar::runtime::matching::VectorMatcher>,
     tag_matcher: Arc<crate::uar::runtime::matching::TagMatcher>,
-    context_manager: Arc<ContextManager>,
     /// Intent classifier for skill matching
     intent_classifier: Arc<dyn IntentClassifier>,
     /// Classifier configuration
@@ -492,7 +489,6 @@ impl RunManager {
         native_skills: Arc<NativeSkillRegistry>,
     ) -> Self {
         let tag_matcher = Arc::new(crate::uar::runtime::matching::TagMatcher::new());
-        let context_manager = Arc::new(ContextManager::new(ContextConfig::default()));
 
         // Create intent classifier based on config
         let intent_classifier: Arc<dyn IntentClassifier> =
@@ -532,7 +528,6 @@ impl RunManager {
             skills,
             vector_matcher,
             tag_matcher,
-            context_manager,
             intent_classifier,
             classifier_config,
             persistence,
@@ -1513,16 +1508,10 @@ impl RunManager {
             }
             _ => None,
         };
-        let messages = crate::uar::context::trim_with_summarization(
-            messages,
-            &effective_strategy,
-            summarization_driver
-                .as_ref()
-                .map(|d| d as &dyn crate::llm::LlmDriver),
-        )
-        .await;
-
-        // Token-budget context management (summarization, etc.)
+        // One reduction path: structural trimming, then the token budget, then
+        // tool-call normalization, with the system message pinned throughout
+        // (`uar::runtime::context::reduce`). The operator-declared strategy
+        // drives both stages, so a run reduces once against one tokenizer.
         let context_limit = effective_policy
             .model
             .as_ref()
@@ -1532,10 +1521,24 @@ impl RunManager {
                     .map(|model| model.limits.context_window as usize)
             })
             .unwrap_or(8_192);
-        let (optimized_messages, context_action) =
-            self.context_manager.apply(messages, context_limit).await;
-        let messages = optimized_messages;
-        if let Some(act) = context_action {
+        let (messages, reduce_report) = crate::uar::runtime::context::reduce::reduce_history(
+            messages,
+            &effective_strategy,
+            context_limit,
+            summarization_driver
+                .as_ref()
+                .map(|d| d as &dyn crate::llm::LlmDriver),
+        )
+        .await;
+        if !reduce_report.normalize.is_clean() {
+            tracing::info!(
+                run_id = %run_id,
+                synthesized = reduce_report.normalize.synthesized.len(),
+                removed = reduce_report.normalize.removed.len(),
+                "Repaired tool-call pairs before dispatch"
+            );
+        }
+        if let Some(act) = reduce_report.context_action {
             emitter.emit(NormalizedEvent::ContextAction(act)).await;
         }
         for skill in &matched_skills {

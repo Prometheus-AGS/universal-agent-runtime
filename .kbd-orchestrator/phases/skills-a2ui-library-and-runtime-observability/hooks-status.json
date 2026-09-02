@@ -1,1 +1,1 @@
-{"totalRuns":63,"failedRuns":0,"lastRun":{"ts":"2026-09-02T09:00:18Z","kind":"task","edge":"before","name":"context-history-integrity:3.1","hookId":"kbd-memory-log","layer":"builtin","mode":"augment","status":0},"lastFailure":null}
+{"totalRuns":83,"failedRuns":0,"lastRun":{"ts":"2026-09-02T09:15:56Z","kind":"task","edge":"after","name":"context-history-integrity:4.1","hookId":"kbd-memory-log","layer":"builtin","mode":"augment","status":0},"lastFailure":null}

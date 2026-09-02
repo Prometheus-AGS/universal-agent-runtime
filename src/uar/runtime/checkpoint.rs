@@ -46,7 +46,33 @@ impl Checkpoint {
         }
     }
 
-    /// Restore a [`GraphState`] from this checkpoint.
+    /// Restore a [`GraphState`] from this checkpoint, reporting a corrupt
+    /// state bag rather than silently substituting an empty one.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when `state` cannot be deserialized into the graph's
+    /// data bag. Resuming with an empty state would look like a successful
+    /// resume while discarding everything the checkpoint recorded.
+    pub fn try_restore_state(&self) -> anyhow::Result<crate::uar::runtime::graph::GraphState> {
+        let data = serde_json::from_value(self.state.clone()).map_err(|e| {
+            anyhow::anyhow!(
+                "checkpoint {} has an unreadable state bag: {e}",
+                self.id
+            )
+        })?;
+        Ok(crate::uar::runtime::graph::GraphState {
+            data,
+            messages: self.messages.clone(),
+            iteration: self.iteration,
+        })
+    }
+
+    /// Restore a [`GraphState`], falling back to an empty data bag.
+    ///
+    /// Prefer [`Self::try_restore_state`]; this exists for callers that
+    /// genuinely tolerate a partial restore.
+    #[must_use]
     pub fn restore_state(&self) -> crate::uar::runtime::graph::GraphState {
         let data = serde_json::from_value(self.state.clone()).unwrap_or_default();
         crate::uar::runtime::graph::GraphState {
@@ -55,4 +81,28 @@ impl Checkpoint {
             iteration: self.iteration,
         }
     }
+}
+
+/// Convert a checkpoint's recorded messages into typed conversation history.
+///
+/// This is what seeds a resumed run, so a malformed entry is an error: a run
+/// that silently starts with no history is indistinguishable from a fresh run.
+///
+/// # Errors
+///
+/// Returns an error when any recorded message cannot be deserialized.
+pub fn history_from_checkpoint(checkpoint: &Checkpoint) -> anyhow::Result<Vec<crate::llm::Message>> {
+    checkpoint
+        .messages
+        .iter()
+        .enumerate()
+        .map(|(i, value)| {
+            serde_json::from_value(value.clone()).map_err(|e| {
+                anyhow::anyhow!(
+                    "checkpoint {} message {i} is not a valid conversation message: {e}",
+                    checkpoint.id
+                )
+            })
+        })
+        .collect()
 }

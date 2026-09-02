@@ -95,10 +95,110 @@ impl Default for ContextStrategy {
     }
 }
 
-/// Quick token estimation: ~4 characters per token.
+// The character-ratio estimator that once lived here is gone: every token
+// count now goes through `uar::runtime::context::token_service::TokenService`,
+// so one run cannot disagree with itself about what a token is.
+
+/// Trim `history` under `strategy`, keeping `system` pinned at index 0.
+///
+/// This is the structural (message-count) half of history reduction. The
+/// system message is never passed to a reducer, so no strategy can drop the
+/// agent's identity, its policy summary, or its skill overlays; only
+/// conversation turns are reduced. The pinned message is prepended to the
+/// result when present.
+///
+/// # Examples
+///
+/// ```
+/// use universal_agent_runtime::llm::{Message, MessageContent, MessageRole};
+/// use universal_agent_runtime::uar::context::{trim_history, ContextStrategy};
+///
+/// let system = Message {
+///     role: MessageRole::System,
+///     content: MessageContent::text("identity"),
+///     tool_call_id: None,
+///     tool_calls: None,
+/// };
+/// let history: Vec<Message> = (0..40)
+///     .map(|i| Message {
+///         role: MessageRole::User,
+///         content: MessageContent::text(format!("turn-{i}")),
+///         tool_call_id: None,
+///         tool_calls: None,
+///     })
+///     .collect();
+///
+/// let out = trim_history(
+///     Some(system),
+///     history,
+///     &ContextStrategy::SlidingWindow { max_messages: 10 },
+/// );
+/// assert_eq!(out.len(), 11);
+/// assert_eq!(out[0].role, MessageRole::System);
+/// ```
 #[must_use]
-pub fn estimate_tokens(text: &str) -> usize {
-    (text.len() + 3) / 4
+pub fn trim_history(
+    system: Option<Message>,
+    history: Vec<Message>,
+    strategy: &ContextStrategy,
+) -> Vec<Message> {
+    let trimmed = trim_count(history, strategy);
+    prepend_pinned(system, trimmed)
+}
+
+/// Async counterpart of [`trim_history`]: runs LLM-backed summarization for
+/// the strategies that need it, with the system message pinned out of reach.
+pub async fn trim_history_with_summarization(
+    system: Option<Message>,
+    history: Vec<Message>,
+    strategy: &ContextStrategy,
+    driver: Option<&dyn LlmDriver>,
+) -> Vec<Message> {
+    let trimmed = trim_with_summarization(history, strategy, driver).await;
+    prepend_pinned(system, trimmed)
+}
+
+fn prepend_pinned(system: Option<Message>, rest: Vec<Message>) -> Vec<Message> {
+    match system {
+        Some(sys) => {
+            let mut out = Vec::with_capacity(rest.len() + 1);
+            out.push(sys);
+            out.extend(rest);
+            out
+        }
+        None => rest,
+    }
+}
+
+/// Split a message list into its leading system message, if any, and the
+/// conversation turns that follow.
+///
+/// Only a system message at index 0 is treated as pinned; a later system
+/// message is an ordinary turn (for example a summarization marker) and stays
+/// in the reducible history.
+///
+/// # Examples
+///
+/// ```
+/// use universal_agent_runtime::llm::{Message, MessageContent, MessageRole};
+/// use universal_agent_runtime::uar::context::split_pinned_system;
+///
+/// let msgs = vec![
+///     Message { role: MessageRole::System, content: MessageContent::text("s"), tool_call_id: None, tool_calls: None },
+///     Message { role: MessageRole::User, content: MessageContent::text("u"), tool_call_id: None, tool_calls: None },
+/// ];
+/// let (system, history) = split_pinned_system(msgs);
+/// assert!(system.is_some());
+/// assert_eq!(history.len(), 1);
+/// ```
+#[must_use]
+pub fn split_pinned_system(mut messages: Vec<Message>) -> (Option<Message>, Vec<Message>) {
+    if messages.first().is_some_and(|m| m.role == MessageRole::System) {
+        let system = messages.remove(0);
+        (Some(system), messages)
+    } else {
+        (None, messages)
+    }
 }
 
 /// Apply a [`ContextStrategy`] to any cloneable list, trimming by count/position.

@@ -368,20 +368,55 @@ async fn resume_run_from_checkpoint(
         }
     };
 
-    let input = req.input.unwrap_or_else(|| {
-        format!(
-            "Resuming run {run_id} from checkpoint {} (node: {})",
-            checkpoint.id, checkpoint.node_id
-        )
-    });
+    // Seed the new run with what the checkpoint actually recorded. A resume
+    // that starts from a prose sentence is not a resume: it discards the
+    // conversation the checkpoint exists to preserve.
+    let restored = match checkpoint.try_restore_state() {
+        Ok(state) => state,
+        Err(e) => {
+            return (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(serde_json::json!({"error": e.to_string()})),
+            )
+                .into_response();
+        }
+    };
+    let history = match crate::uar::runtime::checkpoint::history_from_checkpoint(&checkpoint) {
+        Ok(messages) => messages,
+        Err(e) => {
+            return (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(serde_json::json!({"error": e.to_string()})),
+            )
+                .into_response();
+        }
+    };
+    let seed_history: Vec<crate::uar::runtime::manager::SeedMessage> = history
+        .iter()
+        .map(|m| crate::uar::runtime::manager::SeedMessage {
+            role: match m.role {
+                crate::llm::MessageRole::System => "system".to_string(),
+                crate::llm::MessageRole::Assistant => "assistant".to_string(),
+                crate::llm::MessageRole::Tool => "tool".to_string(),
+                crate::llm::MessageRole::User => "user".to_string(),
+            },
+            content: m.content.as_text().unwrap_or_default().to_string(),
+            tool_call_id: m.tool_call_id.clone(),
+        })
+        .collect();
+
+    // The caller may supply the next turn; without one the run continues from
+    // the restored history alone.
+    let input = req.input.unwrap_or_default();
 
     let new_run_id = manager
-        .start_run(
+        .start_run_with_history(
             req.artifact,
             input,
             req.session_id,
             Some(user.user_id),
             vec![],
+            seed_history,
         )
         .await;
 
@@ -390,6 +425,8 @@ async fn resume_run_from_checkpoint(
         "checkpoint_id": checkpoint_id,
         "checkpoint_node_id": checkpoint.node_id,
         "checkpoint_iteration": checkpoint.iteration,
+        "restored_messages": history.len(),
+        "restored_state_keys": restored.data.len(),
         "run_id": new_run_id,
         "stream_url": format!("/api/uar/runs/{new_run_id}/stream"),
     }))

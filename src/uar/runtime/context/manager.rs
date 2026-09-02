@@ -146,57 +146,35 @@ impl ContextManager {
         token_budget: usize,
         original_tokens: usize,
     ) -> (Vec<Message>, Option<ContextAction>) {
-        // Simple implementation: Keep System + First User + Last N fit
-
-        // 1. Identify critical head messages
+        // Keep the leading system messages and the first user turn, then as
+        // many of the most recent turns as the remaining budget allows.
+        //
+        // Head and tail are bounded by index rather than by comparing message
+        // content: two user turns with identical text ("continue", "yes") are
+        // distinct turns, and dropping one silently changes what the model
+        // sees. The index bound also stops a head message from being re-added
+        // by the tail walk without needing an equality check at all.
         let mut head = Vec::new();
         let mut budget = token_budget;
+        let mut head_end = 0;
 
-        // Keep all system messages
-        let msg_iter = messages.iter().enumerate();
-
-        for (_idx, msg) in msg_iter {
-            if msg.role == MessageRole::System {
-                let t = TokenService::estimate_string(msg.content.as_text().unwrap_or("")) + 3;
-                if t < budget {
-                    head.push(msg.clone());
-                    budget -= t;
-                }
-            } else {
-                // First non-system (User)
-                // Keep it if budget allows and strategy implies keeping "First"
-                // Assumption: "KeepFirstLast" usually implies keeping the very first prompt.
-                let t = TokenService::estimate_string(msg.content.as_text().unwrap_or("")) + 3;
-                if t < budget {
-                    head.push(msg.clone());
-                    budget -= t;
-                }
+        for (idx, msg) in messages.iter().enumerate() {
+            let t = TokenService::estimate_string(msg.content.as_text().unwrap_or("")) + 3;
+            let is_system = msg.role == MessageRole::System;
+            if t < budget {
+                head.push(msg.clone());
+                budget -= t;
+                head_end = idx + 1;
+            }
+            if !is_system {
+                // The first non-system message is the last of the head.
                 break;
             }
         }
 
-        // Keep last messages
+        // Keep last messages, never walking back into the head.
         let mut tail = Vec::new();
-        for msg in messages.iter().rev() {
-            // How to avoid re-adding head messages?
-            // Simple check: if message content/id matches head?
-            // Or just ensure we don't overlap indices.
-            // But we don't have indices in the loop easily.
-            // Simplified: Head is usually small (1-2 msgs). Tail is greedy.
-            // We just ensure we don't duplicate logic.
-            // If message is System, likely in head.
-            if msg.role == MessageRole::System {
-                continue;
-            }
-
-            // Check if this message is already in head (by content - imperfect but works for now)
-            if head
-                .iter()
-                .any(|h| h.content == msg.content && h.role == msg.role)
-            {
-                continue;
-            }
-
+        for msg in messages[head_end..].iter().rev() {
             let t = TokenService::estimate_string(msg.content.as_text().unwrap_or("")) + 3;
             if t <= budget {
                 tail.push(msg.clone());
