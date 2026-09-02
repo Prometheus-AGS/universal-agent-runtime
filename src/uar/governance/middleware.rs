@@ -157,7 +157,11 @@ fn extract_resource(request: &Request<Body>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    // Only the cedar-gated tests below build a router and drive it; without
+    // that feature these would be unused-import warnings.
+    #[cfg(feature = "cedar-governance")]
     use axum::{Router, routing::post};
+    #[cfg(feature = "cedar-governance")]
     use tower::ServiceExt;
 
     #[test]
@@ -167,6 +171,13 @@ mod tests {
         assert!(gate.effective_enabled());
     }
 
+    /// Exercises the real Cedar decision path, so it needs the engine that
+    /// makes one. Without `cedar-governance`, `GovernanceEngine` resolves to
+    /// the `engine_disabled.rs` stub whose `is_allowed` unconditionally
+    /// returns `true` -- every request is permitted, and an assertion about
+    /// denial cannot hold. Gated rather than relaxed: weakening the assertion
+    /// to match the stub would delete the security property under test.
+    #[cfg(feature = "cedar-governance")]
     #[tokio::test]
     async fn governance_off_bypasses_direct_tool_http_cedar() {
         let (mutation, gate, _) =
@@ -207,6 +218,13 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
     }
 
+    /// Exercises the real Cedar decision path, so it needs the engine that
+    /// makes one. Without `cedar-governance`, `GovernanceEngine` resolves to
+    /// the `engine_disabled.rs` stub whose `is_allowed` unconditionally
+    /// returns `true` -- every request is permitted, and an assertion about
+    /// denial cannot hold. Gated rather than relaxed: weakening the assertion
+    /// to match the stub would delete the security property under test.
+    #[cfg(feature = "cedar-governance")]
     #[tokio::test]
     async fn governance_on_preserves_direct_tool_http_cedar() {
         let (mutation, gate, _) =
@@ -247,6 +265,13 @@ mod tests {
         assert_eq!(response.status(), StatusCode::FORBIDDEN);
     }
 
+    /// Exercises the real Cedar decision path, so it needs the engine that
+    /// makes one. Without `cedar-governance`, `GovernanceEngine` resolves to
+    /// the `engine_disabled.rs` stub whose `is_allowed` unconditionally
+    /// returns `true` -- every request is permitted, and an assertion about
+    /// denial cannot hold. Gated rather than relaxed: weakening the assertion
+    /// to match the stub would delete the security property under test.
+    #[cfg(feature = "cedar-governance")]
     #[tokio::test]
     async fn governance_off_preserves_cedar_for_non_tool_actions() {
         let (mutation, gate, _) =
