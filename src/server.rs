@@ -1001,6 +1001,25 @@ async fn run_server_with_listener(
     // Initialize Governance Policy Engine (before RunManager so it can gate the
     // orchestrator tool loop in addition to the HTTP governance layer).
     info!(name: "startup.step", step = 5, stage = "governance_engine", "UAR startup progress");
+    // Say plainly when no policy engine exists, rather than letting it look
+    // like a recoverable policy-load failure.
+    //
+    // Without `cedar-governance`, `GovernanceEngine` is the facade in
+    // `engine_disabled.rs`: `is_allowed` and `is_tool_allowed` return `true`
+    // unconditionally, so the middleware mounted below authorizes every
+    // request carrying `X-Agent-Id`. `load_from_dir` also always fails in that
+    // build, so the "failed to load policies" warning below fires on every
+    // boot and reads like a missing directory -- understating it.
+    //
+    // The permissive baseline is deliberate (governance is opt-in via
+    // `server-full`), and this line is here so an operator can tell a build
+    // that authorizes nothing from one that authorizes everything.
+    #[cfg(not(feature = "cedar-governance"))]
+    warn!(
+        name: "governance.engine.absent",
+        feature = "cedar-governance",
+        "No policy engine is compiled in — every X-Agent-Id request is authorized. Rebuild with `cedar-governance` to enforce policy."
+    );
     let governance_engine = match GovernanceEngine::load_from_dir("policies").await {
         Ok(engine) => {
             info!(
@@ -1556,8 +1575,14 @@ async fn run_server_with_listener(
             uar::security::middleware::auth_middleware,
         ))
         // Cedar governance: authorize requests carrying `X-Agent-Id` against the
-        // loaded policy set (permit-all by default; anonymous requests pass
-        // through). Previously defined but never mounted.
+        // loaded policy set. Anonymous requests pass through untouched
+        // (middleware.rs) — this gate identifies agents, it is not the
+        // authentication boundary; `auth_middleware` above is.
+        //
+        // "Permit-all by default" is literal without `cedar-governance`: the
+        // facade's `is_allowed` returns `true` for every agent, action and
+        // resource, so this layer is inert in a default build. See the
+        // `governance.engine.absent` warning at startup.
         .layer(axum::middleware::from_fn_with_state(
             uar::governance::middleware::GovernanceMiddlewareState::new(
                 Arc::clone(&state.governance_engine),
