@@ -13,7 +13,7 @@ path = "src/main.rs"
 # Pinned to match the workspace root's rmcp version (Cargo.toml) -- keeping a
 # single rmcp major version in the tree avoids duplicate-version bloat across
 # every crate that depends on it.
-rmcp = { version = "=3.1.2", features = ["server", "macros", "transport-io"] }
+rmcp = { version = "=3.2.0", features = ["server", "macros", "transport-io"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "gzip"] }
 html2text = "0.17"
 tokio = { version = "1", features = ["full"] }
