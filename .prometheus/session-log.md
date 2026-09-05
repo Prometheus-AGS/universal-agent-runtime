@@ -3471,3 +3471,12 @@ all earlier phase warnings and the exposed-key rotation requirement. Unrelated
 Impeccable upgrade files and accessibility receipts stay unstaged. The request
 does not authorize archiving the three Presentation changes or reinstate
 cancelled release gates. Full receipt: docs/releases/local-install-2026-09-05.md.
+
+Source commit d6f4f862 contains439scoped files; all pre-commit and commit-message
+checks passed. Pushed successfully to origin/feat/context-history-integrity and
+configured upstream tracking. No PR, tag or GA release was created. GitHub's
+push response reported14default-branch dependency alerts (13high,1moderate),
+preserved as an unresolved warning, not attributed to this branch. KBD status
+ran after commit and push. Final liveness was200; readiness remains intermittent.
+The deployment receipt clarifies that normal startup schema initialization and
+idempotent seeding occurred; preserved data does not mean zero host writes.

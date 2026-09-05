@@ -241,3 +241,11 @@ See docs/releases/local-install-2026-09-05.md for exact hashes and local gates.
 KBD status ran after web build, release build, install and restart checkpoints;
 overall112/120 and Presentation12/12tasks remain unchanged. Commit/push are the
 remaining authorized actions; Presentation archive approval remains separate.
+
+Source commit d6f4f862 passed all hooks and was pushed successfully to
+origin/feat/context-history-integrity with upstream tracking. No PR/tag/GA
+publication. GitHub reported14default-branch dependency alerts; retained without
+claiming remediation. KBD status ran after commit and push. Installation remains
+at PID18125 with liveness observed200, correct served assets and intermittent
+readiness. Shared-database restart and consistent-readiness recovery remain
+unperformed; they are not disguised as completed deployment acceptance.

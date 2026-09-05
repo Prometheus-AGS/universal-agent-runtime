@@ -75,7 +75,16 @@ release or treat liveness as readiness. The shared database was not restarted.
   `2a8cb773797697a3daed2a3803a3f1e8912197c9839035cdc77dfa8de4677a5d`.
 - The shared database LaunchAgent was not restarted. Approval was requested
   because that action would interrupt other applications using the database.
-- Commit and push: pending.
+- Source commit: `d6f4f862` (`feat(runtime): complete governed execution and
+  presentation workflows`),439files. Pre-commit lint17.34s, typecheck18.38s,
+  deployment-policy validation0.55s and commit-message validation1.17s passed.
+- `git push --set-upstream origin feat/context-history-integrity`: exit0;
+  created the remote branch and configured tracking. No force push, PR creation,
+  release tag or GA publication. GitHub reported14default-branch dependency
+  alerts (13high,1moderate); no advisory remediation is claimed.
+- Unrelated Impeccable upgrade files and accessibility receipts remain outside
+  the commit. The new release remains installed with liveness observed200 and
+  intermittent readiness. No database restart or root-cause repair was attempted.
 
 Prior phase-boundary behavioral evidence is in the Presentation execution log
 and the three OpenSpec verification reports. It includes the full server-full
@@ -84,5 +93,7 @@ SurrealKV and PostgreSQL catalog contracts. This deployment does not rerun or
 reinterpret those suites as release certification. Deferred429 coverage,
 live-peer/billing, zoom/contrast and credential-rotation limits remain.
 
-No production source, dependency pin, service configuration, credential, database
-record or GitHub Actions workflow is changed by this deployment procedure.
+No production source, dependency pin, service configuration, credential or
+GitHub Actions workflow was edited by this deployment procedure. Restarting the
+host runs its normal schema initialization and idempotent seeding against the
+existing database; no manual record edits, cleanup or data reset were performed.
