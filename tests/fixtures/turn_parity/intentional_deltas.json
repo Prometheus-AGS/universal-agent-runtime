@@ -1,0 +1,4 @@
+{
+  "rationale": "No differences are currently exempted. The post-dependency legacy path already refreshes skill tools after activation; do not reintroduce a frozen list merely to manufacture an intentional delta.",
+  "entries": []
+}

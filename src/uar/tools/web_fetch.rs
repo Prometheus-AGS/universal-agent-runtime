@@ -14,23 +14,15 @@ pub struct WebFetchTool {
 }
 
 impl WebFetchTool {
-    fn domain_allowed(&self, url: &str) -> bool {
+    fn domain_allowed(&self, url: &url::Url) -> bool {
         if self.allowed_domains.is_empty() {
             return true;
         }
-        let host = url
-            .split("://")
-            .nth(1)
-            .unwrap_or(url)
-            .split('/')
-            .next()
-            .unwrap_or("")
-            .split(':')
-            .next()
-            .unwrap_or("");
-        self.allowed_domains
-            .iter()
-            .any(|d| d == "*" || host == d.as_str() || host.ends_with(&format!(".{d}")))
+        let host = url.host_str().unwrap_or("");
+        self.allowed_domains.iter().any(|d| {
+            let domain = d.to_ascii_lowercase();
+            domain == "*" || host == domain || host.ends_with(&format!(".{domain}"))
+        })
     }
 }
 
@@ -103,42 +95,65 @@ impl WebFetchTool {
     /// Resolution happens BEFORE the check so the decision is made on the
     /// resolved IP rather than the hostname string — a hostname-only rule loses
     /// to DNS rebinding, where an ordinary-looking name answers with 127.0.0.1.
-    async fn guard_url(&self, url: &str) -> Result<(), super::fetch_guard::FetchDenial> {
+    async fn guard_url(
+        &self,
+        url: &url::Url,
+    ) -> Result<Vec<std::net::SocketAddr>, super::fetch_guard::FetchDenial> {
         use super::fetch_guard::{FetchDenial, check_resolved_addresses, check_scheme};
 
-        let parsed =
-            url::Url::parse(url).map_err(|_| FetchDenial::UnsupportedScheme(url.to_string()))?;
-        check_scheme(&parsed)?;
+        check_scheme(url)?;
 
-        let host = parsed
+        let host = url
             .host_str()
             .ok_or_else(|| FetchDenial::UnresolvableHost(url.to_string()))?
             .to_string();
 
         // A literal IP needs no DNS round-trip, and must not get one: resolving
         // it would be a no-op that only adds a failure mode.
-        if let Ok(ip) = host.parse::<std::net::IpAddr>() {
-            return check_resolved_addresses(&host, &[ip]);
+        let port = url.port_or_known_default().unwrap_or(443);
+        if let Ok(ip) = host
+            .trim_start_matches('[')
+            .trim_end_matches(']')
+            .parse::<std::net::IpAddr>()
+        {
+            check_resolved_addresses(&host, &[ip])?;
+            return Ok(vec![std::net::SocketAddr::new(ip, port)]);
         }
 
-        let port = parsed.port_or_known_default().unwrap_or(443);
         let lookup_host = host.clone();
         let resolved = tokio::task::spawn_blocking(move || {
             use std::net::ToSocketAddrs;
             (lookup_host.as_str(), port)
                 .to_socket_addrs()
-                .map(|addrs| addrs.map(|a| a.ip()).collect::<Vec<_>>())
+                .map(|addrs| addrs.collect::<Vec<_>>())
                 .unwrap_or_default()
         })
         .await
         .unwrap_or_default();
 
-        check_resolved_addresses(&host, &resolved)
+        check_resolved_addresses(
+            &host,
+            &resolved
+                .iter()
+                .map(std::net::SocketAddr::ip)
+                .collect::<Vec<_>>(),
+        )?;
+        Ok(resolved)
     }
 }
 
 #[async_trait]
 impl NativeSkill for WebFetchTool {
+    fn check_thread_policy(
+        &self,
+        _policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        // The inherited tool instance carries the unchanged public-web domain,
+        // time and size limits. Request routing cannot use ambient proxy grants.
+        // Sandbox-required dispatch is enforced separately by the run host.
+        Ok(())
+    }
+
     fn name(&self) -> &str {
         "web_fetch"
     }
@@ -172,7 +187,11 @@ impl NativeSkill for WebFetchTool {
             Some(u) => u.to_string(),
             None => return Ok(json!({"ok": false, "error": "Missing required parameter: url"})),
         };
-        if !self.domain_allowed(&url) {
+        let parsed = match url::Url::parse(&url) {
+            Ok(parsed) => parsed,
+            Err(_) => return Ok(json!({"ok": false, "error": "Invalid URL"})),
+        };
+        if !self.domain_allowed(&parsed) {
             return Ok(json!({"ok": false, "error": "Domain not in allowlist."}));
         }
         // SSRF guard. The operator-facing `allowed_domains` above is a
@@ -180,14 +199,19 @@ impl NativeSkill for WebFetchTool {
         // security control; this is. The rules are deliberately not
         // configurable, because the MODEL chooses the URL and a fetched page is
         // untrusted input that can instruct it to fetch somewhere else.
-        if let Err(denial) = self.guard_url(&url).await {
-            return Ok(json!({"ok": false, "error": denial.to_string()}));
-        }
+        let addresses = match self.guard_url(&parsed).await {
+            Ok(addresses) => addresses,
+            Err(denial) => return Ok(json!({"ok": false, "error": denial.to_string()})),
+        };
         let method = args.get("method").and_then(Value::as_str).unwrap_or("GET");
         let raw = args.get("raw").and_then(Value::as_bool).unwrap_or(false);
         let client = match reqwest::Client::builder()
             .timeout(Duration::from_secs(self.timeout_secs))
             .user_agent("UAR-WebFetch/1.0")
+            // Pin the actual connection to the addresses already checked. A
+            // second DNS lookup or ambient proxy must not bypass that decision.
+            .no_proxy()
+            .resolve_to_addrs(parsed.host_str().unwrap_or(""), &addresses)
             // Redirects are NOT followed automatically. A public URL that
             // redirects to 169.254.169.254 would otherwise sail past the
             // pre-flight check, since that check only saw the original host.
@@ -207,9 +231,9 @@ impl NativeSkill for WebFetchTool {
                     .and_then(Value::as_str)
                     .unwrap_or("")
                     .to_string();
-                client.post(&url).body(body)
+                client.post(parsed.clone()).body(body)
             }
-            _ => client.get(&url),
+            _ => client.get(parsed),
         };
         if let Some(headers) = args.get("headers").and_then(Value::as_object) {
             for (k, v) in headers {
@@ -218,7 +242,7 @@ impl NativeSkill for WebFetchTool {
                 }
             }
         }
-        let response = match req.send().await {
+        let mut response = match req.send().await {
             Ok(r) => r,
             Err(e) => return Ok(json!({"ok": false, "error": format!("Request failed: {}", e)})),
         };
@@ -229,20 +253,29 @@ impl NativeSkill for WebFetchTool {
             .and_then(|v| v.to_str().ok())
             .unwrap_or("")
             .to_string();
-        let bytes = match response.bytes().await {
-            Ok(b) => b,
-            Err(e) => {
-                return Ok(
-                    json!({"ok": false, "error": format!("Failed to read response: {}", e)}),
-                );
+        let max_bytes = self.max_size_kb.saturating_mul(1024);
+        let size_error = || json!({"ok": false, "error": format!("Response exceeds limit {}KB", self.max_size_kb)});
+        if response
+            .content_length()
+            .is_some_and(|size| size > max_bytes)
+        {
+            return Ok(size_error());
+        }
+        let mut bytes = Vec::new();
+        loop {
+            let chunk = match response.chunk().await {
+                Ok(Some(chunk)) => chunk,
+                Ok(None) => break,
+                Err(error) => {
+                    return Ok(
+                        json!({"ok": false, "error": format!("Failed to read response: {error}")}),
+                    );
+                }
+            };
+            if (bytes.len() as u64).saturating_add(chunk.len() as u64) > max_bytes {
+                return Ok(size_error());
             }
-        };
-        let size_kb = bytes.len() as u64 / 1024;
-        if size_kb > self.max_size_kb {
-            return Ok(json!({
-                "ok": false,
-                "error": format!("Response {}KB exceeds limit {}KB", size_kb, self.max_size_kb)
-            }));
+            bytes.extend_from_slice(&chunk);
         }
         // Route by content type BEFORE decoding. `from_utf8_lossy` on a PDF
         // yields mojibake that still looks like text, so the model reasons over

@@ -1,4 +1,5 @@
 use crate::session::Session;
+use crate::uar::a2ui::presentations::{Presentation, PresentationDraft};
 use crate::uar::domain::knowledge::{
     DocumentStatus, KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeMatch,
 };
@@ -11,7 +12,12 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+pub mod agent_threads;
+pub mod presentations;
 pub mod providers;
+
+use crate::uar::runtime::thread::{AgentEdge, AgentThread};
+use agent_threads::PersistedAgentThread;
 
 pub(crate) fn tenant_storage_key(owner_id: &str, resource_id: &str) -> String {
     format!("{}:{owner_id}:{resource_id}", owner_id.len())
@@ -39,6 +45,36 @@ pub struct PostgresProvider;
 
 #[async_trait]
 pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
+    /// Create a validated template in the verified owner's partition.
+    async fn create_presentation(
+        &self,
+        owner_id: &str,
+        draft: &PresentationDraft,
+    ) -> Result<Presentation>;
+
+    /// Read one template without exposing records belonging to another owner.
+    async fn get_presentation(&self, owner_id: &str, id: &str) -> Result<Option<Presentation>>;
+
+    /// List the owner's templates, including disabled records for management.
+    async fn list_presentations(&self, owner_id: &str) -> Result<Vec<Presentation>>;
+
+    /// Atomically replace editable content only at the expected revision.
+    async fn update_presentation(
+        &self,
+        owner_id: &str,
+        id: &str,
+        expected_revision: u64,
+        draft: &PresentationDraft,
+    ) -> Result<Presentation>;
+
+    /// Atomically delete only the requested owner's expected record revision.
+    async fn delete_presentation(
+        &self,
+        owner_id: &str,
+        id: &str,
+        expected_revision: u64,
+    ) -> Result<()>;
+
     // Session Management
     async fn save_session(&self, session: &Session) -> Result<()>;
     async fn load_session(&self, owner_id: &str, id: &str) -> Result<Option<Session>>;
@@ -48,6 +84,21 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
 
     /// Load a conversation-scoped chat policy.
     async fn load_conversation_policy(
+        &self,
+        owner_id: &str,
+        conversation_id: &str,
+    ) -> Result<Option<ConversationPolicyRecord>>;
+
+    /// Conditionally write in the principal namespace. None expects no record;
+    /// an existing policy must still equal the complete supplied baseline.
+    async fn save_principal_conversation_policy(
+        &self,
+        record: &ConversationPolicyRecord,
+        expected: Option<&crate::uar::domain::policy::RunPolicy>,
+    ) -> Result<bool>;
+
+    /// Read only the verified principal namespace, without legacy fallback.
+    async fn load_principal_conversation_policy(
         &self,
         owner_id: &str,
         conversation_id: &str,
@@ -166,7 +217,63 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     // Agent Persistence
     // =========================================================================
 
+    /// Insert a fresh root. Existing IDs/paths are errors, never upserts.
+    /// The owner argument must come from the verified host context.
+    async fn create_agent_root(
+        &self,
+        owner_id: &str,
+        thread: &AgentThread,
+    ) -> Result<PersistedAgentThread>;
+
+    /// Atomically insert a pending child and its immutable edge. Both persisted
+    /// parent and root must belong to the owner/tree and still have a live turn.
+    /// An interrupted/error response is not proof that nothing committed: the
+    /// caller must reconcile the exact child ID before releasing its reservation.
+    async fn create_agent_child(
+        &self,
+        owner_id: &str,
+        thread: &AgentThread,
+        edge: &AgentEdge,
+    ) -> Result<PersistedAgentThread>;
+
+    /// Load only from this owner's namespace. Missing records return None;
+    /// corrupt records or backend failures return errors, never empty success.
+    async fn load_agent_thread(
+        &self,
+        owner_id: &str,
+        thread_id: &str,
+    ) -> Result<Option<PersistedAgentThread>>;
+
+    /// Update mutable turn state with compare-and-swap on the storage revision.
+    /// Lineage, artifact, creation time, and terminal outcomes cannot be rewritten.
+    /// A new authorized turn may replace a terminal outcome with a new run ID.
+    async fn update_agent_thread(
+        &self,
+        owner_id: &str,
+        expected_revision: u64,
+        thread: &AgentThread,
+    ) -> Result<PersistedAgentThread>;
+
+    /// List one owner's root-run tree, ordered by canonical path then thread ID
+    /// using Rust string ordering (independent of database locale/collation).
+    async fn list_agent_threads(
+        &self,
+        owner_id: &str,
+        root_run_id: &str,
+    ) -> Result<Vec<PersistedAgentThread>>;
+
+    /// List immutable edges in canonical path/child-ID order. No deletion API is
+    /// exposed: lineage remains available for recovery and lifetime accounting.
+    async fn list_agent_edges(&self, owner_id: &str, root_run_id: &str) -> Result<Vec<AgentEdge>>;
+
     async fn save_agent(&self, agent: &crate::uar::domain::artifact::AgentArtifact) -> Result<()>;
+    /// Persist a merged agent only while the stored artifact matches the read
+    /// baseline. A conflict returns false without overwriting another editor.
+    async fn save_agent_if_unchanged(
+        &self,
+        expected: &crate::uar::domain::artifact::AgentArtifact,
+        updated: &crate::uar::domain::artifact::AgentArtifact,
+    ) -> Result<bool>;
     async fn load_agent(
         &self,
         id: &str,
@@ -230,6 +337,14 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     async fn get_setting(&self, _key: &str) -> Result<Option<Settings>> {
         Ok(None)
     }
+
+    /// Change only global Presentation intent if the full saved policy still
+    /// matches the supplied baseline. Missing or changed records return false.
+    async fn compare_and_swap_global_presentation_policy(
+        &self,
+        expected: &serde_json::Value,
+        selection: &crate::uar::domain::policy::ResourceSelection,
+    ) -> Result<bool>;
 
     /// List settings, optionally scoped to a type key and/or parent_id.
     async fn list_settings(

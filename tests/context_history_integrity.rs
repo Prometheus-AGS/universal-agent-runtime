@@ -330,15 +330,14 @@ async fn iterative_tool_loop_dispatches_a_complete_call_result_pair() {
 }
 
 #[tokio::test]
-async fn graph_llm_node_normalizes_history_at_provider_dispatch() {
+async fn graph_llm_node_refuses_unhosted_provider_dispatch() {
     use std::sync::Arc;
 
     use universal_agent_runtime::config::LlmConfig;
     use universal_agent_runtime::llm::mock_driver::MockLlmDriver;
-    use universal_agent_runtime::mcp::registry::McpRegistry;
     use universal_agent_runtime::normalized::NormalizedEvent;
     use universal_agent_runtime::uar::runtime::graph::{
-        GraphContext, GraphNode, GraphState, LlmNode,
+        GraphContext, GraphNode, GraphState, LlmNode, NodeResult,
     };
 
     let driver = Arc::new(MockLlmDriver::new(vec![vec![
@@ -350,11 +349,12 @@ async fn graph_llm_node_normalizes_history_at_provider_dispatch() {
     let context = GraphContext {
         run_id: "graph-history-normalization".to_string(),
         session_id: None,
-        mcp: Arc::new(McpRegistry::new_empty()),
         llm_config: LlmConfig::default(),
         driver: driver.clone(),
         cache_strategy: None,
         persistence: None,
+        thread_delegate: None,
+        tool_host: None,
     };
     let mut state = GraphState::default();
     state.messages = vec![
@@ -367,21 +367,14 @@ async fn graph_llm_node_normalizes_history_at_provider_dispatch() {
     .collect::<Result<_, _>>()
     .expect("serialize graph history");
 
-    let _ = LlmNode::new("llm").execute(state, &context).await;
+    let result = LlmNode::new("llm").execute(state, &context).await;
 
     let requests = driver.requests();
-    assert_eq!(requests.len(), 1);
-    let dispatched: Vec<Message> = requests[0]
-        .messages
-        .iter()
-        .cloned()
-        .map(serde_json::from_value)
-        .collect::<Result<_, _>>()
-        .expect("graph provider request remains typed");
-    assert_eq!(dispatched[0].role, MessageRole::Assistant);
-    assert_eq!(dispatched[1].role, MessageRole::Tool);
-    assert_eq!(dispatched[1].tool_call_id.as_deref(), Some("c1"));
-    assert_eq!(dispatched[2].role, MessageRole::User);
+    assert!(requests.is_empty());
+    assert!(matches!(
+        result,
+        NodeResult::Error(_, message) if message == "Graph model host is unavailable"
+    ));
 }
 
 /// Scenario: Long conversation under a sliding window keeps the system message.
@@ -813,7 +806,7 @@ fn checkpoint_resume_restores_state_and_messages_or_errors() {
 }
 
 #[tokio::test]
-async fn checkpoint_resume_endpoint_seeds_exact_history_and_graph_state() {
+async fn checkpoint_resume_reassembles_trusted_system_and_preserves_checkpoint_dialogue() {
     use std::sync::Arc;
 
     use axum::Extension;
@@ -912,6 +905,7 @@ async fn checkpoint_resume_endpoint_seeds_exact_history_and_graph_state() {
             name: None,
             roles: Some(vec!["user".to_string()]),
             tenant_id: None,
+            uar_instance_id: None,
             exp: usize::MAX,
         },
     };
@@ -947,21 +941,51 @@ async fn checkpoint_resume_endpoint_seeds_exact_history_and_graph_state() {
         .map(serde_json::from_value)
         .collect::<Result<_, _>>()
         .expect("resumed graph history remains typed");
-    assert_eq!(observed_messages.len(), checkpoint_messages.len());
-    assert_eq!(
-        observed_messages[0].content.as_text(),
-        Some("checkpoint system")
+    assert_eq!(observed_messages.len(), checkpoint_messages.len() + 4);
+    let trusted_system = observed_messages[0]
+        .content
+        .as_text()
+        .expect("resume begins with current trusted system assembly");
+    assert!(trusted_system.contains("You coordinate specialist sub-agents."));
+    assert!(trusted_system.contains("[EFFECTIVE RUN POLICY]"));
+    assert!(trusted_system.contains("<uar-host-content>"));
+    assert!(
+        observed_messages
+            .iter()
+            .all(|message| message.content.as_text() != Some("checkpoint system")),
+        "checkpoint system text must not override current trusted assembly"
+    );
+    assert!(
+        observed_messages.iter().any(|message| {
+            message.role == MessageRole::User && message.content.as_text() == Some("review this")
+        }),
+        "checkpoint user dialogue must survive resume"
     );
     assert_eq!(
-        observed_messages[2]
-            .tool_calls
-            .as_ref()
-            .and_then(|calls| calls.first())
-            .map(|call| call.id.as_str()),
-        Some("checkpoint-call")
+        observed_messages
+            .iter()
+            .filter(|message| {
+                message
+                    .content
+                    .as_text()
+                    .is_some_and(|content| content.contains("[WORLD STATE:"))
+            })
+            .count(),
+        4
     );
+    let assistant_index = observed_messages
+        .iter()
+        .position(|message| {
+            message
+                .tool_calls
+                .as_ref()
+                .is_some_and(|calls| calls.iter().any(|call| call.id == "checkpoint-call"))
+        })
+        .expect("checkpoint assistant tool call survives resume");
     assert_eq!(
-        observed_messages[3].tool_call_id.as_deref(),
+        observed_messages
+            .get(assistant_index + 1)
+            .and_then(|message| message.tool_call_id.as_deref()),
         Some("checkpoint-call")
     );
     assert!(

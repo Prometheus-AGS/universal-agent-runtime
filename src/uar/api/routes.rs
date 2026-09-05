@@ -40,12 +40,18 @@ struct CreateRunRequest {
     artifact: AgentArtifact,
     input: String,
     session_id: Option<String>,
+    #[serde(default)]
+    skill_attachments: Vec<String>,
+    #[serde(flatten)]
+    presentation_negotiation: crate::uar::a2ui::presentation_selection::PresentationNegotiation,
 }
 
 #[derive(serde::Serialize)]
 struct CreateRunResponse {
     run_id: String,
     stream_url: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    activation_failures: Vec<crate::uar::runtime::skills::activation::ActivationFailure>,
 }
 
 #[derive(Deserialize)]
@@ -58,20 +64,25 @@ async fn create_run(
     State(manager): State<Arc<RunManager>>,
     Extension(user): Extension<UserContext>,
     Json(req): Json<CreateRunRequest>,
-) -> Json<CreateRunResponse> {
-    let run_id = manager
-        .start_run(
-            req.artifact,
-            req.input,
-            req.session_id,
-            Some(user.user_id),
-            vec![],
-        )
-        .await;
-    Json(CreateRunResponse {
+) -> Result<Json<CreateRunResponse>, StatusCode> {
+    let mut request = crate::uar::runtime::turn::RunExecutionRequest::new(req.artifact, req.input)
+        .with_user_context(&user)
+        .map_err(|_| StatusCode::UNAUTHORIZED)?;
+    request.session_id = req.session_id;
+    request.skill_attachments = req.skill_attachments;
+    request.presentation_negotiation = req.presentation_negotiation;
+    let run_id = manager.execute_request(request).await;
+    let activation_failures = manager
+        .get_run(&run_id)
+        .await
+        .and_then(|run| run.context.get("activation_failures").cloned())
+        .and_then(|value| serde_json::from_value(value).ok())
+        .unwrap_or_default();
+    Ok(Json(CreateRunResponse {
         run_id: run_id.clone(),
         stream_url: format!("/api/uar/runs/{run_id}/stream"),
-    })
+        activation_failures,
+    }))
 }
 
 async fn stream_run(
@@ -81,11 +92,7 @@ async fn stream_run(
     Query(params): Query<StreamParams>,
     headers: HeaderMap,
 ) -> impl IntoResponse {
-    if manager
-        .get_run_for_user(&user.user_id, &run_id)
-        .await
-        .is_none()
-    {
+    if manager.get_run_for_context(&user, &run_id).await.is_none() {
         return StatusCode::NOT_FOUND.into_response();
     }
     let Some(rx) = manager.subscribe(&run_id).await else {
@@ -140,6 +147,22 @@ async fn stream_run(
             let _ = &disconnect_guard;
             event
         });
+    let stream = async_stream::stream! {
+        tokio::pin!(stream);
+        while let Some(event) = stream.next().await {
+            let terminal = matches!(
+                &event.event,
+                crate::uar::domain::events::NormalizedEvent::RunDone { .. }
+                    | crate::uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. }
+                    | crate::uar::domain::events::NormalizedEvent::Cancelled { .. }
+                    | crate::uar::domain::events::NormalizedEvent::Error { .. }
+            );
+            yield event;
+            if terminal {
+                break;
+            }
+        }
+    };
 
     build_sse_response(stream, agui_spec, replay_snapshot).into_response()
 }
@@ -147,6 +170,8 @@ async fn stream_run(
 #[derive(Deserialize)]
 struct ToolApprovalRequest {
     approved: bool,
+    #[serde(default)]
+    approval_id: Option<String>,
 }
 
 /// POST /api/uar/runs/{run_id}/tool-approval
@@ -169,7 +194,10 @@ async fn api_tool_approval(
             Json(serde_json::json!({ "resolved": false })),
         );
     }
-    if manager.resolve_approval(&run_id, body.approved).await {
+    if manager
+        .resolve_approval_request(&run_id, body.approval_id.as_deref(), body.approved)
+        .await
+    {
         (
             StatusCode::OK,
             Json(serde_json::json!({
@@ -277,6 +305,8 @@ struct ResumeRequest {
     /// Optional new input message; defaults to restoring the last checkpoint state.
     input: Option<String>,
     session_id: Option<String>,
+    #[serde(flatten)]
+    presentation_negotiation: crate::uar::a2ui::presentation_selection::PresentationNegotiation,
 }
 
 /// POST /api/uar/runs/{run_id}/resume
@@ -300,15 +330,15 @@ async fn resume_run(
         format!("Resuming run {run_id}")
     });
 
-    let new_run_id = manager
-        .start_run(
-            req.artifact,
-            input,
-            req.session_id,
-            Some(user.user_id),
-            vec![],
-        )
-        .await;
+    let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(req.artifact, input)
+        .with_user_context(&user)
+    {
+        Ok(request) => request,
+        Err(_) => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    request.session_id = req.session_id;
+    request.presentation_negotiation = req.presentation_negotiation;
+    let new_run_id = manager.execute_request(request).await;
 
     Json(serde_json::json!({
         "resumed_from_run_id": run_id,
@@ -394,17 +424,21 @@ async fn resume_run_from_checkpoint(
     let restored_state_keys = restored.data.len();
     let restored_messages = history.len();
 
-    let new_run_id = manager
-        .start_run_from_checkpoint(
-            req.artifact,
-            req.input,
-            req.session_id,
-            Some(user.user_id),
-            vec![],
-            history,
-            restored,
-        )
-        .await;
+    let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(
+        req.artifact,
+        req.input.clone().unwrap_or_default(),
+    )
+    .with_user_context(&user)
+    {
+        Ok(request) => request,
+        Err(_) => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    request.input = req.input;
+    request.session_id = req.session_id;
+    request.checkpoint_history = Some(history);
+    request.restored_state = Some(restored);
+    request.presentation_negotiation = req.presentation_negotiation;
+    let new_run_id = manager.execute_request(request).await;
 
     Json(serde_json::json!({
         "resumed_from_run_id": run_id,

@@ -112,10 +112,16 @@ harness = false
 anyhow = "1.0"
 axum-test = "21.0.0"
 cucumber = "0.23.0"
+# Snapshot only the prompt prefix-stability diff; the exact version is governed
+# by versions.toml so review output cannot drift with runner upgrades.
+insta = "=1.48.0"
 serial_test = "4.0.1"
 tempfile = "3.27.0"
 tokio = { version = "1.50.0", features = ["full", "test-util"] }
 tower = { version = "0.5.2", features = ["util"] }
+# Exercise provider status and Retry-After handling at the real HTTP boundary;
+# the exact version is governed by versions.toml.
+wiremock = "=0.6.5"
 
 # Testing infrastructure dependencies
 mockall = "0.15"
@@ -277,6 +283,10 @@ reqwest = { version = "0.12", default-features = false, features = [
   "rustls-tls-native-roots",
   "multipart",
 ] }
+# rmcp 3.1.x uses reqwest 0.13. Keep the alias exact so the snapshot-aware
+# MCP transport can construct rmcp's concrete client without crossing the
+# unrelated application HTTP client's reqwest 0.12 type boundary.
+reqwest_mcp = { package = "reqwest", version = "=0.13.4", default-features = false }
 
 # MCP client + in-process server (memory MCP). Bumped from
 # 085470025f6 to the rmcp-v1.8.0 tag (2026-07-04, uar-security-deps-and-hygiene):
@@ -422,6 +432,8 @@ nonzero_ext = "0.3.0"
 # Compiler pipeline (UAR-AGENT-MD → descriptor)
 pulldown-cmark = "0.13.3"
 sha2 = "0.11.0"
+# Host retries use Tokio; omit browser/blocking sleepers and their dependencies.
+backon = { version = "1.6.0", default-features = false, features = ["std", "tokio-sleep"] }
 ed25519-dalek = { version = "3.0", features = ["rand_core"] }
 rand = "0.10.0"
 argon2 = "0.5"
@@ -430,6 +442,9 @@ argon2 = "0.5"
 thiserror = "2.0"
 mime_guess = "2.0"
 base64 = "0.23"
+# Directory capabilities for delegated native file tools. Keep this exact pin
+# aligned with versions.toml; child paths must never be reopened ambiently.
+cap-std = "=4.0.2"
 
 # Credential encryption — AES-256-GCM for per-user provider API keys at rest
 aes-gcm = "0.11"

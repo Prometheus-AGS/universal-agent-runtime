@@ -20,6 +20,8 @@ pub struct ChatCompletionRequest {
     pub messages: Vec<OpenAIMessage>,
     #[serde(default)]
     pub stream: bool,
+    #[serde(flatten)]
+    pub presentation_negotiation: crate::uar::a2ui::presentation_selection::PresentationNegotiation,
     // Add other fields as needed (temperature, etc.) but make them optional
 }
 

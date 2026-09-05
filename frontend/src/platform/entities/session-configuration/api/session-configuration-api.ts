@@ -1,4 +1,5 @@
 import type { ProvidersResponse } from "@/types";
+import { presentationSelectionSchema } from "../../presentation-assignments/contracts";
 
 import type {
   AgentSessionConfig,
@@ -10,7 +11,7 @@ function sessionAuthorizationHeaders(): HeadersInit {
   const apiKey =
     (import.meta as unknown as { env: Record<string, string> }).env
       .VITE_UAR_API_KEY ?? "";
-  return apiKey.startsWith("ey") ? { Authorization: `Bearer ${apiKey}` } : {};
+  return apiKey.startsWith("ey") ? { Authorization: `Bearer ${apiKey}` } : apiKey ? { "x-api-key": apiKey } : {};
 }
 
 function nullableString(value: unknown, field: string): string | null {
@@ -61,6 +62,7 @@ export function decodeAgentSessionConfig(value: unknown): AgentSessionConfig {
       "knowledge_bases",
     ),
     mcp_servers: nullableStringList(record.mcp_servers, "mcp_servers"),
+    presentations: record.presentations == null ? null : presentationSelectionSchema.parse(record.presentations),
     tool_approval: toolApproval as AgentSessionConfig["tool_approval"],
     prompt_caching_enabled: nullableBoolean(
       record.prompt_caching_enabled,
@@ -154,12 +156,18 @@ export async function fetchSessionPromptCaching(
   return decodeSessionPromptCaching(sessionId, await response.json());
 }
 
+export class SessionConfigurationSaveError extends Error {
+  constructor(message: string, readonly uncertain: boolean) { super(message); }
+}
+
 export async function saveAgentSessionConfig(
   sessionId: string,
   config: AgentSessionConfig,
   signal?: AbortSignal,
 ): Promise<AgentSessionConfig> {
-  const response = await fetch(
+  let response: Response;
+  try {
+    response = await fetch(
     `/api/uar/sessions/${encodeURIComponent(sessionId)}/agent-config`,
     {
       method: "POST",
@@ -170,9 +178,16 @@ export async function saveAgentSessionConfig(
       body: JSON.stringify(config),
       signal,
     },
-  );
-  if (!response.ok) {
-    throw new Error(`Session configuration save failed: ${response.status}`);
+    );
+  } catch {
+    throw new SessionConfigurationSaveError("The save result is unknown. Check saved configuration before saving again.", true);
   }
-  return decodeAgentSessionConfig(await response.json());
+  if (!response.ok) {
+    throw new SessionConfigurationSaveError(`Session configuration save failed: ${response.status}${response.status >= 500 ? ". Check saved configuration before saving again." : ""}`, response.status >= 500);
+  }
+  try {
+    return decodeAgentSessionConfig(await response.json());
+  } catch {
+    throw new SessionConfigurationSaveError("The save response could not be confirmed. Check saved configuration before saving again.", true);
+  }
 }

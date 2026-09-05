@@ -233,6 +233,7 @@ async fn scoped_state_and_user_deletion_survive_cold_restart() {
                             Some("conversation-b"),
                         )
                         .await
+                        .accepted
                         .is_empty(),
                     "global and per-agent disables survive a cold reopen"
                 );
@@ -244,6 +245,7 @@ async fn scoped_state_and_user_deletion_survive_cold_restart() {
                             Some("conversation-b"),
                         )
                         .await
+                        .accepted
                         .len(),
                     1,
                     "the per-agent disable does not affect another agent"
@@ -310,6 +312,7 @@ async fn scoped_state_and_user_deletion_survive_cold_restart() {
                             Some("conversation-b"),
                         )
                         .await
+                        .accepted
                         .is_empty(),
                     "scoped disables remain durable after the deletion boot"
                 );

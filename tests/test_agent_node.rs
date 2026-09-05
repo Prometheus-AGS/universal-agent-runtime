@@ -1,66 +1,16 @@
-/// Integration test for AgentNode — verifies remote A2A delegation.
+/// Integration tests for the AgentNode host-capability boundary.
 ///
-/// Spins up a minimal mock A2A server and verifies that an AgentNode with a
-/// remote URL successfully delegates and stores the task result in state.
-use std::net::TcpListener;
+/// Positive local and remote delegation run through `RunManager`, which owns
+/// the otherwise-unconstructible thread capability. These direct graph tests
+/// prove callers cannot bypass that trusted host with a driver or endpoint.
 use std::sync::Arc;
 
-use axum::{Json, Router, routing::post};
 use serde_json::json;
-use tokio::net::TcpListener as TokioListener;
 use universal_agent_runtime::{
     llm::mock_driver::MockLlmDriver,
-    mcp::registry::McpRegistry,
     normalized::NormalizedEvent,
     uar::runtime::graph::{AgentGraph, AgentNode, GraphContext, GraphState},
 };
-
-fn find_free_port() -> u16 {
-    TcpListener::bind("127.0.0.1:0")
-        .unwrap()
-        .local_addr()
-        .unwrap()
-        .port()
-}
-
-/// Start a minimal mock A2A server that returns a completed task.
-async fn start_a2a_mock() -> String {
-    let port = find_free_port();
-
-    let app = Router::new().route(
-        "/",
-        post(|| async {
-            Json(json!({
-                "jsonrpc": "2.0",
-                "id": "1",
-                "result": {
-                    "id": "task-delegated",
-                    "context_id": "ctx-test",
-                    "status": {
-                        "state": "completed",
-                        "timestamp": "2026-04-12T08:00:00Z",
-                        "message": {
-                            "role": "agent",
-                            "parts": [{"type": "text", "text": "remote contribution"}]
-                        }
-                    },
-                    "artifacts": [],
-                    "history": [],
-                    "metadata": {}
-                }
-            }))
-        }),
-    );
-
-    let listener = TokioListener::bind(format!("127.0.0.1:{port}"))
-        .await
-        .unwrap();
-    tokio::spawn(async move {
-        axum::serve(listener, app).await.unwrap();
-    });
-
-    format!("http://127.0.0.1:{port}/")
-}
 
 fn make_ctx(run_id: &str) -> GraphContext {
     make_ctx_with_events(
@@ -77,16 +27,17 @@ fn make_ctx_with_events(run_id: &str, events: Vec<NormalizedEvent>) -> GraphCont
     GraphContext {
         run_id: run_id.to_string(),
         session_id: None,
-        mcp: Arc::new(McpRegistry::new_empty()),
         llm_config: universal_agent_runtime::config::LlmConfig::default(),
         driver,
         cache_strategy: None,
         persistence: None,
+        thread_delegate: None,
+        tool_host: None,
     }
 }
 
 #[tokio::test]
-async fn test_agent_node_local_empty_output_is_error() {
+async fn test_agent_node_local_requires_host_thread_service() {
     let graph = AgentGraph::builder("rust-reviewer")
         .add_node(AgentNode::new("rust-reviewer", "rust-reviewer"))
         .build();
@@ -96,13 +47,13 @@ async fn test_agent_node_local_empty_output_is_error() {
 
     assert_eq!(
         final_state.get::<String>("_error").as_deref(),
-        Some("AgentNode 'rust-reviewer' returned empty output")
+        Some("Graph child execution requires a host thread service")
     );
     assert!(!final_state.data.contains_key("_agent_output_rust-reviewer"));
 }
 
 #[tokio::test]
-async fn test_agent_node_local_delegation_uses_graph_driver() {
+async fn test_agent_node_local_does_not_fall_back_to_graph_driver() {
     let graph = AgentGraph::builder("rust-reviewer")
         .add_node(AgentNode::new("rust-reviewer", "rust-reviewer"))
         .build();
@@ -114,20 +65,16 @@ async fn test_agent_node_local_delegation_uses_graph_driver() {
         .await;
 
     assert_eq!(
-        final_state
-            .get::<String>("_agent_output_rust-reviewer")
-            .as_deref(),
-        Some("delegated")
+        final_state.get::<String>("_error").as_deref(),
+        Some("Graph child execution requires a host thread service")
     );
-    assert!(!final_state.data.contains_key("_error"));
+    assert!(!final_state.data.contains_key("_agent_output_rust-reviewer"));
 }
 
 #[tokio::test]
-async fn test_agent_node_remote_delegation() {
-    let url = start_a2a_mock().await;
-
+async fn test_agent_node_remote_requires_host_thread_service() {
     let graph = AgentGraph::builder("delegate")
-        .add_node(AgentNode::new("delegate", &url))
+        .add_node(AgentNode::new("delegate", "http://127.0.0.1:1/"))
         .build();
 
     let mut initial = GraphState::default();
@@ -136,31 +83,17 @@ async fn test_agent_node_remote_delegation() {
     let ctx = make_ctx("run-agent-node-1");
     let final_state = graph.execute(initial, &ctx).await;
 
-    // The result should be stored under _agent_result_delegate
-    let result: serde_json::Value = final_state
-        .get("_agent_result_delegate")
-        .expect("_agent_result_delegate should be in state");
-
     assert_eq!(
-        result.get("id").and_then(|v| v.as_str()),
-        Some("task-delegated")
+        final_state.get::<String>("_error").as_deref(),
+        Some("Remote graph child execution requires a host thread service")
     );
-
-    let task_id: String = final_state
-        .get("_agent_task_id_delegate")
-        .expect("task_id should be stored");
-    assert_eq!(task_id, "task-delegated");
-    assert_eq!(
-        final_state
-            .get::<String>("_agent_output_delegate")
-            .as_deref(),
-        Some("remote contribution")
-    );
+    assert!(!final_state.data.contains_key("_agent_result_delegate"));
+    assert!(!final_state.data.contains_key("_agent_thread_id_delegate"));
+    assert!(!final_state.data.contains_key("_agent_output_delegate"));
 }
 
 #[tokio::test]
-async fn test_agent_node_error_on_unreachable_url() {
-    // Port 1 is always refused — simulates network failure.
+async fn test_agent_node_remote_endpoint_does_not_bypass_host() {
     let graph = AgentGraph::builder("bad")
         .add_node(AgentNode::new("bad", "http://127.0.0.1:1/"))
         .build();
@@ -168,18 +101,16 @@ async fn test_agent_node_error_on_unreachable_url() {
     let ctx = make_ctx("run-agent-node-err");
     let final_state = graph.execute(GraphState::default(), &ctx).await;
 
-    assert!(
-        final_state.data.contains_key("_error"),
-        "unreachable agent should set _error in state"
+    assert_eq!(
+        final_state.get::<String>("_error").as_deref(),
+        Some("Remote graph child execution requires a host thread service")
     );
 }
 
 #[tokio::test]
-async fn test_agent_node_falls_back_to_last_message() {
-    let url = start_a2a_mock().await;
-
+async fn test_agent_node_message_fallback_does_not_bypass_host() {
     let graph = AgentGraph::builder("delegate")
-        .add_node(AgentNode::new("delegate", &url))
+        .add_node(AgentNode::new("delegate", "http://127.0.0.1:1/"))
         .build();
 
     // No _agent_input — should use the last message from state.messages
@@ -191,7 +122,9 @@ async fn test_agent_node_falls_back_to_last_message() {
     let ctx = make_ctx("run-agent-node-2");
     let final_state = graph.execute(initial, &ctx).await;
 
-    // Task should still be returned (mock ignores input content)
-    assert!(final_state.data.contains_key("_agent_result_delegate"));
-    assert!(!final_state.data.contains_key("_error"));
+    assert_eq!(
+        final_state.get::<String>("_error").as_deref(),
+        Some("Remote graph child execution requires a host thread service")
+    );
+    assert!(!final_state.data.contains_key("_agent_result_delegate"));
 }

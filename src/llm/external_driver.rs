@@ -5,10 +5,10 @@
 //! skills, and event semantics. The host supplies an async handler that accepts
 //! UAR's canonical [`LlmRequest`] and returns normalized stream events.
 
-use crate::llm::{LlmDriver, LlmRequest};
+use crate::llm::{LlmDriver, LlmRequest, ProviderError};
 use crate::normalized::NormalizedEvent;
 use async_trait::async_trait;
-use futures::{Stream, future::BoxFuture};
+use futures::{Stream, StreamExt, future::BoxFuture};
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -58,14 +58,21 @@ impl std::fmt::Debug for ExternalLlmDriver {
 #[async_trait]
 impl LlmDriver for ExternalLlmDriver {
     async fn stream(&self, req: LlmRequest) -> anyhow::Result<ExternalDriverStream> {
-        (self.handler)(req).await
+        match (self.handler)(req).await {
+            Ok(stream) => Ok(Box::pin(stream.map(|event| match event {
+                Ok(event) => Ok(event),
+                Err(error) if ProviderError::from_anyhow(&error).is_some() => Err(error),
+                Err(error) => Err(ProviderError::external(error.to_string()).into()),
+            }))),
+            Err(error) if ProviderError::from_anyhow(&error).is_some() => Err(error),
+            Err(error) => Err(ProviderError::external(error.to_string()).into()),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use futures::StreamExt;
 
     #[tokio::test]
     async fn external_driver_delegates_request_and_streams_events() {

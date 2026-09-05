@@ -18,6 +18,14 @@ pub enum RunnerType {
 
 #[async_trait]
 pub trait SandboxRunner: Send + Sync {
+    /// Whether this backend enforces an execution boundary rather than running
+    /// an ordinary host process. Capability labels alone are not isolation.
+    /// Unported and custom backends must explicitly implement this contract
+    /// before governed sandbox-required tools can use them.
+    fn enforces_isolation(&self) -> bool {
+        false
+    }
+
     async fn create(&self, config: SandboxConfig) -> Result<SandboxHandle, SandboxError>;
     async fn execute(
         &self,

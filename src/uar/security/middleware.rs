@@ -19,6 +19,7 @@ fn anonymous_context() -> UserContext {
             name: Some("Anonymous".to_string()),
             roles: Some(vec!["anonymous".to_string()]),
             tenant_id: None,
+            uar_instance_id: None,
             // far-future expiry for internal placeholder context
             exp: usize::MAX,
         },
@@ -280,6 +281,7 @@ mod tests {
             name: Some("Test User".to_string()),
             roles: Some(vec!["user".to_string()]),
             tenant_id: None,
+            uar_instance_id: None,
             exp: usize::MAX,
         };
         let token = jwt::encode(
@@ -302,6 +304,7 @@ mod tests {
             name: Some("Test User".to_string()),
             roles: Some(vec!["user".to_string()]),
             tenant_id: None,
+            uar_instance_id: None,
             exp: usize::MAX,
         };
         let token = jwt::encode(

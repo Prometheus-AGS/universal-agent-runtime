@@ -1,10 +1,14 @@
 use crate::session::Session;
+use crate::uar::a2ui::presentations::{Presentation, PresentationDraft};
 use crate::uar::domain::knowledge::{
     DocumentStatus, KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeMatch,
 };
 use crate::uar::domain::prompt_caching::UserPromptCachingSettings;
 use crate::uar::domain::skills::{Skill, SkillMatch};
 use crate::uar::persistence::PersistenceLayer;
+use crate::uar::persistence::agent_threads::{self, AgentThreadStoreError, PersistedAgentThread};
+use crate::uar::persistence::presentations::{self, PresentationStoreError};
+use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -53,6 +57,24 @@ impl SurrealDbProvider {
         let database = surreal_db.unwrap_or("uar");
         db.use_ns(ns).use_db(database).await?;
         tracing::info!("SurrealDB using ns='{}' db='{}'", ns, database);
+
+        db.query(include_str!(
+            "../../../../migrations/surrealdb/agent_threads.surql"
+        ))
+        .await?
+        .check()?;
+
+        db.query(include_str!(
+            "../../../../migrations/surrealdb/presentations.surql"
+        ))
+        .await?
+        .check()?;
+
+        db.query(include_str!(
+            "../../../../migrations/surrealdb/principal_conversation_policies.surql"
+        ))
+        .await?
+        .check()?;
 
         tracing::info!("SurrealDB connected successfully");
 
@@ -175,6 +197,63 @@ fn from_db_vec<T: DeserializeOwned>(values: Vec<serde_json::Value>) -> Result<Ve
     values.into_iter().map(from_db_value).collect()
 }
 
+fn agent_thread_payload(record: &PersistedAgentThread) -> Result<serde_json::Value> {
+    let thread = &record.thread;
+    Ok(serde_json::json!({
+        "owner_id": thread.owner_id,
+        "thread_id": thread.thread_id,
+        "root_thread_id": thread.root_thread_id,
+        "root_run_id": thread.root_run_id,
+        "parent_thread_id": thread.parent_thread_id,
+        "canonical_path": thread.canonical_path,
+        "revision": record.revision,
+        "spawn_fence": 0,
+        "data": serde_json::to_string(record)?,
+    }))
+}
+
+fn check_agent_thread_write(mut response: surrealdb::IndexedResults) -> Result<()> {
+    let errors = response.take_errors();
+    // A transaction can mark earlier statements as cancelled. Inspect every
+    // error so that cancellation wrappers do not obscure our deliberate refusal.
+    for error in errors.values() {
+        let message = error.to_string();
+        if message.contains("uar_agent_thread_conflict") {
+            return Err(AgentThreadStoreError::Conflict.into());
+        }
+        if message.contains("uar_agent_thread_exists") {
+            return Err(AgentThreadStoreError::AlreadyExists.into());
+        }
+        if message.contains("uar_agent_thread_missing") {
+            return Err(AgentThreadStoreError::NotFound.into());
+        }
+    }
+    if let Some((_, error)) = errors.into_iter().min_by_key(|(index, _)| *index) {
+        return Err(error.into());
+    }
+    Ok(())
+}
+
+fn presentation_payload(record: &Presentation) -> Result<serde_json::Value> {
+    Ok(serde_json::json!({
+        "owner_id": record.owner_id, "presentation_id": record.id,
+        "revision": record.revision, "data": serde_json::to_string(record)?
+    }))
+}
+
+fn check_presentation_write(mut response: surrealdb::IndexedResults) -> Result<()> {
+    let errors = response.take_errors();
+    for error in errors.values() {
+        if error.to_string().contains("uar_presentation_conflict") {
+            return Err(PresentationStoreError::Conflict.into());
+        }
+    }
+    if let Some((_, error)) = errors.into_iter().min_by_key(|(index, _)| *index) {
+        return Err(error.into());
+    }
+    Ok(())
+}
+
 fn tenant_record_payload<T: Serialize>(value: &T, logical_id: &str) -> Result<serde_json::Value> {
     let mut payload = to_db_value(value)?;
     let fields = payload
@@ -287,6 +366,280 @@ impl SurrealDbProvider {
 
 #[async_trait]
 impl PersistenceLayer for SurrealDbProvider {
+    async fn create_presentation(
+        &self,
+        owner_id: &str,
+        draft: &PresentationDraft,
+    ) -> Result<Presentation> {
+        let record = presentations::new_record(owner_id, draft)?;
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, &record.id);
+        self.db
+            .query("CREATE type::record('presentations', $key) CONTENT $payload")
+            .bind(("key", key))
+            .bind(("payload", presentation_payload(&record)?))
+            .await?
+            .check()?;
+        Ok(record)
+    }
+
+    async fn get_presentation(&self, owner_id: &str, id: &str) -> Result<Option<Presentation>> {
+        let mut response = self.db.query("SELECT VALUE data FROM presentations WHERE owner_id = $owner AND presentation_id = $id")
+            .bind(("owner", owner_id.to_string())).bind(("id", id.to_string())).await?.check()?;
+        let rows: Vec<String> = response.take(0)?;
+        rows.into_iter()
+            .next()
+            .map(|data| Ok(serde_json::from_str(&data)?))
+            .transpose()
+    }
+
+    async fn list_presentations(&self, owner_id: &str) -> Result<Vec<Presentation>> {
+        let mut response = self
+            .db
+            .query("SELECT * FROM presentations WHERE owner_id = $owner ORDER BY presentation_id")
+            .bind(("owner", owner_id.to_string()))
+            .await?
+            .check()?;
+        let rows: Vec<serde_json::Value> = response.take(0)?;
+        rows.into_iter()
+            .map(|row| {
+                let data = row["data"]
+                    .as_str()
+                    .context("Presentation envelope has no data")?;
+                Ok(serde_json::from_str(data)?)
+            })
+            .collect()
+    }
+
+    async fn update_presentation(
+        &self,
+        owner_id: &str,
+        id: &str,
+        expected_revision: u64,
+        draft: &PresentationDraft,
+    ) -> Result<Presentation> {
+        let current = self
+            .get_presentation(owner_id, id)
+            .await?
+            .ok_or(PresentationStoreError::NotFound)?;
+        let next = presentations::next_record(&current, expected_revision, draft)?;
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        let response = self
+            .db
+            .query(
+                "BEGIN TRANSACTION;
+             LET $old = (SELECT * FROM type::record('presentations', $key))[0];
+             IF $old = NONE OR $old.revision != $expected { THROW 'uar_presentation_conflict'; };
+             UPDATE type::record('presentations', $key) CONTENT $payload;
+             COMMIT TRANSACTION;",
+            )
+            .bind(("key", key))
+            .bind(("expected", current.revision as i64))
+            .bind(("payload", presentation_payload(&next)?))
+            .await?;
+        check_presentation_write(response)?;
+        Ok(next)
+    }
+
+    async fn delete_presentation(
+        &self,
+        owner_id: &str,
+        id: &str,
+        expected_revision: u64,
+    ) -> Result<()> {
+        let current = self
+            .get_presentation(owner_id, id)
+            .await?
+            .ok_or(PresentationStoreError::NotFound)?;
+        if current.revision != expected_revision {
+            return Err(PresentationStoreError::Conflict.into());
+        }
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        let response = self
+            .db
+            .query(
+                "BEGIN TRANSACTION;
+             LET $old = (SELECT * FROM type::record('presentations', $key))[0];
+             IF $old = NONE OR $old.revision != $expected { THROW 'uar_presentation_conflict'; };
+             DELETE type::record('presentations', $key);
+             COMMIT TRANSACTION;",
+            )
+            .bind(("key", key))
+            .bind(("expected", current.revision as i64))
+            .await?;
+        check_presentation_write(response)
+    }
+
+    async fn create_agent_root(
+        &self,
+        owner_id: &str,
+        thread: &AgentThread,
+    ) -> Result<PersistedAgentThread> {
+        let record = agent_threads::new_root(owner_id, thread)?;
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, &thread.thread_id);
+        let response = self.db.query(
+            "BEGIN TRANSACTION;
+             LET $old = (SELECT * FROM type::record('agent_threads', $key))[0];
+             LET $path = (SELECT VALUE thread_id FROM agent_threads
+                 WHERE owner_id = $owner AND root_run_id = $root_run AND canonical_path = $path_name)[0];
+             IF $old != NONE OR $path != NONE { THROW 'uar_agent_thread_exists'; };
+             CREATE type::record('agent_threads', $key) CONTENT $payload;
+             COMMIT TRANSACTION;",
+        ).bind(("key", key)).bind(("owner", owner_id.to_string()))
+            .bind(("root_run", thread.root_run_id.clone())).bind(("path_name", thread.canonical_path.clone()))
+            .bind(("payload", agent_thread_payload(&record)?)).await?;
+        check_agent_thread_write(response)?;
+        Ok(record)
+    }
+
+    async fn create_agent_child(
+        &self,
+        owner_id: &str,
+        thread: &AgentThread,
+        edge: &AgentEdge,
+    ) -> Result<PersistedAgentThread> {
+        let parent_id = thread
+            .parent_thread_id
+            .as_deref()
+            .ok_or(AgentThreadStoreError::InvalidTransition)?;
+        let root = self
+            .load_agent_thread(owner_id, &thread.root_thread_id)
+            .await?
+            .ok_or(AgentThreadStoreError::NotFound)?;
+        let parent = if parent_id == thread.root_thread_id {
+            root.clone()
+        } else {
+            self.load_agent_thread(owner_id, parent_id)
+                .await?
+                .ok_or(AgentThreadStoreError::NotFound)?
+        };
+        let record = agent_threads::new_child(owner_id, thread, edge, &parent, &root)?;
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, &thread.thread_id);
+        let parent_key = crate::uar::persistence::tenant_storage_key(owner_id, parent_id);
+        let root_key =
+            crate::uar::persistence::tenant_storage_key(owner_id, &thread.root_thread_id);
+        let edge_payload = serde_json::json!({
+            "owner_id": edge.owner_id, "child_thread_id": edge.child_thread_id,
+            "parent_thread_id": edge.parent_thread_id, "root_thread_id": edge.root_thread_id,
+            "root_run_id": edge.root_run_id, "canonical_path": edge.canonical_path,
+            "data": serde_json::to_string(edge)?,
+        });
+        let response = self.db.query(
+            "BEGIN TRANSACTION;
+             LET $parent = (SELECT * FROM type::record('agent_threads', $parent_key))[0];
+             LET $root = (SELECT * FROM type::record('agent_threads', $root_key))[0];
+             IF $parent = NONE OR $root = NONE { THROW 'uar_agent_thread_missing'; };
+             IF $parent.data != $parent_data OR $root.data != $root_data {
+                 THROW 'uar_agent_thread_conflict';
+             };
+             LET $old = (SELECT * FROM type::record('agent_threads', $key))[0];
+             LET $old_edge = (SELECT * FROM type::record('agent_edges', $key))[0];
+             LET $path = (SELECT VALUE thread_id FROM agent_threads
+                 WHERE owner_id = $owner AND root_run_id = $root_run AND canonical_path = $path_name)[0];
+             IF $old != NONE OR $old_edge != NONE OR $path != NONE { THROW 'uar_agent_thread_exists'; };
+             -- Write decision records too: a concurrent parent/root state
+             -- change must conflict, not commit a spawn from an obsolete read.
+             UPDATE type::record('agent_threads', $root_key) SET spawn_fence += 1;
+             IF $parent_key != $root_key {
+                 UPDATE type::record('agent_threads', $parent_key) SET spawn_fence += 1;
+             };
+             CREATE type::record('agent_threads', $key) CONTENT $payload;
+             CREATE type::record('agent_edges', $key) CONTENT $edge_payload;
+             COMMIT TRANSACTION;",
+        ).bind(("key", key)).bind(("parent_key", parent_key)).bind(("root_key", root_key))
+            .bind(("parent_data", serde_json::to_string(&parent)?)).bind(("root_data", serde_json::to_string(&root)?))
+            .bind(("owner", owner_id.to_string())).bind(("root_run", thread.root_run_id.clone()))
+            .bind(("path_name", thread.canonical_path.clone())).bind(("payload", agent_thread_payload(&record)?))
+            .bind(("edge_payload", edge_payload)).await?;
+        check_agent_thread_write(response)?;
+        Ok(record)
+    }
+
+    async fn load_agent_thread(
+        &self,
+        owner_id: &str,
+        thread_id: &str,
+    ) -> Result<Option<PersistedAgentThread>> {
+        let mut response = self.db.query(
+            "SELECT VALUE data FROM agent_threads WHERE owner_id = $owner AND thread_id = $thread",
+        ).bind(("owner", owner_id.to_string())).bind(("thread", thread_id.to_string())).await?.check()?;
+        let rows: Vec<String> = response.take(0)?;
+        if rows.len() > 1 {
+            return Err(AgentThreadStoreError::AlreadyExists.into());
+        }
+        rows.into_iter()
+            .next()
+            .map(|data| {
+                let record: PersistedAgentThread = serde_json::from_str(&data)?;
+                agent_threads::validate_lookup(&record, owner_id, thread_id)?;
+                Ok(record)
+            })
+            .transpose()
+    }
+
+    async fn update_agent_thread(
+        &self,
+        owner_id: &str,
+        expected_revision: u64,
+        thread: &AgentThread,
+    ) -> Result<PersistedAgentThread> {
+        let current = self
+            .load_agent_thread(owner_id, &thread.thread_id)
+            .await?
+            .ok_or(AgentThreadStoreError::NotFound)?;
+        let next = agent_threads::next_record(owner_id, &current, expected_revision, thread)?;
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, &thread.thread_id);
+        let response = self.db.query(
+            "BEGIN TRANSACTION;
+             LET $old = (SELECT * FROM type::record('agent_threads', $key))[0];
+             IF $old = NONE { THROW 'uar_agent_thread_missing'; };
+             IF $old.revision != $expected OR $old.data != $current_data { THROW 'uar_agent_thread_conflict'; };
+             UPDATE type::record('agent_threads', $key) CONTENT $payload;
+             COMMIT TRANSACTION;",
+        ).bind(("key", key)).bind(("expected", expected_revision as i64))
+            .bind(("current_data", serde_json::to_string(&current)?))
+            .bind(("payload", agent_thread_payload(&next)?)).await?;
+        check_agent_thread_write(response)?;
+        Ok(next)
+    }
+
+    async fn list_agent_threads(
+        &self,
+        owner_id: &str,
+        root_run_id: &str,
+    ) -> Result<Vec<PersistedAgentThread>> {
+        let mut response = self.db.query(
+            "SELECT VALUE data FROM agent_threads WHERE owner_id = $owner AND root_run_id = $root_run",
+        ).bind(("owner", owner_id.to_string())).bind(("root_run", root_run_id.to_string())).await?.check()?;
+        let rows: Vec<String> = response.take(0)?;
+        let records = rows
+            .into_iter()
+            .map(|data| serde_json::from_str(&data))
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(agent_threads::ordered_threads(
+            records,
+            owner_id,
+            root_run_id,
+        )?)
+    }
+
+    async fn list_agent_edges(&self, owner_id: &str, root_run_id: &str) -> Result<Vec<AgentEdge>> {
+        let mut response = self.db.query(
+            "SELECT VALUE data FROM agent_edges WHERE owner_id = $owner AND root_run_id = $root_run",
+        ).bind(("owner", owner_id.to_string())).bind(("root_run", root_run_id.to_string())).await?.check()?;
+        let rows: Vec<String> = response.take(0)?;
+        let edges = rows
+            .into_iter()
+            .map(|data| serde_json::from_str(&data))
+            .collect::<Result<Vec<_>, _>>()?;
+        let threads = self.list_agent_threads(owner_id, root_run_id).await?;
+        Ok(agent_threads::ordered_edges(
+            edges,
+            &threads,
+            owner_id,
+            root_run_id,
+        )?)
+    }
+
     // Session Management
     async fn save_session(&self, session: &Session) -> Result<()> {
         self.save_tenant_record("sessions", session.owner_id(), session.id(), session)
@@ -358,6 +711,52 @@ impl PersistenceLayer for SurrealDbProvider {
     ) -> Result<()> {
         self.delete_tenant_record("conversation_policies", owner_id, conversation_id)
             .await
+    }
+
+    async fn save_principal_conversation_policy(
+        &self,
+        record: &crate::uar::domain::policy::ConversationPolicyRecord,
+        expected: Option<&crate::uar::domain::policy::RunPolicy>,
+    ) -> Result<bool> {
+        let key =
+            crate::uar::persistence::tenant_storage_key(&record.owner_id, &record.conversation_id);
+        let payload = tenant_record_payload(record, &record.conversation_id)?;
+        if let Some(expected) = expected {
+            let mut response = self.db.query("UPDATE type::record('principal_conversation_policies', $key) CONTENT $payload WHERE policy = $expected RETURN AFTER")
+                .bind(("key", key)).bind(("payload", payload))
+                .bind(("expected", serde_json::to_value(expected)?)).await?;
+            let rows: Vec<surrealdb::types::Value> = response.take(0)?;
+            Ok(rows.len() == 1)
+        } else {
+            // CREATE never overwrites an interleaved first save. An uncertain
+            // backend failure remains an error, not a fabricated conflict result.
+            self.db
+                .query(
+                    "CREATE type::record('principal_conversation_policies', $key) CONTENT $payload",
+                )
+                .bind(("key", key))
+                .bind(("payload", payload))
+                .await?
+                .check()?;
+            Ok(true)
+        }
+    }
+
+    async fn load_principal_conversation_policy(
+        &self,
+        owner_id: &str,
+        conversation_id: &str,
+    ) -> Result<Option<crate::uar::domain::policy::ConversationPolicyRecord>> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, conversation_id);
+        // This table has no legacy records. Do not use the legacy-migrating helpers.
+        let mut response = self
+            .db
+            .query("SELECT * FROM type::record('principal_conversation_policies', $key)")
+            .bind(("key", key))
+            .await?;
+        let rows: Vec<surrealdb::types::Value> = response.take(0)?;
+        let record = rows.into_iter().next().map(surreal_to_json).transpose()?;
+        from_db_opt(record.map(restore_tenant_record_id))
     }
 
     async fn save_user_prompt_caching_settings(
@@ -549,6 +948,34 @@ impl PersistenceLayer for SurrealDbProvider {
     ) -> Result<Option<crate::uar::domain::artifact::AgentArtifact>> {
         let agent = self.fetch_one("agents", id).await?;
         from_db_opt(agent)
+    }
+
+    async fn save_agent_if_unchanged(
+        &self,
+        expected: &crate::uar::domain::artifact::AgentArtifact,
+        updated: &crate::uar::domain::artifact::AgentArtifact,
+    ) -> Result<bool> {
+        anyhow::ensure!(expected.id == updated.id, "Agent update identity mismatch");
+        let Some(mut baseline) = self.fetch_one("agents", &expected.id).await? else {
+            return Ok(false);
+        };
+        let current: crate::uar::domain::artifact::AgentArtifact = from_db_value(baseline.clone())?;
+        if serde_json::to_value(current)? != serde_json::to_value(expected)? {
+            return Ok(false);
+        }
+        baseline
+            .as_object_mut()
+            .context("Agent record must be an object")?
+            .remove("id");
+        let mut payload = to_db_value(updated)?;
+        payload
+            .as_object_mut()
+            .context("Agent update must be an object")?
+            .remove("id");
+        let mut response = self.db.query("UPDATE type::record('agents', $id) CONTENT $payload WHERE object::remove($this, 'id') = $baseline RETURN AFTER")
+            .bind(("id", expected.id.clone())).bind(("payload", payload)).bind(("baseline", baseline)).await?;
+        let rows: Vec<surrealdb::types::Value> = response.take(0)?;
+        Ok(rows.len() == 1)
     }
 
     async fn load_agent_by_name(
@@ -977,6 +1404,19 @@ impl PersistenceLayer for SurrealDbProvider {
             .next()
             .map(|v| surreal_value_to_setting(surreal_to_json(v)?))
             .transpose()
+    }
+
+    async fn compare_and_swap_global_presentation_policy(
+        &self,
+        expected: &serde_json::Value,
+        selection: &crate::uar::domain::policy::ResourceSelection,
+    ) -> Result<bool> {
+        let next = presentations::global_policy_with_presentations(expected, selection)?;
+        let mut response = self.db.query("UPDATE type::record('settings', 'run_policy_global') SET data = $next, updated_at = $updated WHERE key = 'run_policy.global' AND data = $expected RETURN AFTER")
+            .bind(("next", next)).bind(("expected", expected.clone()))
+            .bind(("updated", chrono::Utc::now().to_rfc3339())).await?;
+        let rows: Vec<surrealdb::types::Value> = response.take(0)?;
+        Ok(rows.len() == 1)
     }
 
     async fn list_settings(

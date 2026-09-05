@@ -44,15 +44,13 @@ impl GraphState {
 
 /// Immutable execution context passed to every node.
 ///
-/// Provides access to the LLM driver, MCP registry, and per-run metadata.
+/// Provides host-bound execution capabilities and per-run metadata.
 #[allow(missing_debug_implementations)]
 pub struct GraphContext {
     /// Unique ID for this run.
     pub run_id: String,
     /// Optional session / thread ID.
     pub session_id: Option<String>,
-    /// MCP tool registry.
-    pub mcp: Arc<crate::mcp::registry::McpRegistry>,
     /// LLM configuration (model, provider, etc.).
     pub llm_config: crate::config::LlmConfig,
     /// Shared LLM driver for making inference calls.
@@ -61,6 +59,11 @@ pub struct GraphContext {
     pub cache_strategy: Option<crate::llm::anthropic_cache::CacheStrategy>,
     /// Optional persistence layer for saving checkpoints.
     pub persistence: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
+    /// Host-bound child execution. A missing capability denies delegation;
+    /// graph nodes must never substitute a direct model call.
+    pub thread_delegate: Option<Arc<super::delegation::GraphThreadDelegate>>,
+    /// Host-owned explicit tool dispatch. Absence denies tool execution.
+    pub tool_host: Option<Arc<super::tools::GraphToolHost>>,
 }
 
 // ── Node result ────────────────────────────────────────────────────────────────

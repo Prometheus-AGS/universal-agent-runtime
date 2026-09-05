@@ -98,7 +98,11 @@ impl SkillActivationProvider {
 #[async_trait]
 impl CompletionProvider for SkillActivationProvider {
     async fn complete(&self, input: &str) -> anyhow::Result<String> {
-        let matched = self.service.match_skills(input, None).await;
+        let matched = self
+            .service
+            .match_skills(input, None)
+            .await
+            .accepted_skills();
         if matched.is_empty() {
             Ok("none".to_string())
         } else {

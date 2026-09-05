@@ -124,6 +124,8 @@ pub struct AcpRunRequest {
     pub stream: bool,
     #[serde(default)]
     pub metadata: Value,
+    #[serde(flatten)]
+    pub presentation_negotiation: crate::uar::a2ui::presentation_selection::PresentationNegotiation,
 }
 
 #[derive(Debug, Clone, Serialize)]

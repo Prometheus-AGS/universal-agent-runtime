@@ -282,6 +282,7 @@ impl ApiKeyService {
                     name: Some(record.name.clone()),
                     roles: Some(record.roles.clone()),
                     tenant_id: None,
+                    uar_instance_id: None,
                     exp,
                 };
                 let issued_claims = IssuedJwtClaims {
@@ -333,6 +334,7 @@ impl ApiKeyService {
                     name: Some(record.name.clone()),
                     roles: Some(record.roles.clone()),
                     tenant_id: None,
+                    uar_instance_id: None,
                     exp,
                 }));
             }

@@ -9,7 +9,7 @@ use axum::{
         IntoResponse, Response,
         sse::{Event, KeepAlive, Sse},
     },
-    routing::{any, get, post, put},
+    routing::{any, get, post},
 };
 use chrono::Utc;
 use futures::StreamExt as _;
@@ -108,15 +108,19 @@ const SHUTDOWN_HARD_STOP_ALLOWANCE: Duration = Duration::from_millis(500);
 struct ShutdownCoordinator {
     started: tokio_util::sync::CancellationToken,
     cleanup_complete: tokio_util::sync::CancellationToken,
+    cleanup_failure: Arc<Mutex<Option<String>>>,
     process_complete: Arc<(Mutex<bool>, Condvar)>,
+    enforce_process_deadline: bool,
 }
 
 impl ShutdownCoordinator {
-    fn new() -> Self {
+    fn new(enforce_process_deadline: bool) -> Self {
         Self {
             started: tokio_util::sync::CancellationToken::new(),
             cleanup_complete: tokio_util::sync::CancellationToken::new(),
+            cleanup_failure: Arc::new(Mutex::new(None)),
             process_complete: Arc::new((Mutex::new(false), Condvar::new())),
+            enforce_process_deadline,
         }
     }
 
@@ -125,6 +129,10 @@ impl ShutdownCoordinator {
             return;
         }
         self.started.cancel();
+
+        if !self.enforce_process_deadline {
+            return;
+        }
 
         let fuse_state = Arc::clone(&self.process_complete);
         let fuse = std::thread::Builder::new()
@@ -153,6 +161,27 @@ impl ShutdownCoordinator {
 
     fn mark_cleanup_complete(&self) {
         self.cleanup_complete.cancel();
+    }
+
+    fn record_cleanup_failure(&self, error: &anyhow::Error) {
+        let mut failure = self
+            .cleanup_failure
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        failure.get_or_insert_with(|| error.to_string());
+    }
+
+    fn cleanup_result(&self) -> anyhow::Result<()> {
+        let failure = self
+            .cleanup_failure
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        match failure.as_ref() {
+            Some(error) => Err(anyhow::anyhow!(
+                "Runtime shutdown remains unconfirmed: {error}"
+            )),
+            None => Ok(()),
+        }
     }
 
     async fn wait_for_cleanup(&self) {
@@ -278,7 +307,7 @@ async fn request_span_layer(request: Request, next: Next) -> Response {
 
 /// Start the Axum server with the provided configuration manager.
 pub async fn start_server(config_manager: Arc<ConfigManager>) -> anyhow::Result<()> {
-    start_server_with_listener(config_manager, None, None, None, None, None, None).await
+    start_server_with_listener(config_manager, None, None, None, None, None, None, true).await
 }
 
 #[cfg(windows)]
@@ -294,6 +323,7 @@ pub(crate) async fn start_server_with_shutdown(
         None,
         None,
         Some(process_shutdown),
+        true,
     )
     .await
 }
@@ -306,32 +336,59 @@ async fn start_server_with_listener(
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
     process_shutdown: Option<tokio_util::sync::CancellationToken>,
+    enforce_process_deadline: bool,
 ) -> anyhow::Result<()> {
     let config = config_manager.current();
     let embedded_lock = surrealkv_lock_path(
         &config.persistence.provider,
         &config.persistence.database_url,
     );
-    let shutdown_coordinator = ShutdownCoordinator::new();
-    let result = run_server_with_listener(
-        config_manager,
-        listener,
-        a2a_grpc_listener,
-        mcp_config_path,
-        ready,
-        http_shutdown,
-        process_shutdown,
-        shutdown_coordinator.clone(),
-    )
-    .await;
+    let shutdown_coordinator = ShutdownCoordinator::new(enforce_process_deadline);
+    let shutdown_timeout = Duration::from_secs(config.server.shutdown_timeout_secs);
+    let lifecycle = async {
+        let result = run_server_with_listener(
+            config_manager,
+            listener,
+            a2a_grpc_listener,
+            mcp_config_path,
+            ready,
+            http_shutdown,
+            process_shutdown,
+            shutdown_coordinator.clone(),
+        )
+        .await;
 
-    if result.is_ok() && shutdown_coordinator.started.is_cancelled() {
-        if let Some(lock_path) = embedded_lock {
-            wait_for_surrealkv_lock_release(&lock_path).await;
+        if result.is_ok() && shutdown_coordinator.started.is_cancelled() {
+            if let Some(lock_path) = embedded_lock {
+                wait_for_surrealkv_lock_release(&lock_path).await;
+            }
+            shutdown_coordinator.complete();
         }
-        shutdown_coordinator.complete();
+        result
+    };
+    if enforce_process_deadline {
+        lifecycle.await
+    } else {
+        tokio::pin!(lifecycle);
+        tokio::select! {
+            result = &mut lifecycle => result,
+            () = shutdown_coordinator.started.cancelled() => {
+                match tokio::time::timeout(shutdown_timeout, &mut lifecycle).await {
+                    Ok(result) => result,
+                    Err(_) => {
+                        let stage = if shutdown_coordinator.cleanup_complete.is_cancelled() {
+                            "embedded persistence lock release"
+                        } else {
+                            "listener drain or resource cleanup"
+                        };
+                        Err(anyhow::anyhow!(
+                            "embedded server {stage} exceeded its {shutdown_timeout:?} deadline"
+                        ))
+                    }
+                }
+            }
+        }
     }
-    result
 }
 
 fn surrealkv_lock_path(provider: &str, database_url: &str) -> Option<std::path::PathBuf> {
@@ -789,6 +846,16 @@ async fn run_server_with_listener(
     );
 
     let mcp = Arc::new(mcp_registry);
+    let mcp_environment = Arc::new(crate::mcp::binding_cache::McpBindingEnvironment::new(
+        std::env::current_dir()?,
+        std::env::vars_os().collect(),
+    )?);
+    let projected_mcp_runtime = crate::mcp::runtime::McpRuntimeManager::new(
+        crate::mcp::binding_cache::McpBindingCache::default(),
+        Arc::new(crate::mcp::runtime::ConfiguredMcpConnector::default()),
+        Duration::from_secs(30),
+        Duration::from_secs(30),
+    )?;
 
     for (name, _tool) in mcp.tools() {
         info!(name: "mcp.tool.discovered", tool = %name, "MCP tool discovered");
@@ -979,6 +1046,47 @@ async fn run_server_with_listener(
                     if let Err(e) = crate::uar::api::mcp_admin::hydrate_registry(&mcp, &mgr).await {
                         tracing::error!(error = ?e, "Failed to hydrate MCP registry from settings database");
                     }
+
+                    // ADR-010 §1a (c). Audited HERE, after hydration, because
+                    // this is the first moment the registry reflects the
+                    // settings database -- the authoritative source. Auditing
+                    // the config file instead is what let an enabled `openai`
+                    // at api.openai.com sit in a "local-only" deployment while
+                    // a config-file test stayed green.
+                    if crate::llm::local_only::enabled() {
+                        let resolved = provider_registry.list().await;
+                        let rows: Vec<(&str, &str, bool)> = resolved
+                            .iter()
+                            .map(|p| (p.id.as_str(), p.base_url.as_str(), p.enabled))
+                            .collect();
+                        let offenders = crate::llm::local_only::audit_providers(rows);
+                        if offenders.is_empty() {
+                            info!(
+                                providers = resolved.len(),
+                                "local-only inference verified: every enabled provider is loopback"
+                            );
+                        } else {
+                            for o in &offenders {
+                                tracing::error!(
+                                    provider = %o.id,
+                                    base_url = %o.base_url,
+                                    "local-only inference is on but this enabled provider is not loopback"
+                                );
+                            }
+                            anyhow::bail!(
+                                "{} is set but {} enabled provider(s) are not loopback: {}. \
+                                 Refusing to start: a run could send the user's code context \
+                                 off this machine.",
+                                crate::llm::local_only::ENV_LOCAL_ONLY,
+                                offenders.len(),
+                                offenders
+                                    .iter()
+                                    .map(|o| format!("{} -> {}", o.id, o.base_url))
+                                    .collect::<Vec<_>>()
+                                    .join(", ")
+                            );
+                        }
+                    }
                 }
                 Err(error) => finalize_failed_governance_bootstrap(&governance_mutation, &error)?,
             }
@@ -1054,8 +1162,12 @@ async fn run_server_with_listener(
         .await
         .with_agent_graph(uar::defaults::orchestrator_graph())
         .with_skill_service(Arc::clone(&skill_service))
+        .with_mcp_runtime(projected_mcp_runtime.clone(), Arc::clone(&mcp_environment))
+        .with_harness_config(config.harness.clone())
+        .with_world_state_config(config.project_instructions.clone(), config.world_state)
         .with_provider_registry(Arc::clone(&provider_registry))
         .with_native_skills(Arc::clone(&native_skill_registry))
+        .with_a2a_config(&config.a2a)
         .with_a2ui_backbone(Arc::clone(&a2ui_realtime_backbone))
         .with_message_context_strategy(config.context_strategy.clone())
         .with_governance_engine(Arc::clone(&governance_engine))
@@ -1066,6 +1178,9 @@ async fn run_server_with_listener(
         ))
         .with_global_cost_budget(config.llm.budget.as_ref())
         .await;
+        if let Some(runner) = crate::sandbox::platform::configured_isolated_runner()? {
+            rm = rm.with_sandbox_runner(runner);
+        }
         if let Some(ref svc) = provider_service {
             rm = rm.with_provider_service(Arc::clone(svc));
         }
@@ -1076,6 +1191,7 @@ async fn run_server_with_listener(
     // in-flight runs (they emit a terminal `Cancelled` event) within the drain
     // window, instead of being killed abruptly at process teardown.
     let run_cancellation_root = run_manager.root_cancellation_token();
+    let sandbox_manager = Arc::clone(&run_manager);
 
     // CH-03: periodic provider-health sweep, consuming the previously-dead
     // `health_check_secs` config. Shares the same shutdown token as the other
@@ -1095,11 +1211,7 @@ async fn run_server_with_listener(
     ));
 
     // Initialize Actor Collaboration System
-    let actor_system = Arc::new(ActorCollaboration::new(
-        llm_config.clone(),
-        Arc::clone(&mcp),
-        Arc::clone(&native_skill_registry),
-    ));
+    let actor_system = Arc::new(ActorCollaboration::new(Arc::clone(&run_manager)));
     info!("Actor collaboration system initialized");
 
     // Initialize API Key Service
@@ -1130,13 +1242,13 @@ async fn run_server_with_listener(
     };
     info!("Compiler service initialized");
 
-    // Initialize A2A state (shared task store + compiler service).
-    #[cfg(feature = "a2a-transport")]
-    let a2a_task_store = uar::api::a2a::TaskStore::new();
+    // Both A2A transports share the existing mailbox/persisted-thread host.
     #[cfg(feature = "a2a-transport")]
     let a2a_state = Arc::new(uar::api::a2a::A2AState {
-        compiler_service: Arc::clone(&compiler_service),
-        task_store: a2a_task_store,
+        threads: Arc::new(
+            uar::api::a2a::thread_service::A2AThreadService::new(Arc::clone(&actor_system))
+                .with_instance_id(config.a2a.instance_id.clone()),
+        ),
         security: config.security.clone(),
         base_url: format!("http://{}:{}", config.server.host, config.server.port),
     });
@@ -1262,6 +1374,10 @@ async fn run_server_with_listener(
     // of which router a request comes through.
     #[cfg(feature = "a2a-transport")]
     let a2a_routes: axum::Router<AppState> = Router::new()
+        .route(
+            "/a2a/agents/{agent_id}",
+            post(uar::api::a2a::handler::handle_agent_rpc).with_state(Arc::clone(&a2a_state)),
+        )
         .nest(
             "/a2a/compiler",
             uar::api::a2a::build_rpc_router().with_state::<AppState>(Arc::clone(&a2a_state)),
@@ -1398,6 +1514,10 @@ async fn run_server_with_listener(
         // inventory, and spec compilation as MCP tools at /mcp/uar.
         .nest_service("/mcp/uar", uar_mcp_router)
         // A2UI schema listing endpoint
+        .nest(
+            "/api/uar/presentations",
+            uar::api::presentations::build_router().with_state(Arc::clone(&persistence_layer)),
+        )
         .nest("/api/uar/a2ui", {
             let a2ui_state = uar::a2ui::routes::A2uiApiState {
                 registry: Arc::clone(&state.a2ui_registry),
@@ -1495,7 +1615,8 @@ async fn run_server_with_listener(
         )
         .route(
             "/api/agents/{id}",
-            put(uar::api::discovery::update_agent_full)
+            get(uar::api::discovery::get_persisted_agent)
+                .put(uar::api::discovery::update_agent_full)
                 .patch(uar::api::discovery::patch_agent)
                 .delete(uar::api::discovery::delete_agent),
         )
@@ -1748,19 +1869,51 @@ async fn run_server_with_listener(
     let shutdown_cleanup = ingestion_pool_shared
         .map(|pool| Arc::new(move || pool.shutdown()) as Arc<dyn Fn() + Send + Sync + 'static>);
     let async_resource_cleanup = {
+        let actor_system = Arc::clone(&actor_system);
+        let sandbox_manager = Arc::clone(&sandbox_manager);
         let mcp = Arc::clone(&mcp);
+        let projected_mcp_runtime = projected_mcp_runtime.clone();
         let surreal_live_bus = surreal_live_bus.clone();
+        let shutdown_coordinator = shutdown_coordinator.clone();
         Arc::new(move || {
+            let actor_system = Arc::clone(&actor_system);
+            let sandbox_manager = Arc::clone(&sandbox_manager);
             let mcp = Arc::clone(&mcp);
+            let projected_mcp_runtime = projected_mcp_runtime.clone();
             let surreal_live_bus = surreal_live_bus.clone();
+            let shutdown_coordinator = shutdown_coordinator.clone();
             Box::pin(async move {
+                // Mailboxes retain kernel completion and durable thread writes.
+                // Join them before closing their shared transport dependencies.
+                if let Err(error) = actor_system.shutdown_all().await {
+                    shutdown_coordinator.record_cleanup_failure(&error);
+                    tracing::error!(%error, "Actor shutdown retains unconfirmed work");
+                }
+                if let Err(error) = sandbox_manager.shutdown_graph_roots().await {
+                    shutdown_coordinator.record_cleanup_failure(&error);
+                    tracing::error!(%error, "Graph root shutdown retains unconfirmed work");
+                }
+                if let Err(error) = sandbox_manager.shutdown_terminals().await {
+                    shutdown_coordinator.record_cleanup_failure(&error);
+                    tracing::error!(%error, "Terminal shutdown retains unconfirmed processes");
+                }
+                if let Err(error) = sandbox_manager.shutdown_sandboxes().await {
+                    shutdown_coordinator.record_cleanup_failure(&error);
+                    tracing::error!(%error, "Sandbox shutdown retains unconfirmed operations");
+                }
                 let mcp_shutdown = mcp.shutdown();
+                let projected_mcp_shutdown = projected_mcp_runtime.shutdown();
                 let live_query_shutdown = async move {
                     if let Some(bus) = surreal_live_bus {
                         bus.shutdown().await;
                     }
                 };
-                tokio::join!(mcp_shutdown, live_query_shutdown);
+                let (_, projected_result, _) =
+                    tokio::join!(mcp_shutdown, projected_mcp_shutdown, live_query_shutdown,);
+                if let Err(error) = projected_result {
+                    shutdown_coordinator.record_cleanup_failure(&error);
+                    tracing::error!(%error, "Projected MCP shutdown retains unconfirmed resources");
+                }
             }) as Pin<Box<dyn Future<Output = ()> + Send + 'static>>
         }) as ShutdownAsyncCleanup
     };
@@ -1793,7 +1946,7 @@ async fn run_server_with_listener(
         }
     }
 
-    http_result
+    http_result.and(shutdown_coordinator.cleanup_result())
 }
 
 /// Best-effort bind of the loopback companion address for dual-stack `localhost`.
@@ -1856,6 +2009,7 @@ pub async fn start_server_sidecar(
         Some(ready),
         http_shutdown,
         None,
+        true,
     )
     .await
 }
@@ -1886,6 +2040,33 @@ pub async fn start_server_sidecar_with_listeners(
         Some(ready),
         http_shutdown,
         None,
+        true,
+    )
+    .await
+}
+
+/// Start the sidecar with caller-owned listener and process shutdown signals.
+///
+/// This variant is intended for supervisors that own the complete server
+/// lifecycle and must await resource cleanup before releasing the process.
+pub async fn start_server_sidecar_with_listeners_and_shutdowns(
+    config_manager: Arc<ConfigManager>,
+    listener: tokio::net::TcpListener,
+    a2a_grpc_listener: tokio::net::TcpListener,
+    mcp_config_path: Option<std::path::PathBuf>,
+    ready: tokio::sync::oneshot::Sender<std::net::SocketAddr>,
+    http_shutdown: Option<tokio_util::sync::CancellationToken>,
+    process_shutdown: Option<tokio_util::sync::CancellationToken>,
+) -> anyhow::Result<()> {
+    start_server_with_listener(
+        config_manager,
+        Some(listener),
+        Some(a2a_grpc_listener),
+        mcp_config_path,
+        Some(ready),
+        http_shutdown,
+        process_shutdown,
+        false,
     )
     .await
 }
@@ -1958,11 +2139,19 @@ async fn serve_on_listener(
                 }
                 info!(name: "server.shutdown.pool_drained", "Ingestion pool shut down");
             };
+            let async_cleanup_coordinator = shutdown_coordinator.clone();
             let async_cleanup = async move {
                 if let Some(cleanup) = async_cleanup_for_shutdown {
                     cleanup().await;
                 }
-                info!(name: "server.shutdown.async_resources_closed", "Async resources shut down");
+                match async_cleanup_coordinator.cleanup_result() {
+                    Ok(()) => {
+                        info!(name: "server.shutdown.async_resources_closed", "Async resources shut down")
+                    }
+                    Err(error) => {
+                        tracing::error!(%error, "Async resource shutdown remains unconfirmed")
+                    }
+                }
             };
             tokio::join!(blocking_cleanup, async_cleanup);
             shutdown_coordinator.mark_cleanup_complete();
@@ -2051,7 +2240,8 @@ fn build_permissive_cors_layer() -> CorsLayer {
 ///
 /// Human-in-the-loop gate for pending tool calls.
 ///
-/// Body: `{ "approved": true | false }`.
+/// Body: `{ "approved": true | false, "approval_id": "host-request-id" }`.
+/// The ID is optional for legacy root requests and required for child requests.
 /// Returns 200 if the run was waiting for this approval and it was resolved.
 /// Returns 404 if no run with that id has a pending approval.
 async fn handle_tool_call_approval(
@@ -2060,6 +2250,17 @@ async fn handle_tool_call_approval(
     axum::extract::Path(run_id): axum::extract::Path<String>,
     Json(body): Json<serde_json::Value>,
 ) -> Response {
+    let approval_id = match body.get("approval_id") {
+        None | Some(serde_json::Value::Null) => None,
+        Some(serde_json::Value::String(id)) => Some(id.as_str()),
+        Some(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": "approval_id must be a string"})),
+            )
+                .into_response();
+        }
+    };
     let approved = body
         .get("approved")
         .and_then(|v| v.as_bool())
@@ -2079,7 +2280,10 @@ async fn handle_tool_call_approval(
         )
             .into_response();
     }
-    let resolved = state.run_manager.resolve_approval(&run_id, approved).await;
+    let resolved = state
+        .run_manager
+        .resolve_approval_request(&run_id, approval_id, approved)
+        .await;
     if resolved {
         info!(
             name: "approval.resolved",
@@ -2129,6 +2333,11 @@ async fn load_global_resilience_policy(state: &AppState) -> ResiliencePolicy {
         "resilience.stream_start_timeout_ms",
         u64,
         stream_start_timeout_ms
+    );
+    apply_typed!(
+        "resilience.stream_idle_timeout_ms",
+        u64,
+        stream_idle_timeout_ms
     );
     apply_typed!("resilience.retries_enabled", bool, retries_enabled);
     apply_typed!("resilience.retry_max_attempts", u32, retry_max_attempts);
@@ -3606,7 +3815,7 @@ async fn api_messages(
     };
     let session_override = match (&req.session_id, user_ctx.as_ref()) {
         (Some(session_id), Some(user)) => {
-            uar::api::discovery::load_conversation_policy(&state, &user.user_id, session_id)
+            uar::api::discovery::load_conversation_policy(&state, user, session_id)
                 .await
                 .and_then(|policy| policy.prompt_caching_enabled)
         }
@@ -4176,6 +4385,15 @@ enum StreamMode {
 }
 
 impl StreamMode {
+    fn cursor_format(&self) -> u8 {
+        match self {
+            Self::Openai => 0,
+            Self::Agui => 1,
+            Self::Dual => 2,
+            Self::AguiSpec => 3,
+        }
+    }
+
     fn emits_openai_chunks(&self) -> bool {
         matches!(self, Self::Openai | Self::Dual)
     }
@@ -4245,6 +4463,9 @@ pub(crate) struct ChatCompletionRequest {
     /// Typed per-turn UAR policy override.
     #[serde(default)]
     run_policy: Option<uar::domain::policy::RunPolicy>,
+    /// Optional UAR client rendering support and requested Presentation mode.
+    #[serde(flatten)]
+    presentation_negotiation: uar::a2ui::presentation_selection::PresentationNegotiation,
 }
 
 #[inline]
@@ -4675,13 +4896,87 @@ async fn resolve_requested_model(
     })
 }
 
-/// OpenAI-compatible completion endpoint with optional UAR session continuity.
+/// Cursor for one runtime event and, optionally, one projected SSE frame.
+#[derive(Clone, Copy)]
+struct ChatStreamCursor {
+    event_id: u64,
+    frame: Option<usize>,
+    format: Option<u8>,
+}
+
+impl ChatStreamCursor {
+    fn parse(value: &str) -> Option<Self> {
+        let mut parts = value.split(':');
+        let event_id = parts.next()?.parse().ok()?;
+        let (frame, format) = match (parts.next(), parts.next()) {
+            (None, None) => (None, None),
+            (Some(frame), Some(format)) => (Some(frame.parse().ok()?), Some(format.parse().ok()?)),
+            _ => return None,
+        };
+        if parts.next().is_some() || format.is_some_and(|format| format > 3) {
+            return None;
+        }
+        Some(Self {
+            event_id,
+            frame,
+            format,
+        })
+    }
+
+    fn precedes(self, event_id: u64, frame: usize) -> bool {
+        event_id > self.event_id
+            || (event_id == self.event_id && self.frame.is_some_and(|last| frame > last))
+    }
+
+    fn includes_source(self, event_id: u64) -> bool {
+        event_id > self.event_id || (event_id == self.event_id && self.frame.is_some())
+    }
+}
+
+/// OpenAI-compatible completion endpoint with explicit, owner-bound SSE replay.
 pub(crate) async fn api_chat_completion(
     State(state): State<AppState>,
     axum::Extension(user_ctx): axum::Extension<UserContext>,
     headers: HeaderMap,
     Json(req): Json<ChatCompletionRequest>,
 ) -> Response {
+    let resume = match (headers.get("x-uar-run-id"), headers.get("last-event-id")) {
+        (None, None) => None,
+        (Some(run), Some(cursor)) if req.stream => {
+            match (
+                run.to_str().ok(),
+                cursor.to_str().ok().and_then(ChatStreamCursor::parse),
+            ) {
+                (Some(run), Some(cursor)) if !run.trim().is_empty() => {
+                    Some((run.to_owned(), cursor))
+                }
+                _ => {
+                    return openai_error_response(
+                        StatusCode::BAD_REQUEST,
+                        "Invalid chat replay identity or cursor",
+                        Some("invalid_replay_cursor"),
+                    );
+                }
+            }
+        }
+        _ => {
+            return openai_error_response(
+                StatusCode::BAD_REQUEST,
+                "Chat replay requires stream=true, x-uar-run-id and Last-Event-ID together",
+                Some("invalid_replay_request"),
+            );
+        }
+    };
+    let resuming = resume.is_some();
+    let cursor = resume.as_ref().map(|(_, cursor)| *cursor);
+    let cursor_format = req.stream_mode.cursor_format();
+    if cursor.is_some_and(|cursor| cursor.format.is_some_and(|format| format != cursor_format)) {
+        return openai_error_response(
+            StatusCode::BAD_REQUEST,
+            "Replay stream format differs from the cursor",
+            Some("replay_format_mismatch"),
+        );
+    }
     if let Some(temp) = req.temperature {
         tracing::debug!(temperature = temp, "temperature received");
     }
@@ -4689,301 +4984,392 @@ pub(crate) async fn api_chat_completion(
         tracing::debug!(tool_count = tools.len(), "tools payload received");
     }
 
-    let Some(input_message) = extract_input_message(&req) else {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({
-                "error": {
-                    "message": "Request must include `message` or a user message in `messages`",
-                    "type": "invalid_request_error",
-                    "param": "messages",
-                    "code": "invalid_request"
+    let (
+        run_id,
+        session_id,
+        model_name,
+        agent_id_for_policy,
+        effective_input,
+        stream_memory_ctx_count,
+        response_timeout_ms,
+    ) = if let Some((run_id, _)) = &resume {
+        let owner =
+            match uar::runtime::actor::messages::ActorOwner::from_verified_context(&user_ctx) {
+                Ok(owner) => owner,
+                Err(_) => {
+                    return openai_error_response(
+                        StatusCode::UNAUTHORIZED,
+                        "Chat replay requires authenticated identity",
+                        Some("invalid_run_principal"),
+                    );
                 }
-            })),
-        )
-            .into_response();
-    };
-
-    // Input guardrails: screen for prompt-injection / PII before the LLM call.
-    // Detect-only by default (the finding is emitted on the run stream after it
-    // starts); injection is blocked here only when explicitly enabled. The
-    // finding carries a category + short reason — never the raw input.
-    let input_finding = uar::guardrails::screen_input(&input_message, &state.config.guardrails);
-    if let Some(ref finding) = input_finding {
-        uar::telemetry::metrics::record_guardrail_flagged(finding.category.as_str());
-        tracing::warn!(
-            category = %finding.category.as_str(),
-            reason = %finding.reason,
-            "Chat input flagged by guardrail"
-        );
-        let g = &state.config.guardrails;
-        let should_block = match finding.category {
-            uar::guardrails::GuardrailCategory::Injection => g.block_on_injection,
-            uar::guardrails::GuardrailCategory::Pii => g.block_on_pii,
-        };
-        if should_block {
-            let code = match finding.category {
-                uar::guardrails::GuardrailCategory::Injection => "guardrail_injection_blocked",
-                uar::guardrails::GuardrailCategory::Pii => "guardrail_pii_blocked",
             };
+        let Some(run) = state.run_manager.get_run_for_owner(&owner, run_id).await else {
+            return openai_error_response(
+                StatusCode::NOT_FOUND,
+                "Replay run is unavailable",
+                Some("run_not_found"),
+            );
+        };
+        let Some(session_id) = run.conversation_id else {
+            return openai_error_response(
+                StatusCode::CONFLICT,
+                "Run has no chat session",
+                Some("chat_replay_unavailable"),
+            );
+        };
+        let requested_session = match resolve_session_id(&req, &headers) {
+            Ok(session) => session,
+            Err(response) => return response,
+        };
+        if requested_session.is_some_and(|requested| requested != session_id) {
+            return openai_error_response(
+                StatusCode::BAD_REQUEST,
+                "Replay session does not match the original run",
+                Some("replay_session_mismatch"),
+            );
+        }
+        let model = run
+            .context
+            .get("effective_run_policy")
+            .and_then(|policy| policy.get("model"));
+        let route = model.and_then(|model| {
+            Some((
+                model.get("provider_id")?.as_str()?,
+                model.get("model_id")?.as_str()?,
+            ))
+        });
+        let Some((provider, model)) = route else {
+            return openai_error_response(
+                StatusCode::CONFLICT,
+                "Original chat model metadata is unavailable",
+                Some("chat_replay_unavailable"),
+            );
+        };
+        (
+            run_id.clone(),
+            session_id,
+            format!("{provider}/{model}"),
+            run.agent_id,
+            String::new(),
+            0,
+            None,
+        )
+    } else {
+        let Some(input_message) = extract_input_message(&req) else {
             return (
                 StatusCode::BAD_REQUEST,
                 Json(json!({
                     "error": {
-                        "message": "Input rejected by guardrail policy",
-                        "type": "guardrail_blocked",
-                        "code": code
+                        "message": "Request must include `message` or a user message in `messages`",
+                        "type": "invalid_request_error",
+                        "param": "messages",
+                        "code": "invalid_request"
                     }
                 })),
             )
                 .into_response();
-        }
-    }
-
-    let session_id = match resolve_session_id(&req, &headers) {
-        Ok(Some(value)) => value,
-        Ok(None) => Uuid::new_v4().to_string(),
-        Err(resp) => return resp,
-    };
-
-    let mut turn_policy = req.run_policy.clone().unwrap_or_default();
-    if let Some(agent_id) = &req.agent_id {
-        turn_policy.agent_id = Some(agent_id.clone());
-        turn_policy.chat_mode = Some(
-            if matches!(agent_id.as_str(), "default-agent" | "orchestrator-agent") {
-                uar::domain::policy::ChatMode::Uar
-            } else {
-                uar::domain::policy::ChatMode::Agent
-            },
-        );
-    }
-    if let Some(requested_model) = req.model.as_deref() {
-        let resolved_turn_model = match resolve_requested_model(&state, Some(requested_model)).await
-        {
-            Ok(model) => model,
-            Err(response) => return response,
         };
-        turn_policy.model = Some(uar::domain::policy::ModelRoute {
-            provider_id: resolved_turn_model.provider_id,
-            model_id: resolved_turn_model.model_id,
-        });
-    }
-    if !req.memory_enabled {
-        turn_policy.memory_enabled = Some(false);
-    }
 
-    let initial_agent_id = req.agent_id.as_deref().unwrap_or("default-agent");
-    let mut agent = uar::api::discovery::resolve_agent_for_run(&state, initial_agent_id).await;
-    let mut effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
-        &state,
-        &user_ctx.user_id,
-        &session_id,
-        &agent,
-        Some(turn_policy.clone()),
-    )
-    .await;
-    if let Some(effective_agent_id) = effective_run_policy.agent_id.clone()
-        && effective_agent_id != agent.id
-    {
-        agent = uar::api::discovery::resolve_agent_for_run(&state, &effective_agent_id).await;
-        effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
+        // Input guardrails: screen for prompt-injection / PII before the LLM call.
+        // Detect-only by default (the finding is emitted on the run stream after it
+        // starts); injection is blocked here only when explicitly enabled. The
+        // finding carries a category + short reason — never the raw input.
+        let input_finding = uar::guardrails::screen_input(&input_message, &state.config.guardrails);
+        if let Some(ref finding) = input_finding {
+            uar::telemetry::metrics::record_guardrail_flagged(finding.category.as_str());
+            tracing::warn!(
+                category = %finding.category.as_str(),
+                reason = %finding.reason,
+                "Chat input flagged by guardrail"
+            );
+            let g = &state.config.guardrails;
+            let should_block = match finding.category {
+                uar::guardrails::GuardrailCategory::Injection => g.block_on_injection,
+                uar::guardrails::GuardrailCategory::Pii => g.block_on_pii,
+            };
+            if should_block {
+                let code = match finding.category {
+                    uar::guardrails::GuardrailCategory::Injection => "guardrail_injection_blocked",
+                    uar::guardrails::GuardrailCategory::Pii => "guardrail_pii_blocked",
+                };
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": {
+                            "message": "Input rejected by guardrail policy",
+                            "type": "guardrail_blocked",
+                            "code": code
+                        }
+                    })),
+                )
+                    .into_response();
+            }
+        }
+
+        let session_id = match resolve_session_id(&req, &headers) {
+            Ok(Some(value)) => value,
+            Ok(None) => Uuid::new_v4().to_string(),
+            Err(resp) => return resp,
+        };
+
+        let mut turn_policy = req.run_policy.clone().unwrap_or_default();
+        if let Some(agent_id) = &req.agent_id {
+            turn_policy.agent_id = Some(agent_id.clone());
+            turn_policy.chat_mode = Some(
+                if matches!(agent_id.as_str(), "default-agent" | "orchestrator-agent") {
+                    uar::domain::policy::ChatMode::Uar
+                } else {
+                    uar::domain::policy::ChatMode::Agent
+                },
+            );
+        }
+        if let Some(requested_model) = req.model.as_deref() {
+            let resolved_turn_model =
+                match resolve_requested_model(&state, Some(requested_model)).await {
+                    Ok(model) => model,
+                    Err(response) => return response,
+                };
+            turn_policy.model = Some(uar::domain::policy::ModelRoute {
+                provider_id: resolved_turn_model.provider_id,
+                model_id: resolved_turn_model.model_id,
+            });
+        }
+        if !req.memory_enabled {
+            turn_policy.memory_enabled = Some(false);
+        }
+
+        let initial_agent_id = req.agent_id.as_deref().unwrap_or("default-agent");
+        let mut agent =
+            match uar::api::discovery::resolve_agent_for_run(&state, initial_agent_id).await {
+                Ok(agent) => agent,
+                Err(error) => return error.into_response(),
+            };
+        let mut effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
             &state,
-            &user_ctx.user_id,
+            &user_ctx,
             &session_id,
             &agent,
-            Some(turn_policy),
+            Some(turn_policy.clone()),
         )
         .await;
-    }
+        if let Some(effective_agent_id) = effective_run_policy.agent_id.clone()
+            && effective_agent_id != agent.id
+        {
+            agent = match uar::api::discovery::resolve_agent_for_run(&state, &effective_agent_id)
+                .await
+            {
+                Ok(agent) => agent,
+                Err(error) => return error.into_response(),
+            };
+            effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
+                &state,
+                &user_ctx,
+                &session_id,
+                &agent,
+                Some(turn_policy),
+            )
+            .await;
+        }
 
-    let effective_model_name = effective_run_policy
-        .model
-        .as_ref()
-        .map(|model| format!("{}/{}", model.provider_id, model.model_id));
-    let resolved_model =
-        match resolve_requested_model(&state, effective_model_name.as_deref()).await {
-            Ok(model) => model,
-            Err(response) => return response,
+        let effective_model_name = effective_run_policy
+            .model
+            .as_ref()
+            .map(|model| format!("{}/{}", model.provider_id, model.model_id));
+        let resolved_model =
+            match resolve_requested_model(&state, effective_model_name.as_deref()).await {
+                Ok(model) => model,
+                Err(response) => return response,
+            };
+        agent.policy.provider.default.provider = resolved_model.provider_id.clone();
+        agent.policy.provider.default.model = resolved_model.model_id.clone();
+        effective_run_policy.model = Some(uar::domain::policy::ModelRoute {
+            provider_id: resolved_model.provider_id.clone(),
+            model_id: resolved_model.model_id.clone(),
+        });
+
+        let agent_id_for_policy = agent.id.clone();
+        let (effective_resilience_policy, policy_source) =
+            resolve_effective_resilience_policy(&state, &agent_id_for_policy).await;
+
+        tracing::info!(
+            name: "resilience.policy.effective",
+            agent_id = %agent_id_for_policy,
+            source = ?policy_source,
+            request_timeout_ms = effective_resilience_policy.request_timeout_ms,
+            retries_enabled = effective_resilience_policy.retries_enabled,
+            retry_max_attempts = effective_resilience_policy.retry_max_attempts,
+            retry_base_delay_ms = effective_resilience_policy.retry_base_delay_ms,
+            retry_max_delay_ms = effective_resilience_policy.retry_max_delay_ms,
+            "Resolved effective resilience policy"
+        );
+
+        // If attachments were uploaded, assemble an OpenAI-style multipart content string
+        // (document context blocks + user text + image_url parts).  Otherwise pass plain text.
+        let effective_input =
+            build_multipart_content(&input_message, &req.attachments).unwrap_or(input_message);
+
+        // --- Prompt caching: resolve effective setting for this request ---
+        let global_prompt_caching = match &state.settings_manager {
+            Some(manager) => manager
+                .get_typed::<bool>("prompt_caching.enabled")
+                .await
+                .ok()
+                .flatten()
+                .unwrap_or(false),
+            None => false,
         };
-    agent.policy.provider.default.provider = resolved_model.provider_id.clone();
-    agent.policy.provider.default.model = resolved_model.model_id.clone();
-    effective_run_policy.model = Some(uar::domain::policy::ModelRoute {
-        provider_id: resolved_model.provider_id.clone(),
-        model_id: resolved_model.model_id.clone(),
-    });
-
-    let agent_id_for_policy = agent.id.clone();
-    let (effective_resilience_policy, policy_source) =
-        resolve_effective_resilience_policy(&state, &agent_id_for_policy).await;
-
-    tracing::info!(
-        name: "resilience.policy.effective",
-        agent_id = %agent_id_for_policy,
-        source = ?policy_source,
-        request_timeout_ms = effective_resilience_policy.request_timeout_ms,
-        retries_enabled = effective_resilience_policy.retries_enabled,
-        retry_max_attempts = effective_resilience_policy.retry_max_attempts,
-        retry_base_delay_ms = effective_resilience_policy.retry_base_delay_ms,
-        retry_max_delay_ms = effective_resilience_policy.retry_max_delay_ms,
-        "Resolved effective resilience policy"
-    );
-
-    // If attachments were uploaded, assemble an OpenAI-style multipart content string
-    // (document context blocks + user text + image_url parts).  Otherwise pass plain text.
-    let effective_input =
-        build_multipart_content(&input_message, &req.attachments).unwrap_or(input_message);
-
-    // --- Prompt caching: resolve effective setting for this request ---
-    let global_prompt_caching = match &state.settings_manager {
-        Some(manager) => manager
-            .get_typed::<bool>("prompt_caching.enabled")
-            .await
-            .ok()
-            .flatten()
-            .unwrap_or(false),
-        None => false,
-    };
-    let request_override = req.prompt_caching_enabled.or_else(|| {
-        (effective_run_policy
+        let request_override = req.prompt_caching_enabled.or_else(|| {
+            (effective_run_policy
+                .provenance
+                .get("prompt_caching_enabled")
+                == Some(&uar::domain::policy::PolicyScope::Turn))
+            .then_some(effective_run_policy.prompt_caching_enabled)
+        });
+        let session_override = (effective_run_policy
             .provenance
             .get("prompt_caching_enabled")
-            == Some(&uar::domain::policy::PolicyScope::Turn))
-        .then_some(effective_run_policy.prompt_caching_enabled)
-    });
-    let session_override = (effective_run_policy
-        .provenance
-        .get("prompt_caching_enabled")
-        == Some(&uar::domain::policy::PolicyScope::Conversation))
-    .then_some(effective_run_policy.prompt_caching_enabled);
-    let jwt_principal = headers
-        .get(axum::http::header::AUTHORIZATION)
-        .and_then(|value| value.to_str().ok())
-        .filter(|value| value.starts_with("Bearer "))
-        .filter(|_| !headers.contains_key("x-api-key"))
-        .and_then(|_| uar::api::user_settings::principal_storage_key(&user_ctx));
-    let user_override = if let Some(principal_id) = jwt_principal {
-        match state
-            .user_settings_store
-            .caching_enabled_for(&principal_id)
-            .await
-        {
-            Ok(value) => value,
-            Err(error) => {
-                tracing::error!(%error, "failed to resolve user prompt-caching preference");
-                return openai_error_response(
-                    StatusCode::SERVICE_UNAVAILABLE,
-                    "User settings persistence unavailable",
-                    Some("user_settings_unavailable"),
-                );
+            == Some(&uar::domain::policy::PolicyScope::Conversation))
+        .then_some(effective_run_policy.prompt_caching_enabled);
+        let jwt_principal = headers
+            .get(axum::http::header::AUTHORIZATION)
+            .and_then(|value| value.to_str().ok())
+            .filter(|value| value.starts_with("Bearer "))
+            .filter(|_| !headers.contains_key("x-api-key"))
+            .and_then(|_| uar::api::user_settings::principal_storage_key(&user_ctx));
+        let user_override = if let Some(principal_id) = jwt_principal {
+            match state
+                .user_settings_store
+                .caching_enabled_for(&principal_id)
+                .await
+            {
+                Ok(value) => value,
+                Err(error) => {
+                    tracing::error!(%error, "failed to resolve user prompt-caching preference");
+                    return openai_error_response(
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        "User settings persistence unavailable",
+                        Some("user_settings_unavailable"),
+                    );
+                }
             }
-        }
-    } else {
-        None
-    };
-    let effective_prompt_caching = crate::uar::domain::prompt_caching::resolve_effective_caching(
-        request_override,
-        session_override,
-        user_override,
-        global_prompt_caching,
-    );
-    effective_run_policy.prompt_caching_enabled = effective_prompt_caching.enabled;
-    tracing::debug!(
-        prompt_caching_enabled = effective_prompt_caching.enabled,
-        source = ?effective_prompt_caching.source,
-        user_id = %user_ctx.user_id,
-        "Resolved effective prompt-caching setting"
-    );
-
-    // --- Memory: context injection (pre-LLM-call) ---
-    // Build context block and collect the raw hits so we can stream them to the client.
-    let (memory_context_block, memory_recall_items) = if effective_run_policy.memory_enabled {
-        if let Some(svc) = &state.memory_service {
-            let result = context_builder::build_context_with_hits(
-                svc,
-                &effective_input,
-                &user_ctx,
-                Some(&agent.id),
-                Some(&session_id),
-                &resolved_model.model_id,
-            )
-            .await;
-            if !result.block.is_empty() {
-                tracing::debug!(
-                    chars = result.block.len(),
-                    hits = result.hits.len(),
-                    "Memory context block assembled"
-                );
-            }
-            // Convert surreal_memory::Memory → MemoryItem for the stream event.
-            let items: Vec<MemoryItem> = result
-                .hits
-                .iter()
-                .map(|mem| {
-                    let scope_label = format!("{:?}", mem.scope).to_lowercase();
-                    let type_label = format!("{:?}", mem.memory_type).to_lowercase();
-                    MemoryItem {
-                        key: mem
-                            .id
-                            .as_ref()
-                            .and_then(|r| {
-                                serde_json::to_value(r)
-                                    .ok()
-                                    .and_then(|v| v.as_str().map(str::to_string))
-                            })
-                            .unwrap_or_else(|| format!("{scope_label}/{type_label}")),
-                        value: mem.content.clone(),
-                        source: "memory_context".to_string(),
-                        scope: Some(scope_label),
-                        memory_type: Some(type_label),
-                        importance: Some(mem.importance),
-                    }
-                })
-                .collect();
-            (result.block, items)
         } else {
-            (String::new(), vec![])
+            None
+        };
+        let effective_prompt_caching =
+            crate::uar::domain::prompt_caching::resolve_effective_caching(
+                request_override,
+                session_override,
+                user_override,
+                global_prompt_caching,
+            );
+        effective_run_policy.prompt_caching_enabled = effective_prompt_caching.enabled;
+        tracing::debug!(
+            prompt_caching_enabled = effective_prompt_caching.enabled,
+            source = ?effective_prompt_caching.source,
+            user_id = %user_ctx.user_id,
+            "Resolved effective prompt-caching setting"
+        );
+
+        // --- Memory: context injection (pre-LLM-call) ---
+        // Build context block and collect the raw hits so we can stream them to the client.
+        let memory_recall_items = if effective_run_policy.memory_enabled {
+            if let Some(svc) = &state.memory_service {
+                let result = context_builder::build_context_with_hits(
+                    svc,
+                    &effective_input,
+                    &user_ctx,
+                    Some(&agent.id),
+                    Some(&session_id),
+                    &resolved_model.model_id,
+                )
+                .await;
+                if !result.block.is_empty() {
+                    tracing::debug!(
+                        chars = result.block.len(),
+                        hits = result.hits.len(),
+                        "Memory context block assembled"
+                    );
+                }
+                // Convert surreal_memory::Memory → MemoryItem for the stream event.
+                let items: Vec<MemoryItem> = result
+                    .hits
+                    .iter()
+                    .map(|mem| {
+                        let scope_label = format!("{:?}", mem.scope).to_lowercase();
+                        let type_label = format!("{:?}", mem.memory_type).to_lowercase();
+                        MemoryItem {
+                            key: mem
+                                .id
+                                .as_ref()
+                                .and_then(|r| {
+                                    serde_json::to_value(r)
+                                        .ok()
+                                        .and_then(|v| v.as_str().map(str::to_string))
+                                })
+                                .unwrap_or_else(|| format!("{scope_label}/{type_label}")),
+                            value: mem.content.clone(),
+                            source: "memory_context".to_string(),
+                            scope: Some(scope_label),
+                            memory_type: Some(type_label),
+                            importance: Some(mem.importance),
+                        }
+                    })
+                    .collect();
+                items
+            } else {
+                vec![]
+            }
+        } else {
+            vec![]
+        };
+
+        let stream_memory_ctx_count = usize::from(!memory_recall_items.is_empty());
+        let mut run_request =
+            match uar::runtime::turn::RunExecutionRequest::new(agent, effective_input.clone())
+                .with_user_context(&user_ctx)
+            {
+                Ok(request) => request,
+                Err(_) => {
+                    return openai_error_response(
+                        StatusCode::UNAUTHORIZED,
+                        "Invalid run principal",
+                        Some("invalid_run_principal"),
+                    );
+                }
+            };
+        run_request.session_id = Some(session_id.clone());
+        run_request.memory_hits = memory_recall_items;
+        run_request.resolved_policy = Some(effective_run_policy);
+        run_request.presentation_negotiation = req.presentation_negotiation.clone();
+        let run_id = state.run_manager.execute_request(run_request).await;
+
+        // Surface a non-blocking input-guardrail finding on the run's event stream
+        // (recorded in history before the client subscribes, so it replays).
+        if let Some(finding) = input_finding {
+            state
+                .run_manager
+                .emit_to_run(
+                    &run_id,
+                    uar::domain::events::NormalizedEvent::GuardrailFlagged {
+                        run_id: Some(run_id.clone()),
+                        category: finding.category.as_str().to_string(),
+                        reason: finding.reason,
+                    },
+                )
+                .await;
         }
-    } else {
-        (String::new(), vec![])
-    };
 
-    // Prepend memory context to the effective input sent to the LLM.
-    let effective_input_with_memory = if memory_context_block.is_empty() {
-        effective_input.clone()
-    } else {
-        format!(
-            "[MEMORY CONTEXT]\n{}\n[/MEMORY CONTEXT]\n\n{}",
-            memory_context_block, effective_input
+        (
+            run_id,
+            session_id,
+            format!("{}/{}", resolved_model.provider_id, resolved_model.model_id),
+            agent_id_for_policy,
+            effective_input,
+            stream_memory_ctx_count,
+            Some(effective_resilience_policy.request_timeout_ms),
         )
     };
-
-    let run_id = state
-        .run_manager
-        .start_run_with_policy(
-            agent,
-            effective_input_with_memory,
-            Some(session_id.clone()),
-            Some(user_ctx.user_id.clone()),
-            memory_recall_items,
-            Some(effective_run_policy),
-        )
-        .await;
-
-    // Surface a non-blocking input-guardrail finding on the run's event stream
-    // (recorded in history before the client subscribes, so it replays).
-    if let Some(finding) = input_finding {
-        state
-            .run_manager
-            .emit_to_run(
-                &run_id,
-                uar::domain::events::NormalizedEvent::GuardrailFlagged {
-                    run_id: Some(run_id.clone()),
-                    category: finding.category.as_str().to_string(),
-                    reason: finding.reason,
-                },
-            )
-            .await;
-    }
 
     let Some(mut rx) = state.run_manager.subscribe(&run_id).await else {
         return (
@@ -4998,18 +5384,12 @@ pub(crate) async fn api_chat_completion(
             .into_response();
     };
 
-    let completion_id = format!("chatcmpl-{}", Uuid::new_v4().simple());
+    let completion_id = format!("chatcmpl-{run_id}");
     let created = Utc::now().timestamp();
-    let model_name = format!("{}/{}", resolved_model.provider_id, resolved_model.model_id);
 
     // Capture per-request values needed inside the stream closure.
-    let req_memory_enabled = req.memory_enabled;
+    let req_memory_enabled = req.memory_enabled && !resuming;
     let stream_user_ctx = user_ctx.clone();
-    let stream_memory_ctx_count = if memory_context_block.is_empty() {
-        0usize
-    } else {
-        1usize
-    };
 
     if req.stream {
         let emit_openai_chunks = req.stream_mode.emits_openai_chunks();
@@ -5023,12 +5403,44 @@ pub(crate) async fn api_chat_completion(
         let response_run_id = run_id.clone();
         let stream_model_name = model_name.clone();
         let stream_completion_id = completion_id.clone();
-        let replay = state
+        let history = state
             .run_manager
             .history_since(&run_id, None)
             .await
             .unwrap_or_default();
-        let replay_max_id = replay.last().map_or(0, |event| event.id);
+        let replay_max_id = history.last().map_or(0, |event| event.id);
+        if let Some(cursor) = cursor {
+            // Frame ordinals depend on prior text/reasoning/tool lifecycle
+            // state. A retained cursor alone is insufficient after prefix
+            // eviction; do not reconstruct a different projection silently.
+            if history.first().is_some_and(|event| event.id > 1) {
+                return openai_error_response(
+                    StatusCode::GONE,
+                    "Chat replay projection history has expired",
+                    Some("replay_history_expired"),
+                );
+            }
+            let required = cursor
+                .event_id
+                .saturating_add(u64::from(cursor.frame.is_none()));
+            if history.first().is_some_and(|event| event.id > required) {
+                return openai_error_response(
+                    StatusCode::GONE,
+                    "Chat replay cursor is outside retained history",
+                    Some("replay_history_expired"),
+                );
+            }
+            if cursor.event_id > replay_max_id {
+                return openai_error_response(
+                    StatusCode::BAD_REQUEST,
+                    "Chat replay cursor is ahead of the run",
+                    Some("invalid_replay_cursor"),
+                );
+            }
+        }
+        let (prior, replay): (Vec<_>, Vec<_>) = history
+            .into_iter()
+            .partition(|event| cursor.is_some_and(|cursor| !cursor.includes_source(event.id)));
 
         // Clone into stream-owned variables.
         let stream_memory_service = state.memory_service.clone();
@@ -5073,7 +5485,7 @@ pub(crate) async fn api_chat_completion(
                 yield Ok::<Event, std::convert::Infallible>(mem_event);
             }
 
-            if emit_openai_chunks {
+            if emit_openai_chunks && !resuming {
                 let first = OpenAiChunk {
                     id: stream_completion_id.clone(),
                     object: "chat.completion.chunk",
@@ -5103,10 +5515,46 @@ pub(crate) async fn api_chat_completion(
             let mut agui_spec_reasoning_started = false;
             let mut assistant_text_for_capture = String::new();
             let user_text_for_capture = effective_input.clone();
+            let mut terminal_already_seen = false;
+            for event in prior {
+                match event.event {
+                    uar::domain::events::NormalizedEvent::ChatDelta { .. } => agui_spec_text_started = true,
+                    uar::domain::events::NormalizedEvent::ThinkingDelta { .. }
+                    | uar::domain::events::NormalizedEvent::ReasoningDelta { .. } => agui_spec_reasoning_started = true,
+                    uar::domain::events::NormalizedEvent::ToolDelta { tool_call_id, .. } => {
+                        seen_agui_spec_tool_call_ids.insert(tool_call_id);
+                    }
+                    uar::domain::events::NormalizedEvent::ToolStart { tool_call_id, tool, .. } => {
+                        seen_agui_spec_tool_call_ids.insert(tool_call_id.clone());
+                        tool_name_by_id.insert(tool_call_id, tool);
+                    }
+                    uar::domain::events::NormalizedEvent::RunDone { .. }
+                    | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. }
+                    | uar::domain::events::NormalizedEvent::Error { .. }
+                    | uar::domain::events::NormalizedEvent::Cancelled { .. } => terminal_already_seen = true,
+                    _ => {}
+                }
+            }
+
+            // A source event may expand into several SSE frames. Give each a
+            // stable ordinal so reconnecting between frames loses none and
+            // does not repeat the already-rendered prefix of that source event.
+            macro_rules! emit_chat_frame {
+                ($frame:expr, $id:expr, $ordinal:ident) => {{
+                    let ordinal = $ordinal.next().expect("SSE frame index space exhausted");
+                    if cursor.is_none_or(|cursor| cursor.precedes($id, ordinal)) {
+                        let frame = $frame;
+                        let frame = frame.id(format!("{}:{ordinal}:{cursor_format}", $id));
+                        yield Ok::<Event, std::convert::Infallible>(frame);
+                    }
+                }};
+            }
 
             macro_rules! process_stream_event {
                 ($stream_event:expr) => {{
                     let stream_event = $stream_event;
+                    let source_event_id = stream_event.id;
+                    let mut frame_ordinal = 0_usize..;
                     let event_id = stream_event.id.to_string();
                     let normalized_event = stream_event.event;
 
@@ -5117,9 +5565,9 @@ pub(crate) async fn api_chat_completion(
                             serde_json::to_string(&payload).unwrap_or_else(|_| "{}".to_string());
                         let agui_event = Event::default()
                             .event(event_name)
-                            .id(event_id.clone())
+
                             .data(payload_json);
-                        yield Ok(agui_event);
+                        emit_chat_frame!(agui_event, source_event_id, frame_ordinal);
                     }
 
                     // Official AG-UI spec-vocabulary events (CH-21/CH-18) —
@@ -5153,10 +5601,10 @@ pub(crate) async fn api_chat_completion(
                                 &event_id,
                                 0,
                             );
-                            yield Ok(Event::default()
+                            emit_chat_frame!(Event::default()
                                 .event("TEXT_MESSAGE_START")
-                                .id(event_id.clone())
-                                .data(payload.to_string()));
+
+                                .data(payload.to_string()), source_event_id, frame_ordinal);
                         }
                         if matches!(&normalized_event,
                             uar::domain::events::NormalizedEvent::ThinkingDelta { .. }
@@ -5177,7 +5625,7 @@ pub(crate) async fn api_chat_completion(
                                 })),
                             ].into_iter().enumerate() {
                                 let payload = enrich_agui_spec_payload(name, payload, &event_id, ordinal as u64);
-                                yield Ok(Event::default().event(name).id(event_id.clone()).data(payload.to_string()));
+                                emit_chat_frame!(Event::default().event(name).data(payload.to_string()), source_event_id, frame_ordinal);
                             }
                         }
                         if matches!(&normalized_event,
@@ -5198,10 +5646,10 @@ pub(crate) async fn api_chat_completion(
                                     &event_id,
                                     0,
                                 );
-                                yield Ok(Event::default()
+                                emit_chat_frame!(Event::default()
                                     .event("TEXT_MESSAGE_END")
-                                    .id(event_id.clone())
-                                    .data(payload.to_string()));
+
+                                    .data(payload.to_string()), source_event_id, frame_ordinal);
                             }
                             if agui_spec_reasoning_started {
                                 for (offset, (name, payload)) in [
@@ -5218,7 +5666,7 @@ pub(crate) async fn api_chat_completion(
                                     let payload = enrich_agui_spec_payload(
                                         name, payload, &event_id, offset as u64 + 1,
                                     );
-                                    yield Ok(Event::default().event(name).id(event_id.clone()).data(payload.to_string()));
+                                    emit_chat_frame!(Event::default().event(name).data(payload.to_string()), source_event_id, frame_ordinal);
                                 }
                             }
                         }
@@ -5261,10 +5709,10 @@ pub(crate) async fn api_chat_completion(
                             );
                             let start_json = serde_json::to_string(&start_payload)
                                 .unwrap_or_else(|_| "{}".to_string());
-                            yield Ok(Event::default()
+                            emit_chat_frame!(Event::default()
                                 .event("TOOL_CALL_START")
-                                .id(event_id.clone())
-                                .data(start_json));
+
+                                .data(start_json), source_event_id, frame_ordinal);
                         }
 
                         if let Some((event_name, payload)) = to_agui_spec_event(&normalized_event) {
@@ -5275,9 +5723,9 @@ pub(crate) async fn api_chat_completion(
                                 .unwrap_or_else(|_| "{}".to_string());
                             let agui_spec_event = Event::default()
                                 .event(event_name)
-                                .id(event_id.clone())
+
                                 .data(payload_json);
-                            yield Ok(agui_spec_event);
+                            emit_chat_frame!(agui_spec_event, source_event_id, frame_ordinal);
                         }
                     }
 
@@ -5292,9 +5740,9 @@ pub(crate) async fn api_chat_completion(
                             serde_json::to_string(&rt_payload).unwrap_or_else(|_| "{}".to_string());
                         let rt_event = Event::default()
                             .event(rt_event_name)
-                            .id(event_id.clone())
+
                             .data(rt_json);
-                        yield Ok(rt_event);
+                        emit_chat_frame!(rt_event, source_event_id, frame_ordinal);
                     }
 
                     let mut should_stop = false;
@@ -5323,7 +5771,7 @@ pub(crate) async fn api_chat_completion(
                                 };
                                 let json =
                                     serde_json::to_string(&chunk).unwrap_or_else(|_| "{}".to_string());
-                                yield Ok(Event::default().data(json));
+                                emit_chat_frame!(Event::default().data(json), source_event_id, frame_ordinal);
                             }
                         }
                         uar::domain::events::NormalizedEvent::SkillActivated {
@@ -5357,7 +5805,7 @@ pub(crate) async fn api_chat_completion(
                                 };
                                 let json =
                                     serde_json::to_string(&chunk).unwrap_or_else(|_| "{}".to_string());
-                                yield Ok(Event::default().data(json));
+                                emit_chat_frame!(Event::default().data(json), source_event_id, frame_ordinal);
                             }
                         }
                         uar::domain::events::NormalizedEvent::ContextAction(action) => {
@@ -5388,7 +5836,7 @@ pub(crate) async fn api_chat_completion(
                                 };
                                 let json =
                                     serde_json::to_string(&chunk).unwrap_or_else(|_| "{}".to_string());
-                                yield Ok(Event::default().data(json));
+                                emit_chat_frame!(Event::default().data(json), source_event_id, frame_ordinal);
                             }
                         }
                         uar::domain::events::NormalizedEvent::ToolDelta {
@@ -5431,7 +5879,7 @@ pub(crate) async fn api_chat_completion(
                                 };
                                 let json =
                                     serde_json::to_string(&chunk).unwrap_or_else(|_| "{}".to_string());
-                                yield Ok(Event::default().data(json));
+                                emit_chat_frame!(Event::default().data(json), source_event_id, frame_ordinal);
                             }
                         }
                         uar::domain::events::NormalizedEvent::ToolStart {
@@ -5471,7 +5919,7 @@ pub(crate) async fn api_chat_completion(
                                 };
                                 let json =
                                     serde_json::to_string(&chunk).unwrap_or_else(|_| "{}".to_string());
-                                yield Ok(Event::default().data(json));
+                                emit_chat_frame!(Event::default().data(json), source_event_id, frame_ordinal);
                             }
                         }
                         uar::domain::events::NormalizedEvent::ToolEnd {
@@ -5509,7 +5957,7 @@ pub(crate) async fn api_chat_completion(
                                 };
                                 let json =
                                     serde_json::to_string(&chunk).unwrap_or_else(|_| "{}".to_string());
-                                yield Ok(Event::default().data(json));
+                                emit_chat_frame!(Event::default().data(json), source_event_id, frame_ordinal);
                             }
                         }
                         uar::domain::events::NormalizedEvent::RunDone { .. }
@@ -5562,7 +6010,7 @@ pub(crate) async fn api_chat_completion(
                             // --- Response quality: sycophancy detection (fire-and-forget,
                             // post-stream; sync rule-based, no LLM call, no added latency) ---
                             #[cfg(feature = "response-quality")]
-                            if !assistant_text_for_capture.is_empty() {
+                            if !resuming && !assistant_text_for_capture.is_empty() {
                                 let sycophancy_cfg = state.config.sycophancy.clone();
                                 let mgr = Arc::clone(&state.run_manager);
                                 let rid = run_id.clone();
@@ -5645,8 +6093,8 @@ pub(crate) async fn api_chat_completion(
                                 };
                                 let json = serde_json::to_string(&final_chunk)
                                     .unwrap_or_else(|_| "{}".to_string());
-                                yield Ok(Event::default().data(json));
-                                yield Ok(Event::default().data("[DONE]"));
+                                emit_chat_frame!(Event::default().data(json), source_event_id, frame_ordinal);
+                                emit_chat_frame!(Event::default().data("[DONE]"), source_event_id, frame_ordinal);
                             }
                             should_stop = true;
                         }
@@ -5660,8 +6108,17 @@ pub(crate) async fn api_chat_completion(
                                 });
                                 let json = serde_json::to_string(&payload)
                                     .unwrap_or_else(|_| "{}".to_string());
-                                yield Ok(Event::default().data(json));
-                                yield Ok(Event::default().data("[DONE]"));
+                                emit_chat_frame!(Event::default().data(json), source_event_id, frame_ordinal);
+                                emit_chat_frame!(Event::default().data("[DONE]"), source_event_id, frame_ordinal);
+                            }
+                            should_stop = true;
+                        }
+                        uar::domain::events::NormalizedEvent::Cancelled { .. } => {
+                            if emit_openai_chunks {
+                                emit_chat_frame!(Event::default().data(json!({
+                                    "error": {"message": "Run cancelled", "type": "cancelled"}
+                                }).to_string()), source_event_id, frame_ordinal);
+                                emit_chat_frame!(Event::default().data("[DONE]"), source_event_id, frame_ordinal);
                             }
                             should_stop = true;
                         }
@@ -5671,7 +6128,7 @@ pub(crate) async fn api_chat_completion(
                 }};
             }
 
-            let mut stop_stream = false;
+            let mut stop_stream = terminal_already_seen;
             for replay_event in replay {
                 if process_stream_event!(replay_event) {
                     stop_stream = true;
@@ -5738,7 +6195,9 @@ pub(crate) async fn api_chat_completion(
         Ok(result)
     } else {
         timeout(
-            Duration::from_millis(effective_resilience_policy.request_timeout_ms),
+            Duration::from_millis(
+                response_timeout_ms.expect("non-streaming requests start a new run"),
+            ),
             async {
                 loop {
                     match rx.recv().await {
@@ -6169,7 +6628,7 @@ marker.write_bytes(b"stdin-closed")
         .expect("write pending shutdown readiness");
         std::fs::rename(ready_pending_path, ready_path).expect("publish shutdown readiness");
 
-        let coordinator = ShutdownCoordinator::new();
+        let coordinator = ShutdownCoordinator::new(true);
         serve_on_listener(
             primary,
             Some(companion),

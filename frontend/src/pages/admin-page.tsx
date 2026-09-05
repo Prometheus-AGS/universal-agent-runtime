@@ -9,6 +9,7 @@ import { CredentialsPage } from "@/features/credentials";
 import { KnowledgePage } from "@/features/knowledge";
 import { MemoryPage } from "@/features/memory";
 import { ModelsPage } from "@/features/models";
+import { PresentationsPage } from "@/features/presentations";
 import { AdminWelcome, ProvidersPage } from "@/features/providers";
 import {
   RuntimeApprovalsPage,
@@ -36,6 +37,7 @@ const PAGE_MAP = {
   credentials: () => <CredentialsPage />,
   models: () => <ModelsPage />,
   skills: () => <SkillsPage />,
+  presentations: () => <PresentationsPage />,
   agents: () => <AgentsPage />,
   tools: () => <ToolsPage />,
   auth: () => <AuthPage />,

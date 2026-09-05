@@ -98,15 +98,18 @@ pub async fn chat_completions(
     // because OpenAI API is stateless (except for message history passed in request).
     // Ideally we would map thread_id if UAR supported it in context, but UAR sessions are ID-based.
     // We'll create an ephemeral session ID here.
-    let run_id = run_manager
-        .start_run(
-            agent,
-            last_message.clone(),
-            Some(conversation_id.clone()),
-            Some(user_context.user_id),
-            vec![],
-        )
-        .await;
+    let mut run_request =
+        match crate::uar::runtime::turn::RunExecutionRequest::new(agent, last_message.clone())
+            .with_user_context(&user_context)
+        {
+            Ok(request) => request,
+            Err(_) => {
+                return (StatusCode::UNAUTHORIZED, "Invalid run principal").into_response();
+            }
+        };
+    run_request.session_id = Some(conversation_id.clone());
+    run_request.presentation_negotiation = req.presentation_negotiation.clone();
+    let run_id = run_manager.execute_request(run_request).await;
 
     // Subscribe to events
     let Some(mut rx) = run_manager.subscribe(&run_id).await else {

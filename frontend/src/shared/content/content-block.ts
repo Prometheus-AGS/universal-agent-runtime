@@ -8,7 +8,7 @@ export type ContentBlock =
   | { type: "toolUse"; id: string; name: string; inputJson: string }
   | { type: "toolResult"; toolUseId: string; outputJson: string; isError: boolean }
   | { type: "skill"; name: string; status: string }
-  | { type: "artifact"; id: string; kind: string; content: string }
+  | { type: "artifact"; id: string; kind: string; content: string; title?: string }
   | {
       type: "image";
       url: string | null;

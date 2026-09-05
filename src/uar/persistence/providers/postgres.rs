@@ -1,4 +1,5 @@
 use crate::session::Session;
+use crate::uar::a2ui::presentations::{Presentation, PresentationDraft};
 use crate::uar::domain::knowledge::{
     DocumentStatus, KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeMatch,
 };
@@ -6,6 +7,9 @@ use crate::uar::domain::policy::ConversationPolicyRecord;
 use crate::uar::domain::prompt_caching::UserPromptCachingSettings;
 use crate::uar::domain::skills::{Skill, SkillMatch};
 use crate::uar::persistence::PersistenceLayer;
+use crate::uar::persistence::agent_threads::{self, AgentThreadStoreError, PersistedAgentThread};
+use crate::uar::persistence::presentations::{self, PresentationStoreError};
+use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use anyhow::Result;
 use async_trait::async_trait;
 use pgvector::Vector;
@@ -35,8 +39,261 @@ impl PostgresProvider {
     }
 }
 
+async fn insert_agent_thread(
+    connection: &mut sqlx::PgConnection,
+    record: &PersistedAgentThread,
+) -> Result<()> {
+    let thread = &record.thread;
+    let inserted = sqlx::query(
+        "INSERT INTO agent_threads
+         (owner_id, thread_id, root_thread_id, root_run_id, parent_thread_id, canonical_path, revision, data)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING",
+    ).bind(&thread.owner_id).bind(&thread.thread_id).bind(&thread.root_thread_id)
+        .bind(&thread.root_run_id).bind(&thread.parent_thread_id).bind(&thread.canonical_path)
+        .bind(record.revision as i64).bind(serde_json::to_value(record)?)
+        .execute(connection).await?;
+    if inserted.rows_affected() != 1 {
+        return Err(AgentThreadStoreError::AlreadyExists.into());
+    }
+    Ok(())
+}
+
 #[async_trait]
 impl PersistenceLayer for PostgresProvider {
+    async fn create_presentation(
+        &self,
+        owner_id: &str,
+        draft: &PresentationDraft,
+    ) -> Result<Presentation> {
+        let record = presentations::new_record(owner_id, draft)?;
+        sqlx::query("INSERT INTO presentations (owner_id, presentation_id, revision, data) VALUES ($1, $2, $3, $4)")
+            .bind(owner_id).bind(&record.id).bind(record.revision as i64)
+            .bind(serde_json::to_value(&record)?).execute(&self.pool).await?;
+        Ok(record)
+    }
+
+    async fn get_presentation(&self, owner_id: &str, id: &str) -> Result<Option<Presentation>> {
+        let row = sqlx::query(
+            "SELECT data FROM presentations WHERE owner_id = $1 AND presentation_id = $2",
+        )
+        .bind(owner_id)
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await?;
+        row.map(|row| Ok(serde_json::from_value(row.try_get("data")?)?))
+            .transpose()
+    }
+
+    async fn list_presentations(&self, owner_id: &str) -> Result<Vec<Presentation>> {
+        let rows = sqlx::query(
+            "SELECT data FROM presentations WHERE owner_id = $1 ORDER BY presentation_id",
+        )
+        .bind(owner_id)
+        .fetch_all(&self.pool)
+        .await?;
+        rows.into_iter()
+            .map(|row| Ok(serde_json::from_value(row.try_get("data")?)?))
+            .collect()
+    }
+
+    async fn update_presentation(
+        &self,
+        owner_id: &str,
+        id: &str,
+        expected_revision: u64,
+        draft: &PresentationDraft,
+    ) -> Result<Presentation> {
+        let current = self
+            .get_presentation(owner_id, id)
+            .await?
+            .ok_or(PresentationStoreError::NotFound)?;
+        let next = presentations::next_record(&current, expected_revision, draft)?;
+        let result = sqlx::query("UPDATE presentations SET revision = $1, data = $2 WHERE owner_id = $3 AND presentation_id = $4 AND revision = $5")
+            .bind(next.revision as i64).bind(serde_json::to_value(&next)?).bind(owner_id).bind(id)
+            .bind(current.revision as i64).execute(&self.pool).await?;
+        if result.rows_affected() != 1 {
+            return Err(PresentationStoreError::Conflict.into());
+        }
+        Ok(next)
+    }
+
+    async fn delete_presentation(
+        &self,
+        owner_id: &str,
+        id: &str,
+        expected_revision: u64,
+    ) -> Result<()> {
+        let current = self
+            .get_presentation(owner_id, id)
+            .await?
+            .ok_or(PresentationStoreError::NotFound)?;
+        if current.revision != expected_revision {
+            return Err(PresentationStoreError::Conflict.into());
+        }
+        let result = sqlx::query("DELETE FROM presentations WHERE owner_id = $1 AND presentation_id = $2 AND revision = $3")
+            .bind(owner_id).bind(id).bind(current.revision as i64).execute(&self.pool).await?;
+        if result.rows_affected() != 1 {
+            return Err(PresentationStoreError::Conflict.into());
+        }
+        Ok(())
+    }
+
+    async fn create_agent_root(
+        &self,
+        owner_id: &str,
+        thread: &AgentThread,
+    ) -> Result<PersistedAgentThread> {
+        let record = agent_threads::new_root(owner_id, thread)?;
+        let mut transaction = self.pool.begin().await?;
+        insert_agent_thread(&mut transaction, &record).await?;
+        transaction.commit().await?;
+        Ok(record)
+    }
+
+    async fn create_agent_child(
+        &self,
+        owner_id: &str,
+        thread: &AgentThread,
+        edge: &AgentEdge,
+    ) -> Result<PersistedAgentThread> {
+        let parent_id = thread
+            .parent_thread_id
+            .as_deref()
+            .ok_or(AgentThreadStoreError::InvalidTransition)?;
+        let mut transaction = self.pool.begin().await?;
+        // Root-first shared locks allow concurrent siblings but serialize the
+        // spawn against root/parent status updates, including cancellation.
+        let root_row = sqlx::query(
+            "SELECT data FROM agent_threads WHERE owner_id = $1 AND thread_id = $2 FOR SHARE",
+        )
+        .bind(owner_id)
+        .bind(&thread.root_thread_id)
+        .fetch_optional(&mut *transaction)
+        .await?
+        .ok_or(AgentThreadStoreError::NotFound)?;
+        let root: PersistedAgentThread = serde_json::from_value(root_row.try_get("data")?)?;
+        agent_threads::validate_lookup(&root, owner_id, &thread.root_thread_id)?;
+        let parent = if parent_id == thread.root_thread_id {
+            root.clone()
+        } else {
+            let parent_row = sqlx::query(
+                "SELECT data FROM agent_threads WHERE owner_id = $1 AND thread_id = $2 FOR SHARE",
+            )
+            .bind(owner_id)
+            .bind(parent_id)
+            .fetch_optional(&mut *transaction)
+            .await?
+            .ok_or(AgentThreadStoreError::NotFound)?;
+            let parent: PersistedAgentThread = serde_json::from_value(parent_row.try_get("data")?)?;
+            agent_threads::validate_lookup(&parent, owner_id, parent_id)?;
+            parent
+        };
+        let record = agent_threads::new_child(owner_id, thread, edge, &parent, &root)?;
+        insert_agent_thread(&mut transaction, &record).await?;
+        let inserted = sqlx::query(
+            "INSERT INTO agent_edges (owner_id, child_thread_id, parent_thread_id, root_thread_id, root_run_id, canonical_path, data)
+             VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING",
+        ).bind(owner_id).bind(&edge.child_thread_id).bind(&edge.parent_thread_id)
+            .bind(&edge.root_thread_id).bind(&edge.root_run_id).bind(&edge.canonical_path)
+            .bind(serde_json::to_value(edge)?).execute(&mut *transaction).await?;
+        if inserted.rows_affected() != 1 {
+            return Err(AgentThreadStoreError::AlreadyExists.into());
+        }
+        transaction.commit().await?;
+        Ok(record)
+    }
+
+    async fn load_agent_thread(
+        &self,
+        owner_id: &str,
+        thread_id: &str,
+    ) -> Result<Option<PersistedAgentThread>> {
+        let row =
+            sqlx::query("SELECT data FROM agent_threads WHERE owner_id = $1 AND thread_id = $2")
+                .bind(owner_id)
+                .bind(thread_id)
+                .fetch_optional(&self.pool)
+                .await?;
+        row.map(|row| {
+            let record: PersistedAgentThread = serde_json::from_value(row.try_get("data")?)?;
+            agent_threads::validate_lookup(&record, owner_id, thread_id)?;
+            Ok(record)
+        })
+        .transpose()
+    }
+
+    async fn update_agent_thread(
+        &self,
+        owner_id: &str,
+        expected_revision: u64,
+        thread: &AgentThread,
+    ) -> Result<PersistedAgentThread> {
+        let current = self
+            .load_agent_thread(owner_id, &thread.thread_id)
+            .await?
+            .ok_or(AgentThreadStoreError::NotFound)?;
+        let next = agent_threads::next_record(owner_id, &current, expected_revision, thread)?;
+        let updated = sqlx::query(
+            "UPDATE agent_threads SET revision = $1, data = $2
+             WHERE owner_id = $3 AND thread_id = $4 AND revision = $5",
+        )
+        .bind(next.revision as i64)
+        .bind(serde_json::to_value(&next)?)
+        .bind(owner_id)
+        .bind(&thread.thread_id)
+        .bind(expected_revision as i64)
+        .execute(&self.pool)
+        .await?;
+        if updated.rows_affected() != 1 {
+            return Err(AgentThreadStoreError::Conflict.into());
+        }
+        Ok(next)
+    }
+
+    async fn list_agent_threads(
+        &self,
+        owner_id: &str,
+        root_run_id: &str,
+    ) -> Result<Vec<PersistedAgentThread>> {
+        let rows =
+            sqlx::query("SELECT data FROM agent_threads WHERE owner_id = $1 AND root_run_id = $2")
+                .bind(owner_id)
+                .bind(root_run_id)
+                .fetch_all(&self.pool)
+                .await?;
+        let mut records = Vec::with_capacity(rows.len());
+        for row in rows {
+            records.push(serde_json::from_value(row.try_get("data")?)?);
+        }
+        Ok(agent_threads::ordered_threads(
+            records,
+            owner_id,
+            root_run_id,
+        )?)
+    }
+
+    async fn list_agent_edges(&self, owner_id: &str, root_run_id: &str) -> Result<Vec<AgentEdge>> {
+        let rows =
+            sqlx::query("SELECT data FROM agent_edges WHERE owner_id = $1 AND root_run_id = $2")
+                .bind(owner_id)
+                .bind(root_run_id)
+                .fetch_all(&self.pool)
+                .await?;
+        let mut edges = Vec::with_capacity(rows.len());
+        for row in rows {
+            edges.push(serde_json::from_value(row.try_get("data")?)?);
+        }
+        // Read edges first: lineage is immutable and cannot be deleted through
+        // this API, so a concurrent spawn cannot make an already-read edge orphaned.
+        let threads = self.list_agent_threads(owner_id, root_run_id).await?;
+        Ok(agent_threads::ordered_edges(
+            edges,
+            &threads,
+            owner_id,
+            root_run_id,
+        )?)
+    }
+
     async fn save_session(&self, session: &Session) -> Result<()> {
         let id = crate::uar::persistence::tenant_storage_key(session.owner_id(), session.id());
         // Serialize session to JSON
@@ -146,6 +403,48 @@ impl PersistenceLayer for PostgresProvider {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    async fn save_principal_conversation_policy(
+        &self,
+        record: &ConversationPolicyRecord,
+        expected: Option<&crate::uar::domain::policy::RunPolicy>,
+    ) -> Result<bool> {
+        let result = if let Some(expected) = expected {
+            sqlx::query("UPDATE principal_conversation_policies SET policy = $3, updated_at = $4 WHERE owner_id = $1 AND conversation_id = $2 AND policy = $5")
+                .bind(&record.owner_id).bind(&record.conversation_id)
+                .bind(serde_json::to_value(&record.policy)?).bind(record.updated_at)
+                .bind(serde_json::to_value(expected)?).execute(&self.pool).await?
+        } else {
+            sqlx::query("INSERT INTO principal_conversation_policies (owner_id, conversation_id, policy, updated_at) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING")
+                .bind(&record.owner_id).bind(&record.conversation_id)
+                .bind(serde_json::to_value(&record.policy)?).bind(record.updated_at)
+                .execute(&self.pool).await?
+        };
+        Ok(result.rows_affected() == 1)
+    }
+
+    async fn load_principal_conversation_policy(
+        &self,
+        owner_id: &str,
+        conversation_id: &str,
+    ) -> Result<Option<ConversationPolicyRecord>> {
+        let row = sqlx::query(
+            "SELECT owner_id, conversation_id, policy, updated_at FROM principal_conversation_policies WHERE owner_id = $1 AND conversation_id = $2",
+        )
+        .bind(owner_id)
+        .bind(conversation_id)
+        .fetch_optional(&self.pool)
+        .await?;
+        row.map(|row| {
+            Ok(ConversationPolicyRecord {
+                owner_id: row.try_get("owner_id")?,
+                conversation_id: row.try_get("conversation_id")?,
+                policy: serde_json::from_value(row.try_get("policy")?)?,
+                updated_at: row.try_get("updated_at")?,
+            })
+        })
+        .transpose()
     }
 
     async fn save_user_prompt_caching_settings(
@@ -466,6 +765,33 @@ impl PersistenceLayer for PostgresProvider {
         } else {
             Ok(None)
         }
+    }
+
+    async fn save_agent_if_unchanged(
+        &self,
+        expected: &crate::uar::domain::artifact::AgentArtifact,
+        updated: &crate::uar::domain::artifact::AgentArtifact,
+    ) -> Result<bool> {
+        anyhow::ensure!(expected.id == updated.id, "Agent update identity mismatch");
+        let row = sqlx::query("SELECT definition FROM agents WHERE id = $1")
+            .bind(&expected.id)
+            .fetch_optional(&self.pool)
+            .await?;
+        let Some(row) = row else {
+            return Ok(false);
+        };
+        let baseline: serde_json::Value = row.try_get("definition")?;
+        // Compare the decoded contract, but condition the write on raw stored
+        // JSON so legacy records with omitted default fields remain editable.
+        let current: crate::uar::domain::artifact::AgentArtifact =
+            serde_json::from_value(baseline.clone())?;
+        if serde_json::to_value(current)? != serde_json::to_value(expected)? {
+            return Ok(false);
+        }
+        let result = sqlx::query("UPDATE agents SET name = $2, version = $3, definition = $4, updated_at = now() WHERE id = $1 AND definition = $5")
+            .bind(&updated.id).bind(&updated.metadata.title).bind(&updated.version)
+            .bind(serde_json::to_value(updated)?).bind(baseline).execute(&self.pool).await?;
+        Ok(result.rows_affected() == 1)
     }
 
     async fn load_agent_by_name(
@@ -1084,6 +1410,17 @@ impl PersistenceLayer for PostgresProvider {
         } else {
             Ok(None)
         }
+    }
+
+    async fn compare_and_swap_global_presentation_policy(
+        &self,
+        expected: &serde_json::Value,
+        selection: &crate::uar::domain::policy::ResourceSelection,
+    ) -> Result<bool> {
+        let next = presentations::global_policy_with_presentations(expected, selection)?;
+        let result = sqlx::query("UPDATE settings SET data = $1, updated_at = now() WHERE key = 'run_policy.global' AND data = $2")
+            .bind(next).bind(expected).execute(&self.pool).await?;
+        Ok(result.rows_affected() == 1)
     }
 
     async fn list_settings(

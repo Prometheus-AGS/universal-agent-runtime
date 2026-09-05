@@ -71,25 +71,26 @@ pub fn surface_message_to_state_patch(
     kind: A2uiWireKind,
     payload: Value,
 ) -> StatePatchOp {
+    let surface_token = surface_id.replace('~', "~0").replace('/', "~1");
     match kind {
         A2uiWireKind::CreateSurface => StatePatchOp {
             op: "add".to_string(),
-            path: format!("/a2ui/surfaces/{surface_id}"),
+            path: format!("/a2ui/surfaces/{surface_token}"),
             value: Some(payload),
         },
         A2uiWireKind::UpdateComponents => StatePatchOp {
             op: "replace".to_string(),
-            path: format!("/a2ui/surfaces/{surface_id}/components"),
+            path: format!("/a2ui/surfaces/{surface_token}/components"),
             value: Some(payload),
         },
         A2uiWireKind::UpdateDataModel => StatePatchOp {
             op: "replace".to_string(),
-            path: format!("/a2ui/surfaces/{surface_id}/dataModel"),
+            path: format!("/a2ui/surfaces/{surface_token}/dataModel"),
             value: Some(payload),
         },
         A2uiWireKind::DeleteSurface => StatePatchOp {
             op: "remove".to_string(),
-            path: format!("/a2ui/surfaces/{surface_id}"),
+            path: format!("/a2ui/surfaces/{surface_token}"),
             value: None,
         },
     }

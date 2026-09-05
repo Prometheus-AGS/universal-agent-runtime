@@ -44,6 +44,10 @@ struct SessionInner {
     last_activity: RwLock<DateTime<Utc>>,
     /// Optional system prompt.
     system_prompt: RwLock<Option<String>>,
+    /// Host-only baseline. It is not accepted through serialized session input.
+    world_state: RwLock<crate::uar::runtime::world_state::contributor::WorldStateBaseline>,
+    project_instructions:
+        RwLock<Option<crate::uar::runtime::project_instructions::ProjectInstructions>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -97,6 +101,8 @@ impl Session {
                 created_at: now,
                 last_activity: RwLock::new(now),
                 system_prompt: RwLock::new(None),
+                world_state: RwLock::new(Default::default()),
+                project_instructions: RwLock::new(None),
             }),
         }
     }
@@ -128,6 +134,8 @@ impl Session {
                 created_at,
                 last_activity: RwLock::new(last_activity),
                 system_prompt: RwLock::new(state.system_prompt),
+                world_state: RwLock::new(Default::default()),
+                project_instructions: RwLock::new(None),
             }),
         }
     }
@@ -142,6 +150,36 @@ impl Session {
     #[must_use]
     pub fn owner_id(&self) -> &str {
         &self.inner.owner_id
+    }
+
+    /// Snapshot the host-only baseline owned by this exact tenant session.
+    pub(crate) fn world_state_baseline(
+        &self,
+    ) -> crate::uar::runtime::world_state::contributor::WorldStateBaseline {
+        self.inner.world_state.read().unwrap().clone()
+    }
+
+    /// Publish the selected contribution, retaining its messages in session history.
+    pub(crate) fn record_world_state(
+        &self,
+        update: &crate::uar::runtime::world_state::contributor::WorldStateUpdate,
+        instructions: crate::uar::runtime::project_instructions::ProjectInstructions,
+    ) {
+        {
+            let mut messages = self.inner.messages.write().unwrap();
+            let mut baseline = self.inner.world_state.write().unwrap();
+            messages.extend(update.messages.iter().cloned());
+            *baseline = update.baseline.clone();
+            *self.inner.project_instructions.write().unwrap() = Some(instructions);
+        }
+        self.touch();
+    }
+
+    /// Previously accessed subtrees; never accepted from serialized session data.
+    pub(crate) fn project_instructions(
+        &self,
+    ) -> Option<crate::uar::runtime::project_instructions::ProjectInstructions> {
+        self.inner.project_instructions.read().unwrap().clone()
     }
 
     /// Set the system prompt for this session.
@@ -252,6 +290,8 @@ impl Session {
     pub fn clear(&self) {
         let mut guard = self.inner.messages.write().unwrap();
         guard.clear();
+        *self.inner.world_state.write().unwrap() = Default::default();
+        *self.inner.project_instructions.write().unwrap() = None;
         self.touch();
     }
 

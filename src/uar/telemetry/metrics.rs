@@ -287,6 +287,28 @@ pub fn record_skill_activation_outcome(skill_id: &str, success: bool) {
     counter!("uar_skill_activation_outcome_total", &labels).increment(1);
 }
 
+/// One explicit activation is the ground-truth sample for Recall@10.
+/// The histogram's sum / count is recall; this does not filter any catalog.
+pub fn record_skill_shadow_recall(backend: &str, hit: bool) {
+    histogram!("uar_skill_shadow_recall", "backend" => backend.to_string(), "k" => "10")
+        .record(if hit { 1.0 } else { 0.0 });
+}
+
+/// Exact host activation, distinct from matcher acceptance.
+pub fn record_skill_invocation(skill_id: &str, invoke_type: &str) {
+    counter!("uar_skill_invocations_total",
+        "skill" => skill_id.to_string(), "invoke_type" => invoke_type.to_string())
+    .increment(1);
+}
+
+/// Attribution only. Never updates the ordinary token or cost totals.
+pub fn record_skill_request_usage(skill_id: &str, tokens: u64, cost_usd: Option<f64>) {
+    counter!("uar_skill_request_tokens_total", "skill" => skill_id.to_string()).increment(tokens);
+    if let Some(cost) = cost_usd {
+        histogram!("uar_skill_request_cost_usd", "skill" => skill_id.to_string()).record(cost);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     /// Recording through the `metrics` macros must be visible in the handle's

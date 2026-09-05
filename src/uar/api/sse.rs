@@ -11,6 +11,7 @@ pub(crate) struct AguiReplaySnapshot {
     cursor: u64,
     run_id: String,
     state: Option<serde_json::Value>,
+    presentation: Option<serde_json::Value>,
     messages: Vec<serde_json::Value>,
 }
 
@@ -129,8 +130,16 @@ pub(crate) fn build_agui_replay_snapshot(
     });
     let mut state_synchronized = true;
     let mut assistant_text = String::new();
+    let mut presentation = None;
 
     for event in history.iter().filter(|event| event.id <= cursor) {
+        if let NormalizedEvent::StatePatch { patch, .. } = &event.event {
+            for op in patch {
+                if op.path == "/presentation" && op.op == "add" {
+                    presentation = op.value.clone();
+                }
+            }
+        }
         match &event.event {
             NormalizedEvent::StatePatch { patch, .. } if state_synchronized => {
                 state_synchronized = apply_state_patch(&mut state, patch);
@@ -153,6 +162,7 @@ pub(crate) fn build_agui_replay_snapshot(
         cursor,
         run_id: run_id.to_string(),
         state: state_synchronized.then_some(state),
+        presentation,
         messages,
     }
 }
@@ -270,6 +280,24 @@ fn replay_snapshot_events(snapshot: AguiReplaySnapshot) -> Vec<Result<Event, Inf
         );
         frames.push(Ok(Event::default()
             .event("STATE_SNAPSHOT")
+            .id(source_id.clone())
+            .data(payload.to_string())));
+    } else if let Some(presentation) = snapshot.presentation {
+        // An unrelated incomplete state patch must not fabricate a synchronized
+        // global baseline or hide this independently retained full host record.
+        let mut payload = enrich_agui_spec_payload(
+            "CUSTOM",
+            serde_json::json!({
+                "type": "CUSTOM", "profile": "uar.agui/1",
+                "threadId": snapshot.run_id, "runId": snapshot.run_id,
+                "name": "uar.presentation.snapshot", "value": presentation,
+            }),
+            &source_id,
+            3,
+        );
+        payload["eventId"] = serde_json::json!(format!("{source_id}:presentation-snapshot"));
+        frames.push(Ok(Event::default()
+            .event("CUSTOM")
             .id(source_id.clone())
             .data(payload.to_string())));
     }
@@ -564,6 +592,18 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 "metadata": artifact.metadata
             }),
         )),
+        NormalizedEvent::PresentationDiagnostic {
+            run_id,
+            code,
+            message,
+        } => Some((
+            "agui.custom",
+            serde_json::json!({
+                "kind": "custom", "request_id": run_id,
+                "name": "uar.presentation.diagnostic",
+                "value": { "code": code, "message": message }
+            }),
+        )),
         NormalizedEvent::Error {
             run_id,
             code,
@@ -679,6 +719,7 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
         )),
         NormalizedEvent::ToolCallApprovalRequired {
             run_id,
+            approval_id,
             call_index,
             tool_call_id,
             name,
@@ -690,6 +731,7 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 "kind": "tool_call",
                 "phase": "approval_required",
                 "request_id": run_id,
+                "approval_id": approval_id,
                 "call_index": call_index,
                 "id": tool_call_id,
                 "name": name,
@@ -734,6 +776,30 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
         // Runtime step progress is delivered on the `runtime.*` entity bus
         // (see `to_runtime_entity_event`), not the agui surface.
         NormalizedEvent::RuntimeStep { .. } => None,
+        NormalizedEvent::McpServerStateChanged { run_id, lifecycle } => Some((
+            "agui.mcp.state",
+            serde_json::json!({ "kind": "mcp", "request_id": run_id, "lifecycle": lifecycle }),
+        )),
+        NormalizedEvent::AgentThreadStarted { run_id, lifecycle }
+        | NormalizedEvent::AgentThreadUpdated { run_id, lifecycle }
+        | NormalizedEvent::AgentThreadFinished { run_id, lifecycle }
+        | NormalizedEvent::AgentThreadError { run_id, lifecycle } => {
+            let (name, phase) = match event {
+                NormalizedEvent::AgentThreadStarted { .. } => ("agui.subagent.started", "started"),
+                NormalizedEvent::AgentThreadFinished { .. } => {
+                    ("agui.subagent.finished", "finished")
+                }
+                NormalizedEvent::AgentThreadError { .. } => ("agui.subagent.error", "error"),
+                _ => ("agui.subagent.updated", "updated"),
+            };
+            Some((
+                name,
+                serde_json::json!({
+                    "kind": "subagent", "phase": phase, "request_id": run_id,
+                    "lifecycle": lifecycle,
+                }),
+            ))
+        }
         NormalizedEvent::BudgetAlert {
             run_id,
             scope,
@@ -874,6 +940,7 @@ pub fn to_runtime_entity_event(
         )),
         NormalizedEvent::ToolCallApprovalRequired {
             run_id,
+            approval_id,
             call_index,
             tool_call_id,
             name,
@@ -883,7 +950,9 @@ pub fn to_runtime_entity_event(
             "runtime.approval",
             serde_json::json!({
                 "type": "approval_requested",
-                "id": format!("approval:{tool_call_id}"),
+                "id": approval_id.as_ref().map(|id| format!("approval:{id}"))
+                    .unwrap_or_else(|| format!("approval:{tool_call_id}")),
+                "approval_id": approval_id,
                 "run_id": run_id,
                 "call_index": call_index,
                 "tool_call_id": tool_call_id,
@@ -1242,6 +1311,73 @@ mod tests {
                 .state
                 .is_none()
         );
+    }
+
+    #[test]
+    fn presentation_replay_is_independent_of_broken_state_and_never_backfills_future_receipts() {
+        let receipt = serde_json::json!({"version": 1, "client_display": "unconfirmed"});
+        let history = vec![
+            StreamEvent {
+                id: 7,
+                event: NormalizedEvent::StatePatch {
+                    run_id: "run".into(),
+                    patch: vec![StatePatchOp {
+                        op: "replace".into(),
+                        path: "/missing".into(),
+                        value: Some(serde_json::json!(true)),
+                    }],
+                },
+            },
+            StreamEvent {
+                id: 9,
+                event: NormalizedEvent::StatePatch {
+                    run_id: "run".into(),
+                    patch: vec![StatePatchOp {
+                        op: "add".into(),
+                        path: "/presentation".into(),
+                        value: Some(receipt.clone()),
+                    }],
+                },
+            },
+        ];
+        let earlier = build_agui_replay_snapshot("run", &history, 8);
+        assert!(earlier.state.is_none());
+        assert!(earlier.presentation.is_none());
+        let current = build_agui_replay_snapshot("run", &history, 9);
+        assert!(current.state.is_none());
+        assert_eq!(current.presentation, Some(receipt));
+    }
+
+    #[tokio::test]
+    async fn independent_presentation_replay_emits_custom_receipt_not_global_snapshot() {
+        use axum::response::IntoResponse;
+        let snapshot = super::AguiReplaySnapshot {
+            cursor: 9,
+            run_id: "run".into(),
+            state: None,
+            messages: vec![],
+            presentation: Some(serde_json::json!({"version": 1, "client_display": "unconfirmed"})),
+        };
+        let response = axum::response::Sse::new(futures::stream::iter(
+            super::replay_snapshot_events(snapshot),
+        ))
+        .into_response();
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let wire = std::str::from_utf8(&body).unwrap();
+        assert!(!wire.contains("STATE_SNAPSHOT"));
+        let payloads: Vec<serde_json::Value> = wire
+            .lines()
+            .filter_map(|line| line.strip_prefix("data: "))
+            .map(|data| serde_json::from_str(data).unwrap())
+            .collect();
+        assert_eq!(payloads.len(), 2);
+        assert_eq!(payloads[0]["type"], "CUSTOM");
+        assert_eq!(payloads[0]["name"], "uar.presentation.snapshot");
+        assert_eq!(payloads[0]["eventId"], "9:presentation-snapshot");
+        assert_eq!(payloads[0]["value"]["client_display"], "unconfirmed");
+        assert_eq!(payloads[1]["type"], "MESSAGES_SNAPSHOT");
     }
 
     #[test]

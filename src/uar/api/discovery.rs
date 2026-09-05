@@ -151,7 +151,10 @@ async fn current_agent_by_session(
             .into_response();
     };
 
-    let agent = resolve_agent_artifact(&state, &run.agent_id).await;
+    let agent = match resolve_agent_artifact(&state, &run.agent_id).await {
+        Ok(agent) => agent,
+        Err(error) => return error.into_response(),
+    };
     Json(SessionAgentResponse {
         session_id,
         run_id: run.run_id,
@@ -253,36 +256,77 @@ fn ensure_builtin_agent(agents: &mut Vec<AgentArtifact>, candidate: AgentArtifac
     }
 }
 
-async fn resolve_agent_artifact(state: &AppState, agent_id: &str) -> Option<AgentArtifact> {
-    if agent_id == "default-agent" {
-        return Some(crate::uar::defaults::default_agent());
+async fn resolve_agent_artifact(
+    state: &AppState,
+    agent_id: &str,
+) -> Result<Option<AgentArtifact>, (StatusCode, String)> {
+    if let Some(persistence) = &state.persistence {
+        let persisted = persistence.load_agent(agent_id).await.map_err(|_| {
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Agent policy storage is unavailable".to_string(),
+            )
+        })?;
+        if persisted.is_some() {
+            return Ok(persisted);
+        }
     }
-    if agent_id == "orchestrator-agent" {
-        return Some(crate::uar::defaults::orchestrator_agent());
-    }
-    let persistence = state.persistence.as_ref()?;
-    persistence.load_agent(agent_id).await.ok().flatten()
+    Ok(match agent_id {
+        "default-agent" => Some(crate::uar::defaults::default_agent()),
+        "orchestrator-agent" => Some(crate::uar::defaults::orchestrator_agent()),
+        _ => None,
+    })
 }
 
 /// Public wrapper used by the chat handler to resolve an agent by id.
 ///
-/// Falls back to `default_agent()` if not found so the caller always gets
-/// a valid artifact without an extra error-handling layer.
-pub async fn resolve_agent_for_run(state: &AppState, agent_id: &str) -> AgentArtifact {
-    resolve_agent_artifact(state, agent_id)
-        .await
-        .unwrap_or_else(|| {
-            tracing::warn!(
-                agent_id = %agent_id,
-                "Agent not found — falling back to default-agent"
-            );
-            crate::uar::defaults::default_agent()
-        })
+/// Retains the legacy unknown-ID fallback, honoring a persisted default agent.
+///
+/// # Errors
+/// Returns 503 if storage fails, rather than dropping persisted restrictions.
+pub async fn resolve_agent_for_run(
+    state: &AppState,
+    agent_id: &str,
+) -> Result<AgentArtifact, (StatusCode, String)> {
+    if let Some(agent) = resolve_agent_artifact(state, agent_id).await? {
+        return Ok(agent);
+    }
+    tracing::warn!(agent_id = %agent_id, "Agent not found — falling back to default-agent");
+    Ok(resolve_agent_artifact(state, "default-agent")
+        .await?
+        .unwrap_or_else(crate::uar::defaults::default_agent))
 }
 
 // =========================================================================
 // Agent CRUD handlers
 // =========================================================================
+
+/// GET /api/agents/{id} — read a persisted definition without catalog fallbacks.
+///
+/// # Errors
+/// Returns 503 when storage is unavailable and 404 for an absent definition.
+pub async fn get_persisted_agent(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<AgentArtifact>, (StatusCode, String)> {
+    let persistence = state.persistence.as_ref().ok_or((
+        StatusCode::SERVICE_UNAVAILABLE,
+        "Agent storage is unavailable".to_string(),
+    ))?;
+    let agent = agent_store::get_agent(persistence.as_ref(), &id)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Agent storage is unavailable".to_string(),
+            )
+        })?
+        .ok_or((
+            StatusCode::NOT_FOUND,
+            "Persisted agent not found".to_string(),
+        ))?;
+    Ok(Json(agent))
+}
 
 /// POST /api/agents — create a new agent
 pub async fn create_agent(
@@ -358,6 +402,10 @@ pub async fn delete_agent(
 /// previous inline handler produced (404 not found, 400 invalid, 500 backend).
 fn patch_error_response(error: agent_store::AgentStoreError) -> (StatusCode, String) {
     match error {
+        agent_store::AgentStoreError::Conflict => (
+            StatusCode::CONFLICT,
+            "Agent changed; reload before saving".to_string(),
+        ),
         agent_store::AgentStoreError::NotFound(id) => {
             (StatusCode::NOT_FOUND, format!("Agent '{id}' not found"))
         }
@@ -376,6 +424,10 @@ fn patch_error_response(error: agent_store::AgentStoreError) -> (StatusCode, Str
 /// previous inline handler produced (403 for built-in agents, 500 otherwise).
 fn delete_error_response(error: agent_store::AgentStoreError) -> (StatusCode, String) {
     match error {
+        agent_store::AgentStoreError::Conflict => (
+            StatusCode::CONFLICT,
+            "Agent changed; reload before saving".to_string(),
+        ),
         agent_store::AgentStoreError::Protected(id) => (
             StatusCode::FORBIDDEN,
             format!("Agent '{id}' is built in and cannot be deleted"),
@@ -490,6 +542,10 @@ pub struct AgentSessionConfig {
     /// Override the MCP servers available to this agent.
     #[serde(default)]
     pub mcp_servers: Option<Vec<String>>,
+    /// Presentation assignment. Omission preserves the saved selection; an explicit
+    /// `inherit` selection removes the override without copying inherited IDs.
+    #[serde(default)]
+    pub presentations: Option<ResourceSelection>,
     /// Tool approval policy: "auto" | "ask" | "deny".
     #[serde(default)]
     pub tool_approval: Option<String>,
@@ -516,6 +572,7 @@ impl AgentSessionConfig {
             skills: optional_selection(self.skills),
             knowledge_bases: optional_selection(self.knowledge_bases),
             mcp_servers: optional_selection(self.mcp_servers),
+            presentations: self.presentations.unwrap_or_default(),
             prompt_caching_enabled: self.prompt_caching_enabled,
             tool_approval: parse_tool_approval(self.tool_approval.as_deref()),
             ..RunPolicy::default()
@@ -536,6 +593,7 @@ impl AgentSessionConfig {
             skills: selected_ids(&policy.skills),
             knowledge_bases: selected_ids(&policy.knowledge_bases),
             mcp_servers: selected_ids(&policy.mcp_servers),
+            presentations: Some(policy.presentations.clone()),
             prompt_caching_enabled: policy.prompt_caching_enabled,
             tool_approval: match policy.tool_approval {
                 ToolApprovalPolicy::Inherit => None,
@@ -566,34 +624,130 @@ fn parse_tool_approval(value: Option<&str>) -> ToolApprovalPolicy {
 
 pub(crate) async fn load_conversation_policy(
     state: &AppState,
-    owner_id: &str,
+    user: &UserContext,
     conversation_id: &str,
 ) -> Option<RunPolicy> {
-    if let Some(persistence) = &state.persistence {
-        match persistence
-            .load_conversation_policy(owner_id, conversation_id)
+    load_conversation_policy_with_status(state, user, conversation_id)
+        .await
+        .0
+}
+
+fn conversation_policy_owner_key(user: &UserContext) -> String {
+    crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user)
+        .map(|owner| owner.presentation_owner_key())
+        .unwrap_or_else(|_| user.user_id.clone())
+}
+
+fn conversation_policy_cache_key(user: &UserContext, conversation_id: &str) -> String {
+    let key = crate::uar::persistence::tenant_storage_key(
+        &conversation_policy_owner_key(user),
+        conversation_id,
+    );
+    if crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user).is_ok() {
+        // Legacy keys always start with the numeric subject length.
+        format!("principal-policy:{key}")
+    } else {
+        key
+    }
+}
+
+async fn persist_policy_for_user(
+    persistence: &dyn crate::uar::persistence::PersistenceLayer,
+    user: &UserContext,
+    record: &ConversationPolicyRecord,
+    expected: Option<&RunPolicy>,
+) -> anyhow::Result<bool> {
+    if crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user).is_ok() {
+        persistence
+            .save_principal_conversation_policy(record, expected)
             .await
+    } else {
+        persistence.save_conversation_policy(record).await?;
+        Ok(true)
+    }
+}
+
+async fn principal_policy_before_write(
+    persistence: &dyn crate::uar::persistence::PersistenceLayer,
+    user: &UserContext,
+    conversation_id: &str,
+) -> anyhow::Result<Option<RunPolicy>> {
+    let Ok(owner) = crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user)
+    else {
+        return Ok(None);
+    };
+    let key = owner.presentation_owner_key();
+    let record = persistence
+        .load_principal_conversation_policy(&key, conversation_id)
+        .await?;
+    if let Some(record) = &record {
+        anyhow::ensure!(
+            record.owner_id == key && record.conversation_id == conversation_id,
+            "Conversation policy partition mismatch"
+        );
+    }
+    Ok(record.map(|record| record.policy))
+}
+
+fn policy_write_conflict() -> axum::response::Response {
+    (
+        StatusCode::CONFLICT,
+        Json(json!({"error": "conversation policy changed; reload before saving"})),
+    )
+        .into_response()
+}
+
+async fn load_conversation_policy_with_status(
+    state: &AppState,
+    user: &UserContext,
+    conversation_id: &str,
+) -> (Option<RunPolicy>, bool) {
+    let mut unavailable = false;
+    let verified =
+        crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user).ok();
+    if let Some(persistence) = &state.persistence {
+        match crate::uar::domain::policy::load_owner_scoped_conversation_policy(
+            persistence.as_ref(),
+            &user.user_id,
+            conversation_id,
+            verified.as_ref(),
+        )
+        .await
         {
-            Ok(Some(record)) => return Some(record.policy),
-            Ok(None) => {}
+            Ok((policy, true)) => return (policy, false),
+            Ok((Some(policy), false)) => return (Some(policy), false),
+            Ok((None, false)) => {}
             Err(error) => {
+                unavailable = true;
                 tracing::warn!(%error, %conversation_id, "failed to load conversation policy")
             }
         }
     }
-    state
-        .agent_sessions
-        .read()
-        .await
-        .get(&crate::uar::persistence::tenant_storage_key(
-            owner_id,
-            conversation_id,
-        ))
-        .cloned()
-        .map(AgentSessionConfig::into_run_policy)
+    let sessions = state.agent_sessions.read().await;
+    let scoped_key = conversation_policy_cache_key(user, conversation_id);
+    let policy = if let Some(config) = sessions.get(&scoped_key) {
+        Some(config.clone().into_run_policy())
+    } else {
+        sessions
+            .get(&crate::uar::persistence::tenant_storage_key(
+                &user.user_id,
+                conversation_id,
+            ))
+            .cloned()
+            .map(|config| {
+                let mut policy = config.into_run_policy();
+                policy.presentations = ResourceSelection::default();
+                policy
+            })
+    };
+    (policy, unavailable)
 }
 
-async fn policy_universe(state: &AppState, owner_id: &str) -> PolicyUniverse {
+async fn policy_universe(
+    state: &AppState,
+    owner_id: &str,
+    verified_owner: Option<&crate::uar::runtime::actor::messages::ActorOwner>,
+) -> PolicyUniverse {
     let disabled_skills = match &state.settings_manager {
         Some(manager) => manager
             .list_namespace_with_meta("skill_config")
@@ -639,6 +793,8 @@ async fn policy_universe(state: &AppState, owner_id: &str) -> PolicyUniverse {
         .iter()
         .map(|(name, _)| name.clone())
         .collect::<std::collections::BTreeSet<_>>();
+    let (mcp_servers, catalog_tools) = state.run_manager.mcp_policy_inventory(None).await;
+    tools.extend(catalog_tools);
     for tool in state.native_skill_registry.openai_tools_json().await {
         if let Some(name) = tool
             .get("function")
@@ -657,11 +813,19 @@ async fn policy_universe(state: &AppState, owner_id: &str) -> PolicyUniverse {
             knowledge_bases.insert(knowledge_base.name);
         }
     }
+    let (presentations, presentation_warnings) =
+        crate::uar::persistence::presentations::eligible_presentations(
+            state.persistence.as_ref(),
+            verified_owner,
+        )
+        .await;
     PolicyUniverse {
         skills,
         tools,
-        mcp_servers: state.mcp.server_names().into_iter().collect(),
+        mcp_servers,
         knowledge_bases,
+        presentations,
+        presentation_warnings,
     }
 }
 
@@ -674,15 +838,33 @@ async fn policy_universe(state: &AppState, owner_id: &str) -> PolicyUniverse {
 /// embedded runtime. Behavior is identical to the previous inline resolution.
 pub async fn resolve_effective_run_policy(
     state: &AppState,
-    owner_id: &str,
+    user: &UserContext,
     conversation_id: &str,
     agent: &AgentArtifact,
     turn: Option<RunPolicy>,
 ) -> EffectiveRunPolicy {
-    let conversation = load_conversation_policy(state, owner_id, conversation_id).await;
+    let owner_id = &user.user_id;
+    let verified_owner =
+        crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user).ok();
+    let (conversation, unavailable) =
+        load_conversation_policy_with_status(state, user, conversation_id).await;
+    let mut universe = policy_universe(state, owner_id, verified_owner.as_ref()).await;
+    if unavailable {
+        universe.presentations.clear();
+        universe
+            .presentation_warnings
+            .push("Conversation policy could not be loaded; Presentation access is closed".into());
+    }
+    if state.run_manager.uses_agent_graph(agent) {
+        universe.tools.extend(
+            crate::uar::runtime::thread::control::AGENT_TOOL_NAMES
+                .into_iter()
+                .map(str::to_owned),
+        );
+    }
     let ctx = PolicyResolutionContext {
         settings_manager: state.settings_manager.as_deref(),
-        universe: policy_universe(state, owner_id).await,
+        universe,
         default_context_strategy: state.config.context_strategy.clone(),
     };
     resolve_effective_run_policy_core(ctx, agent, conversation, turn).await
@@ -693,27 +875,78 @@ pub async fn save_agent_session_config(
     State(state): State<AppState>,
     Extension(user): Extension<UserContext>,
     Path(session_id): Path<String>,
-    Json(config): Json<AgentSessionConfig>,
+    Json(mut config): Json<AgentSessionConfig>,
 ) -> impl IntoResponse {
+    let Some(persistence) = &state.persistence else {
+        let key = conversation_policy_cache_key(&user, &session_id);
+        let mut sessions = state.agent_sessions.write().await;
+        if config.presentations.is_none() {
+            config.presentations = Some(
+                sessions
+                    .get(&key)
+                    .and_then(|saved| saved.presentations.clone())
+                    .unwrap_or_default(),
+            );
+        }
+        sessions.insert(key, config.clone());
+        return (StatusCode::OK, Json(config)).into_response();
+    };
+    let expected =
+        match principal_policy_before_write(persistence.as_ref(), &user, &session_id).await {
+            Ok(expected) => expected,
+            Err(error) => {
+                tracing::error!(%error, %session_id, "failed to read policy write baseline");
+                return (
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    Json(json!({"error": "conversation policy unavailable"})),
+                )
+                    .into_response();
+            }
+        };
+    if config.presentations.is_none() {
+        let (existing, unavailable) = if expected.is_some() {
+            (expected.clone(), false)
+        } else {
+            load_conversation_policy_with_status(&state, &user, &session_id).await
+        };
+        if unavailable {
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(json!({"error": "cannot preserve Presentation assignment while policy is unavailable"})),
+            ).into_response();
+        }
+        config.presentations = Some(
+            existing
+                .map(|policy| policy.presentations)
+                .unwrap_or_default(),
+        );
+    }
     let policy = config.clone().into_run_policy();
-    if let Some(persistence) = &state.persistence
-        && let Err(error) = persistence
-            .save_conversation_policy(&ConversationPolicyRecord::new_for_user(
-                &user.user_id,
-                session_id.clone(),
-                policy,
-            ))
-            .await
+    match persist_policy_for_user(
+        persistence.as_ref(),
+        &user,
+        &ConversationPolicyRecord::new_for_user(
+            conversation_policy_owner_key(&user),
+            session_id.clone(),
+            policy,
+        ),
+        expected.as_ref(),
+    )
+    .await
     {
-        tracing::error!(%error, %session_id, "failed to persist conversation policy");
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"error": "failed to persist conversation policy"})),
-        )
-            .into_response();
+        Ok(true) => {}
+        Ok(false) => return policy_write_conflict(),
+        Err(error) => {
+            tracing::error!(%error, %session_id, "failed to persist conversation policy");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "failed to persist conversation policy"})),
+            )
+                .into_response();
+        }
     }
     state.agent_sessions.write().await.insert(
-        crate::uar::persistence::tenant_storage_key(&user.user_id, &session_id),
+        conversation_policy_cache_key(&user, &session_id),
         config.clone(),
     );
     (StatusCode::OK, Json(config)).into_response()
@@ -725,29 +958,23 @@ pub async fn get_agent_session_config(
     Extension(user): Extension<UserContext>,
     Path(session_id): Path<String>,
 ) -> impl IntoResponse {
-    if let Some(policy) = load_conversation_policy(&state, &user.user_id, &session_id).await {
+    let (policy, unavailable) =
+        load_conversation_policy_with_status(&state, &user, &session_id).await;
+    if unavailable {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"error": "conversation policy unavailable"})),
+        )
+            .into_response();
+    }
+    if let Some(policy) = policy {
         return (
             StatusCode::OK,
             Json(AgentSessionConfig::from_run_policy(&policy)),
         )
             .into_response();
     }
-    let sessions = state.agent_sessions.read().await;
-    let key = crate::uar::persistence::tenant_storage_key(&user.user_id, &session_id);
-    match sessions.get(&key) {
-        Some(config) => match serde_json::to_value(config) {
-            Ok(value) => (StatusCode::OK, Json(value)).into_response(),
-            Err(err) => {
-                tracing::error!("failed to serialize agent session config: {}", err);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({"error": "failed to serialize config"})),
-                )
-                    .into_response()
-            }
-        },
-        None => StatusCode::NO_CONTENT.into_response(),
-    }
+    StatusCode::NO_CONTENT.into_response()
 }
 
 #[derive(Debug, Serialize)]
@@ -766,7 +993,7 @@ pub async fn get_effective_prompt_caching(
     headers: axum::http::HeaderMap,
     Path(session_id): Path<String>,
 ) -> impl IntoResponse {
-    let session_override = load_conversation_policy(&state, &user.user_id, &session_id)
+    let session_override = load_conversation_policy(&state, &user, &session_id)
         .await
         .and_then(|policy| policy.prompt_caching_enabled);
     let global_default = match &state.settings_manager {
@@ -828,7 +1055,7 @@ pub async fn get_effective_config(
     Extension(user): Extension<UserContext>,
     Path(session_id): Path<String>,
 ) -> impl IntoResponse {
-    let Some(policy) = load_conversation_policy(&state, &user.user_id, &session_id).await else {
+    let Some(policy) = load_conversation_policy(&state, &user, &session_id).await else {
         return (
             StatusCode::NOT_FOUND,
             Json(json!({"error": "No agent session config found for this session"})),
@@ -841,9 +1068,11 @@ pub async fn get_effective_config(
         .agent_id
         .clone()
         .unwrap_or_else(|| "default-agent".to_string());
-    let agent = resolve_agent_for_run(&state, &agent_id).await;
-    let effective =
-        resolve_effective_run_policy(&state, &user.user_id, &session_id, &agent, None).await;
+    let agent = match resolve_agent_for_run(&state, &agent_id).await {
+        Ok(agent) => agent,
+        Err(error) => return error.into_response(),
+    };
+    let effective = resolve_effective_run_policy(&state, &user, &session_id, &agent, None).await;
     (
         StatusCode::OK,
         Json(json!({
@@ -856,15 +1085,24 @@ pub async fn get_effective_config(
         .into_response()
 }
 
+/// Conversation write compatibility: old clients do not know the Presentation field.
+#[derive(Debug, Deserialize)]
+pub struct ConversationPolicyUpdate {
+    /// Existing policy fields keep their full-replacement semantics.
+    #[serde(flatten)]
+    pub policy: RunPolicy,
+    /// Missing/null preserves saved intent; explicit Inherit resets it.
+    #[serde(default)]
+    pub presentations: Option<ResourceSelection>,
+}
+
 /// PUT `/api/uar/conversations/{id}/policy`.
 pub async fn save_conversation_policy(
     State(state): State<AppState>,
     Extension(user): Extension<UserContext>,
     Path(conversation_id): Path<String>,
-    Json(policy): Json<RunPolicy>,
+    Json(update): Json<ConversationPolicyUpdate>,
 ) -> impl IntoResponse {
-    let record =
-        ConversationPolicyRecord::new_for_user(&user.user_id, conversation_id.clone(), policy);
     let Some(persistence) = &state.persistence else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -872,8 +1110,46 @@ pub async fn save_conversation_policy(
         )
             .into_response();
     };
-    match persistence.save_conversation_policy(&record).await {
-        Ok(()) => (StatusCode::OK, Json(record)).into_response(),
+    let expected =
+        match principal_policy_before_write(persistence.as_ref(), &user, &conversation_id).await {
+            Ok(expected) => expected,
+            Err(error) => {
+                tracing::error!(%error, %conversation_id, "failed to read policy write baseline");
+                return (
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    Json(json!({"error": "conversation policy unavailable"})),
+                )
+                    .into_response();
+            }
+        };
+    let mut policy = update.policy;
+    policy.presentations = match update.presentations {
+        Some(selection) => selection,
+        None => {
+            let (existing, unavailable) = if expected.is_some() {
+                (expected.clone(), false)
+            } else {
+                load_conversation_policy_with_status(&state, &user, &conversation_id).await
+            };
+            if unavailable {
+                return (
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    Json(json!({"error": "cannot preserve Presentation assignment while policy is unavailable"})),
+                ).into_response();
+            }
+            existing
+                .map(|policy| policy.presentations)
+                .unwrap_or_default()
+        }
+    };
+    let record = ConversationPolicyRecord::new_for_user(
+        conversation_policy_owner_key(&user),
+        conversation_id.clone(),
+        policy,
+    );
+    match persist_policy_for_user(persistence.as_ref(), &user, &record, expected.as_ref()).await {
+        Ok(true) => (StatusCode::OK, Json(record)).into_response(),
+        Ok(false) => policy_write_conflict(),
         Err(error) => {
             tracing::error!(%error, %conversation_id, "failed to persist conversation policy");
             (
@@ -891,7 +1167,16 @@ pub async fn get_conversation_policy(
     Extension(user): Extension<UserContext>,
     Path(conversation_id): Path<String>,
 ) -> impl IntoResponse {
-    match load_conversation_policy(&state, &user.user_id, &conversation_id).await {
+    let (policy, unavailable) =
+        load_conversation_policy_with_status(&state, &user, &conversation_id).await;
+    if unavailable {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"error": "conversation policy unavailable"})),
+        )
+            .into_response();
+    }
+    match policy {
         Some(policy) => (StatusCode::OK, Json(policy)).into_response(),
         // Missing means "inherit global/agent policy", not an exceptional
         // resource failure. Returning JSON null keeps first-run web/mobile
@@ -906,11 +1191,55 @@ pub async fn delete_conversation_policy(
     Extension(user): Extension<UserContext>,
     Path(conversation_id): Path<String>,
 ) -> impl IntoResponse {
-    if let Some(persistence) = &state.persistence
-        && let Err(error) = persistence
-            .delete_conversation_policy(&user.user_id, &conversation_id)
-            .await
-    {
+    let key = conversation_policy_owner_key(&user);
+    let verified =
+        crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(&user).is_ok();
+    let result = if let Some(persistence) = &state.persistence {
+        if verified {
+            let expected =
+                match principal_policy_before_write(persistence.as_ref(), &user, &conversation_id)
+                    .await
+                {
+                    Ok(expected) => expected,
+                    Err(error) => {
+                        tracing::error!(%error, %conversation_id, "failed to read reset baseline");
+                        return (
+                            StatusCode::SERVICE_UNAVAILABLE,
+                            Json(json!({"error": "conversation policy unavailable"})),
+                        )
+                            .into_response();
+                    }
+                };
+            persistence
+                .save_principal_conversation_policy(
+                    &ConversationPolicyRecord::new_for_user(
+                        &key,
+                        &conversation_id,
+                        RunPolicy::default(),
+                    ),
+                    expected.as_ref(),
+                )
+                .await
+        } else {
+            persistence
+                .delete_conversation_policy(&key, &conversation_id)
+                .await
+                .map(|()| true)
+        }
+    } else if verified {
+        // A verified reset needs a durable shadow to keep legacy fallback suppressed.
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"error": "persistence not configured"})),
+        )
+            .into_response();
+    } else {
+        Ok(true)
+    };
+    if matches!(result, Ok(false)) {
+        return policy_write_conflict();
+    }
+    if let Err(error) = result {
         tracing::error!(%error, %conversation_id, "failed to delete conversation policy");
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -922,9 +1251,6 @@ pub async fn delete_conversation_policy(
         .agent_sessions
         .write()
         .await
-        .remove(&crate::uar::persistence::tenant_storage_key(
-            &user.user_id,
-            &conversation_id,
-        ));
+        .remove(&conversation_policy_cache_key(&user, &conversation_id));
     StatusCode::NO_CONTENT.into_response()
 }

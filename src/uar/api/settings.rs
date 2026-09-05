@@ -58,6 +58,10 @@ impl std::fmt::Debug for SettingsApiState {
 pub fn build_router() -> Router<Arc<SettingsApiState>> {
     Router::new()
         .route("/governance/status", get(get_governance_status))
+        .route(
+            "/presentation-policy",
+            get(get_presentation_policy).put(update_presentation_policy),
+        )
         // Settings types (namespace registry)
         .route("/types", get(list_types))
         .route("/types/{key}", get(get_type))
@@ -598,6 +602,85 @@ async fn get_setting(
 #[derive(Debug, Deserialize)]
 pub struct UpdateSettingPayload {
     pub value: Value,
+}
+
+#[derive(Debug, Deserialize)]
+struct PresentationPolicyUpdate {
+    expected_policy: Value,
+    presentations: crate::uar::domain::policy::ResourceSelection,
+}
+
+async fn get_presentation_policy(
+    State(state): State<Arc<SettingsApiState>>,
+    headers: HeaderMap,
+) -> axum::response::Response {
+    if let Err(error) = require_admin_key(state.as_ref(), &headers) {
+        return error.into_response();
+    }
+    let manager = match mgr_from_state(&state) {
+        Ok(manager) => manager,
+        Err(error) => return error.into_response(),
+    };
+    match manager
+        .get_typed_for_admission::<Value>("run_policy.global")
+        .await
+    {
+        Ok(Some(policy)) => Json(json!({"policy": policy})).into_response(),
+        Ok(None) => ApiError::NotFound("run_policy.global".to_string()).into_response(),
+        Err(error) => {
+            tracing::error!(%error, "global Presentation policy read failed");
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(json!({"error": "global policy unavailable"})),
+            )
+                .into_response()
+        }
+    }
+}
+
+async fn update_presentation_policy(
+    State(state): State<Arc<SettingsApiState>>,
+    headers: HeaderMap,
+    Json(payload): Json<PresentationPolicyUpdate>,
+) -> axum::response::Response {
+    if let Err(error) = require_admin_key(state.as_ref(), &headers) {
+        return error.into_response();
+    }
+    let manager = match mgr_from_state(&state) {
+        Ok(manager) => manager,
+        Err(error) => return error.into_response(),
+    };
+    if crate::uar::persistence::presentations::global_policy_with_presentations(
+        &payload.expected_policy,
+        &payload.presentations,
+    )
+    .is_err()
+    {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({"error": "invalid policy baseline or Presentation selection"})),
+        )
+            .into_response();
+    }
+    match manager
+        .update_presentation_assignment(&payload.expected_policy, &payload.presentations)
+        .await
+    {
+        Ok(Some(policy)) => Json(json!({"policy": policy})).into_response(),
+        Ok(None) => (
+            StatusCode::CONFLICT,
+            Json(json!({"error": "global policy changed; reload before saving"})),
+        )
+            .into_response(),
+        Err(error) => {
+            tracing::error!(%error, "global Presentation policy write failed");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "global policy save could not be confirmed"})),
+            )
+                .into_response()
+        }
+    }
 }
 
 async fn update_setting(

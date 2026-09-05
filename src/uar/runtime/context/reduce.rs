@@ -96,6 +96,9 @@ fn drop_severed_tool_groups(original: &[Message], reduced: &mut Vec<Message>) {
 /// What [`reduce_history`] did to a run's history.
 #[derive(Debug, Clone, Default)]
 pub struct ReduceReport {
+    /// Any structural, token-budget, summarization, or normalization rewrite.
+    /// World-state baselines must be rendered in full after this signal.
+    pub history_rewritten: bool,
     /// The token-budget stage's report, when it changed anything.
     pub context_action: Option<ContextAction>,
     /// What normalization repaired, if anything.
@@ -170,6 +173,7 @@ pub async fn reduce_history(
     context_limit: usize,
     driver: Option<&dyn LlmDriver>,
 ) -> (Vec<Message>, ReduceReport) {
+    let original_history = serde_json::json!(&messages);
     let mut normalized_messages = messages;
     let mut normalize = normalize_history(&mut normalized_messages);
     let normalized_original = normalized_messages.clone();
@@ -191,9 +195,11 @@ pub async fn reduce_history(
     drop_severed_tool_groups(&normalized_original, &mut final_messages);
     merge_normalize_report(&mut normalize, normalize_history(&mut final_messages));
 
+    let history_rewritten = original_history != serde_json::json!(&final_messages);
     (
         final_messages,
         ReduceReport {
+            history_rewritten,
             context_action,
             normalize,
         },

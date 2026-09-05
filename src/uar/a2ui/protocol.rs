@@ -312,6 +312,9 @@ pub(crate) fn parse_message(value: serde_json::Value) -> Result<ValidatedA2uiMes
             "deleteSurface",
         ),
     };
+    if surface_id.trim().is_empty() {
+        return Err("A2UI surface IDs must not be blank".to_string());
+    }
     let payload = value
         .get(payload_key)
         .cloned()

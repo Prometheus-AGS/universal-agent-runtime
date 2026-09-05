@@ -20,12 +20,14 @@ import {
 } from "@/components/ui/sheet";
 import type { AgentConfig } from "@/features/chat/agent-selector";
 import { ModelSelector } from "@/features/models/model-selector";
+import { SessionPresentationSelection } from "@/features/presentations";
 import {
   agentSessionDraftId,
   useAgentSessionDraftActions,
   useAgentSessionDraftError,
   useAgentSessionDraftField,
   useAgentSessionDraftStatus,
+  useAgentSessionDraftUncertain,
   useSessionPromptCaching,
 } from "@/platform/entities";
 import type {
@@ -262,11 +264,13 @@ export function SessionConfigPanel({
   const actions = useAgentSessionDraftActions();
   const saveStatus = useAgentSessionDraftStatus(draftId);
   const error = useAgentSessionDraftError(draftId);
+  const uncertain = useAgentSessionDraftUncertain(draftId);
   const effectivePromptCaching = useSessionPromptCaching(threadId);
   const [retryNonce, setRetryNonce] = useState(0);
   const [effectiveLoading, setEffectiveLoading] = useState(false);
   const [effectiveUnavailable, setEffectiveUnavailable] = useState(false);
   const draftOpened = useRef(false);
+  const saveErrorRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -326,10 +330,12 @@ export function SessionConfigPanel({
 
   const handleSave = useCallback(async () => {
     if (await actions.save(draftId)) onOpenChange(false);
+    else requestAnimationFrame(() => saveErrorRef.current?.focus());
   }, [actions, draftId, onOpenChange]);
 
   const saving = saveStatus === "saving";
   const unavailable =
+    uncertain ||
     saveStatus === null ||
     effectivePromptCaching === null ||
     effectiveLoading ||
@@ -382,6 +388,10 @@ export function SessionConfigPanel({
 
           <Separator />
 
+          <SessionPresentationSelection draftId={draftId} disabled={saving || unavailable} />
+
+          <Separator />
+
           <Button
             onClick={handleSave}
             disabled={saving || unavailable}
@@ -391,6 +401,8 @@ export function SessionConfigPanel({
           </Button>
           {error && (
             <p
+              ref={saveErrorRef}
+              tabIndex={-1}
               role="alert"
               aria-live="assertive"
               className="font-mono text-xs text-destructive"
@@ -398,6 +410,10 @@ export function SessionConfigPanel({
               {error}
             </p>
           )}
+          {uncertain && <Button type="button" variant="secondary" className="min-h-11 w-full" disabled={saving}
+            onClick={() => { void actions.reconcileSaved(draftId); }}>
+            {saving ? "Checking saved configuration..." : "Check saved configuration"}
+          </Button>}
         </div>
       </SheetContent>
     </Sheet>

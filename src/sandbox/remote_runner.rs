@@ -32,6 +32,13 @@ impl RemoteRunner {
 
 #[async_trait]
 impl SandboxRunner for RemoteRunner {
+    fn enforces_isolation(&self) -> bool {
+        // The configured remote sandbox service is the trusted enforcement
+        // boundary. This client submits SandboxConfig to it and never executes
+        // a command locally; this declaration is not remote attestation.
+        true
+    }
+
     async fn create(&self, config: SandboxConfig) -> Result<SandboxHandle, SandboxError> {
         let resp = self
             .build_request("create")

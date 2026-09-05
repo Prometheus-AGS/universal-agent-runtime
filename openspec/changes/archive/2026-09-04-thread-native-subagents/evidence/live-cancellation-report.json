@@ -1,0 +1,80 @@
+{
+  "command": "UAR_SMOKE_MODEL=k3 UAR_SMOKE_LOG=info node openspec/changes/thread-native-subagents/evidence/live-cancellation.mjs target/debug/uar-sidecar --before-first-response",
+  "exit_code": 0,
+  "observed_output": {
+    "model": "k3",
+    "launcher": "sidecar",
+    "harness_mode": "shadow",
+    "cancellation_point": "awaiting-first-provider-response",
+    "at_cancellation": { "status": null, "textChunks": 0, "closed": false },
+    "run_id": "fb1a4c5e-7ec6-42f7-8ecc-6b56f86bf0e0",
+    "calls": [
+      {
+        "index": 0, "status": 200, "textChunks": 2, "closed": true,
+        "upstreamCompleted": true, "downstreamAborted": false,
+        "readAborted": false, "childRequest": false,
+        "inputBytes": 778, "model": "k3", "messageCount": 2,
+        "toolCount": 0, "streaming": true, "toolNames": [],
+        "parameterNames": ["model", "stream_options", "stream"]
+      },
+      {
+        "index": 1, "status": null, "textChunks": 0, "closed": true,
+        "upstreamCompleted": false, "downstreamAborted": true,
+        "readAborted": true, "childRequest": true,
+        "inputBytes": 4638, "model": "k3", "messageCount": 6,
+        "toolCount": 3, "streaming": true,
+        "toolNames": ["activate_skill", "list_agents", "wait_agents"],
+        "parameterNames": ["model", "tool_choice", "stream_options", "stream"],
+        "child_thread_id": "661f046b-ddb1-45b9-abfa-41d4d7d26b1f",
+        "child_run_id": "bfbdc14c-16fe-408e-abab-5ab4b2551ed0"
+      }
+    ],
+    "lifecycles": [
+      {
+        "root_thread_id": "40a674dc-e7c2-4bed-8657-0399eff94c6b",
+        "parent_thread_id": "40a674dc-e7c2-4bed-8657-0399eff94c6b",
+        "child_thread_id": "661f046b-ddb1-45b9-abfa-41d4d7d26b1f",
+        "parent_run_id": "fb1a4c5e-7ec6-42f7-8ecc-6b56f86bf0e0",
+        "child_run_id": null,
+        "canonical_path": "/root/661f046b-ddb1-45b9-abfa-41d4d7d26b1f",
+        "artifact_id": "general-purpose", "status": "pending",
+        "terminal_outcome": null, "revision": 0,
+        "lifecycle_id": "agent-thread:661f046b-ddb1-45b9-abfa-41d4d7d26b1f:0",
+        "timestamp": "2026-09-04T19:30:23.745588Z"
+      },
+      {
+        "root_thread_id": "40a674dc-e7c2-4bed-8657-0399eff94c6b",
+        "parent_thread_id": "40a674dc-e7c2-4bed-8657-0399eff94c6b",
+        "child_thread_id": "661f046b-ddb1-45b9-abfa-41d4d7d26b1f",
+        "parent_run_id": "fb1a4c5e-7ec6-42f7-8ecc-6b56f86bf0e0",
+        "child_run_id": "bfbdc14c-16fe-408e-abab-5ab4b2551ed0",
+        "canonical_path": "/root/661f046b-ddb1-45b9-abfa-41d4d7d26b1f",
+        "artifact_id": "general-purpose", "status": "running",
+        "terminal_outcome": null, "revision": 1,
+        "lifecycle_id": "agent-thread:661f046b-ddb1-45b9-abfa-41d4d7d26b1f:1",
+        "timestamp": "2026-09-04T19:30:23.754223Z"
+      },
+      {
+        "root_thread_id": "40a674dc-e7c2-4bed-8657-0399eff94c6b",
+        "parent_thread_id": "40a674dc-e7c2-4bed-8657-0399eff94c6b",
+        "child_thread_id": "661f046b-ddb1-45b9-abfa-41d4d7d26b1f",
+        "parent_run_id": "fb1a4c5e-7ec6-42f7-8ecc-6b56f86bf0e0",
+        "child_run_id": "bfbdc14c-16fe-408e-abab-5ab4b2551ed0",
+        "canonical_path": "/root/661f046b-ddb1-45b9-abfa-41d4d7d26b1f",
+        "artifact_id": "general-purpose", "status": "cancelled",
+        "terminal_outcome": "cancelled", "revision": 2,
+        "lifecycle_id": "agent-thread:661f046b-ddb1-45b9-abfa-41d4d7d26b1f:2",
+        "timestamp": "2026-09-04T19:30:23.819990Z"
+      }
+    ],
+    "shadows": [],
+    "root_cancelled": true,
+    "result": "passed"
+  },
+  "unverified": [
+    "Cancellation after child text starts streaming",
+    "Provider-side computation and billing termination",
+    "Live remote UAR peer cancellation",
+    "Typed-turn shadow parity: no comparison reports were captured"
+  ]
+}

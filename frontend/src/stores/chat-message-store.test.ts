@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test } from "vitest";
+import { decodePersistedChatContent } from "@/platform/pglite/legacy-chat-content";
 import {
   selectRetryAttempt,
   selectRetryDelayMs,
@@ -145,6 +146,51 @@ describe("chat-message-store streaming", () => {
       expect.objectContaining({ kind: "thinking", text: "deliberation" }),
       expect.objectContaining({ kind: "reasoning", text: "analysis" }),
     ]);
+  });
+
+  test.each([
+    ["json", "json", "application/json", '{"presentation":{"requested_mode":"text"}}'],
+    ["note", "text", "text/plain", "A readable answer, not an interactive surface"],
+  ])("ordinary %s artifacts keep their content and title through canonical reload", (artifactType, language, mime, content) => {
+    const store = useChatMessageStore.getState();
+    store.initThread(THREAD_ID, []);
+    store.beginStream(THREAD_ID, "run-artifact");
+    store.addToolCall(THREAD_ID, "run-artifact", {
+      type: "tool-call", toolCallId: "ordinary", toolName: "__a2ui_display__",
+      args: { artifactType, language, title: "Run policy", metadata: {} },
+      result: content, status: "complete",
+    });
+    const message = useChatMessageStore.getState().messagesByThread[THREAD_ID]?.[0];
+    expect(message?.content).toEqual([{ type: "artifact", id: "ordinary", kind: mime, title: "Run policy", content }]);
+    expect(message?.chunks).toEqual([expect.objectContaining({ kind: "artifact", mime, title: "Run policy", content })]);
+    // Rebuild exclusively from persisted canonical content, not derived chunks.
+    const restored = decodePersistedChatContent(JSON.parse(JSON.stringify(message?.content)), {
+      messageId: "reloaded", at: "2026-09-05T00:00:00Z", finalized: true,
+    });
+    expect(restored.content).toEqual(message?.content);
+    expect(restored.chunks).toEqual([expect.objectContaining({ kind: "artifact", mime, title: "Run policy", content })]);
+  });
+
+  test.each([
+    { artifactType: "a2ui", language: "json", metadata: {} },
+    { artifactType: "display", language: "json", metadata: {} },
+    { artifactType: "a2ui/template", language: "json", metadata: {} },
+    { artifactType: "json", language: "application/a2ui+json", metadata: {} },
+    { artifactType: "json", language: "application/vnd.uar.a2ui+json", metadata: {} },
+    { artifactType: "json", language: "a2ui", metadata: {} },
+    { artifactType: "json", language: "json", metadata: { profile: "uar.a2ui/unknown" } },
+  ])("explicit A2UI declaration stays on the validation path: %j", (declaration) => {
+    const store = useChatMessageStore.getState();
+    store.initThread(THREAD_ID, []);
+    store.beginStream(THREAD_ID, "run-artifact");
+    store.addToolCall(THREAD_ID, "run-artifact", {
+      type: "tool-call", toolCallId: "declared-ui", toolName: "__a2ui_display__",
+      args: { ...declaration, validation: "invalid", validationError: "Unsupported profile" },
+      result: "{}", status: "complete",
+    });
+    const message = useChatMessageStore.getState().messagesByThread[THREAD_ID]?.[0];
+    expect(message?.chunks).toEqual([expect.objectContaining({ kind: "a2ui-display", validation: "invalid" })]);
+    expect(message?.content[0]).toMatchObject({ type: "artifact", kind: "application/vnd.uar.a2ui+json" });
   });
 
   test("persists terminal tool status even when the tool has no output", () => {

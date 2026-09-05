@@ -100,10 +100,13 @@ pub async fn patch_agent(
         .map_err(|e| AgentStoreError::Invalid(format!("invalid agent after merge: {e}")))?;
     agent.id = id.to_string();
 
-    persistence
-        .save_agent(&agent)
+    if !persistence
+        .save_agent_if_unchanged(&existing, &agent)
         .await
-        .map_err(AgentStoreError::Backend)?;
+        .map_err(AgentStoreError::Backend)?
+    {
+        return Err(AgentStoreError::Conflict);
+    }
     Ok(agent)
 }
 
@@ -151,6 +154,9 @@ pub async fn get_agent(
 /// them to the right transport response (e.g. 404 vs 403 vs 500).
 #[derive(Debug, thiserror::Error)]
 pub enum AgentStoreError {
+    /// Another edit committed after the patch read its baseline.
+    #[error("Agent changed; reload before saving")]
+    Conflict,
     /// The requested agent id does not exist.
     #[error("agent '{0}' not found")]
     NotFound(String),

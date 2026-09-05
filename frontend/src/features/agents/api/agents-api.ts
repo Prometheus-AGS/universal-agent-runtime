@@ -10,7 +10,7 @@ export async function fetchAgentsList(): Promise<UarAgent[]> {
 }
 
 export async function patchAgent(agentId: string, body: Record<string, unknown>): Promise<void> {
-  const r = await fetch(`/api/agents/${agentId}`, {
+  const r = await fetch(`/api/agents/${encodeURIComponent(agentId)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

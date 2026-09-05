@@ -175,6 +175,9 @@ pub struct RunPolicy {
     /// Eligible or selected knowledge bases.
     #[serde(default)]
     pub knowledge_bases: ResourceSelection,
+    /// Eligible reusable Presentation templates. Legacy requests inherit.
+    #[serde(default)]
+    pub presentations: ResourceSelection,
     /// Optional memory enablement override.
     #[serde(default)]
     pub memory_enabled: Option<bool>,
@@ -204,6 +207,7 @@ impl Default for RunPolicy {
             tools: ResourceSelection::default(),
             mcp_servers: ResourceSelection::default(),
             knowledge_bases: ResourceSelection::default(),
+            presentations: ResourceSelection::default(),
             memory_enabled: None,
             prompt_caching_enabled: None,
             context_strategy: None,
@@ -304,6 +308,7 @@ pub fn policy_from_agent_artifact(agent: &AgentArtifact) -> RunPolicy {
         merge_resource_selection(&mut policy.tools, extended.tools);
         merge_resource_selection(&mut policy.mcp_servers, extended.mcp_servers);
         merge_resource_selection(&mut policy.knowledge_bases, extended.knowledge_bases);
+        merge_resource_selection(&mut policy.presentations, extended.presentations);
         if extended.memory_enabled.is_some() {
             policy.memory_enabled = extended.memory_enabled;
         }
@@ -315,6 +320,14 @@ pub fn policy_from_agent_artifact(agent: &AgentArtifact) -> RunPolicy {
         }
     }
 
+    if agent
+        .extensions
+        .get("uar.run_policy")
+        .is_some_and(|value| serde_json::from_value::<RunPolicy>(value.clone()).is_err())
+    {
+        // A malformed extension must not erase Presentation restrictions.
+        policy.presentations.mode = SelectionMode::None;
+    }
     policy
 }
 
@@ -354,6 +367,10 @@ pub struct PolicyUniverse {
     pub mcp_servers: BTreeSet<String>,
     /// Enabled knowledge-base identifiers.
     pub knowledge_bases: BTreeSet<String>,
+    /// Enabled templates accessible to the verified owner.
+    pub presentations: BTreeSet<String>,
+    /// Secret-free admission failures carried into the effective-policy receipt.
+    pub presentation_warnings: Vec<String>,
 }
 
 /// Resolved selection for one resource kind.
@@ -365,6 +382,15 @@ pub struct EffectiveResourceSelection {
     pub ids: Vec<String>,
     /// Last non-inherited scope that affected the selection.
     pub source: PolicyScope,
+}
+
+fn legacy_presentation_selection() -> EffectiveResourceSelection {
+    // A persisted pre-Presentation policy cannot acquire newly created resources.
+    EffectiveResourceSelection {
+        mode: SelectionMode::None,
+        ids: Vec::new(),
+        source: PolicyScope::Legacy,
+    }
 }
 
 /// Secret-free, immutable policy used to execute one run.
@@ -386,6 +412,9 @@ pub struct EffectiveRunPolicy {
     pub mcp_servers: EffectiveResourceSelection,
     /// Effective knowledge-base eligibility.
     pub knowledge_bases: EffectiveResourceSelection,
+    /// Owner-accessible Presentation eligibility frozen at admission.
+    #[serde(default = "legacy_presentation_selection")]
+    pub presentations: EffectiveResourceSelection,
     /// Whether governed memory participates in the run.
     pub memory_enabled: bool,
     /// Whether explicit provider prompt caching participates in the run.
@@ -507,7 +536,7 @@ pub fn resolve_run_policy(input: PolicyResolutionInput) -> EffectiveRunPolicy {
         .entry("tool_approval".into())
         .or_insert(PolicyScope::Legacy);
 
-    let mut warnings = Vec::new();
+    let mut warnings = input.universe.presentation_warnings.clone();
     let skills = resolve_resources(
         &input.universe.skills,
         &scopes,
@@ -536,6 +565,13 @@ pub fn resolve_run_policy(input: PolicyResolutionInput) -> EffectiveRunPolicy {
         "knowledge base",
         &mut warnings,
     );
+    let presentations = resolve_resources(
+        &input.universe.presentations,
+        &scopes,
+        |policy| &policy.presentations,
+        "Presentation",
+        &mut warnings,
+    );
 
     EffectiveRunPolicy {
         version: RUN_POLICY_VERSION,
@@ -546,6 +582,7 @@ pub fn resolve_run_policy(input: PolicyResolutionInput) -> EffectiveRunPolicy {
         tools,
         mcp_servers,
         knowledge_bases,
+        presentations,
         memory_enabled,
         prompt_caching_enabled,
         context_strategy,
@@ -599,16 +636,22 @@ pub async fn resolve_effective_run_policy_core(
         provider_id: agent_default.provider.clone(),
         model_id: agent_default.model.clone(),
     });
+    let mut universe = ctx.universe;
     let global = match ctx.settings_manager {
-        Some(manager) => manager
-            .get_typed::<RunPolicy>("run_policy.global")
+        Some(manager) => match manager
+            .get_typed_for_admission::<RunPolicy>("run_policy.global")
             .await
-            .map_err(|error| {
-                tracing::warn!(%error, "failed to load global run policy; using inherited defaults");
-                error
-            })
-            .ok()
-            .flatten(),
+        {
+            Ok(policy) => policy,
+            Err(error) => {
+                tracing::warn!(%error, "failed to load global run policy; Presentation access is closed");
+                universe.presentations.clear();
+                universe.presentation_warnings.push(
+                    "Global policy could not be loaded; Presentation access is closed".into(),
+                );
+                None
+            }
+        },
         None => None,
     };
     let default_prompt_caching_enabled = match ctx.settings_manager {
@@ -630,7 +673,7 @@ pub async fn resolve_effective_run_policy_core(
         agent: Some(agent_policy),
         conversation,
         turn,
-        universe: ctx.universe,
+        universe,
         default_chat_mode: ChatMode::Agent,
         default_context_strategy: ctx.default_context_strategy,
         default_agent_id: Some(agent.id.clone()),
@@ -665,6 +708,48 @@ pub async fn load_persisted_conversation_policy(
     }
 }
 
+/// Read a verified principal's conversation policy with non-destructive legacy fallback.
+/// The boolean reports a principal-scoped row, including an explicit reset marker.
+/// Legacy subject-only rows preserve old settings, never Presentation selections.
+///
+/// # Errors
+/// Propagates storage failures and rejects a mismatched host owner stamp.
+pub(crate) async fn load_owner_scoped_conversation_policy(
+    persistence: &dyn PersistenceLayer,
+    owner_id: &str,
+    conversation_id: &str,
+    owner: Option<&crate::uar::runtime::actor::messages::ActorOwner>,
+) -> anyhow::Result<(Option<RunPolicy>, bool)> {
+    if let Some(owner) = owner {
+        anyhow::ensure!(
+            owner.user_id() == owner_id,
+            "Conversation policy owner mismatch"
+        );
+        let key = owner.presentation_owner_key();
+        if let Some(record) = persistence
+            .load_principal_conversation_policy(&key, conversation_id)
+            .await?
+        {
+            anyhow::ensure!(
+                record.owner_id == key,
+                "Conversation policy partition mismatch"
+            );
+            // A reset shadows legacy data without deleting another tenant's fallback.
+            let policy = (record.policy != RunPolicy::default()).then_some(record.policy);
+            return Ok((policy, true));
+        }
+    }
+    let legacy = persistence
+        .load_conversation_policy(owner_id, conversation_id)
+        .await?
+        .map(|record| {
+            let mut policy = record.policy;
+            policy.presentations = ResourceSelection::default();
+            policy
+        });
+    Ok((legacy, false))
+}
+
 fn approval_rank(value: ToolApprovalPolicy) -> u8 {
     match value {
         ToolApprovalPolicy::Inherit | ToolApprovalPolicy::Auto => 0,
@@ -683,6 +768,7 @@ fn resolve_resources(
     let mut eligible = universe.clone();
     let mut mode = SelectionMode::Auto;
     let mut source = PolicyScope::Legacy;
+    let mut open = true;
 
     for (scope, policy) in scopes {
         let Some(policy) = policy else { continue };
@@ -696,16 +782,27 @@ fn resolve_resources(
             .difference(&denied)
             .cloned()
             .collect::<BTreeSet<_>>();
+        if !denied.is_empty() {
+            open = false;
+            source = *scope;
+        }
         match selection.mode {
             SelectionMode::Inherit => {}
             SelectionMode::None => {
                 eligible.clear();
                 mode = SelectionMode::None;
                 source = *scope;
+                open = false;
             }
             SelectionMode::All | SelectionMode::Auto => {
                 // Lower scopes cannot widen a set narrowed or denied above them.
-                mode = selection.mode;
+                mode = if open {
+                    selection.mode
+                } else if eligible.is_empty() {
+                    SelectionMode::None
+                } else {
+                    SelectionMode::Selected
+                };
                 source = *scope;
             }
             SelectionMode::Selected => {
@@ -713,14 +810,31 @@ fn resolve_resources(
                 for missing in requested.difference(universe) {
                     warnings.push(format!("{label} '{missing}' is unavailable"));
                 }
+                for excluded in requested
+                    .intersection(universe)
+                    .filter(|id| !eligible.contains(*id))
+                {
+                    warnings.push(format!(
+                        "{label} '{excluded}' was excluded by scope restrictions"
+                    ));
+                }
                 eligible = eligible
                     .intersection(&requested)
                     .cloned()
                     .collect::<BTreeSet<_>>();
                 mode = SelectionMode::Selected;
                 source = *scope;
+                open = false;
             }
         }
+    }
+
+    if !open && matches!(mode, SelectionMode::All | SelectionMode::Auto) {
+        mode = if eligible.is_empty() {
+            SelectionMode::None
+        } else {
+            SelectionMode::Selected
+        };
     }
 
     EffectiveResourceSelection {
@@ -740,6 +854,8 @@ mod tests {
             tools: ["read", "search"].map(str::to_string).into(),
             mcp_servers: ["files", "search"].map(str::to_string).into(),
             knowledge_bases: ["personal", "work"].map(str::to_string).into(),
+            presentations: BTreeSet::new(),
+            presentation_warnings: Vec::new(),
         }
     }
 
@@ -755,6 +871,77 @@ mod tests {
             }),
             ..PolicyResolutionInput::default()
         }
+    }
+
+    #[test]
+    fn presentation_scopes_intersect_and_lower_all_never_restores_exclusions() {
+        let selection = |mode, ids: &[&str], denied: &[&str]| RunPolicy {
+            presentations: ResourceSelection {
+                mode,
+                ids: ids.iter().map(|id| (*id).into()).collect(),
+                denied_ids: denied.iter().map(|id| (*id).into()).collect(),
+            },
+            ..Default::default()
+        };
+        for lower_mode in [
+            SelectionMode::Auto,
+            SelectionMode::All,
+            SelectionMode::Inherit,
+            SelectionMode::Selected,
+        ] {
+            let result = resolve_run_policy(PolicyResolutionInput {
+                universe: PolicyUniverse {
+                    presentations: ["a", "b", "c"].map(str::to_owned).into(),
+                    ..Default::default()
+                },
+                global: Some(selection(SelectionMode::Selected, &["a", "b"], &[])),
+                agent: Some(selection(SelectionMode::Selected, &["b", "c"], &[])),
+                conversation: Some(selection(lower_mode, &["a", "b", "c"], &[])),
+                turn: Some(selection(SelectionMode::All, &[], &[])),
+                ..Default::default()
+            });
+            assert_eq!(result.presentations.ids, vec!["b"]);
+            assert_eq!(result.presentations.mode, SelectionMode::Selected);
+        }
+        let denied = resolve_run_policy(PolicyResolutionInput {
+            universe: PolicyUniverse {
+                presentations: ["a", "b"].map(str::to_owned).into(),
+                ..Default::default()
+            },
+            global: Some(selection(SelectionMode::Inherit, &[], &["b"])),
+            turn: Some(selection(SelectionMode::Selected, &["b", "missing"], &[])),
+            ..Default::default()
+        });
+        assert!(denied.presentations.ids.is_empty());
+        assert!(
+            denied
+                .warnings
+                .iter()
+                .any(|warning| warning.contains("'missing' is unavailable"))
+        );
+        assert!(
+            denied
+                .warnings
+                .iter()
+                .any(|warning| warning.contains("'b' was excluded"))
+        );
+    }
+
+    #[test]
+    fn legacy_persisted_effective_policy_does_not_acquire_presentations() {
+        let current = resolve_run_policy(PolicyResolutionInput {
+            universe: PolicyUniverse {
+                presentations: ["new-template".into()].into(),
+                ..Default::default()
+            },
+            ..Default::default()
+        });
+        let mut historical = serde_json::to_value(current).unwrap();
+        historical.as_object_mut().unwrap().remove("presentations");
+        let restored: EffectiveRunPolicy = serde_json::from_value(historical).unwrap();
+        assert_eq!(restored.presentations.mode, SelectionMode::None);
+        assert!(restored.presentations.ids.is_empty());
+        assert_eq!(restored.presentations.source, PolicyScope::Legacy);
     }
 
     #[test]

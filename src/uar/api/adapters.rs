@@ -198,6 +198,15 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
                 "sourceRunId": run_id
             }),
         ),
+        NormalizedEvent::PresentationDiagnostic {
+            run_id,
+            code,
+            message,
+        } => custom(
+            "uar.presentation.diagnostic",
+            Some(run_id),
+            serde_json::json!({ "code": code, "message": message }),
+        ),
         NormalizedEvent::Error {
             run_id,
             code,
@@ -272,6 +281,23 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
                 }),
             )
         }
+        NormalizedEvent::McpServerStateChanged { run_id, lifecycle } => custom(
+            "uar.mcp.server_state",
+            run_id.as_deref(),
+            serde_json::json!(lifecycle),
+        ),
+        NormalizedEvent::AgentThreadStarted { run_id, lifecycle } => {
+            subagent_spec_event("SUBAGENT_STARTED", run_id, lifecycle)
+        }
+        NormalizedEvent::AgentThreadFinished { run_id, lifecycle } => {
+            subagent_spec_event("SUBAGENT_FINISHED", run_id, lifecycle)
+        }
+        NormalizedEvent::AgentThreadError { run_id, lifecycle } => {
+            subagent_spec_event("SUBAGENT_ERROR", run_id, lifecycle)
+        }
+        NormalizedEvent::AgentThreadUpdated { run_id, lifecycle } => {
+            subagent_spec_event("CUSTOM", run_id, lifecycle)
+        }
         NormalizedEvent::StatePatch { run_id, patch } => (
             "STATE_DELTA",
             serde_json::json!({
@@ -322,6 +348,7 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
         ),
         NormalizedEvent::ToolCallApprovalRequired {
             run_id,
+            approval_id,
             tool_call_id,
             name,
             arguments_json,
@@ -331,6 +358,7 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
             "uar.tool.approval_required",
             Some(run_id),
             serde_json::json!({
+                "approvalId": approval_id,
                 "toolCallId": tool_call_id, "name": name,
                 "arguments": arguments_json, "riskReason": risk_reason
             }),
@@ -369,6 +397,65 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
         ),
     };
     Some(mapped)
+}
+
+/// Preserve the root stream's run identity while correlating the actual child
+/// turn. Pre-start transitions have no child run ID and use a named extension,
+/// never a fabricated SUBAGENT_STARTED/FINISHED/ERROR run identifier.
+fn subagent_spec_event(
+    requested_type: &'static str,
+    run_id: &str,
+    lifecycle: &crate::uar::domain::events::AgentLifecycle,
+) -> (&'static str, Value) {
+    let Some(child_run_id) = lifecycle
+        .child_run_id
+        .as_deref()
+        .filter(|_| requested_type != "CUSTOM")
+    else {
+        let name = if requested_type == "SUBAGENT_ERROR" {
+            "uar.agent_thread.error"
+        } else {
+            "uar.agent_thread.updated"
+        };
+        return (
+            "CUSTOM",
+            json!({
+                "type": "CUSTOM", "profile": "uar.agui/1", "name": name,
+                "runId": run_id, "threadId": lifecycle.root_thread_id,
+                "timestamp": lifecycle.timestamp.timestamp_millis(), "value": lifecycle,
+            }),
+        );
+    };
+    let mut payload = json!({
+        "type": requested_type, "profile": "uar.agui/1",
+        "runId": run_id, "threadId": lifecycle.root_thread_id,
+        "subagentRunId": child_run_id,
+        "timestamp": lifecycle.timestamp.timestamp_millis(), "lifecycle": lifecycle,
+    });
+    if requested_type == "SUBAGENT_STARTED" {
+        payload["name"] = json!(lifecycle.canonical_path);
+        if lifecycle.parent_thread_id != lifecycle.root_thread_id
+            && let Some(parent_run_id) = &lifecycle.parent_run_id
+        {
+            payload["parentSubagentRunId"] = json!(parent_run_id);
+        }
+    } else if requested_type == "SUBAGENT_ERROR" {
+        // Stored backend messages may contain prompts or secrets. Only a
+        // host-defined category crosses the lifecycle transport boundary.
+        let cancelled = lifecycle.terminal_outcome
+            == Some(crate::uar::domain::events::AgentLifecycleOutcome::Cancelled);
+        payload["code"] = json!(if cancelled {
+            "CANCELLED"
+        } else {
+            "AGENT_FAILED"
+        });
+        payload["message"] = json!(if cancelled {
+            "Child agent cancelled"
+        } else {
+            "Child agent failed"
+        });
+    }
+    (requested_type, payload)
 }
 
 /// Add the stable UAR profile metadata shared by live and replayed AG-UI frames.

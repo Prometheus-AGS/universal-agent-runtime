@@ -5,6 +5,8 @@
 //! re-remediate-stale-rustsec: it never compiled — its test called a
 //! nonexistent API — and pinned vulnerable hickory-proto into Cargo.lock.)
 
+pub mod bindings;
+pub mod execution;
 pub mod mcp_tools;
 pub mod platform;
 pub mod runner;

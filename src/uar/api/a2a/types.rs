@@ -4,10 +4,10 @@
 //! Reference: <https://a2a-protocol.org/latest/specification/>
 //!
 //! Key concepts:
-//! - **Task** — the unit of work, maps 1:1 to a [`CompilerSession`]
+//! - **Task** — transport correlation for a host-bound agent conversation
 //! - **Message** — a conversational turn (user or agent)
 //! - **Part** — typed content within a message (text, file, data)
-//! - **Artifact** — output produced by the agent (compiled descriptor)
+//! - **Artifact** — structured output produced by the agent
 //! - **AgentCard** — machine-readable agent capability declaration
 
 use serde::{Deserialize, Serialize};
@@ -124,6 +124,16 @@ pub struct Task {
     /// Arbitrary metadata.
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub metadata: HashMap<String, serde_json::Value>,
+}
+
+impl Task {
+    /// UAR's cleanup receipt extension. A malformed present flag is not proof
+    /// of cleanup; only explicit false or absence clears the uncertainty.
+    pub fn cleanup_unconfirmed(&self) -> bool {
+        self.metadata
+            .get("cleanup_unconfirmed")
+            .is_some_and(|value| value.as_bool() != Some(false))
+    }
 }
 
 /// Task status with optional message.

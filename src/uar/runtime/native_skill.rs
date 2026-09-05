@@ -84,6 +84,38 @@ pub trait NativeSkill: Send + Sync {
         false
     }
 
+    /// Whether this implementation has an adapter for the host's sandbox
+    /// protocol. A code-execution effect is not evidence of an adapter.
+    fn supports_sandbox_execution(&self) -> bool {
+        false
+    }
+
+    /// Admit direct execution under a captured child policy. Implementations
+    /// must enforce any authority they consume, not merely declare ReadOnly.
+    ///
+    /// # Errors
+    /// Unported tools cannot silently inherit an unrestricted host execution
+    /// path. Sandbox execution uses the host's separate physical binding.
+    fn check_thread_policy(
+        &self,
+        _policy: &super::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        anyhow::bail!("Native tool has no delegated permission enforcement")
+    }
+
+    /// Translate validated arguments into this tool's actual sandbox operation.
+    /// The host must not guess executable code or language from field/tool names.
+    ///
+    /// # Errors
+    /// The default rejects tools without an explicit sandbox adapter. Implementors
+    /// must preserve argument semantics and reject unsupported execution modes.
+    fn sandbox_request(
+        &self,
+        _args: serde_json::Value,
+    ) -> anyhow::Result<crate::sandbox::ExecutionRequest> {
+        anyhow::bail!("Tool has no sandbox execution adapter")
+    }
+
     /// Optional key used to serialize conflicting read-only operations.
     fn concurrency_key(&self) -> Option<&str> {
         None
@@ -107,6 +139,25 @@ pub trait NativeSkill: Send + Sync {
     /// Execute the tool with the given arguments and return the result.
     async fn execute(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value>;
 
+    /// Execute with host context only after schema validation and governance.
+    /// Implementations without contextual behavior retain their existing path.
+    async fn execute_with_context(
+        &self,
+        args: serde_json::Value,
+        _context: &NativeExecutionContext,
+    ) -> anyhow::Result<serde_json::Value> {
+        self.execute(args).await
+    }
+
+    /// Declare structured outputs from a successful result, before truncation.
+    /// The trusted host owns publication; ordinary tools produce no artifacts.
+    fn result_artifacts(
+        &self,
+        _result: &serde_json::Value,
+    ) -> anyhow::Result<Vec<super::thread::artifacts::ToolOutputArtifact>> {
+        Ok(Vec::new())
+    }
+
     /// Format one successful result for model-visible history.
     ///
     /// The default preserves the existing JSON representation and applies the
@@ -123,6 +174,121 @@ pub trait NativeSkill: Send + Sync {
             &content, policy, model,
         )
     }
+}
+
+/// Opaque per-call Presentation capability. Only the trusted run host can
+/// construct it; public context struct-update construction remains supported.
+#[derive(Clone, Debug)]
+pub struct PresentationExecutionContext {
+    snapshot: Arc<super::presentations::RunPresentationSnapshot>,
+    call_id: String,
+}
+
+impl PresentationExecutionContext {
+    pub(crate) fn new(
+        snapshot: Arc<super::presentations::RunPresentationSnapshot>,
+        call_id: &str,
+    ) -> Self {
+        Self {
+            snapshot,
+            call_id: call_id.to_owned(),
+        }
+    }
+
+    pub(crate) fn snapshot(&self) -> &super::presentations::RunPresentationSnapshot {
+        &self.snapshot
+    }
+}
+
+/// Non-model-owned capability supplied by the governed host tool loop.
+#[derive(Clone, Default)]
+pub struct NativeExecutionContext {
+    /// Private host capture. No tool argument can install another snapshot.
+    pub presentations: Option<PresentationExecutionContext>,
+    /// Principal retained by the admitted turn, never taken from tool arguments.
+    pub verified_owner: Option<super::actor::messages::ActorOwner>,
+    /// Host-resolved conversation (the thread ID for delegated turns). Tool
+    /// arguments may select records inside it, never a replacement namespace.
+    pub session_id: Option<String>,
+    /// Present only for a host-admitted delegated turn.
+    pub thread_policy: Option<Arc<super::thread::policy_intersection::ThreadPolicy>>,
+    /// Run-owned lifetime scope for host terminal calls, not an execution grant.
+    pub terminal_scope: Option<crate::uar::tools::terminal_process::TerminalRun>,
+    /// Exact actor-turn output receipt, never supplied by model arguments.
+    pub artifact_collector: Option<super::thread::artifacts::RunArtifactCollector>,
+    pub project_instructions:
+        Option<Arc<tokio::sync::Mutex<super::project_instructions::ProjectInstructions>>>,
+}
+
+impl std::fmt::Debug for NativeExecutionContext {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NativeExecutionContext")
+            .field("has_verified_owner", &self.verified_owner.is_some())
+            .field("has_session", &self.session_id.is_some())
+            .field("has_thread_policy", &self.thread_policy.is_some())
+            .field("has_terminal_scope", &self.terminal_scope.is_some())
+            .field("has_artifact_collector", &self.artifact_collector.is_some())
+            .field(
+                "has_project_instructions",
+                &self.project_instructions.is_some(),
+            )
+            .finish_non_exhaustive()
+    }
+}
+
+/// Trusted direct-call boundary shared by sequential and parallel tool dispatch.
+/// A tool's overridable contextual method cannot bypass delegated admission.
+///
+/// # Errors
+/// Rejects a missing/foreign owner or unenforceable child policy before I/O.
+pub(crate) async fn execute_native(
+    skill: &dyn NativeSkill,
+    args: serde_json::Value,
+    context: &NativeExecutionContext,
+) -> anyhow::Result<serde_json::Value> {
+    if let Some(policy) = &context.thread_policy {
+        anyhow::ensure!(
+            context
+                .verified_owner
+                .as_ref()
+                .is_some_and(|owner| owner.user_id() == policy.owner_id()),
+            "Delegated native tool has no matching verified owner"
+        );
+        skill.check_thread_policy(policy)?;
+    }
+    let mut result = match skill.execute_with_context(args, context).await {
+        Ok(result) => result,
+        Err(error) => {
+            if matches!(skill.name(), "a2ui_render" | "presentation_render")
+                && let Some(presentations) = &context.presentations
+            {
+                presentations.snapshot.record_generation_failure();
+            }
+            return Err(error);
+        }
+    };
+    if let Some(collector) = &context.artifact_collector {
+        let owner = context
+            .verified_owner
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Artifact output has no verified owner"))?;
+        collector.publish(owner, skill.result_artifacts(&result)?)?;
+    }
+    if matches!(skill.name(), "a2ui_render" | "presentation_render")
+        && let Some(presentations) = &context.presentations
+    {
+        presentations.snapshot.retain_preparation(
+            &presentations.call_id,
+            skill.name(),
+            result.clone(),
+        )?;
+        // The full validated surface stays on the host. Model history and
+        // ToolEnd carry a compact preparation receipt, never publication data.
+        if let Some(fields) = result.as_object_mut() {
+            fields.remove("a2uiMessages");
+        }
+    }
+    Ok(result)
 }
 
 /// Registry holding all registered native skills, keyed by their name.

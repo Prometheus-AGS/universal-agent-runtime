@@ -2,9 +2,14 @@
 
 use std::{collections::HashMap, sync::RwLock};
 
+use crate::uar::a2ui::presentations::{Presentation, PresentationDraft};
+use crate::uar::persistence::presentations::{self, PresentationStoreError};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use uuid::Uuid;
+
+use crate::uar::persistence::agent_threads::{self, AgentThreadStoreError, PersistedAgentThread};
+use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 
 use crate::{
     session::Session,
@@ -27,19 +32,29 @@ use crate::{
 /// Process-local persistence. All state is discarded on shutdown.
 #[derive(Debug, Default)]
 pub struct InMemoryProvider {
+    presentations: RwLock<HashMap<String, Presentation>>,
     sessions: RwLock<HashMap<String, Session>>,
     conversation_policies: RwLock<HashMap<String, ConversationPolicyRecord>>,
+    principal_conversation_policies: RwLock<HashMap<String, ConversationPolicyRecord>>,
     user_prompt_caching_settings: RwLock<HashMap<String, UserPromptCachingSettings>>,
     skills: RwLock<HashMap<String, Skill>>,
     knowledge_bases: RwLock<HashMap<String, KnowledgeBase>>,
     chunks: RwLock<HashMap<String, KnowledgeChunk>>,
     documents: RwLock<HashMap<String, KnowledgeDocument>>,
     agents: RwLock<HashMap<String, AgentArtifact>>,
+    agent_threads: RwLock<AgentThreadStore>,
     memories: RwLock<Vec<Memory>>,
     /// Registered settings types keyed by their slug (e.g. `run_policy`).
     settings_types: RwLock<HashMap<String, SettingsType>>,
     /// Setting values keyed by their dotted key (e.g. `run_policy.global`).
     settings: RwLock<HashMap<String, Settings>>,
+}
+
+/// One lock covers records and edges so a reader cannot observe a half-spawn.
+#[derive(Debug, Default)]
+struct AgentThreadStore {
+    threads: HashMap<String, PersistedAgentThread>,
+    edges: HashMap<String, AgentEdge>,
 }
 
 impl InMemoryProvider {
@@ -82,6 +97,206 @@ fn write<T>(lock: &RwLock<T>) -> Result<std::sync::RwLockWriteGuard<'_, T>> {
 
 #[async_trait]
 impl PersistenceLayer for InMemoryProvider {
+    async fn create_presentation(
+        &self,
+        owner_id: &str,
+        draft: &PresentationDraft,
+    ) -> Result<Presentation> {
+        let record = presentations::new_record(owner_id, draft)?;
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, &record.id);
+        let mut records = write(&self.presentations)?;
+        match records.entry(key) {
+            std::collections::hash_map::Entry::Vacant(entry) => {
+                entry.insert(record.clone());
+            }
+            std::collections::hash_map::Entry::Occupied(_) => {
+                return Err(PresentationStoreError::Conflict.into());
+            }
+        }
+        Ok(record)
+    }
+
+    async fn get_presentation(&self, owner_id: &str, id: &str) -> Result<Option<Presentation>> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        Ok(read(&self.presentations)?.get(&key).cloned())
+    }
+
+    async fn list_presentations(&self, owner_id: &str) -> Result<Vec<Presentation>> {
+        let mut records: Vec<_> = read(&self.presentations)?
+            .values()
+            .filter(|record| record.owner_id == owner_id)
+            .cloned()
+            .collect();
+        records.sort_by(|left, right| left.id.cmp(&right.id));
+        Ok(records)
+    }
+
+    async fn update_presentation(
+        &self,
+        owner_id: &str,
+        id: &str,
+        expected_revision: u64,
+        draft: &PresentationDraft,
+    ) -> Result<Presentation> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        let mut records = write(&self.presentations)?;
+        let current = records.get(&key).ok_or(PresentationStoreError::NotFound)?;
+        let next = presentations::next_record(current, expected_revision, draft)?;
+        records.insert(key, next.clone());
+        Ok(next)
+    }
+
+    async fn delete_presentation(
+        &self,
+        owner_id: &str,
+        id: &str,
+        expected_revision: u64,
+    ) -> Result<()> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        let mut records = write(&self.presentations)?;
+        let current = records.get(&key).ok_or(PresentationStoreError::NotFound)?;
+        if current.revision != expected_revision {
+            return Err(PresentationStoreError::Conflict.into());
+        }
+        records.remove(&key);
+        Ok(())
+    }
+
+    async fn create_agent_root(
+        &self,
+        owner_id: &str,
+        thread: &AgentThread,
+    ) -> Result<PersistedAgentThread> {
+        let record = agent_threads::new_root(owner_id, thread)?;
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, &thread.thread_id);
+        let mut store = write(&self.agent_threads)?;
+        if store.threads.contains_key(&key)
+            || store.threads.values().any(|existing| {
+                existing.thread.owner_id == owner_id
+                    && existing.thread.root_run_id == thread.root_run_id
+                    && existing.thread.canonical_path == thread.canonical_path
+            })
+        {
+            return Err(AgentThreadStoreError::AlreadyExists.into());
+        }
+        store.threads.insert(key, record.clone());
+        Ok(record)
+    }
+
+    async fn create_agent_child(
+        &self,
+        owner_id: &str,
+        thread: &AgentThread,
+        edge: &AgentEdge,
+    ) -> Result<PersistedAgentThread> {
+        let parent_id = thread
+            .parent_thread_id
+            .as_deref()
+            .ok_or(AgentThreadStoreError::InvalidTransition)?;
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, &thread.thread_id);
+        let parent_key = crate::uar::persistence::tenant_storage_key(owner_id, parent_id);
+        let root_key =
+            crate::uar::persistence::tenant_storage_key(owner_id, &thread.root_thread_id);
+        let mut store = write(&self.agent_threads)?;
+        let parent = store
+            .threads
+            .get(&parent_key)
+            .ok_or(AgentThreadStoreError::NotFound)?;
+        let root = store
+            .threads
+            .get(&root_key)
+            .ok_or(AgentThreadStoreError::NotFound)?;
+        let record = agent_threads::new_child(owner_id, thread, edge, parent, root)?;
+        if store.threads.contains_key(&key)
+            || store.edges.contains_key(&key)
+            || store.threads.values().any(|existing| {
+                existing.thread.owner_id == owner_id
+                    && existing.thread.root_run_id == thread.root_run_id
+                    && existing.thread.canonical_path == thread.canonical_path
+            })
+        {
+            return Err(AgentThreadStoreError::AlreadyExists.into());
+        }
+        store.threads.insert(key.clone(), record.clone());
+        store.edges.insert(key, edge.clone());
+        Ok(record)
+    }
+
+    async fn load_agent_thread(
+        &self,
+        owner_id: &str,
+        thread_id: &str,
+    ) -> Result<Option<PersistedAgentThread>> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, thread_id);
+        let record = read(&self.agent_threads)?.threads.get(&key).cloned();
+        if let Some(record) = &record {
+            agent_threads::validate_lookup(record, owner_id, thread_id)?;
+        }
+        Ok(record)
+    }
+
+    async fn update_agent_thread(
+        &self,
+        owner_id: &str,
+        expected_revision: u64,
+        thread: &AgentThread,
+    ) -> Result<PersistedAgentThread> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, &thread.thread_id);
+        let mut store = write(&self.agent_threads)?;
+        let current = store
+            .threads
+            .get(&key)
+            .ok_or(AgentThreadStoreError::NotFound)?;
+        let next = agent_threads::next_record(owner_id, current, expected_revision, thread)?;
+        store.threads.insert(key, next.clone());
+        Ok(next)
+    }
+
+    async fn list_agent_threads(
+        &self,
+        owner_id: &str,
+        root_run_id: &str,
+    ) -> Result<Vec<PersistedAgentThread>> {
+        let records = read(&self.agent_threads)?
+            .threads
+            .values()
+            .filter(|record| {
+                record.thread.owner_id == owner_id && record.thread.root_run_id == root_run_id
+            })
+            .cloned()
+            .collect();
+        Ok(agent_threads::ordered_threads(
+            records,
+            owner_id,
+            root_run_id,
+        )?)
+    }
+
+    async fn list_agent_edges(&self, owner_id: &str, root_run_id: &str) -> Result<Vec<AgentEdge>> {
+        let store = read(&self.agent_threads)?;
+        let records = store
+            .threads
+            .values()
+            .filter(|record| {
+                record.thread.owner_id == owner_id && record.thread.root_run_id == root_run_id
+            })
+            .cloned()
+            .collect();
+        let records = agent_threads::ordered_threads(records, owner_id, root_run_id)?;
+        let edges = store
+            .edges
+            .values()
+            .filter(|edge| edge.owner_id == owner_id && edge.root_run_id == root_run_id)
+            .cloned()
+            .collect();
+        Ok(agent_threads::ordered_edges(
+            edges,
+            &records,
+            owner_id,
+            root_run_id,
+        )?)
+    }
+
     async fn save_session(&self, session: &Session) -> Result<()> {
         let key = crate::uar::persistence::tenant_storage_key(session.owner_id(), session.id());
         write(&self.sessions)?.insert(key, session.clone());
@@ -113,6 +328,30 @@ impl PersistenceLayer for InMemoryProvider {
         let key = crate::uar::persistence::tenant_storage_key(owner_id, conversation_id);
         write(&self.conversation_policies)?.remove(&key);
         Ok(())
+    }
+    async fn save_principal_conversation_policy(
+        &self,
+        record: &ConversationPolicyRecord,
+        expected: Option<&crate::uar::domain::policy::RunPolicy>,
+    ) -> Result<bool> {
+        let key =
+            crate::uar::persistence::tenant_storage_key(&record.owner_id, &record.conversation_id);
+        let mut policies = write(&self.principal_conversation_policies)?;
+        if policies.get(&key).map(|current| &current.policy) != expected {
+            return Ok(false);
+        }
+        policies.insert(key, record.clone());
+        Ok(true)
+    }
+    async fn load_principal_conversation_policy(
+        &self,
+        owner_id: &str,
+        conversation_id: &str,
+    ) -> Result<Option<ConversationPolicyRecord>> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, conversation_id);
+        Ok(read(&self.principal_conversation_policies)?
+            .get(&key)
+            .cloned())
     }
     async fn save_user_prompt_caching_settings(
         &self,
@@ -257,6 +496,23 @@ impl PersistenceLayer for InMemoryProvider {
     async fn load_agent(&self, id: &str) -> Result<Option<AgentArtifact>> {
         Ok(read(&self.agents)?.get(id).cloned())
     }
+    async fn save_agent_if_unchanged(
+        &self,
+        expected: &AgentArtifact,
+        updated: &AgentArtifact,
+    ) -> Result<bool> {
+        anyhow::ensure!(expected.id == updated.id, "Agent update identity mismatch");
+        let mut agents = write(&self.agents)?;
+        let Some(current) = agents.get(&expected.id) else {
+            return Ok(false);
+        };
+        if serde_json::to_value(current)? != serde_json::to_value(expected)? {
+            return Ok(false);
+        }
+        agents.insert(updated.id.clone(), updated.clone());
+        Ok(true)
+    }
+
     async fn load_agent_by_name(&self, name: &str) -> Result<Option<AgentArtifact>> {
         Ok(read(&self.agents)?
             .values()
@@ -322,6 +578,24 @@ impl PersistenceLayer for InMemoryProvider {
 
     async fn get_setting(&self, key: &str) -> Result<Option<Settings>> {
         Ok(read(&self.settings)?.get(key).cloned())
+    }
+
+    async fn compare_and_swap_global_presentation_policy(
+        &self,
+        expected: &serde_json::Value,
+        selection: &crate::uar::domain::policy::ResourceSelection,
+    ) -> Result<bool> {
+        let next = presentations::global_policy_with_presentations(expected, selection)?;
+        let mut settings = write(&self.settings)?;
+        let Some(setting) = settings.get_mut("run_policy.global") else {
+            return Ok(false);
+        };
+        if setting.data != *expected {
+            return Ok(false);
+        }
+        setting.data = next;
+        setting.updated_at = Some(chrono::Utc::now());
+        Ok(true)
     }
 
     async fn list_settings(

@@ -104,10 +104,11 @@ async fn test_rpc_error_propagated() {
 
     let app = Router::new().route(
         "/",
-        post(|| async {
+        post(|Json(req): Json<serde_json::Value>| async move {
+            let id = req.get("id").cloned().unwrap_or(json!(1));
             Json(json!({
                 "jsonrpc": "2.0",
-                "id": "1",
+                "id": id,
                 "error": {
                     "code": -32601,
                     "message": "Method not found"

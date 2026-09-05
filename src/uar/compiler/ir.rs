@@ -335,6 +335,8 @@ pub struct IdentitySection {
     pub persona: String,
     #[serde(default)]
     pub system_prompt: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub instructions: Vec<String>,
     #[serde(default)]
     pub greeting: Option<String>,
 }

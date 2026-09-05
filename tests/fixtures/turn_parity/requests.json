@@ -1,0 +1,22 @@
+{
+  "cases": [
+    {
+      "id": "basic-user-turn",
+      "input": "Summarize the active runtime state.",
+      "instructions": [],
+      "memory": null
+    },
+    {
+      "id": "host-instructions",
+      "input": "Follow the project-specific convention.",
+      "instructions": ["Keep generated identifiers deterministic."],
+      "memory": null
+    },
+    {
+      "id": "memory-contribution",
+      "input": "Use the recalled fact.",
+      "instructions": [],
+      "memory": "The peer runtime uses host-owned authority."
+    }
+  ]
+}

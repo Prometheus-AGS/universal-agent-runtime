@@ -10,6 +10,10 @@ pub struct UserClaims {
     pub roles: Option<Vec<String>>,
     #[serde(default)]
     pub tenant_id: Option<String>,
+    /// Authenticated UAR issuer identity for governed instance-to-instance A2A.
+    /// Ordinary user tokens omit it and cannot present a delegation contract.
+    #[serde(default)]
+    pub uar_instance_id: Option<String>,
     pub exp: usize, // Expiration time (UNIX timestamp)
 }
 

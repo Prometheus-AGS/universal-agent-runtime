@@ -3,7 +3,9 @@
 //! The registry aggregates skills from all enabled storage providers
 //! and provides fast lookups.
 
-use crate::uar::domain::skills::{Skill, SkillMatch};
+use crate::uar::domain::skills::Skill;
+#[cfg(test)]
+use crate::uar::domain::skills::SkillMatch;
 use crate::uar::persistence::PersistenceLayer;
 use crate::uar::runtime::matching::vector::VectorMatcher;
 use std::collections::HashMap;
@@ -207,11 +209,14 @@ impl SkillRegistry {
 
     /// List all registered skills.
     pub fn list(&self) -> Vec<Skill> {
-        self.skills
+        let mut skills = self
+            .skills
             .values()
             .filter(|skill| !skill.tombstoned)
             .cloned()
-            .collect()
+            .collect::<Vec<_>>();
+        skills.sort_by(|left, right| left.skill_id.cmp(&right.skill_id));
+        skills
     }
 
     /// List only enabled skills.
@@ -277,13 +282,32 @@ impl SkillRegistry {
 
     /// Vector-based skill matching (uses persistence + VectorMatcher).
     pub async fn find_matches(&self, query: &str) -> Vec<Skill> {
+        self.find_candidates(query)
+            .await
+            .into_iter()
+            .map(|candidate| candidate.skill)
+            .collect()
+    }
+
+    /// Preserve real similarity scores for thresholding and shadow telemetry.
+    pub async fn find_candidates(
+        &self,
+        query: &str,
+    ) -> Vec<crate::uar::domain::skills::SkillCandidate> {
         if let (Some(db), Some(vm)) = (&self.persistence, &self.vector_matcher) {
             match vm.embed_batch(vec![query.to_string()]).await {
                 Ok(embeddings) => {
                     if let Some(q_vec) = embeddings.first() {
                         match db.search_skills(q_vec, self.vector_candidate_limit()).await {
                             Ok(matches) => {
-                                return Self::visible_vector_matches(matches);
+                                return matches
+                                    .into_iter()
+                                    .filter(|candidate| !candidate.skill.tombstoned)
+                                    .map(|candidate| crate::uar::domain::skills::SkillCandidate {
+                                        skill: candidate.skill,
+                                        score: candidate.score,
+                                    })
+                                    .collect();
                             }
                             Err(e) => {
                                 error!("Skill search failed: {:?}", e);
@@ -298,13 +322,17 @@ impl SkillRegistry {
         }
 
         // Fallback to keyword match
-        self.find_by_keyword(query)
+        self.list()
+            .iter()
+            .map(|skill| crate::uar::domain::skills::SkillCandidate::keyword(skill, query))
+            .collect()
     }
 
     fn vector_candidate_limit(&self) -> usize {
         self.skills.len().max(Self::VECTOR_MATCH_LIMIT)
     }
 
+    #[cfg(test)]
     fn visible_vector_matches(matches: Vec<SkillMatch>) -> Vec<Skill> {
         matches
             .into_iter()

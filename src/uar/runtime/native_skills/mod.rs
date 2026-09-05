@@ -9,7 +9,11 @@
 //! - Session search → `native_tools.session_search_enabled`
 
 pub mod a2ui_render;
+pub mod activate_skill;
+pub mod agents;
 pub mod echo;
+pub mod presentation_render;
+pub mod search_tools;
 pub mod system_info;
 
 use std::sync::Arc;
@@ -39,6 +43,9 @@ pub async fn register_builtins(
     registry.register(echo::EchoSkill).await?;
     registry.register(system_info::SystemInfoSkill).await?;
     registry.register(a2ui_render::A2uiRenderSkill).await?;
+    registry
+        .register(presentation_render::PresentationRenderSkill)
+        .await?;
 
     // ── Compiler skills ───────────────────────────────────────────────────
     let key_provider: Arc<dyn KeyProvider> = Arc::new(LocalKeyProvider::ephemeral());
@@ -68,24 +75,28 @@ pub async fn register_builtins(
     // ── File system tools ─────────────────────────────────────────────────
     if native_cfg.file_tools_enabled {
         use crate::uar::tools::file_patch::FilePatchTool;
-        use crate::uar::tools::file_tools::{FileReadTool, FileWriteTool};
+        use crate::uar::tools::file_tools::{DelegatedFileRoots, FileReadTool, FileWriteTool};
+        let delegated_roots = DelegatedFileRoots::capture(&native_cfg.file_allowed_paths);
         registry
-            .register(FileReadTool {
-                allowed_paths: native_cfg.file_allowed_paths.clone(),
-                max_size_kb: native_cfg.file_max_size_kb,
-            })
+            .register(FileReadTool::new(
+                native_cfg.file_allowed_paths.clone(),
+                native_cfg.file_max_size_kb,
+                delegated_roots.clone(),
+            ))
             .await?;
         registry
-            .register(FileWriteTool {
-                allowed_paths: native_cfg.file_allowed_paths.clone(),
-                max_size_kb: native_cfg.file_write_max_kb,
-            })
+            .register(FileWriteTool::new(
+                native_cfg.file_allowed_paths.clone(),
+                native_cfg.file_write_max_kb,
+                delegated_roots.clone(),
+            ))
             .await?;
         registry
-            .register(FilePatchTool {
-                allowed_paths: native_cfg.file_allowed_paths.clone(),
-                max_size_kb: native_cfg.file_max_size_kb,
-            })
+            .register(FilePatchTool::new(
+                native_cfg.file_allowed_paths.clone(),
+                native_cfg.file_max_size_kb,
+                delegated_roots,
+            ))
             .await?;
         tracing::info!(
             allowed_paths = ?native_cfg.file_allowed_paths,

@@ -29,7 +29,9 @@ use anyhow::Result;
 use axum::Router;
 use rmcp::{
     ErrorData as McpError, ServerHandler,
-    handler::server::{router::tool::ToolRouter, wrapper::Parameters},
+    handler::server::{
+        router::tool::ToolRouter, tool::Extension as McpExtension, wrapper::Parameters,
+    },
     model::{CallToolResult, ContentBlock, Implementation, ServerCapabilities, ServerInfo},
     tool, tool_handler, tool_router,
     transport::streamable_http_server::{
@@ -40,7 +42,11 @@ use rmcp::{
 use crate::uar::{
     compiler::pipeline,
     persistence::PersistenceLayer,
-    runtime::{manager::RunManager, native_skill::NativeSkillRegistry},
+    runtime::{
+        actor::messages::ActorOwner, manager::RunManager, native_skill::NativeSkillRegistry,
+        turn::RunExecutionRequest,
+    },
+    security::claims::UserContext,
 };
 
 // ── Helper utilities ──────────────────────────────────────────────────────────
@@ -55,6 +61,15 @@ fn err_mcp(e: impl std::fmt::Display) -> McpError {
     McpError::invalid_params(e.to_string(), None)
 }
 
+fn verified_owner(parts: &axum::http::request::Parts) -> Result<ActorOwner, McpError> {
+    let user = parts
+        .extensions
+        .get::<UserContext>()
+        .ok_or_else(|| McpError::invalid_params("verified user context required", None))?;
+    ActorOwner::from_verified_context(user)
+        .map_err(|_| McpError::invalid_params("verified user context required", None))
+}
+
 // ── Parameter structs ─────────────────────────────────────────────────────────
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -66,9 +81,6 @@ pub struct CreateRunParams {
     /// Optional session ID for conversation continuity.
     #[serde(default)]
     pub session_id: Option<String>,
-    /// Optional user ID for scoped memory retrieval.
-    #[serde(default)]
-    pub user_id: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -159,7 +171,9 @@ impl UarRuntimeMcpServer {
     async fn uar_create_run(
         &self,
         Parameters(p): Parameters<CreateRunParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
     ) -> Result<CallToolResult, McpError> {
+        let owner = verified_owner(&parts)?;
         let agent = if let Some(persistence) = &self.persistence {
             persistence
                 .list_agents()
@@ -180,16 +194,9 @@ impl UarRuntimeMcpServer {
             ));
         };
 
-        let run_id = self
-            .run_manager
-            .start_run(
-                agent,
-                p.input,
-                p.session_id,
-                p.user_id,
-                vec![], // memory hits resolved by RunManager's memory service
-            )
-            .await;
+        let mut request = RunExecutionRequest::new(agent, p.input).with_verified_owner(owner);
+        request.session_id = p.session_id;
+        let run_id = self.run_manager.execute_request(request).await;
 
         let response = serde_json::json!({
             "run_id": run_id,
@@ -208,10 +215,16 @@ impl UarRuntimeMcpServer {
     async fn uar_get_run_status(
         &self,
         Parameters(p): Parameters<RunIdParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
     ) -> Result<CallToolResult, McpError> {
-        let run = self.run_manager.get_run(&p.run_id).await.ok_or_else(|| {
-            McpError::invalid_params(format!("run '{}' not found", p.run_id), None)
-        })?;
+        let owner = verified_owner(&parts)?;
+        let run = self
+            .run_manager
+            .get_run_for_owner(&owner, &p.run_id)
+            .await
+            .ok_or_else(|| {
+                McpError::invalid_params(format!("run '{}' not found", p.run_id), None)
+            })?;
 
         let status = serde_json::json!({
             "run_id": run.run_id,

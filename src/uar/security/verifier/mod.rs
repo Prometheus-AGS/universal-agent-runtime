@@ -468,6 +468,7 @@ mod tests {
             name: None,
             roles: None,
             tenant_id: Some("tenant-a".to_owned()),
+            uar_instance_id: None,
             exp: usize::MAX,
         };
         let token = jwt::encode(

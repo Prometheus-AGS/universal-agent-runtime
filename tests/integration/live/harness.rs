@@ -21,7 +21,7 @@ use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 use universal_agent_runtime::config::Cli;
 use universal_agent_runtime::config_manager::ConfigManager;
-use universal_agent_runtime::server::start_server_sidecar_with_listeners;
+use universal_agent_runtime::server::start_server_sidecar_with_listeners_and_shutdowns;
 
 static TRACING_INIT: Once = Once::new();
 static SCRATCH_SWEEP: Once = Once::new();
@@ -51,6 +51,27 @@ fn init_tracing_once() {
 /// when `jwt_required: false`, yielding a real non-anonymous `UserContext`).
 pub const HARNESS_JWT_SECRET: &str = "test-secret-not-for-production";
 
+/// Mint the verified UAR-instance identity used by peer-first orchestration
+/// cases. Call this after booting the server so UAR has installed its guarded
+/// process-level JWT provider before the test encodes a token.
+#[allow(dead_code)] // The BDD target shares this harness but has no peer-auth scenario.
+pub fn mint_harness_peer_token() -> String {
+    let claims = universal_agent_runtime::uar::security::claims::UserClaims {
+        sub: "live-harness-peer".to_string(),
+        name: Some("Live Harness UAR Peer".to_string()),
+        roles: Some(vec!["service".to_string()]),
+        tenant_id: None,
+        uar_instance_id: Some("live-harness-uar".to_string()),
+        exp: usize::MAX,
+    };
+    jsonwebtoken::encode(
+        &jsonwebtoken::Header::default(),
+        &claims,
+        &jsonwebtoken::EncodingKey::from_secret(HARNESS_JWT_SECRET.as_bytes()),
+    )
+    .expect("mint harness UAR peer JWT")
+}
+
 /// Which optional services a baseline case needs, beyond the always-on
 /// SurrealDB-embedded persistence layer `start_server` requires
 /// unconditionally (see appstate-field-plan.md's persistence finding).
@@ -69,14 +90,14 @@ pub struct ServiceNeeds {
 /// chase that down (out of scope for a test-infra change — see design.md),
 /// this harness runs it on a dedicated OS thread with its own
 /// current-thread Tokio runtime, which has no `Send` requirement on the
-/// future it drives.
+/// future it drives. Dropping the handle cancels and joins that thread so a
+/// full integration binary does not retain every previously booted server.
 #[allow(dead_code)] // The BDD target imports this harness but only reads `base_url`.
 pub struct TestServerHandle {
     pub base_url: String,
     shutdown: CancellationToken,
-    // Optional so `shutdown` can move the join handle into `spawn_blocking`.
-    // Existing callers may still drop the handle, which detaches the server
-    // thread exactly as before.
+    // Optional so explicit shutdown or `Drop` can take and join the server
+    // thread exactly once.
     thread: Option<std::thread::JoinHandle<anyhow::Result<()>>>,
 }
 
@@ -208,6 +229,24 @@ impl ProcessTestServerExitBarrier {
             status.success(),
             "child server process exited unsuccessfully: {status}"
         );
+    }
+}
+
+impl Drop for TestServerHandle {
+    fn drop(&mut self) {
+        self.shutdown.cancel();
+        if let Some(thread) = self.thread.take() {
+            match thread.join() {
+                Ok(Ok(())) => {}
+                Ok(Err(error)) if !std::thread::panicking() => {
+                    panic!("embedded integration server shutdown failed: {error:#}")
+                }
+                Err(_) if !std::thread::panicking() => {
+                    panic!("embedded integration server thread panicked")
+                }
+                Ok(Err(_)) | Err(_) => {}
+            }
+        }
     }
 }
 
@@ -389,7 +428,8 @@ pub async fn boot_test_server_process(
     .spawn()
     .expect("spawn child server process");
 
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(60);
+    // Enclose the inner 120s startup wait and subsequent 30s health probe.
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(180);
     loop {
         if let Ok(base_url) = std::fs::read_to_string(&ready_path) {
             return ProcessTestServerHandle {
@@ -406,7 +446,7 @@ pub async fn boot_test_server_process(
         if tokio::time::Instant::now() >= deadline {
             let _ = child.kill();
             let _ = child.wait();
-            panic!("child server did not become ready within 60s");
+            panic!("child server did not become ready within 180s");
         }
         tokio::time::sleep(Duration::from_millis(50)).await;
     }
@@ -459,7 +499,7 @@ async fn boot_test_server_inner(
          persistence:\n  provider: \"surreal\"\n  database_url: \"surrealkv://{}\"\n\
          acp:\n  enabled: true\n  path: \"/acp\"\n  auth_required: true\n\
          llm:\n  model: \"{llm_model}\"\n  base_url: \"{llm_base_url}\"\n\
-         server:\n  host: \"127.0.0.1\"\n  port: {port}\n  shutdown_timeout_secs: 1\n\
+         server:\n  host: \"127.0.0.1\"\n  port: {port}\n  shutdown_timeout_secs: 30\n\
   grpc_port: {grpc_port}\n\
          {memory_yaml}",
         persistence_path.display(),
@@ -508,35 +548,43 @@ async fn boot_test_server_inner(
     let shutdown = CancellationToken::new();
     let thread_shutdown = shutdown.clone();
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel();
-    let thread = std::thread::spawn(move || {
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .expect("build current-thread runtime for server");
-        rt.block_on(async move {
-            let listener = tokio::net::TcpListener::from_std(listener)
-                .expect("register harness listener with Tokio");
-            let grpc_listener = tokio::net::TcpListener::from_std(grpc_listener)
-                .expect("register harness gRPC listener with Tokio");
-            let result = start_server_sidecar_with_listeners(
-                config,
-                listener,
-                grpc_listener,
-                Some(mcp_config_path),
-                ready_tx,
-                Some(thread_shutdown),
-            )
-            .await;
-            if let Err(error) = &result {
-                eprintln!("start_server_sidecar exited with error: {error:?}");
-            }
-            result
+    let thread = std::thread::Builder::new()
+        .name("uar-live-itest-server".to_string())
+        .stack_size(8 * 1024 * 1024)
+        .spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("build current-thread runtime for server");
+            rt.block_on(async move {
+                let listener = tokio::net::TcpListener::from_std(listener)
+                    .expect("register harness listener with Tokio");
+                let grpc_listener = tokio::net::TcpListener::from_std(grpc_listener)
+                    .expect("register harness gRPC listener with Tokio");
+                let result = start_server_sidecar_with_listeners_and_shutdowns(
+                    config,
+                    listener,
+                    grpc_listener,
+                    Some(mcp_config_path),
+                    ready_tx,
+                    Some(thread_shutdown.clone()),
+                    Some(thread_shutdown),
+                )
+                .await;
+                if let Err(error) = &result {
+                    eprintln!("start_server_sidecar exited with error: {error:?}");
+                }
+                result
+            })
         })
-    });
+        .expect("spawn dedicated live integration server thread");
 
-    let ready_addr = tokio::time::timeout(Duration::from_secs(30), ready_rx)
+    // The real server discovers and reconciles the operator's standard skill
+    // directory. With 1,044 skills this exceeded 30s in the phase-end BDD run.
+    // Bound startup separately from the unchanged request/health assertions.
+    let ready_addr = tokio::time::timeout(Duration::from_secs(120), ready_rx)
         .await
-        .expect("server did not signal readiness within 30s")
+        .expect("server did not signal readiness within 120s")
         .expect("server exited before signaling readiness");
     let base_url = format!("http://{ready_addr}");
     wait_for_health(&base_url).await;

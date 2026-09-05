@@ -44,6 +44,7 @@ fn server_for(user: Option<&str>, service: Option<Arc<ProviderService>>) -> Test
                 name: None,
                 roles: Some(vec!["user".to_string()]),
                 tenant_id: None,
+                uar_instance_id: None,
                 exp: usize::MAX,
             },
         };

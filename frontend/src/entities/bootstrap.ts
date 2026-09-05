@@ -3,6 +3,9 @@ import {
   configureEngine,
   createPGlitePersistenceAdapter,
   registerSessionConfigurationEntities,
+  registerPresentationEntities,
+  registerPresentationAssignmentEntities,
+  registerPresentationProvenanceEntities,
   startLocalFirstGraph,
 } from "@/platform/entities";
 import type {
@@ -67,6 +70,9 @@ export async function bootstrapEntityGraph() {
   // Register all entity schemas and relations
   registerAllSchemas();
   registerSessionConfigurationEntities();
+  registerPresentationEntities();
+  registerPresentationAssignmentEntities();
+  registerPresentationProvenanceEntities();
 }
 
 export async function initializeDurableEntityGraph(

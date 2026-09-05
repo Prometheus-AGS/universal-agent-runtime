@@ -49,6 +49,21 @@ security:
   # Env: UAR_SECURITY__SETTINGS_ADMIN_KEY
   settings_admin_key: "replace-with-a-long-random-secret"
 
+# Governed outbound A2A is disabled when this section has no trusted peers.
+# Each endpoint must also appear in the calling agent artifact's a2a.dependencies.
+a2a:
+  # Stable ID acknowledged by other UAR instances. Required when peers exist.
+  instance_id: "uar-west"
+  trusted_peers:
+    # Exact named-agent JSON-RPC endpoint; HTTPS is required off loopback.
+    - instance_id: "uar-east"
+      agent_id: "general-purpose"
+      endpoint: "https://uar-east.example.com/a2a/agents/general-purpose"
+      # A target-issued JWT whose signed `uar_instance_id` claim is exactly
+      # this instance_id ("uar-west"). Keep it out of committed production
+      # config and set UAR_A2A__TRUSTED_PEERS__0__BEARER_TOKEN in the environment.
+      bearer_token: "replace-with-target-issued-jwt"
+
 resilience:
   # Enable rate limiting to prevent abuse.
   # Default: true
@@ -503,6 +518,22 @@ failover:
   # fallback_models:
   #   - "anthropic/claude-3-5-haiku-20241022"
   #   - "groq/llama-3.3-70b-versatile"
+
+# =============================================================================
+# PROJECT INSTRUCTIONS (Host-owned workspace trust)
+# =============================================================================
+project_instructions:
+  # Optional additional names: CLAUDE.md, GEMINI.md. A matching *.override.md
+  # takes precedence over its base file in the same directory.
+  file_names: [AGENTS.md]
+  root_markers: [.git]
+  # Explicit absolute workspace roots only. Empty means no instruction files
+  # are read. Requests cannot mark their own workspace trusted.
+  trusted_workspaces: []
+
+world_state:
+  # A positive time bucket size. Calls within the same bucket do not resend time.
+  time_granularity_secs: 60
 
 # =============================================================================
 # NATIVE TOOLS (In-Process Tool Execution)

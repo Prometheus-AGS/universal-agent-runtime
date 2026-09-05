@@ -22,6 +22,7 @@ export type NavigationDestinationId =
   | "providers"
   | "mcp-tools"
   | "skills"
+  | "presentations"
   | "a2ui"
   | "runtime-settings"
   | "about";
@@ -100,6 +101,14 @@ const BASE_NAV_DESTINATIONS: readonly NavigationDestination[] = [
     group: "configure",
     icon: Sparkles,
     matchPaths: ["/admin/skills", "/admin/compiler"],
+  },
+  {
+    id: "presentations",
+    path: "/admin/presentations",
+    label: "Presentations",
+    description: "Reusable UI templates for agents",
+    group: "configure",
+    icon: Boxes,
   },
   {
     id: "runtime-settings",

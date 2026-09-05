@@ -1,22 +1,26 @@
-//! A2A Protocol RC v1.0 endpoint for the UAR Compiler Agent.
+//! A2A transport adapters over the persisted agent-thread host.
 //!
 //! Mounts at:
 //! - `POST /a2a/compiler` — JSON-RPC 2.0 dispatcher
+//! - `POST /a2a/agents/{agent_id}` — dispatcher for a registered artifact
 //! - `GET /.well-known/agent.json` — AgentCard
 //!
-//! ## A2A ↔ Compiler Session Mapping
+//! ## Task mapping
 //!
 //! | A2A Concept | UAR Mapping |
 //! |-------------|-------------|
-//! | `contextId` | `CompilerSession.id` |
-//! | `message/send` (first) | Creates session + task |
-//! | `message/send` (subsequent) | Adds turn to session |
-//! | `tasks/get` | Returns session status + completeness |
-//! | `tasks/cancel` | Cancels session |
-//! | `Artifact` in response | Compiled descriptor.json when `Completed` |
+//! | `context_id` | Owner/artifact-qualified conversation correlation |
+//! | `message/send` (first) | Creates an exact actor binding and submits a root turn |
+//! | `message/send` (subsequent) | Submits another turn after the previous receipt |
+//! | `tasks/get` | Projects the persisted thread and exact invocation receipt |
+//! | `tasks/cancel` | Cancels and joins the bound actor, then settles persistence |
+//!
+//! `metadata.cleanup_unconfirmed` distinguishes failed execution from confirmed
+//! resource cleanup. Neither transport may treat that flag as successful stop.
 
 pub mod agent_card;
 pub mod client;
+pub mod contract;
 #[cfg(feature = "server")]
 pub mod discovery;
 // gRPC transport requires proto compilation via tonic-build.
@@ -25,10 +29,14 @@ pub mod discovery;
 pub mod grpc;
 #[cfg(feature = "server")]
 pub mod handler;
+pub mod peer;
 pub mod registry;
 #[cfg(feature = "postgres-backend")]
 pub mod registry_postgres;
+pub mod task_execution;
 pub mod task_store;
+#[cfg(feature = "server")]
+pub mod thread_service;
 pub mod types;
 
 #[cfg(feature = "server")]

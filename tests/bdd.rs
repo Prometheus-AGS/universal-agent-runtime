@@ -17,7 +17,7 @@ mod live {
 }
 
 use cucumber::{World as _, given, then, when};
-use live::harness::{ServiceNeeds, boot_test_server};
+use live::harness::{ServiceNeeds, TestServerHandle, boot_test_server};
 use live::stub_llm::{
     FixtureResponse, FixtureSet, RequestFingerprint, StubLlmServer, start_stub_llm,
 };
@@ -26,13 +26,12 @@ const MODEL: &str = "gpt-5.4-mini";
 
 /// Cucumber scenario state. `stub` MUST be held for the scenario's lifetime
 /// — `StubLlmServer::drop` aborts its task, so dropping it early would kill
-/// the LLM backend mid-scenario. The booted UAR server's own handle does NOT
-/// need to be held (its OS thread is intentionally detached/leaked for the
-/// rest of the test binary's process — see harness.rs's `TestServerHandle`
-/// doc comment), so only its `base_url` is kept.
+/// the LLM backend mid-scenario. `server` is declared before `stub` so Rust
+/// drops and joins the UAR server before stopping its LLM backend.
 #[derive(cucumber::World)]
 struct World {
     pending_fixtures: FixtureSet,
+    server: Option<TestServerHandle>,
     stub: Option<StubLlmServer>,
     base_url: Option<String>,
     response_status: Option<u16>,
@@ -52,6 +51,7 @@ impl Default for World {
     fn default() -> Self {
         Self {
             pending_fixtures: FixtureSet::new(),
+            server: None,
             stub: None,
             base_url: None,
             response_status: None,
@@ -122,7 +122,8 @@ async fn ensure_server_booted(world: &mut World) {
     let fixtures = std::mem::take(&mut world.pending_fixtures);
     let stub = start_stub_llm(fixtures).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
-    world.base_url = Some(server.base_url);
+    world.base_url = Some(server.base_url.clone());
+    world.server = Some(server);
     world.stub = Some(stub);
 }
 

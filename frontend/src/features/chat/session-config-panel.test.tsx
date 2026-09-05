@@ -50,6 +50,7 @@ vi.mock("@/platform/entities", () => {
       return null;
     },
     useAgentSessionDraftStatus: () => "idle",
+    useAgentSessionDraftUncertain: () => false,
     useSessionPromptCaching: () => mocks.effective,
   };
 });
@@ -60,6 +61,11 @@ vi.mock("@/features/models/model-selector", () => ({
       Select model override
     </button>
   ),
+}));
+
+// This suite isolates prompt caching; Presentation controls have their own domain path.
+vi.mock("@/features/presentations", () => ({
+  SessionPresentationSelection: () => <section aria-label="Presentations" />,
 }));
 
 describe("SessionConfigPanel prompt caching", () => {

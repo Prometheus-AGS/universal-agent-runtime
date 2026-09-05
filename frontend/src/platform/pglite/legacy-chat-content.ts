@@ -33,7 +33,7 @@ function canonicalBlock(value: unknown): ContentBlock | null {
     case "toolUse": return { type: "toolUse", id: text(block.id), name: text(block.name), inputJson: text(block.inputJson, "{}") };
     case "toolResult": return { type: "toolResult", toolUseId: text(block.toolUseId), outputJson: text(block.outputJson), isError: block.isError === true };
     case "skill": return { type: "skill", name: text(block.name), status: text(block.status, "complete") };
-    case "artifact": return { type: "artifact", id: text(block.id), kind: text(block.kind, "application/octet-stream"), content: text(block.content) };
+    case "artifact": return { type: "artifact", id: text(block.id), kind: text(block.kind, "application/octet-stream"), content: text(block.content), title: typeof block.title === "string" ? block.title : undefined };
     case "image": return { type: "image", url: typeof block.url === "string" ? block.url : null, dataBase64: typeof block.dataBase64 === "string" ? block.dataBase64 : null, mime: text(block.mime, "image/unknown"), path: typeof block.path === "string" ? block.path : undefined, alt: typeof block.alt === "string" ? block.alt : undefined, width: typeof block.width === "number" ? block.width : undefined, height: typeof block.height === "number" ? block.height : undefined };
     case "divider": return { type: "divider" };
     default: return null;

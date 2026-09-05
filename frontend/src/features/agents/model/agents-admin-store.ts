@@ -7,7 +7,6 @@ import {
   fetchAgentsList,
   generateAgentDefinition,
   patchAgent,
-  updateAgentFull,
 } from "../api/agents-api";
 import { fetchKnowledgeBases } from "@/features/knowledge/api";
 import { fetchSkillsList } from "@/features/skills/api";
@@ -63,7 +62,9 @@ export const useAgentsAdminStore = create<AgentsAdminState>((set, get) => ({
   },
 
   save: async (id, payload) => {
-    if (id) await updateAgentFull(id, payload);
+    // The form edits known fields; preserve independently assigned run-policy
+    // extensions through the host's conditional merge rather than full replace.
+    if (id) await patchAgent(id, payload);
     else await createAgent(payload);
     await get().load();
   },

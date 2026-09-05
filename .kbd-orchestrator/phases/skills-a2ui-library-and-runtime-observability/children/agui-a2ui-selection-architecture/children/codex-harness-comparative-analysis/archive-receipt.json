@@ -1,0 +1,74 @@
+{
+  "date": "2026-09-04",
+  "authorization": "Operator approved syncing and archiving all eight changes, preserving deferred429 test and coverage warnings, then continuing autonomously.",
+  "archives": [
+    {
+      "change": "deterministic-prompt-assembly",
+      "dest": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/openspec/changes/archive/2026-09-04-deterministic-prompt-assembly",
+      "fileCount": 4,
+      "sha256Inventory": "123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745  ./.openspec.yaml\n771fbab0ff4920cb4ca7c5256cb2655c85dd008a5844423faf9ef8035c156c32  ./specs/prompt-assembly/spec.md\na44689068df6a85d0888bf3f626e80288a75ad2dd047dfd769920f215d7a5874  ./tasks.md\nf8491b650478993a1c18c88ac0fbe871c5bd2fa53ca6901e1b624d246b103b59  ./proposal.md\n"
+    },
+    {
+      "change": "fail-closed-tool-arguments",
+      "dest": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/openspec/changes/archive/2026-09-04-fail-closed-tool-arguments",
+      "fileCount": 5,
+      "sha256Inventory": "123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745  ./.openspec.yaml\n25331aaff2ac1d8e44864147b34f282f9b2e32440613fef9f302f9a94a9be54b  ./specs/tool-approval-workflow/spec.md\n44021a869a2d1cd4478aaf13023bbffbb7163dadb2e5f5fc3704f2bec5a28f03  ./tasks.md\n6e950b04824541fc62564569401bec76ca2c31e243eb8da085ded646a29d9215  ./specs/tool-call-protocol/spec.md\nf71f3db105f80d238e58702d1096e941ece72fce51f4a0884f2a52731274fd11  ./proposal.md\n"
+    },
+    {
+      "change": "model-path-resiliency",
+      "dest": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/openspec/changes/archive/2026-09-04-model-path-resiliency",
+      "fileCount": 4,
+      "sha256Inventory": "0723e7b76ec6712160645390b4725426c266a01bd332c48d449b55e4a6f047ee  ./tasks.md\n123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745  ./.openspec.yaml\n660b8224294fd04763390bcba2f4fd2fa21fbd4d9a17714291b79dfb0652f792  ./proposal.md\nd6fdab26c231c3dbdca493d76e0c11f7ea5cd8ebc5cab4ff6f11123a03324c34  ./specs/model-path-resiliency/spec.md\n"
+    },
+    {
+      "change": "progressive-skill-runtime",
+      "dest": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/openspec/changes/archive/2026-09-04-progressive-skill-runtime",
+      "fileCount": 4,
+      "sha256Inventory": "123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745  ./.openspec.yaml\n56eef0240828af3477d76c2a87a22e53f80e0388c6d74afcc9412e38a56dd6ab  ./tasks.md\n5c516e396fd725c40ab05b57df1be3d341e7d7724b78bf1df1d42dc30d288b90  ./specs/skill-activation-runtime/spec.md\n9bc1da908544718ea54e744edc2685dbcbb2f75b2bbeef78a9587d1306e4d4b7  ./proposal.md\n"
+    },
+    {
+      "change": "typed-turn-assembly",
+      "dest": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/openspec/changes/archive/2026-09-04-typed-turn-assembly",
+      "fileCount": 5,
+      "sha256Inventory": "123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745  ./.openspec.yaml\n3bf7389bc4635f8ff5a78c5509d9deb26a5dad58301f8a45946d708d0eaf6527  ./proposal.md\n623cdb020b08f71486862b2838a8f550a88edf9880493a54a969374f1a370c41  ./tasks.md\n7dd62b2df97c2355aa7aef161a108d50fe6f2e8f1fd368462bfcb7878ca41a64  ./specs/turn-assembly-kernel/spec.md\n9d71d3173907b0a8558b22a2943db29fe6a08232fa2baf840708492cb240d7ce  ./parity-report.json\n"
+    },
+    {
+      "change": "projected-mcp-runtime",
+      "dest": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/openspec/changes/archive/2026-09-04-projected-mcp-runtime",
+      "fileCount": 5,
+      "sha256Inventory": "123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745  ./.openspec.yaml\n9592e5e548f2484a3ed45b3e35e0b1454411a697a8b272077199b1815fe76ac0  ./specs/mcp-runtime-projection/spec.md\ne340d4b0997fca9cfc9b27cda39860ce88dd68929601b4497166ae390780cf82  ./evidence/stdio-integration.md\ne4cc5e202500911b80578e3eb1a04f355f567af15408c4f7d1d04487dfc72d5a  ./proposal.md\ne4fe070de16d654c64e73c94f2f63e091af43441134f94ac7e6f467663a3465d  ./tasks.md\n"
+    },
+    {
+      "change": "thread-native-subagents",
+      "dest": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/openspec/changes/archive/2026-09-04-thread-native-subagents",
+      "fileCount": 9,
+      "sha256Inventory": "03722582db0f8b0684b056b34b7a115dd18ded30044ef1032bde702f1252ecfa  ./evidence/remote-host-regressions.md\n123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745  ./.openspec.yaml\n22c818f86db62843c73366f73d33bc04fd7796f06c491ea9a5799ecd5356677b  ./evidence/live-cancellation.mjs\n339f9d49168c0a24a4777d8b6c4756d6066e0911ad7c96b4386655cc69ce7ee2  ./tasks.md\n4d63d2fe1c49f5d8e0670f11eaba945af11131821c81e6efe9c3831a9e7c4f42  ./proposal.md\n6e9c30ae8e5dd3b1f94d0c122642315f66ba9c1016345f51ba961d7e01d816d6  ./specs/multi-agent-orchestration/spec.md\ncfdbbf6943822a43f8d7c6ec16b806446d42d6434ad1206b0edb5228e208afb6  ./evidence/README.md\nd58b40bcf1c3c574d9b7eb71fea89bfc1e91679e394363771c8f03d6825dbe64  ./specs/agent-thread-kernel/spec.md\ndb85c705abe1c88d3c6ae58ae56f6c7cda5e0959726a8318cc29d32fc6a3900b  ./evidence/live-cancellation-report.json\n"
+    },
+    {
+      "change": "typed-turn-default-flip",
+      "dest": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/openspec/changes/archive/2026-09-04-typed-turn-default-flip",
+      "fileCount": 10,
+      "sha256Inventory": "40ddc6436cf6664ab026a1746ad41087cefebe9fa9179497c3e5bf804b800586  ./proposal.md\n46efa4d290a0a871a6f25f8d1524b2bd3b37a54cf6f483be1bf607e6507ba1b5  ./evidence/live-shadow.mjs\n65961732f7bfd229d12c8d4d9b91fc115a25cda70acbeda403bedf5f0723b9a2  ./evidence/README.md\n7ef985b20b4fee393c396b29ee44d2df91e4b0a5d02ce4e2724e706a98671c57  ./evidence/live-shadow-report.json\n8e920d017f15ccdee0069da90dfe23c070c1d46dae1df7c92ee1915b86168e38  ./evidence/audit-correction-report.md\n99552633ac5bcb19b4e10808bc4276424d77f2c90c3891f1fdecd0f81821a916  ./tasks.md\n9d71d3173907b0a8558b22a2943db29fe6a08232fa2baf840708492cb240d7ce  ./parity-report.json\n9f905658a2149fd250c104c807f8e5cff152439e33d3e040e8f1eaa114e82983  ./specs/turn-assembly-kernel/spec.md\ncbc4afe0deb15b3537ee2615c07bdef85af4e92ab845575e5d952157a578370b  ./evidence/phase-close-verification.md\ncebe40241dd6ed1865b72a06984b8ac85306f8182bad363b06242770d53dbcd9  ./evidence/phase-test-report.md\n"
+    }
+  ],
+  "syncedCapabilities": [
+    "prompt-assembly",
+    "tool-call-protocol",
+    "model-path-resiliency",
+    "skill-activation-runtime",
+    "turn-assembly-kernel",
+    "mcp-runtime-projection",
+    "agent-thread-kernel",
+    "tool-approval-workflow",
+    "multi-agent-orchestration"
+  ],
+  "deferredTask": {
+    "change": "model-path-resiliency",
+    "id": "5.4",
+    "status": "unchecked",
+    "reason": "Real provider429 honoring Retry-After remains unobserved."
+  },
+  "formalRefinerQa": "skipped: required execution tools/logs unavailable",
+  "runtimeRetested": false,
+  "sourceChanged": false
+}

@@ -186,6 +186,13 @@ export const NAV_ITEMS: NavItem[] = [
     category: "Governance & Agents",
   },
   {
+    key: "presentation_policy",
+    label: "Presentation Policy",
+    subtitle: "Instance-wide template ceiling · admin access required",
+    icon: Layers,
+    category: "Governance & Agents",
+  },
+  {
     key: "skill_config",
     label: "Skills",
     subtitle: "Skill activation defaults",

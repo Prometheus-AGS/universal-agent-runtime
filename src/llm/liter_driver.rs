@@ -17,7 +17,7 @@ use liter_llm::{
 use crate::normalized::NormalizedEvent;
 use crate::uar::telemetry::metrics as telemetry_metrics;
 
-use super::{LlmDriver, LlmRequest};
+use super::{LlmDriver, LlmRequest, ProviderError};
 
 /// Accumulated state for a streaming tool call being assembled from deltas.
 #[derive(Default)]
@@ -129,6 +129,28 @@ fn record_call_latency(model: &str, call_start: std::time::Instant) {
 
 #[async_trait::async_trait]
 impl LlmDriver for LiterLlmDriver {
+    fn with_bound_model(&self, model: &str) -> anyhow::Result<Arc<dyn LlmDriver>> {
+        let (provider, _) = self.model.split_once('/').ok_or_else(|| {
+            anyhow::anyhow!("Inherited driver has no qualified provider identity")
+        })?;
+        let (requested_provider, requested_model) = model.split_once('/').ok_or_else(|| {
+            anyhow::anyhow!("Child model must have a qualified provider identity")
+        })?;
+        if provider != requested_provider
+            || provider.is_empty()
+            || requested_model.trim().is_empty()
+        {
+            anyhow::bail!("Child model is outside the inherited provider binding");
+        }
+        // Reuse the captured DefaultClient, including its provider/credential
+        // bindings. Calling new() here would repeat environment resolution.
+        Ok(Arc::new(Self::from_client(
+            Arc::clone(&self.client),
+            model.to_string(),
+            self.parallel_tool_calls,
+        )))
+    }
+
     #[tracing::instrument(
         name = "llm.call",
         skip(self, req),
@@ -139,7 +161,8 @@ impl LlmDriver for LiterLlmDriver {
         req: LlmRequest,
     ) -> anyhow::Result<std::pin::Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>>
     {
-        let chat_req = build_chat_request(&self.model, self.parallel_tool_calls, &req)?;
+        let chat_req = build_chat_request(&self.model, self.parallel_tool_calls, &req)
+            .map_err(|error| ProviderError::invalid_request(error.to_string()))?;
 
         // liter-llm returns an owned `'static` chunk stream. Return the normalized
         // stream immediately so the orchestrator's stream-start timeout covers
@@ -150,7 +173,11 @@ impl LlmDriver for LiterLlmDriver {
         // a per-call latency histogram when the returned stream finishes.
         let call_start = std::time::Instant::now();
         let call_span = tracing::Span::current();
-        let mut chunk_stream = self.client.chat_stream(chat_req).await?;
+        let mut chunk_stream = self
+            .client
+            .chat_stream(chat_req)
+            .await
+            .map_err(ProviderError::from_liter)?;
 
         let out = async_stream::stream! {
             let mut tool_accum: BTreeMap<u32, ToolAccum> = BTreeMap::new();
@@ -169,10 +196,7 @@ impl LlmDriver for LiterLlmDriver {
                     Ok(c) => c,
                     Err(e) => {
                         record_call_latency(&metrics_model, call_start);
-                        yield Ok(NormalizedEvent::Error {
-                            message: e.to_string(),
-                            code: Some("liter_llm_stream_error".to_string()),
-                        });
+                        yield Err(ProviderError::from_liter(e).into());
                         return;
                     }
                 };
@@ -473,15 +497,14 @@ mod prompt_caching_tests {
             .await
             .expect("create normalized stream");
 
-        let event = tokio::time::timeout(std::time::Duration::from_secs(1), stream.next())
+        let error = tokio::time::timeout(std::time::Duration::from_secs(1), stream.next())
             .await
             .expect("invalid provider chunk must produce an event")
             .expect("normalized event")
-            .expect("stream errors are normalized events");
-        assert!(
-            matches!(event, NormalizedEvent::Error { ref code, .. } if code.as_deref() == Some("liter_llm_stream_error")),
-            "unexpected normalized event: {event:?}"
-        );
+            .expect_err("invalid provider chunks must remain typed stream errors");
+        let provider_error = ProviderError::from_anyhow(&error)
+            .expect("liter stream failures must preserve provider error metadata");
+        assert_eq!(provider_error.kind, crate::llm::ProviderErrorKind::Stream);
         drop(stream);
 
         assert_eq!(

@@ -47,6 +47,7 @@
 
 use super::harness::{
     HARNESS_JWT_SECRET, ServiceNeeds, boot_test_server, boot_test_server_process,
+    mint_harness_peer_token,
 };
 use super::stub_llm::{FixtureResponse, FixtureSet, RequestFingerprint, start_stub_llm};
 use serial_test::serial;
@@ -166,7 +167,7 @@ async fn l2_c06_orchestrator_delegates_with_trace() {
             RequestFingerprint {
                 model: MODEL.to_string(),
                 last_user_message: PROBE.to_string(),
-                has_tools: false,
+                has_tools: true,
                 has_tool_result: false,
             },
             FixtureResponse::Content(RECORDED_CONTRIBUTION.to_string()),
@@ -174,10 +175,11 @@ async fn l2_c06_orchestrator_delegates_with_trace() {
     let recorded = std::env::var(super::backend::BACKEND_ENV_VAR).as_deref() != Ok("live");
     let backend = super::backend::resolve(fixtures).await;
     let server = boot_test_server(&backend.base_url, &backend.model, ServiceNeeds::default()).await;
+    let peer_token = mint_harness_peer_token();
 
     let response = reqwest::Client::new()
         .post(format!("{}/api/chat/completion", server.base_url))
-        .header("Authorization", format!("Bearer {HARNESS_JWT_SECRET}"))
+        .bearer_auth(peer_token)
         .json(&serde_json::json!({
             "model": backend.model,
             "agent_id": "orchestrator-agent",
@@ -968,6 +970,7 @@ async fn l3_c21_a2a_tasks_are_partitioned_by_verified_tenant() {
             name: None,
             roles: Some(vec!["user".to_owned()]),
             tenant_id: Some(tenant.to_owned()),
+            uar_instance_id: None,
             exp: usize::MAX,
         };
         jsonwebtoken::encode(
@@ -1078,7 +1081,7 @@ async fn l3_c21_a2a_tasks_are_partitioned_by_verified_tenant() {
     .json::<serde_json::Value>()
     .await
     .expect("C-21: cross-tenant cancel JSON");
-    assert_eq!(cross_cancel["error"]["code"], -32002);
+    assert_eq!(cross_cancel["error"]["code"], -32001);
 
     let after_cancel = call(&tenant_a, "tasks/get", serde_json::json!({"id": task_id}))
         .await
@@ -1108,6 +1111,7 @@ async fn l3_c21_threads_memory_and_knowledge_are_partitioned_by_verified_user() 
             name: None,
             roles: Some(vec!["user".to_owned()]),
             tenant_id: None,
+            uar_instance_id: None,
             exp: usize::MAX,
         };
         jsonwebtoken::encode(

@@ -1033,3 +1033,601 @@ Fix applied: moved the three script-written files to the runtime's directory and
 rewrote `scope.json.allowedWritePaths`. The runtime is authoritative for position.
 Root cause is in `~/.claude/skills/kbd-new-child/kbd-new-child.sh` lines 60–66
 versus 145–150; not fixed here because it lives outside this repo.
+
+## 2026-09-02 — A filtered registry is not a frozen execution binding
+
+`McpRegistry::filtered` copies eligibility maps but retains shared service slots.
+`upsert_server` replaces the slot's transport/config, and reconnect installs a
+new client in that same slot. A child using only a filtered view can therefore
+execute through a binding different from the one its parent granted. The new
+`freeze_bindings` path retains exact transport Arcs, checks selected descriptors
+on those transports, and refuses calls after replacement/revocation/closure.
+It never reconnects. Child skill activation recognizes this view and checks
+inherited dependencies instead of starting source-declared commands/URLs/auth.
+Filtering a frozen view preserves its bindings and narrows its close token;
+closing a borrowed view does not shut down the parent's transport. This code
+has not been built or behavior-tested yet; root capture is still unwired.
+
+The vendored liter-llm client at commit
+`c5c6caac617eb931cd5009146a70831422ec236c` also resolves environment credentials
+in `DefaultClient::new` (`vendor/git/liter-llm/crates/liter-llm/src/client/mod.rs`).
+Do not rebuild a child's client from a copied LlmConfig with missing keys.
+`LlmDriver::with_bound_model` now lets supported drivers reuse their captured
+client for another model within the same provider; it is not a credential
+lookup or an authorization grant. Unsupported host drivers must keep the
+original model or supply an explicitly bound implementation, never silently
+rebuild against environment/global settings. Manager integration remains open.
+
+## 2026-09-02 — Compile-only checkpoint after root binding capture
+
+The first `cargo check --locked --no-default-features --features server-full`
+refused the previously hand-edited lockfile before compilation. Its BackON
+entry contained only fastrand, while the new direct dependency enabled timer
+features. The cached BackON 1.6.0 manifest and official documentation agree on
+that feature wiring: https://docs.rs/backon/1.6.0/backon/ . UAR's actual call
+site uses Tokio retry futures. Select `std` and `tokio-sleep` explicitly, without
+default browser/blocking sleepers, and include the already-resolved Tokio in
+BackON's lock dependencies. No package version or checksum changed.
+
+The subsequent compile found three accumulated errors: an unconditional
+reference to the feature-gated in-memory provider, a moved chat input still
+needed by capture, and LowerHex formatting on the SHA digest array. Memory
+fallback now exists only with its feature; otherwise actor admission requires
+configured persistence. Clone the shared input and encode digest bytes using
+the existing prompt-hash convention. Public runtime types use redacted Debug
+summaries; the legacy vector helper is test-only. The final identical Tier 0
+command passed with zero warnings in 30.92s. No tests ran. This supersedes the
+earlier no-compilation checkpoint, not any outstanding behavioral acceptance.
+
+Root model and skill captures now have production callers in manager.rs.
+Do not overstate this: complete inherited resource bundles, MCP root capture,
+child model-policy selection, and ThreadExecutionHost integration remain open.
+
+## 2026-09-02 — Root cost accounting must happen before another model call
+
+End-of-run accounting could only report Exceeded after the tool loop finished;
+graph calls bypassed it. Captured drivers now admit against shared scope totals
+before each request and atomically apply each priced cumulative Usage update to
+run/session/agent/global scopes. A synchronous, short ledger lock avoids losing
+part of a received update across scopes when a stream future is cancelled.
+Repeated cumulative events replace the same request estimate; later cache counts
+can lower it. Run completion reads status instead of charging the estimate again.
+
+Source inventory also corrects an earlier prerequisite: RunManager's only
+classifier constructor calls create_classifier, which uses Hybrid for Llm.
+create_classifier_with_resources has no production caller under src/. The
+standalone LlmClassifier's fresh-client path is therefore not currently in the
+shared manager execution path. Do not add its speculative adapter as a
+prerequisite; revisit only if that resource-aware factory is actually wired.
+
+## 2026-09-03 — A runner label and a code-shaped argument are not isolation
+
+src/sandbox/wasmtime_runner.rs uses tokio::process::Command and ordinary host
+filesystem calls; it does not execute through a Wasmtime sandbox. Its runner_type
+and networking capability therefore cannot prove physical isolation. The governed
+orchestrator now requires SandboxRunner::enforces_isolation (default false);
+RemoteRunner relies on the explicitly configured remote service contract, not
+attestation. The legacy local runner itself is unchanged and remains unsuitable
+for required isolation.
+
+The same dispatch path previously ignored artifact execution_mode, treated
+Sandboxed as Auto, and executed native/MCP directly when a runner or guessed
+code field was missing. Wiring actual mode and requiring explicit native sandbox
+adapters closes those routes. Never infer code/language from an arbitrary tool
+name or code/command/script field. Preserve env/cwd/timeout and configured shell
+semantics when adapting terminal execution.
+
+Three T0 passes zero warnings, not runtime acceptance. Remote create/execute/
+destroy still lacks joined cancellation ownership and error reconciliation. The
+new server caller makes completing that lifecycle necessary before acceptance;
+an ignored destroy error or dropped stream cannot count as completed cleanup.
+
+## 2026-09-03 — A consumed join handle must be recorded before another await
+
+In the new owned sandbox worker, JoinError handling awaited the diagnostic
+receipt lock before clearing the consumed handle. Cancelling that waiter could
+leave a completed JoinHandle to be polled again. Save consumption and a
+conservative failed outcome synchronously, then inspect the receipt; a later
+waiter can finish classification without re-polling the handle. T0 passed in
+24.60s with zero warnings; race behavior remains phase-end verification.
+
+The preceding inline-sandbox lifecycle gap is now addressed by a retained
+supervisor with actual orchestrator/manager/server callers. Unknown remote create
+or destroy outcomes are still unknown, not cleaned up. Retain their backend and
+receipt; do not retry mutations without an idempotency/reconciliation contract.
+SandboxBinding now retains actual config and opaque host environment grants.
+SandboxConfig::volumes is only a string map; no code here defines read-only mount
+semantics. Reject unsupported mounts rather than inventing that wire convention.
+The default profile exposes no host mounts/environment and disables networking;
+this says nothing about direct native tools outside the sandbox. Final integrated
+T0 passed zero warnings20.31s; concrete child-host attachment is still missing.
+
+## 2026-09-03 — Native delegation requires authority, not a ReadOnly label
+
+SessionSearchTool loaded ANONYMOUS_SESSION_OWNER even inside a verified actor
+turn. It now receives the frozen verified owner via NativeExecutionContext,
+loads only that owner's session and rejects a foreign returned record or missing
+host context. Direct child calls also pass through execute_native's mandatory
+implementation policy check. ReadOnly alone cannot authorize filesystem/session
+access. Unsupported direct tools remain rejected until their permission ports
+exist; this is not a completion claim for those tools.
+
+Child registry filtering omitted search_tools. Parent discovery state could
+survive descriptor equivalence even though activation and agent controls were
+already filtered out. Exclude all three turn-local handler families; activation,
+discovery and agent execution check the exact policy they were constructed for.
+
+ThreadService attachment now derives policy/original artifact/persistence/
+cancellation and execution host from CapturedThreadKernel. A shared root-owned
+atomic claim prevents separate captures from starting two zero-counter schedulers.
+No actor/graph/A2A attachment caller exists yet. Five zero-warning T0 passes do
+not establish runtime isolation, cancellation or attachment-race behavior.
+
+## 2026-09-03 — Attach actor controls before manifests, retain producer ownership
+
+Supersedes the preceding no-actor-caller observation: manager.rs now captures and
+attaches ThreadService for each committed actor root. Its five control names
+enter normal policy resolution, not a post-resolution allowlist. The executable
+native snapshot must precede installing root handlers; otherwise the service
+retains its own handlers through kernel resources. Descriptor-only control
+factory identity does not grant spawning or exempt sandbox execution requirements.
+
+ActorCollaboration now creates a child of the live source root. The endpoint is
+an explicit verified root-user decision, subject to Cedar and selected policy;
+child tools still require the root approval path. An idle source cannot silently
+become an independent target root. Raw Collaborate mailbox envelopes are refused.
+
+A completion receiver is not ownership of the tokio producer JoinHandle. Actor
+roots now retain that handle, await it by reference, record consumption before
+another await, and keep failed receipts. The registry retains roots whose child
+cleanup is unresolved after mailbox join. Runtime race behavior is unverified;
+latest T0 passed zero warnings23.18s. Remaining native permission ports still
+reject unsupported delegated execution; they have not been silently completed.
+
+## 2026-09-03 — Record namespaces and checked network destinations must survive dispatch
+
+Supersedes the older unported compiler/memory/web observations. Compiler tool
+session IDs were shared across host conversations; contextual access now uses
+the verified owner and host conversation namespace. Legacy NativeTool dispatch
+must use call_native_with_context, otherwise memory arguments select user_id
+without the admitted turn's owner check. All six memory tools now have that port.
+By-ID history cannot infer ownership after the live record has been deleted.
+
+Checking a hostname before making a separately resolved HTTP request does not
+bind the request to the checked addresses. WebFetchTool now uses its checked
+SocketAddr list for resolution, disallows automatic proxies, and reads only up
+to its exact byte allowance. Proxy-only configurations are a compatibility risk;
+the existing blocking DNS lookup still has no joined cancellation contract.
+Three Tier 0 passes were warning-free (47.45s,32.56s,15.11s); runtime tests remain
+deferred. File/patch, direct terminal and A2UI ports are still incomplete.
+
+## 2026-09-03 — File metadata is not a read bound
+
+Native file tools checked floor(len/1024) then read an entire file; growth after
+stat and sub-KB overflow bypassed the configured limit. Reads now inspect and
+bound one open handle. Patch output expansion is checked before allocating the
+replacement, and the same handle is written rather than reopening the path.
+Writes flush before success; this is not durable fsync or cancellation rollback.
+Append size checks do not lock out unrelated writers. Initial pathname traversal
+still lacks directory confinement; child file calls remain denied. Adding the
+already-transitive cap-std4.0.2 directly awaits its operator-owned versions.toml
+pin. Tier0 passed12.46s with zero warnings; runtime tests stay at phase end.
+
+## 2026-09-03 — Timeout cannot own a terminal process
+
+Direct terminal output() was nested in a timeout; dropping that future discarded
+the process handle. Managed calls now use a run-owned TerminalSupervisor with
+exact Child handles, borrowed joins and persistent failed-cleanup receipts.
+kill_on_drop is fallback protection, not evidence that a process was reaped.
+Workers drain stdout/stderr concurrently with bounded head/tail capture.
+RunManager and server shutdown have actual cleanup callers. T0 passed twice
+zero warnings39.43s,19.92s; no runtime tests yet. A shell's descendants are not
+owned by its Child handle. Direct delegated terminal execution remains denied;
+standalone raw tools still lack managed joining and bounded raw capture.
+
+## 2026-09-03 — OpenSpec ordinals are not this phase's canonical KBD IDs
+
+kbd-apply list emits ordinal18 with a title beginning4.2. This migrated phase
+already registers semantic task ID4.2. Passing18 to begin-task creates another
+canonical record rather than starting4.2. A shortened title also fails the
+canonical guard's exact-subject lookup. Inspect prometheus kbd status --json
+and use the existing semantic ID and exact stored title. This turn's accidental
+record18 was cancelled through the typed API, preserving history; the ledger
+still counts it (6/26), while OpenSpec remains5/25. Never claim a cancelled
+duplicate as another completed implementation task or edit derived projections.
+
+## 2026-09-03 — Latest thread state is not a delegated invocation receipt
+
+A child may finish and start a queued follow-up before its graph parent reads
+the watch. Retain the first terminal result separately; do not return the new
+turn's result. Likewise, a later unresolved persistence write must not invalidate
+an already-committed first receipt. The source critic caught the latter check;
+the fix compiles, but race verification remains phase-end integration work.
+
+## 2026-09-03 — Graph early returns bypass shared terminal bookkeeping
+
+The graph producer emitted terminal events and returned before the ordinary
+tool loop's RunStatus update. Successful, errored and cancelled graph runs could
+therefore stay Running in the active-run store. Each graph exit now sets its
+status after cleanup; failed cleanup yields Error, including after cancellation.
+Likewise, logging graph shutdown failure is not propagation: the server now
+retains the error and returns it, preventing graceful-success reporting.
+Source critic re-review found no remaining issue in these two paths. Tier0
+passed zero warnings21.23s/17.71s; runtime behavior awaits phase-end tests.
+
+## 2026-09-03 — Failed A2A execution does not prove remote cleanup
+
+An actor can commit a Failed result while its child cleanup remains unconfirmed.
+A2A clients must not equate every terminal-looking task with confirmed cleanup.
+The shared Task::cleanup_unconfirmed predicate now gates both cancellation
+helpers and the retained client driver. The inbound service publishes that flag
+before awaiting stop, not just on Err: dropping a stop waiter is also a pending
+settlement. Confirmed retry clears only cleanup uncertainty, not historical
+execution failure. Exact ActorSession handles avoid spawn-then-name-lookup races;
+the registry must retain the whole session, including pending persistence, after
+mailbox join. Source review cleared these fixes; runtime tests remain phase-end.
+
+The new A2ATaskExecution stores in-flight mutation futures on the object. A
+dropped borrowed waiter can resume them; dropping the whole object is NOT async
+cleanup. Its future host caller must retain it until settlement. That graph/
+thread integration is still absent; compiling the object is not task4.3 complete.
+
+## 2026-09-03 — Compiler artifacts cannot come from truncated tool history
+
+Native format_result truncates output before chat history and ToolEnd projection.
+A signed compiler descriptor cannot be reconstructed reliably from that text.
+The actual native host boundary now captures structured compiler results before
+formatting, in an owner/run-bound collector closed before the exact actor reply.
+Successful tool output survives a later model failure/cancellation without
+reclassifying the run as successful. No artifact comes from assistant prose.
+
+CleanupUnconfirmed is not only a child-thread outcome: manager finalizers can
+also report sandbox_cleanup_unconfirmed and terminal_cleanup_unconfirmed. A2A
+now marks all three, and ActorRootBinding retains those exact resource scopes
+for subsequent stop/cleanup. The gRPC Task has no metadata field; uncertain
+cleanup remains nonterminal working, not a misleading terminal Failed receipt.
+Final source review cleared these paths; runtime checks are still phase-end work.
+
+## 2026-09-03 — Normalize cache tokens before shared budget accounting
+
+Anthropic input_tokens excludes cache reads and cache creation, while UAR's
+ModelCost expects cache counts to be portions of an inclusive prompt total.
+Passing that field directly undercounts both tokens and spend. StreamState now
+sums all three input categories with saturating arithmetic at the provider
+boundary. The root budget consumes cache_creation_tokens at catalog cache_write
+pricing without counting those tokens twice. Existing compute/estimate_cost
+signatures retain their no-cache-write behavior. Pricing remains an estimate,
+not an invoice; cache-duration pricing and unreported usage remain limitations.
+Source: https://platform.claude.com/docs/en/build-with-claude/prompt-caching
+Tier0 passed twice without warnings; runtime regression tests remain phase-end.
+
+## 2026-09-03 — A retained graph-tool future must also survive panic
+
+Keeping a request future in a mutex slot protects it from a dropped node waiter,
+but an unwind leaves that slot populated too. Re-polling the already-panicked
+future from shutdown can panic outside the producer finalizer's catch and skip
+other resource cleanup. GraphToolHost now catches unwinds inside the retained
+future and turns them into terminal errors before its slot is cleared.
+
+Shutdown cancels its host token before draining. A cancellation recheck after
+ToolStart's event-sink await prevents a never-dispatched request from being
+started by that drain. Already-dispatched work is awaited without replay; local
+settlement is not proof that a remote effect was rolled back. Source review
+accepted the revised path. Runtime cancellation/panic coverage remains phase-end.
+
+## 2026-09-03 — Drain graph work before taking its activation lock
+
+The retained graph model stream can own ActivationContext's mutex while a skill
+preflight awaits. A cancelled node waiter releases the host slot mutex, not that
+activation guard. Taking the activation lock before polling the retained stream
+deadlocks cleanup. Drain the host first, then record activation outcomes.
+
+Panic protection must include transcript finalization and save_session, not only
+provider consumption. Persist-failure receipts remain sticky through normal and
+cancelled completion and repeated shutdown; a terminal future alone does not prove
+history persistence. Child graph hosts also need producer-finalizer ownership when
+there is no ActorRootBinding. All are now source-reviewed; runtime races untested.
+
+Graph provider EOF is not success without a normalized terminal event. Node system
+prompts are request-local overlays, not shared graph dialogue. Captured children
+use frozen MCP registries without preflight objects, so a remote legacy-dispatch
+restriction must check inherited thread policy as well as captured preflight.
+
+## 2026-09-03 — A server-name health gauge must aggregate owner bindings
+
+Projected MCP caches isolate by owner/config/auth/environment, but the compatibility
+health gauge is intentionally labeled only by server name. Publishing one exact
+binding's boolean directly lets a newly observed dormant owner overwrite another
+owner's Ready state. Track readiness by lifecycle binding id and publish any-ready.
+
+Compute the aggregate and call the gauge recorder under the same short synchronous
+lock. Publishing after lock release races: an older writer can overwrite the newer
+aggregate. Unregister on final lifecycle-state drop so dead bindings do not leave a
+server permanently healthy. Exact normalized lifecycle events keep their binding id
+and sequence; the aggregate applies only to the compatibility gauge.
+
+## 2026-09-03 — Tool success does not prove a valid A2UI projection envelope
+
+An `a2ui_render` ToolResult crosses a host boundary even when `success` is true.
+Missing or non-array `a2uiMessages` must emit a protocol error rather than disappear.
+Surface IDs are opaque data, not trusted JSON Pointer fragments: reject blank IDs and
+encode `~` as `~0` and `/` as `~1` before constructing state paths. Keep projection
+in one helper shared by ordinary and graph loops so replay, events and ToolEnd order
+cannot drift.
+
+## 2026-09-04 — Preopening a lexical directory name is not enough
+
+A configured path such as `/tmp/..` can look narrower than the directory handle it
+opens. Canonicalizing before open also leaves a swap window. For delegated file
+authority, open the configured directory first, identity-match its canonical path
+back to that exact handle, and compare the handle directly with the filesystem-root
+handle. Retain the handle; never reopen the pathname for a child operation.
+
+## 2026-09-04 — MCP transport arguments and HTTP extensions are not authority
+
+An authenticated streamable-HTTP MCP call can still lose identity if a tool
+handler reads `user_id` from Parameters. rmcp 3.1.2 preserves Axum request parts
+in its tool-call context; recover UserContext from those request extensions and
+derive ActorOwner there. Retain the full owner, including tenant, in host-only run
+state for later authorization. Comparing only the subject reopens cross-tenant
+status access when two issuers reuse a subject.
+
+## 2026-09-04 — Projected MCP revocation and error text need explicit wiring
+
+Mutating the legacy registry does not touch owner-keyed projected bindings.
+Every administrative replace, disable, or delete must invalidate all cache keys
+for that server and begin transport shutdown. Also never include an expanded
+remote URL in an error: URL placeholders may contain credentials and registry
+startup logs connection errors.
+
+## 2026-09-04 — Captured environment is not a child-process environment grant
+
+The host needs a complete environment snapshot to resolve declared values and
+key bindings, but passing that map wholesale to a skill-contributed stdio server
+exposes unrelated database, JWT, provider, and peer credentials. Launch with
+`env_clear`, copy only minimal process variables, and add only keys explicitly
+declared by that server. Operators must declare every application credential a
+server needs.
+
+## 2026-09-04 — MCP service slots need producer accounting independent of registry views
+
+`McpRegistry::merge` and `filtered` can share `ClientServiceState` slots while
+holding different registry maps or admission state. Registry-level shutdown
+accounting alone is therefore insufficient: a producer admitted through one
+view can publish or retire a service after another view's final slot check.
+Count replacement producers on the shared slot itself, reject publication once
+that slot enters shutdown, and retain rejected/replaced services until an
+awaited reap. Likewise, a synchronous removal must transfer the slot to a
+shutdown-owned queue before releasing the service-map lock; cancel-without-owning
+the eventual join is not a shutdown guarantee.
+## 2026-09-04 — KBD/OpenSpec task IDs diverge after semantic import
+
+**Observed behavior.** `kbd-apply list` exposes OpenSpec task ordinals in its
+first column, while the canonical KBD phase already contains semantic IDs such
+as `1.1` and `1.2`. Passing ordinal `1` to `begin-task` registered a duplicate
+canonical row; repeated titles then made the bottleneck guard unable to resolve
+a unique task subject.
+
+**Working rule.** In a phase whose KBD task inventory already uses semantic
+IDs, drive the KBD transition with that semantic ID and use the OpenSpec ordinal
+only for the backend checkbox. Inspect canonical task IDs before the first
+phase-end test. A completed duplicate is append-only event history and cannot
+be cancelled retroactively, so status must disclose the projection discrepancy.
+## 2026-09-04 — Description trimming alone did not preserve skill discovery
+
+**Observed failure.** The 2,000-skill catalog test retained only 1,285 IDs under
+the 10,000-token cap even after every description was trimmed away.
+
+**Root cause.** The minimum catalog form still rendered title/source separators
+for every row. Their aggregate token cost forced entry omission, so the
+description-first policy did not actually preserve the complete eligible set.
+
+**Fix.** After fair description trimming, render an identity-only tier before
+omitting entries. If even all IDs cannot fit, omission remains explicit and
+counted. The unchanged 2,000-skill integration test now passes with all IDs.
+
+## 2026-09-04 — Retrying a terminated Cargo wrapper left duplicate compilers
+
+The phase-end sidecar build returned exit 1 without a compiler diagnostic.
+A subsequent single-job retry did not establish a single writer: process
+inspection found two orphaned rustc processes (PPID 1) and a third compiler
+owned by the retry, all targeting surrealdb_core with metadata
+11b57ce731d471c5 and extra-filename -3b62ef2261cb5ab9 in the same build directory.
+The two confirmed orphan processes were sent SIGTERM; the owned retry remained.
+An empty tool result or terminated Cargo wrapper does not prove its compiler
+children ended. Inspect exact process ancestry, artifact identity and output
+directory before retrying. The earlier memory-pressure diagnosis was unproven;
+the observed cause of contention was duplicate surviving compiler processes.
+
+## 2026-09-04 — Scratch launchers still discover user skills and need policies
+
+A fresh working directory and database do not isolate UAR from the standard
+user skill directory. The existing integration server helper scanned 1,044
+skills from the operator's home and twice exceeded its fixed 30-second
+readiness deadline before any provider request. A separate attempt became
+ready in roughly 27 seconds, proving the timeout was intermittent.
+
+That attempt received real router text, but the child was correctly denied:
+the temporary directory contained no `policies/`, so governance loaded an
+empty policy set. The live cancellation runner now copies the repository's
+three Cedar files unchanged into its scratch directory. Do not bypass
+governance or change the home directory to conceal these setup constraints.
+Neither startup failure nor successful router text proves child cancellation.
+
+## 2026-09-04 — Shared BDD startup bound was shorter than real skill discovery
+
+The typed-default phase run passed its default/rollback test, then exited 101
+at BDD (8/9 scenarios passed). The multi-turn scenario never issued its request:
+the helper panicked after 30 seconds waiting for server readiness. Earlier
+isolated launch receipts showed intermittent startup exceeding that same bound
+while discovering/reconciling 1,044 standard user skills. The shared helper now
+allows 120 seconds for readiness and 180 seconds for the enclosing child process;
+the existing health probe and request assertions are unchanged. Do not report
+this initial run as a product pass; the complete new-default rerun remains the
+verification gate. Independent artifact review accepted the bounded adjustment.
+
+## 2026-09-04 — Phase audit supersedes IDs-only catalog and unconditional completion claims
+
+The earlier IDs-only catalog fix preserved IDs but dropped nonempty titles and
+suggestion markers. Independent audit found that the 2,000-entry fixture used
+empty titles, so its passing result did not prove the written catalog requirement.
+The compact tier now keeps titles and suggestions; extreme pressure still uses
+explicit counted omission. This supersedes the earlier recommendation to render
+an identity-only tier, not the historical test receipt.
+
+The same audit found unused production concurrency (an always-present approval
+gate disabled it), retry stopping at provider metadata, primary chat replay
+starting another run, and never-dispatched remote leases surviving admission or
+cancellation failure. The green phase suite lacked those host-path regressions.
+New semantic correction tasks are registered against the four original changes.
+Direct Complete-to-InProgress change transition is rejected, but starting a new
+task correctly re-derives the change as in progress without rewriting history.
+Canonical implementation is therefore 6/10 for the active child and 107/120
+overall at revision 2290, not an unqualified 10/10 acceptance.
+
+## 2026-09-04 — Real default-root remote tests exposed routing-mode inheritance
+
+All three new remote host-path tests initially failed before admission with
+`unsupported or malformed thread policy section: uar.run_policy.chat_mode`.
+The real default-agent root resolves UAR mode; for_remote_child copied that mode
+into its named-agent contract, while narrow correctly rejects non-Agent child
+mode. The fix belongs in host contract construction: concrete_scope_for selects
+Agent mode and preserves the inherited resource/approval/budget ceilings. Do
+not mask this by changing the regression fixture to a non-default named root.
+The correction's runtime rerun is pending; this records the observed cause, not
+a passing result.
+
+## 2026-09-04 — Encoded principals still collide with raw legacy subjects
+
+A collision-safe tenant/subject encoding is not disjoint from arbitrary legacy
+subject strings when both use the same table or cache namespace. A subject can
+literally equal another principal's encoding. Presentation policy source review
+exposed this defect. Verified conversation policies now use separate persistence
+tables/maps and a nonnumeric cache prefix; legacy cache keys start with a numeric
+length. Legacy fallback cannot grant Presentation intent, and reset markers
+suppress fallback. Compilation passed; phase-end regression evidence is pending.
+
+## 2026-09-04 — Omitted policy fields need atomic preservation
+
+Reading saved Presentation intent and later replacing the policy can overwrite
+an interleaved restriction. A fresh frontend GET is also not a write baseline:
+when Presentation is not dirty, send null/omit it instead of echoing the read
+selection. Verified conversation writes now compare their stored policy baseline;
+the global field endpoint compares complete raw JSON; agent merge patches use
+conditional writes. Global admission bypasses cached values so another host's
+restriction and database outages are observed. Backend query execution and
+interleaved regressions still need phase-end evidence.
+
+Assignment-load errors must not write the main session save status: a late GET
+failure can unlock a form during POST and allow edits that its completion then
+discards. The assignment now has separate guarded error state. Confirmed POST
+and later derived reads are separate outcomes; uncertain POSTs require an explicit
+reread before another save. Do not mark a confirmed mutation failed because its
+follow-up effective-state read failed.
+
+## 2026-09-04 — Agent catalog fallbacks are not saved policy authority
+
+The legacy agent list converts a storage failure into built-in defaults. It is
+unsuitable for an assignment editor: empty built-in extensions can masquerade as
+saved inheritance. The strict persisted-agent GET returns404/503 instead. HTTP
+chat also previously resolved built-ins before persistence, bypassing saved
+Presentation restrictions; it now reads storage first and propagates failures.
+The actor path already used fallible persisted-first resolution. Backend source
+review and compilation passed; regression execution remains phase-end work.
+
+Standalone assignment admission includes catalog generation as well as owner.
+A same-owner re-admission must invalidate a preflight read before a mutation is
+dispatched. Discarded reads publish an explicit retry state, not indefinite
+verification. Inactive selected IDs survive confirmed non-Selected saves as
+draft metadata; only explicit reset/discard clears them.
+
+## 2026-09-05 — Presentation preparation is not model history
+
+The native orchestrator truncates formatted tool output before ToolResult.
+Publishing A2UI by reparsing that text rejects valid large templates and does
+not establish frozen-content provenance. Preserve exact untruncated output in
+a host-owned, call-ID-bound receipt before formatting; consume it once during
+publication. Keep only compact preparation status in model history.
+
+Removing tool IDs does not narrow a registry while effective tool mode stays
+Auto/All; convert a narrowed nonempty selection to Selected. Typed prompt
+assembly also must explicitly retain host presentation.output instructions.
+
+Legacy chat projection reserves __a2ui_input__/__a2ui_display__ as synthetic
+tool names. Provider tool announcements precede execution validation; block
+those model-controlled names at the host event boundary. Separately, the
+current agui.artifact adapter treats all artifacts as A2UI, including plain
+JSON policy output. That adapter defect remains open for the selection UI work.
+
+## 2026-09-05 — Artifact declarations and historical contract presence
+
+The ordinary artifact classifier now gives explicit A2UI intent precedence over
+generic JSON, preserving real malformed-profile rejection. Titles must survive
+both canonical ContentBlock decoding and toChunks projection; saved derived
+chunks alone can conceal a canonical title-loss bug. TypeScript/lint passed;
+reload and rendering regressions remain phase-end work.
+
+Serde defaults erase whether older delegation policies omitted Presentation
+selection. Retain wire presence and historical typed field order for digest
+compatibility; apply target-local None to a separate execution copy. Outgoing
+legacy serialization is valid only without negotiation or new template authority.
+Do not retry negotiated contracts after removing restrictions. Compilation passed;
+old-peer digest and live interoperability are not yet verified.
+
+## 2026-09-05 — Provenance requires host evidence and cursor-safe retention
+
+ToolResult.success is not evidence that a renderer executed. Record generation
+failure at the native execution boundary or only after consuming a host receipt.
+A missing receipt produces a diagnostic, not a generation-failure claim.
+NormalizedEvent::Error closes run streams; recoverable Presentation rejection
+must be nonterminal so text fallback and final provenance can arrive.
+
+The512-event history ring can evict admission evidence. Keep the latest full
+provenance with its original sequence separately; never show it at an older
+cursor. Unrelated incomplete A2UI state must not erase independently known
+provenance or cause a fabricated synchronized global snapshot. A dedicated
+CUSTOM snapshot extension preserves that distinction. These paths compile and
+passed source review; phase-end cursor/eviction/ordering tests are still pending.
+
+## 2026-09-05 — Phase test fixtures and stale-callback evidence
+
+Archiving typed-turn-assembly moved parity-report.json, but a Rust include_str
+still referenced the active change directory. Preserve the oracle contents and
+update the exact path; do not regenerate expected parity just to pass the test.
+
+A UI run-switch test can miss stale writes to the previous run because it now
+subscribes to a different graph ID. Assert the prior entity remains idle with
+no observation after invoking the old callback. Also retain the existing A2UI
+protocol ban on executable markup when testing literal template data.
+
+## 2026-09-05 — Presentation phase browser and fixture findings
+
+A Button onClick callback must not pass its MouseEvent to an action whose
+optional argument is a record ID. NewPresentationButton did so; the owner-safe
+domain rejected the event as an unknown ID. Explicitly call onOpen() and test
+both creation entry points plus existing-row identity.
+
+Base UI Select.Value needs the existing value-to-label items mapping when the
+closed trigger must display authored labels rather than wire values. Include
+dynamic 'Inherit, with exclusions'; exact-text tests distinguish its two states.
+
+An explicit --env-file does not isolate the UAR executable from cwd .env:
+main.rs calls dotenv() first, and legacy LLM_* values override the config file.
+A phase browser fixture launched from the repo imported an existing credential
+into its temporary database. Launch test executables from a clean temporary cwd
+with explicit test-only env and config; verify actual persistence descriptors
+and sanitized effective settings before navigating credential-bearing pages or
+sending model requests. Never log the credential. The original env file was
+unchanged; the exposed key requires operator rotation.
+
+## 2026-09-05 — Run inspector intrinsic width and publication vocabulary
+
+An implicit single-column grid can use a JSON pre block's min-content width:
+the390px trace expanded to26361px. Explicit grid-cols-1 plus shrinking inspector
+and tab-panel children keeps overflow local to the JSON pane. The existing
+Tabs wrapper rendered flex-direction row in this inspector; a local flex-col
+keeps the tab strip above its panel without refactoring every shared Tabs user.
+Confirm real computed width, not just document scrollWidth, because an ancestor
+can hide internal overflow. The Presentation metric deliberately excludes
+policy-summary artifacts; label it generated UI surface publication so visible
+diagnostic UI does not contradict an empty renderer-publication result.

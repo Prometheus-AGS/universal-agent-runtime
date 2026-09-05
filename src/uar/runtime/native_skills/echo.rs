@@ -41,6 +41,14 @@ impl NativeSkill for EchoSkill {
         ToolSource::BuiltIn
     }
 
+    fn check_thread_policy(
+        &self,
+        _policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        // Returns only its validated arguments; consumes no host resource grant.
+        Ok(())
+    }
+
     async fn execute(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
         tracing::debug!(args = %args, "Executing native echo skill");
         Ok(serde_json::json!({

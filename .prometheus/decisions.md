@@ -1038,3 +1038,767 @@ requires must first cut seams into the monolith, which is itself a risky change.
 **Rationale.** The 1,510-line run entry point has no seams to shadow behind. Each correctness change extracts a pure function that the typed assembler later composes, so shadow parity compares against a legacy path that already has deterministic ordering and validated tools. An intentional-delta allowlist, each entry naming the change that introduces it, keeps "intentional" from becoming a place to hide regressions.
 
 **Uncomfortable constraint.** Two adversarial rounds still ended in BLOCK; the round-2 fixes were applied after the cap and go to the plan stage un-vetted. `versions.toml` entries for jsonschema and the other pins are operator actions that block execution of change 2 until done.
+
+## 2026-09-02 — Typed assembly remains opt-in pending phase-end evidence
+
+**Decision.** Keep `HarnessConfig::default().mode` and the `harness.mode` settings-schema default at `legacy`. `typed-turn-default-flip` still requires both the parity-corpus report and recorded live shadow smoke with zero unexpected differences. Neither evidence record has been produced during this implementation pass.
+
+**Mechanism.** `typed` uses the staged contributors. `shadow` renders typed prompt sections separately, records redacted per-step differences, and dispatches the legacy request. Shadow reuses the prepared legacy history reduction so it does not issue a second paid summarization request. The checked-in allowlist currently has no exemptions: progressive-skill-runtime already refreshes skill tools on the legacy path, so the historical frozen-list assumption cannot justify an exemption now.
+
+**Uncomfortable constraint.** Shared history reduction is not an independent check of the reducer algorithm; its correctness still depends on the phase-end history tests. Production code has not been compiled or tested in this implementation pass. Graph-node tool-loop integration remains work for thread-native-subagents, and no full-change acceptance is claimed for changes 3–6.
+
+## 2026-09-02 — World-state ownership and round-4 independence
+
+**Decision.** Continue change 9 while the change-7 sandbox choice remains unresolved. The plan's gate says "Before Round 4 change 7"; changes 8 and 9 have no dependency on that decision. The earlier checkpoint's blanket stop interpretation is superseded.
+
+**Mechanism.** Project trust comes only from host configuration and defaults to an empty list. Project bodies carry escaped Host markers; enforced policy is unchanged. Session-owned baselines are not deserialized from client/session input. A captured clock bucket and instruction snapshot feed both assembly paths. Context reduction reserves space for full replay, signals all history rewrites, then world state is inserted before active skill bodies are budgeted. Only the selected assembly path commits its update.
+
+**Uncomfortable constraint.** This code is uncompiled and untested pending the operator's phase-end sequence. Shared host capture and legacy reduction in shadow are not independent verification. The existing graph path still needs the planned change-8 adapter work for governed native tool execution and per-call typed snapshots; no change-9 test or acceptance claim is made here.
+
+## 2026-09-02 — Thread admission must not undercount uncertain persistence
+
+**Decision.** Use host-derived owner/root lineage and a single tree admission gate for the thread contracts. Model spawn input contains the artifact, delegated prompt, name, and history choice only; it cannot supply root identity or delegation approval. History forking defaults to none and never copies parent system context or tool traffic.
+
+**Mechanism.** New-child reservations count against concurrency, depth, and lifetime before persistence. Once a database write begins, cancellation is no longer proof that no child exists. Dropping that reservation releases concurrency but retains lifetime capacity until the host reconciles the write. Confirmed failure may explicitly abort; confirmed commit transfers the concurrent slot to the live-turn permit. Root ceilings cannot exceed four concurrent children, depth three, or sixteen total.
+
+**Uncomfortable constraint.** These are implemented contracts, not a working child execution service yet. Provider writes and recovery must honor this protocol in the remaining tasks. Compilation, actual concurrent admission, durable ordering, and cancellation behavior remain unverified until phase-end tests.
+
+## 2026-09-02 — Child policy uses frozen host bindings, not fresh resolution
+
+**Decision.** Intersect each child artifact with a host-held parent snapshot. Credential/service bindings, native/MCP tool identities, sandbox bindings, and the root approval run are host-owned. The versioned `uar.thread_policy` extension expresses restrictions only. Existing `uar.run_policy` and `budgets` are decoded strictly at this boundary, including nested fields.
+
+**Mechanism.** Concrete `Selected`/`None` resource sets avoid the observed manager behavior in which `All`/`Auto` omits a filter. Base and extension policy constraints intersect independently; neither erases the other's deny list. Exact credential bindings intersect, approved filesystem capabilities intersect per binding, isolation requirements only strengthen, and each numeric ceiling takes the lower value. Compiler MCP declarations select inherited identities but cannot replace live connection credentials or endpoints. Root approval identity never changes in a child policy.
+
+**Uncomfortable constraint.** A policy value is not enforcement. The upcoming service/adapters must retain exact bindings, pass the captured narrowed artifact and effective policy, enforce sandbox capabilities and root-shared counters, and route approvals only to the root. The current implementation is uncompiled and untested under the operator's phase-end sequence; it is not yet called from execution.
+
+## 2026-09-02 — Thread storage revisions and atomic spawn lineage
+
+**Decision.** Persist each child and its edge atomically and use a storage revision distinct from history revision. Reads and writes require the verified owner; immutable lineage is never upserted or deleted through the thread API. All providers validate and sort decoded records through shared Rust functions.
+
+**Mechanism.** Memory uses one lock. PostgreSQL uses root-first parent/root shared locks, atomic inserts, foreign keys, and revision-guarded updates. SurrealDB uses a single transaction, parent/root snapshot checks plus physical write fences, unique indexes, and inspection of every statement error. New migrations define the tables; SurrealDB initialization explicitly includes its idempotent schema. Failed or interrupted writes require reconciliation, not an assumption of rollback.
+
+**Uncomfortable constraint.** Source implementation does not prove durable behavior. No migration, database query, compilation, concurrency test, or restart test ran in this turn. Phase-end integration tests must establish the atomicity, owner isolation, stale-write refusal, stable ordering, and cold-recovery claims; the upcoming service must honor the uncertain-write reservation protocol.
+
+## 2026-09-02 — Agent descriptors bind to one live host turn
+
+**Decision.** Construct a fresh native registry for each agent-control context. All five controls are model-only descriptors with strict schemas and declared effects; spawn is omitted without explicit authorization from the original registered artifact or a verified root-user grant. A wildcard expanded during policy intersection is eligibility, not delegation authorization.
+
+**Mechanism.** Private host context captures owner, root, caller run, intersected policy, cancellation, and authorization. Calls check current persisted caller identity and native tool binding. Returned records must remain in that root tree; message identities remain metadata, and list output omits prompt/history/result bodies. Interrupt acknowledges a descendant cancellation request without claiming completion. Read-only waits use current-state watches, retain observed terminal outcomes across a concurrent resume, and recheck the caller after subscription setup and waiting.
+
+**Uncomfortable constraint.** This task delivers descriptors and the host dispatch contract, not a concrete execution service. `registry_for_turn` has no manager caller and `AgentThreadHost` has no implementation yet. The adapters must provide real execution, root authority rechecks at mutation, persistence, mailbox ordering, root approval/budgets, and cancellation. No build or behavior test ran; these claims remain source-level until phase-end verification.
+
+## 2026-09-02 — Lifecycle metadata and live graph boundaries
+
+**Decision.** Project child lifecycle from confirmed persisted transitions using a content-free domain payload. Preserve root-stream identity, actual child/parent run IDs, storage revision, stable lifecycle identity, and persisted timestamp. Emit graph step boundaries around each node execution through the existing host event stream, not from a completed trace.
+
+**Mechanism.** The lifecycle projector reuses persistence transition validation and exact lineage checks, suppresses repeated state writes, and never copies result text or raw failure messages. AG-UI subagent mappings use the documented SUBAGENT_STARTED/FINISHED/ERROR schemas; pending or pre-start failure uses a named CUSTOM event because no child run ID exists. Failed/cancelled categories are static host labels. Graph numbering is engine-owned and resumes from checkpoint iteration; cancelled in-flight nodes do not produce synthetic finished boundaries.
+
+**Uncomfortable constraint.** The graph event path is connected to RunManager, but the forthcoming child host must call the lifecycle projector after confirmed commits and retain the correct captured parent turn. There is no durable outbox/restart-delivery proof in this task. No builds, schema tests, replay tests, or cancellation tests ran; all behavioral claims remain unverified until phase end. Existing trace data and the old graph output prefix remain for task 4.2, not silently removed here.
+
+## 2026-09-02 — Actor mailboxes use the shared run host; task 4.1 remains partial
+
+**Decision.** Direct actor prompts enter RunManager with an exact registered artifact, authenticated owner, private kernel session, host-generated run ID, and actor cancellation token. The actor no longer creates an independent orchestrator or history vector. Commit root/start state before kernel entry and terminal state before the reply. Reject missing/anonymous actor identity before request body extraction.
+
+**Mechanism.** The run emitter captures terminal results through a lossless oneshot channel; retained SSE history holds only a weak reference, so disappearance of the producer closes the completion channel. A live mailbox receiver prevents an SSE viewer disconnect from cancelling its work, without changing explicit cancellation. Actor lookup is owner/tenant-qualified and publication reserves the name atomically. Unknown artifact IDs and storage errors do not select the default artifact.
+
+**Persistence recovery.** Retain the exact expected envelope and revision before every write. A failed write may be reconciled only by an owner-qualified read of that exact envelope, never by retrying the mutation or assuming absence proves rollback. Same-request confirmation permits continuation. Later confirmation of an unstarted turn closes that turn as failed/cancelled before accepting new input. Terminal-write recovery preserves the actual recorded result. Shutdown attempts the same reconciliation. An unavailable or different snapshot leaves the actor unresolved.
+
+**Uncomfortable constraint.** This is not completion of task 4.1. Collaboration still starts the target's independent root instead of a source-root child; concrete AgentThreadHost wiring, frozen execution bindings, root approval/budget integration, and restart recovery remain unfinished. Actor registry keys include tenant, but RunManager/thread owner fields remain user-ID based; full cross-tenant isolation is not claimed. Builds, tests, and acceptance review remain deferred to phase end per the operator. Tokio's Sender::is_closed contract was checked through Context7 at https://docs.rs/tokio/latest/tokio/sync/oneshot/struct.Sender.html. No dependency changes were needed.
+
+## 2026-09-02 — Root-scoped thread host and completion status requirement
+
+**Operator instruction.** Execute the `kbd-status` skill after finishing every task, change, or phase. This is an additional completion-boundary action, not permission to run tests before phase end. Read and follow `/Users/gqadonis/Projects/prometheus/prometheus-skill-pack/skills/process/kbd-process-orchestrator/skills/kbd-status/SKILL.md`; show canonical implementation counts separately from evidence/certification/publication and disclose stale projections.
+
+**Decision.** Add one ThreadService per live root run as the concrete AgentThreadHost. It owns admission, typed mailbox sequencing, tracked mutations/workers, storage transitions, subscriptions, interruption, and lifecycle publication. The required ThreadExecutionHost bridge owns exact artifact/history resolution, binding/sandbox/budget admission, and shared-kernel execution. It has no default methods or alternate model loop.
+
+**Mechanism.** A spawn intersects the parent's captured policy, validates live authority again after resolution/history I/O, reserves a child, atomically persists the child and edge, then starts its worker. Only confirmed transitions publish. Unknown writes retain their exact expected envelope and child reservation; explicit reconciliation closes unstarted recovered work rather than replaying it. Accepted queued triggers retain the existing active-child slot, preventing another spawn from stranding an acknowledged message between turns. Model execution runs outside the root storage lock; roots retain worker handles and disappearing executor tasks produce failure outcomes.
+
+**Uncomfortable constraint.** The service is implemented and exported but not constructed on the production path yet. ThreadExecutionHost has no concrete RunManager implementation. Root attachment must be single-instance and account for the actor's later root turns; frozen resource bindings, root approvals/per-call budget enforcement, root message consumption, and root completion publication still need manager/actor wiring. No build, formatter, tests, or acceptance review ran; task 4.1 remains open.
+
+## 2026-09-02 — Serialize root approval requests before enabling child execution
+
+**Observed boundary.** RunManager stored one replaceable oneshot sender per run and published the approval event before inserting that sender. Sharing this path with concurrent children would overwrite siblings; an immediate human response could also arrive before the sender existed. The thread specification requires child approvals to use the root channel without granting child-supplied approval authority.
+
+**Decision and implementation.** Replace the production slot map with `thread/approvals.rs`: one host-registered root channel, serialized pending requests, request IDs minted by the host, registration before publication, and synchronous drop cleanup. Five minutes bounds queueing, event publication, and decision together. Root and caller cancellation interrupt the wait; the root emitter and root run identity are captured in a request-only channel. The broker resolver remains on RunManager. Weak channel indexing does not retain completed run emitters. Child channels cannot accept run-only decisions; the exact `approval_id` is required. Ordinary root requests keep the existing run-only API for compatibility. This means uncorrelated legacy root replies still lack replay correlation; no broader replay guarantee is claimed.
+
+**Wiring.** RunManager now uses this broker for real root runs, registers it before assembly, and accepts an internal inherited-channel parameter for the forthcoming child entry. Both HTTP approval routes accept optional `approval_id` after their existing owner lookup. The normalized event and official/legacy/runtime event mappings expose the ID. Runtime approval entity IDs use the request identity to avoid sibling tool-call-ID collisions. A malformed non-string ID on the raw JSON route is rejected, not treated as absent. Cancellation is checked before governance, and the future inherited-child path cannot use the root's local governance toggle to erase narrowed Ask/Deny policy.
+
+**Uncomfortable constraint.** Every existing kernel caller still supplies no inherited channel. Child execution, resource freezing, actor collaboration, and root-shared usage enforcement are not integrated. Current browser clients send only `{ approved }`; they continue working for ordinary roots, but must carry the event's request ID before child approvals are exposed there. No frontend edits were made. Old standalone approval helper tests are retained under `cfg(test)` and do not test the new broker; phase-end integration coverage must replace or supplement them. No build or tests ran. Task 4.1 remains open, not accepted.
+
+## 2026-09-02 — Pin executable connections, not mutable service names
+
+**Observed boundary.** MCP filtering shares mutable service slots; configuration replacement and reconnection can change their credentials/endpoints. Skill activation starts dependencies from each skill's source configuration. The vendored LLM client's constructor resolves environment keys. All three are incompatible with a child's inherited immutable execution bindings.
+
+**Decision.** Add frozen MCP views that retain exact transport Arcs, recheck selected tool descriptors on those same transports, and refuse replacement, revocation, closure, reconnect, resource merge, and tool registration. Filtered frozen views retain exact connections and have child cancellation tokens. Closing a borrowed view disables that view, not shared parent transports; removing an owned server revokes retained slots. Frozen skill activation validates inherited dependencies instead of executing the artifact's command/URL/auth/env recipe. Ordinary root activation remains unchanged.
+
+**Model binding.** Add an object-safe, refusal-by-default `LlmDriver::with_bound_model`. LiterLlmDriver reuses its existing DefaultClient for a qualified model in the same provider. AnthropicDriver retains its HTTP client, key, endpoint, and defaults while changing only the model. The host must still check policy and binding identity; this method is not authorization. No vendor code or dependency pin changed.
+
+**Uncomfortable constraint.** No production root capture calls freeze_bindings or with_bound_model yet. This supplies the missing binding primitives, not the concrete ThreadExecutionHost/actor integration. McpRegistry::merge now returns McpMergeError so immutable-binding rejection is distinguishable from a descriptor collision; downstream callers that explicitly name its former error type need migration. No compilation or behavior tests ran. Task 4.1 remains open. Asked the operator asynchronously for change 7's planned sandbox choice while continuing independent work; no decision has been inferred.
+
+## 2026-09-02 — Consume captured model and skill resources in real root turns
+
+**Decision.** `turn/bindings.rs` captures a primary model client, healthy
+fallback clients, configuration, and health binding once after root model and
+credential resolution. The shared manager uses these exact clients for initial
+summarization, ordinary tool-loop execution, and its graph driver. Host-supplied
+model drivers now also handle summarization; that path must not construct an
+unrelated credential-bearing client. Existing fallback ordering and unavailable
+fallback skip behavior remain.
+
+**Skill capture.** A read-only matching view captures skill definitions,
+enablement, legacy agent bindings, and matching config. Manager matching,
+catalog generation, and activation share its registry. Vector retrieval may
+contribute scores for captured IDs but cannot replace a captured skill body.
+The global service still owns mutations/evolution for later runs. The snapshot
+retains host embedding/search resources; it does not claim frozen vector
+ranking, child budget accounting, or a complete capability-free registry.
+
+**Verification policy.** Tests remain at phase end. The repository's required
+compile-only Tier 0 check is distinct from tests and was run. It exposed and
+led to fixes for the existing BackON feature/lock mismatch, three compile
+errors, and 23 warnings. The final locked server-full check passed, zero
+warnings, in 30.92s. No package upgrades, formatter, test runs, or acceptance
+critic. Redacted debug output excludes prompts, message content, credentials,
+and executable handles. Missing actor persistence now refuses admission rather
+than referencing a backend absent from the build.
+
+**Uncomfortable constraint.** These are connected root preparation paths, not
+completed child execution. The optional kernel argument still carries only
+approvals; all callers still pass None. No concrete ThreadExecutionHost or
+production root MCP freeze exists. Task 4.1 and the 2/10, 83/182 counters remain
+unchanged. The status skill was executed at this checkpoint and remains
+mandatory after every genuine task/change/phase completion.
+
+## 2026-09-02 — Put root cost admission on captured model drivers
+
+**Requirement and mechanism.** Thread execution requires root-shared model-call
+budgets. The existing tracker reported Exceeded only after a run. ModelCallBudget
+now captures the payer scopes and cancellation token; primary and fallback
+clients receive BudgetedModelDriver wrappers, reused by summarization and graph
+execution too. Each call checks the ledger before dispatch. Received priced
+Usage updates atomically replace that request's cumulative cost estimate across
+all scopes. Same-client model rebinding retains this payer and guard. Agent cost
+ceilings are installed before driver capture, and run completion no longer
+double-charges. Scope gauges and threshold traces remain on the call path.
+
+**Boundary.** Ledger poisoning refuses new paid work instead of authorizing from
+possibly partial accounting. Root cancellation interrupts local startup/stream
+waits; it does not claim to stop billing already accepted by a remote provider.
+Accounting is independent of optional cost-display configuration.
+
+**Uncomfortable limits.** This is not complete task 5.1 or task 4.1: concrete
+child hosting, narrowed token/rate/tool/time budgets, missing/unpriced usage,
+in-flight reservation, and child admission remain unfinished. Existing durable
+cost roll-ups still run at normal-run completion and omit graph/summarization
+calls; no durable accounting completeness is claimed. The existing agent-scope
+identity policy is unchanged. Final locked server-full compile: exit 0, no
+warnings, 7.85s. No tests or acceptance check ran.
+
+## 2026-09-02 — Child assembly uses inherited resources, not root resolution
+
+The optional execute_request_inner input is now InheritedRunBindings rather
+than an approval-only channel. It carries the thread/policy/control identity,
+model and skill snapshots, frozen MCP view, native handlers, captured harness
+settings, cwd, and root approval capability. The child branch validates owner,
+run, private session, canonical-history presence, control-policy identity and
+root approval identity before touching session state. It uses the narrowed
+artifact and policy without global policy backfill. It bypasses provider,
+credential, skill-index, and fresh payer construction. Parent activation/agent
+handlers are excluded before child-local handlers are registered.
+
+Captured model clients now have opaque credential grants. Child route selection
+requires the exact grant, reuses or rebinds an existing driver, and retains its
+root-budget wrapper. Keep the still-authorized binding catalog separate from
+this turn's selected primary/fallbacks: choosing one provider does not revoke
+other provider grants that the child's policy still permits its descendants to
+use. Connection recipes are stripped from the child's copied LlmConfig.
+
+The uncomfortable thing: every current caller still supplies None. This is a
+compiled inherited assembly branch, not functioning end-to-end child execution.
+Root capture/attachment, concrete ThreadExecutionHost, actor lifetime and actual
+collaboration, enforceable sandbox restrictions, full budgets, cancellation
+cleanup and phase-end acceptance remain required before task 4.1 is done.
+
+## 2026-09-02 — Actor conversations span distinct root runs
+
+ActorThreadSession now creates a fresh persisted root for each direct turn,
+while retaining its owner-qualified session_id and canonical conversation
+history. The old root stays in persistence. Updating run_id on the original
+root retained a stale root_run_id and contradicted ThreadService::attach's
+fresh-root authority check. An unresolved/live predecessor cannot be replaced.
+The existing exact-write reconciliation path also handles the next root's
+creation without replaying the prompt or retrying an uncertain write.
+
+The actor's terminal reply is now delayed until its executing kernel future
+unwinds. RunCompletionCapture freezes a terminal event; RunCompletionGuard
+releases the reply at producer exit. Short synchronous capture locking permits
+this non-async drop boundary. A producer panic reports failure; absence of a
+terminal event closes the channel instead of inventing successful output.
+Actor stop/shutdown_all now cancel and join mailbox tasks outside the registry
+lock, rather than detaching them by dropping their JoinHandles.
+
+Uncomfortable limits: ActorInfo.thread_id is the latest root, not a stable
+conversation ID; clients use session_id for the latter. Joining the mailbox and
+main kernel future does not join separately spawned cost/evolution maintenance,
+remote billing, or the still-unwired descendant service. This does not complete
+task 4.1, real actor collaboration, or tree-wide cancellation. The final
+compile-only T0 passed without warnings in 18.13s; behavior tests remain at
+phase end.
+
+## 2026-09-02 — Reject unsupported MCP stdio sandbox requests
+
+projected-mcp-runtime task 0.1 chooses its explicit rejection alternative.
+Codex commit 986ff1cc7ced0081ec5014b700a376333d87f869 requires permission-profile,
+network-proxy and platform-helper integration; UAR SandboxRunner does not expose
+a long-lived stdio launcher. Source paths and the rejected port alternative are
+recorded in the phase decision log. No new dependency or sandbox claim.
+
+Shared config validation now rejects sandboxed:true stdio during McpConfig
+deserialization and before registry startup/reconnect/provisioning. HTTP and
+embedded saves and hydration validate before persistence or connection removal,
+including disabled entries. The guard addresses the observed inert sandbox flag
+at the trusted host process-launch/configuration boundary. Boot's existing
+log-and-empty-registry fallback is unchanged. This does not solve child-thread
+physical filesystem/network enforcement.
+
+Four compile-only T0 checks passed with zero warnings (30.97s, 8.23s, 8.01s,
+10.18s); behavior testing remains at phase end. Task 1.8 stays open.
+
+## 2026-09-02 — MCP catalog separates declarations from execution
+
+Task 2.1 captures immutable source-qualified server definitions. Global/Skill/
+Child provenance determines authority; a second rank cannot contradict it.
+Required/optional status and host-observed authentication are explicit, and
+sandbox policy derives from the validated config. Same-source collisions fail;
+different sources await authority-aware projection, not insertion-order override.
+
+The versioned SHA-256 identity includes every declared launch input, preserving
+argument order and sorting env keys with fixed-width length framing. It does
+not pretend to capture resolved process environment or credential revisions;
+task 2.3 must include those separately. Configuration and hash Debug surfaces
+are redacted because configured values can contain secrets. The catalog has no
+live handles, I/O or mutation APIs, and is not a grant of executable authority.
+No run-path caller yet: production wiring is task 4.1, not claimed by 2.1.
+
+## 2026-09-03 — Source-pinned MCP projection
+
+Task 2.2 uses the resolved eligible IDs for every policy mode and never treats
+All as permission to broaden the resolved universe. Server authority is chosen
+before tool discovery, then retained exactly. Global > active eligible skill >
+current child; equally authoritative conflicting definitions fail. A missing
+winner's catalog is an error, not an invitation to use lower-authority tools.
+
+Tool snapshots retain their declaration and completeness. Conflicting full
+snapshots cannot be unioned (that would revive deleted tools); stale config/auth
+metadata fails, as do wrong-server/non-MCP descriptors and name collisions.
+Hidden tools are omitted, deferred tools remain eligible without initial
+advertisement, and descriptors retain all governance metadata. The host still
+owns concrete binding identity, environment, sandbox and Cedar checks. The
+projection is not yet wired into the manager; no live behavior claim.
+
+## 2026-09-03 — MCP binding identity and caller-owned refresh
+
+Task 2.3 uses verified ActorOwner (user and tenant), source-qualified declared
+config, required/auth metadata and an exact OS-string environment/cwd snapshot
+as the cache identity. No anonymous owner, lossy environment conversion, secret
+Debug or ambient fallback is introduced. The host connector must actually use
+the supplied snapshot; this task does not claim that later integration exists.
+
+One caller owns a refresh future; watch shares its result with waiters. The
+drop guard clears cancellation/failure and generation checks reject stale
+publication. Invalidation cancels rather than overlapping a replacement attempt.
+Read-heavy RwLock state follows async-patterns without adding a lock dependency;
+guards never span awaits. Tokio watch semantics were checked via Context7:
+https://docs.rs/tokio/latest/tokio/sync/watch/struct.Sender.html and
+https://docs.rs/tokio/latest/tokio/sync/watch/struct.Receiver.html.
+
+Synchronous registry cancellation is separate from awaited transport closure.
+Retired handles remain owned through cancellable cleanup and shutdown. The
+uncomfortable limit is the still-unimplemented snapshot-aware connector and
+manager wiring: production connection reuse and partial-launch cleanup are not
+yet demonstrated. Final T0 passed with zero warnings in 31.44s; tests stay at
+phase end. No replacement of the existing reconnect-generation mechanism.
+
+## 2026-09-03 — Captured stdio bindings and HTTP dependency prerequisite
+
+New projected stdio launch resolves command paths and environment from the
+binding request, without fresh global reads or implicit provisioning. Complete
+paginated discovery compiles descriptors before publication. The authoritative
+reconnect slot captures both request and complete catalog, so an old view cannot
+re-read different launch inputs or install a changed schema after reconnect.
+Administrative replacement clears that snapshot with its config update.
+
+The total lazy-call deadline can cancel reconnect while its counter is nonzero.
+A ReconnectAttempt drop guard now releases that count on every unwind; ordinary
+and snapshot reconnect retain the existing generation check. This fixes a named
+cancellation/shutdown sequence, not speculative hardening. Uncomfortable limit:
+counter cleanup and SDK cancellation do not prove that UAR shutdown has joined
+every partial-launch child; that work and phase-end behavior evidence remain.
+
+HTTP requires an explicit SDK-compatible client to honor captured proxy inputs.
+Direct UAR reqwest0.12 is not rmcp3.1.2's reqwest0.13.4. Dependency-pin-discipline
+requires the new direct alias pin in operator-owned versions.toml; requested
+reqwest_mcp="0.13.4", leaving all manifests unchanged. Cached official index
+checksum matches the existing Cargo.lock package; fresh registry access was403.
+No version bump or alternative handwritten MCP HTTP protocol was introduced.
+
+## 2026-09-03 — Own partial stdio launches through a host join barrier
+
+Cancellation during handshake/discovery can precede cache publication. Keep
+the direct Child in a tracked reaper, not solely inside the handshake transport.
+Dropping the transport cancels its reaper; explicit transport close waits for
+the reaper result. The runtime connector owns the tracker and awaits it during
+shutdown, including attempts that never returned a RunningService. Admission
+and tracker registration share a short lock so shutdown cannot miss a spawn.
+The async-patterns skill drove this structured ownership; TaskTracker close
+alone is not an admission gate (official docs loaded via Context7):
+https://docs.rs/tokio-util/latest/tokio_util/task/struct.TaskTracker.html.
+
+The uncomfortable limit: direct-child kill/reap is not a descendant-process
+tree sandbox; no such guarantee is claimed. Compile-only evidence passed in
+26.57s with zero warnings, not live process proof. Task 3.1 remains unfinished
+pending the HTTP pin and adapter; RunManager integration is still task 4.1.
+
+## 2026-09-03 — Optional availability cannot suppress binding failures
+
+Task 3.2 proceeds independently while task 3.1 awaits the HTTP alias pin. MCP
+preflight accepts only authority-selected definitions, one verified owner and
+captured parent environment. Optional environment/auth/connection/discovery/
+timeout failures produce a named warning and omit the selected server's tools.
+Required availability failures abort with an actionable, secret-free error.
+Invalid binding, revocation, cancellation, shutdown and projection errors remain
+fatal regardless of optional status. Otherwise a connector ownership bug could
+silently be reclassified as acceptable degraded availability.
+
+The narrowing helper can only remove selected optional servers; it neither
+reselects origins nor changes tool eligibility. Cached complete catalogs retain
+lazy startup. No credential lookup or tool authorization moved into the kernel.
+Uncomfortable limit: runtime API call sites compile, but RunManager integration
+and live behavior evidence remain outstanding. T0 passed zero warnings in31.79s;
+tests and acceptance review remain at phase end per operator instruction.
+
+## 2026-09-03 — MCP lifecycle publication shares the binding generation
+
+Each exact owner/config/auth/environment cache entry owns one ordered lifecycle
+publisher. Opaque random IDs and typed reasons preserve correlation without
+serializing secrets or secret-derived configuration hashes. Initial snapshots
+and bounded future-event subscriptions are atomic; lag is explicit and recovery
+is a snapshot, not fabricated replay. Observers retain only a Weak publisher.
+
+Reconnect callbacks attach only after binding validation and carry the cache
+generation as well as the existing registry configuration generation. Shutdown
+is terminal within that lifecycle generation. A concrete shutdown/late-install
+interleaving could otherwise emit Ready after ShuttingDown. Reconnect admission
+is single-flight per slot; cancellation changes only its own Connecting state.
+The bool compatibility metric is written under the same publication lock, not
+by a late independent reconnect write. Its server-only labels remain unchanged.
+
+The async-patterns, agent-runtime-security and agui-event-contract skills drove
+weak observer ownership, generation-bound publication and secret-free envelopes.
+Uncomfortable limit: there is no RunManager subscriber yet (task4.1), no idle
+transport health-monitor claim, and no behavioral evidence until phase-end tests.
+Task3.3 T0 passed with zero warnings in32.23s,23.66s,11.95s. HTTP3.1 still awaits
+the operator-owned reqwest_mcp pin; no dependency or versions.toml edits.
+
+## 2026-09-03 — MCP discovery changes visibility, not descriptor authority
+
+Keep original ToolDescriptor metadata intact and project a separate bounded
+visible map. Mutating Deferred into Eager on the original descriptor would
+break exact catalog/binding comparisons or confuse advertisement with grants.
+The host caps each step at32 MCP tools, search selects at most8, and retained
+selections are bounded/revalidated against the next authorized snapshot.
+These are implementation defaults for the required bounded tool surface, not
+new operator config or policy grants. Hidden tools never enter the search index.
+
+Register search_tools only in a fresh chat-local native registry and only when
+deferred tools exist. Run every model batch against its frozen visible map,
+even if search modifies next-step selections earlier in the batch. This follows
+agent-runtime-security's host boundary and async-patterns' explicit shared
+state ownership; no lock spans await, no new task is spawned, no server starts.
+
+Uncomfortable limit: the live orchestrator call site is implemented, but its
+200-tool and concurrency behavior awaits phase-end tests. Final T0 was clean
+in11.30s after removing one observed unused import. HTTP adapter and manager
+binding-cache integration remain separate unfinished tasks; no scope reduction.
+
+## 2026-09-03 — Prepared MCP execution and delegation preserve binding identity
+
+Carry McpPreflight alongside the activation/step snapshot rather than route
+projected tool names back through a mutable global registry. Host-governed calls
+resolve exact projected descriptors; native tools retain their separate path.
+Publish activation state only after preparation and collision checks finish.
+Use that same descriptor snapshot for run outcome attribution.
+
+At an explicit child handoff, wait for selected lazy bindings and freeze the
+actual transport Arcs. Keep leases until capture and revocation checks finish;
+retain only projected MCP tools and companion in-process tools. A child cannot
+silently omit a previously prepared dependency or receive reconnect recipes.
+Complete catalog discovery must also apply during freezing: first-page-only
+validation would reject legitimate tools discovered by the paginated connector.
+
+No new guard is speculative: these checks enforce the delegation trust boundary,
+captured identity, descriptor collisions and observed discovery-page mismatch.
+Uncomfortable limit: task4.1 is not complete. The new root constructor and child
+handoff APIs have no root caller yet; graph/bootstrap/policy-universe/lifecycle/
+shutdown integration remains. Latest T0 checks passed zero warnings in19.55s,
+9.55s and7.35s; no behavioral acceptance is claimed before phase-end testing.
+
+## 2026-09-03 — Preserve verified principal through MCP assembly
+
+Root ingress must retain ActorOwner, not just user_id: the latter loses tenant
+identity used by McpBindingCache. HTTP adapters and actor mailboxes now carry
+the existing verified owner through RunExecutionRequest and ResolvedTurn;
+prepared step assembly compares it with McpPreflight.owner. Anonymous and
+legacy caller strings are not promoted into verified cache owners. This is the
+runtime-security skill's existing tenant-binding trust boundary, not JWT parsing.
+
+Uncomfortable limit: shared caching is still not enabled at the root, and older
+embedded/interaction APIs still lack the stamp. These require explicit host
+identity/isolation before migration; compilation is not tenant-isolation proof.
+Four T0 passes were warning-free:18.47s,9.87s,8.14s,12.90s. Tests remain phase-end.
+
+## 2026-09-03 — Root MCP resources enter RunManager without ambient fallback
+
+Accept the host's immutable owner/catalog/environment plus its shared runtime
+through RunExecutionRequest. When supplied, build the projected activation host
+and preserve it across skill activations; required failures stop the run. Every
+preflight observes the same run token. Do not shut down a shared runtime when
+one run ends, and do not replace a failed captured binding with legacy config.
+
+Uncomfortable limit: bootstrap still supplies no bundle; default execution is
+not migrated. Captured graph requests fail explicitly until their governed
+adapter is implemented. This temporary unsupported branch must be removed by
+task4.1 completion, not accepted as a smaller scope. T0 clean34.12s and13.40s;
+no behavior tests. The HTTP operator pin remains absent.
+
+## 2026-09-03 — Actor shutdown retains join ownership until completion
+
+Observed two gaps in the actual actor path: the server resource cleanup did not
+call shutdown_all, and stop_actor removed its JoinHandle before awaiting it, so
+an HTTP timeout could detach the actor from all later cleanup. Retain handles
+in registry-owned Arcs, await by mutable reference under a per-handle mutex,
+then remove only the matching actor. A cancelled waiter releases the mutex but
+not the handle. Close admission with an actor-system child token before taking
+the shutdown snapshot, and await mailboxes before shared MCP shutdown.
+
+Uncomfortable limit: compile checks do not prove shutdown races or persistence
+recovery. The server's existing hard deadline still applies. Actor collaboration
+is not yet a child-thread adapter, so task 4.1 remains open. These changes follow
+the actor-model, async-patterns and agent-runtime-security skills; no unrelated
+feature or new timeout was added. T0 passed zero warnings: 17.42s, 25.05s, 15.73s.
+
+## 2026-09-03 — Capture child kernel resources without recapturing authority
+
+Keep root executable resources under a root-owned cancellation lease, with only
+a weak reference in the run index. CapturedThreadKernel validates the committed
+owner/root before freezing MCP, then enters the same manager kernel with inherited
+clients, skills, native bindings, approvals and cwd. Model/client constructors and
+ambient resource lookup are not substitutes for inherited bindings. Root completion
+revokes the lease even while a borrower holds an Arc. The async/security skills
+drive cancellation ownership and owner/resource validation at this boundary.
+
+History is recorded per run as well as into the existing conversation: the latter
+is mutable across runs and cannot identify an earlier child's canonical dialogue.
+This costs an additional in-process dialogue snapshot; it does not add durable
+recovery. ThreadService shutdown joins owned jobs before closing live child
+records, retains failed join receipts, and reconciles uncertain writes only by
+exact readback. It is not equivalent to dropping task handles.
+
+Uncomfortable limit: this supplies the captured execution entry, not the missing
+admission host or adapter attachment. No actor/graph/A2A caller uses it yet. Full
+sandbox/budget enforcement and root scheduler ownership remain prerequisite to
+enabling delegation. Initial compile mismatch fixed; six subsequent T0 checks
+passed zero warnings. No tests or acceptance review before the phase boundary.
+
+## 2026-09-03 — Root budget envelopes narrow without new accounting identities
+
+Reuse CostBudgetTracker's captured root scope keys for child token/cost/tool/rate
+accounting. Root entry time anchors narrowed deadlines; raw captured model
+clients receive one budget wrapper only when used. This prevents fresh child
+balances and duplicate billing from nested wrappers. ThreadService requires the
+actual captured kernel and checks its budget itself, independently of adapter
+sandbox admission. Approved and governance-bypassed tools share one allowance.
+Finite cost limits reject unpriced models. Session cost is not Agent-wide spend:
+the prior assignment could reject unrelated sessions of the same artifact.
+
+Uncomfortable limit: known-usage admission is not a prepaid billing guarantee.
+In-flight work can overshoot, missing provider usage remains unaccounted, and
+local deadline expiry does not prove remote work stopped. No adapter attachment
+exists yet; task5.1 stays open. Five warning-free T0 checks, no behavior tests.
+
+## 2026-09-03 — Sandbox ownership and permission capture belong to the host
+
+Keep remote create/execute/destroy in supervisor-owned jobs, not the model stream
+future. Await one creation/destruction response and retain uncertainty instead of
+replaying a mutation. Complete actor replies only after finalization; cancellation
+does not prove remote cleanup. Save consumed JoinHandles before another await.
+Capture execution configuration once and pass the exact binding to descendants;
+opaque environment grants narrow captured values without host lookups. Reject
+mount restrictions while the current string-map protocol lacks explicit access
+semantics. No new remote wire format or read-only claim is introduced.
+
+Uncomfortable limit: compile success is not cleanup/isolation evidence, and this
+binding does not enforce permissions for direct native tools. Missing concrete
+host/adapter attachment keeps task4.1 open. Final T0 zero warnings20.31s; behavioral
+tests remain at the phase boundary as instructed by the operator.
+
+## 2026-09-03 — Actor adapters reuse the admitted root service
+
+Pass the host's committed root and persistence instance directly into assembly.
+Include control-factory names in normal policy resolution, snapshot executable
+resources before installing root-local handlers, then attach once before the
+manifest/model launch. This avoids both policy widening and self-retaining
+service/kernel/handler cycles. Capture validation preserves existing root tools;
+the stricter adapter checks continue to gate delegated execution, not root capture.
+
+Authenticated actor collaboration targets a child in the source's live root,
+not a mailbox command that creates a new independent run. The explicit endpoint
+request authorizes root delegation after Cedar; child resources still intersect
+and child tool approvals still bubble to the root. Do not infer authorization
+from message text or silently start a new root for an idle source actor.
+
+Retain the actual actor producer JoinHandle as well as child jobs. Join by
+reference and keep unknown cleanup receipts in the actor registry. A completion
+message or finished mailbox is insufficient evidence that its tree is drained.
+
+Uncomfortable limit: these are source/compile results, not runtime acceptance.
+Native permission ports remain incomplete, task4.1 is open and phase-end tests
+are deferred under the operator's implementation-first rule.
+
+## 2026-09-03 — Native child tools retain their actual authority
+
+Compiler sessions use (verified owner, host conversation, compiler session)
+keys instead of trusting a model-supplied ID as a global namespace. Compiler
+signing only inherits a captured in-memory provider with an explicit local
+delegation contract; unknown providers default to denial. Legacy memory tools
+now receive the same host context as NativeSkill implementations and bind every
+verified call to the existing memory owner field. No new tenant storage grammar
+or credential material is synthesized.
+
+Web-fetch admission retains the configured public-web capability. Requests bind
+to the addresses checked by the SSRF guard and disable ambient HTTP proxies so
+an intermediary cannot silently resolve a different destination. Response size
+is enforced while reading, using exact bytes. This is not a claim that sandbox
+mount/environment policy controls host-native tools.
+
+Uncomfortable limit: proxy-only deployments can stop working; deleted memory
+history lacks a live ownership record; source/compile checks do not establish
+runtime isolation or rollback. Other native permission ports remain open.
+
+## 2026-09-03 — File byte bounds are separate from directory confinement
+
+Implement exact file-size enforcement and a single patch read/write handle now,
+but do not use these as evidence that path-prefix checks enforce confinement.
+The remaining path traversal boundary needs captured directory capabilities.
+cap-std4.0.2 is already locked transitively and its Dir API fits this boundary;
+direct adoption awaits the operator's cap_std pin in versions.toml, required by
+dependency-pin-discipline. No dependency manifest changed. Do not copy a large
+OS-specific resolver or reach through another dependency to evade that gate.
+
+Uncomfortable limit: the opened-handle patch prevents redirecting its final
+write, not an escape during the initial open. External file writes and partial
+I/O on cancellation are not made transactional. Task4.1 is not finished.
+
+## 2026-09-03 — A direct terminal process needs host ownership, not just timeout
+
+RunManager now retains a dedicated terminal process supervisor. Tool futures
+request work; run-owned workers keep exact Child and JoinHandle ownership through
+timeout/cancellation and report reaping failures without discarding receipts.
+Leases cancel on unwind; normal, cancelled, and server shutdown paths join jobs.
+Output capture drains both pipes while retaining bounded head/tail data.
+
+Uncomfortable limit: this owns the shell process, not escaped descendants, and
+does not confine host credentials/cwd/environment. Keep delegated direct-shell
+execution denied until its physical permission contract exists. Standalone raw
+tool compatibility is explicitly weaker and is not evidence of managed cleanup.
+Task4.1 remains incomplete; runtime acceptance is deferred to phase end.
+
+## 2026-09-03 — A2UI validation does not consume a host resource grant
+
+The native A2UI permission port permits its existing declarative validator,
+not surface mutation by an agent kernel. RunManager owns publication with the
+actual execution run ID. The host still applies selected-tool policy, approval
+and execution-mode checks. This backend-only change does not redesign UI or
+authorize actions described in a surface. No visual-design pass applies.
+
+Uncomfortable limit: the existing result truncation/publication path remains
+unchanged and runtime delivery is unverified until phase-end tests. Do not use
+this pure-data tool's contract to justify direct file, shell or network grants.
+
+## 2026-09-03 — A graph invocation consumes its first child result
+
+Graph AgentNode now uses the host's child controls and actual approval/budget
+gate rather than pretending a two-message LLM request is a specialist agent.
+The built-in graph target names now resolve real artifacts. Route identity
+stays in graph/thread metadata, not assistant text. Child history is explicitly
+selected and defaults to none.
+
+An ordinary latest-state watch is insufficient: a queued follow-up can replace
+the first result before the graph waiter is scheduled. ThreadService therefore
+retains one first-terminal receipt per entry in addition to its existing latest
+watch. The independent critic identified a later-pending-write check that still
+hid the receipt; fixed it while preserving caller/parent authorization.
+
+Uncomfortable limit: ordinary graph root attachment is missing; actor/inherited
+bindings are the only supplied delegates. This is partial4.2, not acceptance.
+The runtime behavior and integration-test migration remain phase-end work.
+
+## 2026-09-03 — Ordinary graphs share persisted root ownership, not mailbox lifetime
+
+Supersedes the missing ordinary graph root caller above. Reuse ActorThreadSession
+for the complete verified request and retain it in GraphRootSupervisor. The HTTP
+preparation future observes readiness; it does not own the worker or its writes.
+Its cancellation requests cleanup. The internal completion observer must not
+defeat last-viewer cancellation, unlike a real independently waiting mailbox.
+
+Graph terminal status now agrees with terminal events; a cleanup failure overrides
+successful execution. Server cleanup retains failures and propagates them instead
+of emitting graceful success. These changes address the source critic's concrete
+findings. Exact uncertain writes remain retained, never blindly replayed.
+
+Uncomfortable limit: compilation and isolated source review are not behavioral
+acceptance. Captured-MCP graph dispatch still fails closed, remote A2A is pending,
+and tests remain deferred to the phase boundary.
+
+## 2026-09-03 — Governed outbound A2A children require trusted UAR peers
+
+Operator decision: the prevalent deployment is UAR instances delegating to other
+UAR instances. Count a remote A2A task as a governed child only when its endpoint
+is operator-configured and authenticated and the peer explicitly acknowledges a
+compatible UAR enforcement contract for exact owner/root/parent/child identity,
+the intersected policy and root budget, usage receipts, and cancellation. Missing
+or mismatched acknowledgement fails closed. Keep standard A2A JSON bodies stable;
+carry the UAR contract through authenticated transport metadata and exact receipts.
+
+Arbitrary A2A endpoints are not governed children in this change. Supporting them
+later requires a separate external/unmanaged capability and explicit policy because
+local tracking cannot prove remote tool, credential, sandbox, budget, usage, or
+cancellation enforcement. A trusted-peer acknowledgement is still a contractual
+boundary, not cryptographic remote attestation; do not describe it as attestation.
+
+## 2026-09-04 — Delegated direct files use captured directory capabilities
+
+Trusted UAR peers may delegate `file_read`, `file_write`, and `file_patch` only
+when the exact native tool is inherited and the host configured at least one
+bounded directory root. Convert those roots to open directory handles before a
+child request exists and perform all child path operations relative to them.
+Reject wildcard, empty, filesystem-root, relative, unavailable, or unsupported
+root authority. Keep ordinary root-run compatibility on its existing allowlist
+path.
+
+This matches the prevalent UAR-to-UAR use case without treating pathname prefix
+checks as physical confinement. Direct child shell execution stays denied: a
+supervisor that owns a process lifetime does not confine its filesystem,
+environment, credentials, or escaped descendants. The uncomfortable cost is
+that permissive `*`/filesystem-root configurations work for root runs but cannot
+be delegated, and unsupported directory-identity platforms fail closed.
+
+## 2026-09-04 — Peer-first projected MCP uses verified host binding identity
+
+The prevalent topology is UAR-to-UAR. A verified root therefore captures the
+target host's immutable MCP definitions and enters one shared host-owned cache
+keyed by full subject/tenant owner, config hash, opaque per-boot binding revision,
+and resolved environment. Wire `user_id` is metadata, never authority. Anonymous
+or identity-stripped adapters cannot acquire the projected cache.
+
+Treat Unknown and Required authentication as non-executable. Treat host-captured
+definitions as Authenticated with a redacted revision identity; actual secrets
+remain in host-only snapshots and never enter errors or events. Administrative
+definition changes revoke every cached owner revision before the new catalog can
+be used.
+
+All/Auto stays open to tools discovered from already-selected frozen server
+definitions only when no higher scope narrowed or denied the resource family.
+Once closed, the effective selection becomes finite Selected/None so lower scopes
+cannot reopen it. Stdio skill processes receive explicit configured environment
+keys plus minimal launch variables, not the complete UAR process environment.
+
+## 2026-09-04 — Delegated MCP authority is frozen locally and peer-local remotely
+
+Projected MCP catalogs contain only host-global and skill-contributed server
+definitions. Local agent children inherit narrowed frozen bindings and cannot
+reconstruct or reconnect MCP servers. Authenticated remote UAR children execute
+as roots on the peer and resolve the peer's own definitions and credential
+bindings. The unused child-definition provenance was removed because it implied
+a connection-recipe transfer path that the trusted thread kernel deliberately
+does not provide. This decision favors the prevalent UAR-to-UAR deployment while
+keeping credentials and launch configuration within the host that owns them.
+
+## 2026-09-04 — Name the live cancellation point instead of overstating evidence
+
+Task 6.3 requires a local multi-agent cancellation smoke with a real model; it
+does not require child text before cancellation. An independent artifact-only
+review confirmed that cancelling a persisted child's real outbound request
+while it awaits its first provider response meets that criterion. The passing
+k3 sidecar run is recorded in thread-native-subagents/evidence/live-cancellation-report.json.
+The original after-text scenario remains available and unverified, not silently
+replaced or reported as passing. Real provider timeouts and 500/502 responses
+prevented it from reaching emitted child text. A closed local request does not
+prove the provider stopped computation or billing. Empty shadow reports cannot
+serve as evidence for the typed-default flip.
+
+## 2026-09-04 — Typed default evidence gate met with explicitly narrow coverage
+
+The copied typed-turn-assembly parity report covers three cases: basic user
+turn, host instructions, and memory contribution. It has zero unexpected or
+allowlisted differences, verified by the completed phase-end corpus test.
+The live command `UAR_SMOKE_MODEL=k3 UAR_SMOKE_LOG=info node
+openspec/changes/typed-turn-default-flip/evidence/live-shadow.mjs
+target/debug/uar-sidecar` exited 0. Two independent default-agent runs (basic
+input and host instructions) each emitted real text, completed, dispatched legacy,
+and emitted one shadow comparison with zero differences. The command, output,
+and run IDs are in the change's evidence directory. This satisfies the recorded
+pre-flip gate; full Tier 2 verification with the new default is still required.
+
+The uncomfortable thing: two live cases on k3 and a three-case corpus are weak
+coverage for the complete runtime. Live memory, MCP, active skills, multi-step
+tools, remote peers, and other providers are not established by this receipt.
+Keep `harness.mode: legacy` as an explicit rollback for one minor release;
+shadow remains opt-in and performs duplicate assembly, not duplicate inference.
+
+## 2026-09-04 — Deferred provider observation is not an implementation gap
+
+Model-path-resiliency's approved proposal explicitly defers the real-provider
+429 smoke. Its spec requires retry behavior, covered by completed local tests,
+but adds no live-provider observation gate. Independent artifact review confirmed
+that implementation may be complete while task5.4 stays unchecked and evidence
+stays outstanding. Correct the canonical change status without inventing a21/21
+task pass. The exact live reproduction command and provider observation remain
+unverified; no request flooding or synthetic429 is authorized as a substitute.
+
+## 2026-09-04 — Original-scope phase audit corrections before closure
+
+Plan revision 6 records five observed source defects across four original changes.
+Preserve the earlier passing suite and live receipts, but do not treat them as
+coverage of the missed paths. Build the full correction batch before authoring
+and executing its integration regressions; keep archive/phase reflection pending.
+
+Remote capacity is released only on host-proven non-dispatch or confirmed peer
+cleanup. Governed parallel reads retain exactly-once host budget admission and
+per-call approval/execution ordering. Catalog minimum lines retain titles and
+suggestions. Provider metadata does not end the pre-semantic retry boundary;
+partial semantic output still interrupts rather than replaying inference.
+
+Primary chat reconnect reuses the existing x-uar-run-id as an explicit request
+identity paired with Last-Event-ID, verifies exact subject/tenant ownership, and
+uses format-tagged event/frame cursors. It never guesses a session's latest run.
+Projection-prefix eviction returns 410 because no retained projection checkpoint
+exists. That bounded limitation is explicit; a fresh run is not recovery.
+
+## 2026-09-04 — Presentation domain confirmed as reusable UI templates
+
+The operator chose reusable UI templates, separate from the development-only
+A2UI tester. The active parent phase now has goals, three OpenSpec deltas and
+a reviewed implementation plan. Trusted-host persistence owns identity,
+tenant/subject partition and revisions; template content remains declarative.
+Admitted runs will capture complete validated content and revision so a later
+edit, disable or delete cannot relabel new content with old provenance.
+Text-only negotiation must govern every surface-publication ingress, including
+host policy artifacts and direct surface submission, not just native tools.
+
+Impeccable was updated locally from 4.1.1 to 4.2.0 at the operator's request,
+without installing hooks. The existing admin identity remains authoritative.
+UI/UX Pro Max's landing-page/glass recommendations were rejected as off-target;
+its accessibility and error-recovery guidance applies. No no-code builder,
+marketplace, arbitrary executable components or restored release gates enter
+this phase. Runtime tests remain at the end of the implemented phase.

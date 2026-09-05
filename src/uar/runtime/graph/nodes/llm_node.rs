@@ -1,11 +1,8 @@
 //! LLM graph node — calls the configured LLM driver and stores the response.
 
 use async_trait::async_trait;
-use futures::StreamExt;
 use tracing::{debug, warn};
 
-use crate::llm::{LlmRequest, MessageRole};
-use crate::normalized::NormalizedEvent;
 use crate::uar::runtime::graph::types::{GraphContext, GraphNode, GraphState, NodeResult};
 
 /// A graph node that sends the current conversation to the LLM driver and
@@ -62,90 +59,37 @@ impl GraphNode for LlmNode {
 
     async fn execute(&self, mut state: GraphState, ctx: &GraphContext) -> NodeResult {
         debug!(node_id = %self.id, run_id = %ctx.run_id, "LlmNode executing");
+        let Some(host) = &ctx.tool_host else {
+            return NodeResult::Error(state, "Graph model host is unavailable".into());
+        };
 
-        // Build the message list: optional system prompt + conversation history
-        let mut messages: Vec<serde_json::Value> = Vec::new();
-
-        if let Some(ref sys) = self.system_prompt {
-            messages.push(serde_json::json!({
-                "role": MessageRole::System,
-                "content": sys
-            }));
-        }
-
-        messages.extend(state.messages.clone());
-
-        if messages.is_empty() {
+        if state.messages.is_empty() && self.system_prompt.is_none() {
             return NodeResult::Error(state, "LlmNode: no messages to send".to_string());
         }
 
-        let mut req = LlmRequest {
-            messages,
-            // The MCP registry's tools, in OpenAI shape.
-            //
-            // This was `Vec::new()` with the comment "Graph nodes don't
-            // handle tool calls directly". The effect was that NO tools
-            // reached any provider: the model saw tool names only if they
-            // appeared in prompt text, invented a call from that, and the
-            // provider had no schema to validate it against — so the call
-            // came back as prose and nothing executed. Observed 2026-09-01
-            // against a local ferrox sidecar, where the model correctly
-            // named `file_read` and `time__current_time` and neither ran.
-            //
-            // `openai_tools_json` already existed on the registry, and the
-            // registry is already on `GraphContext`; only the wiring was
-            // missing.
-            tools: ctx.mcp.openai_tools_json(),
-            cache_strategy: ctx.cache_strategy.clone(),
-            thinking_config: None,
-            anthropic_system: None,
-            extra_params: None,
-        };
-        if let Err(error) =
-            crate::uar::runtime::context::normalize::normalize_provider_messages(&mut req.messages)
+        let turn = match host
+            .model_turn(
+                &ctx.run_id,
+                state.messages.clone(),
+                self.system_prompt.clone(),
+            )
+            .await
         {
-            return NodeResult::Error(state, format!("LlmNode history error: {error}"));
-        }
-
-        let stream = match ctx.driver.stream(req).await {
-            Ok(s) => s,
-            Err(e) => {
-                return NodeResult::Error(state, format!("LlmNode driver error: {e}"));
-            }
+            Ok(turn) => turn,
+            Err(error) => return NodeResult::Error(state, format!("LlmNode host error: {error}")),
         };
-
-        futures::pin_mut!(stream);
-
-        let mut text = String::new();
-
-        while let Some(event_result) = stream.next().await {
-            match event_result {
-                Ok(NormalizedEvent::MessageDelta { text: delta }) => {
-                    text.push_str(&delta);
-                }
-                Ok(NormalizedEvent::Done) => break,
-                Ok(NormalizedEvent::Error { message, .. }) => {
-                    return NodeResult::Error(state, format!("LlmNode stream error: {message}"));
-                }
-                Ok(_) => {} // ignore other events (stream start, tool calls, etc.)
-                Err(e) => {
-                    return NodeResult::Error(state, format!("LlmNode stream error: {e}"));
-                }
-            }
+        state.messages = turn
+            .messages
+            .into_iter()
+            .map(|message| serde_json::json!(message))
+            .collect();
+        if let Some(error) = turn.error {
+            return NodeResult::Error(state, error);
         }
-
-        if text.is_empty() {
+        if turn.text.is_empty() {
             warn!(node_id = %self.id, run_id = %ctx.run_id, "LlmNode received empty response");
         }
-
-        // Store raw text in data bag
-        state.set(&self.output_key, &text);
-
-        // Append as assistant message in history
-        state.messages.push(serde_json::json!({
-            "role": "assistant",
-            "content": text
-        }));
+        state.set(&self.output_key, &turn.text);
 
         NodeResult::Continue(state)
     }

@@ -146,6 +146,36 @@ struct TestTriggerAck {
 
 // ── Handlers ──────────────────────────────────────────────────────────────────
 
+async fn surface_run(
+    state: &A2uiApiState,
+    user: &UserContext,
+    run_id: &str,
+) -> Result<crate::uar::domain::runs::Run, axum::response::Response> {
+    let Some((run, snapshot)) = state
+        .run_manager
+        .presentation_run_for_user(user, run_id)
+        .await
+    else {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({
+                "error": "Admitted run not found"
+            })),
+        )
+            .into_response());
+    };
+    if !snapshot.selection().allows_surfaces() {
+        return Err((
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({
+                "error": "This run permits text output only", "code": "presentation_output_ceiling"
+            })),
+        )
+            .into_response());
+    }
+    Ok(run)
+}
+
 /// `GET /api/uar/a2ui/schemas`
 ///
 /// Returns all schemas registered in the A2UI registry (built-ins + user-defined).
@@ -184,19 +214,9 @@ async fn submit_artifact_response(
     Json(payload): Json<ArtifactResponsePayload>,
 ) -> impl IntoResponse {
     // Verify the run exists and is active.
-    let run = match state
-        .run_manager
-        .get_run_for_user(&user.user_id, &run_id)
-        .await
-    {
-        Some(r) => r,
-        None => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(serde_json::json!({ "error": format!("run '{}' not found", run_id) })),
-            )
-                .into_response();
-        }
+    let run = match surface_run(&state, &user, &run_id).await {
+        Ok(run) => run,
+        Err(response) => return response,
     };
 
     // Preserve the response on the source run for every live/late subscriber.
@@ -225,6 +245,7 @@ async fn submit_artifact_response(
                 "artifactId": payload.artifact_id,
                 "response": payload.response,
             }),
+            &user,
         )
         .await
     {
@@ -328,17 +349,8 @@ async fn submit_messages(
     Path(run_id): Path<String>,
     Json(body): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    if state
-        .run_manager
-        .get_run_for_user(&user.user_id, &run_id)
-        .await
-        .is_none()
-    {
-        return (
-            StatusCode::NOT_FOUND,
-            Json(serde_json::json!({ "error": format!("run '{run_id}' not found") })),
-        )
-            .into_response();
+    if let Err(response) = surface_run(&state, &user, &run_id).await {
+        return response;
     }
     match publish_messages(&state, &run_id, body).await {
         Ok((artifact_id, surface_ids)) => (
@@ -380,19 +392,9 @@ async fn submit_action(
     Path(run_id): Path<String>,
     Json(payload): Json<A2uiActionPayload>,
 ) -> impl IntoResponse {
-    let run = match state
-        .run_manager
-        .get_run_for_user(&user.user_id, &run_id)
-        .await
-    {
-        Some(run) => run,
-        None => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(serde_json::json!({ "error": format!("run '{run_id}' not found") })),
-            )
-                .into_response();
-        }
+    let run = match surface_run(&state, &user, &run_id).await {
+        Ok(run) => run,
+        Err(response) => return response,
     };
     let surface_path = format!("/a2ui/surfaces/{}", payload.surface_id);
     let replay = state.realtime_backbone.replay(&run_id);
@@ -442,7 +444,7 @@ async fn submit_action(
         .await;
     let continuation_run_id = match state
         .run_manager
-        .continue_with_interaction(&run.run_id, interaction)
+        .continue_with_interaction(&run.run_id, interaction, &user)
         .await
     {
         Ok(value) => value,
@@ -568,19 +570,9 @@ async fn test_trigger_artifact(
     Path(run_id): Path<String>,
     Json(payload): Json<TestTriggerPayload>,
 ) -> impl IntoResponse {
-    let run = match state
-        .run_manager
-        .get_run_for_user(&user.user_id, &run_id)
-        .await
-    {
-        Some(r) => r,
-        None => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(serde_json::json!({ "error": format!("run '{}' not found or not active", run_id) })),
-            )
-                .into_response();
-        }
+    let run = match surface_run(&state, &user, &run_id).await {
+        Ok(run) => run,
+        Err(response) => return response,
     };
 
     let artifact_id = uuid::Uuid::new_v4().to_string();
@@ -625,19 +617,9 @@ async fn surface_test_trigger(
     Path(run_id): Path<String>,
     Json(payload): Json<SurfaceTestTriggerPayload>,
 ) -> impl IntoResponse {
-    let run = match state
-        .run_manager
-        .get_run_for_user(&user.user_id, &run_id)
-        .await
-    {
-        Some(r) => r,
-        None => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(serde_json::json!({ "error": format!("run '{}' not found or not active", run_id) })),
-            )
-                .into_response();
-        }
+    let run = match surface_run(&state, &user, &run_id).await {
+        Ok(run) => run,
+        Err(response) => return response,
     };
 
     let kind = match payload.kind.as_str() {
@@ -698,7 +680,7 @@ async fn surface_replay(
 ) -> impl IntoResponse {
     if state
         .run_manager
-        .get_run_for_user(&user.user_id, &run_id)
+        .presentation_run_for_user(&user, &run_id)
         .await
         .is_none()
     {

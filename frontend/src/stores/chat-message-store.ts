@@ -307,6 +307,22 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         }
         if (toolCall.toolName === "__a2ui_display__") {
           const metadata = record(toolCall.args.metadata);
+          const artifactType = typeof toolCall.args.artifactType === "string" ? toolCall.args.artifactType : "";
+          const language = typeof toolCall.args.language === "string" ? toolCall.args.language : "";
+          // Declared A2UI intent wins even when its profile is missing/invalid
+          // or its language is JSON. Never infer an active surface from content.
+          const isA2ui = artifactType === "a2ui" || artifactType === "display" || artifactType.startsWith("a2ui/")
+            || ["a2ui", "application/a2ui+json", "application/vnd.uar.a2ui+json"].includes(language)
+            || (typeof metadata.profile === "string" && metadata.profile.startsWith("uar.a2ui/"));
+          if (!isA2ui) {
+            const mime = [artifactType, language].some((value) => value === "json" || value === "application/json")
+              ? "application/json" : "text/plain";
+            const title = typeof toolCall.args.title === "string" ? toolCall.args.title : undefined;
+            const content = toolCall.result ?? "";
+            message.content.push({ type: "artifact", id: toolCall.toolCallId, kind: mime, title, content });
+            chunks.push({ ...base, kind: "artifact", artifactId: toolCall.toolCallId, mime, title, content });
+            return;
+          }
           const declaredValidation = toolCall.args.validation;
           const validation: A2uiDisplayChunk["validation"] = declaredValidation === "invalid" || declaredValidation === "unknown-component" ? declaredValidation : "valid";
           const displayChunk = { ...base, kind: "a2ui-display" as const, toolCallId: toolCall.toolCallId, profile: typeof metadata.profile === "string" ? metadata.profile : "", version: typeof metadata.protocol_version === "string" ? metadata.protocol_version : undefined, component: String(toolCall.args.artifactType ?? "surface"), payload: { ...toolCall.args, content: toolCall.result }, validation, validationError: typeof toolCall.args.validationError === "string" ? toolCall.args.validationError : undefined };

@@ -18,6 +18,71 @@ use std::sync::Arc;
 use crate::uar::memory::service::MemoryService;
 use surreal_memory::Memory;
 
+fn check_memory_policy(
+    policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+) -> anyhow::Result<()> {
+    anyhow::ensure!(
+        policy.effective().memory_enabled,
+        "Memory is disabled for this delegated turn"
+    );
+    Ok(())
+}
+
+/// Model owner fields are filters, never authority. Preserve the legacy direct
+/// host API, but every verified run is confined to its captured user's records.
+async fn scoped_arguments(
+    mut args: serde_json::Value,
+    context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    service: Option<&MemoryService>,
+    by_id: bool,
+) -> anyhow::Result<serde_json::Value> {
+    if let Some(policy) = &context.thread_policy {
+        check_memory_policy(policy)?;
+    }
+    let Some(owner) = &context.verified_owner else {
+        anyhow::ensure!(
+            context.thread_policy.is_none(),
+            "Memory requires a verified delegated owner"
+        );
+        return Ok(args);
+    };
+    let object = args
+        .as_object_mut()
+        .ok_or_else(|| anyhow::anyhow!("Memory arguments must be an object"))?;
+    if let Some(requested) = object.get("user_id") {
+        anyhow::ensure!(
+            requested.as_str() == Some(owner.user_id()),
+            "Memory owner cannot be replaced by tool arguments"
+        );
+    }
+    if by_id {
+        let id = object
+            .get("memory_id")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| anyhow::anyhow!("Missing memory_id"))?;
+        anyhow::ensure!(
+            !id.trim().is_empty()
+                && id
+                    .split_once(':')
+                    .is_none_or(|(table, _)| table == "memory"),
+            "Memory ID must address a memory record"
+        );
+        if let Some(service) = service {
+            let memory = service
+                .get(id)
+                .await?
+                .ok_or_else(|| anyhow::anyhow!("Memory is unavailable to this owner"))?;
+            anyhow::ensure!(
+                memory.user_id.as_deref() == Some(owner.user_id()),
+                "Memory is unavailable to this owner"
+            );
+        }
+    } else {
+        object.insert("user_id".into(), json!(owner.user_id()));
+    }
+    Ok(args)
+}
+
 #[derive(Debug)]
 pub struct MemorySaveTool {
     memory_service: Option<Arc<MemoryService>>,
@@ -31,6 +96,22 @@ impl MemorySaveTool {
 
 #[async_trait]
 impl NativeTool for MemorySaveTool {
+    fn check_thread_policy(
+        &self,
+        policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        check_memory_policy(policy)
+    }
+
+    async fn call_with_context(
+        &self,
+        args: serde_json::Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<serde_json::Value> {
+        self.call(scoped_arguments(args, context, self.memory_service.as_deref(), false).await?)
+            .await
+    }
+
     fn name(&self) -> &'static str {
         "memory_save"
     }
@@ -85,7 +166,10 @@ impl NativeTool for MemorySaveTool {
         let user_id = args["user_id"].as_str().map(str::to_string);
 
         if let Some(svc) = &self.memory_service {
-            let memory = Memory::new(content.to_string(), user_id, agent_id, None, categories);
+            let mut memory = Memory::new(content.to_string(), user_id, agent_id, None, categories);
+            if memory.user_id.is_some() {
+                memory.scope = surreal_memory::MemoryScope::User;
+            }
             let stored = svc
                 .storage()
                 .add_memory(memory)
@@ -125,6 +209,22 @@ impl MemoryListTool {
 
 #[async_trait]
 impl NativeTool for MemoryListTool {
+    fn check_thread_policy(
+        &self,
+        policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        check_memory_policy(policy)
+    }
+
+    async fn call_with_context(
+        &self,
+        args: serde_json::Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<serde_json::Value> {
+        self.call(scoped_arguments(args, context, self.memory_service.as_deref(), false).await?)
+            .await
+    }
+
     fn name(&self) -> &'static str {
         "memory_list"
     }
@@ -221,6 +321,22 @@ impl MemoryDeleteTool {
 
 #[async_trait]
 impl NativeTool for MemoryDeleteTool {
+    fn check_thread_policy(
+        &self,
+        policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        check_memory_policy(policy)
+    }
+
+    async fn call_with_context(
+        &self,
+        args: serde_json::Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<serde_json::Value> {
+        self.call(scoped_arguments(args, context, self.memory_service.as_deref(), true).await?)
+            .await
+    }
+
     fn name(&self) -> &'static str {
         "memory_delete_by_id"
     }
@@ -278,6 +394,22 @@ impl MemoryUpdateTool {
 
 #[async_trait]
 impl NativeTool for MemoryUpdateTool {
+    fn check_thread_policy(
+        &self,
+        policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        check_memory_policy(policy)
+    }
+
+    async fn call_with_context(
+        &self,
+        args: serde_json::Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<serde_json::Value> {
+        self.call(scoped_arguments(args, context, self.memory_service.as_deref(), true).await?)
+            .await
+    }
+
     fn name(&self) -> &'static str {
         "memory_update_by_id"
     }
@@ -358,6 +490,22 @@ impl MemoryHistoryTool {
 
 #[async_trait]
 impl NativeTool for MemoryHistoryTool {
+    fn check_thread_policy(
+        &self,
+        policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        check_memory_policy(policy)
+    }
+
+    async fn call_with_context(
+        &self,
+        args: serde_json::Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<serde_json::Value> {
+        self.call(scoped_arguments(args, context, self.memory_service.as_deref(), true).await?)
+            .await
+    }
+
     fn name(&self) -> &'static str {
         "memory_history"
     }
@@ -431,6 +579,22 @@ impl MemoryRecallTool {
 
 #[async_trait]
 impl NativeTool for MemoryRecallTool {
+    fn check_thread_policy(
+        &self,
+        policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        check_memory_policy(policy)
+    }
+
+    async fn call_with_context(
+        &self,
+        args: serde_json::Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<serde_json::Value> {
+        self.call(scoped_arguments(args, context, self.memory_service.as_deref(), false).await?)
+            .await
+    }
+
     fn name(&self) -> &'static str {
         "memory_recall"
     }

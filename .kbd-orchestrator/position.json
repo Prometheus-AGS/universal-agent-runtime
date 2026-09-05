@@ -2,10 +2,10 @@
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 1551,
-  "derivedRevision": 1551,
+  "sourceRevision": 2360,
+  "derivedRevision": 2360,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 1147,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 1956,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -19,18 +19,17 @@
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
   "conflictCount": 0,
-  "updatedAt": "2026-09-02T13:13:31.630228Z",
+  "updatedAt": "2026-09-05T08:13:13.652767Z",
   "cursor": [
     "skills-a2ui-library-and-runtime-observability",
-    "agui-a2ui-selection-architecture",
-    "codex-harness-comparative-analysis"
+    "agui-a2ui-selection-architecture"
   ],
   "root": {
     "type": "phase",
     "id": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
     "status": "ready",
     "progress": {
-      "done": 102,
+      "done": 112,
       "total": 120
     },
     "children": [
@@ -609,7 +608,7 @@
             "canonicalId": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture",
             "status": "IN_PROGRESS",
             "progress": {
-              "done": 2,
+              "done": 3,
               "total": 3
             },
             "children": [
@@ -617,9 +616,9 @@
                 "type": "phase",
                 "id": "codex-harness-comparative-analysis",
                 "canonicalId": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::codex-harness-comparative-analysis",
-                "status": "IN_PROGRESS",
+                "status": "COMPLETE",
                 "progress": {
-                  "done": 1,
+                  "done": 10,
                   "total": 10
                 },
                 "children": [
@@ -635,81 +634,81 @@
                   {
                     "type": "change",
                     "id": "fail-closed-tool-arguments",
-                    "status": "PENDING",
+                    "status": "COMPLETE",
                     "progress": {
-                      "done": 0,
-                      "total": 19
+                      "done": 20,
+                      "total": 20
                     }
                   },
                   {
                     "type": "change",
                     "id": "deterministic-prompt-assembly",
-                    "status": "PENDING",
+                    "status": "COMPLETE",
                     "progress": {
-                      "done": 0,
-                      "total": 18
+                      "done": 22,
+                      "total": 22
                     }
                   },
                   {
                     "type": "change",
                     "id": "model-path-resiliency",
-                    "status": "PENDING",
+                    "status": "COMPLETE",
                     "progress": {
-                      "done": 0,
-                      "total": 21
+                      "done": 22,
+                      "total": 23
                     }
                   },
                   {
                     "type": "change",
                     "id": "progressive-skill-runtime",
-                    "status": "PENDING",
+                    "status": "COMPLETE",
                     "progress": {
-                      "done": 0,
-                      "total": 19
+                      "done": 20,
+                      "total": 20
                     }
                   },
                   {
                     "type": "change",
                     "id": "typed-turn-assembly",
-                    "status": "PENDING",
+                    "status": "COMPLETE",
                     "progress": {
-                      "done": 0,
+                      "done": 17,
                       "total": 17
                     }
                   },
                   {
                     "type": "change",
                     "id": "projected-mcp-runtime",
-                    "status": "PENDING",
+                    "status": "COMPLETE",
                     "progress": {
-                      "done": 0,
+                      "done": 22,
                       "total": 22
                     }
                   },
                   {
                     "type": "change",
                     "id": "thread-native-subagents",
-                    "status": "PENDING",
+                    "status": "COMPLETE",
                     "progress": {
-                      "done": 0,
-                      "total": 25
+                      "done": 31,
+                      "total": 31
                     }
                   },
                   {
                     "type": "change",
                     "id": "project-instructions-world-state",
-                    "status": "PENDING",
+                    "status": "COMPLETE",
                     "progress": {
-                      "done": 0,
-                      "total": 14
+                      "done": 14,
+                      "total": 23
                     }
                   },
                   {
                     "type": "change",
                     "id": "typed-turn-default-flip",
-                    "status": "PENDING",
+                    "status": "COMPLETE",
                     "progress": {
-                      "done": 0,
+                      "done": 8,
                       "total": 8
                     }
                   }
@@ -721,8 +720,8 @@
                 "id": "establish-presentation-catalog-workspace",
                 "status": "COMPLETE",
                 "progress": {
-                  "done": 0,
-                  "total": 0
+                  "done": 4,
+                  "total": 4
                 }
               },
               {
@@ -730,17 +729,17 @@
                 "id": "scope-presentation-capabilities",
                 "status": "COMPLETE",
                 "progress": {
-                  "done": 0,
-                  "total": 0
+                  "done": 4,
+                  "total": 4
                 }
               },
               {
                 "type": "change",
                 "id": "select-and-observe-presentations",
-                "status": "IN_PROGRESS",
+                "status": "COMPLETE",
                 "progress": {
-                  "done": 0,
-                  "total": 0
+                  "done": 4,
+                  "total": 4
                 }
               }
             ],

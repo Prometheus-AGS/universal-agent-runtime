@@ -94,7 +94,7 @@ export function toChunks(blocks: readonly ContentBlock[], context: ChunkProjecti
         chunks.push({ ...base, kind: "skill-activation", skillId: block.name, skillName: block.name, status: block.status === "active" ? "active" : "complete" });
         return;
       case "artifact":
-        chunks.push({ ...base, kind: "artifact", artifactId: block.id, mime: block.kind, content: block.content });
+        chunks.push({ ...base, kind: "artifact", artifactId: block.id, title: block.title, mime: block.kind, content: block.content });
         return;
       case "image":
         chunks.push({ ...base, kind: "image", url: imageUrl(block), alt: block.alt, width: block.width, height: block.height, sourcePath: block.path });

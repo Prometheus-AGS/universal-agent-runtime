@@ -18,6 +18,13 @@ use super::error::CompileError;
 /// implementations can integrate with external KMS services.
 #[async_trait]
 pub trait KeyProvider: Send + Sync + std::fmt::Debug {
+    /// Whether this captured provider signs entirely in memory, without fresh
+    /// key lookup, filesystem access, networking or another ambient credential.
+    /// Unknown/KMS implementations need an explicit delegated binding first.
+    fn supports_local_delegation(&self) -> bool {
+        false
+    }
+
     /// Sign the given data and return the signature bytes.
     async fn sign(&self, data: &[u8]) -> Result<Vec<u8>, CompileError>;
 
@@ -91,6 +98,10 @@ impl LocalKeyProvider {
 
 #[async_trait]
 impl KeyProvider for LocalKeyProvider {
+    fn supports_local_delegation(&self) -> bool {
+        true
+    }
+
     async fn sign(&self, data: &[u8]) -> Result<Vec<u8>, CompileError> {
         let signature = self.signing_key.sign(data);
         Ok(signature.to_bytes().to_vec())

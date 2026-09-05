@@ -1,0 +1,24 @@
+{
+  "result": "passed",
+  "model": "k3",
+  "harness_mode": "shadow",
+  "smoke_set_size": 2,
+  "cases": [
+    {
+      "id": "basic-user-turn",
+      "run_id": "f89479db-15d3-4106-ba00-d6a23cc08e1a",
+      "shadows": [{"differences": [], "unexpected_difference_count": 0, "allowlisted_difference_count": 0, "dispatched_path": "legacy"}],
+      "completed": true,
+      "text_events": 1,
+      "event_names": ["agui.artifact", "agui.stream.start", "agui.state.patch", "agui.message.delta", "agui.done"]
+    },
+    {
+      "id": "host-instructions",
+      "run_id": "cf3b0a2b-2a61-4a03-843a-4427c0a1a99c",
+      "shadows": [{"differences": [], "unexpected_difference_count": 0, "allowlisted_difference_count": 0, "dispatched_path": "legacy"}],
+      "completed": true,
+      "text_events": 1,
+      "event_names": ["agui.artifact", "agui.stream.start", "agui.state.patch", "agui.message.delta", "agui.done"]
+    }
+  ]
+}

@@ -26,6 +26,7 @@ pub mod liter_driver;
 pub mod mock_driver;
 pub mod orchestrator;
 pub mod prompt_dialect;
+pub mod provider_error;
 pub mod registry;
 pub mod router;
 pub mod tool_extractor;
@@ -37,11 +38,14 @@ pub use external_driver::{ExternalDriverHandler, ExternalDriverStream, ExternalL
 pub use health::{ProviderHealthMonitor, ProviderHealthSnapshot};
 pub use liter_driver::LiterLlmDriver;
 pub use orchestrator::{Orchestrator, ToolApprovalGate, ToolApprovalResult};
+pub use provider_error::{ProviderError, ProviderErrorKind};
 pub use registry::{ProviderConfig, ProviderRegistry};
 pub use router::ModelRouter;
 
 use crate::normalized::NormalizedEvent;
 use futures::Stream;
+
+pub mod local_only;
 
 /// Extract the provider name from a "provider/model" string.
 #[must_use]
@@ -290,6 +294,17 @@ pub struct LlmRequest {
 /// emitting [`NormalizedEvent`]s as the model generates output.
 #[async_trait::async_trait]
 pub trait LlmDriver: Send + Sync {
+    /// Select another model on this exact provider/client binding. The trusted
+    /// host checks the child's policy before calling; this grants no authority.
+    /// Implementations must not resolve new credentials or change endpoints.
+    ///
+    /// # Errors
+    /// Host drivers without model-rebinding support refuse it. The host can
+    /// still share the original driver for its original model unchanged.
+    fn with_bound_model(&self, _model: &str) -> anyhow::Result<std::sync::Arc<dyn LlmDriver>> {
+        anyhow::bail!("This model driver cannot rebind an inherited client");
+    }
+
     /// Stream a response from the LLM.
     ///
     /// # Errors

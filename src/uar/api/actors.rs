@@ -4,15 +4,17 @@
 
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{Extension, Path, Request, State},
     http::StatusCode,
+    middleware::{self, Next},
+    response::Response,
     routing::{delete, get, post},
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::uar::runtime::actor::{
-    messages::{ActorInfo, AgentReply},
+    messages::{ActorInfo, ActorOwner, AgentReply},
     system::ActorCollaboration,
 };
 
@@ -25,6 +27,19 @@ pub fn build_router() -> Router<Arc<ActorCollaboration>> {
         .route("/{id}", delete(stop_actor))
         .route("/{id}/message", post(send_message))
         .route("/{id}/collaborate", post(collaborate))
+        .route_layer(middleware::from_fn(require_actor_owner))
+}
+
+/// Require the authenticated host principal even when general local endpoints
+/// permit anonymous access. Missing extensions return 401 before body parsing.
+async fn require_actor_owner(mut request: Request, next: Next) -> Result<Response, StatusCode> {
+    let user = request
+        .extensions()
+        .get::<crate::uar::security::claims::UserContext>()
+        .ok_or(StatusCode::UNAUTHORIZED)?;
+    let owner = ActorOwner::from_verified_context(user).map_err(|_| StatusCode::UNAUTHORIZED)?;
+    request.extensions_mut().insert(owner);
+    Ok(next.run(request).await)
 }
 
 // =============================================================================
@@ -32,14 +47,18 @@ pub fn build_router() -> Router<Arc<ActorCollaboration>> {
 // =============================================================================
 
 /// List all active actors.
-async fn list_actors(State(system): State<Arc<ActorCollaboration>>) -> Json<ActorsResponse> {
-    let actors = system.list_actors().await;
+async fn list_actors(
+    State(system): State<Arc<ActorCollaboration>>,
+    Extension(owner): Extension<ActorOwner>,
+) -> Json<ActorsResponse> {
+    let actors = system.list_actors(&owner).await;
     Json(ActorsResponse { actors })
 }
 
 /// Spawn a new agent actor.
 async fn spawn_actor(
     State(system): State<Arc<ActorCollaboration>>,
+    Extension(owner): Extension<ActorOwner>,
     Json(req): Json<SpawnActorRequest>,
 ) -> Result<(StatusCode, Json<SpawnActorResponse>), (StatusCode, Json<ErrorResponse>)> {
     let actor_name = req
@@ -47,7 +66,7 @@ async fn spawn_actor(
         .unwrap_or_else(|| format!("actor-{}", uuid::Uuid::new_v4()));
 
     match system
-        .spawn_agent(actor_name, req.agent_id.clone(), req.system_prompt)
+        .spawn_agent(&owner, actor_name, req.agent_id.clone(), req.system_prompt)
         .await
     {
         Ok(id) => Ok((
@@ -69,11 +88,12 @@ async fn spawn_actor(
 /// Send a message to a named actor and wait for the reply.
 async fn send_message(
     State(system): State<Arc<ActorCollaboration>>,
+    Extension(owner): Extension<ActorOwner>,
     Path(id): Path<String>,
     Json(req): Json<MessageRequest>,
 ) -> Result<Json<AgentReply>, (StatusCode, Json<ErrorResponse>)> {
     system
-        .send_prompt(&id, req.content)
+        .send_prompt(&owner, &id, req.content)
         .await
         .map(Json)
         .map_err(|e| {
@@ -89,11 +109,12 @@ async fn send_message(
 /// Request collaboration between two actors.
 async fn collaborate(
     State(system): State<Arc<ActorCollaboration>>,
+    Extension(owner): Extension<ActorOwner>,
     Path(id): Path<String>,
     Json(req): Json<CollaborateRequest>,
 ) -> Result<Json<AgentReply>, (StatusCode, Json<ErrorResponse>)> {
     system
-        .collaborate(&req.from_actor, &id, req.task)
+        .collaborate(&owner, &req.from_actor, &id, req.task)
         .await
         .map(Json)
         .map_err(|e| {
@@ -109,9 +130,10 @@ async fn collaborate(
 /// Stop a named actor.
 async fn stop_actor(
     State(system): State<Arc<ActorCollaboration>>,
+    Extension(owner): Extension<ActorOwner>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
-    system.stop_actor(&id).await.map_err(|e| {
+    system.stop_actor(&owner, &id).await.map_err(|e| {
         (
             StatusCode::NOT_FOUND,
             Json(ErrorResponse {

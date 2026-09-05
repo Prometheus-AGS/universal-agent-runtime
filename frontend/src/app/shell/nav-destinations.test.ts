@@ -28,6 +28,7 @@ describe("shell navigation inventory", () => {
       "Providers",
       "MCP & tools",
       "Skills",
+      "Presentations",
       "A2UI",
       "Runtime settings",
     ]);
@@ -44,6 +45,7 @@ describe("shell navigation inventory", () => {
     ["/admin/credentials", "providers"],
     ["/admin/mcp-health", "mcp-tools"],
     ["/admin/compiler", "skills"],
+    ["/admin/presentations", "presentations"],
     ["/admin/a2ui-testing", "a2ui"],
     ["/admin/protocols", "runtime-settings"],
     ["/about", "about"],
@@ -68,6 +70,7 @@ describe("shell navigation inventory", () => {
   test("excludes the A2UI testing destination from production inventory and routing", () => {
     const production = buildNavigationDestinations({ includeDevelopment: false });
     expect(production.some(({ id }) => id === "a2ui")).toBe(false);
+    expect(findDestinationForPath("/admin/presentations", production)?.id).toBe("presentations");
     expect(findDestinationForPath("/admin/a2ui-testing", production)).toBeUndefined();
     expect(buildNavigationDestinations({ includeDevelopment: true }).some(({ id }) => id === "a2ui")).toBe(true);
   });

@@ -601,6 +601,207 @@ fn unavailable_embedding_backend() -> Arc<dyn EmbeddingBackend> {
     ))
 }
 
+async fn governed_probe_run(
+    second_effect: ToolEffect,
+    second_key: Option<&str>,
+    approval: ToolApprovalPolicy,
+    tool_budget: u32,
+) -> (
+    Arc<RunManager>,
+    String,
+    Arc<MockLlmDriver>,
+    Arc<SchedulingProbe>,
+) {
+    let probe = Arc::new(SchedulingProbe::default());
+    let native = Arc::new(NativeSkillRegistry::new());
+    for (name, effect, key) in [
+        ("probe_first", ToolEffect::ReadOnly, Some("first")),
+        ("probe_second", second_effect, second_key),
+    ] {
+        native
+            .register(ProbeSkill {
+                name: name.into(),
+                effect,
+                // The Unknown case deliberately enters the exclusive-lock branch,
+                // rather than selecting the descriptor-approval sequential path.
+                approval_class: ApprovalClass::NotRequired,
+                concurrency_key: key.map(str::to_owned),
+                probe: probe.clone(),
+            })
+            .await
+            .unwrap();
+    }
+    let driver = Arc::new(MockLlmDriver::new(vec![
+        tool_batch(&[
+            ("probe-1", "probe_first", "{}"),
+            ("probe-2", "probe_second", "{}"),
+        ]),
+        final_turn(),
+    ]));
+    let manager = Arc::new(
+        RunManager::new(
+            LlmConfig {
+                model: "openai/gpt-4o".into(),
+                api_key: Some("test-key".into()),
+                parallel_tool_calls: Some(true),
+                ..LlmConfig::default()
+            },
+            Arc::new(McpRegistry::new_empty()),
+            SessionStore::new(),
+            Arc::new(RwLock::new(SkillRegistry::new(None, None))),
+            Arc::new(
+                universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
+                    unavailable_embedding_backend(),
+                    0.75,
+                ),
+            ),
+            None,
+        )
+        .await
+        .with_native_skills(native)
+        .with_llm_driver(driver.clone()),
+    );
+    let mut artifact = defaults::default_agent();
+    artifact.extensions.insert(
+        "uar.run_policy".into(),
+        json!({"version":1,"tool_approval":approval}),
+    );
+    artifact.extensions.insert(
+        "budgets".into(),
+        json!({"max_tool_calls_per_turn":tool_budget}),
+    );
+    let run_id = manager
+        .start_run(artifact, "run both probes".into(), None, None, Vec::new())
+        .await;
+    (manager, run_id, driver, probe)
+}
+
+async fn wait_for_probe_events(
+    manager: &RunManager,
+    run_id: &str,
+    predicate: impl Fn(&[universal_agent_runtime::uar::runtime::manager::StreamEvent]) -> bool,
+) -> Vec<universal_agent_runtime::uar::runtime::manager::StreamEvent> {
+    tokio::time::timeout(Duration::from_secs(3), async {
+        loop {
+            let events = manager.history_since(run_id, None).await.unwrap();
+            if predicate(&events) {
+                return events;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("governed probe reaches the expected host event")
+}
+
+#[tokio::test]
+async fn run_manager_preserves_governed_concurrency_keys_and_exclusive_effects() {
+    for (effect, key, expected_overlap) in [
+        (ToolEffect::ReadOnly, Some("second"), 2),
+        (ToolEffect::ReadOnly, Some("first"), 1),
+        (ToolEffect::ReadOnly, None, 2),
+        (ToolEffect::Unknown, Some("second"), 1),
+    ] {
+        let (manager, run_id, driver, probe) =
+            governed_probe_run(effect, key, ToolApprovalPolicy::Auto, 2).await;
+        let events = wait_for_probe_events(&manager, &run_id, |events| {
+            events
+                .iter()
+                .any(|event| matches!(event.event, RunEvent::RunDone { .. }))
+        })
+        .await;
+        assert_eq!(probe.max_active.load(Ordering::SeqCst), expected_overlap);
+        if expected_overlap == 1 {
+            assert_call_order(&probe);
+        }
+        let results = events
+            .iter()
+            .filter_map(|event| match &event.event {
+                RunEvent::ToolEnd {
+                    tool_call_id, ok, ..
+                } => Some((tool_call_id.as_str(), *ok)),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(results, vec![("probe-1", true), ("probe-2", true)]);
+        assert_eq!(driver.requests().len(), 2);
+    }
+}
+
+#[tokio::test]
+async fn approved_read_executes_before_the_next_approval_and_is_charged_once() {
+    let (manager, run_id, driver, probe) = governed_probe_run(
+        ToolEffect::ReadOnly,
+        Some("second"),
+        ToolApprovalPolicy::Ask,
+        2,
+    )
+    .await;
+    for count in 1..=2 {
+        wait_for_probe_events(&manager, &run_id, |events| {
+            events
+                .iter()
+                .filter(|event| matches!(event.event, RunEvent::ToolCallApprovalRequired { .. }))
+                .count()
+                == count
+        })
+        .await;
+        let timeline = probe.timeline.lock().unwrap().clone();
+        if count == 1 {
+            assert!(timeline.is_empty());
+        } else {
+            assert_eq!(timeline, vec!["start:probe_first", "end:probe_first"]);
+        }
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while !manager.resolve_approval(&run_id, true).await {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("approval channel is ready");
+    }
+    let events = wait_for_probe_events(&manager, &run_id, |events| {
+        events
+            .iter()
+            .any(|event| matches!(event.event, RunEvent::RunDone { .. }))
+    })
+    .await;
+    assert_call_order(&probe);
+    assert_eq!(probe.max_active.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        events
+            .iter()
+            .filter(|event| matches!(event.event, RunEvent::ToolEnd { ok: true, .. }))
+            .count(),
+        2,
+        "two-call budget must not be charged twice"
+    );
+    assert_eq!(driver.requests().len(), 2);
+}
+
+#[tokio::test]
+async fn governed_parallel_candidate_still_rejects_calls_beyond_the_root_budget() {
+    let (manager, run_id, _, probe) = governed_probe_run(
+        ToolEffect::ReadOnly,
+        Some("second"),
+        ToolApprovalPolicy::Auto,
+        1,
+    )
+    .await;
+    let events = wait_for_probe_events(&manager, &run_id, |events| {
+        events
+            .iter()
+            .any(|event| matches!(event.event, RunEvent::RunDone { .. }))
+    })
+    .await;
+    assert_eq!(
+        *probe.timeline.lock().unwrap(),
+        vec!["start:probe_first", "end:probe_first"]
+    );
+    assert!(events.iter().any(|event| matches!(&event.event,
+        RunEvent::ToolCallDenied { tool_call_id, .. } if tool_call_id == "probe-2")));
+}
+
 #[tokio::test]
 async fn readonly_mcp_hint_does_not_bypass_ask_approval() {
     let mcp = Arc::new(

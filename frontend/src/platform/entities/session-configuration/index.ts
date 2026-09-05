@@ -50,4 +50,14 @@ export {
   useAgentSessionDraftStatus,
   useConfiguredModels,
   useSessionPromptCaching,
+  useSessionPresentationReady,
+  useSessionPresentationError,
+  useAgentSessionDraftUncertain,
+  useSessionPresentationMode,
+  useSessionPresentationIds,
+  useSessionPresentationMarked,
+  useSessionPresentationRetainedCount,
+  useSessionPresentationMatchCount,
 } from "./use-session-configuration";
+
+export type { PresentationSelection, PresentationSelectionMode } from "../presentation-assignments/contracts";

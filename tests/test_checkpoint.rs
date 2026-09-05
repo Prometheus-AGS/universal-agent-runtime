@@ -98,7 +98,6 @@ async fn test_list_checkpoints_for_run() {
 async fn test_checkpoint_node_persists_via_graph_context() {
     use universal_agent_runtime::{
         llm::mock_driver::MockLlmDriver,
-        mcp::registry::McpRegistry,
         normalized::NormalizedEvent,
         uar::runtime::graph::{AgentGraph, GraphContext, GraphState},
     };
@@ -121,11 +120,12 @@ async fn test_checkpoint_node_persists_via_graph_context() {
     let ctx = GraphContext {
         run_id: "run-cp-test".to_string(),
         session_id: Some("session-1".to_string()),
-        mcp: Arc::new(McpRegistry::new_empty()),
         llm_config: universal_agent_runtime::config::LlmConfig::default(),
         driver,
         cache_strategy: None,
         persistence: Some(Arc::clone(&db)),
+        thread_delegate: None,
+        tool_host: None,
     };
 
     let state = GraphState::default();

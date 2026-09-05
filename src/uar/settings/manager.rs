@@ -419,6 +419,62 @@ impl SettingsManager {
         }
     }
 
+    /// Read an admission policy without treating failed storage as a missing key.
+    /// The configured cache remains authoritative when the key is present.
+    ///
+    /// # Errors
+    /// Propagates fallback storage errors and invalid serialized values.
+    pub async fn get_typed_for_admission<T: DeserializeOwned>(
+        &self,
+        key: &str,
+    ) -> Result<Option<T>> {
+        // Admission must observe committed restrictions from another host and
+        // surface outages even when this process still has a cached value.
+        let value = self
+            .persistence
+            .get_setting(key)
+            .await?
+            .map(|setting| setting.data);
+        value
+            .map(serde_json::from_value)
+            .transpose()
+            .map_err(Into::into)
+    }
+
+    /// Conditionally update only Presentation intent, without replacing other policy fields.
+    pub async fn update_presentation_assignment(
+        &self,
+        expected: &Value,
+        selection: &crate::uar::domain::policy::ResourceSelection,
+    ) -> Result<Option<Value>> {
+        let next = crate::uar::persistence::presentations::global_policy_with_presentations(
+            expected, selection,
+        )?;
+        if !self
+            .persistence
+            .compare_and_swap_global_presentation_policy(expected, selection)
+            .await?
+        {
+            return Ok(None);
+        }
+        let committed = self
+            .persistence
+            .get_setting("run_policy.global")
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Global policy disappeared after update"))?;
+        self.cache.write().await.insert(
+            "run_policy.global".to_string(),
+            CacheEntry {
+                setting: committed,
+                meta: SettingsMeta {
+                    source: SettingSource::Api,
+                    is_drift: false,
+                },
+            },
+        );
+        Ok(Some(next))
+    }
+
     /// Set a setting value via the API. The write is validated against the type's
     /// JSON Schema before being persisted.
     pub async fn set_value(&self, key: &str, value: Value) -> Result<()> {
@@ -1076,6 +1132,8 @@ fn build_core_schema(
                     "x-control": "slider", "x-order": 4 },
                 "stream_start_timeout_ms": { "type": "integer", "minimum": 1000, "title": "Stream Start Timeout (ms)",
                     "x-control": "slider", "x-order": 5 },
+                "stream_idle_timeout_ms": { "type": "integer", "minimum": 1000, "title": "Stream Idle Timeout (ms)",
+                    "x-control": "slider", "x-order": 16 },
                 "retries_enabled": { "type": "boolean", "title": "Retries Enabled",
                     "x-control": "toggle", "x-order": 6 },
                 "retry_max_attempts": { "type": "integer", "minimum": 0, "maximum": 10, "title": "Max Retry Attempts",
@@ -1151,6 +1209,12 @@ fn build_core_schema(
             ),
             make_setting(
                 &st,
+                "resilience.stream_idle_timeout_ms",
+                "Stream Idle Timeout (ms)",
+                json!(r.stream_idle_timeout_ms),
+            ),
+            make_setting(
+                &st,
                 "resilience.retries_enabled",
                 "Retries Enabled",
                 json!(r.retries_enabled),
@@ -1214,6 +1278,52 @@ fn build_core_schema(
                 "resilience.timeout_disabled",
                 "Timeout Disabled",
                 json!(r.timeout_disabled),
+            ),
+        ];
+        result.push((st, settings));
+    }
+
+    // -------------------------------------------------------------------------
+    // typed turn assembly and progressive skills
+    // -------------------------------------------------------------------------
+    {
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Runtime Harness", "type": "object",
+            "properties": {
+                "mode": {
+                    "type": "string", "enum": ["legacy", "shadow", "typed"], "default": "typed",
+                    "description": "Typed assembly is the default. Legacy is deprecated and retained as a rollback for one minor release after the default flip. Shadow is opt-in: it assembles both paths but dispatches only legacy."
+                },
+                "skill_activation_mode": {"type": "string", "enum": ["legacy_overlay", "catalog"], "default": "legacy_overlay"},
+                "skill_reattachment": {
+                    "type": "object", "required": ["per_skill_tokens", "total_tokens"],
+                    "properties": {
+                        "per_skill_tokens": {"type": "integer", "minimum": 0, "default": 5000},
+                        "total_tokens": {"type": "integer", "minimum": 0, "default": 25000}
+                    }
+                }
+            }
+        });
+        let st = make_type("Runtime Harness", "harness", schema);
+        let settings = vec![
+            make_setting(
+                &st,
+                "harness.mode",
+                "Assembly Mode",
+                json!(config.harness.mode),
+            ),
+            make_setting(
+                &st,
+                "harness.skill_activation_mode",
+                "Skill Activation Mode",
+                json!(config.harness.skill_activation_mode),
+            ),
+            make_setting(
+                &st,
+                "harness.skill_reattachment",
+                "Skill Reattachment Budget",
+                json!(config.harness.skill_reattachment),
             ),
         ];
         result.push((st, settings));
@@ -1943,6 +2053,7 @@ fn build_core_schema(
                 "burst_size": { "type": "number", "minimum": 1 },
                 "request_timeout_ms": { "type": "integer", "minimum": 1000 },
                 "stream_start_timeout_ms": { "type": "integer", "minimum": 1000 },
+                "stream_idle_timeout_ms": { "type": "integer", "minimum": 1000 },
                 "retries_enabled": { "type": "boolean" },
                 "retry_max_attempts": { "type": "integer", "minimum": 0, "maximum": 10 },
                 "retry_base_delay_ms": { "type": "integer", "minimum": 100 },
@@ -2933,6 +3044,7 @@ fn run_policy_schema_and_defaults() -> (SettingsType, Vec<Settings>) {
             "tools": resource_selection,
             "mcp_servers": resource_selection,
             "knowledge_bases": resource_selection,
+            "presentations": resource_selection,
             "memory_enabled": { "type": ["boolean", "null"] },
             "prompt_caching_enabled": { "type": ["boolean", "null"] },
             "context_strategy": { "type": ["object", "null"] },
@@ -2961,6 +3073,7 @@ fn run_policy_schema_and_defaults() -> (SettingsType, Vec<Settings>) {
             "tools": inherit,
             "mcp_servers": inherit,
             "knowledge_bases": inherit,
+            "presentations": inherit,
             "memory_enabled": null,
             "prompt_caching_enabled": null,
             "context_strategy": null,

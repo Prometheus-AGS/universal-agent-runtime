@@ -7,13 +7,13 @@ use std::pin::Pin;
 
 use async_stream::stream;
 use futures::Stream;
-use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
+use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue, RETRY_AFTER};
 use tracing::{debug, warn};
 
 use super::anthropic_cache::CacheStrategy;
 use super::anthropic_streaming::StreamState;
 use super::anthropic_types::*;
-use super::{LlmDriver, LlmRequest};
+use super::{LlmDriver, LlmRequest, ProviderError};
 use crate::normalized::NormalizedEvent;
 
 const ANTHROPIC_API_URL: &str = "https://api.anthropic.com/v1/messages";
@@ -292,13 +292,32 @@ impl AnthropicDriver {
 
 #[async_trait::async_trait]
 impl LlmDriver for AnthropicDriver {
+    fn with_bound_model(&self, model: &str) -> anyhow::Result<std::sync::Arc<dyn LlmDriver>> {
+        let model = model
+            .strip_prefix("anthropic/")
+            .filter(|model| !model.trim().is_empty())
+            .ok_or_else(|| {
+                anyhow::anyhow!("Child model is outside the inherited Anthropic binding")
+            })?;
+        Ok(std::sync::Arc::new(Self {
+            client: self.client.clone(),
+            api_key: self.api_key.clone(),
+            base_url: self.base_url.clone(),
+            model: model.to_string(),
+            max_tokens: self.max_tokens,
+            default_cache_strategy: self.default_cache_strategy.clone(),
+            default_thinking_config: self.default_thinking_config.clone(),
+        }))
+    }
+
     async fn stream(
         &self,
         req: LlmRequest,
     ) -> anyhow::Result<Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>> {
         let api_request = self.build_request_with_strategy(&req);
 
-        let body = serde_json::to_string(&api_request)?;
+        let body = serde_json::to_string(&api_request)
+            .map_err(|error| ProviderError::invalid_request(error.to_string()))?;
         debug!(
             model = %api_request.model,
             has_tools = api_request.tools.is_some(),
@@ -312,10 +331,17 @@ impl LlmDriver for AnthropicDriver {
             .headers(self.build_headers())
             .body(body)
             .send()
-            .await?;
+            .await
+            .map_err(ProviderError::from_reqwest)?;
 
         let status = response.status();
         if !status.is_success() {
+            let retry_after = response
+                .headers()
+                .get(RETRY_AFTER)
+                .and_then(|value| value.to_str().ok())
+                .and_then(|value| value.trim().parse::<u64>().ok())
+                .map(std::time::Duration::from_secs);
             let error_body = response.text().await.unwrap_or_default();
             let error_msg = serde_json::from_str::<serde_json::Value>(&error_body)
                 .ok()
@@ -327,9 +353,12 @@ impl LlmDriver for AnthropicDriver {
                 })
                 .unwrap_or_else(|| format!("Anthropic API error: {status}"));
 
-            return Err(anyhow::anyhow!(
-                "Anthropic API returned HTTP {status}: {error_msg}"
-            ));
+            return Err(ProviderError::from_http(
+                status.as_u16(),
+                retry_after,
+                format!("Anthropic API returned HTTP {status}: {error_msg}"),
+            )
+            .into());
         }
 
         // Stream SSE response
@@ -353,10 +382,7 @@ impl LlmDriver for AnthropicDriver {
                     Ok(bytes) => bytes,
                     Err(e) => {
                         warn!("SSE stream error: {e}");
-                        yield Ok(NormalizedEvent::Error {
-                            message: format!("Stream error: {e}"),
-                            code: Some("stream_error".to_string()),
-                        });
+                        yield Err(ProviderError::from_reqwest(e).into());
                         break;
                     }
                 };

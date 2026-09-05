@@ -15,7 +15,7 @@ export const SettingsPage: FC = () => {
   const types = useSettingsTypesMeta();
 
   const availableKeys = new Set(types.map((t) => t.key));
-  const customPanelKeys = new Set(["prompt_caching", "user_settings"]);
+  const customPanelKeys = new Set(["prompt_caching", "user_settings", "presentation_policy"]);
   const activeItem = NAV_ITEMS.find((item) => item.key === active);
 
   return (

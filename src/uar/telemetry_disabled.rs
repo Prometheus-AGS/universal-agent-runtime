@@ -144,4 +144,7 @@ pub mod metrics {
     pub fn set_mcp_server_status(_server_name: &str, _healthy: bool) {}
     pub fn record_skill_activation(_skill_id: &str, _backend: &str, _accepted: bool) {}
     pub fn record_skill_activation_outcome(_skill_id: &str, _success: bool) {}
+    pub fn record_skill_shadow_recall(_backend: &str, _hit: bool) {}
+    pub fn record_skill_invocation(_skill_id: &str, _invoke_type: &str) {}
+    pub fn record_skill_request_usage(_skill_id: &str, _tokens: u64, _cost_usd: Option<f64>) {}
 }

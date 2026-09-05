@@ -108,6 +108,7 @@ fn admin_ctx(user_id: Option<&str>) -> crate::uar::security::claims::UserContext
             name: None,
             roles: None,
             tenant_id: None,
+            uar_instance_id: None,
             exp: 0,
         },
     }

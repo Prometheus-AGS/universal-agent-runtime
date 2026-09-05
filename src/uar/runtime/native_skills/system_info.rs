@@ -36,6 +36,14 @@ impl NativeSkill for SystemInfoSkill {
         ToolSource::BuiltIn
     }
 
+    fn check_thread_policy(
+        &self,
+        _policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        // Fixed platform/CPU facts, not process environment values or host paths.
+        Ok(())
+    }
+
     async fn execute(&self, _args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
         tracing::debug!("Executing native system info skill");
         Ok(serde_json::json!({

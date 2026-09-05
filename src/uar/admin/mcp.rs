@@ -121,6 +121,10 @@ pub async fn save(
     name: String,
     server: StoredMcpServer,
 ) -> Result<SaveResult, String> {
+    server
+        .entry
+        .validate_sandbox_policy(&name)
+        .map_err(|error| error.to_string())?;
     let manager = manager.ok_or_else(|| "UAR settings storage is unavailable".to_string())?;
 
     let mut servers = list(registry, Some(manager)).await;
@@ -202,14 +206,16 @@ pub async fn hydrate(
 
     // The file→database seed: an empty store adopts the file configuration
     // once, and every later read comes from the database.
-    let effective = if stored.is_empty() && !current.is_empty() {
+    let seed = stored.is_empty() && !current.is_empty();
+    let effective = if seed { current } else { stored };
+    for (name, server) in &effective {
+        server.entry.validate_sandbox_policy(name)?;
+    }
+    if seed {
         manager
-            .set_value(SETTINGS_KEY, serde_json::to_value(&current)?)
+            .set_value(SETTINGS_KEY, serde_json::to_value(&effective)?)
             .await?;
-        current
-    } else {
-        stored
-    };
+    }
 
     for name in registry.server_names() {
         registry.remove_server(&name);

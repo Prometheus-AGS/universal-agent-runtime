@@ -2,10 +2,10 @@
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 1551,
-  "derivedRevision": 1551,
+  "sourceRevision": 2360,
+  "derivedRevision": 2360,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 1147,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 1956,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -23,25 +23,23 @@
   "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
   "path": [
     "skills-a2ui-library-and-runtime-observability",
-    "agui-a2ui-selection-architecture",
-    "codex-harness-comparative-analysis"
+    "agui-a2ui-selection-architecture"
   ],
   "phaseIds": [
     "skills-a2ui-library-and-runtime-observability",
-    "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture",
-    "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::codex-harness-comparative-analysis"
+    "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture"
   ],
-  "activePhaseId": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::codex-harness-comparative-analysis",
+  "activePhaseId": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture",
   "phase": "skills-a2ui-library-and-runtime-observability",
-  "childPointer": "codex-harness-comparative-analysis",
+  "childPointer": "agui-a2ui-selection-architecture",
   "change": null,
   "currentTask": null,
   "status": "ready",
   "completionMetric": "implementation",
-  "implementationCompleted": 102,
+  "implementationCompleted": 112,
   "implementationTotal": 120,
-  "planRevision": 5,
-  "revision": 1551,
-  "exactNextCommand": "/kbd-apply fail-closed-tool-arguments",
-  "updatedAt": "2026-09-02T13:13:31.630228Z"
+  "planRevision": 7,
+  "revision": 2360,
+  "exactNextCommand": "All12/12 Presentation tasks and3/3changes accepted; overall112/120 at2359. No code/test gap remains for local phase scope. Await explicit approval to sync/archive establish-presentation-catalog-workspace, scope-presentation-capabilities and select-and-observe-presentations; request was sent. On approval sync three new capability specs, archive, kbd-status after each, then Reflect/phase close and reconcile eight previously cancelled release rows honestly. Retain429 coverage, PGlite eval, zoom/contrast, peer/billing and credential-rotation warnings. Owned test services stopped. Do not rerun completed suites or change the paused native goal.",
+  "updatedAt": "2026-09-05T08:13:13.652767Z"
 }

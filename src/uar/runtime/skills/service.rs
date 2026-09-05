@@ -8,7 +8,7 @@
 
 use super::registry::SkillRegistry;
 use super::storage::{SkillStorageProvider, StorageProviderKind};
-use crate::uar::domain::skills::{Skill, SkillScope};
+use crate::uar::domain::skills::{Skill, SkillCandidate, SkillMatchResult, SkillScope};
 use crate::uar::persistence::PersistenceLayer;
 use crate::uar::runtime::matching::vector::VectorMatcher;
 use serde::{Deserialize, Serialize};
@@ -48,6 +48,9 @@ pub struct SkillMatchingConfig {
     /// Minimum score threshold for a match (0.0–1.0)
     #[serde(default = "default_threshold")]
     pub threshold: f32,
+    /// Required separation between the two strongest candidates.
+    #[serde(default = "default_margin_threshold")]
+    pub margin_threshold: f32,
     /// Maximum number of matched skills to return
     #[serde(default = "default_top_k")]
     pub top_k: usize,
@@ -64,11 +67,16 @@ fn default_top_k() -> usize {
     3
 }
 
+fn default_margin_threshold() -> f32 {
+    0.05
+}
+
 impl Default for SkillMatchingConfig {
     fn default() -> Self {
         Self {
             algorithm: SkillMatchingAlgorithm::default(),
             threshold: default_threshold(),
+            margin_threshold: default_margin_threshold(),
             top_k: default_top_k(),
             model_name: None,
         }
@@ -115,6 +123,38 @@ pub struct SkillService {
     agent_skills: RwLock<HashMap<String, Vec<String>>>,
     /// Optional governance engine for Cedar policy enforcement on skill mutations.
     governance: Option<Arc<crate::uar::governance::engine::GovernanceEngine>>,
+}
+
+/// Read-only matching inputs captured for one run. No storage-provider or
+/// skill-mutation API is carried into this view.
+pub(crate) struct SkillMatchingSnapshot {
+    pub(crate) registry: Arc<RwLock<SkillRegistry>>,
+    pub(crate) config: SkillMatchingConfig,
+    agent_skills: HashMap<String, Vec<String>>,
+}
+
+impl SkillMatchingSnapshot {
+    pub(crate) async fn match_skills_scoped(
+        &self,
+        query: &str,
+        agent_id: Option<&str>,
+        conversation_id: Option<&str>,
+    ) -> SkillMatchResult {
+        let legacy_bindings = agent_id
+            .and_then(|id| self.agent_skills.get(id))
+            .filter(|ids| !ids.is_empty())
+            .cloned();
+        let registry = self.registry.read().await;
+        SkillService::match_in_registry(
+            query,
+            agent_id,
+            conversation_id,
+            legacy_bindings.as_ref(),
+            &registry,
+            &self.config,
+        )
+        .await
+    }
 }
 
 impl std::fmt::Debug for SkillService {
@@ -580,18 +620,18 @@ impl SkillService {
         Ok(removed)
     }
 
-    /// Match skills to a query for a specific agent.
-    pub async fn match_skills(&self, query: &str, agent_id: Option<&str>) -> Vec<Skill> {
+    /// Match skills to a query without treating candidates as activations.
+    pub async fn match_skills(&self, query: &str, agent_id: Option<&str>) -> SkillMatchResult {
         self.match_skills_scoped(query, agent_id, None).await
     }
 
-    /// Match skills after resolving conversation > agent > global state.
+    /// Match after resolving conversation > agent > global enabled state.
     pub async fn match_skills_scoped(
         &self,
         query: &str,
         agent_id: Option<&str>,
         conversation_id: Option<&str>,
-    ) -> Vec<Skill> {
+    ) -> SkillMatchResult {
         let legacy_bindings = if let Some(agent_id) = agent_id {
             self.agent_skills
                 .read()
@@ -603,131 +643,115 @@ impl SkillService {
             None
         };
         let registry = self.registry.read().await;
-        let config = self.matching_config.read().await;
+        let config = self.matching_config.read().await.clone();
+        Self::match_in_registry(
+            query,
+            agent_id,
+            conversation_id,
+            legacy_bindings.as_ref(),
+            &registry,
+            &config,
+        )
+        .await
+    }
 
-        let candidates = registry
+    /// Capture bodies, scoped enablement, bindings, and matching configuration
+    /// before run assembly. Vector retrieval may supply scores, but never
+    /// replace a captured skill body or introduce an uncaptured skill ID.
+    pub(crate) async fn matching_snapshot(&self) -> SkillMatchingSnapshot {
+        let agent_skills = self.agent_skills.read().await.clone();
+        let registry = self.registry.read().await;
+        let config = self.matching_config.read().await.clone();
+        SkillMatchingSnapshot {
+            registry: Arc::new(RwLock::new(registry.clone())),
+            config,
+            agent_skills,
+        }
+    }
+
+    async fn match_in_registry(
+        query: &str,
+        agent_id: Option<&str>,
+        conversation_id: Option<&str>,
+        legacy_bindings: Option<&Vec<String>>,
+        registry: &SkillRegistry,
+        config: &SkillMatchingConfig,
+    ) -> SkillMatchResult {
+        let eligible = registry
             .list()
             .into_iter()
             .filter(|skill| {
-                let agent_fallback = legacy_bindings.as_ref().map(|skill_ids| {
-                    skill_ids.iter().any(|id| id == &skill.skill_id)
-                        && skill.enabled_for(None, None)
-                });
-                skill.enabled_for_with_agent_fallback(agent_id, conversation_id, agent_fallback)
+                let fallback = legacy_bindings
+                    .as_ref()
+                    .map(|ids| ids.contains(&skill.skill_id) && skill.enabled_for(None, None));
+                skill.enabled_for_with_agent_fallback(agent_id, conversation_id, fallback)
             })
             .collect::<Vec<_>>();
-
-        if candidates.is_empty() {
-            return Vec::new();
-        }
-
-        // Match using configured algorithm
-        let matched = match config.algorithm {
-            SkillMatchingAlgorithm::Keyword => {
-                self.keyword_match(query, &candidates, config.top_k, config.threshold)
+        let keyword = || {
+            eligible
+                .iter()
+                .map(|skill| SkillCandidate::keyword(skill, query))
+                .collect::<Vec<_>>()
+        };
+        let candidates = match config.algorithm {
+            SkillMatchingAlgorithm::Keyword | SkillMatchingAlgorithm::Llm => {
+                if config.algorithm == SkillMatchingAlgorithm::Llm {
+                    warn!("LLM matching not yet implemented, falling back to keyword");
+                }
+                Self::keyword_match(query, &eligible, config.top_k, config.threshold).candidates
             }
-            SkillMatchingAlgorithm::Embedding | SkillMatchingAlgorithm::LocalEmbedding => {
-                // Use vector matching through the registry
-                let results = registry.find_matches(query).await;
-                results
-                    .into_iter()
-                    .filter(|s| candidates.iter().any(|c| c.skill_id == s.skill_id))
-                    .take(config.top_k)
-                    .collect()
-            }
-            SkillMatchingAlgorithm::Llm => {
-                // LLM matching — fallback to keyword for now
-                // TODO: implement LLM-based classification
-                warn!("LLM matching not yet implemented, falling back to keyword");
-                self.keyword_match(query, &candidates, config.top_k, config.threshold)
-            }
+            SkillMatchingAlgorithm::Embedding | SkillMatchingAlgorithm::LocalEmbedding => registry
+                .find_candidates(query)
+                .await
+                .into_iter()
+                .filter_map(|candidate| {
+                    eligible
+                        .iter()
+                        .find(|skill| skill.skill_id == candidate.skill.skill_id)
+                        .map(|skill| SkillCandidate {
+                            skill: skill.clone(),
+                            score: candidate.score,
+                        })
+                })
+                .collect(),
             SkillMatchingAlgorithm::Hybrid => {
-                // Combine keyword + embedding results
-                let keyword_results =
-                    self.keyword_match(query, &candidates, config.top_k * 2, config.threshold);
-                let vector_results: Vec<Skill> = registry
-                    .find_matches(query)
-                    .await
+                let mut merged = keyword()
                     .into_iter()
-                    .filter(|s| candidates.iter().any(|c| c.skill_id == s.skill_id))
-                    .collect();
-
-                // Deduplicate and merge
-                let mut seen = std::collections::HashSet::new();
-                let mut merged = Vec::new();
-                for s in vector_results.iter().chain(keyword_results.iter()) {
-                    if seen.insert(s.skill_id.clone()) {
-                        merged.push(s.clone());
+                    .map(|candidate| (candidate.skill.skill_id.clone(), candidate))
+                    .collect::<HashMap<_, _>>();
+                for candidate in registry.find_candidates(query).await {
+                    if let Some(existing) = merged.get_mut(&candidate.skill.skill_id) {
+                        // Both scores are confidence values; retain the stronger signal.
+                        existing.score = existing.score.max(candidate.score);
                     }
                 }
-                merged.truncate(config.top_k);
-                merged
+                merged.into_values().collect()
             }
         };
-
-        // CH-08: record an activation decision (accepted=true — everything
-        // `match_skills` returns was selected) per skill, labeled by the
-        // matching backend actually used. Per-skill/per-backend counters give
-        // the activation-recall half of the precision/recall pair; whether
-        // the model actually *used* an activated skill's tools (the outcome
-        // half, `record_skill_activation_outcome`) requires correlating this
-        // decision against the run's later tool-call stream, which is a
-        // separate, harder problem (candidate-vs-considered-but-rejected
-        // visibility doesn't exist at this layer either) — deliberately
-        // scope-cut for this pass, consistent with this phase's other
-        // documented scope cuts (plan.md D-A..D-D).
-        let backend = match config.algorithm {
-            SkillMatchingAlgorithm::Keyword => "keyword",
-            SkillMatchingAlgorithm::Embedding => "embedding",
-            SkillMatchingAlgorithm::LocalEmbedding => "local_embedding",
-            SkillMatchingAlgorithm::Llm => "llm",
-            SkillMatchingAlgorithm::Hybrid => "hybrid",
-        };
-        for skill in &matched {
-            crate::uar::telemetry::metrics::record_skill_activation(&skill.skill_id, backend, true);
-        }
-        matched
+        SkillMatchResult::resolve(
+            candidates,
+            config.threshold,
+            config.margin_threshold,
+            config.top_k,
+        )
     }
 
-    /// Simple keyword matching.
+    /// Keyword matching with the same scored-result contract as other backends.
     fn keyword_match(
-        &self,
         query: &str,
         candidates: &[Skill],
         top_k: usize,
-        _threshold: f32,
-    ) -> Vec<Skill> {
-        let q = query.to_lowercase();
-        let mut scored: Vec<(&Skill, f32)> = candidates
-            .iter()
-            .filter_map(|s| {
-                let mut score = 0.0_f32;
-
-                // Check keyword triggers
-                for kw in &s.triggers.keywords {
-                    if q.contains(&kw.to_lowercase()) {
-                        score += 1.0;
-                    }
-                }
-
-                // Check title/description
-                if s.title.to_lowercase().contains(&q) {
-                    score += 0.5;
-                }
-                if s.description.to_lowercase().contains(&q) {
-                    score += 0.3;
-                }
-
-                if score > 0.0 { Some((s, score)) } else { None }
-            })
-            .collect();
-
-        scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-        scored
-            .into_iter()
-            .take(top_k)
-            .map(|(s, _)| s.clone())
-            .collect()
+        threshold: f32,
+    ) -> SkillMatchResult {
+        SkillMatchResult::resolve(
+            candidates
+                .iter()
+                .map(|skill| SkillCandidate::keyword(skill, query))
+                .collect(),
+            threshold,
+            0.0,
+            top_k,
+        )
     }
 
     // --- Per-agent skill configuration ---
@@ -1449,12 +1473,14 @@ mod tests {
             service
                 .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
                 .await
+                .accepted
                 .is_empty()
         );
         assert_eq!(
             service
                 .match_skills_scoped("initial", Some("agent-a"), Some("conversation-b"))
                 .await
+                .accepted
                 .len(),
             1
         );
@@ -1462,6 +1488,7 @@ mod tests {
             service
                 .match_skills_scoped("initial", Some("agent-b"), Some("conversation-b"))
                 .await
+                .accepted
                 .is_empty()
         );
 
@@ -1493,6 +1520,7 @@ mod tests {
             service
                 .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
                 .await
+                .accepted
                 .len(),
             1
         );
@@ -1500,12 +1528,14 @@ mod tests {
             service
                 .match_skills_scoped("initial", Some("agent-a"), Some("conversation-b"))
                 .await
+                .accepted
                 .is_empty()
         );
         assert_eq!(
             service
                 .match_skills_scoped("initial", Some("agent-b"), Some("conversation-b"))
                 .await
+                .accepted
                 .len(),
             1
         );
@@ -1519,7 +1549,7 @@ mod tests {
         let in_flight_binding = service
             .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
             .await;
-        assert_eq!(in_flight_binding.len(), 1);
+        assert_eq!(in_flight_binding.accepted.len(), 1);
 
         assert!(
             service
@@ -1531,11 +1561,12 @@ mod tests {
                 .await
         );
 
-        assert_eq!(in_flight_binding.len(), 1);
+        assert_eq!(in_flight_binding.accepted.len(), 1);
         assert!(
             service
                 .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
                 .await
+                .accepted
                 .is_empty()
         );
     }
@@ -1555,8 +1586,8 @@ mod tests {
         service.create_skill(unbound).await.unwrap();
 
         let matched = service.match_skills("initial", Some("agent-a")).await;
-        assert_eq!(matched.len(), 1);
-        assert_eq!(matched[0].skill_id, "future-skill");
+        assert_eq!(matched.accepted.len(), 1);
+        assert_eq!(matched.accepted[0], "future-skill");
 
         assert!(
             service
@@ -1570,7 +1601,8 @@ mod tests {
         let conversation_match = service
             .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
             .await;
-        assert_eq!(conversation_match.len(), 2);
+        assert_eq!(conversation_match.candidates.len(), 2);
+        assert!(conversation_match.accepted.is_empty());
     }
 
     #[tokio::test]
@@ -1626,12 +1658,14 @@ mod tests {
             restarted
                 .match_skills_scoped("initial", Some("agent-a"), Some("conversation-b"))
                 .await
+                .accepted
                 .is_empty()
         );
         assert_eq!(
             restarted
                 .match_skills_scoped("initial", Some("agent-b"), Some("conversation-b"))
                 .await
+                .accepted
                 .len(),
             1
         );
@@ -1779,6 +1813,7 @@ mod tests {
             removed_service
                 .match_skills("removed", Some("agent-b"))
                 .await
+                .accepted
                 .is_empty()
         );
         let tombstoned = persistence
@@ -1809,12 +1844,14 @@ mod tests {
             restored
                 .match_skills("removed", Some("agent-a"))
                 .await
+                .accepted
                 .is_empty()
         );
         assert_eq!(
             restored
                 .match_skills("removed", Some("agent-b"))
                 .await
+                .accepted
                 .len(),
             1
         );
@@ -1963,6 +2000,7 @@ mod tests {
                         service
                             .match_skills("cold-removed", Some("agent-b"))
                             .await
+                            .accepted
                             .is_empty()
                     );
                 }
@@ -1983,12 +2021,14 @@ mod tests {
                         service
                             .match_skills("cold-removed", Some("agent-a"))
                             .await
+                            .accepted
                             .is_empty()
                     );
                     assert_eq!(
                         service
                             .match_skills("cold-removed", Some("agent-b"))
                             .await
+                            .accepted
                             .len(),
                         1
                     );

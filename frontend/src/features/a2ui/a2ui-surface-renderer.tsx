@@ -17,6 +17,7 @@ interface A2uiSurfaceRendererProps {
   onAction: (name: string, context: Record<string, unknown>) => void;
   actionPending?: boolean;
   statusMessage?: string | null;
+  idPrefix?: string;
 }
 
 function resolvePath(data: Record<string, unknown>, path: string): unknown {
@@ -49,6 +50,7 @@ export function A2uiSurfaceRenderer({
   onAction,
   actionPending = false,
   statusMessage,
+  idPrefix = "",
 }: A2uiSurfaceRendererProps) {
   const componentMap = new Map(components.map((component) => [component.id, component]));
   const root = componentMap.get("root") ?? components[0];
@@ -95,7 +97,7 @@ export function A2uiSurfaceRenderer({
         const value = String(dynamicValue(component.value, data) ?? "");
         const field = component.variant === "longText" ? (
           <Textarea
-            id={component.id}
+            id={`${idPrefix}${component.id}`}
             value={value}
             placeholder={component.placeholder}
             disabled={actionPending || !path}
@@ -104,7 +106,7 @@ export function A2uiSurfaceRenderer({
           />
         ) : (
           <Input
-            id={component.id}
+            id={`${idPrefix}${component.id}`}
             type={component.variant === "email" ? "email" : component.variant === "number" ? "number" : "text"}
             value={value}
             placeholder={component.placeholder}
@@ -112,19 +114,19 @@ export function A2uiSurfaceRenderer({
             onChange={(event) => path && onDataChange(path, event.target.value)}
           />
         );
-        return <div className="space-y-1.5"><Label htmlFor={component.id}>{component.label}</Label>{field}</div>;
+        return <div className="space-y-1.5"><Label htmlFor={`${idPrefix}${component.id}`}>{component.label}</Label>{field}</div>;
       }
       case "CheckBox": {
         const path = bindingPath(component.value);
         return (
           <div className="flex min-h-11 items-center gap-2">
             <Checkbox
-              id={component.id}
+              id={`${idPrefix}${component.id}`}
               checked={Boolean(dynamicValue(component.value, data))}
               disabled={actionPending || !path}
               onCheckedChange={(checked) => path && onDataChange(path, checked === true)}
             />
-            <Label htmlFor={component.id}>{component.label}</Label>
+            <Label htmlFor={`${idPrefix}${component.id}`}>{component.label}</Label>
           </div>
         );
       }
@@ -143,8 +145,8 @@ export function A2uiSurfaceRenderer({
               >
                 {component.options.map((option) => (
                   <div key={option.value} className="flex min-h-11 items-center gap-2">
-                    <RadioGroupItem id={`${component.id}-${option.value}`} value={option.value} />
-                    <Label htmlFor={`${component.id}-${option.value}`}>{option.label}</Label>
+                    <RadioGroupItem id={`${idPrefix}${component.id}-${option.value}`} value={option.value} />
+                    <Label htmlFor={`${idPrefix}${component.id}-${option.value}`}>{option.label}</Label>
                   </div>
                 ))}
               </RadioGroup>
@@ -157,7 +159,7 @@ export function A2uiSurfaceRenderer({
             {component.options.map((option) => (
               <div key={option.value} className="flex min-h-11 items-center gap-2">
                 <Checkbox
-                  id={`${component.id}-${option.value}`}
+                  id={`${idPrefix}${component.id}-${option.value}`}
                   checked={values.includes(option.value)}
                   disabled={actionPending || !path}
                   onCheckedChange={(checked) => {
@@ -165,7 +167,7 @@ export function A2uiSurfaceRenderer({
                     onDataChange(path, checked ? [...values, option.value] : values.filter((value) => value !== option.value));
                   }}
                 />
-                <Label htmlFor={`${component.id}-${option.value}`}>{option.label}</Label>
+                <Label htmlFor={`${idPrefix}${component.id}-${option.value}`}>{option.label}</Label>
               </div>
             ))}
           </fieldset>

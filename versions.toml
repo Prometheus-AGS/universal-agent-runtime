@@ -41,5 +41,11 @@ js_yaml_v4 = "4.3.1"
 nanoid = "3.3.18"
 jsonschema = "0.49.4"
 
+cap_std = "4.0.2"
+reqwest_mcp = "0.13.4"
+
+insta = "1.48.0"
+wiremock = "0.6.5"
+
 [decisions]
 # id = "rationale"

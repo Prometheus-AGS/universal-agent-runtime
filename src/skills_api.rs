@@ -197,6 +197,6 @@ impl SkillsApi {
     /// back to keyword matching otherwise — an embedded host with no embedder
     /// still gets useful results rather than an empty list.
     pub async fn query(&self, query: &str) -> Vec<Skill> {
-        self.inner.match_skills(query, None).await
+        self.inner.match_skills(query, None).await.accepted_skills()
     }
 }

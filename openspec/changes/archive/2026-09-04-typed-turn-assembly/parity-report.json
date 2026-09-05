@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "harness_mode": "shadow",
+  "corpus_size": 3,
+  "intentional_delta_count": 0,
+  "requests": [
+    {
+      "id": "basic-user-turn",
+      "dispatched_path": "legacy",
+      "dispatched_request_count": 1,
+      "resolved_step_count": 1,
+      "unexpected_difference_count": 0,
+      "allowlisted_differences": []
+    },
+    {
+      "id": "host-instructions",
+      "dispatched_path": "legacy",
+      "dispatched_request_count": 1,
+      "resolved_step_count": 1,
+      "unexpected_difference_count": 0,
+      "allowlisted_differences": []
+    },
+    {
+      "id": "memory-contribution",
+      "dispatched_path": "legacy",
+      "dispatched_request_count": 1,
+      "resolved_step_count": 1,
+      "unexpected_difference_count": 0,
+      "allowlisted_differences": []
+    }
+  ],
+  "totals": {
+    "unexpected_difference_count": 0,
+    "observed_allowlisted_differences": []
+  }
+}

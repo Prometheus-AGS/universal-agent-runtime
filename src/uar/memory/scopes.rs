@@ -79,6 +79,7 @@ mod tests {
                 name: None,
                 roles: None,
                 tenant_id: None,
+                uar_instance_id: None,
                 exp: usize::MAX,
             },
         }
@@ -93,6 +94,7 @@ mod tests {
                 name: Some("Test User".to_string()),
                 roles: Some(vec!["user".to_string()]),
                 tenant_id: None,
+                uar_instance_id: None,
                 exp: usize::MAX,
             },
         }

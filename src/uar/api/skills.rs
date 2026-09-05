@@ -374,7 +374,13 @@ async fn match_skills(
             params.conversation_id.as_deref(),
         )
         .await;
-    Json(matched.into_iter().map(SkillResponse::from).collect())
+    Json(
+        matched
+            .accepted_skills()
+            .into_iter()
+            .map(SkillResponse::from)
+            .collect(),
+    )
 }
 
 async fn refresh_skills(State(service): State<Arc<SkillService>>) -> impl IntoResponse {

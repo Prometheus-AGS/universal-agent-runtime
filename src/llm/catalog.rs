@@ -221,17 +221,34 @@ impl ModelCost {
     /// at `cache_read` when priced, otherwise at the regular input rate. Pure and
     /// catalog-independent so it is unit-testable.
     #[must_use]
+    pub fn compute(&self, input_tokens: u64, output_tokens: u64, cache_read_tokens: u64) -> f64 {
+        self.compute_with_cache_write(input_tokens, output_tokens, cache_read_tokens, 0)
+    }
+
+    /// Compute catalog-priced usage with disjoint cache read/write portions
+    /// already included in `input_tokens`. Missing cache prices use the regular
+    /// input rate, as with [`Self::compute`]; this remains a catalog estimate.
+    #[must_use]
     #[expect(
         clippy::cast_precision_loss,
         reason = "token counts are far below f64's 2^52 exact-integer range"
     )]
-    pub fn compute(&self, input_tokens: u64, output_tokens: u64, cache_read_tokens: u64) -> f64 {
+    pub(crate) fn compute_with_cache_write(
+        &self,
+        input_tokens: u64,
+        output_tokens: u64,
+        cache_read_tokens: u64,
+        cache_write_tokens: u64,
+    ) -> f64 {
         const PER_M: f64 = 1_000_000.0;
         let cached = cache_read_tokens.min(input_tokens);
-        let regular_input = input_tokens.saturating_sub(cached);
+        let written = cache_write_tokens.min(input_tokens.saturating_sub(cached));
+        let regular_input = input_tokens.saturating_sub(cached).saturating_sub(written);
         let cache_rate = self.cache_read.unwrap_or(self.input);
+        let write_rate = self.cache_write.unwrap_or(self.input);
         (regular_input as f64) * self.input / PER_M
             + (cached as f64) * cache_rate / PER_M
+            + (written as f64) * write_rate / PER_M
             + (output_tokens as f64) * self.output / PER_M
     }
 }
@@ -247,12 +264,31 @@ pub fn estimate_cost(
     output_tokens: u64,
     cache_read_tokens: u64,
 ) -> Option<f64> {
+    estimate_cost_with_cache_write(model, input_tokens, output_tokens, cache_read_tokens, 0)
+}
+
+/// Estimate catalog-priced usage including cache writes. Both cache counts are
+/// portions of `input_tokens`. Returns `None` under the same conditions as
+/// [`estimate_cost`]; cache duration-specific pricing is not represented here.
+#[must_use]
+pub(crate) fn estimate_cost_with_cache_write(
+    model: &str,
+    input_tokens: u64,
+    output_tokens: u64,
+    cache_read_tokens: u64,
+    cache_write_tokens: u64,
+) -> Option<f64> {
     let (provider, model_id) = model.split_once('/')?;
     let cost = ModelCatalog::global()
         .model(provider, model_id)?
         .cost
         .as_ref()?;
-    Some(cost.compute(input_tokens, output_tokens, cache_read_tokens))
+    Some(cost.compute_with_cache_write(
+        input_tokens,
+        output_tokens,
+        cache_read_tokens,
+        cache_write_tokens,
+    ))
 }
 
 #[cfg(test)]

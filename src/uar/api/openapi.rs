@@ -99,7 +99,41 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "summary": "Start an agent run",
                     "description": "Creates a governed run and returns its identifier and event stream URL",
                     "tags": ["runs"],
-                    "responses": { "200": { "description": "Run created" } }
+                    "requestBody": {
+                        "required": true,
+                        "content": {"application/json": {"schema": {
+                            "type": "object",
+                            "required": ["artifact", "input"],
+                            "properties": {
+                                "artifact": {"type": "object", "description": "Agent artifact defining the run policy and prompt"},
+                                "input": {"type": "string"},
+                                "session_id": {"type": ["string", "null"]},
+                                "skill_attachments": {
+                                    "type": "array", "items": {"type": "string"}, "default": [],
+                                    "description": "Skill IDs to activate before the first model call, intersected with effective eligibility"
+                                }
+                            }
+                        }}}
+                    },
+                    "responses": { "200": {
+                        "description": "Run created; rejected attachments appear in activation_failures without adding their bodies or tools",
+                        "content": {"application/json": {"schema": {
+                            "type": "object", "required": ["run_id", "stream_url"],
+                            "properties": {
+                                "run_id": {"type": "string"},
+                                "stream_url": {"type": "string"},
+                                "activation_failures": {"type": "array", "items": {
+                                    "type": "object", "required": ["code", "skill_id"],
+                                    "properties": {
+                                        "code": {"type": "string", "enum": ["missing", "ineligible", "disabled", "dependency_invalid", "limit_reached"]},
+                                        "skill_id": {"type": "string"},
+                                        "reason": {"type": "string"},
+                                        "limit": {"type": "integer", "minimum": 0}
+                                    }
+                                }}
+                            }
+                        }}}
+                    } }
                 }
             },
             "/api/uar/runs/{id}/stream": {

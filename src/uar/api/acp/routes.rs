@@ -102,7 +102,7 @@ async fn handle_rpc(
             return (StatusCode::OK, Json(resp)).into_response();
         }
     };
-    let resp = dispatch(req, state, sessions, &user.user_id).await;
+    let resp = dispatch(req, state, sessions, &user).await;
     (StatusCode::OK, Json(resp)).into_response()
 }
 
@@ -134,13 +134,7 @@ async fn handle_rpc_stream(
     };
 
     // Start the run and subscribe to its event stream.
-    let resp = dispatch(
-        req,
-        Arc::clone(&state),
-        Arc::clone(&sessions),
-        &user.user_id,
-    )
-    .await;
+    let resp = dispatch(req, Arc::clone(&state), Arc::clone(&sessions), &user).await;
     if resp.error.is_some() {
         return (StatusCode::OK, Json(resp)).into_response();
     }

@@ -27,5 +27,14 @@
 //! Tools are namespaced by server name: `server_name::tool_name`
 //! (e.g., `time::now`, `tavily::search`).
 
+pub mod binding_cache;
+pub mod catalog;
 pub mod config;
+pub mod exposure;
+pub mod lifecycle;
+pub mod preflight;
+pub mod projection;
 pub mod registry;
+pub(crate) mod run_events;
+pub mod runtime;
+mod stdio_process;

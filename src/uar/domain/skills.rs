@@ -255,6 +255,119 @@ pub struct SkillMatch {
     pub score: f32,
 }
 
+pub type SkillId = String;
+
+/// A scored candidate is not itself an activation decision.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SkillCandidate {
+    pub skill: Skill,
+    pub score: f32,
+}
+
+impl SkillCandidate {
+    pub fn keyword(skill: &Skill, query: &str) -> Self {
+        let query = query.trim().to_lowercase();
+        let mut score = 0.0_f32;
+        if !query.is_empty() {
+            for keyword in &skill.triggers.keywords {
+                if !keyword.is_empty() && query.contains(&keyword.to_lowercase()) {
+                    score += 1.0;
+                }
+            }
+            if skill.title.to_lowercase().contains(&query) {
+                score += 0.5;
+            }
+            if skill.description.to_lowercase().contains(&query) {
+                score += 0.3;
+            }
+        }
+        Self {
+            skill: skill.clone(),
+            score: score.min(1.0),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct SkillMatchResult {
+    pub candidates: Vec<SkillCandidate>,
+    pub accepted: Vec<SkillId>,
+}
+
+impl SkillMatchResult {
+    /// Reject non-finite matcher output, enforce the top-two margin, then
+    /// retain only individual scores meeting the acceptance threshold.
+    pub fn resolve(
+        candidates: Vec<SkillCandidate>,
+        threshold: f32,
+        margin: f32,
+        top_k: usize,
+    ) -> Self {
+        Self::resolve_with_prefer(candidates, threshold, margin, top_k, &[])
+    }
+
+    /// Artifact preferences break equal scores, never override confidence.
+    pub fn resolve_with_prefer(
+        mut candidates: Vec<SkillCandidate>,
+        threshold: f32,
+        margin: f32,
+        top_k: usize,
+        prefer: &[String],
+    ) -> Self {
+        candidates.retain(|candidate| candidate.score.is_finite());
+        let preference = |id: &str| {
+            prefer
+                .iter()
+                .position(|preferred| preferred == id)
+                .unwrap_or(usize::MAX)
+        };
+        candidates.sort_by(|left, right| {
+            right
+                .score
+                .total_cmp(&left.score)
+                .then_with(|| {
+                    preference(&left.skill.skill_id).cmp(&preference(&right.skill.skill_id))
+                })
+                .then_with(|| left.skill.skill_id.cmp(&right.skill.skill_id))
+        });
+        let decisive = threshold.is_finite()
+            && margin.is_finite()
+            && candidates.first().is_some_and(|top| {
+                top.score >= threshold
+                    && candidates
+                        .get(1)
+                        .is_none_or(|second| top.score - second.score >= margin)
+            });
+        let accepted = if decisive {
+            candidates
+                .iter()
+                .filter(|candidate| candidate.score >= threshold)
+                .take(top_k)
+                .map(|candidate| candidate.skill.skill_id.clone())
+                .collect()
+        } else {
+            Vec::new()
+        };
+        Self {
+            candidates,
+            accepted,
+        }
+    }
+
+    /// Compatibility projection for host APIs that return skill objects.
+    pub fn accepted_skills(&self) -> Vec<Skill> {
+        self.accepted
+            .iter()
+            .filter_map(|id| {
+                self.candidates
+                    .iter()
+                    .find(|candidate| &candidate.skill.skill_id == id)
+                    .map(|candidate| candidate.skill.clone())
+            })
+            .collect()
+    }
+}
+
 fn default_enabled() -> bool {
     true
 }

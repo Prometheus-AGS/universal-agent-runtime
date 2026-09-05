@@ -1,4 +1,4 @@
-#[cfg(feature = "in-memory-backend")]
+#[cfg(any(feature = "in-memory-backend", test))]
 pub mod memory;
 #[cfg(feature = "postgres-backend")]
 pub mod postgres;

@@ -68,7 +68,8 @@ describe("agents admin store", () => {
     await useAgentsAdminStore.getState().remove(agent.id);
 
     expect(agentsApi.createAgent).toHaveBeenCalledWith(agent);
-    expect(agentsApi.updateAgentFull).toHaveBeenCalledWith(agent.id, agent);
+    expect(agentsApi.updateAgentFull).not.toHaveBeenCalled();
+    expect(agentsApi.patchAgent).toHaveBeenCalledWith(agent.id, agent);
     expect(agentsApi.patchAgent).toHaveBeenCalledWith(agent.id, { status: "active" });
     expect(agentsApi.deleteAgent).toHaveBeenCalledWith(agent.id);
     expect(useGraphStore.getState().entities.Agent?.[agent.id]).toBeUndefined();

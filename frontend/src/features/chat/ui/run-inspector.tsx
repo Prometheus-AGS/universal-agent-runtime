@@ -3,6 +3,7 @@ import { Check, Clipboard, ExternalLink, Play, RefreshCw, X } from "lucide-react
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PresentationRunDetails } from "./presentation-run-details";
 import type {
   RunCheckpoint,
   RunReplayProjection,
@@ -85,7 +86,7 @@ export function RunInspector({
   };
 
   return (
-    <aside aria-labelledby="run-inspector-heading" className="flex min-h-0 flex-col gap-3 rounded-xl bg-surface p-3">
+    <aside aria-labelledby="run-inspector-heading" className="flex min-h-0 min-w-0 flex-col gap-3 rounded-xl bg-surface p-3">
       <div>
         <p className="font-mono text-[10px] uppercase tracking-widest text-ember">Selected record</p>
         <h2 id="run-inspector-heading" className="truncate font-display text-base font-semibold text-foreground">
@@ -93,13 +94,15 @@ export function RunInspector({
         </h2>
       </div>
 
-      <Tabs defaultValue="payload" className="min-h-0">
+      <PresentationRunDetails runId={context.runId} />
+
+      <Tabs defaultValue="payload" className="min-h-0 min-w-0 flex-col">
         <TabsList variant="line" aria-label="Inspector views" className="min-h-11 w-full justify-start">
           <TabsTrigger className="min-h-11 focus-visible:ring-0 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-ember" value="payload">Payload</TabsTrigger>
           <TabsTrigger className="min-h-11 focus-visible:ring-0 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-ember" value="timing">Timing</TabsTrigger>
           <TabsTrigger className="min-h-11 focus-visible:ring-0 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-ember" value="raw">Raw AG-UI</TabsTrigger>
         </TabsList>
-        <TabsContent value="payload" className="min-h-0">
+        <TabsContent value="payload" className="min-h-0 min-w-0">
           <pre className="max-h-72 overflow-auto rounded-lg bg-card p-3 font-mono text-[11px] leading-relaxed text-fg-sub">{payloadText}</pre>
           <Button type="button" variant="ghost" size="sm" className="mt-2 min-h-11 focus-visible:ring-0 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-ember" onClick={() => void copy(payloadText)}>
             <Clipboard aria-hidden="true" /> Copy payload
@@ -123,7 +126,7 @@ export function RunInspector({
             </dd>
           </dl>
         </TabsContent>
-        <TabsContent value="raw" className="min-h-0">
+        <TabsContent value="raw" className="min-h-0 min-w-0">
           <pre className="max-h-72 overflow-auto rounded-lg bg-card p-3 font-mono text-[11px] leading-relaxed text-fg-sub">{rawText}</pre>
           <Button type="button" variant="ghost" size="sm" className="mt-2 min-h-11 focus-visible:ring-0 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-ember" onClick={() => void copy(rawText)}>
             <Clipboard aria-hidden="true" /> Copy raw event

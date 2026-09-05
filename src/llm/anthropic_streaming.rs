@@ -216,9 +216,16 @@ impl StreamState {
     }
 
     fn handle_message_stop(&mut self) -> Vec<NormalizedEvent> {
-        let prompt_tokens = self.usage.input_tokens;
+        // Anthropic reports uncached input separately from cache reads/writes.
+        // Normalized prompt usage includes all three, with cache fields as
+        // breakdowns rather than additional tokens.
+        let prompt_tokens = self
+            .usage
+            .input_tokens
+            .saturating_add(self.usage.cache_read_input_tokens.unwrap_or(0))
+            .saturating_add(self.usage.cache_creation_input_tokens.unwrap_or(0));
         let completion_tokens = self.usage.output_tokens;
-        let total_tokens = prompt_tokens + completion_tokens;
+        let total_tokens = prompt_tokens.saturating_add(completion_tokens);
 
         vec![
             NormalizedEvent::Usage {
@@ -434,9 +441,9 @@ mod tests {
         assert!(matches!(
             &events[0],
             NormalizedEvent::Usage {
-                prompt_tokens: 50,
+                prompt_tokens: 70,
                 completion_tokens: 30,
-                total_tokens: 80,
+                total_tokens: 100,
                 cached_tokens: Some(20),
                 ..
             }

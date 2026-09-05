@@ -47,6 +47,50 @@ impl NativeSkill for TerminalExecTool {
         self.use_sandbox
     }
 
+    fn supports_sandbox_execution(&self) -> bool {
+        matches!(self.shell.as_str(), "sh" | "/bin/sh" | "bash" | "/bin/bash")
+    }
+
+    fn sandbox_request(&self, args: Value) -> anyhow::Result<crate::sandbox::ExecutionRequest> {
+        let command = args
+            .get("command")
+            .and_then(Value::as_str)
+            .ok_or_else(|| anyhow::anyhow!("Missing terminal command"))?;
+        // The runner's language protocol supports Bash. Invoke the configured
+        // supported shell explicitly so sh is not silently changed to Bash and
+        // arbitrary shell configuration cannot become a command interpolation.
+        anyhow::ensure!(
+            self.supports_sandbox_execution(),
+            "Configured terminal shell has no sandbox adapter"
+        );
+        let code = format!(
+            "exec {} -c '{}'",
+            self.shell,
+            command.replace('\'', "'\\''")
+        );
+        let env = match args.get("env") {
+            Some(value) => serde_json::from_value(value.clone())?,
+            None => std::collections::HashMap::new(),
+        };
+        Ok(crate::sandbox::ExecutionRequest {
+            language: crate::sandbox::Language::Bash,
+            code,
+            stdin: None,
+            env,
+            cwd: args
+                .get("working_dir")
+                .and_then(Value::as_str)
+                .map(str::to_owned),
+            timeout_seconds: Some(
+                args.get("timeout_secs")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(self.timeout_secs)
+                    .min(self.timeout_secs),
+            ),
+            mode: crate::sandbox::ExecutionMode::Ephemeral,
+        })
+    }
+
     fn source(&self) -> ToolSource {
         ToolSource::BuiltIn
     }
@@ -79,6 +123,32 @@ impl NativeSkill for TerminalExecTool {
     }
 
     async fn execute(&self, args: Value) -> anyhow::Result<Value> {
+        self.execute_in_scope(args, None).await
+    }
+
+    async fn execute_with_context(
+        &self,
+        args: Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<Value> {
+        // A scope owns cleanup, not authorization. Delegated direct execution
+        // remains denied by execute_native until its permission port exists.
+        anyhow::ensure!(
+            context.terminal_scope.is_some()
+                || (context.verified_owner.is_none() && context.thread_policy.is_none()),
+            "Verified terminal execution requires a host-owned process scope"
+        );
+        self.execute_in_scope(args, context.terminal_scope.as_ref())
+            .await
+    }
+}
+
+impl TerminalExecTool {
+    async fn execute_in_scope(
+        &self,
+        args: Value,
+        scope: Option<&super::terminal_process::TerminalRun>,
+    ) -> anyhow::Result<Value> {
         let command = match args.get("command").and_then(Value::as_str) {
             Some(c) => c.to_string(),
             None => {
@@ -88,7 +158,8 @@ impl NativeSkill for TerminalExecTool {
         let cmd_timeout = args
             .get("timeout_secs")
             .and_then(Value::as_u64)
-            .unwrap_or(self.timeout_secs);
+            .unwrap_or(self.timeout_secs)
+            .min(self.timeout_secs);
         if self.use_sandbox {
             return Ok(json!({
                 "ok": false,
@@ -110,6 +181,25 @@ impl NativeSkill for TerminalExecTool {
         }
         cmd.stdout(std::process::Stdio::piped());
         cmd.stderr(std::process::Stdio::piped());
+        cmd.kill_on_drop(true);
+        if let Some(scope) = scope {
+            return match scope.execute(cmd, Duration::from_secs(cmd_timeout)).await {
+                Ok(output) => Ok(json!({
+                    "ok": output.status.success(),
+                    "exit_code": output.status.code().unwrap_or(-1),
+                    "stdout": output.stdout,
+                    "stderr": output.stderr,
+                    "stdout_bytes": output.stdout_bytes,
+                    "stderr_bytes": output.stderr_bytes,
+                    "command": command
+                })),
+                Err(error) => {
+                    Ok(json!({"ok": false, "error": error.to_string(), "command": command}))
+                }
+            };
+        }
+        // Compatibility for standalone tool callers outside RunManager. The
+        // drop guard requests termination, but only a host scope proves joining.
         let result = timeout(Duration::from_secs(cmd_timeout), async {
             match cmd.output().await {
                 Ok(output) => {

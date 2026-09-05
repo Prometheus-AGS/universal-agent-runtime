@@ -52,7 +52,7 @@ export function RunTracePanel({
   ), [trace.filters, trace.projection, trace.selectNode, trace.toggleExpanded, trace.toggleFilter]);
 
   return (
-    <section aria-label={`Trace for run ${context.runId}`} className="grid min-h-0 flex-1 gap-3 overflow-auto bg-background p-3 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <section aria-label={`Trace for run ${context.runId}`} className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-auto bg-background p-3 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex min-h-[32rem] min-w-0 flex-col gap-3 rounded-xl bg-surface p-3">
         {trace.network.snapshot.status === "loading" && (
           <p className="rounded-lg bg-card px-3 py-2 text-sm text-fg-sub" role="status">

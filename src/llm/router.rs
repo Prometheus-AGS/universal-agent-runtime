@@ -37,6 +37,19 @@ impl ModelRouter {
     /// Returns the fully-qualified model string (`"provider/model"`) or `None`
     /// if no configured provider has a model matching the requirements.
     pub async fn route(&self, requirements: &RouteRequirements) -> Option<String> {
+        self.route_with_preferred_model(requirements, None).await
+    }
+
+    /// Select a healthy model while preferring one exact fully-qualified model.
+    ///
+    /// The exact preference is applied only after the normal capability and
+    /// health filters, so a model in provider cooldown can never win merely
+    /// because policy selected it before routing.
+    pub async fn route_with_preferred_model(
+        &self,
+        requirements: &RouteRequirements,
+        preferred_model: Option<&str>,
+    ) -> Option<String> {
         let filter = CapabilityFilter {
             needs_tools: requirements.needs_tools,
             needs_reasoning: requirements.needs_reasoning,
@@ -130,6 +143,17 @@ impl ModelRouter {
                     .as_ref()
                     .is_some_and(|cost| cost.input <= max_cost)
             });
+        }
+
+        if let Some(preferred) = preferred_model {
+            let preferred_match = candidates
+                .iter()
+                .find(|(provider, model)| format!("{}/{}", provider.id, model.id) == preferred)
+                .map(|(provider, model)| format!("{}/{}", provider.id, model.id));
+
+            if preferred_match.is_some() {
+                return preferred_match;
+            }
         }
 
         // Prefer the requested provider if specified

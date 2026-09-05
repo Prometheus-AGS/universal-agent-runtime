@@ -45,3 +45,6 @@ export type {
 } from "@prometheus-ags/prometheus-entity-management";
 
 export * from "./session-configuration";
+export * from "./presentations";
+export * from "./presentation-assignments";
+export * from "./presentation-provenance";

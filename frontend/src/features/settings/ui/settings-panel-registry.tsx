@@ -25,8 +25,10 @@ import {
 } from "./panels/governance-settings-panels";
 import { MemoryPanel } from "./panels/memory-settings-panel";
 import { ResiliencePanel } from "./panels/resilience-settings-panel";
+import { GlobalPresentationAssignment } from "@/features/presentations";
 
 export const PANEL_MAP: Record<string, () => ReactNode> = {
+  presentation_policy: () => <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6"><div className="max-w-3xl"><GlobalPresentationAssignment /></div></div>,
   llm: () => (
     <GenericSchemaPanel
       namespace="llm"
@@ -129,4 +131,3 @@ export const PANEL_MAP: Record<string, () => ReactNode> = {
   prompt_caching: () => <PromptCachingPanel />,
   user_settings: () => <UserSettingsPanel />,
 };
-

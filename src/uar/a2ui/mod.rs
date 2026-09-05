@@ -13,6 +13,8 @@
 
 pub mod design_systems;
 pub(crate) mod policy_surface;
+pub mod presentation_selection;
+pub mod presentations;
 pub(crate) mod protocol;
 pub mod realtime;
 pub mod registry;

@@ -27,6 +27,7 @@ import {
   type SystemDefaultModelStatus,
 } from "@/features/providers";
 import { useAgentsAdmin } from "../model/use-agents-admin";
+import { AgentPresentationAssignment } from "@/features/presentations";
 import type { UarAgent } from "@/types";
 
 // ── Agent Memory Section ───────────────────────────────────────────────────
@@ -477,6 +478,7 @@ export const AgentsPage: FC = () => {
 
               {/* Memory section */}
               <AgentMemorySection agent={selected} onPatch={admin.patch} />
+              <div className="mt-6"><AgentPresentationAssignment agentId={selected.id} /></div>
             </div>
           </ScrollArea>
         ) : (

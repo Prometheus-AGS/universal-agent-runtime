@@ -70,14 +70,18 @@ impl GraphNode for ToolNode {
             "ToolNode executing"
         );
 
-        // Read arguments from state (default to empty object if absent)
-        let args: serde_json::Value = state
-            .get::<serde_json::Value>(&self.args_key)
-            .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
+        let Some(host) = &ctx.tool_host else {
+            return NodeResult::Error(state, "Graph tool host is unavailable".to_owned());
+        };
+        let Some(args) = state.get::<serde_json::Value>(&self.args_key) else {
+            return NodeResult::Error(state, "Graph tool arguments are missing".to_owned());
+        };
 
-        match ctx.mcp.call_namespaced_tool(&self.tool_name, args).await {
-            Ok(result) => {
-                let content = serde_json::to_string(&result).unwrap_or_default();
+        match host
+            .execute(&ctx.run_id, state.iteration, self.tool_name.clone(), args)
+            .await
+        {
+            Ok(content) => {
                 state.set(&self.output_key, &content);
                 NodeResult::Continue(state)
             }

@@ -148,6 +148,16 @@ impl NativeSkill for A2uiRenderSkill {
         ToolSource::BuiltIn
     }
 
+    fn check_thread_policy(
+        &self,
+        _policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        // This implementation only validates and returns declarative messages.
+        // The governed host publishes them under its actual run ID; arguments
+        // cannot select another run or execute the actions they describe.
+        Ok(())
+    }
+
     async fn execute(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
         let messages = args
             .get("messages")
@@ -160,9 +170,9 @@ impl NativeSkill for A2uiRenderSkill {
             parse_message(message.clone()).map_err(anyhow::Error::msg)?;
         }
         Ok(serde_json::json!({
-            "status": "rendered",
+            "status": "prepared",
             "terminal": true,
-            "instruction": "The interactive surface is rendered. Do not call a2ui_render again for this request; briefly confirm completion to the user.",
+            "instruction": "The interactive surface messages are prepared for host publication. Do not call a2ui_render again for this request; describe the content without claiming client display.",
             "a2uiMessages": messages
         }))
     }
@@ -179,7 +189,7 @@ mod tests {
             "createSurface": {"surfaceId": "demo", "catalogId": "urn:uar:a2ui:catalog:1"}
         }]});
         let result = A2uiRenderSkill.execute(safe).await.expect("safe surface");
-        assert_eq!(result["status"], "rendered");
+        assert_eq!(result["status"], "prepared");
         assert_eq!(result["terminal"], true);
         assert!(
             result["instruction"]

@@ -101,6 +101,60 @@ pub fn orchestrator_agent() -> AgentArtifact {
         "Use rust-reviewer for Rust implementation and safety review; use general-purpose for other work."
             .to_string(),
     ];
+    // A wildcard makes tools eligible; it is not explicit spawn authorization.
+    // This artifact's declared purpose is delegation to its graph specialists.
+    agent.policy.tools.allow.push("spawn_agent".to_string());
+    agent
+}
+
+/// Built-in artifact for the default graph's general-purpose child.
+pub(crate) fn general_purpose_agent() -> AgentArtifact {
+    let mut agent = default_agent();
+    agent.id = "general-purpose".to_string();
+    agent.metadata.title = "General-purpose specialist".to_string();
+    agent.metadata.description =
+        "Executes a delegated general-purpose task through the shared turn kernel.".to_string();
+    agent.metadata.tags = vec!["general".to_string(), "specialist".to_string()];
+    agent.prompt.instructions = vec![
+        "Answer the delegated task using concrete evidence. Distinguish observations from assumptions.".to_string(),
+    ];
+    agent
+}
+
+/// Built-in artifact for the default graph's Rust-review child.
+pub(crate) fn rust_reviewer_agent() -> AgentArtifact {
+    let mut agent = general_purpose_agent();
+    agent.id = "rust-reviewer".to_string();
+    agent.metadata.title = "Rust reviewer".to_string();
+    agent.metadata.description =
+        "Reviews Rust implementation, correctness and safety with source evidence.".to_string();
+    agent.metadata.tags = vec![
+        "rust".to_string(),
+        "review".to_string(),
+        "specialist".to_string(),
+    ];
+    agent.prompt.instructions.push(
+        "Review Rust correctness, ownership, concurrency and safety. Cite concrete source evidence for findings and state which behavior remains unverified.".to_string(),
+    );
+    agent
+}
+
+/// Compiler endpoint artifact, using the existing governed compiler tools.
+pub(crate) fn compiler_agent() -> AgentArtifact {
+    let mut agent = default_agent();
+    agent.id = "compiler-agent".to_owned();
+    agent.metadata.title = "UAR Compiler Agent".to_owned();
+    agent.metadata.description =
+        "Builds and compiles UAR-AGENT-MD specifications through governed compiler tools."
+            .to_owned();
+    agent.metadata.tags = vec!["compiler".to_owned()];
+    agent.policy.tools.allow = vec![
+        "uar.compile".to_owned(),
+        "uar.session.update_section".to_owned(),
+        "uar.session.check_completeness".to_owned(),
+        "uar.session.compile".to_owned(),
+    ];
+    agent.prompt.system = "You are the UAR Compiler Agent. Help the user build a UAR-AGENT-MD specification. Use uar.compile for a complete document; use the session tools to assemble and check an incomplete document. Report actual compiler results and errors. Never claim a specification is compiled or signed without a successful compiler result.".to_owned();
     agent
 }
 
@@ -123,11 +177,11 @@ pub(crate) fn orchestrator_graph() -> crate::uar::runtime::graph::AgentGraph {
         .build()
 }
 
-/// Seeds the two built-in agents into the persistence layer at startup.
+/// Seeds built-in agents into the persistence layer at startup.
 ///
-/// This is an idempotent upsert: if a row with the same `id` already exists,
-/// the definition is overwritten so system updates (e.g. prompt improvements)
-/// are always applied. Because the agents are now persisted, the realtime
+/// The assistant and orchestrator are refreshed by idempotent upserts so system
+/// updates apply. Specialist defaults are inserted only when absent, preserving
+/// operator-registered artifacts under those names. Because agents are persisted, the realtime
 /// entity bus will re-emit them after any `Agent` ChangeSet, making them
 /// reliably visible in the admin list and chat selector without relying on the
 /// `ensure_builtin_agent` shim.
@@ -145,6 +199,17 @@ pub async fn seed_builtin_agents(
             Err(e) => {
                 tracing::warn!(agent_id = %id, error = ?e, "Failed to seed built-in agent — continuing");
             }
+        }
+    }
+    // These names previously existed only in graph routing. Preserve any
+    // operator-registered specialist that already owns one of the IDs.
+    for agent in [
+        general_purpose_agent(),
+        rust_reviewer_agent(),
+        compiler_agent(),
+    ] {
+        if persistence.load_agent(&agent.id).await?.is_none() {
+            persistence.save_agent(&agent).await?;
         }
     }
     Ok(())

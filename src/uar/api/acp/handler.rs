@@ -5,6 +5,7 @@
 
 use super::types::*;
 use crate::AppState;
+use crate::uar::security::claims::UserContext;
 use chrono::Utc;
 use serde_json::{Value, json};
 use std::collections::HashMap;
@@ -67,8 +68,9 @@ pub async fn dispatch(
     req: JsonRpcRequest,
     state: Arc<AppState>,
     sessions: Arc<AcpSessionStore>,
-    owner_id: &str,
+    user: &UserContext,
 ) -> JsonRpcResponse {
+    let owner_id = user.user_id.as_str();
     match req.method.as_str() {
         "agents/list" => handle_agents_list(req.id, &state).await,
         "agents/get" => handle_agents_get(req.id, req.params, &state).await,
@@ -77,7 +79,7 @@ pub async fn dispatch(
         }
         "sessions/get" => handle_sessions_get(req.id, req.params, &sessions, owner_id).await,
         "sessions/delete" => handle_sessions_delete(req.id, req.params, &sessions, owner_id).await,
-        "runs/create" => handle_runs_create(req.id, req.params, &state, &sessions, owner_id).await,
+        "runs/create" => handle_runs_create(req.id, req.params, &state, &sessions, user).await,
         "runs/get" => handle_runs_get(req.id, req.params, &state, owner_id).await,
         _ => JsonRpcResponse::err(
             req.id,
@@ -237,8 +239,9 @@ async fn handle_runs_create(
     params: Option<Value>,
     state: &AppState,
     sessions: &AcpSessionStore,
-    owner_id: &str,
+    user: &UserContext,
 ) -> JsonRpcResponse {
+    let owner_id = user.user_id.as_str();
     let params = match params {
         Some(p) => p,
         None => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, "Missing params"),
@@ -250,6 +253,19 @@ async fn handle_runs_create(
     let input = match params.get("input").and_then(Value::as_str) {
         Some(s) => s.to_string(),
         None => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, "Missing input"),
+    };
+    let presentation_negotiation = match serde_json::from_value::<
+        crate::uar::a2ui::presentation_selection::PresentationNegotiation,
+    >(params.clone())
+    {
+        Ok(negotiation) => negotiation,
+        Err(_) => {
+            return JsonRpcResponse::err(
+                id,
+                RPC_INVALID_PARAMS,
+                "Invalid Presentation negotiation",
+            );
+        }
     };
 
     // Verify session exists
@@ -263,16 +279,15 @@ async fn handle_runs_create(
 
     // Delegate to RunManager using the default agent
     let artifact = crate::uar::defaults::default_agent();
-    let run_id = state
-        .run_manager
-        .start_run(
-            artifact,
-            input,
-            Some(session_id),
-            Some(owner_id.to_owned()),
-            vec![],
-        )
-        .await;
+    let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(artifact, input)
+        .with_user_context(user)
+    {
+        Ok(request) => request,
+        Err(_) => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, "Invalid run principal"),
+    };
+    request.session_id = Some(session_id);
+    request.presentation_negotiation = presentation_negotiation;
+    let run_id = state.run_manager.execute_request(request).await;
 
     JsonRpcResponse::ok(
         id,

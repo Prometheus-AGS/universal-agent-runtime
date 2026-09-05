@@ -75,6 +75,9 @@ impl SaveMcpServerRequest {
             }
             other => return Err(format!("unsupported MCP transport '{other}'")),
         };
+        entry
+            .validate_sandbox_policy(&name)
+            .map_err(|error| error.to_string())?;
         Ok((
             name,
             StoredMcpServer {
@@ -215,6 +218,7 @@ async fn save_server(
     } else {
         state.mcp.remove_server(&name);
     }
+    state.run_manager.invalidate_mcp_server(&name).await;
     let mut servers = stored_servers(&state).await;
     servers.insert(name.clone(), stored.clone());
     if let Err(error) = persist(&state, &servers).await {
@@ -232,6 +236,7 @@ async fn delete_server(
     Path(name): Path<String>,
 ) -> impl IntoResponse {
     state.mcp.remove_server(&name);
+    state.run_manager.invalidate_mcp_server(&name).await;
     let mut servers = stored_servers(&state).await;
     let removed = servers.remove(&name).is_some();
     if let Err(error) = persist(&state, &servers).await {

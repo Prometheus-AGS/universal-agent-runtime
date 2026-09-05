@@ -1,3 +1,5 @@
+import type { PresentationSelection } from "../presentation-assignments/contracts";
+
 export const CONFIGURED_PROVIDER_ENTITY = "ConfiguredProvider" as const;
 export const CONFIGURED_MODEL_ENTITY = "ConfiguredModel" as const;
 export const AGENT_SESSION_ENTITY = "AgentSession" as const;
@@ -14,6 +16,8 @@ export interface AgentSessionConfig extends Record<string, unknown> {
   skills: string[] | null;
   knowledge_bases: string[] | null;
   mcp_servers: string[] | null;
+  /** Null/omitted on write preserves host intent. Explicit Inherit resets it. */
+  presentations?: PresentationSelection | null;
   tool_approval: ToolApproval | null;
   /** Missing legacy values decode to null (Inherit). */
   prompt_caching_enabled: boolean | null;
@@ -52,6 +56,12 @@ export interface AgentSessionDraft extends AgentSessionConfig {
   dirty_fields: AgentSessionField[];
   save_status: AgentSessionDraftStatus;
   error: string | null;
+  /** Inactive IDs are draft memory, never serialized outside Selected mode. */
+  presentation_retained_ids?: string[];
+  presentation_owner_id?: string | null;
+  presentation_admission_id?: string;
+  presentation_error?: string | null;
+  save_uncertain?: boolean;
 }
 
 /** One provider configured for this UAR instance. */

@@ -1,104 +1,91 @@
-//! [`ractor::Actor`] implementation that wraps a UAR agent.
-//!
-//! Each `AgentActor` represents a single agent running as an independently
-//! addressable actor. It can receive user prompts, tool results, and
-//! collaboration requests from other agents.
+//! An actor mailbox over the shared thread/run host. Actors do not construct
+//! an LLM driver, orchestrator, tool registry, or private conversation history.
 
 use std::sync::Arc;
 
 use ractor::{Actor, ActorProcessingErr, ActorRef};
-use tracing::{error, info};
+use tokio_util::sync::CancellationToken;
 
-use crate::config::LlmConfig;
-use crate::llm::{Message, MessageContent, MessageRole, Orchestrator};
-use crate::mcp::registry::McpRegistry;
-use crate::uar::runtime::native_skill::NativeSkillRegistry;
+use crate::uar::runtime::thread::{AgentThreadResult, actor_host::ActorThreadSession};
 
 use super::messages::{ActorStatus, AgentMessage, AgentReply};
 
-// ---------------------------------------------------------------------------
-// Actor state
-// ---------------------------------------------------------------------------
-
-/// Internal mutable state held by a running agent actor.
-#[derive(Debug)]
+/// Mailbox-owned state. The host owns thread persistence and run execution.
 pub struct AgentActorState {
-    /// Unique agent identifier (matches the agent artifact ID).
     pub agent_id: String,
-    /// Current lifecycle status.
     pub status: ActorStatus,
-    /// Conversation history for this actor's session.
-    pub history: Vec<Message>,
-    /// LLM orchestrator for processing prompts.
-    pub orchestrator: Arc<Orchestrator>,
+    session: Arc<tokio::sync::Mutex<ActorThreadSession>>,
+    cancellation: CancellationToken,
 }
 
-// ---------------------------------------------------------------------------
-// Actor definition
-// ---------------------------------------------------------------------------
+impl std::fmt::Debug for AgentActorState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AgentActorState")
+            .field("agent_id", &self.agent_id)
+            .field("status", &self.status)
+            .finish_non_exhaustive()
+    }
+}
 
-/// An agent running as an actor.
-///
-/// Spawned by [`super::system::ActorCollaboration`], each `AgentActor` wraps
-/// an orchestrator and holds its own conversation history so it can
-/// independently process messages.
+/// Serialized mailbox adapter, not an alternative agent execution kernel.
 #[derive(Debug)]
 pub struct AgentActor;
 
-/// Arguments passed to [`AgentActor::pre_start`] when spawning.
-#[derive(Debug)]
+/// Trusted-host arguments. Identity and artifact are resolved before spawning.
 pub struct AgentActorArgs {
-    /// Agent artifact ID.
     pub agent_id: String,
-    /// LLM config for this agent's orchestrator.
-    pub llm_config: LlmConfig,
-    /// MCP registry shared across the runtime.
-    pub mcp: Arc<McpRegistry>,
-    /// Native skill registry shared across the runtime.
-    pub native_skills: Arc<NativeSkillRegistry>,
-    /// Optional system prompt to seed the conversation.
-    pub system_prompt: Option<String>,
+    pub cancellation: CancellationToken,
+    pub(crate) session: Arc<tokio::sync::Mutex<ActorThreadSession>>,
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+impl std::fmt::Debug for AgentActorArgs {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AgentActorArgs")
+            .field("agent_id", &self.agent_id)
+            .finish_non_exhaustive()
+    }
+}
 
-/// Collect streamed events into a single response string.
-async fn collect_stream_response(
-    stream: impl futures::Stream<Item = crate::normalized::NormalizedEvent> + Send,
-    agent_id: &str,
-) -> (String, bool) {
-    use crate::normalized::NormalizedEvent;
-    use futures::StreamExt;
-
-    futures::pin_mut!(stream);
-
-    let mut response_text = String::new();
-    let mut success = true;
-
-    while let Some(event) = stream.next().await {
-        match event {
-            NormalizedEvent::MessageDelta { text } => {
-                response_text.push_str(&text);
+impl AgentActorState {
+    async fn execute(&mut self, content: String) -> AgentReply {
+        if self.cancellation.is_cancelled() {
+            return AgentReply {
+                content: "Actor has been stopped".into(),
+                success: false,
+                metadata: serde_json::json!({"code": "actor_stopped"}),
+            };
+        }
+        match self.session.lock().await.execute(content).await {
+            Ok(record) => {
+                let metadata = serde_json::json!({
+                    "thread_id": record.thread.thread_id,
+                    "root_run_id": record.thread.root_run_id,
+                    "run_id": record.thread.run_id,
+                    "status": record.thread.status,
+                });
+                let (content, success) = match record.thread.result {
+                    Some(AgentThreadResult::Completed { output }) => (output, true),
+                    Some(AgentThreadResult::Failed { message, .. }) => (message, false),
+                    Some(AgentThreadResult::Cancelled) => ("Run cancelled".into(), false),
+                    None => ("Thread returned without a terminal result".into(), false),
+                };
+                AgentReply {
+                    content,
+                    success,
+                    metadata,
+                }
             }
-            NormalizedEvent::Error { message: err, .. } => {
-                error!(agent_id = %agent_id, error = %err, "LLM error");
-                response_text = err;
-                success = false;
-                break;
+            Err(error) => {
+                tracing::error!(agent_id = %self.agent_id, error = %error, "Actor host execution failed");
+                AgentReply {
+                    content: "Actor host execution failed".into(),
+                    success: false,
+                    metadata: serde_json::json!({"code": "actor_host_failed"}),
+                }
             }
-            NormalizedEvent::Done => break,
-            _ => {} // Ignore other events
         }
     }
-
-    (response_text, success)
 }
-
-// ---------------------------------------------------------------------------
-// Actor trait implementation
-// ---------------------------------------------------------------------------
 
 impl Actor for AgentActor {
     type Msg = AgentMessage;
@@ -110,29 +97,13 @@ impl Actor for AgentActor {
         _myself: ActorRef<Self::Msg>,
         args: Self::Arguments,
     ) -> Result<Self::State, ActorProcessingErr> {
-        info!(agent_id = %args.agent_id, "Agent actor starting");
-
-        let orchestrator = Arc::new(Orchestrator::new(
-            args.llm_config,
-            args.mcp,
-            args.native_skills,
-        )?);
-
-        let mut history = Vec::new();
-        if let Some(system_prompt) = args.system_prompt {
-            history.push(Message {
-                role: MessageRole::System,
-                content: MessageContent::text(system_prompt),
-                tool_call_id: None,
-                tool_calls: None,
-            });
-        }
-
+        let agent_id = args.agent_id;
+        let session = args.session;
         Ok(AgentActorState {
-            agent_id: args.agent_id,
+            agent_id,
             status: ActorStatus::Running,
-            history,
-            orchestrator,
+            session,
+            cancellation: args.cancellation,
         })
     }
 
@@ -143,126 +114,54 @@ impl Actor for AgentActor {
         state: &mut Self::State,
     ) -> Result<(), ActorProcessingErr> {
         match message {
-            AgentMessage::UserPrompt { content, reply } => {
-                info!(agent_id = %state.agent_id, "Processing user prompt");
-
-                // Add the user message to history
-                state.history.push(Message {
-                    role: MessageRole::User,
-                    content: MessageContent::text(content),
-                    tool_call_id: None,
-                    tool_calls: None,
-                });
-
-                // Use the orchestrator to get a response
-                let (response_text, success) = match state
-                    .orchestrator
-                    .chat_with_history(state.history.clone())
-                    .await
-                {
-                    Ok(stream) => collect_stream_response(stream, &state.agent_id).await,
-                    Err(e) => {
-                        error!(agent_id = %state.agent_id, error = %e, "Orchestrator error");
-                        (format!("Error: {e}"), false)
-                    }
-                };
-
-                // Add assistant response to history
-                if success {
-                    state.history.push(Message {
-                        role: MessageRole::Assistant,
-                        content: MessageContent::text(&response_text),
-                        tool_call_id: None,
-                        tool_calls: None,
-                    });
-                }
-
-                // Reply if a channel was provided
-                if let Some(reply_tx) = reply {
-                    let _ = reply_tx.send(AgentReply {
-                        content: response_text,
-                        success,
-                        metadata: serde_json::json!({}),
-                    });
-                }
-            }
-
-            AgentMessage::Collaborate {
-                from_agent_id,
-                task,
+            AgentMessage::UserRun {
+                run_id,
+                content,
+                artifacts,
                 reply,
             } => {
-                info!(
-                    agent_id = %state.agent_id,
-                    from = %from_agent_id,
-                    "Received collaboration request"
-                );
-
-                let collab_prompt =
-                    format!("[Collaboration request from agent {from_agent_id}]: {task}");
-
-                state.history.push(Message {
-                    role: MessageRole::User,
-                    content: MessageContent::text(collab_prompt),
-                    tool_call_id: None,
-                    tool_calls: None,
-                });
-
-                let (response_text, success) = match state
-                    .orchestrator
-                    .chat_with_history(state.history.clone())
-                    .await
-                {
-                    Ok(stream) => collect_stream_response(stream, &state.agent_id).await,
-                    Err(e) => (format!("Error: {e}"), false),
+                let result = if state.cancellation.is_cancelled() {
+                    Err(super::messages::ActorRunError::Stopped)
+                } else {
+                    state
+                        .session
+                        .lock()
+                        .await
+                        .execute_named(content, run_id, Some(artifacts.clone()))
+                        .await
+                        .map_err(super::messages::ActorRunError::Host)
                 };
-
-                if success {
-                    state.history.push(Message {
-                        role: MessageRole::Assistant,
-                        content: MessageContent::text(&response_text),
-                        tool_call_id: None,
-                        tool_calls: None,
-                    });
+                let result = artifacts
+                    .close()
+                    .map_err(super::messages::ActorRunError::Host)
+                    .and(result);
+                let _ = reply.send(result);
+            }
+            AgentMessage::UserPrompt { content, reply } => {
+                let result = state.execute(content).await;
+                if let Some(reply) = reply {
+                    let _ = reply.send(result);
                 }
-
+            }
+            AgentMessage::Collaborate { reply, .. } => {
+                // A mailbox message contains no verified root capability. The
+                // authenticated collaboration host now enters ThreadService.
                 let _ = reply.send(AgentReply {
-                    content: response_text,
-                    success,
-                    metadata: serde_json::json!({
-                        "collaboration_from": from_agent_id,
-                    }),
+                    content: "Collaboration requires the verified root thread host".into(),
+                    success: false,
+                    metadata: serde_json::json!({"code": "collaboration_host_required"}),
                 });
             }
-
-            AgentMessage::ToolResult {
-                tool_call_id,
-                content,
-                success: _,
-            } => {
-                info!(
-                    agent_id = %state.agent_id,
-                    tool_call_id = %tool_call_id,
-                    "Received tool result"
-                );
-
-                state.history.push(Message {
-                    role: MessageRole::Tool,
-                    content: MessageContent::text(
-                        serde_json::to_string(&content).unwrap_or_default(),
-                    ),
-                    tool_call_id: Some(tool_call_id),
-                    tool_calls: None,
-                });
+            AgentMessage::ToolResult { .. } => {
+                // Only the governed run loop can pair and ingest tool results.
+                return Err("Actor mailboxes do not accept standalone tool results".into());
             }
-
             AgentMessage::Shutdown => {
-                info!(agent_id = %state.agent_id, "Agent actor shutting down");
+                state.cancellation.cancel();
                 state.status = ActorStatus::Stopping;
                 myself.stop(None);
             }
         }
-
         Ok(())
     }
 
@@ -271,7 +170,11 @@ impl Actor for AgentActor {
         _myself: ActorRef<Self::Msg>,
         state: &mut Self::State,
     ) -> Result<(), ActorProcessingErr> {
-        info!(agent_id = %state.agent_id, "Agent actor stopped");
+        state.cancellation.cancel();
+        if let Err(error) = state.session.lock().await.settle_uncertain().await {
+            tracing::error!(agent_id = %state.agent_id, error = %error,
+                "Actor stopped with an unresolved thread transition");
+        }
         state.status = ActorStatus::Stopped;
         Ok(())
     }

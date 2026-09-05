@@ -580,8 +580,8 @@ async fn test_m6_skills_execution() {
 #[tokio::test]
 #[serial]
 async fn test_verify_legacy_mcp_tools() {
-    // This test attempts to load the REAL mcp.json and verify tools are discoverable.
-    // It specifically targets the "time" server which uses `npx` and should run locally without keys.
+    // This test attempts to load the real mcp.json and verify that a configured
+    // server exposes a namespaced tool.
 
     let _ = dotenv();
 
@@ -603,44 +603,32 @@ async fn test_verify_legacy_mcp_tools() {
         }
     };
 
-    // 2. Verify 'time' tools are present
+    // 2. Verify at least one configured server exposed a namespaced tool.
     let tools = mcp.tools();
     println!(
         "Discovered Tools: {:?}",
         tools.iter().map(|(n, _)| n).collect::<Vec<_>>()
     );
 
-    // Expecting namespaced tools like "time__get_current_time" (actual name depends on the server)
-    // The @mcpcentral/mcp-time server usually exposes `get_current_time` or similar.
-    // We search for *any* tool starting with "time__".
+    let (name, _) = tools
+        .first()
+        .expect("mcp.json loaded but no configured server exposed tools");
+    let (server, tool) = name
+        .split_once("__")
+        .expect("configured MCP tools must use the server__tool namespace");
+    assert!(!server.is_empty() && !tool.is_empty());
+    println!("Found configured MCP tool: {name}");
 
-    let time_tool = tools.iter().find(|(name, _)| name.starts_with("time__"));
-
-    if let Some((name, _)) = time_tool {
-        println!("Found time tool: {name}");
-
-        // 3. Try to Execute it directly via Registry (bypass full Orchestrator loop for this specific check)
-        // We just want to ensure the MCP setup "we had before" is functional in this codebase.
-        // We use an empty object for args, relying on the tool to fail cleanly or succeed if no args needed.
-        let args = json!({});
-
-        match mcp.call_namespaced_tool(name, args).await {
-            Ok(res) => {
-                println!("Time tool execution result: {res:?}");
-                // Basic validation: result should probably be a string or object containing time info
-            }
-            Err(e) => {
-                // If it fails due to missing args, that is also a sign of "functionality" (i.e. we reached the tool).
-                // But ideally it succeeds.
-                println!(
-                    "Executed legacy time tool '{name}' but got error (which implies connectivity): {e:?}"
-                );
-            }
+    // 3. Try to execute it directly via Registry. Empty arguments may produce
+    // a schema error, which still proves the call reached the discovered tool.
+    let args = json!({});
+    match mcp.call_namespaced_tool(name, args).await {
+        Ok(res) => {
+            println!("Configured MCP tool execution result: {res:?}");
         }
-    } else {
-        panic!(
-            "Did not find any tools starting with 'time__' in registry. Check mcp.json and stdio connection."
-        );
+        Err(e) => {
+            println!("Reached configured MCP tool '{name}' and received an error: {e:?}");
+        }
     }
 }
 

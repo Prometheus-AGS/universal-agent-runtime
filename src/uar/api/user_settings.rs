@@ -235,6 +235,7 @@ mod tests {
                 name: None,
                 roles: None,
                 tenant_id: tenant.map(str::to_owned),
+                uar_instance_id: None,
                 exp: usize::MAX,
             },
         }

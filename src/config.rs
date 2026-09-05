@@ -171,10 +171,64 @@ pub enum EvalAction {
     },
 }
 
+/// Skill matching suggests catalog entries or activates legacy overlays.
+#[derive(
+    Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq, schemars::JsonSchema,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum SkillActivationMode {
+    #[default]
+    LegacyOverlay,
+    Catalog,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct HarnessConfig {
+    #[serde(default)]
+    pub mode: HarnessMode,
+    #[serde(default)]
+    pub skill_activation_mode: SkillActivationMode,
+    #[serde(default)]
+    pub skill_reattachment: SkillReattachmentBudget,
+}
+
+/// Typed assembly is the default after the recorded parity-and-smoke gate.
+#[derive(
+    Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq, schemars::JsonSchema,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum HarnessMode {
+    /// Deprecated rollback path, retained for one minor release after the flip.
+    Legacy,
+    Shadow,
+    #[default]
+    Typed,
+}
+
+/// Model-token ceilings for re-attaching active bodies after compaction.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(default)]
+pub struct SkillReattachmentBudget {
+    pub per_skill_tokens: usize,
+    pub total_tokens: usize,
+}
+
+impl Default for SkillReattachmentBudget {
+    fn default() -> Self {
+        Self {
+            per_skill_tokens: 5_000,
+            total_tokens: 25_000,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct AppConfig {
     pub server: ServerConfig,
     pub security: SecurityConfig,
+    /// Authenticated UAR peers eligible for governed outbound A2A delegation.
+    #[serde(default)]
+    pub a2a: A2aConfig,
     pub resilience: ResilienceConfig,
     pub persistence: PersistenceConfig,
     #[serde(default)]
@@ -195,6 +249,15 @@ pub struct AppConfig {
     /// Intent classifier configuration for skill matching
     #[serde(default)]
     pub intent_classifier: ClassifierConfig,
+    /// Progressive runtime migration controls.
+    #[serde(default)]
+    pub harness: HarnessConfig,
+    /// Host-only project instruction discovery; no workspace is trusted by default.
+    #[serde(default)]
+    pub project_instructions: crate::uar::runtime::project_instructions::ProjectInstructionsConfig,
+    /// World-state time precision; defaults to one minute.
+    #[serde(default)]
+    pub world_state: crate::uar::runtime::world_state::sections::WorldStateConfig,
     /// LLM configuration (liter-llm unified client)
     #[serde(default)]
     pub llm: LlmConfig,
@@ -230,6 +293,111 @@ pub struct AppConfig {
     /// Can be overridden per-agent via agent policy extensions.
     #[serde(default)]
     pub context_strategy: crate::uar::context::ContextStrategy,
+}
+
+/// Host-owned A2A peer trust. Graphs and agent artifacts can select only an
+/// exact endpoint listed here; credentials never enter graph or artifact data.
+#[derive(Clone, Default, Deserialize, schemars::JsonSchema)]
+pub struct A2aConfig {
+    /// Stable identity this instance presents in the UAR delegation contract.
+    #[serde(default)]
+    pub instance_id: String,
+    /// Exact authenticated agent endpoints accepted for governed delegation.
+    #[serde(default)]
+    pub trusted_peers: Vec<A2aPeerConfig>,
+}
+
+impl std::fmt::Debug for A2aConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("A2aConfig")
+            .field("instance_id", &self.instance_id)
+            .field("trusted_peers", &self.trusted_peers)
+            .finish()
+    }
+}
+
+/// One exact remote UAR agent binding. Reusing a token for several agents is
+/// explicit: each endpoint still needs its own entry and artifact dependency.
+#[derive(Clone, Deserialize, schemars::JsonSchema)]
+pub struct A2aPeerConfig {
+    pub instance_id: String,
+    pub agent_id: String,
+    pub endpoint: String,
+    #[schemars(with = "String")]
+    pub bearer_token: secrecy::SecretString,
+}
+
+impl std::fmt::Debug for A2aPeerConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("A2aPeerConfig")
+            .field("instance_id", &self.instance_id)
+            .field("agent_id", &self.agent_id)
+            .field("endpoint", &self.endpoint)
+            .field("bearer_token", &REDACTED)
+            .finish()
+    }
+}
+
+impl A2aConfig {
+    fn validate(&self) -> Result<(), config::ConfigError> {
+        use secrecy::ExposeSecret;
+        use std::collections::BTreeSet;
+
+        if self.trusted_peers.is_empty() {
+            return Ok(());
+        }
+        if self.instance_id.trim().is_empty() || self.instance_id != self.instance_id.trim() {
+            return Err(config::ConfigError::Message(
+                "a2a.instance_id must be non-empty when trusted peers are configured".to_owned(),
+            ));
+        }
+        let mut endpoints = BTreeSet::new();
+        for peer in &self.trusted_peers {
+            if peer.instance_id.trim().is_empty()
+                || peer.agent_id.trim().is_empty()
+                || peer.instance_id != peer.instance_id.trim()
+                || peer.agent_id != peer.agent_id.trim()
+                || peer.bearer_token.expose_secret().is_empty()
+            {
+                return Err(config::ConfigError::Message(
+                    "each trusted A2A peer requires non-empty instance_id, agent_id, endpoint, and bearer_token"
+                        .to_owned(),
+                ));
+            }
+            let endpoint = reqwest::Url::parse(&peer.endpoint).map_err(|_| {
+                config::ConfigError::Message(
+                    "trusted A2A peer endpoint must be an absolute URL".to_owned(),
+                )
+            })?;
+            let loopback_http = endpoint.scheme() == "http"
+                && endpoint.host_str().is_some_and(|host| {
+                    host.eq_ignore_ascii_case("localhost")
+                        || host
+                            .parse::<std::net::IpAddr>()
+                            .is_ok_and(|address| address.is_loopback())
+                });
+            if endpoint.scheme() != "https" && !loopback_http {
+                return Err(config::ConfigError::Message(
+                    "trusted A2A peer credentials require HTTPS except on loopback".to_owned(),
+                ));
+            }
+            if endpoint.username() != ""
+                || endpoint.password().is_some()
+                || endpoint.query().is_some()
+                || endpoint.fragment().is_some()
+            {
+                return Err(config::ConfigError::Message(
+                    "trusted A2A peer endpoints cannot contain userinfo, query, or fragment components".to_owned(),
+                ));
+            }
+            if !endpoints.insert(peer.endpoint.clone()) {
+                return Err(config::ConfigError::Message(
+                    "trusted A2A peer endpoints must be unique".to_owned(),
+                ));
+            }
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
@@ -395,6 +563,8 @@ pub struct ResilienceConfig {
     pub request_timeout_ms: u64,
     #[serde(default = "ResilienceConfig::default_stream_start_timeout_ms")]
     pub stream_start_timeout_ms: u64,
+    #[serde(default = "ResilienceConfig::default_stream_idle_timeout_ms")]
+    pub stream_idle_timeout_ms: u64,
     #[serde(default = "ResilienceConfig::default_retries_enabled")]
     pub retries_enabled: bool,
     #[serde(default = "ResilienceConfig::default_retry_max_attempts")]
@@ -424,6 +594,10 @@ impl ResilienceConfig {
 
     fn default_stream_start_timeout_ms() -> u64 {
         15_000
+    }
+
+    fn default_stream_idle_timeout_ms() -> u64 {
+        30_000
     }
 
     fn default_retries_enabled() -> bool {
@@ -1094,6 +1268,7 @@ impl AppConfig {
             .set_default("resilience.burst_size", 20.0)?
             .set_default("resilience.request_timeout_ms", 30_000_i64)?
             .set_default("resilience.stream_start_timeout_ms", 15_000_i64)?
+            .set_default("resilience.stream_idle_timeout_ms", 30_000_i64)?
             .set_default("resilience.retries_enabled", true)?
             .set_default("resilience.retry_max_attempts", 3_i64)?
             .set_default("resilience.retry_base_delay_ms", 1_000_i64)?
@@ -1355,6 +1530,11 @@ impl AppConfig {
         }
 
         deserialized.security.validate()?;
+        deserialized.a2a.validate()?;
+        deserialized
+            .project_instructions
+            .validate()
+            .map_err(|error| config::ConfigError::Message(error.to_string()))?;
 
         Ok(deserialized)
     }
@@ -1722,6 +1902,15 @@ mod tests {
     use super::*;
     use std::fs;
     use std::path::PathBuf;
+
+    #[test]
+    fn harness_defaults_to_typed_and_retains_legacy_rollback() {
+        assert_eq!(HarnessConfig::default().mode, HarnessMode::Typed);
+        let omitted: HarnessConfig = serde_json::from_str("{}").unwrap();
+        assert_eq!(omitted.mode, HarnessMode::Typed);
+        let rollback: HarnessConfig = serde_json::from_str(r#"{"mode":"legacy"}"#).unwrap();
+        assert_eq!(rollback.mode, HarnessMode::Legacy);
+    }
 
     #[test]
     fn json_schema_describes_the_top_level_shape() {

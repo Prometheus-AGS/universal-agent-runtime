@@ -1,0 +1,88 @@
+# Local release installation — 2026-09-05
+
+## Authorized scope and plan
+
+The operator requested a release build, installation, LaunchAgent restart,
+commit, and push. This is a local deployment, not GA publication or renewed
+authorization for the previously cancelled certification gates. The three
+completed Presentation changes remain active pending separate sync/archive
+approval.
+
+1. Build the locked `server-full` release executable and production web assets.
+2. Back up the existing executable and static bundle, install the new artifacts,
+   and retain the existing LaunchAgent plist, service environment and config.
+3. Restart the existing UAR LaunchAgent; check executable identity, liveness,
+   readiness and served assets. Do not send inference requests or expose keys.
+4. Commit the completed runtime/Presentation source, tests, accepted historical
+   archives and execution records; push the current branch to origin without
+   force. Leave unrelated skill upgrades and accessibility receipts untouched.
+
+## Baseline
+
+Branch: `feat/context-history-integrity`; starting HEAD `f86267d4`.
+Existing UAR PID: 31618; listener: loopback port1906.
+The service uses `/Users/gqadonis/Projects/graph-explorer/.uar/config.yaml`,
+not the stock installer's config. Therefore the stock installer must not be
+used: it would regenerate the plist and merge provider configuration.
+
+The uncomfortable baseline: `/healthz` returned200, but `/readyz` timed out
+after10seconds and the configured native database's port28000 `/health` timed
+out after8seconds. This predates installation. Do not attribute it to the new
+release or treat liveness as readiness. The shared database was not restarted.
+
+## Verification receipts
+
+- `pnpm build`: exit0, 10472modules,17.92seconds. Four existing pinned PGlite0.5.4
+  direct-eval warnings retained.
+- `node scripts/validate-static-bundle.mjs static`: exit0,
+  `Frontend bundle valid (11 referenced assets).`
+- `git diff --check`: exit0 before deployment changes.
+- `git diff --cached --check`: exit0 after removing whitespace-only defects
+  from nine new Markdown review/spec artifacts.
+- `gitleaks git --pre-commit --staged --redact --no-banner --no-color`:
+  exit0, approximately2.99MB scanned, no leaks found. This is a heuristic scan.
+- `pnpm github-actions-policy:validate`: exit0, deployment workflows only.
+- `pnpm -C frontend typecheck && pnpm -C frontend lint`: exit0.
+- Independent artifact-only review found no blocking scope or evidence issue
+  in439staged files; it did not rerun tests or establish deployment success.
+- Private rollback backup:
+  `/Users/gqadonis/.prometheus/backups/uar/release-20260905.UGe0zD`.
+  Existing executable, static bundle, plist, service environment and config
+  retained. `cmp` of the backed-up and installed executable exited0.
+- `cargo build --release --locked --no-default-features --features server-full
+  --bin universal-agent-runtime`: exit0, `Finished release profile [optimized]
+  target(s) in 47m 41s`. No Rust warnings were reported.
+- The release executable reports `universal-agent-runtime 1.0.0`; `file` reports
+  a Mach-O64-bit arm64 executable. Built and installed SHA-256:
+  `2e3d3ab62920d43e1c26b78fb77e1cd46c80c9c4e1cfc97d369c73be9e46cd4c`.
+- Database health recovered without mutation and returned200 twice before the
+  UAR restart. The old process's readiness still timed out.
+- Installed the executable and static bundle through a temporary same-filesystem
+  staging directory after validation. Retained the previous static directory
+  as `static-before-switch` in the rollback backup. Removed only the empty
+  staging directory. `cmp` confirmed executable equality.
+- Restarted only `com.prometheus.universal-agent-runtime` using the existing
+  `packaging/native/macos/control.sh` stop/start operations. New PID18125.
+  Existing plist, service environment and custom config match backup byte-for-byte.
+- Startup was slow: database sign-in, database initialization, default knowledge
+  base and persistence/RAG initialization progressed over several minutes.
+  Loopback listeners1906/50051 exist. Health and readiness each returned200,
+  but a subsequent readiness check returned408 after30.010136seconds and another
+  timed out after10seconds. **Consistent readiness is not established.** The
+  pre-install dependency timeout remains relevant; no root cause is asserted.
+- A local HTTP byte comparison verified the served index and all11referenced
+  assets against the new build. Index SHA-256:
+  `2a8cb773797697a3daed2a3803a3f1e8912197c9839035cdc77dfa8de4677a5d`.
+- The shared database LaunchAgent was not restarted. Approval was requested
+  because that action would interrupt other applications using the database.
+- Commit and push: pending.
+
+Prior phase-boundary behavioral evidence is in the Presentation execution log
+and the three OpenSpec verification reports. It includes the full server-full
+suite,462frontend unit tests, targeted inspector/API checks and actual memory,
+SurrealKV and PostgreSQL catalog contracts. This deployment does not rerun or
+reinterpret those suites as release certification. Deferred429 coverage,
+live-peer/billing, zoom/contrast and credential-rotation limits remain.
+
+No production source, dependency pin, service configuration, credential, database
+record or GitHub Actions workflow is changed by this deployment procedure.

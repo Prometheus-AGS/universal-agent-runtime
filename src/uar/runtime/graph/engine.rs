@@ -9,6 +9,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, error, info};
 
+use crate::uar::domain::events::{NormalizedEvent, RuntimeEventSink};
+
 use super::types::{GraphContext, GraphEdge, GraphNode, GraphState, NodeResult};
 
 /// Maximum iterations before the engine hard-stops to prevent infinite loops.
@@ -38,13 +40,34 @@ impl AgentGraph {
     /// Returns the final [`GraphState`] after execution completes (normally,
     /// via a `Finished` signal, or after an error).
     pub async fn execute(&self, initial_state: GraphState, ctx: &GraphContext) -> GraphState {
+        self.execute_inner(initial_state, ctx, None).await
+    }
+
+    /// Execute with live step boundaries on the trusted host's ordered run sink.
+    /// A dropped/cancelled node future does not fabricate a finished boundary.
+    pub async fn execute_with_events(
+        &self,
+        initial_state: GraphState,
+        ctx: &GraphContext,
+        events: &dyn RuntimeEventSink,
+    ) -> GraphState {
+        self.execute_inner(initial_state, ctx, Some(events)).await
+    }
+
+    async fn execute_inner(
+        &self,
+        initial_state: GraphState,
+        ctx: &GraphContext,
+        events: Option<&dyn RuntimeEventSink>,
+    ) -> GraphState {
         let mut state = initial_state;
         let mut current_id = self.entry_node.clone();
+        // The engine owns step numbering, including after checkpoint resume;
+        // a node's returned state must not reset or duplicate event identities.
+        let mut step = state.iteration;
 
         loop {
-            state.iteration += 1;
-
-            if state.iteration > MAX_GRAPH_ITERATIONS {
+            if step >= MAX_GRAPH_ITERATIONS {
                 error!(
                     run_id = %ctx.run_id,
                     iteration = state.iteration,
@@ -62,6 +85,8 @@ impl AgentGraph {
                     break;
                 }
             };
+            step += 1;
+            state.iteration = step;
 
             debug!(
                 run_id = %ctx.run_id,
@@ -74,18 +99,40 @@ impl AgentGraph {
             trace.push(current_id.clone());
             state.set("_graph_trace", trace);
 
-            state = match node.execute(state, ctx).await {
+            if let Some(events) = events {
+                events
+                    .emit(NormalizedEvent::RuntimeStep {
+                        run_id: ctx.run_id.clone(),
+                        step,
+                        kind: "started".to_string(),
+                    })
+                    .await;
+            }
+            let result = node.execute(state, ctx).await;
+            if let Some(events) = events {
+                events
+                    .emit(NormalizedEvent::RuntimeStep {
+                        run_id: ctx.run_id.clone(),
+                        step,
+                        kind: "finished".to_string(),
+                    })
+                    .await;
+            }
+            state = match result {
                 NodeResult::Continue(s) => s,
-                NodeResult::Finished(s) => {
+                NodeResult::Finished(mut s) => {
+                    s.iteration = step;
                     info!(run_id = %ctx.run_id, node_id = %current_id, "Graph finished");
                     return s;
                 }
                 NodeResult::Error(mut s, msg) => {
+                    s.iteration = step;
                     error!(run_id = %ctx.run_id, node_id = %current_id, error = %msg, "Graph node error");
                     s.set("_error", &msg);
                     return s;
                 }
             };
+            state.iteration = step;
 
             match self.find_next(&current_id, &state) {
                 Some(next_id) => {

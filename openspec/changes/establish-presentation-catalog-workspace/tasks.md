@@ -1,0 +1,14 @@
+## 1. Implementation and phase acceptance
+
+- [x] 1.1 Implement the Presentation contract, safe instantiation and owner-scoped revision-aware persistence.
+- [x] 1.2 Expose authenticated catalog CRUD with ownership, validation and stale-edit errors.
+- [x] 1.3 Build typed graph entities/actions/hooks and production registry/editor/safe preview after the required design gate.
+- [x] 1.4 At phase end, prove catalog persistence, ownership, stale-edit rejection and desktop/mobile management workflows.
+
+Task 1.1 implementation evidence: Tier 0 `cargo check --locked --no-default-features --features server-full` exited 0 in 1m22s after the contract/store edit. This checks the Surreal-backed production profile; PostgreSQL/memory feature checks and runtime/round-trip/concurrency tests remain task 1.4. No test suite has run in this phase yet.
+
+Task 1.2 implementation evidence: the same Tier 0 command exited 0 in 1m12s after adding the authenticated catalog router. Owner keys include verified tenant and subject using the existing principal-key contract. Auth, CRUD response and error-path tests remain task 1.4.
+
+Task 1.3 implementation evidence: `pnpm typecheck && pnpm lint` exited 0 after the final source-review focus and exit-warning fixes. `/admin/presentations` is production navigation; the A2UI tester stays development-only. Impeccable 4.2.0/UI-UX Pro Max design and artifact-only review receipts are in the parent KBD phase. The standalone boundary scan exits 1 on 16 unrelated Providers/Settings findings and names none of this task's files. Browser behavior, persistence recovery and visual finish remain task 1.4 at the end of the whole phase; this checkbox is implementation, not acceptance.
+
+Task1.4 acceptance (2026-09-05): full server-full phase suite passed, including four-process SurrealKV seed/update/delete/empty restart, owner isolation, stale revisions and concurrent writers. Dedicated PostgresProvider contract/reconnection passed1/1 in0.31s against disposable PostgreSQL16.15/pgvector0.8.6; dedicated in-memory contract passed1/1 in0.00s. Both used additive backend features in the same unoptimized test profile. Four authenticated API tests passed, including tenant identity, forged owner, invalid drafts, stale PUT/DELETE and CRUD. Frontend full462-test suite and final typecheck/lint/build passed; three real-graph page regressions cover both creation buttons and existing-row identity. Browser creation, preview, reload, editing revision2, disablement, confirmed deletion and focus recovery succeeded in isolated data. Desktop/narrow captures and independent Impeccable finish review support the bounded UI corrections. No operator data was deleted; the disposable test servers/container were stopped. Full zoom/contrast, release/live-peer and existing429/coverage limits remain unverified; retain the fixture credential-rotation notice. No PostgreSQL, memory or Surreal catalog pass is inferred from compilation alone.

@@ -202,6 +202,7 @@ mod tests {
                 role: "helper".into(),
                 persona: "A test".into(),
                 system_prompt: None,
+                instructions: vec![],
                 greeting: None,
             }),
             ui: Some(UiSection {

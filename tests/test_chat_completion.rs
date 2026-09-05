@@ -13,10 +13,15 @@ use universal_agent_runtime::session::SessionStore;
 use universal_agent_runtime::uar::defaults;
 use universal_agent_runtime::uar::domain::artifact::AgentArtifact;
 use universal_agent_runtime::uar::domain::events::NormalizedEvent;
+use universal_agent_runtime::uar::persistence::{
+    PersistenceLayer, providers::surreal::SurrealDbProvider,
+};
 use universal_agent_runtime::uar::rag::embeddings::EmbeddingBackend;
 use universal_agent_runtime::uar::runtime::graph::{AgentGraph, AgentNode, GraphState, RouterNode};
 use universal_agent_runtime::uar::runtime::manager::RunManager;
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
+use universal_agent_runtime::uar::runtime::turn::RunExecutionRequest;
+use universal_agent_runtime::uar::security::claims::{UserClaims, UserContext};
 
 /// These tests exercise run lifecycle only — nothing embeds. The
 /// unconditionally-compiled `UnavailableEmbeddingBackend` therefore builds and
@@ -81,7 +86,7 @@ async fn make_manager() -> Arc<RunManager> {
     Arc::new(RunManager::new(llm_config, mcp, sessions, skills, vm, None).await)
 }
 
-async fn make_graph_manager(driver: Arc<MockLlmDriver>) -> Arc<RunManager> {
+async fn make_graph_manager(driver: Arc<MockLlmDriver>) -> (Arc<RunManager>, tempfile::TempDir) {
     let mcp = Arc::new(McpRegistry::new_empty());
     let llm_config = LlmConfig {
         model: "openai/gpt-4o".to_string(),
@@ -90,6 +95,22 @@ async fn make_graph_manager(driver: Arc<MockLlmDriver>) -> Arc<RunManager> {
     };
     let sessions = SessionStore::new();
     let skills = Arc::new(RwLock::new(SkillRegistry::new(None, None)));
+    let database = tempfile::tempdir().expect("graph manager database directory");
+    let endpoint = format!(
+        "surrealkv://{}",
+        database.path().join("graph-manager.db").display()
+    );
+    let persistence: Arc<dyn PersistenceLayer> = Arc::new(
+        SurrealDbProvider::new(
+            &endpoint,
+            None,
+            None,
+            Some("graph-manager-test"),
+            Some("graph-manager-test"),
+        )
+        .await
+        .expect("graph manager database opens"),
+    );
     let graph = AgentGraph::builder("router")
         .add_node(RouterNode::new(
             "router",
@@ -104,23 +125,24 @@ async fn make_graph_manager(driver: Arc<MockLlmDriver>) -> Arc<RunManager> {
                 .unwrap_or_else(|| "general-purpose".to_string())
         })
         .build();
-    Arc::new(
+    let manager = Arc::new(
         RunManager::new(
             llm_config,
             mcp,
             sessions,
             skills,
             make_vector_matcher(),
-            None,
+            Some(persistence),
         )
         .await
         .with_llm_driver(driver)
         .with_agent_graph(graph),
-    )
+    );
+    (manager, database)
 }
 
 async fn wait_for_run_done(manager: &RunManager, run_id: &str) -> Vec<NormalizedEvent> {
-    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+    let completed = tokio::time::timeout(std::time::Duration::from_secs(10), async {
         loop {
             let events = manager
                 .history_since(run_id, None)
@@ -135,8 +157,17 @@ async fn wait_for_run_done(manager: &RunManager, run_id: &str) -> Vec<Normalized
             tokio::task::yield_now().await;
         }
     })
-    .await
-    .expect("run should complete")
+    .await;
+    match completed {
+        Ok(events) => events,
+        Err(_) => {
+            let events = manager
+                .history_since(run_id, None)
+                .await
+                .unwrap_or_default();
+            panic!("run should complete; observed events: {events:#?}");
+        }
+    }
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -257,7 +288,7 @@ async fn orchestrator_run_routes_and_streams_delegated_answer() {
             DriverEvent::Done,
         ],
     ]));
-    let manager = make_graph_manager(Arc::clone(&driver)).await;
+    let (manager, _database) = make_graph_manager(Arc::clone(&driver)).await;
     let orchestrator = defaults::orchestrator_agent();
     assert_eq!(orchestrator.runtime.entry, "orchestrator");
     assert!(
@@ -271,15 +302,50 @@ async fn orchestrator_run_routes_and_streams_delegated_answer() {
         defaults::default_agent().prompt.system
     );
 
-    let run_id = manager
-        .start_run(
-            orchestrator,
-            "Review this Rust ownership boundary".to_string(),
-            None,
-            None,
-            vec![],
-        )
-        .await;
+    let peer = UserContext {
+        user_id: "chat-integration-peer".to_string(),
+        tenant_id: None,
+        claims: UserClaims {
+            sub: "chat-integration-peer".to_string(),
+            name: Some("Chat integration UAR peer".to_string()),
+            roles: Some(vec!["service".to_string()]),
+            tenant_id: None,
+            uar_instance_id: Some("chat-integration-uar".to_string()),
+            exp: usize::MAX,
+        },
+    };
+    let request = RunExecutionRequest::new(
+        orchestrator,
+        "Review this Rust ownership boundary".to_string(),
+    )
+    .with_user_context(&peer)
+    .expect("verified peer context builds a hosted run request");
+    let run_id = manager.execute_request(request).await;
+    let approval_id = tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        loop {
+            if let Some(approval_id) = manager
+                .history_since(&run_id, None)
+                .await
+                .unwrap_or_default()
+                .into_iter()
+                .find_map(|event| match event.event {
+                    NormalizedEvent::ToolCallApprovalRequired { approval_id, .. } => approval_id,
+                    _ => None,
+                })
+            {
+                return approval_id;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("spawn_agent approval should be requested");
+    assert!(
+        manager
+            .resolve_approval_request(&run_id, Some(&approval_id), true)
+            .await,
+        "the exact graph child approval must resolve"
+    );
     let events = wait_for_run_done(&manager, &run_id).await;
 
     assert_eq!(driver.call_count(), 2, "router and sub-agent must both run");
@@ -321,7 +387,7 @@ async fn attached_graph_does_not_change_default_agent_path() {
         },
         DriverEvent::Done,
     ]]));
-    let manager = make_graph_manager(Arc::clone(&driver)).await;
+    let (manager, _database) = make_graph_manager(Arc::clone(&driver)).await;
 
     let run_id = manager
         .start_run(

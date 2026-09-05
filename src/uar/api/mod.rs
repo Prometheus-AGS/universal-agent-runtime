@@ -31,6 +31,8 @@ pub mod openai;
 #[cfg(feature = "server")]
 pub mod openapi;
 #[cfg(feature = "server")]
+pub mod presentations;
+#[cfg(feature = "server")]
 pub mod providers;
 #[cfg(feature = "server")]
 pub mod routes;

@@ -23,13 +23,22 @@ use crate::uar::compiler::pipeline;
 use crate::uar::compiler::registries::{InMemoryEndpointRegistry, InMemorySchemaRegistry};
 use crate::uar::compiler::session::{CompilerSession, SessionStatus, TurnRole};
 use crate::uar::compiler::signing::KeyProvider;
-use crate::uar::runtime::native_skill::NativeSkill;
+use crate::uar::runtime::native_skill::{NativeExecutionContext, NativeSkill};
 use crate::uar::tools::descriptor::{ToolEffect, ToolSource};
 
 /// Thread-safe session store for conversational compilation.
 #[derive(Debug, Clone)]
 pub struct CompilerSessionStore {
-    sessions: Arc<RwLock<HashMap<String, CompilerSession>>>,
+    sessions: Arc<RwLock<HashMap<(Option<CompilerSessionScope>, String), CompilerSession>>>,
+    scope: Option<CompilerSessionScope>,
+}
+
+/// Identity is provided by the run host, not decoded from compiler arguments.
+/// Anonymous conversations and legacy unscoped host callers are separate too.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct CompilerSessionScope {
+    owner: Option<crate::uar::runtime::actor::messages::ActorOwner>,
+    conversation_id: String,
 }
 
 impl Default for CompilerSessionStore {
@@ -44,20 +53,43 @@ impl CompilerSessionStore {
     pub fn new() -> Self {
         Self {
             sessions: Arc::new(RwLock::new(HashMap::new())),
+            scope: None,
         }
+    }
+
+    fn for_context(&self, context: &NativeExecutionContext) -> anyhow::Result<Self> {
+        let scope = match context.session_id.as_deref() {
+            Some(id) if !id.trim().is_empty() => Some(CompilerSessionScope {
+                owner: context.verified_owner.clone(),
+                conversation_id: id.to_owned(),
+            }),
+            None if context.verified_owner.is_none() && context.thread_policy.is_none() => None,
+            _ => anyhow::bail!("Compiler session requires a host conversation identity"),
+        };
+        Ok(Self {
+            sessions: Arc::clone(&self.sessions),
+            scope,
+        })
     }
 
     /// Create a new session and return its ID.
     pub async fn create(&self) -> String {
         let session = CompilerSession::new();
         let id = session.id.clone();
-        self.sessions.write().await.insert(id.clone(), session);
+        self.sessions
+            .write()
+            .await
+            .insert((self.scope.clone(), id.clone()), session);
         id
     }
 
     /// Get a clone of a session by ID.
     pub async fn get(&self, id: &str) -> Option<CompilerSession> {
-        self.sessions.read().await.get(id).cloned()
+        self.sessions
+            .read()
+            .await
+            .get(&(self.scope.clone(), id.to_owned()))
+            .cloned()
     }
 
     /// Update a session in the store.
@@ -65,12 +97,15 @@ impl CompilerSessionStore {
         self.sessions
             .write()
             .await
-            .insert(session.id.clone(), session);
+            .insert((self.scope.clone(), session.id.clone()), session);
     }
 
     /// Remove a session from the store.
     pub async fn remove(&self, id: &str) -> Option<CompilerSession> {
-        self.sessions.write().await.remove(id)
+        self.sessions
+            .write()
+            .await
+            .remove(&(self.scope.clone(), id.to_owned()))
     }
 }
 
@@ -94,6 +129,23 @@ impl UpdateSectionTool {
 
 #[async_trait::async_trait]
 impl NativeSkill for UpdateSectionTool {
+    fn check_thread_policy(
+        &self,
+        _policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        Ok(()) // execute_with_context scopes every session lookup and mutation.
+    }
+
+    async fn execute_with_context(
+        &self,
+        args: Value,
+        context: &NativeExecutionContext,
+    ) -> anyhow::Result<Value> {
+        Self::new(self.store.for_context(context)?)
+            .execute(args)
+            .await
+    }
+
     fn name(&self) -> &str {
         "uar.session.update_section"
     }
@@ -245,6 +297,23 @@ impl CheckCompletenessTool {
 
 #[async_trait::async_trait]
 impl NativeSkill for CheckCompletenessTool {
+    fn check_thread_policy(
+        &self,
+        _policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        Ok(()) // Only the caller's host-scoped compilation session is read.
+    }
+
+    async fn execute_with_context(
+        &self,
+        args: Value,
+        context: &NativeExecutionContext,
+    ) -> anyhow::Result<Value> {
+        Self::new(self.store.for_context(context)?)
+            .execute(args)
+            .await
+    }
+
     fn name(&self) -> &str {
         "uar.session.check_completeness"
     }
@@ -327,6 +396,37 @@ impl CompileSessionTool {
 
 #[async_trait::async_trait]
 impl NativeSkill for CompileSessionTool {
+    fn result_artifacts(
+        &self,
+        result: &Value,
+    ) -> anyhow::Result<Vec<crate::uar::runtime::thread::artifacts::ToolOutputArtifact>> {
+        super::compiler_skill::compilation_artifacts(result)
+    }
+
+    fn check_thread_policy(
+        &self,
+        _policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            self.key_provider.supports_local_delegation(),
+            "Compiler signer has no local delegated execution contract"
+        );
+        Ok(())
+    }
+
+    async fn execute_with_context(
+        &self,
+        args: Value,
+        context: &NativeExecutionContext,
+    ) -> anyhow::Result<Value> {
+        Self::new(
+            self.store.for_context(context)?,
+            Arc::clone(&self.key_provider),
+        )
+        .execute(args)
+        .await
+    }
+
     fn name(&self) -> &str {
         "uar.session.compile"
     }

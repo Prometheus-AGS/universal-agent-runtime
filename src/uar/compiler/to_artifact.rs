@@ -145,7 +145,7 @@ impl From<&AgentDescriptorIR> for AgentArtifact {
         // ── prompt ────────────────────────────────────────────────────────
         let prompt = AgentPrompt {
             system: system_prompt(ir),
-            instructions: vec![],
+            instructions: ir.identity.instructions.clone(),
         };
 
         // ── memory ────────────────────────────────────────────────────────

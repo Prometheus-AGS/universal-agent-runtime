@@ -149,6 +149,7 @@ mod tests {
                 name: None,
                 roles: None,
                 tenant_id: None,
+                uar_instance_id: None,
                 exp: 0,
             },
         }

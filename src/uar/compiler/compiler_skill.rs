@@ -71,6 +71,26 @@ impl NativeSkill for CompilerAgentSkill {
         ToolSource::BuiltIn
     }
 
+    fn result_artifacts(
+        &self,
+        result: &Value,
+    ) -> anyhow::Result<Vec<crate::uar::runtime::thread::artifacts::ToolOutputArtifact>> {
+        compilation_artifacts(result)
+    }
+
+    fn check_thread_policy(
+        &self,
+        _policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        // Compilation uses only the request, per-call in-memory registries,
+        // and the exact signer retained by the inherited native tool binding.
+        anyhow::ensure!(
+            self.key_provider.supports_local_delegation(),
+            "Compiler signer has no local delegated execution contract"
+        );
+        Ok(())
+    }
+
     async fn execute(&self, args: Value) -> anyhow::Result<Value> {
         let markdown = args
             .get("markdown")
@@ -99,6 +119,25 @@ impl NativeSkill for CompilerAgentSkill {
         let result = serde_json::to_value(&output)?;
         Ok(result)
     }
+}
+
+/// Only actual compiler results become downloadable descriptors. Assistant
+/// text and not-ready/error results are never treated as compiled artifacts.
+pub(crate) fn compilation_artifacts(
+    result: &Value,
+) -> anyhow::Result<Vec<crate::uar::runtime::thread::artifacts::ToolOutputArtifact>> {
+    if result.get("error").is_some() {
+        return Ok(Vec::new());
+    }
+    let _: pipeline::CompileOutput = serde_json::from_value(result.clone())?;
+    Ok(vec![
+        crate::uar::runtime::thread::artifacts::ToolOutputArtifact {
+            artifact_id: uuid::Uuid::new_v4().to_string(),
+            name: "compiled-descriptor.json".into(),
+            description: "Compiled UAR agent descriptor".into(),
+            data: result.clone(),
+        },
+    ])
 }
 
 #[cfg(test)]

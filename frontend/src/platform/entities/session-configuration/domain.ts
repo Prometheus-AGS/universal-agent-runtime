@@ -1,4 +1,7 @@
 import { graphStore } from "@prometheus-ags/prometheus-entity-management";
+import { copyPresentationSelection, type PresentationSelectionMode } from "../presentation-assignments/contracts";
+import { PRESENTATION_ADMISSION_ID, presentationListKey } from "../presentations/domain";
+import { PRESENTATION_CATALOG_ENTITY, PRESENTATION_ENTITY, type Presentation, type PresentationCatalog } from "../presentations/contracts";
 
 import {
   AGENT_SESSION_DRAFT_ENTITY,
@@ -16,6 +19,7 @@ import {
   fetchAgentSessionConfig,
   fetchSessionPromptCaching,
   saveAgentSessionConfig,
+  SessionConfigurationSaveError,
 } from "./api/session-configuration-api";
 
 const ALL_SESSION_FIELDS: AgentSessionField[] = [
@@ -25,6 +29,7 @@ const ALL_SESSION_FIELDS: AgentSessionField[] = [
   "skills",
   "knowledge_bases",
   "mcp_servers",
+  "presentations",
   "tool_approval",
   "prompt_caching_enabled",
 ];
@@ -52,6 +57,7 @@ function copyConfig(config: AgentSessionConfig): AgentSessionConfig {
       ? [...config.knowledge_bases]
       : null,
     mcp_servers: config.mcp_servers ? [...config.mcp_servers] : null,
+    presentations: copyPresentationSelection(config.presentations),
     tool_approval: config.tool_approval,
     prompt_caching_enabled: config.prompt_caching_enabled,
   };
@@ -89,6 +95,9 @@ function mergeConfigFields(
         break;
       case "tool_approval":
         merged.tool_approval = source.tool_approval;
+        break;
+      case "presentations":
+        merged.presentations = copyPresentationSelection(source.presentations);
         break;
       case "prompt_caching_enabled":
         merged.prompt_caching_enabled = source.prompt_caching_enabled;
@@ -204,6 +213,10 @@ export function openAgentSessionDraft(
     dirty_fields: [],
     save_status: "idle",
     error: null,
+    presentation_retained_ids: [...(config.presentations?.ids ?? [])],
+    presentation_owner_id: null,
+    presentation_error: null,
+    save_uncertain: false,
   };
   graph.replaceEntity(AGENT_SESSION_DRAFT_ENTITY, id, draft);
   return id;
@@ -235,6 +248,7 @@ export function setAgentSessionDraftField<K extends AgentSessionField>(
   if (
     !draft ||
     draft.save_status === "saving" ||
+    draft.save_uncertain ||
     Object.is(draft[field], value)
   )
     return;
@@ -302,7 +316,7 @@ export function commitAgentSessionDraft(
   confirmedAgentIds.set(sessionId, saved.agent_id);
   replaceCanonicalAgentSession(
     sessionId,
-    mergeConfigFields(canonical ?? saved, saved, changedFields),
+    mergeConfigFields(canonical ?? saved, saved, [...changedFields, "presentations"]),
   );
   if (!draft || draft.generation !== generation) return false;
   graph.removeEntity(AGENT_SESSION_DRAFT_ENTITY, draftId);
@@ -331,7 +345,11 @@ export async function saveAgentSessionDraft(draftId: string): Promise<boolean> {
     AGENT_SESSION_DRAFT_ENTITY,
     draftId,
   );
-  if (!draft) return false;
+  if (!draft || draft.save_status === "saving" || draft.save_uncertain) return false;
+  if (draft.dirty_fields.includes("presentations") && !admittedSessionPresentationDraft(graph, draftId)) {
+    markAgentSessionDraftError(draftId, "Reload the Presentation catalog before saving this assignment draft.");
+    return false;
+  }
 
   const generation = draft.generation;
   const snapshot = copyConfig(draft);
@@ -362,21 +380,35 @@ export async function saveAgentSessionDraft(draftId: string): Promise<boolean> {
         snapshot,
         changedFields,
       );
+      // A preflight GET is not a write baseline. Only intentional assignment
+      // edits send explicit intent; other saves use atomic host preservation.
+      if (!dirtyFields.includes("presentations")) payload.presentations = null;
+      if (dirtyFields.includes("presentations") && !admittedSessionPresentationDraft(graphStore.getState(), draftId)) {
+        throw new Error("Presentation admission changed. Your draft is retained; reload the catalog before saving.");
+      }
       const saved = await saveAgentSessionConfig(
         draft.session_id,
         payload,
         controller.signal,
       );
-      await loadSessionPromptCaching(draft.session_id, controller.signal);
-      return commitAgentSessionDraft(
+      const committed = commitAgentSessionDraft(
         draftId,
         generation,
         draft.session_id,
         saved,
         changedFields,
       );
+      // POST already confirmed the saved configuration. A later derived read
+      // failure must not turn it into an unconfirmed write or enable replay.
+      try { await loadSessionPromptCaching(draft.session_id, controller.signal); }
+      catch { graphStore.getState().removeEntity(SESSION_PROMPT_CACHING_ENTITY, draft.session_id); }
+      return committed;
     });
   } catch (error) {
+    const current = graphStore.getState().readEntity<AgentSessionDraft>(AGENT_SESSION_DRAFT_ENTITY, draftId);
+    if (error instanceof SessionConfigurationSaveError && error.uncertain && current?.generation === generation) {
+      graphStore.getState().upsertEntity(AGENT_SESSION_DRAFT_ENTITY, draftId, { save_uncertain: true });
+    }
     if (!controller.signal.aborted) {
       markAgentSessionDraftError(draftId, (error as Error).message, generation);
     }
@@ -424,6 +456,7 @@ export async function selectAgentForSession(
       const saved = await saveAgentSessionConfig(sessionId, {
         ...copyConfig(current ?? optimisticConfig),
         agent_id: agentId,
+        presentations: null,
       });
       confirmedAgentIds.set(sessionId, saved.agent_id);
       if (agentSelectionGenerations.get(sessionId) !== selectionGeneration)
@@ -475,4 +508,110 @@ export const agentSessionDraftActions = {
   save: saveAgentSessionDraft,
   selectAgent: selectAgentForSession,
   setField: setAgentSessionDraftField,
+  admitPresentations: admitSessionPresentations,
+  setPresentationMode,
+  togglePresentation,
+  resetPresentations,
+  reconcileSaved: reconcileSavedSessionConfiguration,
 } as const;
+
+type GraphState = ReturnType<typeof graphStore.getState>;
+
+export function admittedSessionPresentationDraft(state: GraphState, draftId: string): AgentSessionDraft | null {
+  const catalog = state.entities[PRESENTATION_CATALOG_ENTITY]?.[PRESENTATION_ADMISSION_ID] as PresentationCatalog | undefined;
+  const draft = state.entities[AGENT_SESSION_DRAFT_ENTITY]?.[draftId] as AgentSessionDraft | undefined;
+  return catalog?.status === "ready" && catalog.owner_id && draft?.presentation_owner_id === catalog.owner_id
+    && draft.presentation_admission_id === PRESENTATION_ADMISSION_ID ? draft : null;
+}
+
+async function admitSessionPresentations(draftId: string): Promise<void> {
+  const state = graphStore.getState();
+  const catalog = state.entities[PRESENTATION_CATALOG_ENTITY]?.[PRESENTATION_ADMISSION_ID] as PresentationCatalog | undefined;
+  const draft = state.readEntity<AgentSessionDraft>(AGENT_SESSION_DRAFT_ENTITY, draftId);
+  if (!draft || catalog?.status !== "ready" || !catalog.owner_id || admittedSessionPresentationDraft(state, draftId)) return;
+  if (draft.dirty_fields.includes("presentations") || draft.save_status === "saving") return;
+  let config: AgentSessionConfig | null;
+  try { config = await fetchAgentSessionConfig(draft.session_id); }
+  catch {
+    const current = graphStore.getState();
+    const currentCatalog = current.entities[PRESENTATION_CATALOG_ENTITY]?.[PRESENTATION_ADMISSION_ID] as PresentationCatalog | undefined;
+    const currentDraft = current.readEntity<AgentSessionDraft>(AGENT_SESSION_DRAFT_ENTITY, draftId);
+    if (currentCatalog?.generation === catalog.generation && currentCatalog.owner_id === catalog.owner_id
+      && currentDraft?.generation === draft.generation && currentDraft.save_status !== "saving") {
+      current.upsertEntity(AGENT_SESSION_DRAFT_ENTITY, draftId, { presentation_error: "Could not load the current assignment. Reload assignment to retry." });
+    }
+    return;
+  }
+  const current = graphStore.getState();
+  const currentCatalog = current.entities[PRESENTATION_CATALOG_ENTITY]?.[PRESENTATION_ADMISSION_ID] as PresentationCatalog | undefined;
+  const currentDraft = current.readEntity<AgentSessionDraft>(AGENT_SESSION_DRAFT_ENTITY, draftId);
+  if (currentCatalog?.status !== "ready" || currentCatalog.generation !== catalog.generation
+    || currentCatalog.owner_id !== catalog.owner_id || currentDraft?.generation !== draft.generation
+    || currentDraft.dirty_fields.includes("presentations") || currentDraft.save_status === "saving") return;
+  current.upsertEntity(AGENT_SESSION_DRAFT_ENTITY, draftId, {
+    presentations: copyPresentationSelection(config?.presentations),
+    presentation_retained_ids: [...(config?.presentations?.ids ?? [])],
+    presentation_owner_id: catalog.owner_id,
+    presentation_admission_id: PRESENTATION_ADMISSION_ID,
+    presentation_error: null,
+  });
+}
+
+function setPresentationMode(draftId: string, mode: PresentationSelectionMode): void {
+  const state = graphStore.getState();
+  const draft = admittedSessionPresentationDraft(state, draftId);
+  if (!draft || draft.save_status === "saving" || draft.save_uncertain) return;
+  const selection = copyPresentationSelection(draft.presentations) ?? { mode: "inherit", ids: [], denied_ids: [] };
+  const retained = selection.mode === "selected" ? selection.ids : draft.presentation_retained_ids ?? [];
+  state.upsertEntity(AGENT_SESSION_DRAFT_ENTITY, draftId, {
+    presentation_retained_ids: [...retained],
+    presentations: { ...selection, mode, ids: mode === "selected" ? [...retained] : [] },
+    dirty_fields: [...new Set([...draft.dirty_fields, "presentations"])], save_status: "idle", error: null,
+  });
+}
+
+function togglePresentation(draftId: string, id: string, excluded = false): void {
+  const state = graphStore.getState();
+  const draft = admittedSessionPresentationDraft(state, draftId);
+  if (!draft || draft.save_status === "saving" || draft.save_uncertain) return;
+  const selection = copyPresentationSelection(draft.presentations) ?? { mode: "inherit", ids: [], denied_ids: [] };
+  if (!excluded && selection.mode !== "selected") return;
+  const field = excluded ? "denied_ids" : "ids";
+  const removing = selection[field].includes(id);
+  const record = state.readEntity<Presentation>(PRESENTATION_ENTITY, id);
+  if (!removing && (!record || record.owner_id !== draft.presentation_owner_id || !record.content.enabled
+    || !state.lists[presentationListKey(record.owner_id)]?.ids.includes(id))) return;
+  selection[field] = removing ? selection[field].filter((value) => value !== id) : [...selection[field], id];
+  setAgentSessionDraftField(draftId, "presentations", selection);
+}
+
+function resetPresentations(draftId: string): void {
+  const state = graphStore.getState();
+  const draft = admittedSessionPresentationDraft(state, draftId);
+  if (!draft || draft.save_status === "saving" || draft.save_uncertain) return;
+  state.upsertEntity(AGENT_SESSION_DRAFT_ENTITY, draftId, { presentation_retained_ids: [] });
+  setAgentSessionDraftField(draftId, "presentations", { mode: "inherit", ids: [], denied_ids: [] });
+}
+
+async function reconcileSavedSessionConfiguration(draftId: string): Promise<void> {
+  const state = graphStore.getState();
+  const draft = state.readEntity<AgentSessionDraft>(AGENT_SESSION_DRAFT_ENTITY, draftId);
+  if (!draft?.save_uncertain || draft.save_status === "saving") return;
+  markAgentSessionDraftSaving(draftId, draft.generation);
+  try {
+    await enqueueSessionMutation(draft.session_id, async () => {
+      const saved = await fetchAgentSessionConfig(draft.session_id);
+      const current = graphStore.getState();
+      const currentDraft = current.readEntity<AgentSessionDraft>(AGENT_SESSION_DRAFT_ENTITY, draftId);
+      if (currentDraft?.generation !== draft.generation) return;
+      if (saved) replaceCanonicalAgentSession(draft.session_id, saved);
+      else current.removeEntity(AGENT_SESSION_ENTITY, draft.session_id);
+      current.upsertEntity(AGENT_SESSION_DRAFT_ENTITY, draftId, {
+        save_uncertain: false, save_status: "idle",
+        error: "Saved configuration checked. Your draft is retained; review the shown choices before saving again.",
+      });
+    });
+  } catch {
+    markAgentSessionDraftError(draftId, "Saved configuration is still unavailable. Your draft is retained; check again before saving.", draft.generation);
+  }
+}

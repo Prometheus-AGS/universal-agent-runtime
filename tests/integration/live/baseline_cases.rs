@@ -6,7 +6,7 @@
 //! proving the feature works end-to-end through the actual production code
 //! path — not a unit-level approximation.
 
-use super::harness::{HARNESS_JWT_SECRET, ServiceNeeds, boot_test_server};
+use super::harness::{HARNESS_JWT_SECRET, ServiceNeeds, boot_test_server, mint_harness_peer_token};
 use super::stub_llm::{FixtureResponse, FixtureSet, RequestFingerprint, start_stub_llm};
 use serial_test::serial;
 
@@ -196,8 +196,9 @@ async fn tool_loop_round_trip() {
 /// 2.5 — Agent selection via the `agent_id` request field.
 ///
 /// Scope note (see specs/live-integration-testing/spec.md's "Known gap"):
-/// this proves `agent_id` resolution is fallback-safe for both built-in
-/// agents (`resolve_agent_for_run`, `src/uar/api/discovery.rs:259`) — it
+/// this proves authenticated UAR-peer `agent_id` resolution is fallback-safe
+/// for both built-in agents (`resolve_agent_for_run`,
+/// `src/uar/api/discovery.rs:259`) — it
 /// does NOT prove agent identity changes observable LLM-call behavior.
 /// `/api/chat/completion` does not read `agent.prompt.system` (that's only
 /// consumed by `RunManager::start_run`, a different code path), and the two
@@ -236,11 +237,13 @@ async fn agent_selection_resolves_both_builtin_agents() {
         );
     let stub = start_stub_llm(fixtures).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let peer_token = mint_harness_peer_token();
     let client = reqwest::Client::new();
 
     for agent_id in ["default-agent", "orchestrator-agent"] {
         let resp = client
             .post(format!("{}/api/chat/completion", server.base_url))
+            .bearer_auth(&peer_token)
             .json(&serde_json::json!({
                 "model": MODEL,
                 "messages": [{"role": "user", "content": "hello"}],
@@ -261,6 +264,7 @@ async fn agent_selection_resolves_both_builtin_agents() {
     // An unknown agent_id must fall back to default-agent rather than error.
     let resp = client
         .post(format!("{}/api/chat/completion", server.base_url))
+        .bearer_auth(&peer_token)
         .json(&serde_json::json!({
             "model": MODEL,
             "messages": [{"role": "user", "content": "hello"}],
@@ -550,6 +554,7 @@ async fn credential_chain_put_then_list() {
         name: Some("Live ITest User".to_string()),
         roles: Some(vec!["user".to_string()]),
         tenant_id: None,
+        uar_instance_id: None,
         exp: usize::MAX,
     };
     let token = jsonwebtoken::encode(

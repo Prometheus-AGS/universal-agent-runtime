@@ -2,9 +2,38 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, path::Path};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(try_from = "UncheckedMcpConfig")]
 pub struct McpConfig {
     #[serde(rename = "mcpServers")]
     pub mcp_servers: HashMap<String, McpServerEntry>,
+}
+
+#[derive(Deserialize)]
+struct UncheckedMcpConfig {
+    #[serde(rename = "mcpServers")]
+    mcp_servers: HashMap<String, McpServerEntry>,
+}
+
+impl TryFrom<UncheckedMcpConfig> for McpConfig {
+    type Error = anyhow::Error;
+
+    fn try_from(value: UncheckedMcpConfig) -> Result<Self, Self::Error> {
+        let config = Self {
+            mcp_servers: value.mcp_servers,
+        };
+        config.validate_sandbox_policy()?;
+        Ok(config)
+    }
+}
+
+impl McpConfig {
+    /// Validate the whole configuration before any server is connected.
+    pub(crate) fn validate_sandbox_policy(&self) -> anyhow::Result<()> {
+        for (name, entry) in &self.mcp_servers {
+            entry.validate_sandbox_policy(name)?;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -16,7 +45,7 @@ pub enum McpServerEntry {
         args: Vec<String>,
         #[serde(default)]
         env: HashMap<String, String>,
-        /// When true, the MCP server process runs inside a sandbox.
+        /// Requires an OS sandbox. Rejected until a stdio sandbox backend exists.
         #[serde(default)]
         sandboxed: bool,
     },
@@ -25,6 +54,24 @@ pub enum McpServerEntry {
         #[serde(default)]
         env: HashMap<String, String>,
     },
+}
+
+impl McpServerEntry {
+    /// Reject unsupported sandbox requests before process or settings side effects.
+    pub(crate) fn validate_sandbox_policy(&self, name: &str) -> anyhow::Result<()> {
+        if matches!(
+            self,
+            Self::Stdio {
+                sandboxed: true,
+                ..
+            }
+        ) {
+            anyhow::bail!(
+                "MCP server {name:?} requests sandboxed: true, but the OS-backed stdio sandbox backend is unavailable"
+            );
+        }
+        Ok(())
+    }
 }
 
 pub fn load_mcp_config(path: impl AsRef<Path>) -> anyhow::Result<McpConfig> {
@@ -107,6 +154,33 @@ fn find_placeholders(input: &str) -> Vec<Placeholder> {
     }
 
     found
+}
+
+/// Resolve placeholders only against host-captured inputs, never process state.
+/// Error text omits the input because URLs and environment values can be secret.
+pub(crate) fn expand_from_environment(
+    input: &str,
+    environment: &std::collections::BTreeMap<std::ffi::OsString, std::ffi::OsString>,
+) -> anyhow::Result<String> {
+    let mut output = String::with_capacity(input.len());
+    let mut cursor = 0;
+    for placeholder in find_placeholders(input) {
+        output.push_str(&input[cursor..placeholder.span.start]);
+        let value = environment
+            .get(std::ffi::OsStr::new(&placeholder.name))
+            .filter(|value| !value.is_empty());
+        match value {
+            Some(value) => output.push_str(value.to_str().ok_or_else(|| {
+                anyhow::anyhow!("MCP placeholder {:?} is not UTF-8", placeholder.name)
+            })?),
+            None => output.push_str(placeholder.default.as_deref().ok_or_else(|| {
+                anyhow::anyhow!("MCP placeholder {:?} is unresolved", placeholder.name)
+            })?),
+        }
+        cursor = placeholder.span.end;
+    }
+    output.push_str(&input[cursor..]);
+    Ok(output)
 }
 
 /// Substitute the placeholders in `input`, resolving each from the process

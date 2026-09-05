@@ -60,7 +60,36 @@ impl NativeSkill for SessionSearchTool {
         ToolSource::BuiltIn
     }
 
-    async fn execute(&self, args: Value) -> anyhow::Result<Value> {
+    fn check_thread_policy(
+        &self,
+        policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
+    ) -> anyhow::Result<()> {
+        // The contextual call also requires the inherited verified principal.
+        anyhow::ensure!(
+            policy.effective().memory_enabled,
+            "Session search is disabled by the child memory policy"
+        );
+        Ok(())
+    }
+
+    async fn execute(&self, _args: Value) -> anyhow::Result<Value> {
+        anyhow::bail!("Session search requires a verified host execution context")
+    }
+
+    async fn execute_with_context(
+        &self,
+        args: Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<Value> {
+        let owner = context.verified_owner.as_ref().ok_or_else(|| {
+            anyhow::anyhow!("Session search requires a verified host execution context")
+        })?;
+        self.search_for_owner(args, owner.user_id()).await
+    }
+}
+
+impl SessionSearchTool {
+    async fn search_for_owner(&self, args: Value, owner_id: &str) -> anyhow::Result<Value> {
         let query = match args.get("query").and_then(Value::as_str) {
             Some(q) => q.to_string(),
             None => return Ok(json!({"ok": false, "error": "Missing required parameter: query"})),
@@ -82,11 +111,7 @@ impl NativeSkill for SessionSearchTool {
             .unwrap_or(self.max_results)
             .min(self.max_results);
 
-        let session = match self
-            .persistence
-            .load_session(crate::session::ANONYMOUS_SESSION_OWNER, &session_id)
-            .await
-        {
+        let session = match self.persistence.load_session(owner_id, &session_id).await {
             Ok(Some(s)) => s,
             Ok(None) => {
                 return Ok(
@@ -97,6 +122,10 @@ impl NativeSkill for SessionSearchTool {
         };
 
         let query_lower = query.to_lowercase();
+        anyhow::ensure!(
+            session.owner_id() == owner_id && session.id() == session_id,
+            "Session store returned a foreign session"
+        );
         let hits: Vec<Value> = session
             .messages()
             .into_iter()

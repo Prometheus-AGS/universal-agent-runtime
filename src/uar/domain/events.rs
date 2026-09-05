@@ -45,6 +45,11 @@ pub enum NormalizedEvent {
         title: String,
         selection_method: String,
     },
+    /// Host-owned MCP binding state; a binding may outlive an individual run.
+    McpServerStateChanged {
+        run_id: Option<String>,
+        lifecycle: McpServerLifecycle,
+    },
 
     ToolStart {
         run_id: String,
@@ -73,6 +78,13 @@ pub enum NormalizedEvent {
         artifact: ArtifactPayload,
     },
 
+    /// A surface was rejected without terminating the readable-text run.
+    /// This is a host diagnostic, not a successful publication receipt.
+    PresentationDiagnostic {
+        run_id: String,
+        code: String,
+        message: String,
+    },
     Error {
         run_id: String,
         code: String,
@@ -124,6 +136,26 @@ pub enum NormalizedEvent {
         step: u32,
         /// `started` | `finished`.
         kind: String,
+    },
+    /// A persisted child turn started. Never contains its prompt or history.
+    AgentThreadStarted {
+        run_id: String,
+        lifecycle: AgentLifecycle,
+    },
+    /// A child was persisted pending execution or changed nonterminal state.
+    AgentThreadUpdated {
+        run_id: String,
+        lifecycle: AgentLifecycle,
+    },
+    /// A child turn completed successfully; its output is retrieved separately.
+    AgentThreadFinished {
+        run_id: String,
+        lifecycle: AgentLifecycle,
+    },
+    /// A child failed or was cancelled, including before a child run started.
+    AgentThreadError {
+        run_id: String,
+        lifecycle: AgentLifecycle,
     },
     StatePatch {
         run_id: String,
@@ -182,6 +214,9 @@ pub enum NormalizedEvent {
     /// The run is paused until the user responds via the approval endpoint.
     ToolCallApprovalRequired {
         run_id: String,
+        /// Host-issued request identity; required when resolving child approvals.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        approval_id: Option<String>,
         call_index: usize,
         tool_call_id: String,
         name: String,
@@ -210,6 +245,100 @@ pub enum NormalizedEvent {
         /// Model used for this run.
         model: Option<String>,
     },
+}
+
+/// Content-free lifecycle projection. This is deliberately not a serialized
+/// thread/result: arbitrary model output and backend error text stay private.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct AgentLifecycle {
+    pub root_thread_id: String,
+    pub parent_thread_id: String,
+    pub child_thread_id: String,
+    pub parent_run_id: Option<String>,
+    pub child_run_id: Option<String>,
+    pub canonical_path: String,
+    pub artifact_id: String,
+    pub status: AgentLifecycleStatus,
+    pub terminal_outcome: Option<AgentLifecycleOutcome>,
+    /// Persisted storage revision, not a delivery counter or history revision.
+    pub revision: u64,
+    /// Stable source identity for deduplication across publication retries.
+    pub lifecycle_id: String,
+    /// Persisted transition time; replay must not replace it with wall-clock now.
+    pub timestamp: chrono::DateTime<chrono::Utc>,
+}
+
+/// Public state vocabulary independent of the execution implementation.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum AgentLifecycleStatus {
+    Pending,
+    Running,
+    Waiting,
+    Completed,
+    Failed,
+    Cancelled,
+}
+
+/// Terminal classification only; no response body, prompt, or raw error.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum AgentLifecycleOutcome {
+    Completed,
+    Failed,
+    Cancelled,
+}
+
+/// Trusted-host event publication boundary. Kernels supply typed event intents;
+/// the host owns ordering, retention, and transport. No detached publication.
+#[async_trait::async_trait]
+pub trait RuntimeEventSink: Send + Sync {
+    async fn emit(&self, event: NormalizedEvent);
+}
+
+/// Observable state of one exact MCP binding generation, not an access grant.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum McpServerState {
+    /// This generation has no active connection (including dormant startup).
+    Disabled,
+    /// Its single-flight connection/discovery attempt is in progress.
+    Connecting,
+    /// A matching connection and complete catalog have been published.
+    Ready,
+    /// Authentication must be supplied or refreshed by the host.
+    AuthRequired,
+    /// Establishment or discovery failed, or its caller cancelled the attempt.
+    Failed,
+    /// Revocation has begun; this is not proof of completed resource cleanup.
+    ShuttingDown,
+}
+
+/// Bounded reason labels; never serialize a raw connection error or token.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum McpStateReason {
+    AuthenticationRequired,
+    ConnectionFailed,
+    IncompleteCatalog,
+    InvalidBinding,
+    Invalidated,
+    Cancelled,
+    Retired,
+}
+
+/// Secret-free lifecycle observation. IDs are random, not credential/config hashes.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct McpServerLifecycle {
+    pub event_id: uuid::Uuid,
+    pub binding_id: uuid::Uuid,
+    pub generation: uuid::Uuid,
+    pub sequence: u64,
+    pub timestamp: chrono::DateTime<chrono::Utc>,
+    pub server: String,
+    pub state: McpServerState,
+    pub reason: Option<McpStateReason>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

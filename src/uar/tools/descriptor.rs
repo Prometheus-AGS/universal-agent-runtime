@@ -68,6 +68,9 @@ pub struct ToolCollision {
 /// Failure to assemble an executable tool descriptor.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum ToolAssemblyError {
+    /// A captured delegation cannot acquire another executable resource.
+    #[error("cannot add a tool to a frozen executable binding")]
+    FrozenBinding,
     /// The declared input schema could not be compiled.
     #[error("invalid input schema for tool '{provider_name}': {message}")]
     InvalidSchema {

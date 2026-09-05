@@ -200,7 +200,7 @@ pub enum NormalizedEvent {
     /// Token usage information from the API.
     #[serde(rename = "usage")]
     Usage {
-        /// Number of tokens in the prompt/input.
+        /// Total prompt/input tokens, including cache reads and cache writes.
         prompt_tokens: u32,
         /// Number of tokens in the completion/output.
         completion_tokens: u32,
@@ -209,7 +209,8 @@ pub enum NormalizedEvent {
         /// Tokens served from the provider's prompt cache (OpenAI: `cached_tokens`; Anthropic: `cache_read_input_tokens`).
         #[serde(default, skip_serializing_if = "Option::is_none")]
         cached_tokens: Option<u32>,
-        /// Tokens written into the provider's prompt cache (Anthropic: `cache_creation_input_tokens`).
+        /// Prompt tokens written into the provider's cache, already included in
+        /// `prompt_tokens` (Anthropic: `cache_creation_input_tokens`).
         #[serde(default, skip_serializing_if = "Option::is_none")]
         cache_creation_tokens: Option<u32>,
     },
