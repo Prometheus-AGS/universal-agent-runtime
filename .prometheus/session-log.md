@@ -3480,3 +3480,27 @@ preserved as an unresolved warning, not attributed to this branch. KBD status
 ran after commit and push. Final liveness was200; readiness remains intermittent.
 The deployment receipt clarifies that normal startup schema initialization and
 idempotent seeding occurred; preserved data does not mean zero host writes.
+
+## 2026-09-05 — Approved shared SurrealDB restart; readiness still failing
+
+The operator approved the shared database restart. Stopped UAR, booted out
+ai.prometheus.surrealdb-native, and verified both registrations and old processes
+absent. Bootstrapped the unchanged SurrealDB plist; new PID29223 opened the same
+RocksDB directory (device16777235/inode898189177). Database health returned200
+and authenticated WebSocket RETURN true passed in5705ms before UAR was started.
+Probe credentials stayed in process memory/environment and were never printed.
+
+UAR restarted as PID34726 with the same installed release/config/environment.
+Startup advanced over several minutes; liveness eventually returned200 in
+0.021005s. Another authenticated WebSocket query passed in9109ms, but a query
+during startup timed out at15s. Post-start readiness timed out at15s and then
+returned408 at30.022509s. The approved restart was performed, but stable
+readiness was not recovered. No internal cause is established. Do not repeat
+restarts, change dependencies or call this healthy based on a PID or liveness.
+
+Both plists, service environment, custom config and executable retain their
+pre-restart hashes. No manual database writes, deletion, cleanup, source changes
+or new guards. Both services remain running; only the deployment receipt and
+this append-only history changed. KBD implementation remains112/120, with the
+Presentation12/12tasks accepted and archive approval still separate. Existing
+credential-rotation, coverage, dependency-alert and certification limits remain.

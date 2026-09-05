@@ -97,3 +97,33 @@ No production source, dependency pin, service configuration, credential or
 GitHub Actions workflow was edited by this deployment procedure. Restarting the
 host runs its normal schema initialization and idempotent seeding against the
 existing database; no manual record edits, cleanup or data reset were performed.
+
+## Authorized shared-database restart follow-up
+
+The operator subsequently approved restarting the shared SurrealDB LaunchAgent
+to attempt readiness recovery. Stopped UAR first, then booted out SurrealDB.
+Both labels were absent and both previous processes had exited before the
+database was bootstrapped again. No forced kill, cleanup or configuration edit.
+
+SurrealDB PID29223 opened the existing RocksDB store and started its web server.
+`curl --max-time 8 ... http://127.0.0.1:28000/health` returned200 in0.564665s.
+The installed3.2.4 CLI completed an authenticated WebSocket `RETURN true;` query
+with result `[true]`, exit0 in5705ms. Credentials were read from the existing
+plist into child-process environment only; they were not printed or persisted.
+Initial pre-listener connection failures are not counted as query passes.
+
+Only after that query passed, restarted UAR as PID34726. Startup completed over
+several minutes. Post-start liveness returned200 in0.021005s. A repeated
+WebSocket query passed in9109ms, but another query during startup exceeded its
+15-second timeout. Post-start readiness exceeded15seconds, then a separate
+35-second-bounded probe returned408 in30.022509s. **The restart did not establish
+stable readiness.** These observations do not establish the internal cause of
+the latency; another restart or a dependency/configuration change is not implied.
+
+Both LaunchAgents remain running. Both plist hashes, UAR service environment,
+custom config and installed executable hash match their pre-restart values.
+The RocksDB directory retains device16777235/inode898189177; it was not moved,
+replaced or deleted. Normal host startup initialization is not a zero-write
+claim. No product code, guards, dependencies or tests changed; only this receipt
+and the append-only session log were updated. This is bounded operational
+evidence, not a sustained-availability or release-certification result.
