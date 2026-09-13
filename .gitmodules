@@ -7,10 +7,10 @@
 	branch = main
 [submodule "frontend/packages/prometheus-entity-management"]
 	path = frontend/packages/prometheus-entity-management
-	url = git@github.com:Prometheus-AGS/prometheus-entity-management.git
+	url = https://github.com/Prometheus-AGS/prometheus-entity-management.git
 [submodule "vendor/git/liter-llm"]
 	path = vendor/git/liter-llm
-	url = git@github.com:GQAdonis/liter-llm.git
+	url = https://github.com/GQAdonis/liter-llm.git
 [submodule "vendor/git/rust-mcp-filesystem"]
 	path = vendor/git/rust-mcp-filesystem
-	url = git@github.com:GQAdonis/rust-mcp-filesystem.git
+	url = https://github.com/GQAdonis/rust-mcp-filesystem.git
