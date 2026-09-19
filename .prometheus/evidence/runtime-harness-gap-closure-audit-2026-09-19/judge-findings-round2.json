@@ -1,0 +1,59 @@
+{
+  "mode": "decision",
+  "verdict": "BLOCK",
+  "judge_model": "kbd-judge",
+  "producer_model": "claude-fable-5-1",
+  "isolation_mode": "rest-gateway:http://localhost:8181/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "Falsifier",
+      "claim": "The falsifier does not falsify the core decision to halt revision 7 and hold an operator gate; several listed triggers would instead support halting.",
+      "evidence": "Decision: \"Stop executing plan revision 7 at the routing 2.3 task boundary and hold a short operator gate before any re-plan.\" Falsifier includes: \"Tier 2 on the committed tree fails in areas the twelve completed tasks touched. Then per-task critic passes were not evidence of soundness, A5 fails, and repair precedes any new task.\" A Tier 2 failure would validate the need to stop/reassess, not show the stop-and-gate decision was wrong.",
+      "suggested_fix": "Define falsifiers that would specifically show continuing revision 7 was better than stopping, e.g. evidence that the existing exit gates are reachable on the current machine within a bounded time and that operator answers are unnecessary for the next tasks."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "Decision / original_intent",
+      "claim": "The decision permits an outcome that explicitly does not satisfy the stated operator intent of reaching a full production-ready implementation.",
+      "evidence": "original_intent: \"recommend a corrected plan that reaches full implementation faster.\" Gate Q1 Option A says: \"Under A the result must be labelled 'implemented, not certified'; it is not the full production-ready target and must not be reported as such.\"",
+      "suggested_fix": "Separate a temporary implementation milestone from the target plan, and require the corrected plan to include a concrete path, owner, and schedule to full production-ready certification rather than making it an optional follow-on."
+    },
+    {
+      "severity": "WARNING",
+      "file": "Decision / Gate 0",
+      "claim": "The operator gate asks for strategic product decisions but provides no default, decision rule, or timeout, so the halt can become another unbounded stall.",
+      "evidence": "Decision: \"hold a short operator gate\" and \"Gate 0: three operator answers\"; no maximum wait time, escalation path, or default if the operator is unavailable is specified.",
+      "suggested_fix": "Add a hard timeout and defaults, e.g. if no answer within N hours, proceed with Option B provisioning or produce a bounded status report instead of continuing execution."
+    },
+    {
+      "severity": "WARNING",
+      "file": "Decision / Actions that hold under either answer",
+      "claim": "The plan commits a dirty, untested working tree before establishing that the completed work is coherent, despite acknowledging large unrelated dirt and no audit-run tests.",
+      "evidence": "Author note: \"No test or build was run\"; E1: \"Uncommitted: 48 source/test files, +7,522/\u22121,078, inside a 274-path dirty tree that also carries 103 unrelated deletions\"; Action 1: \"Commit the phase work ... Then run Tier 2 once on the committed tree.\"",
+      "suggested_fix": "First isolate unrelated deletions and run at least a minimal pre-commit verification on the intended commit set; then commit only verified, reviewed chunks."
+    },
+    {
+      "severity": "WARNING",
+      "file": "Falsifier",
+      "claim": "The falsifier uses thresholds without a justified source, making pass/fail boundaries arbitrary.",
+      "evidence": "Falsifier: \"mean hours per PRODUCT task exceeds 5, or a single lifecycle task exceeds 12\"; Assumption A4 says \"PRODUCT tasks cost 2 to 5 hours each, from 6 data points\" and \"Lifecycle tasks are expected to exceed that\" but gives no basis for the 12-hour lifecycle cutoff.",
+      "suggested_fix": "Tie thresholds to observed task distributions, remaining schedule constraints, or operator budget; otherwise replace them with a required re-estimation trigger rather than declaring the decision wrong."
+    },
+    {
+      "severity": "WARNING",
+      "file": "Decision / Action 2",
+      "claim": "The bounded-provider validation protocol is treated as sufficient without evidence that a 200-request sample can prove an enforceable bound for production traffic.",
+      "evidence": "Action 2: \"at least 200 dispatched requests per model; M set to the maximum observed under-count plus 10%; zero tolerated exceedances in the sample\"; no rationale is given for why 200 samples or max+10% covers prompt/template/model variability.",
+      "suggested_fix": "State the statistical or engineering basis for the sample size and margin, or require formal tokenizer/template bounds plus adversarial cases before labeling a provider `bounded`."
+    },
+    {
+      "severity": "WARNING",
+      "file": "Decision / Action 5",
+      "claim": "The claim that the revised order reaches value faster is not supported by an estimate of the new critical path or total duration.",
+      "evidence": "original_intent asks to \"recommend a corrected plan that reaches full implementation faster\"; Action 5 gives an ordering, but the only quantitative estimate remains \"Straight-line projection for the 32 remaining tasks: 54 to 125 wall-clock hours\" for the old task set, with no revised total after removing or rescheduling work.",
+      "suggested_fix": "Provide a revised task count, estimated hours by class, and expected completion range under Option A and Option B."
+    }
+  ]
+}

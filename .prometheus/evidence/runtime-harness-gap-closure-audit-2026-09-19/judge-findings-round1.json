@@ -1,0 +1,60 @@
+{
+  "mode": "decision",
+  "verdict": "BLOCK",
+  "judge_model": "kbd-judge",
+  "producer_model": "claude-fable-5-1",
+  "isolation_mode": "rest-gateway:http://localhost:8181/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "decision_document / Decision item 2; original_intent",
+      "claim": "The decision reaches a faster exit by redefining the goal away from the requested full production-ready implementation.",
+      "evidence": "Original intent asks to \"recommend a corrected plan that reaches full implementation faster\" for \"a full production-ready implementation of the eight feedback features\"; Decision item 2 redefines completion as \"on macOS, feature profile `server-full`, against the two enabled providers, with every unmet item listed as a named limitation\" and moves certification/crash suites/coverage/claim matrix to a \"non-gating follow-on phase.\"",
+      "suggested_fix": "Do not call the narrowed macOS/local-provider scope phase completion unless the operator explicitly accepts that it is not the full production-ready target; otherwise revise the plan to include provisioning or access needed to satisfy the original production definition."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "decision_document / Assumptions A1; Decision item 2",
+      "claim": "The most load-bearing assumption is cheaply checkable now but is deferred until after the plan is changed.",
+      "evidence": "A1 states: \"If the operator requires multi-OS and live-provider certification before calling it done, item 2 is wrong\"; Decision item 2 nevertheless proposes to \"Re-scope `runtime-harness-profile-certification` from 'mandatory dependency of parent completion' to a follow-on phase.\"",
+      "suggested_fix": "Ask and record the operator's definition of done before adopting revision 8; make item 2 conditional on that explicit answer."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "decision_document / Finding P2; Decision item 3; Assumption A3",
+      "claim": "The proposed bounded-estimate provider contract contradicts the document's own finding that one enabled provider lacks an enforceable output ceiling.",
+      "evidence": "P2 says \"Ferrox lacks a complete-envelope count and an enforceable output ceiling\" and \"The local ChatGPT-subscription proxy counts `post_dispatch_only` and its backend strips `max_output_tokens`; no remaining task can change that.\" Decision item 3 still says to \"register production profiles for Ferrox and the local proxy using a tokenizer estimate plus the plan's own margin term M\"; A3 admits this is \"Not verified\" and that if the proxy rewrites requests \"no defensible bound may exist.\"",
+      "suggested_fix": "Separate provider support from bounded-estimate support: require an enforceable output cap or classify the proxy/Ferrox as unsupported for production budgeting until a real bound is demonstrated."
+    },
+    {
+      "severity": "WARNING",
+      "file": "decision_document / Falsifier",
+      "claim": "The validation falsifier for bounded estimates is underspecified and can pass without proving the contract is safe.",
+      "evidence": "The falsifier says a bounded estimate fails if it \"is exceeded by measured usage in the validation sample,\" but does not define sample size, prompt distribution, confidence level, margin source, maximum tolerated exceedance rate, or which providers/models/tasks must be covered.",
+      "suggested_fix": "Define a validation protocol before implementation: minimum sample count, workload corpus, per-provider/model coverage, exceedance threshold, margin calculation, and required rerun cadence."
+    },
+    {
+      "severity": "WARNING",
+      "file": "decision_document / Decision item 7; Findings E2 and The uncomfortable thing",
+      "claim": "The plan cuts review frequency despite its own evidence that review blocks were catching real defects.",
+      "evidence": "E2 reports task 2.1 took \"three critic blocks,\" 2.2 took \"two rounds,\" and protected-context 2.3 had \"two failing critic rounds\"; the document's own \"uncomfortable thing\" says \"every critic BLOCK in the session log named a genuine bug\" and \"Cutting critic frequency will let some of those through.\" Decision item 7 nevertheless caps review at \"isolated critic once per change\" and \"two rounds.\"",
+      "suggested_fix": "Keep stricter review for changes affecting production behavior until the defect rate falls, or replace removed critic rounds with concrete automated checks tied to the classes of bugs previously found."
+    },
+    {
+      "severity": "WARNING",
+      "file": "decision_document / Decision item 5",
+      "claim": "The reduced task list has no concrete acceptance mapping from the eight requested capabilities to passing tests.",
+      "evidence": "Decision item 5 says to cut from 32 tasks to \"the 13 PRODUCT tasks plus the tests that prove them\" and move the \"F1\u2013F8 claim matrix\" to a follow-on phase, but the original intent is to implement the eight feedback features and the decision does not specify which tests prove F1 through F8.",
+      "suggested_fix": "For each of F1\u2013F8, list the exact product task(s), test(s), and runtime acceptance evidence required before the narrowed phase can be declared complete."
+    },
+    {
+      "severity": "WARNING",
+      "file": "decision_document / Falsifier",
+      "claim": "The cost falsifier only tests the first five PRODUCT tasks and does not protect against later high-cost work or hidden subprojects.",
+      "evidence": "The falsifier says the decision is wrong if \"the mean cost per PRODUCT task over the next five tasks exceeds 5 hours,\" while A4 admits the estimate is based on \"6 data points\" and that \"Lifecycle 2.1 to 2.3 touch 8 to 10 files each and may cost more.\"",
+      "suggested_fix": "Use milestone-based re-estimation after each change group and include worst-case bounds for the known larger lifecycle tasks, not only the next five-task mean."
+    }
+  ],
+  "checked_classes": []
+}
