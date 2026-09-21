@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "task": "harness-model-profiles-routing-1-1",
+  "command": "python3 .kbd-orchestrator/phases/runtime-harness-gap-closure/evidence/execute/harness-model-profiles-routing/1.1/verify.py",
+  "workingDirectory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "exitCode": 0,
+  "script": "verify.py",
+  "scriptSha256": "c4a4b1af71561eda0a04fa1e745bf494eda7b783ea45a80f656258830cfbd745",
+  "output": "verification.log",
+  "outputSha256": "da459795664947118ac7bca0ccaaa40700d7f86cc67e03f075bb792e3fce2c67",
+  "exitReceipt": "verification.exit",
+  "exitReceiptSha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+  "matrixSha256": "8708dacaa80447127498f9377c01cc3bbde2f2815cb7dd99ae074f15565d2964",
+  "sourceReceiptsSha256": "a3fddec13001af519f464047fc354ad758547f1267a6c959aef3efa30833abe7"
+}

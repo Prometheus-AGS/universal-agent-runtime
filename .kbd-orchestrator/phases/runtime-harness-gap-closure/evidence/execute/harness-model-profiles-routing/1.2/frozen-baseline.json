@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "task": "harness-model-profiles-routing-1-2",
+  "candidateHead": "226d4a0af89811975662cf3f203c699f70e8cebc",
+  "acceptanceContract": {
+    "path": ".kbd-orchestrator/phases/runtime-harness-gap-closure/acceptance-contract.json",
+    "sha256": "b2878c3836ac887b0468e61e67e9a0828c0371ba3e9c8e7ff89d7c094265b75c",
+    "version": "harness-gap-eval-v1",
+    "status": "frozen_inputs_and_thresholds_not_executed"
+  },
+  "datasets": {
+    "routingAdmissionCases": 18,
+    "routingTaskQualityCases": 8,
+    "contextStrategies": 3,
+    "contextPersistencePaths": 3,
+    "contextPayloadClasses": 7,
+    "contextSizeBoundaries": 5,
+    "contextParallelCallCounts": 3,
+    "contextBudgetCases": 3,
+    "contextCartesianCases": 945,
+    "contextFailureCases": 198,
+    "contextBudgetEntryPointCases": 54,
+    "contextLongHistoryRecords": 1004,
+    "contextNormalEntryPointBindings": 18,
+    "explicitModelCaseIds": ["R01", "R02", "R09", "R11", "R12", "R13", "R15", "R16", "R17", "R18"],
+    "tenantPolicyCaseIds": ["R13", "R14", "R18"],
+    "sharedCostBudgetCaseIds": ["R15", "R16", "R18"],
+    "sharedLatencyBudgetCaseIds": ["R17"],
+    "qualityCaseIds": ["T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08"]
+  },
+  "contextCorpus": {
+    "generator": {
+      "path": ".kbd-orchestrator/phases/runtime-harness-gap-closure/evidence/execute/harness-model-profiles-routing/1.2/generate_context_corpus.py",
+      "version": "context-corpus-v1",
+      "sha256": "c324c15c67d8c0d230203d01773ccff4e44dbd7ecd4d625fb4beccff1ce4bc06"
+    },
+    "manifest": {
+      "path": ".kbd-orchestrator/phases/runtime-harness-gap-closure/evidence/execute/harness-model-profiles-routing/1.2/context-corpus-manifest.json",
+      "sha256": "566297bffde023cb205198f901792677c40ae7f48c1fb1d479dbca4a0e682f6d"
+    },
+    "aggregateSha256": {
+      "cartesianCases": "754716316d9891620cece4168c3557c66e13b5a4516a89e11bfccb54a6ce9767",
+      "normalEntryPointCoverage": "8893e095c78d49808127186f7572cda58a897244160682dfb5d12a6807a8b805",
+      "longHistory": "718cb876fb8c08c81aad720fd253da16073b90dbd76cceb4d836a8139b9fa7fc",
+      "failureCases": "ee88c0f391f1e9f821dd59f3564eeb31ac34b48356d40cc8a02748b152017822",
+      "budgetCases": "99fa44c6cbddcd8f455c30aa48225eac55077cf41ba8f07cb9ad0483cabe15a2"
+    }
+  },
+  "numericalCriteria": {
+    "routeConstraintsPassRate": 1,
+    "routeExplicitModelIntegrity": 1,
+    "routeTenantPolicyIntegrity": 1,
+    "routeSharedBudgetAccountingAccuracy": 1,
+    "routeTaskSuccessDeltaMin": 0,
+    "routeImprovementAnyOf": [
+      "task success +0.05 absolute",
+      "total cost -0.10 relative",
+      "p95 latency -0.10 relative"
+    ],
+    "contextProtectedFactRetention": 1,
+    "contextTaskSuccessDeltaMin": 0,
+    "contextTotalCostRatioMax": 1.1,
+    "contextP95LatencyRatioMax": 1.1,
+    "repetitions": 3
+  },
+  "sharedBudgetComponents": ["root", "classifier", "summaries", "retries", "children"],
+  "historicalBaselines": {
+    "routingAccuracy": {
+      "path": "evals/results/routing-accuracy.baseline.json",
+      "sha256": "c6d2f9dd82e0ea3b41be2928cb804f41d1e7fdd0289d12d758ddfe4c3873589e",
+      "boundary": "contains-only scalar; insufficient for quality/cost/latency certification"
+    },
+    "contextEfficiency": {
+      "path": "evals/results/context-efficiency.baseline.json",
+      "sha256": "c6d2f9dd82e0ea3b41be2928cb804f41d1e7fdd0289d12d758ddfe4c3873589e",
+      "boundary": "contains-only scalar; insufficient for protected-retention/cost/latency certification"
+    }
+  },
+  "fixtureSources": {
+    "tests/prompt_assembly.rs": "d329fdcad2ec90baddb8fbb5e05df9a031876a63def43ad0090eb11c8f6951ee",
+    "tests/model_path_resiliency.rs": "a40f39d6650fa8466f0f232264d115a0114d91065884b1fb71a00dacb97b74e8"
+  },
+  "measurementBoundary": "Synthetic cases certify deterministic constraint, arithmetic and wiring behavior only. Live quality/cost/latency claims require paired held-out evidence for each certified exact deployment; blocked or unknown evidence is not a pass."
+}

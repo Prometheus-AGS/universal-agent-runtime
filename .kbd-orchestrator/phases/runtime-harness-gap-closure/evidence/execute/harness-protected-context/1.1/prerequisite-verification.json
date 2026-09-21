@@ -1,0 +1,54 @@
+{
+  "phase": "runtime-harness-gap-closure",
+  "change": "harness-protected-context",
+  "task": "1.1",
+  "status": "PASS",
+  "verifiedAt": "2026-09-16",
+  "artifactHashes": {
+    "review/plan/final-packet.json": "cfdb4854809ffb27adbfdbbded26bf8fbfcef9c654f514d16a393d90510ff2b2",
+    "acceptance-contract.json": "2bad9bd749b0bc6f7633278465ca89561c138a3a04dc33ddd524c9816185d80c",
+    "execution-map.json": "d7129c2575e016e614244847f7e716f62646e49749ff5bad505e16a398088444",
+    "provider-profile-matrix.json": "05ae3cfd6acf3e690c3032cbcd2be41a1bd6b3e1a54662740afa2ff04477e071"
+  },
+  "checks": {
+    "reviewedArtifactHashes": "44/44 match",
+    "protectedContextScenarios": "25/25 mapped",
+    "entryPoints": [
+      "initial",
+      "iteration",
+      "retry before semantic commit",
+      "ordered failover",
+      "graph LLM node",
+      "actor/child turn",
+      "checkpoint resume"
+    ],
+    "contextStrategies": [
+      "SlidingWindow",
+      "KeepFirstLast",
+      "progressive summarization"
+    ],
+    "persistencePaths": [
+      "fresh",
+      "reload",
+      "checkpoint"
+    ],
+    "acquisitionPolicyBytes": {
+      "presentation": 32000,
+      "canonicalReceipt": 16777216,
+      "perRunReceipts": 67108864
+    },
+    "legacyMigration": "Only provably complete records migrate as complete; truncated or unverifiable legacy records remain unknown/incomplete and cannot enter guaranteed replay.",
+    "configuredProfilesCertified": 0,
+    "productDiffBeforeBaseline": []
+  },
+  "baseline": {
+    "sourceRevision": "226d4a0af89811975662cf3f203c699f70e8cebc",
+    "worktree": "/Users/gqadonis/.claude/worktrees/runtime-harness-baseline",
+    "detached": true,
+    "clean": true,
+    "separateCargoTarget": "/Users/gqadonis/.cache/uar-cargo-targets/runtime-harness-baseline",
+    "measurements": "NOT_RUN; task 1.2 owns deterministic fixtures and baseline execution before behavior edits"
+  },
+  "reviewLimitation": "The final correction deltas were checked locally after the required two review rounds and did not receive a third independent review. This evidence verifies their frozen hashes and predicates; it does not relabel the final review verdict or establish runtime correctness.",
+  "initialCheckCorrection": "The first local assertion expected 26 protected-context scenarios. The reviewed OpenSpec inventory contains 25; the corrected check validates all 25 by change ownership and preserves the total phase count of 85."
+}

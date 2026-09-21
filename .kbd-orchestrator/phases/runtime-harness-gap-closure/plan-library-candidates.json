@@ -1,0 +1,150 @@
+{
+  "phase": "runtime-harness-gap-closure",
+  "generated_at": "2026-09-16T23:06:38.240246+00:00",
+  "gaps_addressed": [
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8"
+  ],
+  "candidates": [
+    {
+      "id": "cand-007",
+      "name": "A2A Python SDK TaskStore / AgentExecutor",
+      "kind": "pattern",
+      "repo_url": "https://github.com/a2aproject/a2a-python",
+      "registry": "none",
+      "fit_for_gap": "F4 durable protocol lifecycle",
+      "verdict": "reference",
+      "license": "Apache-2.0",
+      "evidence": [
+        {
+          "tier": 2,
+          "source_url": "https://github.com/a2aproject/a2a-python/blob/main/src/a2a/server/agent_execution/agent_executor.py",
+          "claim": "The official executor separates execution/cancellation from event publication; TaskStore is a distinct server concern."
+        }
+      ],
+      "risks": [
+        "Python server integration would add an execution/persistence boundary beside the Rust host.",
+        "Protocol records alone do not establish UAR mailbox crash recovery or external exactly-once effects."
+      ],
+      "decision_rationale": "Reference lifecycle separation; adapt cand-001 persistence/thread host with durable correlation and acceptance intent. Do not install the Python SDK."
+    },
+    {
+      "id": "cand-008",
+      "name": "OpenTelemetry GenAI agent/tool conventions",
+      "kind": "pattern",
+      "repo_url": "https://github.com/open-telemetry/semantic-conventions-genai",
+      "registry": "none",
+      "fit_for_gap": "F6 graph/child observability",
+      "verdict": "reference",
+      "license": "Apache-2.0",
+      "evidence": [
+        {
+          "tier": 2,
+          "source_url": "https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/",
+          "claim": "The attribute registry provides tool identity conventions; the former agent-span page now redirects readers to the dedicated GenAI repository."
+        }
+      ],
+      "risks": [
+        "Telemetry is not the authoritative ordered task ledger.",
+        "Convention movement/stability must not change existing event wire fields."
+      ],
+      "decision_rationale": "Keep existing RuntimeStep and tracing/OTLP dependencies. Add host correlation fields and optional convention mapping; no new exporter or observability service."
+    },
+    {
+      "id": "cand-009",
+      "name": "Anthropic skill-creator evaluation methodology",
+      "kind": "pattern",
+      "repo_url": "https://github.com/anthropics/skills/tree/main/skills/skill-creator",
+      "registry": "none",
+      "fit_for_gap": "F5 activation and task quality",
+      "verdict": "reference",
+      "license": "Apache-2.0",
+      "evidence": [
+        {
+          "tier": 2,
+          "source_url": "https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md",
+          "claim": "The source separates trigger positives/near-miss negatives and outcome assertions, tracks timing/token comparisons, and separates training from held-out cases."
+        },
+        {
+          "tier": 1,
+          "source_url": "https://raw.githubusercontent.com/anthropics/skills/main/skills/skill-creator/LICENSE.txt",
+          "claim": "Skill-local license is Apache-2.0; repository root metadata alone reported no license."
+        }
+      ],
+      "risks": [
+        "Its Claude-specific trigger execution is not UAR scope/permission behavior.",
+        "Tuning on certification cases would contaminate evaluation."
+      ],
+      "decision_rationale": "Reference held-out trigger/outcome methodology; adapt current skill activation fixtures and exhaustive oracle. No upstream scripts are copied or executed."
+    },
+    {
+      "id": "cand-010",
+      "name": "Ragas faithfulness / claim decomposition",
+      "kind": "pattern",
+      "repo_url": "https://github.com/vibrantlabsai/ragas",
+      "registry": "none",
+      "fit_for_gap": "F7 answer evidence verification",
+      "verdict": "reference",
+      "license": "Apache-2.0",
+      "evidence": [
+        {
+          "tier": 2,
+          "source_url": "https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/faithfulness/",
+          "claim": "Faithfulness decomposes an answer into claims and assesses support in supplied context; it is not an access-control mechanism."
+        }
+      ],
+      "risks": [
+        "Model entailment is fallible and does not prove truth or tenant authorization.",
+        "Direct Python dependency would duplicate the governed inference boundary."
+      ],
+      "decision_rationale": "Reference claim-level support; extend UAR verification with governed Liter extraction/entailment plus deterministic source/version/authorization checks. Model judgments remain labeled advisory; malformed/unknown evidence abstains."
+    },
+    {
+      "id": "cand-011",
+      "name": "Inspect AI external-agent evaluation",
+      "kind": "framework",
+      "repo_url": "https://github.com/UKGovernmentBEIS/inspect_ai",
+      "registry": "pypi",
+      "fit_for_gap": "F6/F8 tool-inclusive evaluation",
+      "verdict": "reference",
+      "license": "MIT",
+      "evidence": [
+        {
+          "tier": 2,
+          "source_url": "https://github.com/UKGovernmentBEIS/inspect_ai/blob/main/src/inspect_ai/_eval/task/task.py",
+          "claim": "Task construction accepts custom solver/agent and scorers; evaluation exposes repeated epochs and retained logs."
+        }
+      ],
+      "risks": [
+        "Adopting a second runner adds Python packaging and risks exercising an adapter instead of the UAR host.",
+        "It cannot automatically supply UAR-specific deny, receipt or budget oracles."
+      ],
+      "decision_rationale": "Reference solver/scorer/log separation; adapt existing Rust eval runner with a governed target and deterministic host fixtures. External Inspect integration is unnecessary for these exit criteria."
+    }
+  ],
+  "build_required": [
+    {
+      "need": "F4 owner-scoped durable acceptance/correlation",
+      "why_no_candidate": "Survey cand-007 completed. Existing Rust host and three persistence providers remain authoritative; Python SDK does not replace their UAR-specific transaction and mailbox recovery contract."
+    },
+    {
+      "need": "F6 authoritative graph and child correlation",
+      "why_no_candidate": "Survey cand-008 completed. OTLP conventions inform labels; committed RuntimeStep identity/order must remain in the existing host event path."
+    },
+    {
+      "need": "F5 UAR-specific quality fixtures and metrics",
+      "why_no_candidate": "Survey cand-009 completed. Upstream methodology is reusable; scope precedence, governed activation and task oracle are UAR-specific."
+    },
+    {
+      "need": "F7 authorized claim/evidence verification",
+      "why_no_candidate": "Survey cand-010 completed. Reuse claim-level method through Liter; host authorization/version checks and audit projection cannot be delegated to a metric library."
+    },
+    {
+      "need": "F6/F8 production-host target for existing eval runner",
+      "why_no_candidate": "Survey cand-011 completed. Existing CLI/baseline format and trusted orchestration are retained; no need for another installed runner."
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "phase": "runtime-harness-gap-closure",
+  "change": "harness-protected-context",
+  "task": "2.3",
+  "revision": "226d4a0af89811975662cf3f203c699f70e8cebc",
+  "status": "PASS",
+  "commands": [
+    {
+      "command": "RUSTC_WRAPPER= cargo check --locked --no-default-features --features server-full",
+      "tier": 0,
+      "exitCode": 0,
+      "observed": "Finished dev profile in 57.32s with no warnings"
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test context_history_integrity",
+      "tier": 1,
+      "exitCode": 0,
+      "observed": "27 passed; 0 failed; 2 ignored; finished in 1.52s after 7m 03s build"
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test test_context_strategy",
+      "tier": 1,
+      "exitCode": 0,
+      "observed": "4 passed; 0 failed; 0 ignored; finished in 0.00s after 7m 56s build"
+    },
+    {
+      "command": "cargo fmt --check && git diff --check",
+      "tier": 0,
+      "exitCode": 0,
+      "observed": "No formatting or whitespace findings"
+    },
+    {
+      "command": "openspec validate harness-protected-context --strict",
+      "tier": 0,
+      "exitCode": 0,
+      "observed": "Change 'harness-protected-context' is valid"
+    }
+  ],
+  "correctionRuns": [
+    {
+      "command": "RUSTC_WRAPPER= cargo check --locked --no-default-features --features server-full",
+      "exitCode": 101,
+      "observed": "Endpoint fingerprint LowerHex compile error and one stale import warning; both corrected"
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test context_history_integrity",
+      "exitCode": 101,
+      "observed": "26 passed; 1 failed; 2 ignored because the success fixture attempted the now-forbidden stream override; fixture corrected while the rejection scenario remained"
+    }
+  ],
+  "sourceSha256": {
+    "src/uar/runtime/context/mod.rs": "540c2b3ebbeaf75dc63b595ff39e90cb0d9c2c3fa721a6196e4094ee57d9330c",
+    "src/uar/runtime/context/budget.rs": "aab2bf576a27e21fa387d6e34599577174faf1c3601768e8f5528ee57733ada4",
+    "src/uar/runtime/context/token_service.rs": "923a76c3c116f75311315a98e9cb0548a5ff22f52070727cbb014ca29a2acb40",
+    "src/llm/mod.rs": "89d873ff72eb96ce24c9cc758f3735bc66d8421290908b0821dc6ec6c91a2f5e",
+    "src/llm/liter_driver.rs": "04cc4f23fa85808f4d28290fd741b6f591a7895c940829bfb1d413170a09fa93",
+    "src/llm/anthropic_driver.rs": "df2cb4bea15715c432627dc75b4d0d2660206b18c20afcefac98c939d18d18fa",
+    "src/llm/external_driver.rs": "0bc232e99424aac8d5c0bc1fc966fd1b22d1cdf84e6d32f7c7440e632db04c4f",
+    "src/llm/orchestrator.rs": "5b78e6b05414529f995e8f7a787b031c85155197a4a66c585489339f6ec396aa",
+    "tests/context_history_integrity.rs": "59ddc788a416829211f5ded1dbedecaace551833d9d3773bdf748f9d82e7cd11",
+    "tests/test_context_strategy.rs": "aa707d5fb4758f034536a92aefa4d36dde3ca2466da5bb139f42d6808fb3cdac"
+  },
+  "review": {
+    "initialVerdict": "FAIL",
+    "initialCriticalFindings": 7,
+    "secondVerdict": "FAIL",
+    "secondCriticalFindings": 2,
+    "secondMajorFindings": 1,
+    "finalVerdict": "PASS",
+    "finalFindings": 0
+  },
+  "unverified": [
+    "Live external-provider behavior",
+    "Exact real-provider model templates, aliases and tokenizer/output contracts",
+    "Profile-wide and release certification"
+  ]
+}

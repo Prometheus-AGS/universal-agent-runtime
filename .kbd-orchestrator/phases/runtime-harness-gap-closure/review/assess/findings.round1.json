@@ -1,0 +1,31 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "gpt-5.5",
+  "producer_model": "gpt-6",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The assessment marks the purpose/scope goal met while omitting the required preservation of the supplied feedback as feedback-source.txt.",
+      "evidence": "The goals require: \"Preserve the supplied feedback as feedback-source.txt in this directory.\" In GOAL PROGRESS, goal 1 is marked \"MET for assessment\" with only \"All F1\u2013F8 reviewed; no completion percentage asserted.\" The artifact never states that feedback-source.txt exists or was preserved, and the file_tree does not list a runtime-harness-gap-closure feedback-source.txt.",
+      "suggested_fix": "Record whether feedback-source.txt was created/preserved, cite its path, or mark goal 1 partial with this as a remaining gap."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The handoff contains an unresolved draft placeholder for the Rust build check, leaving required verification status incomplete.",
+      "evidence": "BUILD HEALTH states: \"Rust build check: **PENDING AT DRAFT** \u2014 `cargo check --locked --no-default-features --features server-full`; final observed result belongs in the verification section before handoff.\" The artifact has no verification section with the final observed result, while GOAL PROGRESS says verification policy is only \"PARTIAL\" and \"final compile result required before handoff.\"",
+      "suggested_fix": "Either run and record the final command/result before handoff, or explicitly classify the assessment as incomplete and list the pending build check as a blocker."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "isolation": "Fresh-context native artifact critic; artifact packet only.",
+  "verdict": "BLOCK",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "execution-map.json",
+      "claim": "Change 1 acceptance depends on request-boundary work assigned to dependent change 2.",
+      "evidence": "Output ceiling, framing and model-switch scenarios are owned by change 1/3.1 while driver/settings and entry-path integration were assigned to change 2.",
+      "suggested_fix": "Move minimum boundary enforcement into change 1 and require successful supported-fixture dispatch."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "acceptance-contract.json",
+      "claim": "Admission-only routing cases cannot measure task classification, success or quality improvement.",
+      "evidence": "R01-R12 provide derived requirements and expected destinations, not task inputs, classification labels or task-output/provider-usage assertions.",
+      "suggested_fix": "Add task-level corpus and assign production classifier-to-routing integration."
+    },
+    {
+      "severity": "WARNING",
+      "file": "acceptance-contract.json",
+      "claim": "Scoped formatter cases lack actual installed catalog overrides.",
+      "evidence": "S13/S14 expect narrower scopes while the shared catalog includes all three scopes; prompt claims do not change host state.",
+      "suggested_fix": "Define explicit per-case installed scope and assert host-selected version."
+    }
+  ],
+  "recordFormat": "Faithful concise transcription of returned findings; full original review remains in task history."
+}

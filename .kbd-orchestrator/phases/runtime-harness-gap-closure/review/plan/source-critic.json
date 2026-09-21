@@ -1,0 +1,21 @@
+{
+  "verdict": "WARNINGS",
+  "isolation": "fresh-context native artifact critic; packet only; round 2",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "acceptance-contract.json",
+      "claim": "Frozen payload generator does not exercise actual CRLF bytes.",
+      "evidence": "Decoded contextCorpus.payloads[1] contains literal backslash-r and backslash-n; no escape decoding is defined.",
+      "suggested_fix": "Encode actual CRLF and assert bytes 0D 0A before freezing."
+    },
+    {
+      "severity": "WARNING",
+      "file": "acceptance-contract.json",
+      "claim": "Coding success source-equality rule rejects correct equivalent live implementations.",
+      "evidence": "T03/T04 taskOracle exact strings and shared successRule require source equality in addition to assertions.",
+      "suggested_fix": "Use required function interface and executable assertions; exact source strings only for replay fixtures."
+    }
+  ],
+  "recordFormat": "Faithful concise transcription; original response retained in task history."
+}

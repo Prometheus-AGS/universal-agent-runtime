@@ -1,0 +1,91 @@
+{
+  "phase": "runtime-harness-gap-closure",
+  "stage": "analyze",
+  "recorded_at": "2026-09-16T19:41:20.665600+00:00",
+  "head": "226d4a0af89811975662cf3f203c699f70e8cebc",
+  "assessment_source_hashes": "28 unchanged",
+  "sources": [
+    {
+      "path": "versions.toml",
+      "sha256": "b4b7ea00a0f62460fe7981fedf96cf3686ee49f189f8cc77d987301580037307"
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "793269835d93deaa562d7d4851743fbb2a72e47bcc1c89fc6c411e092f1d4787"
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "bf45ffb90f828eaa23d26a9cf9bd13e7b14df4a3ac12fb42791f279de0742d31"
+    },
+    {
+      "path": "src/llm/prompt_dialect.rs",
+      "sha256": "347567eff4d59852ec6395d66f11dc841307d6216c9a70cca9c4f7520d9e9be9"
+    },
+    {
+      "path": "src/llm/orchestrator.rs",
+      "sha256": "043585bedf5408de0711de45ae4aa90b11455052e3f40f4796d8d3d156570922"
+    },
+    {
+      "path": "src/llm/liter_driver.rs",
+      "sha256": "cc83228adeb933ce7ee03fe0b52c3640011bc6d3dc4da676153a3a24d41dc1f8"
+    },
+    {
+      "path": "src/llm/catalog.rs",
+      "sha256": "7cfb1139952fdc9d0096f6f3bc4749304153e426911cbfbdebdcdce8b8b3bfc8"
+    },
+    {
+      "path": "src/uar/compiler/ir.rs",
+      "sha256": "9e6334298004d5c30826886d344ee389d2b4d7d1f5d8f7543f1992904ec210c0"
+    },
+    {
+      "path": "src/uar/runtime/manager.rs",
+      "sha256": "55bd52588ff7f29ce1fb1ae6b747a08c262a8823ba6e0c3ba6fde22d92853369"
+    },
+    {
+      "path": "src/uar/runtime/prompt/assemble.rs",
+      "sha256": "0f00235a91e8203ec8dfee984cce612969c3f6a0619620bdb45fe28f0ae85c2e"
+    },
+    {
+      "path": "src/uar/runtime/prompt/fragment.rs",
+      "sha256": "7c19f0785b933f83bebb67834120b3ddaa38feb7d38e2bd4d907cd0887dbd603"
+    },
+    {
+      "path": "src/uar/runtime/prompt/manifest.rs",
+      "sha256": "706cbfca9408c18d19266594190602fa2a1dff7b9c0700c83d52ca4c5ba2a887"
+    },
+    {
+      "path": "src/uar/runtime/context/summarizer.rs",
+      "sha256": "b56af686dffbae7865b1e28059c702e8195eba6ffb66b78c5c5a06822f0370c2"
+    },
+    {
+      "path": "src/uar/runtime/context/reduce.rs",
+      "sha256": "c11c9e8d88ab4b3195a5dd52ecf8fe154cb61c7be270239c35722e72b0d803ec"
+    },
+    {
+      "path": "src/uar/runtime/context/manager.rs",
+      "sha256": "4972c989a5e1274bcc275aa152cf07ec57f0a89f37a91a0421f3286950dbb4e8"
+    },
+    {
+      "path": "src/uar/runtime/context/token_service.rs",
+      "sha256": "1b17cde101c23a40f34c4af2ff2b2e9c08432bc82099a02ea372b3b1a32ac97c"
+    },
+    {
+      "path": "src/uar/runtime/context/truncate.rs",
+      "sha256": "193803a988bcfd024512d1b7413bb36caaf08f3c3abbe1ead102b193f1bc1465"
+    },
+    {
+      "path": "src/uar/context/strategy.rs",
+      "sha256": "2ab7ebae124ef227095fad87d31fefa4d84937abb80db4a1b76e85db1aa7cc2d"
+    },
+    {
+      "path": "openspec/specs/conversation-history-integrity/spec.md",
+      "sha256": "3da2ae5ebe62f6c451e75f9a4a49e98f63ac903f08e02014c04db6b9032e309a"
+    },
+    {
+      "path": ".claude/rules/rust.md",
+      "sha256": "0e09bd032cad6500076ee7e8097519a2a8d5ff9b49ceef22a37be870f6d53ded"
+    }
+  ],
+  "product_status": "",
+  "notice": "Hashes establish source identity, not runtime behavior."
+}

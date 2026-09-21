@@ -1,0 +1,17 @@
+{
+  "stage": "analyze",
+  "completedAt": "2026-09-16T19:46:06Z",
+  "outputs": [
+    "analysis.md",
+    "library-candidates.json",
+    "decision-log.md",
+    "evidence/analysis-research.json",
+    "evidence/analysis-verification.json",
+    "review/analyze/findings.json",
+    "review/analyze/source-critic.md"
+  ],
+  "nextStage": "spec",
+  "summaryForNext": "Six candidates: adapt existing UAR/Liter seams and tiktoken-rs0.12.0; reference model chat templates/MiniJinja; no new dependency. Specify versioned exact-destination templates and a pure protected-context budget planner: never compress/drop protected tool/data payloads, only eligible prose; explicit overflow, invalid-history and authorization outcomes; raw acquisition before formatting; final request recount and actual output reservation. Native critic PASS; cross-model final PASS with one WARNING: five F4-F8 build-versus-adopt plan commitments are BLOCKED pending targeted external-candidate evaluation; Spec can define behavior but Plan cannot waive this prerequisite. Registry/version and provider-profile limits recorded; build health UNKNOWN; no runtime tests. Next /kbd-spec runtime-harness-gap-closure.",
+  "skipped": false,
+  "skipReason": null
+}

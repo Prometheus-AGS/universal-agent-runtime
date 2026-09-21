@@ -1,0 +1,87 @@
+{
+  "task": "harness-protected-context-2-1",
+  "status": "PASS",
+  "candidateRevision": "226d4a0af89811975662cf3f203c699f70e8cebc",
+  "verifiedAt": "2026-09-17T13:53:48Z",
+  "toolchain": {
+    "rustc": "rustc 1.99.0-nightly (b6839f4d0 2026-07-17)",
+    "cargo": "cargo 1.99.0-nightly (59800466c 2026-07-07)"
+  },
+  "checks": [
+    {
+      "command": "env RUSTC_WRAPPER= cargo check --locked --no-default-features --features server-full",
+      "exitCode": 0,
+      "result": "Finished dev profile in 5m 38s; no warnings"
+    },
+    {
+      "command": "env RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --lib canonical_receipt_tests",
+      "exitCode": 0,
+      "result": "6 passed; 0 failed; 753 filtered out"
+    },
+    {
+      "command": "env RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --lib direct_tool_preserves_canonical_value_before_display_truncation",
+      "exitCode": 0,
+      "result": "1 passed; 0 failed; 758 filtered out"
+    },
+    {
+      "command": "env RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --lib uar::tools::terminal_process::tests",
+      "exitCode": 0,
+      "result": "2 terminal raw-byte capture tests passed; 0 failed"
+    },
+    {
+      "command": "env RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --lib canonical_receipts_are_ordered_partitioned_and_immutable",
+      "exitCode": 0,
+      "result": "1 passed; 0 failed"
+    },
+    {
+      "command": "env RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test context_history_integrity",
+      "exitCode": 0,
+      "result": "17 passed; 0 failed; 2 ignored"
+    },
+    {
+      "command": "env RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test test_context_strategy",
+      "exitCode": 0,
+      "result": "4 passed; 0 failed"
+    },
+    {
+      "command": "rustfmt --edition 2024 --check <task Rust files>",
+      "exitCode": 0,
+      "result": "no output"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "result": "no output"
+    },
+    {
+      "command": "openspec validate harness-protected-context --strict",
+      "exitCode": 0,
+      "result": "Change 'harness-protected-context' is valid"
+    }
+  ],
+  "files": {
+    "src/llm/orchestrator.rs": "dc72b6ddc0ab3abfd6eebbbf3c067cce7522b299733fd8c44ddcbd9dcfda8585",
+    "src/uar/persistence/agent_threads.rs": "e7a9a19074e666dc19b1a5e426f16333c79e053bcdb2812b8bd442e25d0c3f94",
+    "src/uar/persistence/mod.rs": "3c207bcad5bd19dcc7996b267de61dec0600981c99a43eabf0a8051b2f17b62b",
+    "src/uar/persistence/providers/memory.rs": "97e1259a23b87ff4624fcd3734c0ae5b472d4ec54c882c24e108f6d19d2ba186",
+    "src/uar/persistence/providers/postgres.rs": "81493018f5c4f1a16458b9f6503f9ef8d0f9eb762b115e86bd42361861f79b9a",
+    "src/uar/persistence/providers/surreal.rs": "73861c23dbf0c1367ecde76ba398217e9eca51dd52381e514bb6e8c6a4a2f8be",
+    "src/uar/runtime/manager.rs": "e1da29dfdb1e33801f1113db3a4e9263bf44462c76e43e0ef1523dfa312e5cd5",
+    "src/uar/runtime/native_skill.rs": "db5f494f5c01f10adc51d0a6227cfbd4f9c1c3a0aff7baf294bbe60a82eec985",
+    "src/uar/tools/terminal_exec.rs": "9d95aa2acbbdfcc6ecffb866aa1e80f06aad2dcbaa324c53be6641dd045dcdaa",
+    "src/uar/tools/terminal_process.rs": "73440ad2115daa4ff84f3cb5f928a441fcdc49291a8d8e36ea60eda54a02fc80",
+    "tests/context_history_integrity.rs": "7d2b4328cbead77279a1e31821aa2b938deeec2825342a5330f0db7bffebaab0",
+    "migrations/20260917000000_canonical_tool_receipts.sql": "7de43e9fe28daecca8b6d963fe78ddd427cf7702bacf570d1091136c60395f71",
+    "migrations/surrealdb/canonical_tool_receipts.surql": "dc49cc64051414af65c8188fa933e10779439a579548753f399e4ddca2a1fc00"
+  },
+  "limits": {
+    "receiptBytes": 16777216,
+    "runRetainedBytes": 67108864,
+    "terminalRawBytesPerStream": 8388608,
+    "surrealConflictRetries": 16
+  },
+  "unverified": [
+    "The Postgres transaction was not exercised against a live Postgres database in this task.",
+    "The Surreal compare-and-set retry path was not forced through concurrent contention or restart durability in this task."
+  ]
+}

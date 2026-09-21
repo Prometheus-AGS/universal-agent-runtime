@@ -1,0 +1,34 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "gpt-5.5",
+  "producer_model": "gpt-6",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The plan does not authorize creation or verification of the required eval starter suite file, so the eval-harness scenario can be implemented without satisfying its spec.",
+      "evidence": "The eval-harness spec requires: \"WHEN the repository is checked out THEN evals/starter.yaml exists, declares scorers and loads/scores through the harness.\" But execution-map.json maps eval-harness/01 to fixtureFile \"tests/harness_governed_evaluation.rs\" and the governed-evaluation task editFiles are only \"src/uar/eval/mod.rs\", \"src/uar/eval/runner.rs\", \"src/uar/eval/integration_tests.rs\", \"src/uar/eval/judge.rs\", \"src/uar/eval/scorer_spec.rs\", \"src/uar/eval/cli.rs\", and \"src/uar/eval/persistence.rs\"; the file_tree also contains no \"evals/starter.yaml\".",
+      "suggested_fix": "Add evals/starter.yaml as an authorized fixture/artifact path in execution-map.json and bind eval-harness/01 acceptance to loading and scoring that exact file."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The governed-evaluation task plan tells implementers to reproduce two historical failures even though the plan explicitly says their identities are unresolved and guessed routing tests must not be treated as those failures.",
+      "evidence": "plan.md states: \"The identities of the two historical reported failures remain unresolved; do not call these three the same two. Completion needs the original reports/IDs or explicit evidence that the historical claim is superseded, not a passing guessed test.\" But execution-map.json task harness-governed-evaluation 2.3 is titled \"Reproduce the two historical eval failures\" and its verification is \"cargo test --locked --no-default-features --features server-full routing_\", which does not encode the required original IDs or supersession decision.",
+      "suggested_fix": "Split task 2.3 into an identification/supersession gate that blocks until original report IDs are found or formally classified, and only then add exact reproduction tests; do not use broad routing_ tests as the historical-failure acceptance criterion."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The knowledge-evidence plan says it preserves the existing knowledge journey but omits the BDD/UI journey files that the change scope names, leaving required product-path coverage unowned.",
+      "evidence": "openspec/changes/harness-knowledge-evidence/design.md scopes \"tests/bdd/steps/kb-retrieval.steps.ts\" and \"tests/bdd/features/chat-kb-retrieval.feature\", and plan.md says change 5 preserves \"the existing knowledge journey.\" In execution-map.json, all harness-knowledge-evidence tasks use only fixtureFile \"tests/harness_knowledge_evidence.rs\" and editFiles limited to \"src/uar/rag/pipeline.rs\", \"src/uar/rag/retrieval.rs\", \"src/uar/rag/citation_stream.rs\", and \"src/uar/rag/verification.rs\".",
+      "suggested_fix": "Add explicit BDD/product-journey fixture ownership for chat-kb-retrieval.feature and kb-retrieval.steps.ts, or mark those files as a blocking Tier 3/product-journey gate with exact commands and evidence requirements."
+    }
+  ]
+}

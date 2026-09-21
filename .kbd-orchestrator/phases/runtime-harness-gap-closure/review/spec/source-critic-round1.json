@@ -1,0 +1,21 @@
+{
+  "verdict": "PASS_WITH_WARNING",
+  "isolation": "fresh-context native artifact critic",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/harness-model-profiles-routing/specs/model-path-resiliency/spec.md",
+      "claim": "The exhausted-candidate outcome is written as a prohibition rather than a zero-admissible-destination condition.",
+      "evidence": "No admissible destination SHALL yield an explicit unavailable, unsupported or budget outcome.",
+      "suggested_fix": "Use an explicit if-no-destination condition and add an exhausted-candidates scenario."
+    }
+  ],
+  "checked_classes": [
+    "F1-F8 goal coverage",
+    "canonical contract migration",
+    "sibling dependencies",
+    "scenario testability",
+    "repository constraints",
+    "evidence overclaims"
+  ]
+}

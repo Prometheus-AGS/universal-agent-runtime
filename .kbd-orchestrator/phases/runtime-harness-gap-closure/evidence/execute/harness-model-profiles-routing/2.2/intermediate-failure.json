@@ -1,0 +1,10 @@
+{
+  "stage": "integration-test compile",
+  "result": "failed_then_corrected",
+  "diagnostic": "E0382: borrow of moved value `base_url` in the endpoint-profile HTTP fixture",
+  "correction": "Pass `base_url.clone()` to the builder so the fixture retains the value for endpoint fingerprinting.",
+  "finalEvidence": [
+    "model_path_resiliency.log",
+    "model_path_resiliency.exit"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "gpt-5.5",
+  "producer_model": "gpt-6",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "The analysis recommends adopting specific test libraries without recording them as evaluated candidates.",
+      "evidence": "D3 recommends: \"Reuse pinned wiremock 0.6.5 and insta 1.48.0 where applicable.\" But library-candidates.json lists only Existing UAR seams, tiktoken-rs, Hugging Face chat-template conventions, MiniJinja, LLMLingua, and Rig; neither wiremock nor insta has a candidate entry, verdict, fit criteria, maintenance check, or risks.",
+      "suggested_fix": "Add wiremock and insta to library-candidates.json with version/pin status, fit, maintenance/licensing where relevant, and an explicit adapt/reject verdict, or remove the adoption recommendation from analysis.md."
+    },
+    {
+      "severity": "WARNING",
+      "file": "library-candidates.json",
+      "line": 0,
+      "claim": "Several F4-F8 build-required decisions are asserted without evaluating any solution category for those gaps.",
+      "evidence": "The candidate list covers runtime seams, tokenization/templates, prompt compression, and a replacement framework, but no A2A/task-lifecycle, tracing/observability, RAG evidence-verification, skill-evaluation, or agentic-eval harness candidates. The file nevertheless concludes build-required items such as F7 with: \"No candidate examined establishes UAR-specific tenant/revocation/provenance semantics\" and F6/F8 with: \"Existing completion evaluations do not exercise tool governance; profile and coverage evidence must come from this runtime.\"",
+      "suggested_fix": "Either evaluate representative candidates/patterns in the missing categories or narrow the conclusions to say the analysis did not research external options for those gaps and defer build-vs-adopt decisions to Spec/Plan."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

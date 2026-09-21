@@ -1,0 +1,184 @@
+{
+  "phase": "runtime-harness-gap-closure",
+  "generated_at": "2026-09-16T19:36:01.141Z",
+  "research_budget": {
+    "max_queries_per_tier": 8,
+    "max_minutes": 20,
+    "queries_used": {
+      "tier1": 4,
+      "tier2": 8,
+      "tier3": 4,
+      "tier4": 7
+    }
+  },
+  "elapsed_minutes": 3.2443333333333335,
+  "mode": "stack-specified",
+  "limits": [
+    "Tier 2 reached its eight-request cap (3 resolve, 3 docs, 2 official-document opens).",
+    "Registry Python requests failed TLS certificate verification; system curl retries returned HTTP403. No TLS validation bypassed.",
+    "firecrawl developer command unavailable (unknown command); primary-source web retrieval used as fallback.",
+    "Latest registry releases, deployment-specific provider compatibility and performance remain unverified. No dependencies installed or upgraded."
+  ],
+  "tier1": [
+    {
+      "query": "tiktoken-rs",
+      "result": {
+        "status": "fulfilled",
+        "value": {
+          "chunk_id": "b3fe81",
+          "wall_time_seconds": 0.870723791,
+          "exit_code": 0,
+          "original_token_count": 244,
+          "output": "[{\"description\":\"Ready-made tokenizer library for working with GPT and tiktoken\",\"fullName\":\"zurawiki/tiktoken-rs\",\"license\":{\"key\":\"mit\",\"name\":\"MIT License\",\"url\":\"https://api.github.com/licenses/mit\"},\"openIssuesCount\":9,\"pushedAt\":\"2026-07-01T02:49:07Z\",\"stargazersCount\":406,\"url\":\"https://github.com/zurawiki/tiktoken-rs\"},{\"description\":\"C API for tiktoken-rs\",\"fullName\":\"kojix2/tiktoken-c\",\"license\":{\"key\":\"mit\",\"name\":\"MIT License\",\"url\":\"https://api.github.com/licenses/mit\"},\"openIssuesCount\":1,\"pushedAt\":\"2026-07-01T23:43:27Z\",\"stargazersCount\":13,\"url\":\"https://github.com/kojix2/tiktoken-c\"},{\"description\":\"Another unoffical Ruby binding for Tiktoken utilizing tiktoken-rs and magnus Rust packages\",\"fullName\":\"LoganBresnahan/j_r_r_token\",\"license\":{\"key\":\"mit\",\"name\":\"MIT License\",\"url\":\"https://api.github.com/licenses/mit\"},\"openIssuesCount\":0,\"pushedAt\":\"2026-05-28T01:45:41Z\",\"stargazersCount\":5,\"url\":\"https://github.com/LoganBresnahan/j_r_r_token\"}]\n"
+        }
+      }
+    },
+    {
+      "query": "minijinja",
+      "result": {
+        "status": "fulfilled",
+        "value": {
+          "chunk_id": "47bbf3",
+          "wall_time_seconds": 0.964912417,
+          "exit_code": 0,
+          "original_token_count": 252,
+          "output": "[{\"description\":\"MiniJinja is a powerful but minimal dependency template engine for Rust compatible with Jinja/Jinja2\",\"fullName\":\"mitsuhiko/minijinja\",\"license\":{\"key\":\"apache-2.0\",\"name\":\"Apache License 2.0\",\"url\":\"https://api.github.com/licenses/apache-2.0\"},\"openIssuesCount\":21,\"pushedAt\":\"2026-09-15T23:14:49Z\",\"stargazersCount\":2771,\"url\":\"https://github.com/mitsuhiko/minijinja\"},{\"description\":\"WASM based playground for MiniJinja\",\"fullName\":\"mitsuhiko/minijinja-playground\",\"license\":{\"key\":\"apache-2.0\",\"name\":\"Apache License 2.0\",\"url\":\"https://api.github.com/licenses/apache-2.0\"},\"openIssuesCount\":0,\"pushedAt\":\"2026-03-15T22:05:01Z\",\"stargazersCount\":18,\"url\":\"https://github.com/mitsuhiko/minijinja-playground\"},{\"description\":\"An example using axum and minijinja templates\",\"fullName\":\"woile/web-template-rs-example\",\"license\":{\"key\":\"\",\"name\":\"\",\"url\":\"\"},\"openIssuesCount\":0,\"pushedAt\":\"2024-11-04T07:00:56Z\",\"stargazersCount\":9,\"url\":\"https://github.com/woile/web-template-rs-example\"}]\n"
+        }
+      }
+    },
+    {
+      "query": "llmlingua",
+      "result": {
+        "status": "fulfilled",
+        "value": {
+          "chunk_id": "0be328",
+          "wall_time_seconds": 1.251707291,
+          "exit_code": 0,
+          "original_token_count": 296,
+          "output": "[{\"description\":\"[EMNLP'23, ACL'24] To speed up LLMs' inference and enhance LLM's perceive of key information, compress the prompt and KV-Cache, which achieves up to 20x compression with minimal performance loss. \",\"fullName\":\"microsoft/LLMLingua\",\"license\":{\"key\":\"mit\",\"name\":\"MIT License\",\"url\":\"https://api.github.com/licenses/mit\"},\"openIssuesCount\":121,\"pushedAt\":\"2026-09-10T23:37:23Z\",\"stargazersCount\":6665,\"url\":\"https://github.com/microsoft/LLMLingua\"},{\"description\":\"JavaScript/TypeScript implementation of LLMLingua-2 (Experimental)\",\"fullName\":\"atjsh/llmlingua-2-js\",\"license\":{\"key\":\"mit\",\"name\":\"MIT License\",\"url\":\"https://api.github.com/licenses/mit\"},\"openIssuesCount\":9,\"pushedAt\":\"2026-08-17T07:05:40Z\",\"stargazersCount\":32,\"url\":\"https://github.com/atjsh/llmlingua-2-js\"},{\"description\":\"Prompt Compression using LLMLingua. It helps with token's cost and latency.\",\"fullName\":\"AIAnytime/Prompt-Compression-using-LLMLingua\",\"license\":{\"key\":\"mit\",\"name\":\"MIT License\",\"url\":\"https://api.github.com/licenses/mit\"},\"openIssuesCount\":1,\"pushedAt\":\"2023-12-17T19:45:53Z\",\"stargazersCount\":8,\"url\":\"https://github.com/AIAnytime/Prompt-Compression-using-LLMLingua\"}]\n"
+        }
+      }
+    },
+    {
+      "query": "rig language:Rust",
+      "result": {
+        "status": "fulfilled",
+        "value": {
+          "chunk_id": "b01688",
+          "wall_time_seconds": 0.815384083,
+          "exit_code": 0,
+          "original_token_count": 224,
+          "output": "[{\"description\":\"⚙️🦀 Build modular and scalable LLM Applications in Rust\",\"fullName\":\"0xPlaygrounds/rig\",\"license\":{\"key\":\"mit\",\"name\":\"MIT License\",\"url\":\"https://api.github.com/licenses/mit\"},\"openIssuesCount\":99,\"pushedAt\":\"2026-09-16T19:02:09Z\",\"stargazersCount\":8648,\"url\":\"https://github.com/0xPlaygrounds/rig\"},{\"description\":\"The R Installation Manager\",\"fullName\":\"r-lib/rig\",\"license\":{\"key\":\"mit\",\"name\":\"MIT License\",\"url\":\"https://api.github.com/licenses/mit\"},\"openIssuesCount\":29,\"pushedAt\":\"2026-09-16T12:23:17Z\",\"stargazersCount\":992,\"url\":\"https://github.com/r-lib/rig\"},{\"description\":\"Composable camera rigs\",\"fullName\":\"h3r2tic/dolly\",\"license\":{\"key\":\"apache-2.0\",\"name\":\"Apache License 2.0\",\"url\":\"https://api.github.com/licenses/apache-2.0\"},\"openIssuesCount\":10,\"pushedAt\":\"2024-07-22T19:44:31Z\",\"stargazersCount\":481,\"url\":\"https://github.com/h3r2tic/dolly\"}]\n"
+        }
+      }
+    }
+  ],
+  "tier2resolve": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Available Libraries:\n\n- Title: Tiktoken-rs\n- Context7-compatible library ID: /zurawiki/tiktoken-rs\n- Description: Ready-made tokenizer library for working with GPT and tiktoken\n- Code Snippets: 407\n- Source Reputation: High\n- Benchmark Score: 85.64\n----------\n- Title: Tiktoken\n- Context7-compatible library ID: /openai/tiktoken\n- Description: tiktoken is a fast Byte Pair Encoding (BPE) tokenizer for use with OpenAI's models, offering efficient text-to-token conversion and extensibility for custom encodings.\n- Code Snippets: 300\n- Source Reputation: High\n- Benchmark Score: 92.72\n----------\n- Title: Tiktoken Go\n- Context7-compatible library ID: /pkoukk/tiktoken-go\n- Description: Tiktoken Go is a Go port of OpenAI's tiktoken, a fast BPE tokenizer for use with OpenAI's language models that converts text into tokens.\n- Code Snippets: 192\n- Source Reputation: High\n- Benchmark Score: 94.15\n----------\n- Title: Tiktoken Go\n- Context7-compatible library ID: /tiktoken-go/tokenizer\n- Description: Pure Go implementation of OpenAI's tiktoken tokenizer\n- Code Snippets: 346\n- Source Reputation: Medium\n- Benchmark Score: 92\n----------\n- Title: Tiktoken CLI\n- Context7-compatible library ID: /samber/tiktoken-cli\n- Description: Tiktoken CLI is a command-line interface for counting tokens in files and directories using OpenAI's tiktoken tokenizer, ideal for estimating API costs, checking context window limits, or auditing prompt sizes before sending them to OpenAI, Anthropic, or any LLM provider.\n- Code Snippets: 18\n- Source Reputation: High\n- Benchmark Score: 100"
+          }
+        ]
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Available Libraries:\n\n- Title: MiniJinja\n- Context7-compatible library ID: /mitsuhiko/minijinja\n- Description: MiniJinja is a powerful template engine with minimal dependencies based on Jinja2 syntax, available in multiple languages including Rust, JavaScript, Python, Go, and as a CLI.\n- Code Snippets: 697\n- Source Reputation: High\n- Benchmark Score: 68.58\n----------\n- Title: MiniJinja\n- Context7-compatible library ID: /websites/rs_minijinja_minijinja\n- Description: MiniJinja is a powerful Rust template engine based on Jinja2 syntax with minimal dependencies, supporting dynamic objects, custom filters, and expression evaluation.\n- Code Snippets: 967\n- Source Reputation: High\n- Benchmark Score: 77.59\n----------\n- Title: MiniJinja\n- Context7-compatible library ID: /websites/rs_minijinja\n- Description: MiniJinja is a powerful but minimal dependency template engine for Rust, based on the syntax and behavior of the Jinja2 template engine.\n- Code Snippets: 2333\n- Source Reputation: High\n----------\n- Title: tmpltool\n- Context7-compatible library ID: /bordeux/tmpltool\n- Description: A fast and simple command-line template rendering tool using MiniJinja templates with environment variables, supporting hash generation, filesystem operations, data parsing, validation functions, and more.\n- Code Snippets: 841\n- Source Reputation: High"
+          }
+        ]
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Available Libraries:\n\n- Title: Hugging Face Transformers\n- Context7-compatible library ID: /websites/huggingface_co_transformers_main\n- Description: Hugging Face Transformers is an open-source library providing pre-trained models and tools for natural language processing, computer vision, and audio tasks using PyTorch and TensorFlow.\n- Code Snippets: 116\n- Source Reputation: High\n- Benchmark Score: 21.94\n----------\n- Title: Hugging Face Course\n- Context7-compatible library ID: /huggingface/course\n- Description: A free and open-source course teaching transformers and natural language processing using the Hugging Face ecosystem.\n- Code Snippets: 2568\n- Source Reputation: High\n- Benchmark Score: 63.37\n----------\n- Title: Hugging Face Tokenizers\n- Context7-compatible library ID: /huggingface/tokenizers\n- Description: 💥 Fast State-of-the-Art Tokenizers optimized for Research and Production\n- Code Snippets: 362\n- Source Reputation: High\n- Benchmark Score: 76.64\n----------\n- Title: Hugging Face Hub\n- Context7-compatible library ID: /websites/huggingface_co_huggingface_hub\n- Description: The Hugging Face Hub client library allows Python users to interact with the Hugging Face Hub, a platform for discovering, sharing, and collaborating on machine learning models, datasets, and applications.\n- Code Snippets: 1848\n- Source Reputation: High\n- Benchmark Score: 81.26\n----------\n- Title: Hugging Face Hub\n- Context7-compatible library ID: /huggingface/huggingface_hub\n- Description: The official Python client for the Huggingface Hub.\n- Code Snippets: 1731\n- Source Reputation: High\n- Benchmark Score: 81.46"
+          }
+        ]
+      }
+    }
+  ],
+  "tier2docs": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "### num_tokens_from_messages\n\nSource: https://github.com/zurawiki/tiktoken-rs/blob/main/_autodocs/api-reference-chat-completion.md\n\nCalculates the total tokens required to encode a message array based on OpenAI's tokenization specification.\n\n```APIDOC\n## Function: num_tokens_from_messages\n\n### Description\nCalculates the total tokens needed to encode all messages according to OpenAI's tokenization specification. This follows the official OpenAI cookbook implementation with per-message overhead tokens and special handling for function calls.\n\n### Signature\n`pub fn num_tokens_from_messages(model: &str, messages: &[ChatCompletionRequestMessage]) -> Result<usize>`\n\n### Parameters\n- **model** (&str) - Required - Model name (e.g., \"gpt-4o\", \"gpt-3.5-turbo\")\n- **messages** (&[ChatCompletionRequestMessage]) - Required - Array of chat messages\n\n### Returns\n- **Result<usize>** - Total token count\n\n### Errors\nReturns error if model is not recognized or doesn't support chat completion token counting.\n```\n\n--------------------------------\n\n### Count Tokens with Tool Calls in Rust\n\nSource: https://github.com/zurawiki/tiktoken-rs/blob/main/_autodocs/examples-and-patterns.md\n\nCalculates token usage for messages that include tool calls, such as function invocations.\n\n```rust\nuse tiktoken_rs::{num_tokens_from_messages, ChatCompletionRequestMessage, FunctionCall};\n\nfn main() -> Result<(), Box<dyn std::error::Error>> {\n    let messages = vec![\n        ChatCompletionRequestMessage {\n            role: \"assistant\".to_string(),\n            tool_calls: vec![\n                FunctionCall {\n                    name: \"get_weather\".to_string(),\n                    arguments: r#\"{\"location\": \"Paris\", \"unit\": \"celsius\"}\"# .to_string(),\n                },\n            ],\n            ..Default::default()\n        },\n    ];\n    \n    let tokens = num_tokens_from_messages(\"gpt-4o\", &messages)?;\n    println!(\"Tokens with tool call: {}\", tokens);\n    \n    Ok(())\n}\n```\n\n--------------------------------\n\n### bpe_for_model\n\nSource: https://github.com/zurawiki/tiktoken-rs/blob/main/_autodocs/api-reference-initialization.md\n\nRetrieves a cached tokenizer instance for a given model name, handling aliases and fine-tuned prefixes.\n\n```APIDOC\n## bpe_for_model\n\n### Description\nLooks up the model name, determines which tokenizer it uses, and returns the cached singleton instance. Handles model aliases and fine-tuned model prefixes.\n\n### Signature\n`pub fn bpe_for_model(model: &str) -> Result<&'static CoreBPE>`\n\n### Parameters\n- **model** (&str) - Required - Model name (e.g., \"gpt-4o\", \"gpt-3.5-turbo\")\n\n### Returns\n- **Result<&'static CoreBPE>** - Cached tokenizer or error if the model name is not recognized.\n\n### Example\n```rust\nuse tiktoken_rs::bpe_for_model;\n\nlet bpe = bpe_for_model(\"gpt-4o\").unwrap();\nlet tokens = bpe.encode_with_special_tokens(\"Hello GPT-4o\");\n```\n```\n\n--------------------------------\n\n### num_tokens_from_messages\n\nSource: https://github.com/zurawiki/tiktoken-rs/blob/main/_autodocs/errors.md\n\nCounts tokens for chat messages. Errors include unrecognized models, unsupported tokenizers, or regex errors.\n\n```APIDOC\n## num_tokens_from_messages\n\n### Description\nCounts the number of tokens in a list of chat messages for a given model.\n\n### Errors\n- \"No tokenizer found for model {}\": The model name is not recognized.\n- \"Chat token counting is not supported for model {...}\": The model uses a tokenizer that does not support chat token counting.\n- \"Regex error while tokenizing: ...\": An internal encoding error occurred.\n```\n\n### Token Counting Functions > num_tokens_from_messages\n\nSource: https://github.com/zurawiki/tiktoken-rs/blob/main/_autodocs/api-reference-chat-completion.md\n\nThe num_tokens_from_messages function calculates the total tokens required to encode chat messages according to OpenAI's specifications. It accounts for per-message framing overhead, name field presence, function or tool call overhead, and reply priming tokens. The function supports specific base encodings including Cl100kBase, O200kBase, and O200kHarmony."
+          }
+        ]
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "### strict_undefined is only checked on Emit in the VM, not on any other instruction\n\nSource: https://github.com/mitsuhiko/minijinja/blob/main/src/vm/mod.rs\n\nIn the VM dispatch loop, strict_undefined is only consulted on the Emit instruction (line 372-376). It has no effect on for loops, if blocks, filters, math, or any other template construct. The fuel tracking (line 352-354) runs unconditionally for all instructions but only caps total instruction count, not language features.\n\n```rust\n                Instruction::Emit => {\n                    let value = stack.pop();\n                    if state.env().is_default_formatter() {\n                        if strict_undefined\n                            && matches!(value.0, ValueRepr::Undefined(UndefinedType::Default))\n                        {\n                            bail!(Error::from(ErrorKind::UndefinedError));\n                        }\n                        ctx_ok!(write_escaped(out, state.auto_escape, &value));\n                    } else {\n                        ctx_ok!(state.env().format(&value, state, out));\n                    }\n                }\n```\n\n--------------------------------\n\n### Template::undeclared_variables — public API with docstring example\n\nSource: https://github.com/mitsuhiko/minijinja/blob/main/src/template.rs\n\nThe top-level method on `Template`. When `nested` is `false`, dotted accesses like `bar.baz` are collapsed to their root variable `bar`. When `nested` is `true`, the full dotted path `bar.baz` is returned.\n\n```rust\n    /// let undeclared = tmpl.undeclared_variables(false);\n    /// // returns [\"foo\", \"bar\"]\n    /// let undeclared = tmpl.undeclared_variables(true);\n    /// // returns [\"foo\", \"bar.baz\"]\n    pub fn undeclared_variables(&self, nested: bool) -> HashSet<String> {\n        match parse(\n            self.compiled.instructions.source(),\n            self.name(),\n            self.compiled.syntax_config.clone(),\n            Default::default(),\n        ) {\n            Ok(ast) => find_undeclared(&ast, nested),\n            Err(_) => HashSet::new(),\n        }\n    }\n```\n\n--------------------------------\n\n### Render Template with Strict Mode and Environment Variables\n\nSource: https://github.com/mitsuhiko/minijinja/blob/main/minijinja-cli/src/long_help.txt\n\nRenders a template file with strict mode enabled, potentially using environment variables for configuration.\n\n```bash\nminijinja-cli --strict --env hello.j2\n```\n\n--------------------------------\n\n### Run Example with Compile-Time Bundled Templates\n\nSource: https://github.com/mitsuhiko/minijinja/blob/main/examples/embedding/README.md\n\nExecute the example with the 'bundled' feature flag enabled to use compile-time bundled templates. This integrates templates directly into the binary.\n\n```console\n$ cargo run --features=bundled\n```\n\n### Updating to MiniJinja 3 > Mutable Execution State\n\nSource: https://github.com/mitsuhiko/minijinja/blob/main/UPDATING.md\n\nState mutation now relies on extensions for render-local typed Rust storage, replacing previous temporary object methods. Extensions allow data to persist through includes, blocks, and macro calls without requiring Value wrapping or mutexes. Named temporary data remains available for values that must be represented as a Value."
+          }
+        ]
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "No documentation in \"/websites/huggingface_co_transformers_main\" matched this query. Try a more specific query with different terms, or search for another library that covers this topic."
+          }
+        ]
+      }
+    }
+  ],
+  "primary_documents": [
+    {
+      "url": "https://huggingface.co/docs/transformers/main/en/chat_templating",
+      "claim": "Chat serialization varies by model; avoid duplicated special tokens."
+    },
+    {
+      "url": "https://huggingface.co/docs/transformers/main/en/chat_extras",
+      "claim": "Tools and tool results require model-compatible chat representation."
+    },
+    {
+      "url": "https://platform.claude.com/docs/en/build-with-claude/extended-thinking",
+      "claim": "Manual vs adaptive thinking depends on model generation; output ceiling and thinking reservation interact."
+    },
+    {
+      "url": "https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking",
+      "claim": "Adaptive thinking uses effort and max_tokens; total output includes thinking."
+    },
+    {
+      "url": "https://github.com/MoonshotAI/kimi-cli/blob/main/docs/en/configuration/env-vars.md",
+      "claim": "Official CLI documents thinking.keep for supported Moonshot models only."
+    },
+    {
+      "url": "https://docs.z.ai/guides/overview/concept-param",
+      "claim": "Thinking control and model context/output limits documented; not evidence for every current UAR reasoning_effort value."
+    },
+    {
+      "url": "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/deep-thinking",
+      "claim": "enable_thinking documented; exact deployment wrappers and preserve_thinking remain unverified."
+    },
+    {
+      "url": "https://github.com/microsoft/LLMLingua",
+      "claim": "Prompt compressor removes tokens; not an as-is protected-data budgeting solution."
+    },
+    {
+      "url": "https://github.com/mitsuhiko/minijinja",
+      "claim": "Rust Jinja-compatible template engine; optional future candidate, not selected dependency."
+    }
+  ]
+}

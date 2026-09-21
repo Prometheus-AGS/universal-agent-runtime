@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "change": "harness-protected-context",
+  "task": "3.1",
+  "candidate": {
+    "head": "226d4a0af89811975662cf3f203c699f70e8cebc",
+    "workingTreeDiffSha256": "f54824be733efe86bff95c5bf01138026a9ecc5f2ca04db48b6108218d660939"
+  },
+  "commands": [
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test context_history_integrity",
+      "exitCode": 0,
+      "output": "context_history_integrity.log",
+      "outputSha256": "45e9ade42a567a99b1c69522ad7ddc32cf047aabb6442c5d1fe8e4c5ebbc5181",
+      "result": {
+        "passed": 31,
+        "failed": 0,
+        "ignored": 2
+      }
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test test_context_strategy",
+      "exitCode": 0,
+      "output": "test_context_strategy.log",
+      "outputSha256": "179570600211dac7ff054d8a9fd860ad85e90cc50abd8c3d4971032d9f3009c5",
+      "result": {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  ],
+  "serializedRequestEvidence": {
+    "exactSupportedFixture": "exact_budget_contract_dispatches_intact_protected_wire_body",
+    "explicitOutcomes": [
+      "fit",
+      "compression_required",
+      "overflow",
+      "invalid_history",
+      "unsupported_counting"
+    ],
+    "protectedFailures": [
+      "protected_overflow_and_approximate_count_block_before_dispatch",
+      "failed_summary_returns_explicit_overflow_when_originals_do_not_fit"
+    ],
+    "checkpointAuthorization": "checkpoint_resume_reassembles_trusted_system_and_preserves_checkpoint_dialogue"
+  },
+  "review": {
+    "isolatedArtifactCritic": "PASS",
+    "findings": []
+  },
+  "claimBoundary": {
+    "profileWideCertification": false,
+    "actualProviderProfilesVerified": [],
+    "statement": "Evidence proves local server-full behavior for the completed protected-context change and a synthetic exact-destination contract. Per-model templates, actual provider profiles, live providers, other build profiles, Tier 2, and Tier 3 remain outside this task."
+  }
+}

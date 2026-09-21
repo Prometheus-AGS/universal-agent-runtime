@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "change": "harness-model-profiles-routing",
+  "task": "1.2",
+  "candidate": {
+    "head": "226d4a0af89811975662cf3f203c699f70e8cebc"
+  },
+  "artifacts": {
+    "acceptance-contract.json": "b2878c3836ac887b0468e61e67e9a0828c0371ba3e9c8e7ff89d7c094265b75c",
+    "frozen-baseline.json": "7654c9dd906c0925b2bfe53358a260f927e9d77c0eeb2273394d348fcdd9d48a",
+    "generate_context_corpus.py": "c324c15c67d8c0d230203d01773ccff4e44dbd7ecd4d625fb4beccff1ce4bc06",
+    "context-corpus-manifest.json": "566297bffde023cb205198f901792677c40ae7f48c1fb1d479dbca4a0e682f6d",
+    "verify.py": "73848809ad1c7054deff95062f33b9b8890093ac87d56f4645908071d70b23dc",
+    "verification.log": "2f0c325b3b7f6f37136857eb7f868aad7103b00abc7d607bb14608dcebeba121",
+    "verification.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "command-receipts.json": "1d03cd91a9f8bef0e1982d8f41bcffd300abb29e1ec0616c7e2db37ee56220bf",
+    "summary.md": "189346d9f083e8aee354f59389a5e3a3b86960fac601b2490c1cb440d459003f",
+    "cargo-check.log": "21bcc4a0e34da2e805fd30eccee70e386355d23bb5cd97cecf47bb78c2c2dd2f",
+    "cargo-check.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "prompt_assembly-initial-failure.log": "3ff0e7fed3cd1bbd0566afadc9523be0278287c7c5150350c705d01226b5ccbb",
+    "prompt_assembly-initial-failure.exit": "39b8dc3fc8b44765c8e6f1adee04c5b465e555ab791cc42d0d9e810d5b64297c",
+    "prompt_assembly.log": "717dbb72469b272d87190cfffa700e81cfc6c4adc6d39842e6f8b504f3c5dfa3",
+    "prompt_assembly.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "model_path_resiliency.log": "5cf86a1257373565562f2773af323f92c873293cb1e7a4d14fd5ea1f7b9e1cb4",
+    "model_path_resiliency.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "openspec-validate.json": "e032da08cc2732110332e9c4db68b2ce1348bf0fc25a58730b609b0808927d47",
+    "openspec-validate.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "openspec-tasks.md": "c208e260ca8f3de572d1760a428f2d9a4f7bc04bf18c4966e74db98915ec8666",
+    "tests-prompt_assembly.rs": "d329fdcad2ec90baddb8fbb5e05df9a031876a63def43ad0090eb11c8f6951ee"
+  },
+  "commands": [
+    {
+      "command": "python3 .kbd-orchestrator/phases/runtime-harness-gap-closure/evidence/execute/harness-model-profiles-routing/1.2/verify.py",
+      "exitCode": 0,
+      "output": "verification.log"
+    },
+    {
+      "command": "python3 generate_context_corpus.py --check context-corpus-manifest.json",
+      "exitCode": 0,
+      "result": "byte-for-byte match"
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo check --locked --no-default-features --features server-full",
+      "exitCode": 0,
+      "output": "cargo-check.log"
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test prompt_assembly",
+      "exitCode": 0,
+      "output": "prompt_assembly.log"
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test model_path_resiliency",
+      "exitCode": 0,
+      "output": "model_path_resiliency.log"
+    },
+    {
+      "command": "openspec validate harness-model-profiles-routing --strict --json --no-interactive",
+      "exitCode": 0,
+      "output": "openspec-validate.json"
+    }
+  ],
+  "result": {
+    "routingAdmissionCases": 18,
+    "routingTaskQualityCases": 8,
+    "contextNormalCases": 945,
+    "contextNormalEntryPointBindings": 18,
+    "contextFailureCases": 198,
+    "contextBudgetCases": 54,
+    "contextLongHistoryRecords": 1004,
+    "promptAssemblyPassed": 6,
+    "modelPathResiliencyPassed": 12
+  },
+  "review": {
+    "isolatedArtifactCritic": "PASS",
+    "finalFindings": [],
+    "correctedFindings": [
+      "prose-only cross-product lacked exact generation and retained per-case hashes",
+      "normal cases lacked complete typed payload/tool-call/tool-result inputs and production entry-point bindings"
+    ]
+  },
+  "claimBoundary": "This task freezes deterministic inputs and numerical gates. Synthetic cases certify fixture, arithmetic and wiring contracts only. Live quality, cost, latency and supported-destination certification remain pending."
+}

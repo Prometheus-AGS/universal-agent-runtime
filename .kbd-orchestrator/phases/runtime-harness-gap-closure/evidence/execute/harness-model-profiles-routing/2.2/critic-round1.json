@@ -1,0 +1,24 @@
+{
+  "reviewer": "artifact-critic",
+  "isolation": "artifact-only",
+  "verdict": "BLOCK",
+  "findings": [
+    {
+      "severity": "critical",
+      "finding": "The profiled body that was validated was not proven to be the body Liter dispatched."
+    },
+    {
+      "severity": "major",
+      "finding": "A profile declaring an output ceiling could dispatch without a matching budget contract."
+    },
+    {
+      "severity": "major",
+      "finding": "The request profile was not bound strongly enough to the endpoint and provider identity."
+    },
+    {
+      "severity": "major",
+      "finding": "Anthropic thinking-budget arithmetic used an unchecked plus-one transform."
+    }
+  ],
+  "resolution": "Added prepared-request byte retention and a redacted wire receipt, mandatory ceiling contracts, provider/model/endpoint fingerprint binding, and checked Anthropic arithmetic with pre-dispatch regressions."
+}

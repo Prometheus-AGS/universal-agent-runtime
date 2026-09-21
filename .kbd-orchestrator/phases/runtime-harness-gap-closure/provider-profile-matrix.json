@@ -1,0 +1,527 @@
+{
+  "schemaVersion": 2,
+  "phase": "runtime-harness-gap-closure",
+  "task": "harness-model-profiles-routing-1-1",
+  "capturedAt": "2026-09-18T15:36:00Z",
+  "evidenceReceipt": "evidence/execute/harness-model-profiles-routing/1.1/source-receipts.json",
+  "claimBoundary": {
+    "certifiedDispatchProfiles": 0,
+    "statement": "This is the complete prerequisite inventory, not a dispatch certification. Each profile remains blocked until tasks 2.1 and 2.2 prove its exact final wire, complete-envelope hard count and enforceable output reservation.",
+    "uncomfortableFinding": "Both effective local providers are reachable, but neither can yet prove the complete final request and an enforceable output ceiling together. The ChatGPT subscription backend explicitly strips max_output_tokens."
+  },
+  "inventory": {
+    "effectiveRuntime": "http://127.0.0.1:1906",
+    "effectiveProviderRegistrySha256": "e084f6fb946426a40b1dfd21773a5f4ef69d2f2a086218e5b15cf80b5e7d4e91",
+    "redactedDurableProviderSetSha256": "dc7e54bcf742d72fee773d4dacaaf22d5c5e68d9829075f757e227fbe93d58d7",
+    "configuredProviderCount": 6,
+    "configuredExactModelCount": 13,
+    "effectiveEnabledProviderCount": 2,
+    "precedenceFinding": "Durable provider settings are authoritative after initialization. YAML defaults enable all six, while durable state disables kimi-for-coding, minimax, alibaba and zai.",
+    "aliasFinding": "The runtime synthesizes ollama over ferrox-local and chatgpt over local-openai-proxy. They are aliases of the same deployments, not independent profiles."
+  },
+  "selectionContract": {
+    "key": ["providerId", "normalizedBaseUrl", "endpointKind", "exactModelId", "profileRevision"],
+    "exactMatchRequired": true,
+    "familySubstringMayAuthorizeCompatibility": false,
+    "unknownExactModelOutcome": "unsupported_profile",
+    "proxyPrefixFallbackFinding": "The pinned openai-proxy contains a gpt-5.* passthrough after exact catalogue lookup. The matrix rejects that fallback as compatibility evidence and inventories only exact IDs observed from /v1/models.",
+    "rollingAliasRule": "A rolling vendor alias carries an observed documentation revision and remains uncertified until a live alias/upstream receipt is captured."
+  },
+  "sources": {
+    "uar-effective-registry": "GET http://127.0.0.1:1906/api/uar/providers",
+    "uar-durable-providers-redacted": "GET http://127.0.0.1:1906/api/uar/settings/providers with api_key and volatile record metadata omitted before hashing",
+    "uar-prompt-sections": "src/uar/runtime/prompt/assemble.rs and src/uar/runtime/prompt/fragment.rs at the candidate tree",
+    "prompt-assembly-spec": "openspec/changes/harness-model-profiles-routing/specs/prompt-assembly/spec.md",
+    "ferrox-model-endpoint": "GET http://127.0.0.1:8899/v1/models",
+    "ferrox-tokenizer-endpoint": "POST http://127.0.0.1:8899/v1/tokenize",
+    "ferrox-source": "/Users/gqadonis/Projects/references/ferrox at 0bdcbc44f1674cd0b84975a29a80bb4f64d093af",
+    "ferrox-qwen-gguf": "sha256:98266f7c5ada4873f0a4d117e9fd61f374d1b136542a0f613cb63e4535607a89",
+    "qwen-model-card": "https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct",
+    "openai-proxy-model-endpoint": "GET http://127.0.0.1:8181/v1/models",
+    "openai-proxy-source": "/Users/gqadonis/Projects/references/baseline/openai-proxy at 7833663d3b46f7467f2017f2cce392c09ec1b7ac",
+    "openai-gpt-5-4": "https://developers.openai.com/api/docs/models/gpt-5.4",
+    "openai-input-count": "https://developers.openai.com/api/docs/guides/token-counting",
+    "kimi-models": "https://www.kimi.com/code/docs/en/kimi-code/models.html",
+    "kimi-config": "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/config-files",
+    "minimax-openai-api": "https://platform.minimax.io/docs/api-reference/text-openai-api",
+    "minimax-chat": "https://platform.minimax.io/docs/api-reference/text-chat-openai",
+    "minimax-input-count": "https://platform.minimax.io/docs/api-reference/responses-input-tokens",
+    "alibaba-qwen3-8-max": "https://www.alibabacloud.com/help/en/model-studio/qwen3-8-max",
+    "alibaba-openai-chat": "https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions",
+    "alibaba-text-generation": "https://www.alibabacloud.com/help/en/model-studio/text-generation",
+    "zai-glm-5-2": "https://docs.z.ai/guides/llm/glm-5.2",
+    "zai-parameters": "https://docs.z.ai/guides/overview/concept-param",
+    "zai-chat": "https://docs.z.ai/api-reference/llm/chat-completion",
+    "zai-tokenizer": "https://docs.z.ai/api-reference/tools/tokenizer"
+  },
+  "contracts": {
+    "templates": {
+      "ferrox-qwen2.5-coder-gguf": {
+        "revision": "gguf-sha256:98266f7c5ada4873f0a4d117e9fd61f374d1b136542a0f613cb63e4535607a89",
+        "wire": "openai_chat_messages",
+        "owner": "ferrox_endpoint",
+        "requiredSlots": ["agent_identity", "enforced_policy", "host_instructions", "conversation_history", "current_input"],
+        "conditionalSlots": ["skill_catalog", "active_skills", "world_state", "memory_and_retrieval", "governed_tools", "required_evidence"],
+        "supportedRoles": ["system", "user", "assistant", "tool"],
+        "unsupportedRoles": ["developer", "unknown"],
+        "missingSlotOrRoleOutcome": "unsupported_profile",
+        "rule": "UAR sends roles/messages. Ferrox renders tokenizer.chat_template from the exact GGUF. UAR must not add raw control tokens.",
+        "sources": ["uar-prompt-sections", "prompt-assembly-spec", "ferrox-source", "ferrox-qwen-gguf", "qwen-model-card"]
+      },
+      "openai-proxy-chatgpt-codex-responses": {
+        "revision": "openai-proxy@7833663d3b46f7467f2017f2cce392c09ec1b7ac+binary-sha256:2806d24df19d8cd2dacbed1d807c3f5d52f78c9816b1523ae2da2ef7f0407214",
+        "wire": "openai_chat_inbound_to_chatgpt_codex_responses_outbound",
+        "owner": "openai-proxy",
+        "requiredSlots": ["agent_identity", "enforced_policy", "host_instructions", "conversation_history", "current_input"],
+        "conditionalSlots": ["skill_catalog", "active_skills", "world_state", "memory_and_retrieval", "governed_tools", "required_evidence"],
+        "supportedRoles": ["system", "user", "assistant", "tool"],
+        "unsupportedRoles": ["developer", "unknown"],
+        "missingSlotOrRoleOutcome": "unsupported_profile",
+        "rule": "UAR sends chat messages. The proxy emits Responses input items, instructions and tools; there is no raw model chat template.",
+        "sources": ["uar-prompt-sections", "prompt-assembly-spec", "openai-proxy-source"]
+      },
+      "kimi-k3-openai-chat": {
+        "revision": "official-docs-observed-2026-09-18",
+        "wire": "openai_compatible_chat",
+        "owner": "kimi_endpoint",
+        "requiredSlots": ["agent_identity", "enforced_policy", "host_instructions", "conversation_history", "current_input"],
+        "conditionalSlots": ["skill_catalog", "active_skills", "world_state", "memory_and_retrieval", "governed_tools", "required_evidence"],
+        "supportedRoles": ["system", "user", "assistant", "tool"],
+        "unsupportedRoles": ["developer", "unknown"],
+        "missingSlotOrRoleOutcome": "unsupported_profile",
+        "rule": "Use the documented message schema for exact alias k3; never infer Qwen control tokens from a family name.",
+        "sources": ["uar-prompt-sections", "prompt-assembly-spec", "kimi-models", "kimi-config"]
+      },
+      "minimax-m3-openai-chat": {
+        "revision": "official-docs-observed-2026-09-18",
+        "wire": "openai_compatible_chat",
+        "owner": "minimax_endpoint",
+        "requiredSlots": ["agent_identity", "enforced_policy", "host_instructions", "conversation_history", "current_input"],
+        "conditionalSlots": ["skill_catalog", "active_skills", "world_state", "memory_and_retrieval", "governed_tools", "required_evidence"],
+        "supportedRoles": ["system", "user", "assistant", "tool"],
+        "unsupportedRoles": ["developer", "unknown"],
+        "missingSlotOrRoleOutcome": "unsupported_profile",
+        "rule": "Use exact MiniMax-M3 chat and thinking controls. reasoning_split is output formatting, not the thinking switch.",
+        "sources": ["uar-prompt-sections", "prompt-assembly-spec", "minimax-openai-api", "minimax-chat"]
+      },
+      "alibaba-qwen3.8-max-openai-chat": {
+        "revision": "official-docs-observed-2026-09-18",
+        "wire": "dashscope_openai_compatible_chat",
+        "owner": "dashscope_endpoint",
+        "requiredSlots": ["agent_identity", "enforced_policy", "host_instructions", "conversation_history", "current_input"],
+        "conditionalSlots": ["skill_catalog", "active_skills", "world_state", "memory_and_retrieval", "governed_tools", "required_evidence"],
+        "supportedRoles": ["system", "user", "assistant", "tool"],
+        "unsupportedRoles": ["developer", "unknown"],
+        "missingSlotOrRoleOutcome": "unsupported_profile",
+        "rule": "Historical reasoning_content is protected continuity when preserve_thinking applies; never summarize or synthesize it.",
+        "sources": ["uar-prompt-sections", "prompt-assembly-spec", "alibaba-qwen3-8-max", "alibaba-openai-chat", "alibaba-text-generation"]
+      },
+      "zai-openai-chat": {
+        "revision": "official-docs-observed-2026-09-18",
+        "wire": "zai_openai_compatible_chat",
+        "owner": "zai_endpoint",
+        "requiredSlots": ["agent_identity", "enforced_policy", "host_instructions", "conversation_history", "current_input"],
+        "conditionalSlots": ["skill_catalog", "active_skills", "world_state", "memory_and_retrieval", "governed_tools", "required_evidence"],
+        "supportedRoles": ["system", "user", "assistant", "tool"],
+        "unsupportedRoles": ["developer", "unknown"],
+        "missingSlotOrRoleOutcome": "unsupported_profile",
+        "rule": "Use exact-model thinking settings. GLM-5.2 evidence does not authorize GLM-4.7 behavior.",
+        "sources": ["uar-prompt-sections", "prompt-assembly-spec", "zai-glm-5-2", "zai-parameters", "zai-chat"]
+      }
+    },
+    "settings": {
+      "ferrox-qwen2.5-coder-settings": {
+        "revision": "ferrox@0bdcbc44f1674cd0b84975a29a80bb4f64d093af+durable-settings-sha256:22d0147c4d846c47ec909780da33c1e98516d25d5aaf8852e4a86422b0feeeac",
+        "requiredFields": ["model", "messages"],
+        "allowedFields": ["stream", "max_tokens", "tools", "tool_choice"],
+        "blockedUntilWireFixture": ["parallel_tool_calls", "response_format", "reasoning_effort", "chat_template_kwargs"],
+        "forbiddenFields": ["raw_model_control_tokens"],
+        "unknownSettingOutcome": "unsupported_setting",
+        "sources": ["uar-durable-providers-redacted", "ferrox-source", "ferrox-model-endpoint"]
+      },
+      "openai-proxy-chatgpt-codex-settings": {
+        "revision": "openai-proxy@7833663d3b46f7467f2017f2cce392c09ec1b7ac",
+        "requiredInboundFields": ["model", "messages"],
+        "allowedInboundFields": ["stream", "max_tokens", "tools", "tool_choice", "parallel_tool_calls"],
+        "forcedOutboundFields": {"stream": true, "store": false},
+        "strippedOutboundFields": ["temperature", "top_p", "max_output_tokens", "stop"],
+        "blockedUntilWireFixture": ["response_format", "reasoning_effort"],
+        "unknownSettingOutcome": "unsupported_setting",
+        "sources": ["openai-proxy-source", "openai-proxy-model-endpoint"]
+      },
+      "kimi-k3-settings": {
+        "revision": "official-docs-observed-2026-09-18",
+        "requiredFields": ["model", "messages"],
+        "allowedFields": ["stream", "tools", "tool_choice", "reasoning_effort"],
+        "allowedReasoningEfforts": ["low", "high", "max"],
+        "blockedUntilWireFixture": ["max_tokens", "response_format", "parallel_tool_calls"],
+        "unknownSettingOutcome": "unsupported_setting",
+        "sources": ["kimi-models", "kimi-config"]
+      },
+      "minimax-m3-settings": {
+        "revision": "official-docs-observed-2026-09-18",
+        "requiredFields": ["model", "messages"],
+        "allowedFields": ["stream", "tools", "tool_choice", "max_completion_tokens", "thinking", "reasoning_split"],
+        "allowedThinkingTypes": ["adaptive", "disabled"],
+        "fieldSemantics": {"reasoning_split": "output_format_only"},
+        "deprecatedFields": ["max_tokens"],
+        "blockedUntilWireFixture": ["response_format", "parallel_tool_calls"],
+        "unknownSettingOutcome": "unsupported_setting",
+        "sources": ["minimax-openai-api", "minimax-chat"]
+      },
+      "alibaba-qwen3.8-max-settings": {
+        "revision": "official-docs-observed-2026-09-18",
+        "requiredFields": ["model", "messages"],
+        "allowedFields": ["stream", "tools", "tool_choice", "max_tokens", "enable_thinking", "preserve_thinking", "reasoning_effort", "response_format"],
+        "allowedReasoningEfforts": ["low", "medium", "xhigh"],
+        "protectedContinuityFields": ["reasoning_content"],
+        "blockedUntilWireFixture": ["parallel_tool_calls"],
+        "unknownSettingOutcome": "unsupported_setting",
+        "sources": ["alibaba-qwen3-8-max", "alibaba-openai-chat", "alibaba-text-generation"]
+      },
+      "zai-glm5.2-settings": {
+        "revision": "official-docs-observed-2026-09-18",
+        "requiredFields": ["model", "messages"],
+        "allowedFields": ["stream", "tools", "tool_choice", "max_tokens", "thinking", "reasoning_effort", "response_format"],
+        "allowedThinkingTypes": ["enabled", "disabled"],
+        "allowedReasoningEfforts": ["none", "minimal", "low", "medium", "high", "xhigh", "max"],
+        "blockedUntilWireFixture": ["parallel_tool_calls"],
+        "unknownSettingOutcome": "unsupported_setting",
+        "sources": ["zai-glm-5-2", "zai-parameters", "zai-chat"]
+      },
+      "zai-glm4.7-settings-unproven": {
+        "revision": "durable-settings-sha256:775ca5157b3cddc4915b7fcc4e329675bc0c34a53b5a9e7be6c3b1e2124d7ff6",
+        "requiredFields": ["model", "messages"],
+        "allowedFields": ["stream", "tools", "tool_choice"],
+        "blockedUntilExactOfficialEvidence": ["max_tokens", "thinking", "reasoning_effort", "response_format", "parallel_tool_calls"],
+        "unknownSettingOutcome": "unsupported_setting",
+        "sources": ["uar-durable-providers-redacted"]
+      }
+    },
+    "counting": {
+      "ferrox-rendered-prompt": {
+        "revision": "ferrox@0bdcbc44f1674cd0b84975a29a80bb4f64d093af+gguf-sha256:98266f7c5ada4873f0a4d117e9fd61f374d1b136542a0f613cb63e4535607a89",
+        "certainty": "exact_for_rendered_prompt_bytes",
+        "hardBound": false,
+        "scope": "The live tokenizer returned 9 tokens for a fixed rendered Qwen chat string. It does not accept messages/tools, so the full server-rendered envelope still needs a final-wire fixture.",
+        "sources": ["ferrox-tokenizer-endpoint", "ferrox-source", "ferrox-qwen-gguf"]
+      },
+      "openai-proxy-post-dispatch-usage": {
+        "revision": "openai-proxy@7833663d3b46f7467f2017f2cce392c09ec1b7ac",
+        "certainty": "post_dispatch_only",
+        "hardBound": false,
+        "scope": "No matching preflight endpoint exists for the effective ChatGPT subscription wire. Official OpenAI API counting does not certify this proxy.",
+        "sources": ["openai-proxy-source", "openai-input-count"]
+      },
+      "kimi-client-measured-estimated": {
+        "revision": "official-docs-observed-2026-09-18",
+        "certainty": "measured_plus_estimated",
+        "hardBound": false,
+        "scope": "The documented client estimate is not a provider upper bound for the complete message/tool envelope.",
+        "sources": ["kimi-config"]
+      },
+      "minimax-responses-estimate": {
+        "revision": "official-docs-observed-2026-09-18",
+        "certainty": "provider_estimate",
+        "hardBound": false,
+        "scope": "The endpoint can include messages and tools but documents an estimate, not a guaranteed upper bound.",
+        "sources": ["minimax-input-count"]
+      },
+      "alibaba-post-dispatch-usage": {
+        "revision": "official-docs-observed-2026-09-18",
+        "certainty": "post_dispatch_only",
+        "hardBound": false,
+        "scope": "No complete-request preflight upper bound was established.",
+        "sources": ["alibaba-text-generation", "alibaba-openai-chat"]
+      },
+      "zai-text-estimate": {
+        "revision": "official-docs-observed-2026-09-18",
+        "certainty": "text_estimate",
+        "hardBound": false,
+        "scope": "The tokenizer estimates text only, not the final messages, tools and provider envelope.",
+        "sources": ["zai-tokenizer"]
+      }
+    },
+    "outputs": {
+      "ferrox-output-unknown": {
+        "revision": "durable-settings-sha256:22d0147c4d846c47ec909780da33c1e98516d25d5aaf8852e4a86422b0feeeac",
+        "requestField": "max_tokens",
+        "enforceableCeiling": null,
+        "status": "blocked",
+        "reason": "Durable settings omit max_output_tokens and an independent server ceiling was not proven.",
+        "sources": ["uar-durable-providers-redacted", "ferrox-source"]
+      },
+      "openai-proxy-chatgpt-output-uncontrolled": {
+        "revision": "openai-proxy@7833663d3b46f7467f2017f2cce392c09ec1b7ac",
+        "requestField": null,
+        "enforceableCeiling": null,
+        "status": "blocked",
+        "reason": "ChatGptCodex strips max_output_tokens. Catalogue values are metadata, not a request-enforced ceiling.",
+        "sources": ["openai-proxy-source", "openai-proxy-model-endpoint"]
+      },
+      "kimi-output-unproven": {
+        "revision": "official-docs-observed-2026-09-18",
+        "requestField": "max_tokens",
+        "configuredCeiling": 131072,
+        "enforceableCeiling": null,
+        "status": "blocked",
+        "reason": "The configured value was not established as the exact k3 endpoint maximum.",
+        "sources": ["uar-durable-providers-redacted", "kimi-models", "kimi-config"]
+      },
+      "minimax-m3-output": {
+        "revision": "official-docs-observed-2026-09-18",
+        "requestField": "max_completion_tokens",
+        "configuredCeiling": 128000,
+        "documentedRecommended": 131072,
+        "documentedMaximum": 524288,
+        "enforceableCeiling": 128000,
+        "status": "documented_not_live_verified",
+        "sources": ["minimax-chat"]
+      },
+      "alibaba-qwen3.8-output": {
+        "revision": "official-docs-observed-2026-09-18",
+        "requestField": "max_tokens",
+        "configuredCeiling": 131072,
+        "documentedMaximum": 131072,
+        "documentedReasoningMaximum": 262144,
+        "enforceableCeiling": 131072,
+        "status": "documented_not_live_verified",
+        "sources": ["alibaba-qwen3-8-max", "alibaba-openai-chat"]
+      },
+      "zai-glm5.2-output": {
+        "revision": "official-docs-observed-2026-09-18",
+        "requestField": "max_tokens",
+        "configuredCeiling": 131072,
+        "documentedDefault": 65536,
+        "documentedMaximum": 131072,
+        "enforceableCeiling": 131072,
+        "status": "documented_not_live_verified",
+        "sources": ["zai-glm-5-2", "zai-parameters", "zai-chat"]
+      },
+      "zai-glm4.7-output-unproven": {
+        "revision": "durable-settings-sha256:775ca5157b3cddc4915b7fcc4e329675bc0c34a53b5a9e7be6c3b1e2124d7ff6",
+        "requestField": "max_tokens",
+        "configuredCeiling": 131072,
+        "enforceableCeiling": null,
+        "status": "blocked",
+        "reason": "No exact GLM-4.7 official source was retrieved; GLM-5.2 evidence is not inherited.",
+        "sources": ["uar-durable-providers-redacted"]
+      }
+    }
+  },
+  "providers": [
+    {
+      "providerId": "ferrox-local",
+      "baseUrl": "http://127.0.0.1:8899/v1",
+      "endpointKind": "openai_chat_local_raw_inference",
+      "configuredEnabled": true,
+      "effectiveEnabled": true,
+      "defaultModel": "Qwen2.5 Coder 7B Instruct",
+      "redactedRecordSha256": "22d0147c4d846c47ec909780da33c1e98516d25d5aaf8852e4a86422b0feeeac",
+      "endpointModelsSha256": "3fe1d218d3f9491a5e85d7f5a5c8127df2b66a0aac0a370772335733f524290e",
+      "profileRevision": "ferrox@0bdcbc44f1674cd0b84975a29a80bb4f64d093af+binary-sha256:116c9e35476102a5e5f734929fead80b586e10d3337b72cecfabfbdebf459470+gguf-sha256:98266f7c5ada4873f0a4d117e9fd61f374d1b136542a0f613cb63e4535607a89",
+      "models": [{
+        "exactModelId": "Qwen2.5 Coder 7B Instruct",
+        "exactProfileKey": "ferrox-local|http://127.0.0.1:8899/v1|openai_chat_local_raw_inference|Qwen2.5 Coder 7B Instruct",
+        "aliasRevision": "local-endpoint-model-list-sha256:3fe1d218d3f9491a5e85d7f5a5c8127df2b66a0aac0a370772335733f524290e",
+        "contextWindow": 32768,
+        "contextProvenance": "durable_settings_and_unscaled_qwen_model_card",
+        "templateContract": "ferrox-qwen2.5-coder-gguf",
+        "settingsContract": "ferrox-qwen2.5-coder-settings",
+        "countingContract": "ferrox-rendered-prompt",
+        "outputContract": "ferrox-output-unknown",
+        "certification": "BLOCKED",
+        "blockers": ["complete messages/tools envelope count is not proven", "independent output ceiling is unknown", "final UAR-to-Ferrox wire fixture is task 2.2"]
+      }]
+    },
+    {
+      "providerId": "local-openai-proxy",
+      "baseUrl": "http://127.0.0.1:8181/v1",
+      "endpointKind": "openai_chat_proxy_to_chatgpt_codex_responses",
+      "configuredEnabled": true,
+      "effectiveEnabled": true,
+      "defaultModel": "gpt-5.4",
+      "redactedRecordSha256": "d0ad0fe9a30057d8bfd1b912710895ea6f70e2ae64ed0ed084b8a55dd4949db2",
+      "endpointModelsSha256": "f1a29ea67d35bacbc3b03734f354fd2fcd50ce30ebe848e884606a7132c0041f",
+      "profileRevision": "openai-proxy@7833663d3b46f7467f2017f2cce392c09ec1b7ac+binary-sha256:2806d24df19d8cd2dacbed1d807c3f5d52f78c9816b1523ae2da2ef7f0407214+backend:ChatGptCodex",
+      "sharedContracts": {
+        "templateContract": "openai-proxy-chatgpt-codex-responses",
+        "settingsContract": "openai-proxy-chatgpt-codex-settings",
+        "countingContract": "openai-proxy-post-dispatch-usage",
+        "outputContract": "openai-proxy-chatgpt-output-uncontrolled"
+      },
+      "models": [
+        {"exactModelId": "gpt-5.4", "exactProfileKey": "local-openai-proxy|http://127.0.0.1:8181/v1|openai_chat_proxy_to_chatgpt_codex_responses|gpt-5.4", "aliasRevision": "exact-catalog@7833663d3b46f7467f2017f2cce392c09ec1b7ac", "contextWindow": 400000, "catalogMaxOutput": 32768, "templateContract": "openai-proxy-chatgpt-codex-responses", "settingsContract": "openai-proxy-chatgpt-codex-settings", "countingContract": "openai-proxy-post-dispatch-usage", "outputContract": "openai-proxy-chatgpt-output-uncontrolled", "certification": "BLOCKED"},
+        {"exactModelId": "gpt-5.4-mini", "exactProfileKey": "local-openai-proxy|http://127.0.0.1:8181/v1|openai_chat_proxy_to_chatgpt_codex_responses|gpt-5.4-mini", "aliasRevision": "exact-catalog@7833663d3b46f7467f2017f2cce392c09ec1b7ac", "contextWindow": 200000, "catalogMaxOutput": 16384, "templateContract": "openai-proxy-chatgpt-codex-responses", "settingsContract": "openai-proxy-chatgpt-codex-settings", "countingContract": "openai-proxy-post-dispatch-usage", "outputContract": "openai-proxy-chatgpt-output-uncontrolled", "certification": "BLOCKED"},
+        {"exactModelId": "gpt-5.4-nano", "exactProfileKey": "local-openai-proxy|http://127.0.0.1:8181/v1|openai_chat_proxy_to_chatgpt_codex_responses|gpt-5.4-nano", "aliasRevision": "exact-catalog@7833663d3b46f7467f2017f2cce392c09ec1b7ac", "contextWindow": 128000, "catalogMaxOutput": 8192, "templateContract": "openai-proxy-chatgpt-codex-responses", "settingsContract": "openai-proxy-chatgpt-codex-settings", "countingContract": "openai-proxy-post-dispatch-usage", "outputContract": "openai-proxy-chatgpt-output-uncontrolled", "certification": "BLOCKED"},
+        {"exactModelId": "gpt-5.5", "exactProfileKey": "local-openai-proxy|http://127.0.0.1:8181/v1|openai_chat_proxy_to_chatgpt_codex_responses|gpt-5.5", "aliasRevision": "exact-catalog@7833663d3b46f7467f2017f2cce392c09ec1b7ac", "contextWindow": 400000, "catalogMaxOutput": 32768, "templateContract": "openai-proxy-chatgpt-codex-responses", "settingsContract": "openai-proxy-chatgpt-codex-settings", "countingContract": "openai-proxy-post-dispatch-usage", "outputContract": "openai-proxy-chatgpt-output-uncontrolled", "certification": "BLOCKED"},
+        {"exactModelId": "gpt-5.6-luna", "exactProfileKey": "local-openai-proxy|http://127.0.0.1:8181/v1|openai_chat_proxy_to_chatgpt_codex_responses|gpt-5.6-luna", "aliasRevision": "exact-catalog@7833663d3b46f7467f2017f2cce392c09ec1b7ac", "contextWindow": 1050000, "catalogMaxOutput": 128000, "templateContract": "openai-proxy-chatgpt-codex-responses", "settingsContract": "openai-proxy-chatgpt-codex-settings", "countingContract": "openai-proxy-post-dispatch-usage", "outputContract": "openai-proxy-chatgpt-output-uncontrolled", "certification": "BLOCKED"},
+        {"exactModelId": "gpt-5.6-sol", "exactProfileKey": "local-openai-proxy|http://127.0.0.1:8181/v1|openai_chat_proxy_to_chatgpt_codex_responses|gpt-5.6-sol", "aliasRevision": "exact-catalog@7833663d3b46f7467f2017f2cce392c09ec1b7ac", "contextWindow": 1050000, "catalogMaxOutput": 128000, "templateContract": "openai-proxy-chatgpt-codex-responses", "settingsContract": "openai-proxy-chatgpt-codex-settings", "countingContract": "openai-proxy-post-dispatch-usage", "outputContract": "openai-proxy-chatgpt-output-uncontrolled", "certification": "BLOCKED"},
+        {"exactModelId": "gpt-5.6-terra", "exactProfileKey": "local-openai-proxy|http://127.0.0.1:8181/v1|openai_chat_proxy_to_chatgpt_codex_responses|gpt-5.6-terra", "aliasRevision": "exact-catalog@7833663d3b46f7467f2017f2cce392c09ec1b7ac", "contextWindow": 1050000, "catalogMaxOutput": 128000, "templateContract": "openai-proxy-chatgpt-codex-responses", "settingsContract": "openai-proxy-chatgpt-codex-settings", "countingContract": "openai-proxy-post-dispatch-usage", "outputContract": "openai-proxy-chatgpt-output-uncontrolled", "certification": "BLOCKED"}
+      ],
+      "sharedBlockers": ["complete preflight count is unavailable", "effective backend strips max_output_tokens", "official OpenAI API limits do not certify this subscription proxy deployment"]
+    },
+    {
+      "providerId": "kimi-for-coding",
+      "baseUrl": "https://api.kimi.com/coding/v1",
+      "endpointKind": "openai_compatible_chat",
+      "configuredEnabled": true,
+      "effectiveEnabled": false,
+      "defaultModel": "k3",
+      "redactedRecordSha256": "cf1798e5a972778d831d1077a7b3c04f6309a95572db4be302d1d08b84bcb056",
+      "profileRevision": "durable-settings-sha256:cf1798e5a972778d831d1077a7b3c04f6309a95572db4be302d1d08b84bcb056+docs-observed-2026-09-18",
+      "models": [{
+        "exactModelId": "k3",
+        "exactProfileKey": "kimi-for-coding|https://api.kimi.com/coding/v1|openai_compatible_chat|k3",
+        "aliasRevision": "rolling-k3-observed-2026-09-18",
+        "immutableAlias": false,
+        "configuredContextWindow": 1048576,
+        "documentedContextQualification": "1048576 requires an entitled higher tier; other accounts may receive 256K behavior",
+        "templateContract": "kimi-k3-openai-chat",
+        "settingsContract": "kimi-k3-settings",
+        "countingContract": "kimi-client-measured-estimated",
+        "outputContract": "kimi-output-unproven",
+        "certification": "BLOCKED",
+        "blockers": ["provider is effectively disabled", "rolling alias/upstream is not pinned", "context entitlement and output maximum are not live verified", "no complete-request hard count"]
+      }]
+    },
+    {
+      "providerId": "minimax",
+      "baseUrl": "https://api.minimax.io/v1",
+      "endpointKind": "openai_compatible_chat",
+      "configuredEnabled": true,
+      "effectiveEnabled": false,
+      "defaultModel": "MiniMax-M3",
+      "redactedRecordSha256": "212aae4dfba9dbde9d657e79d1bfde42c795be760a1299a1fa74d525e0f4192d",
+      "profileRevision": "durable-settings-sha256:212aae4dfba9dbde9d657e79d1bfde42c795be760a1299a1fa74d525e0f4192d+docs-observed-2026-09-18",
+      "models": [{
+        "exactModelId": "MiniMax-M3",
+        "exactProfileKey": "minimax|https://api.minimax.io/v1|openai_compatible_chat|MiniMax-M3",
+        "aliasRevision": "official-model-id-observed-2026-09-18",
+        "contextWindow": 1000000,
+        "templateContract": "minimax-m3-openai-chat",
+        "settingsContract": "minimax-m3-settings",
+        "countingContract": "minimax-responses-estimate",
+        "outputContract": "minimax-m3-output",
+        "certification": "BLOCKED",
+        "blockers": ["provider is effectively disabled", "count endpoint is an estimate rather than a proven bound", "live final-wire and setting preservation are not verified"]
+      }]
+    },
+    {
+      "providerId": "alibaba",
+      "baseUrl": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "endpointKind": "dashscope_openai_compatible_chat",
+      "configuredEnabled": true,
+      "effectiveEnabled": false,
+      "defaultModel": "qwen3.8-max",
+      "redactedRecordSha256": "e26ef68d28ad2b4cbd47e84d55b7e0f4dbd46af4912f2110307130020d0fcdc2",
+      "profileRevision": "durable-settings-sha256:e26ef68d28ad2b4cbd47e84d55b7e0f4dbd46af4912f2110307130020d0fcdc2+docs-observed-2026-09-18",
+      "models": [{
+        "exactModelId": "qwen3.8-max",
+        "exactProfileKey": "alibaba|https://dashscope-intl.aliyuncs.com/compatible-mode/v1|dashscope_openai_compatible_chat|qwen3.8-max",
+        "aliasRevision": "rolling-qwen3.8-max-observed-2026-09-18; documented-snapshot=qwen3.8-max-0902",
+        "immutableAlias": false,
+        "contextWindow": 1000000,
+        "maximumInputWithoutThinking": 991808,
+        "maximumInputWithThinking": 983616,
+        "templateContract": "alibaba-qwen3.8-max-openai-chat",
+        "settingsContract": "alibaba-qwen3.8-max-settings",
+        "countingContract": "alibaba-post-dispatch-usage",
+        "outputContract": "alibaba-qwen3.8-output",
+        "continuity": "preserve_thinking defaults true; historical reasoning_content is protected and billed/countable",
+        "certification": "BLOCKED",
+        "blockers": ["provider is effectively disabled", "configured base was not live verified", "rolling alias is not pinned to the snapshot", "no complete-request hard count"]
+      }]
+    },
+    {
+      "providerId": "zai",
+      "baseUrl": "https://api.z.ai/api/paas/v4",
+      "endpointKind": "zai_openai_compatible_chat",
+      "configuredEnabled": true,
+      "effectiveEnabled": false,
+      "defaultModel": "glm-5.2",
+      "redactedRecordSha256": "775ca5157b3cddc4915b7fcc4e329675bc0c34a53b5a9e7be6c3b1e2124d7ff6",
+      "profileRevision": "durable-settings-sha256:775ca5157b3cddc4915b7fcc4e329675bc0c34a53b5a9e7be6c3b1e2124d7ff6+docs-observed-2026-09-18",
+      "models": [
+        {
+          "exactModelId": "glm-5.2",
+          "exactProfileKey": "zai|https://api.z.ai/api/paas/v4|zai_openai_compatible_chat|glm-5.2",
+          "aliasRevision": "official-model-id-observed-2026-09-18",
+          "contextWindow": 1000000,
+          "templateContract": "zai-openai-chat",
+          "settingsContract": "zai-glm5.2-settings",
+          "countingContract": "zai-text-estimate",
+          "outputContract": "zai-glm5.2-output",
+          "reasoningEffortMapping": {"none": "disabled", "minimal": "disabled", "low": "high", "medium": "high", "high": "high", "xhigh": "max", "max": "max"},
+          "certification": "BLOCKED",
+          "blockers": ["provider is effectively disabled", "tokenizer estimates text rather than the complete envelope", "live final-wire and setting preservation are not verified"]
+        },
+        {
+          "exactModelId": "glm-4.7",
+          "exactProfileKey": "zai|https://api.z.ai/api/paas/v4|zai_openai_compatible_chat|glm-4.7",
+          "aliasRevision": "durable-settings-observed-2026-09-18",
+          "configuredContextWindow": 204800,
+          "templateContract": "zai-openai-chat",
+          "settingsContract": "zai-glm4.7-settings-unproven",
+          "countingContract": "zai-text-estimate",
+          "outputContract": "zai-glm4.7-output-unproven",
+          "certification": "BLOCKED",
+          "blockers": ["provider is effectively disabled", "no exact GLM-4.7 official source was retrieved", "GLM-5.2 fields cannot be inherited by family name"]
+        }
+      ]
+    }
+  ],
+  "synthesizedAliases": [
+    {
+      "providerId": "ollama",
+      "aliasRevision": "effective-registry-sha256:e084f6fb946426a40b1dfd21773a5f4ef69d2f2a086218e5b15cf80b5e7d4e91",
+      "baseUrl": "http://127.0.0.1:8899/v1",
+      "exactModelId": "Qwen2.5 Coder 7B Instruct",
+      "canonicalIdentity": {
+        "providerId": "ferrox-local",
+        "baseUrl": "http://127.0.0.1:8899/v1",
+        "endpointKind": "openai_chat_local_raw_inference",
+        "exactModelId": "Qwen2.5 Coder 7B Instruct",
+        "profileRevision": "ferrox@0bdcbc44f1674cd0b84975a29a80bb4f64d093af+binary-sha256:116c9e35476102a5e5f734929fead80b586e10d3337b72cecfabfbdebf459470+gguf-sha256:98266f7c5ada4873f0a4d117e9fd61f374d1b136542a0f613cb63e4535607a89"
+      },
+      "dispatchEligible": false,
+      "certifyIndependently": false,
+      "ineligibility": "Alias is not independently reviewed; callers must resolve the complete canonical identity."
+    },
+    {
+      "providerId": "chatgpt",
+      "aliasRevision": "effective-registry-sha256:e084f6fb946426a40b1dfd21773a5f4ef69d2f2a086218e5b15cf80b5e7d4e91",
+      "baseUrl": "http://127.0.0.1:8181/v1",
+      "canonicalIdentity": {
+        "providerId": "local-openai-proxy",
+        "baseUrl": "http://127.0.0.1:8181/v1",
+        "endpointKind": "openai_chat_proxy_to_chatgpt_codex_responses",
+        "exactModelId": null,
+        "profileRevision": "openai-proxy@7833663d3b46f7467f2017f2cce392c09ec1b7ac+binary-sha256:2806d24df19d8cd2dacbed1d807c3f5d52f78c9816b1523ae2da2ef7f0407214+backend:ChatGptCodex"
+      },
+      "dispatchEligible": false,
+      "certifyIndependently": false,
+      "ineligibility": "The synthesized alias has no exact model. Dispatch must first select one of the seven exact canonical profiles."
+    }
+  ],
+  "excludedRuntimeEntries": [{"providerId": "openai", "reason": "Disabled synthesized catalogue fallback, not an effective durable configured route."}],
+  "audit": {
+    "exactProviderCount": 6,
+    "exactModelProfileCount": 13,
+    "modelProfilesWithExactProfileKeys": 13,
+    "modelProfilesWithTemplateContracts": 13,
+    "modelProfilesWithSettingsContracts": 13,
+    "modelProfilesWithCountingContracts": 13,
+    "modelProfilesWithOutputContracts": 13,
+    "profilesUsingFamilySubstringAsSoleEvidence": [],
+    "fieldsUsingFamilySubstringAsSoleEvidence": [],
+    "synthesizedAliasCount": 2,
+    "synthesizedAliasesWithRevision": 2,
+    "dispatchEligibleSynthesizedAliasCount": 0,
+    "dispatchEligibleAliasesMissingCompleteCanonicalIdentity": [],
+    "ineligibleAliasesMissingExactModel": ["chatgpt"],
+    "dispatchCertifiedProfileCount": 0,
+    "status": "PASS",
+    "statement": "Every model is keyed by exact provider, base, endpoint kind and model ID. Family names are explanatory only; the observed gpt-5.* proxy fallback is excluded from support evidence."
+  }
+}

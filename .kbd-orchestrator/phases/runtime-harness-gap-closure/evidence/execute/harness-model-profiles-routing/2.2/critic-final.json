@@ -1,0 +1,6 @@
+{
+  "reviewer": "artifact-critic",
+  "isolation": "artifact-only",
+  "verdict": "PASS",
+  "findings": []
+}

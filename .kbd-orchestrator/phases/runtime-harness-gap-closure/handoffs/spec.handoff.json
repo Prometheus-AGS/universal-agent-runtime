@@ -1,0 +1,23 @@
+{
+  "stage": "spec",
+  "completedAt": "2026-09-16T22:55:33Z",
+  "outputs": [
+    "spec.md",
+    "spec-manifest.json",
+    "decision-log.md",
+    "evidence/spec-verification.json",
+    "review/spec/findings.json",
+    "review/spec/source-critic.json",
+    "review/spec/review-receipt.json",
+    "../../../openspec/changes/harness-protected-context/proposal.md",
+    "../../../openspec/changes/harness-model-profiles-routing/proposal.md",
+    "../../../openspec/changes/harness-task-graph-lifecycle/proposal.md",
+    "../../../openspec/changes/harness-skill-activation-quality/proposal.md",
+    "../../../openspec/changes/harness-knowledge-evidence/proposal.md",
+    "../../../openspec/changes/harness-governed-evaluation/proposal.md"
+  ],
+  "nextStage": "plan",
+  "summaryForNext": "Six dependency-ordered OpenSpec changes; 11 deltas, 85 scenarios, 44 unchecked tasks. Exact model/endpoint templates and pure protected-data budgeting are specified. Strict validation 6/6; final native and distinct-model reviews PASS with zero findings. ZeeSpec inactive/unknown-acceptable. Five external-candidate surveys, exact provider evidence, frozen metrics and a separate local Tier3 certification milestone remain mandatory Plan prerequisites. No runtime implementation or tests; build health UNKNOWN. Next /kbd-plan runtime-harness-gap-closure.",
+  "skipped": false,
+  "skipReason": null
+}

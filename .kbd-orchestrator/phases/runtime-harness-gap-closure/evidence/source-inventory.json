@@ -1,0 +1,152 @@
+{
+  "baseline": "226d4a0af89811975662cf3f203c699f70e8cebc",
+  "sources": [
+    {
+      "path": "Cargo.toml",
+      "sha256": "793269835d93deaa562d7d4851743fbb2a72e47bcc1c89fc6c411e092f1d4787",
+      "lines": 560
+    },
+    {
+      "path": "frontend/vitest.config.ts",
+      "sha256": "13deea727549702ecb3c10716220f7dd2188862d20f5df5ca9098360077270b6",
+      "lines": 70
+    },
+    {
+      "path": "openspec/specs/eval-harness/spec.md",
+      "sha256": "77d25efdde3c4b584e25a9d1230d925ed8a61ff6059c3e2d76b61f4b2c324547",
+      "lines": 249
+    },
+    {
+      "path": "src/llm/liter_driver.rs",
+      "sha256": "cc83228adeb933ce7ee03fe0b52c3640011bc6d3dc4da676153a3a24d41dc1f8",
+      "lines": 538
+    },
+    {
+      "path": "src/llm/orchestrator.rs",
+      "sha256": "043585bedf5408de0711de45ae4aa90b11455052e3f40f4796d8d3d156570922",
+      "lines": 2407
+    },
+    {
+      "path": "src/llm/router.rs",
+      "sha256": "a26e11103cd9905992890b82f3bcedc9f756b6fe6de9091ec8c2b1efbd3084da",
+      "lines": 432
+    },
+    {
+      "path": "src/uar/api/a2a/handler.rs",
+      "sha256": "0e148e73a8bda3ed7e5a88a33f12da41ce51d505551d7650eaa254c8ce504646",
+      "lines": 362
+    },
+    {
+      "path": "src/uar/api/a2a/thread_service.rs",
+      "sha256": "fcd97d3419b6364e251220c3b1891871545ee08ba49a09e9bec21546d43b57f8",
+      "lines": 509
+    },
+    {
+      "path": "src/uar/domain/events.rs",
+      "sha256": "b602eec4a28106c607959fe4ba8b55dd2455988a91c6d06e5a6659310a328594",
+      "lines": 421
+    },
+    {
+      "path": "src/uar/eval/cli.rs",
+      "sha256": "2be98242d057b7897cbcf90ed90ce6198ea7a66721346c155479f078e27cc9d7",
+      "lines": 306
+    },
+    {
+      "path": "src/uar/eval/integration_tests.rs",
+      "sha256": "5336ea8adf84521d5e476a9b66f2c8e343a0eea83d04e7c7cb51c268c66d7a5a",
+      "lines": 221
+    },
+    {
+      "path": "src/uar/eval/targeted.rs",
+      "sha256": "bc7d912979f16ae9bac3fbb825f664ac2bb3b9821ce95fa902c59144daaafaae",
+      "lines": 307
+    },
+    {
+      "path": "src/uar/llm/router.rs",
+      "sha256": "e6a3dedcc3aae497ce3dfd7796b477e7d03307f7d56ab87f5bf8e561d2018ff9",
+      "lines": 73
+    },
+    {
+      "path": "src/uar/rag/pipeline.rs",
+      "sha256": "b37878358165911230864811d25096563832bfbd887d17c10b42b8ec1d6da556",
+      "lines": 414
+    },
+    {
+      "path": "src/uar/rag/verification.rs",
+      "sha256": "ee34be329dfcb7ec68509a40203dd21908538550ab7e520f54ce580d0f98f9be",
+      "lines": 108
+    },
+    {
+      "path": "src/uar/runtime/context/manager.rs",
+      "sha256": "4972c989a5e1274bcc275aa152cf07ec57f0a89f37a91a0421f3286950dbb4e8",
+      "lines": 418
+    },
+    {
+      "path": "src/uar/runtime/context/reduce.rs",
+      "sha256": "c11c9e8d88ab4b3195a5dd52ecf8fe154cb61c7be270239c35722e72b0d803ec",
+      "lines": 300
+    },
+    {
+      "path": "src/uar/runtime/context/token_service.rs",
+      "sha256": "1b17cde101c23a40f34c4af2ff2b2e9c08432bc82099a02ea372b3b1a32ac97c",
+      "lines": 169
+    },
+    {
+      "path": "src/uar/runtime/graph/engine.rs",
+      "sha256": "db04863ef6ffc892f186742135cbd44cb03f5e32b1a6ca8ba82cd4486fbbf53a",
+      "lines": 240
+    },
+    {
+      "path": "src/uar/runtime/graph/turn.rs",
+      "sha256": "e45bb03d2fa517f48a6acf566f4192b998ed03062e3b51e1ea007b53c16dfcd1",
+      "lines": 251
+    },
+    {
+      "path": "src/uar/runtime/manager.rs",
+      "sha256": "55bd52588ff7f29ce1fb1ae6b747a08c262a8823ba6e0c3ba6fde22d92853369",
+      "lines": 5816
+    },
+    {
+      "path": "src/uar/runtime/skills/activation.rs",
+      "sha256": "ecab66759cab5d278784cde7b4229459aa80b6e496c49402d999b88bebbae425",
+      "lines": 504
+    },
+    {
+      "path": "src/uar/runtime/turn/builtin.rs",
+      "sha256": "1c2833643384187b89e505156bbc0256ea4815abb6139ab346dfea31b6aa82bc",
+      "lines": 344
+    },
+    {
+      "path": "src/uar/runtime/turn/resolved.rs",
+      "sha256": "0aa98b6a8b743de3385cb73170e325b3701512b6cce5116f2d8ce069b6945786",
+      "lines": 257
+    },
+    {
+      "path": "tests/a2a_thread_service.rs",
+      "sha256": "1144c61062b5c2c125a37e3717c2f2b9404da59691efe2245cf54a2bb23e0b28",
+      "lines": 381
+    },
+    {
+      "path": "tests/context_history_integrity.rs",
+      "sha256": "bb2b7ee455ed86a321707ef351e36b96899b38687a40a0c31adab7cb97297984",
+      "lines": 997
+    },
+    {
+      "path": "tests/skill_activation_runtime.rs",
+      "sha256": "01420328b91dd3d24eba85ef7ca5754e134d768a2e29164c2501f17f16454a03",
+      "lines": 866
+    },
+    {
+      "path": "versions.toml",
+      "sha256": "b4b7ea00a0f62460fe7981fedf96cf3686ee49f189f8cc77d987301580037307",
+      "lines": 51
+    }
+  ],
+  "constraint_file_exists": false,
+  "notice": "Source hashes identify inspected files; not behavioral verification.",
+  "feedback_source": {
+    "path": ".kbd-orchestrator/phases/runtime-harness-gap-closure/feedback-source.txt",
+    "sha256": "5a478d7a091cd0e337ab64b15cb41b17cf869adf09f51ea07f07b75ef65f4efe",
+    "attachment_cmp": "identical"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "task": "harness-model-profiles-routing-1-2",
+  "commands": [
+    {
+      "command": "python3 .kbd-orchestrator/phases/runtime-harness-gap-closure/evidence/execute/harness-model-profiles-routing/1.2/verify.py",
+      "exitCode": 0,
+      "scriptSha256": "73848809ad1c7054deff95062f33b9b8890093ac87d56f4645908071d70b23dc",
+      "output": "verification.log",
+      "outputSha256": "2f0c325b3b7f6f37136857eb7f868aad7103b00abc7d607bb14608dcebeba121"
+    },
+    {
+      "command": "python3 .kbd-orchestrator/phases/runtime-harness-gap-closure/evidence/execute/harness-model-profiles-routing/1.2/generate_context_corpus.py --check .kbd-orchestrator/phases/runtime-harness-gap-closure/evidence/execute/harness-model-profiles-routing/1.2/context-corpus-manifest.json",
+      "exitCode": 0,
+      "generatorSha256": "c324c15c67d8c0d230203d01773ccff4e44dbd7ecd4d625fb4beccff1ce4bc06",
+      "manifestSha256": "566297bffde023cb205198f901792677c40ae7f48c1fb1d479dbca4a0e682f6d",
+      "result": {
+        "cartesianCases": 945,
+        "failureCases": 198,
+        "budgetCases": 54,
+        "longHistoryRecords": 1004,
+        "normalEntryPointBindings": 18
+      }
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test prompt_assembly",
+      "exitCode": 101,
+      "output": "prompt_assembly-initial-failure.log",
+      "outputSha256": "3ff0e7fed3cd1bbd0566afadc9523be0278287c7c5150350c705d01226b5ccbb",
+      "outcome": "Observed test-crate query-depth compile failure; corrected by adding only #![recursion_limit = \"256\"] to the named fixture."
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo check --locked --no-default-features --features server-full",
+      "exitCode": 0,
+      "output": "cargo-check.log",
+      "outputSha256": "21bcc4a0e34da2e805fd30eccee70e386355d23bb5cd97cecf47bb78c2c2dd2f"
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test prompt_assembly",
+      "exitCode": 0,
+      "output": "prompt_assembly.log",
+      "outputSha256": "717dbb72469b272d87190cfffa700e81cfc6c4adc6d39842e6f8b504f3c5dfa3",
+      "result": {"passed": 6, "failed": 0, "ignored": 0}
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test model_path_resiliency",
+      "exitCode": 0,
+      "output": "model_path_resiliency.log",
+      "outputSha256": "5cf86a1257373565562f2773af323f92c873293cb1e7a4d14fd5ea1f7b9e1cb4",
+      "result": {"passed": 12, "failed": 0, "ignored": 0}
+    },
+    {
+      "command": "openspec validate harness-model-profiles-routing --strict --json --no-interactive",
+      "exitCode": 0,
+      "output": "openspec-validate.json",
+      "outputSha256": "e032da08cc2732110332e9c4db68b2ce1348bf0fc25a58730b609b0808927d47",
+      "result": {"passed": 1, "failed": 0}
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "verdict": "BLOCK",
+  "findings": [
+    {
+      "severity": "major",
+      "file": "src/uar/runtime/prompt/fragment.rs",
+      "issue": "Plain rendering allowed markerless user bodies to emit host-owned marker syntax.",
+      "resolution": "User content now has a host-owned envelope and is escaped; adversarial user, skill and retrieved bodies are tested in plain and structured layouts."
+    },
+    {
+      "severity": "major",
+      "file": "tests/prompt_assembly.rs",
+      "issue": "The compiler fixture proved only serde round-trip, not parser/compiler/emitter propagation for a template-only declaration.",
+      "resolution": "The fixture now parses a template-only prompt section, compiles it, and asserts schema v2 plus the exact emitted payload identifier."
+    },
+    {
+      "severity": "major",
+      "file": "src/llm/prompt_dialect.rs",
+      "issue": "Blank destination and profile identities or revisions could compare equal and resolve.",
+      "resolution": "Typed destination/profile identity validation now runs before matching, with blank exact, family, profile and destination revision regressions."
+    }
+  ]
+}

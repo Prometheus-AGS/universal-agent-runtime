@@ -1,0 +1,2027 @@
+{
+  "phase": "runtime-harness-gap-closure",
+  "order": [
+    "harness-protected-context",
+    "harness-model-profiles-routing",
+    "harness-task-graph-lifecycle",
+    "harness-skill-activation-quality",
+    "harness-knowledge-evidence",
+    "harness-governed-evaluation"
+  ],
+  "rule": "Exact paths are maximum authorized scope, not a demand to edit every file. Inspect before each edit; no kernel writes. Fixture names below are proposed names to implement, not existing passing tests. Every scenario is owned by its change integration task; task title defines the producing implementation unit. Tests must call production host seams.",
+  "newFilesProposed": {
+    "harness-protected-context": [
+      "src/uar/runtime/context/budget.rs",
+      "tests/support/harness_context.rs"
+    ],
+    "harness-knowledge-evidence": [
+      "tests/harness_knowledge_evidence.rs"
+    ],
+    "harness-governed-evaluation": [
+      "tests/harness_governed_evaluation.rs"
+    ],
+    "harness-model-profiles-routing": [
+      "src/llm/task_classifier.rs"
+    ]
+  },
+  "tasks": [
+    {
+      "change": "harness-protected-context",
+      "id": "1.1",
+      "canonicalId": "harness-protected-context-1-1",
+      "sequence": 1,
+      "title": "Confirm the protected-context scope and scenario-to-fixture matrix; enumerate exact edit paths, acquisition/storage limits and legacy completeness migration in Plan, with a reviewed artifact proving every context strategy and entry point is covered.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/context_history_integrity.rs",
+        "tests/test_context_strategy.rs"
+      ],
+      "verification": [
+        "Tier 0: verify prerequisite evidence and hashes; no behavior edit until this gate passes."
+      ],
+      "outputEvidence": "evidence/execute/harness-protected-context/1.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-protected-context",
+      "id": "1.2",
+      "canonicalId": "harness-protected-context-1-2",
+      "sequence": 2,
+      "title": "Create deterministic canonical receipt/history fixtures and final-request capture helpers; verify they reproduce tool-pair loss, pre-history truncation and empty-text assistant loss where present.",
+      "editFiles": [
+        "tests/support/harness_context.rs"
+      ],
+      "fixtureFiles": [
+        "tests/context_history_integrity.rs",
+        "tests/test_context_strategy.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test context_history_integrity",
+        "cargo test --locked --no-default-features --features server-full --test test_context_strategy"
+      ],
+      "outputEvidence": "evidence/execute/harness-protected-context/1.2/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-protected-context",
+      "id": "2.1",
+      "canonicalId": "harness-protected-context-2-1",
+      "sequence": 3,
+      "title": "Preserve canonical native/MCP/graph/terminal receipts before display formatting and enforce acquisition limits truthfully; verify byte/value identity and incomplete-result scenarios.",
+      "editFiles": [
+        "src/llm/orchestrator.rs",
+        "src/uar/runtime/native_skill.rs",
+        "src/uar/tools/terminal_exec.rs",
+        "src/uar/tools/terminal_process.rs",
+        "src/uar/runtime/graph/nodes/tool_node.rs",
+        "src/uar/persistence/mod.rs",
+        "src/uar/persistence/agent_threads.rs",
+        "src/uar/persistence/providers/memory.rs",
+        "src/uar/persistence/providers/postgres.rs",
+        "src/uar/persistence/providers/surreal.rs"
+      ],
+      "fixtureFiles": [
+        "tests/context_history_integrity.rs",
+        "tests/test_context_strategy.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test context_history_integrity",
+        "cargo test --locked --no-default-features --features server-full --test test_context_strategy"
+      ],
+      "outputEvidence": "evidence/execute/harness-protected-context/2.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-protected-context",
+      "id": "2.2",
+      "canonicalId": "harness-protected-context-2-2",
+      "sequence": 4,
+      "title": "Replace destructive normalization/reduction and persist meaningful empty-text turns; verify pending versus terminal records, parallel groups, repeated turns and invalid-history outcomes.",
+      "editFiles": [
+        "src/uar/runtime/context/normalize.rs",
+        "src/uar/runtime/context/reduce.rs",
+        "src/uar/context/strategy.rs",
+        "src/uar/runtime/manager.rs",
+        "src/llm/orchestrator.rs"
+      ],
+      "fixtureFiles": [
+        "tests/context_history_integrity.rs",
+        "tests/test_context_strategy.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test context_history_integrity",
+        "cargo test --locked --no-default-features --features server-full --test test_context_strategy"
+      ],
+      "outputEvidence": "evidence/execute/harness-protected-context/2.2/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-protected-context",
+      "id": "2.3",
+      "canonicalId": "harness-protected-context-2-3",
+      "sequence": 5,
+      "title": "Add the pure budget planner and minimum production request-boundary enforcement for explicitly resolved counting/output contracts; verify final envelope/output limits and every entry point with supported fixture dispatch plus invalid/overflow rejection.",
+      "editFiles": [
+        "src/uar/runtime/context/mod.rs",
+        "src/uar/runtime/context/manager.rs",
+        "src/uar/runtime/context/token_service.rs",
+        "src/uar/runtime/context/budget.rs",
+        "src/llm/mod.rs",
+        "src/llm/liter_driver.rs",
+        "src/llm/orchestrator.rs",
+        "src/uar/runtime/turn/builtin.rs",
+        "src/uar/runtime/graph/nodes/llm_node.rs",
+        "src/uar/runtime/prompt/assemble.rs"
+      ],
+      "fixtureFiles": [
+        "tests/context_history_integrity.rs",
+        "tests/test_context_strategy.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test context_history_integrity",
+        "cargo test --locked --no-default-features --features server-full --test test_context_strategy"
+      ],
+      "outputEvidence": "evidence/execute/harness-protected-context/2.3/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending",
+      "acceptance": "Own common request preparation and final output-envelope enforcement now. All initial/iteration/retry/failover/graph/child/resume paths invoke this contract. Use a supported synthetic exact destination with a proven tokenizer/framing contract and captured outbound request. Successful fit must dispatch intact protected data; universal unsupported is not a pass. No dependency on change 2 profile discovery or routing."
+    },
+    {
+      "change": "harness-protected-context",
+      "id": "2.4",
+      "canonicalId": "harness-protected-context-2-4",
+      "sequence": 6,
+      "title": "Restrict governed summarization to host-marked prose and charge shared usage; verify that protected bodies never enter summarizer inputs and all failure/cancellation cases retain originals.",
+      "editFiles": [
+        "src/uar/runtime/context/manager.rs",
+        "src/uar/runtime/context/summarizer.rs",
+        "src/uar/runtime/manager.rs",
+        "src/uar/runtime/turn/builtin.rs",
+        "src/llm/orchestrator.rs"
+      ],
+      "fixtureFiles": [
+        "tests/context_history_integrity.rs",
+        "tests/test_context_strategy.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test context_history_integrity",
+        "cargo test --locked --no-default-features --features server-full --test test_context_strategy"
+      ],
+      "outputEvidence": "evidence/execute/harness-protected-context/2.4/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-protected-context",
+      "id": "2.5",
+      "canonicalId": "harness-protected-context-2-5",
+      "sequence": 7,
+      "title": "Integrate checkpoint/protection metadata and authorization invalidation; verify raw digests, legacy-incomplete behavior and revoked resume.",
+      "editFiles": [
+        "src/uar/runtime/graph/nodes/checkpoint_node.rs",
+        "src/uar/persistence/mod.rs",
+        "src/uar/persistence/agent_threads.rs",
+        "src/uar/persistence/providers/memory.rs",
+        "src/uar/persistence/providers/postgres.rs",
+        "src/uar/persistence/providers/surreal.rs"
+      ],
+      "fixtureFiles": [
+        "tests/context_history_integrity.rs",
+        "tests/test_context_strategy.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test context_history_integrity",
+        "cargo test --locked --no-default-features --features server-full --test test_context_strategy"
+      ],
+      "outputEvidence": "evidence/execute/harness-protected-context/2.5/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-protected-context",
+      "id": "3.1",
+      "canonicalId": "harness-protected-context-3-1",
+      "sequence": 8,
+      "title": "Run the applicable local unit checks for completed units and archive exact outputs; demonstrate final serialized-request fit or explicit outcome across all context strategies without claiming profile-wide certification.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/context_history_integrity.rs",
+        "tests/test_context_strategy.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test context_history_integrity",
+        "cargo test --locked --no-default-features --features server-full --test test_context_strategy"
+      ],
+      "outputEvidence": "evidence/execute/harness-protected-context/3.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-model-profiles-routing",
+      "id": "1.1",
+      "canonicalId": "harness-model-profiles-routing-1-1",
+      "sequence": 1,
+      "title": "Complete the exact provider/endpoint/model evidence matrix, official-source links, profile/alias revisions and counting/output contracts; verify no supported field relies only on family substring matching.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/prompt_assembly.rs",
+        "tests/model_path_resiliency.rs"
+      ],
+      "verification": [
+        "Tier 0: verify prerequisite evidence and hashes; no behavior edit until this gate passes."
+      ],
+      "outputEvidence": "evidence/execute/harness-model-profiles-routing/1.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-model-profiles-routing",
+      "id": "1.2",
+      "canonicalId": "harness-model-profiles-routing-1-2",
+      "sequence": 2,
+      "title": "Freeze routing/compaction baseline datasets and numerical quality/cost/latency criteria; verify explicit model, tenant and shared-budget constraints are represented.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/prompt_assembly.rs",
+        "tests/model_path_resiliency.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test prompt_assembly",
+        "cargo test --locked --no-default-features --features server-full --test model_path_resiliency"
+      ],
+      "outputEvidence": "evidence/execute/harness-model-profiles-routing/1.2/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-model-profiles-routing",
+      "id": "2.1",
+      "canonicalId": "harness-model-profiles-routing-2-1",
+      "sequence": 3,
+      "title": "Extend typed template resolution and compiler override propagation without new dependencies; verify exact/family/generic precedence, required slots and deterministic escaped rendering.",
+      "editFiles": [
+        "src/llm/prompt_dialect.rs",
+        "src/uar/compiler/ir.rs",
+        "src/uar/runtime/prompt/mod.rs",
+        "src/uar/runtime/prompt/fragment.rs",
+        "src/uar/runtime/prompt/assemble.rs"
+      ],
+      "fixtureFiles": [
+        "tests/prompt_assembly.rs",
+        "tests/model_path_resiliency.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test prompt_assembly",
+        "cargo test --locked --no-default-features --features server-full --test model_path_resiliency"
+      ],
+      "outputEvidence": "evidence/execute/harness-model-profiles-routing/2.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-model-profiles-routing",
+      "id": "2.2",
+      "canonicalId": "harness-model-profiles-routing-2-2",
+      "sequence": 4,
+      "title": "Apply endpoint-specific settings, serialization and output ceilings at the driver boundary; verify final outbound fixtures for every declared supported profile and unsupported settings.",
+      "editFiles": [
+        "src/llm/mod.rs",
+        "src/llm/liter_driver.rs"
+      ],
+      "fixtureFiles": [
+        "tests/prompt_assembly.rs",
+        "tests/model_path_resiliency.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test prompt_assembly",
+        "cargo test --locked --no-default-features --features server-full --test model_path_resiliency"
+      ],
+      "outputEvidence": "evidence/execute/harness-model-profiles-routing/2.2/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending",
+      "boundaryOwnership": "Change 1 already implements common final envelope/count/output enforcement. This task adds exact endpoint-specific profile/settings mappings and their compatible transforms to that contract; it does not create the first enforcement boundary."
+    },
+    {
+      "change": "harness-model-profiles-routing",
+      "id": "2.3",
+      "canonicalId": "harness-model-profiles-routing-2-3",
+      "sequence": 5,
+      "title": "Connect initial/iteration/retry/failover/graph/resume preparation to canonical content; verify smaller-window failover and protected continuity incompatibility.",
+      "editFiles": [
+        "src/llm/orchestrator.rs",
+        "src/uar/runtime/turn/builtin.rs",
+        "src/uar/runtime/graph/nodes/llm_node.rs",
+        "src/uar/runtime/manager.rs"
+      ],
+      "fixtureFiles": [
+        "tests/prompt_assembly.rs",
+        "tests/model_path_resiliency.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test prompt_assembly",
+        "cargo test --locked --no-default-features --features server-full --test model_path_resiliency"
+      ],
+      "outputEvidence": "evidence/execute/harness-model-profiles-routing/2.3/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending",
+      "boundaryOwnership": "All entry points already invoke change 1 preparation. Supply exact model profiles/templates to those hooks and test destination switching; do not defer basic context safety here."
+    },
+    {
+      "change": "harness-model-profiles-routing",
+      "id": "2.4",
+      "canonicalId": "harness-model-profiles-routing-2-4",
+      "sequence": 6,
+      "title": "Connect governed task classification and host-derived requirements to production run-start routing; constrain ranking/fallback by policy, capabilities, health, protected fit and shared budgets; verify admission and task-outcome corpora.",
+      "editFiles": [
+        "src/llm/router.rs",
+        "src/llm/orchestrator.rs",
+        "src/llm/task_classifier.rs",
+        "src/llm/mod.rs",
+        "src/llm/benchmarks.rs",
+        "src/uar/runtime/manager.rs"
+      ],
+      "fixtureFiles": [
+        "tests/prompt_assembly.rs",
+        "tests/model_path_resiliency.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test prompt_assembly",
+        "cargo test --locked --no-default-features --features server-full --test model_path_resiliency"
+      ],
+      "outputEvidence": "evidence/execute/harness-model-profiles-routing/2.4/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending",
+      "acceptance": "Replace the observed default RouteRequirements construction in RunManager with actual host-derived requirements plus a versioned semantic class; use relevant existing benchmark dimension and provenance where available. Explicit model/policy constraints dominate. Classification is not the skill matcher and cannot authorize tools. Charge classifier work, record errors/unknown, and evaluate T01-T08 independently from R01-R12."
+    },
+    {
+      "change": "harness-model-profiles-routing",
+      "id": "2.5",
+      "canonicalId": "harness-model-profiles-routing-2-5",
+      "sequence": 7,
+      "title": "Extend redacted manifests and cache identity; verify profile/template/counting identity, actual versus predicted usage and revocation.",
+      "editFiles": [
+        "src/uar/runtime/prompt/manifest.rs",
+        "src/uar/prompt_cache.rs"
+      ],
+      "fixtureFiles": [
+        "tests/prompt_assembly.rs",
+        "tests/model_path_resiliency.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test prompt_assembly",
+        "cargo test --locked --no-default-features --features server-full --test model_path_resiliency"
+      ],
+      "outputEvidence": "evidence/execute/harness-model-profiles-routing/2.5/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-model-profiles-routing",
+      "id": "3.1",
+      "canonicalId": "harness-model-profiles-routing-3-1",
+      "sequence": 8,
+      "title": "Run request-level regressions and frozen routing/context comparisons locally; retain measured deltas, unmet gates and supported-destination limitations in the evidence matrix.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/prompt_assembly.rs",
+        "tests/model_path_resiliency.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test prompt_assembly",
+        "cargo test --locked --no-default-features --features server-full --test model_path_resiliency"
+      ],
+      "outputEvidence": "evidence/execute/harness-model-profiles-routing/3.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-task-graph-lifecycle",
+      "id": "1.1",
+      "canonicalId": "harness-task-graph-lifecycle-1-1",
+      "sequence": 1,
+      "title": "Complete the two mandatory targeted external-candidate surveys for durable A2A recovery and graph/agent observability; verify source-backed adopt/adapt/build decisions and finalized recovery/event mechanisms before implementation planning.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/a2a_thread_service.rs",
+        "tests/agent_threads.rs",
+        "tests/test_graph_execution.rs"
+      ],
+      "verification": [
+        "Tier 0: verify prerequisite evidence and hashes; no behavior edit until this gate passes."
+      ],
+      "outputEvidence": "evidence/execute/harness-task-graph-lifecycle/1.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-task-graph-lifecycle",
+      "id": "1.2",
+      "canonicalId": "harness-task-graph-lifecycle-1-2",
+      "sequence": 2,
+      "title": "Map host-owned identity transitions and crash boundaries to exact edit files and fixtures; verify manager/orchestrator ownership follows predecessor changes.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/a2a_thread_service.rs",
+        "tests/agent_threads.rs",
+        "tests/test_graph_execution.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test a2a_thread_service",
+        "cargo test --locked --no-default-features --features server-full --test agent_threads",
+        "cargo test --locked --no-default-features --features server-full --test test_graph_execution"
+      ],
+      "outputEvidence": "evidence/execute/harness-task-graph-lifecycle/1.2/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-task-graph-lifecycle",
+      "id": "2.1",
+      "canonicalId": "harness-task-graph-lifecycle-2-1",
+      "sequence": 3,
+      "title": "Persist owner-scoped A2A task/context-to-run/thread mapping through the existing service; verify cross-protocol lookup, artifacts and cross-tenant rejection.",
+      "editFiles": [
+        "src/uar/api/a2a/thread_service.rs",
+        "src/uar/api/a2a/handler.rs",
+        "src/uar/api/a2a/types.rs",
+        "src/uar/api/a2a/contract.rs",
+        "src/uar/persistence/mod.rs",
+        "src/uar/persistence/agent_threads.rs",
+        "src/uar/persistence/providers/memory.rs",
+        "src/uar/persistence/providers/postgres.rs",
+        "src/uar/persistence/providers/surreal.rs",
+        "src/uar/runtime/thread/service.rs"
+      ],
+      "fixtureFiles": [
+        "tests/a2a_thread_service.rs",
+        "tests/agent_threads.rs",
+        "tests/test_graph_execution.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test a2a_thread_service",
+        "cargo test --locked --no-default-features --features server-full --test agent_threads",
+        "cargo test --locked --no-default-features --features server-full --test test_graph_execution"
+      ],
+      "outputEvidence": "evidence/execute/harness-task-graph-lifecycle/2.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-task-graph-lifecycle",
+      "id": "2.2",
+      "canonicalId": "harness-task-graph-lifecycle-2-2",
+      "sequence": 4,
+      "title": "Implement researched creation/enqueue/publication recovery; verify one logical run under injected boundary crashes and explicit uncertain external completion.",
+      "editFiles": [
+        "src/uar/api/a2a/thread_service.rs",
+        "src/uar/persistence/mod.rs",
+        "src/uar/persistence/agent_threads.rs",
+        "src/uar/persistence/providers/memory.rs",
+        "src/uar/persistence/providers/postgres.rs",
+        "src/uar/persistence/providers/surreal.rs",
+        "src/uar/runtime/thread/service.rs",
+        "src/uar/runtime/thread/execution.rs"
+      ],
+      "fixtureFiles": [
+        "tests/a2a_thread_service.rs",
+        "tests/agent_threads.rs",
+        "tests/test_graph_execution.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test a2a_thread_service",
+        "cargo test --locked --no-default-features --features server-full --test agent_threads",
+        "cargo test --locked --no-default-features --features server-full --test test_graph_execution"
+      ],
+      "outputEvidence": "evidence/execute/harness-task-graph-lifecycle/2.2/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending",
+      "durableFixtureOwnership": {
+        "surreal": {
+          "features": "server-full",
+          "test": "a2a_thread_service",
+          "setup": "isolated durable Surreal store; reconnect same storage after host kill/restart"
+        },
+        "postgres": {
+          "features": "server-full,postgres-backend",
+          "test": "a2a_thread_service",
+          "setup": "disposable local Postgres database; reconnect same database after host kill/restart"
+        },
+        "boundaries": "all six lifecycleCrashBoundaries",
+        "unitVerification": "current server-full unit seams first; durable backend profile supplements in the Tier 3 milestone",
+        "gate": "Both stable-OS/backend crash receipts required before parent phase completion."
+      }
+    },
+    {
+      "change": "harness-task-graph-lifecycle",
+      "id": "2.3",
+      "canonicalId": "harness-task-graph-lifecycle-2-3",
+      "sequence": 5,
+      "title": "Propagate graph/node/iteration/tool/child correlation through existing events; verify causal ordering, terminal uniqueness and cursor replay.",
+      "editFiles": [
+        "src/uar/runtime/thread/graph_host.rs",
+        "src/uar/runtime/graph/engine.rs",
+        "src/uar/runtime/graph/turn.rs",
+        "src/uar/runtime/graph/tools.rs",
+        "src/uar/runtime/graph/nodes/agent_node.rs",
+        "src/uar/runtime/graph/nodes/tool_node.rs",
+        "src/uar/runtime/actor/messages.rs",
+        "src/uar/runtime/actor/system.rs",
+        "src/uar/runtime/actor/agent_actor.rs",
+        "src/normalized.rs"
+      ],
+      "fixtureFiles": [
+        "tests/a2a_thread_service.rs",
+        "tests/agent_threads.rs",
+        "tests/test_graph_execution.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test a2a_thread_service",
+        "cargo test --locked --no-default-features --features server-full --test agent_threads",
+        "cargo test --locked --no-default-features --features server-full --test test_graph_execution"
+      ],
+      "outputEvidence": "evidence/execute/harness-task-graph-lifecycle/2.3/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-task-graph-lifecycle",
+      "id": "2.4",
+      "canonicalId": "harness-task-graph-lifecycle-2-4",
+      "sequence": 6,
+      "title": "Connect approval suspension/deny and checkpoint recovery to canonical receipts; verify no denied or completed action executes on resume.",
+      "editFiles": [
+        "src/uar/runtime/thread/execution.rs",
+        "src/uar/runtime/thread/approvals.rs",
+        "src/uar/runtime/thread/limits.rs",
+        "src/uar/runtime/thread/events.rs",
+        "src/uar/runtime/thread/actor_host.rs",
+        "src/uar/runtime/graph/nodes/tool_node.rs"
+      ],
+      "fixtureFiles": [
+        "tests/a2a_thread_service.rs",
+        "tests/agent_threads.rs",
+        "tests/test_graph_execution.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test a2a_thread_service",
+        "cargo test --locked --no-default-features --features server-full --test agent_threads",
+        "cargo test --locked --no-default-features --features server-full --test test_graph_execution"
+      ],
+      "outputEvidence": "evidence/execute/harness-task-graph-lifecycle/2.4/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-task-graph-lifecycle",
+      "id": "2.5",
+      "canonicalId": "harness-task-graph-lifecycle-2-5",
+      "sequence": 7,
+      "title": "Unify shared limits/accounting and cancellation cleanup across graph and children; verify budget/iteration exhaustion, non-dispatch reservation release and visible unresolved remote work.",
+      "editFiles": [
+        "src/uar/runtime/thread/execution.rs",
+        "src/uar/runtime/thread/limits.rs",
+        "src/uar/runtime/thread/control.rs",
+        "src/uar/runtime/thread/actor_host.rs",
+        "src/uar/runtime/graph/nodes/agent_node.rs",
+        "src/uar/runtime/actor/system.rs",
+        "src/uar/runtime/actor/agent_actor.rs"
+      ],
+      "fixtureFiles": [
+        "tests/a2a_thread_service.rs",
+        "tests/agent_threads.rs",
+        "tests/test_graph_execution.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test a2a_thread_service",
+        "cargo test --locked --no-default-features --features server-full --test agent_threads",
+        "cargo test --locked --no-default-features --features server-full --test test_graph_execution"
+      ],
+      "outputEvidence": "evidence/execute/harness-task-graph-lifecycle/2.5/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-task-graph-lifecycle",
+      "id": "3.1",
+      "canonicalId": "harness-task-graph-lifecycle-3-1",
+      "sequence": 8,
+      "title": "Run local cross-protocol and graph integration fixtures at the prescribed tier; retain ordered traces for success, failure, approval, cancellation, restart and exhaustion.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/a2a_thread_service.rs",
+        "tests/agent_threads.rs",
+        "tests/test_graph_execution.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test a2a_thread_service",
+        "cargo test --locked --no-default-features --features server-full --test agent_threads",
+        "cargo test --locked --no-default-features --features server-full --test test_graph_execution"
+      ],
+      "outputEvidence": "evidence/execute/harness-task-graph-lifecycle/3.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-skill-activation-quality",
+      "id": "1.1",
+      "canonicalId": "harness-skill-activation-quality-1-1",
+      "sequence": 1,
+      "title": "Complete the mandatory external skill-selection/evaluation candidate survey and record a supported reuse decision before implementation planning; verify provenance and pin compatibility.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/skill_activation_runtime.rs"
+      ],
+      "verification": [
+        "Tier 0: verify prerequisite evidence and hashes; no behavior edit until this gate passes."
+      ],
+      "outputEvidence": "evidence/execute/harness-skill-activation-quality/1.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-skill-activation-quality",
+      "id": "1.2",
+      "canonicalId": "harness-skill-activation-quality-1-2",
+      "sequence": 2,
+      "title": "Freeze dataset/labels, exhaustive oracle, baseline and numerical acceptance criteria for every required metric; verify positive/negative/ambiguous/explicit/scope/long-context coverage and the existing 99% Recall@10 gate.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/skill_activation_runtime.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test skill_activation_runtime"
+      ],
+      "outputEvidence": "evidence/execute/harness-skill-activation-quality/1.2/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-skill-activation-quality",
+      "id": "2.1",
+      "canonicalId": "harness-skill-activation-quality-2-1",
+      "sequence": 3,
+      "title": "Preserve scoped explicit activation in the existing services; verify conversation > agent > global precedence and governed rejection.",
+      "editFiles": [
+        "src/uar/runtime/skills/activation.rs",
+        "src/uar/runtime/skills/catalog.rs",
+        "src/uar/runtime/skills/service.rs",
+        "src/uar/runtime/native_skills/activate_skill.rs"
+      ],
+      "fixtureFiles": [
+        "tests/skill_activation_runtime.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test skill_activation_runtime"
+      ],
+      "outputEvidence": "evidence/execute/harness-skill-activation-quality/2.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-skill-activation-quality",
+      "id": "2.2",
+      "canonicalId": "harness-skill-activation-quality-2-2",
+      "sequence": 4,
+      "title": "Retain immutable active skill versions and reattach before final budget validation; verify exact body, revocation and overflow scenarios.",
+      "editFiles": [
+        "src/uar/runtime/skills/retention.rs",
+        "src/uar/runtime/skills/provenance.rs",
+        "src/uar/runtime/skills/service.rs",
+        "src/uar/runtime/prompt/assemble.rs"
+      ],
+      "fixtureFiles": [
+        "tests/skill_activation_runtime.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test skill_activation_runtime"
+      ],
+      "outputEvidence": "evidence/execute/harness-skill-activation-quality/2.2/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-skill-activation-quality",
+      "id": "2.3",
+      "canonicalId": "harness-skill-activation-quality-2-3",
+      "sequence": 5,
+      "title": "Add outcome-aware local evaluation and prompt-only attribution; verify task success and actual tool use remain separate and existing total usage is not double counted.",
+      "editFiles": [
+        "src/uar/runtime/skills/usage.rs",
+        "src/uar/runtime/skills/service.rs"
+      ],
+      "fixtureFiles": [
+        "tests/skill_activation_runtime.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test skill_activation_runtime"
+      ],
+      "outputEvidence": "evidence/execute/harness-skill-activation-quality/2.3/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-skill-activation-quality",
+      "id": "3.1",
+      "canonicalId": "harness-skill-activation-quality-3-1",
+      "sequence": 6,
+      "title": "Run baseline-versus-candidate measurements locally and retain all metric outputs; keep candidate omission/ranking changes gated when thresholds fail.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/skill_activation_runtime.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test skill_activation_runtime"
+      ],
+      "outputEvidence": "evidence/execute/harness-skill-activation-quality/3.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-knowledge-evidence",
+      "id": "1.1",
+      "canonicalId": "harness-knowledge-evidence-1-1",
+      "sequence": 1,
+      "title": "Complete the mandatory external evidence-verification candidate survey and settle the algorithm/reuse decision before implementation planning; verify source-backed rationale.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/harness_knowledge_evidence.rs"
+      ],
+      "verification": [
+        "Tier 0: verify prerequisite evidence and hashes; no behavior edit until this gate passes."
+      ],
+      "outputEvidence": "evidence/execute/harness-knowledge-evidence/1.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-knowledge-evidence",
+      "id": "1.2",
+      "canonicalId": "harness-knowledge-evidence-1-2",
+      "sequence": 2,
+      "title": "Freeze evidence fixtures and verdict criteria with source versions and access states; verify supported/missing/conflicting/stale/tenant/revocation/injection coverage.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/harness_knowledge_evidence.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test harness_knowledge_evidence"
+      ],
+      "outputEvidence": "evidence/execute/harness-knowledge-evidence/1.2/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-knowledge-evidence",
+      "id": "2.1",
+      "canonicalId": "harness-knowledge-evidence-2-1",
+      "sequence": 3,
+      "title": "Recheck authorization at retrieval/use/retry/resume and invalidate derivatives; verify captured outbound and audit projections contain no revoked or cross-tenant evidence.",
+      "editFiles": [
+        "src/uar/rag/pipeline.rs",
+        "src/uar/rag/retrieval.rs",
+        "src/uar/rag/citation_stream.rs"
+      ],
+      "fixtureFiles": [
+        "tests/harness_knowledge_evidence.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test harness_knowledge_evidence"
+      ],
+      "outputEvidence": "evidence/execute/harness-knowledge-evidence/2.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-knowledge-evidence",
+      "id": "2.2",
+      "canonicalId": "harness-knowledge-evidence-2-2",
+      "sequence": 4,
+      "title": "Link claims to authorized evidence and emit supported/insufficient/conflicting/stale verdicts through existing services; verify against the frozen oracle beyond lexical overlap.",
+      "editFiles": [
+        "src/uar/rag/pipeline.rs",
+        "src/uar/rag/verification.rs",
+        "src/uar/rag/citation_stream.rs"
+      ],
+      "fixtureFiles": [
+        "tests/harness_knowledge_evidence.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test harness_knowledge_evidence"
+      ],
+      "outputEvidence": "evidence/execute/harness-knowledge-evidence/2.2/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-knowledge-evidence",
+      "id": "2.3",
+      "canonicalId": "harness-knowledge-evidence-2-3",
+      "sequence": 5,
+      "title": "Preserve ingestion, hybrid retrieval, embedding support and the existing knowledge journey; verify production-path regression fixtures without redesigning UI.",
+      "editFiles": [
+        "src/uar/rag/pipeline.rs",
+        "src/uar/rag/retrieval.rs"
+      ],
+      "fixtureFiles": [
+        "tests/harness_knowledge_evidence.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test harness_knowledge_evidence"
+      ],
+      "outputEvidence": "evidence/execute/harness-knowledge-evidence/2.3/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending",
+      "milestoneJourneyOwnership": {
+        "owner": "runtime-harness-profile-certification",
+        "parentTask": "harness-knowledge-evidence/2.3",
+        "fixtures": [
+          "tests/bdd/features/chat-kb-retrieval.feature",
+          "tests/bdd/steps/kb-retrieval.steps.ts"
+        ],
+        "verification": "pnpm test:bdd",
+        "tier": 3,
+        "requiredEvidence": "Ingestion -> hybrid retrieval -> answer -> citation and access/revocation assertions through the existing UI; retain trace and exact candidate revision. Run only in the milestone. Missing row blocks phase completion."
+      }
+    },
+    {
+      "change": "harness-knowledge-evidence",
+      "id": "3.1",
+      "canonicalId": "harness-knowledge-evidence-3-1",
+      "sequence": 6,
+      "title": "Run local evidence and checkpoint-resume integration cases at the prescribed tier; retain source/claim decisions and injection/authorization traces.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/harness_knowledge_evidence.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test harness_knowledge_evidence"
+      ],
+      "outputEvidence": "evidence/execute/harness-knowledge-evidence/3.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-governed-evaluation",
+      "id": "1.1",
+      "canonicalId": "harness-governed-evaluation-1-1",
+      "sequence": 1,
+      "title": "Complete the mandatory external agentic-evaluation candidate survey and record a supported reuse decision before implementation planning; verify no replacement framework is assumed.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/harness_governed_evaluation.rs"
+      ],
+      "verification": [
+        "Tier 0: verify prerequisite evidence and hashes; no behavior edit until this gate passes."
+      ],
+      "outputEvidence": "evidence/execute/harness-governed-evaluation/1.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-governed-evaluation",
+      "id": "1.2",
+      "canonicalId": "harness-governed-evaluation-1-2",
+      "sequence": 2,
+      "title": "Register the separate local Tier 3 certification milestone as a prerequisite for phase completion, inventory supported profiles/live requirements and identify exact historical failures/coverage metric; verify the Plan contains all gates before runtime edits.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/harness_governed_evaluation.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test harness_governed_evaluation"
+      ],
+      "outputEvidence": "evidence/execute/harness-governed-evaluation/1.2/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending",
+      "historicalIdentityGate": {
+        "output": "evidence/execute/harness-governed-evaluation/1.2/historical-failures.json",
+        "required": "For each of the two reported failures: original report identity, source revision, exact target/test ID and reproduction command; or source-backed supersession record explaining removal/rename/replacement with proof that resolves that historical claim. Unknown IDs remain BLOCKED.",
+        "broadCohortIsNotAcceptance": true,
+        "downstream": "Task 2.3 and final certification cannot pass without this artifact."
+      }
+    },
+    {
+      "change": "harness-governed-evaluation",
+      "id": "1.3",
+      "canonicalId": "harness-governed-evaluation-1-3",
+      "sequence": 3,
+      "title": "Inventory workflows and invoked scripts for observed product-test violations; verify the delivered inventory and, only if edits are needed, run pnpm github-actions-policy:validate before and after them without bypassing failures.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/harness_governed_evaluation.rs"
+      ],
+      "verification": [
+        "Tier 0: verify prerequisite evidence and hashes; no behavior edit until this gate passes."
+      ],
+      "outputEvidence": "evidence/execute/harness-governed-evaluation/1.3/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-governed-evaluation",
+      "id": "2.1",
+      "canonicalId": "harness-governed-evaluation-2-1",
+      "sequence": 4,
+      "title": "Extend the existing runner with the governed production target and deterministic fixtures from earlier changes; verify task/tool/approval/graph/history/cancellation/budget scoring on real host traces.",
+      "editFiles": [
+        "src/uar/eval/mod.rs",
+        "src/uar/eval/runner.rs",
+        "src/uar/eval/integration_tests.rs",
+        "src/uar/eval/judge.rs",
+        "src/uar/eval/scorer_spec.rs",
+        "evals/starter.yaml"
+      ],
+      "fixtureFiles": [
+        "tests/harness_governed_evaluation.rs",
+        "evals/starter.yaml"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test harness_governed_evaluation"
+      ],
+      "outputEvidence": "evidence/execute/harness-governed-evaluation/2.1/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending",
+      "acceptance": "Load and score the exact repository evals/starter.yaml through the production suite loader/runner; preserve completion-only CLI behavior. File already exists; edit only if required by the governed target contract."
+    },
+    {
+      "change": "harness-governed-evaluation",
+      "id": "2.2",
+      "canonicalId": "harness-governed-evaluation-2-2",
+      "sequence": 5,
+      "title": "Add strict local baseline/delta gating and seeded regression cases; verify each seeded fault exits nonzero and completion-only suites remain compatible.",
+      "editFiles": [
+        "src/uar/eval/runner.rs",
+        "src/uar/eval/cli.rs",
+        "src/uar/eval/persistence.rs"
+      ],
+      "fixtureFiles": [
+        "tests/harness_governed_evaluation.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test harness_governed_evaluation"
+      ],
+      "outputEvidence": "evidence/execute/harness-governed-evaluation/2.2/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-governed-evaluation",
+      "id": "2.3",
+      "canonicalId": "harness-governed-evaluation-2-3",
+      "sequence": 6,
+      "title": "After task 1.2 identifies each historical failure or records evidence-backed supersession, run each exact reproduction command and measure coverage with unchanged denominator/exclusions and 60% gates; fix only reproduced in-scope defects and retain reports.",
+      "editFiles": [
+        "src/uar/eval/targeted.rs",
+        "src/uar/eval/integration_tests.rs"
+      ],
+      "fixtureFiles": [
+        "src/uar/eval/targeted.rs",
+        "frontend/src/entities/runtime-ingest.test.ts",
+        "frontend/src/entities/sync.test.ts",
+        "frontend/src/platform/pglite/run-event-persistence.test.ts",
+        "frontend/src/platform/agui/agui-normalizer.test.ts",
+        "frontend/src/lib/realtime/__tests__/uar-sse-adapter.test.ts"
+      ],
+      "verification": [
+        "Execute each exact command recorded in the validated historical-failures.json gate from task 1.2; unresolved identity blocks this task.",
+        "pnpm -C frontend test:coverage"
+      ],
+      "outputEvidence": "evidence/execute/harness-governed-evaluation/2.3/",
+      "gate": "Historical identity/supersession gate from task 1.2 must pass; routing_ is a diagnostic cohort only and never substitutes for it.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-governed-evaluation",
+      "id": "3.1",
+      "canonicalId": "harness-governed-evaluation-3-1",
+      "sequence": 7,
+      "title": "Run phase Tier 2 checks after units complete and separately execute the registered local Tier 3 milestone when eligible; verify all supported-profile and pending-live rows have evidence or remain blockers.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/harness_governed_evaluation.rs"
+      ],
+      "verification": [
+        "cargo fmt --all -- --check",
+        "cargo test --locked --no-default-features --features server-full",
+        "pnpm build",
+        "pnpm test",
+        "pnpm -C frontend test:coverage",
+        "python3 - <<'PYGATE'\nimport json,pathlib,subprocess,hashlib\np=pathlib.Path('.kbd-orchestrator/phases/runtime-harness-gap-closure')\ns=json.loads(subprocess.check_output(['prometheus','kbd','--path','.','status','--json'],text=True))\nassert s['phases']['runtime-harness-profile-certification']['status']=='complete'\nr=json.loads((p/'evidence/profile-certification-receipt.json').read_text())\nassert r['status']=='PASS'\nassert r['candidateRevision']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()\nassert r['acceptanceContractSha256']==hashlib.sha256((p/'acceptance-contract.json').read_bytes()).hexdigest()\nrequired=set(r['requiredRows'])\nmanifest=p/'evidence/certification-required-rows.json'\nassert required==set(json.loads(manifest.read_text())['requiredRows'])\nassert r['requirementsSha256']==hashlib.sha256(manifest.read_bytes()).hexdigest()\nassert {'linux/surreal/crash','macos/surreal/crash','linux/postgres/crash','macos/postgres/crash'}<=required\nrows={x['id']:x for x in r['rows']}\nassert required and required<=rows.keys()\nfor key in required:\n row=rows[key]\n assert row['status']=='PASS' and row['exitCode']==0 and row['testCount']>0 and row['command']\n assert row['evidence'] and all((p/f).is_file() for f in row['evidence'])\nprint('Tier 3 milestone receipt gate PASS')\nPYGATE"
+      ],
+      "outputEvidence": "evidence/execute/harness-governed-evaluation/3.1/",
+      "gate": "After all implementation units: run Tier 2 commands, then enter the separately registered milestone for Tier 3. Do not complete this task until the final receipt check passes. Required rows must also exactly match the reviewed milestone environment inventory; review requiredRows against that manifest, not only the four mandatory backend IDs.",
+      "status": "pending"
+    },
+    {
+      "change": "harness-governed-evaluation",
+      "id": "3.2",
+      "canonicalId": "harness-governed-evaluation-3-2",
+      "sequence": 8,
+      "title": "Assemble F1\u2013F8 claim/evidence matrix with commands, revisions, profiles, baselines, metrics and traces; verify no blocked row, stale report or baseline update is counted as successful certification.",
+      "editFiles": [],
+      "fixtureFiles": [
+        "tests/harness_governed_evaluation.rs"
+      ],
+      "verification": [
+        "cargo test --locked --no-default-features --features server-full --test harness_governed_evaluation"
+      ],
+      "outputEvidence": "evidence/execute/harness-governed-evaluation/3.2/",
+      "gate": "All predecessor changes complete; prerequisite evidence before behavior edits; Tier 1 only after this unit is complete.",
+      "status": "pending"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "conversation-history-integrity/01",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/conversation-history-integrity/spec.md",
+      "scenario": "Known and unknown models",
+      "fixtureFile": "tests/context_history_integrity.rs",
+      "proposedTestName": "harness_conversation_history_integrity_known_and_unknown_models",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "conversation-history-integrity/02",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/conversation-history-integrity/spec.md",
+      "scenario": "Unknown multimodal cost",
+      "fixtureFile": "tests/context_history_integrity.rs",
+      "proposedTestName": "harness_conversation_history_integrity_unknown_multimodal_cost",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "conversation-history-integrity/03",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/conversation-history-integrity/spec.md",
+      "scenario": "Oversized terminal output",
+      "fixtureFile": "tests/context_history_integrity.rs",
+      "proposedTestName": "harness_conversation_history_integrity_oversized_terminal_output",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "conversation-history-integrity/04",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/conversation-history-integrity/spec.md",
+      "scenario": "Output within policy",
+      "fixtureFile": "tests/context_history_integrity.rs",
+      "proposedTestName": "harness_conversation_history_integrity_output_within_policy",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "conversation-history-integrity/05",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/conversation-history-integrity/spec.md",
+      "scenario": "Acquisition or storage limit",
+      "fixtureFile": "tests/context_history_integrity.rs",
+      "proposedTestName": "harness_conversation_history_integrity_acquisition_or_storage_limit",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "conversation-history-integrity/06",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/conversation-history-integrity/spec.md",
+      "scenario": "Resume from a graph checkpoint",
+      "fixtureFile": "tests/context_history_integrity.rs",
+      "proposedTestName": "harness_conversation_history_integrity_resume_from_a_graph_checkpoint",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "conversation-history-integrity/07",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/conversation-history-integrity/spec.md",
+      "scenario": "Legacy or revoked checkpoint",
+      "fixtureFile": "tests/context_history_integrity.rs",
+      "proposedTestName": "harness_conversation_history_integrity_legacy_or_revoked_checkpoint",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "conversation-history-integrity/08",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/conversation-history-integrity/spec.md",
+      "scenario": "Verified terminal call failure",
+      "fixtureFile": "tests/context_history_integrity.rs",
+      "proposedTestName": "harness_conversation_history_integrity_verified_terminal_call_failure",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "conversation-history-integrity/09",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/conversation-history-integrity/spec.md",
+      "scenario": "Missing result does not prove cancellation",
+      "fixtureFile": "tests/context_history_integrity.rs",
+      "proposedTestName": "harness_conversation_history_integrity_missing_result_does_not_prove_cancellation",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "conversation-history-integrity/10",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/conversation-history-integrity/spec.md",
+      "scenario": "Orphan or duplicate record",
+      "fixtureFile": "tests/context_history_integrity.rs",
+      "proposedTestName": "harness_conversation_history_integrity_orphan_or_duplicate_record",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "conversation-history-integrity/11",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/conversation-history-integrity/spec.md",
+      "scenario": "Reduction cannot sever or discard a group",
+      "fixtureFile": "tests/context_history_integrity.rs",
+      "proposedTestName": "harness_conversation_history_integrity_reduction_cannot_sever_or_discard_a_group",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "conversation-history-integrity/12",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/conversation-history-integrity/spec.md",
+      "scenario": "Empty assistant and repeated continue",
+      "fixtureFile": "tests/context_history_integrity.rs",
+      "proposedTestName": "harness_conversation_history_integrity_empty_assistant_and_repeated_continue",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "protected-context-budget/01",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/protected-context-budget/spec.md",
+      "scenario": "Long conversation and model switch",
+      "fixtureFile": "tests/test_context_strategy.rs",
+      "proposedTestName": "harness_protected_context_budget_long_conversation_and_model_switch",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "protected-context-budget/02",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/protected-context-budget/spec.md",
+      "scenario": "Unproven placement preference",
+      "fixtureFile": "tests/test_context_strategy.rs",
+      "proposedTestName": "harness_protected_context_budget_unproven_placement_preference",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "protected-context-budget/03",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/protected-context-budget/spec.md",
+      "scenario": "Data in an ordinary text message",
+      "fixtureFile": "tests/test_context_strategy.rs",
+      "proposedTestName": "harness_protected_context_budget_data_in_an_ordinary_text_message",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "protected-context-budget/04",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/protected-context-budget/spec.md",
+      "scenario": "Payload integrity oracle",
+      "fixtureFile": "tests/test_context_strategy.rs",
+      "proposedTestName": "harness_protected_context_budget_payload_integrity_oracle",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "protected-context-budget/05",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/protected-context-budget/spec.md",
+      "scenario": "Reserves and independent input limit",
+      "fixtureFile": "tests/test_context_strategy.rs",
+      "proposedTestName": "harness_protected_context_budget_reserves_and_independent_input_limit",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "protected-context-budget/06",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/protected-context-budget/spec.md",
+      "scenario": "Reasoning already included",
+      "fixtureFile": "tests/test_context_strategy.rs",
+      "proposedTestName": "harness_protected_context_budget_reasoning_already_included",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "protected-context-budget/07",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/protected-context-budget/spec.md",
+      "scenario": "Protected payload exceeds destination",
+      "fixtureFile": "tests/test_context_strategy.rs",
+      "proposedTestName": "harness_protected_context_budget_protected_payload_exceeds_destination",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "protected-context-budget/08",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/protected-context-budget/spec.md",
+      "scenario": "Invalid reservation",
+      "fixtureFile": "tests/test_context_strategy.rs",
+      "proposedTestName": "harness_protected_context_budget_invalid_reservation",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "protected-context-budget/09",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/protected-context-budget/spec.md",
+      "scenario": "Non-additive framing",
+      "fixtureFile": "tests/test_context_strategy.rs",
+      "proposedTestName": "harness_protected_context_budget_non_additive_framing",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "protected-context-budget/10",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/protected-context-budget/spec.md",
+      "scenario": "Output ceiling propagation",
+      "fixtureFile": "tests/test_context_strategy.rs",
+      "proposedTestName": "harness_protected_context_budget_output_ceiling_propagation",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "protected-context-budget/11",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/protected-context-budget/spec.md",
+      "scenario": "Protected blocks between prose",
+      "fixtureFile": "tests/test_context_strategy.rs",
+      "proposedTestName": "harness_protected_context_budget_protected_blocks_between_prose",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "protected-context-budget/12",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/protected-context-budget/spec.md",
+      "scenario": "Failed summary",
+      "fixtureFile": "tests/test_context_strategy.rs",
+      "proposedTestName": "harness_protected_context_budget_failed_summary",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "protected-context-budget/13",
+      "change": "harness-protected-context",
+      "spec": "openspec/changes/harness-protected-context/specs/protected-context-budget/spec.md",
+      "scenario": "Revocation between attempts",
+      "fixtureFile": "tests/test_context_strategy.rs",
+      "proposedTestName": "harness_protected_context_budget_revocation_between_attempts",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "model-path-resiliency/01",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/model-path-resiliency/spec.md",
+      "scenario": "Primary in cooldown",
+      "fixtureFile": "tests/model_path_resiliency.rs",
+      "proposedTestName": "harness_model_path_resiliency_primary_in_cooldown",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "model-path-resiliency/02",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/model-path-resiliency/spec.md",
+      "scenario": "Healthy but too small fallback",
+      "fixtureFile": "tests/model_path_resiliency.rs",
+      "proposedTestName": "harness_model_path_resiliency_healthy_but_too_small_fallback",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "model-path-resiliency/03",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/model-path-resiliency/spec.md",
+      "scenario": "Every candidate is rejected",
+      "fixtureFile": "tests/model_path_resiliency.rs",
+      "proposedTestName": "harness_model_path_resiliency_every_candidate_is_rejected",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "model-path-resiliency/04",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/model-path-resiliency/spec.md",
+      "scenario": "Explicit disallowed or unavailable model",
+      "fixtureFile": "tests/model_path_resiliency.rs",
+      "proposedTestName": "harness_model_path_resiliency_explicit_disallowed_or_unavailable_model",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "model-path-resiliency/05",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/model-path-resiliency/spec.md",
+      "scenario": "Routing baseline",
+      "fixtureFile": "tests/model_path_resiliency.rs",
+      "proposedTestName": "harness_model_path_resiliency_routing_baseline",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "model-path-resiliency/06",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/model-path-resiliency/spec.md",
+      "scenario": "Rate limit before semantic output",
+      "fixtureFile": "tests/model_path_resiliency.rs",
+      "proposedTestName": "harness_model_path_resiliency_rate_limit_before_semantic_output",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "model-path-resiliency/07",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/model-path-resiliency/spec.md",
+      "scenario": "Failure after semantic output",
+      "fixtureFile": "tests/model_path_resiliency.rs",
+      "proposedTestName": "harness_model_path_resiliency_failure_after_semantic_output",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "prompt-assembly/01",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/prompt-assembly/spec.md",
+      "scenario": "Manifest is emitted alongside the effective policy artifact",
+      "fixtureFile": "tests/prompt_assembly.rs",
+      "proposedTestName": "harness_prompt_assembly_manifest_is_emitted_alongside_the_effective_policy_artifact",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "prompt-assembly/02",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/prompt-assembly/spec.md",
+      "scenario": "Failover changes preparation",
+      "fixtureFile": "tests/prompt_assembly.rs",
+      "proposedTestName": "harness_prompt_assembly_failover_changes_preparation",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "prompt-assembly/03",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/prompt-assembly/spec.md",
+      "scenario": "Descriptor override reaches production",
+      "fixtureFile": "tests/prompt_assembly.rs",
+      "proposedTestName": "harness_prompt_assembly_descriptor_override_reaches_production",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "prompt-assembly/04",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/prompt-assembly/spec.md",
+      "scenario": "Ambiguous family match",
+      "fixtureFile": "tests/prompt_assembly.rs",
+      "proposedTestName": "harness_prompt_assembly_ambiguous_family_match",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "prompt-assembly/05",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/prompt-assembly/spec.md",
+      "scenario": "Missing required slot",
+      "fixtureFile": "tests/prompt_assembly.rs",
+      "proposedTestName": "harness_prompt_assembly_missing_required_slot",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "prompt-assembly/06",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/prompt-assembly/spec.md",
+      "scenario": "Different endpoint for the same family",
+      "fixtureFile": "tests/prompt_assembly.rs",
+      "proposedTestName": "harness_prompt_assembly_different_endpoint_for_the_same_family",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "prompt-assembly/07",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/prompt-assembly/spec.md",
+      "scenario": "All entry paths use the contract",
+      "fixtureFile": "tests/prompt_assembly.rs",
+      "proposedTestName": "harness_prompt_assembly_all_entry_paths_use_the_contract",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "prompt-assembly/08",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/prompt-assembly/spec.md",
+      "scenario": "Failover after compaction",
+      "fixtureFile": "tests/prompt_assembly.rs",
+      "proposedTestName": "harness_prompt_assembly_failover_after_compaction",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "prompt-assembly/09",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/prompt-assembly/spec.md",
+      "scenario": "Opaque continuity incompatibility",
+      "fixtureFile": "tests/prompt_assembly.rs",
+      "proposedTestName": "harness_prompt_assembly_opaque_continuity_incompatibility",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "prompt-assembly/10",
+      "change": "harness-model-profiles-routing",
+      "spec": "openspec/changes/harness-model-profiles-routing/specs/prompt-assembly/spec.md",
+      "scenario": "Cache compatibility",
+      "fixtureFile": "tests/prompt_assembly.rs",
+      "proposedTestName": "harness_prompt_assembly_cache_compatibility",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "agent-thread-kernel/01",
+      "change": "harness-task-graph-lifecycle",
+      "spec": "openspec/changes/harness-task-graph-lifecycle/specs/agent-thread-kernel/spec.md",
+      "scenario": "External client sends a message",
+      "fixtureFile": "tests/a2a_thread_service.rs",
+      "proposedTestName": "harness_agent_thread_kernel_external_client_sends_a_message",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "agent-thread-kernel/02",
+      "change": "harness-task-graph-lifecycle",
+      "spec": "openspec/changes/harness-task-graph-lifecycle/specs/agent-thread-kernel/spec.md",
+      "scenario": "Cross-protocol lookup and cancellation",
+      "fixtureFile": "tests/a2a_thread_service.rs",
+      "proposedTestName": "harness_agent_thread_kernel_cross_protocol_lookup_and_cancellation",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "agent-thread-kernel/03",
+      "change": "harness-task-graph-lifecycle",
+      "spec": "openspec/changes/harness-task-graph-lifecycle/specs/agent-thread-kernel/spec.md",
+      "scenario": "Cross-tenant task reference",
+      "fixtureFile": "tests/a2a_thread_service.rs",
+      "proposedTestName": "harness_agent_thread_kernel_cross_tenant_task_reference",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "agent-thread-kernel/04",
+      "change": "harness-task-graph-lifecycle",
+      "spec": "openspec/changes/harness-task-graph-lifecycle/specs/agent-thread-kernel/spec.md",
+      "scenario": "Crash at each creation boundary",
+      "fixtureFile": "tests/a2a_thread_service.rs",
+      "proposedTestName": "harness_agent_thread_kernel_crash_at_each_creation_boundary",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "agent-thread-kernel/05",
+      "change": "harness-task-graph-lifecycle",
+      "spec": "openspec/changes/harness-task-graph-lifecycle/specs/agent-thread-kernel/spec.md",
+      "scenario": "Restart during approval",
+      "fixtureFile": "tests/a2a_thread_service.rs",
+      "proposedTestName": "harness_agent_thread_kernel_restart_during_approval",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "multi-agent-orchestration/01",
+      "change": "harness-task-graph-lifecycle",
+      "spec": "openspec/changes/harness-task-graph-lifecycle/specs/multi-agent-orchestration/spec.md",
+      "scenario": "Graph and child trace",
+      "fixtureFile": "tests/test_graph_execution.rs",
+      "proposedTestName": "harness_multi_agent_orchestration_graph_and_child_trace",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "multi-agent-orchestration/02",
+      "change": "harness-task-graph-lifecycle",
+      "spec": "openspec/changes/harness-task-graph-lifecycle/specs/multi-agent-orchestration/spec.md",
+      "scenario": "Failure and replay",
+      "fixtureFile": "tests/test_graph_execution.rs",
+      "proposedTestName": "harness_multi_agent_orchestration_failure_and_replay",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "multi-agent-orchestration/03",
+      "change": "harness-task-graph-lifecycle",
+      "spec": "openspec/changes/harness-task-graph-lifecycle/specs/multi-agent-orchestration/spec.md",
+      "scenario": "Approval denied",
+      "fixtureFile": "tests/test_graph_execution.rs",
+      "proposedTestName": "harness_multi_agent_orchestration_approval_denied",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "multi-agent-orchestration/04",
+      "change": "harness-task-graph-lifecycle",
+      "spec": "openspec/changes/harness-task-graph-lifecycle/specs/multi-agent-orchestration/spec.md",
+      "scenario": "Budget or iteration exhaustion",
+      "fixtureFile": "tests/test_graph_execution.rs",
+      "proposedTestName": "harness_multi_agent_orchestration_budget_or_iteration_exhaustion",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "multi-agent-orchestration/05",
+      "change": "harness-task-graph-lifecycle",
+      "spec": "openspec/changes/harness-task-graph-lifecycle/specs/multi-agent-orchestration/spec.md",
+      "scenario": "Cancel with outstanding children",
+      "fixtureFile": "tests/test_graph_execution.rs",
+      "proposedTestName": "harness_multi_agent_orchestration_cancel_with_outstanding_children",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "multi-agent-orchestration/06",
+      "change": "harness-task-graph-lifecycle",
+      "spec": "openspec/changes/harness-task-graph-lifecycle/specs/multi-agent-orchestration/spec.md",
+      "scenario": "Resume after a completed effect",
+      "fixtureFile": "tests/test_graph_execution.rs",
+      "proposedTestName": "harness_multi_agent_orchestration_resume_after_a_completed_effect",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "skill-activation-runtime/01",
+      "change": "harness-skill-activation-quality",
+      "spec": "openspec/changes/harness-skill-activation-quality/specs/skill-activation-runtime/spec.md",
+      "scenario": "Compaction with an active skill",
+      "fixtureFile": "tests/skill_activation_runtime.rs",
+      "proposedTestName": "harness_skill_activation_runtime_compaction_with_an_active_skill",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "skill-activation-runtime/02",
+      "change": "harness-skill-activation-quality",
+      "spec": "openspec/changes/harness-skill-activation-quality/specs/skill-activation-runtime/spec.md",
+      "scenario": "Activation changed or revoked",
+      "fixtureFile": "tests/skill_activation_runtime.rs",
+      "proposedTestName": "harness_skill_activation_runtime_activation_changed_or_revoked",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "skill-activation-runtime/03",
+      "change": "harness-skill-activation-quality",
+      "spec": "openspec/changes/harness-skill-activation-quality/specs/skill-activation-runtime/spec.md",
+      "scenario": "Same skill in multiple scopes",
+      "fixtureFile": "tests/skill_activation_runtime.rs",
+      "proposedTestName": "harness_skill_activation_runtime_same_skill_in_multiple_scopes",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "skill-activation-runtime/04",
+      "change": "harness-skill-activation-quality",
+      "spec": "openspec/changes/harness-skill-activation-quality/specs/skill-activation-runtime/spec.md",
+      "scenario": "Explicit but forbidden activation",
+      "fixtureFile": "tests/skill_activation_runtime.rs",
+      "proposedTestName": "harness_skill_activation_runtime_explicit_but_forbidden_activation",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "skill-activation-runtime/05",
+      "change": "harness-skill-activation-quality",
+      "spec": "openspec/changes/harness-skill-activation-quality/specs/skill-activation-runtime/spec.md",
+      "scenario": "Labeled activation evaluation",
+      "fixtureFile": "tests/skill_activation_runtime.rs",
+      "proposedTestName": "harness_skill_activation_runtime_labeled_activation_evaluation",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "skill-activation-runtime/06",
+      "change": "harness-skill-activation-quality",
+      "spec": "openspec/changes/harness-skill-activation-quality/specs/skill-activation-runtime/spec.md",
+      "scenario": "No frozen acceptance contract",
+      "fixtureFile": "tests/skill_activation_runtime.rs",
+      "proposedTestName": "harness_skill_activation_runtime_no_frozen_acceptance_contract",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "knowledge-rag-product-certification/01",
+      "change": "harness-knowledge-evidence",
+      "spec": "openspec/changes/harness-knowledge-evidence/specs/knowledge-rag-product-certification/spec.md",
+      "scenario": "Evidence fixtures",
+      "fixtureFile": "tests/harness_knowledge_evidence.rs",
+      "proposedTestName": "harness_knowledge_rag_product_certification_evidence_fixtures",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "knowledge-rag-product-certification/02",
+      "change": "harness-knowledge-evidence",
+      "spec": "openspec/changes/harness-knowledge-evidence/specs/knowledge-rag-product-certification/spec.md",
+      "scenario": "Revocation and injection across restart",
+      "fixtureFile": "tests/harness_knowledge_evidence.rs",
+      "proposedTestName": "harness_knowledge_rag_product_certification_revocation_and_injection_across_restart",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "rag-provenance/01",
+      "change": "harness-knowledge-evidence",
+      "spec": "openspec/changes/harness-knowledge-evidence/specs/rag-provenance/spec.md",
+      "scenario": "Revoked evidence between retrieval and use",
+      "fixtureFile": "tests/harness_knowledge_evidence.rs",
+      "proposedTestName": "harness_rag_provenance_revoked_evidence_between_retrieval_and_use",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "rag-provenance/02",
+      "change": "harness-knowledge-evidence",
+      "spec": "openspec/changes/harness-knowledge-evidence/specs/rag-provenance/spec.md",
+      "scenario": "Retrieved prompt injection",
+      "fixtureFile": "tests/harness_knowledge_evidence.rs",
+      "proposedTestName": "harness_rag_provenance_retrieved_prompt_injection",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "rag-provenance/03",
+      "change": "harness-knowledge-evidence",
+      "spec": "openspec/changes/harness-knowledge-evidence/specs/rag-provenance/spec.md",
+      "scenario": "Conflicting sources",
+      "fixtureFile": "tests/harness_knowledge_evidence.rs",
+      "proposedTestName": "harness_rag_provenance_conflicting_sources",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "rag-provenance/04",
+      "change": "harness-knowledge-evidence",
+      "spec": "openspec/changes/harness-knowledge-evidence/specs/rag-provenance/spec.md",
+      "scenario": "Unsupported or stale answer",
+      "fixtureFile": "tests/harness_knowledge_evidence.rs",
+      "proposedTestName": "harness_rag_provenance_unsupported_or_stale_answer",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "eval-harness/01",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+      "scenario": "Starter suite ships and is valid",
+      "fixtureFile": "tests/harness_governed_evaluation.rs",
+      "proposedTestName": "harness_eval_harness_starter_suite_ships_and_is_valid",
+      "executionTask": "3.1",
+      "oracle": "Load and score exact evals/starter.yaml with the real suite loader/runner and deterministic provider fixture; schema/file existence alone is insufficient.",
+      "status": "NOT_RUN",
+      "requiredArtifact": "evals/starter.yaml"
+    },
+    {
+      "id": "eval-harness/02",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+      "scenario": "Local deterministic gate",
+      "fixtureFile": "tests/harness_governed_evaluation.rs",
+      "proposedTestName": "harness_eval_harness_local_deterministic_gate",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "eval-harness/03",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+      "scenario": "Live environment missing",
+      "fixtureFile": "tests/harness_governed_evaluation.rs",
+      "proposedTestName": "harness_eval_harness_live_environment_missing",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "eval-harness/04",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+      "scenario": "Full successful task",
+      "fixtureFile": "tests/harness_governed_evaluation.rs",
+      "proposedTestName": "harness_eval_harness_full_successful_task",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "eval-harness/05",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+      "scenario": "Seeded regression detection",
+      "fixtureFile": "tests/harness_governed_evaluation.rs",
+      "proposedTestName": "harness_eval_harness_seeded_regression_detection",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "eval-harness/06",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+      "scenario": "Reproducible artifacts",
+      "fixtureFile": "tests/harness_governed_evaluation.rs",
+      "proposedTestName": "harness_eval_harness_reproducible_artifacts",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "eval-harness/07",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+      "scenario": "Default invocation runs the server",
+      "fixtureFile": "tests/harness_governed_evaluation.rs",
+      "proposedTestName": "harness_eval_harness_default_invocation_runs_the_server",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "eval-harness/08",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+      "scenario": "Run a suite",
+      "fixtureFile": "tests/harness_governed_evaluation.rs",
+      "proposedTestName": "harness_eval_harness_run_a_suite",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "eval-harness/09",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+      "scenario": "Regression sets a non-zero exit code",
+      "fixtureFile": "tests/harness_governed_evaluation.rs",
+      "proposedTestName": "harness_eval_harness_regression_sets_a_non_zero_exit_code",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "eval-harness/10",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+      "scenario": "Update baseline",
+      "fixtureFile": "tests/harness_governed_evaluation.rs",
+      "proposedTestName": "harness_eval_harness_update_baseline",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "eval-harness/11",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+      "scenario": "Inspect baseline / list results",
+      "fixtureFile": "tests/harness_governed_evaluation.rs",
+      "proposedTestName": "harness_eval_harness_inspect_baseline_list_results",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "eval-harness/12",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+      "scenario": "Strict run with no baseline fails",
+      "fixtureFile": "tests/harness_governed_evaluation.rs",
+      "proposedTestName": "harness_eval_harness_strict_run_with_no_baseline_fails",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "eval-harness/13",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+      "scenario": "Non-strict run with no baseline is clean",
+      "fixtureFile": "tests/harness_governed_evaluation.rs",
+      "proposedTestName": "harness_eval_harness_non_strict_run_with_no_baseline_is_clean",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "eval-harness/14",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+      "scenario": "Scheduled tier is strict",
+      "fixtureFile": "tests/harness_governed_evaluation.rs",
+      "proposedTestName": "harness_eval_harness_scheduled_tier_is_strict",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "runtime-profile-certification/01",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/runtime-profile-certification/spec.md",
+      "scenario": "Only server-full passes",
+      "fixtureFile": "profile-certification.md",
+      "proposedTestName": "harness_runtime_profile_certification_only_server_full_passes",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "runtime-profile-certification/02",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/runtime-profile-certification/spec.md",
+      "scenario": "Experimental or inapplicable surface",
+      "fixtureFile": "profile-certification.md",
+      "proposedTestName": "harness_runtime_profile_certification_experimental_or_inapplicable_surface",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "runtime-profile-certification/03",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/runtime-profile-certification/spec.md",
+      "scenario": "Current coverage differs from report",
+      "fixtureFile": "profile-certification.md",
+      "proposedTestName": "harness_runtime_profile_certification_current_coverage_differs_from_report",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "runtime-profile-certification/04",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/runtime-profile-certification/spec.md",
+      "scenario": "Historical test no longer fails",
+      "fixtureFile": "profile-certification.md",
+      "proposedTestName": "harness_runtime_profile_certification_historical_test_no_longer_fails",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "runtime-profile-certification/05",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/runtime-profile-certification/spec.md",
+      "scenario": "Certification milestone unavailable",
+      "fixtureFile": "profile-certification.md",
+      "proposedTestName": "harness_runtime_profile_certification_certification_milestone_unavailable",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "runtime-profile-certification/06",
+      "change": "harness-governed-evaluation",
+      "spec": "openspec/changes/harness-governed-evaluation/specs/runtime-profile-certification/spec.md",
+      "scenario": "Spec-only stage",
+      "fixtureFile": "profile-certification.md",
+      "proposedTestName": "harness_runtime_profile_certification_spec_only_stage",
+      "executionTask": "3.1",
+      "oracle": "Exact WHEN/THEN in this scenario; final host request/receipt/event evidence, not a mock of the function under test.",
+      "status": "NOT_RUN"
+    }
+  ],
+  "entryPointMatrix": [
+    {
+      "entry": "initial",
+      "prepareContract": "canonical content -> current authorization -> destination profile -> protected budget -> eligible prose summary if needed -> reattach -> final post-Liter count/output-bound check",
+      "fixtures": "tests/context_history_integrity.rs + tests/prompt_assembly.rs + tests/model_path_resiliency.rs",
+      "strategies": "All three contextCorpus strategies",
+      "status": "NOT_RUN"
+    },
+    {
+      "entry": "iteration",
+      "prepareContract": "canonical content -> current authorization -> destination profile -> protected budget -> eligible prose summary if needed -> reattach -> final post-Liter count/output-bound check",
+      "fixtures": "tests/context_history_integrity.rs + tests/prompt_assembly.rs + tests/model_path_resiliency.rs",
+      "strategies": "All three contextCorpus strategies",
+      "status": "NOT_RUN"
+    },
+    {
+      "entry": "retry before semantic commit",
+      "prepareContract": "canonical content -> current authorization -> destination profile -> protected budget -> eligible prose summary if needed -> reattach -> final post-Liter count/output-bound check",
+      "fixtures": "tests/context_history_integrity.rs + tests/prompt_assembly.rs + tests/model_path_resiliency.rs",
+      "strategies": "All three contextCorpus strategies",
+      "status": "NOT_RUN"
+    },
+    {
+      "entry": "ordered failover",
+      "prepareContract": "canonical content -> current authorization -> destination profile -> protected budget -> eligible prose summary if needed -> reattach -> final post-Liter count/output-bound check",
+      "fixtures": "tests/context_history_integrity.rs + tests/prompt_assembly.rs + tests/model_path_resiliency.rs",
+      "strategies": "All three contextCorpus strategies",
+      "status": "NOT_RUN"
+    },
+    {
+      "entry": "graph LLM node",
+      "prepareContract": "canonical content -> current authorization -> destination profile -> protected budget -> eligible prose summary if needed -> reattach -> final post-Liter count/output-bound check",
+      "fixtures": "tests/context_history_integrity.rs + tests/prompt_assembly.rs + tests/model_path_resiliency.rs",
+      "strategies": "All three contextCorpus strategies",
+      "status": "NOT_RUN"
+    },
+    {
+      "entry": "actor/child turn",
+      "prepareContract": "canonical content -> current authorization -> destination profile -> protected budget -> eligible prose summary if needed -> reattach -> final post-Liter count/output-bound check",
+      "fixtures": "tests/context_history_integrity.rs + tests/prompt_assembly.rs + tests/model_path_resiliency.rs",
+      "strategies": "All three contextCorpus strategies",
+      "status": "NOT_RUN"
+    },
+    {
+      "entry": "checkpoint resume",
+      "prepareContract": "canonical content -> current authorization -> destination profile -> protected budget -> eligible prose summary if needed -> reattach -> final post-Liter count/output-bound check",
+      "fixtures": "tests/context_history_integrity.rs + tests/prompt_assembly.rs + tests/model_path_resiliency.rs",
+      "strategies": "All three contextCorpus strategies",
+      "status": "NOT_RUN"
+    }
+  ],
+  "outOfScope": "Unrelated readiness changes, dependency pins, UI redesign, workflow edits without observed policy violation. Additional source paths require recorded Plan scope amendment and review before editing."
+}

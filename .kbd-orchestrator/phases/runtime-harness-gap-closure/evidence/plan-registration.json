@@ -1,0 +1,1543 @@
+{
+  "outputPolicy": "Actual command outputs reduced to transaction receipt fields; full canonical state remains in the KBD ledger.",
+  "transactions": [
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "change",
+        "register",
+        "--command-id",
+        "gap-plan-change-harness-protected-context-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--id",
+        "harness-protected-context",
+        "--title",
+        "harness-protected-context",
+        "--sequence",
+        "1"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2496,
+        "lastEventId": "f4b6ae01-5b8a-4036-8258-674927aa3f22",
+        "lastEventHash": "fd8deecdec516df50724e36da9533d8877cc3d4a222473fbd0679092a4a3941e"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-protected-context-1-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-protected-context",
+        "--id",
+        "harness-protected-context-1-1",
+        "--title",
+        "1.1 Confirm the protected-context scope and scenario-to-fixture matrix; enumerate exact edit paths, acquisition/storage limits and legacy completeness migration in Plan, with a reviewed artifact proving every context strategy and entry point is covered.",
+        "--sequence",
+        "1"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2497,
+        "lastEventId": "6d1707f1-eddb-4590-a8ff-33abe3ebcec6",
+        "lastEventHash": "7bcbe7f0e678fcecd43e78b0da01b1f04ee920daa8d4372bda025ca9dafd1172"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-protected-context-1-2-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-protected-context",
+        "--id",
+        "harness-protected-context-1-2",
+        "--title",
+        "1.2 Create deterministic canonical receipt/history fixtures and final-request capture helpers; verify they reproduce tool-pair loss, pre-history truncation and empty-text assistant loss where present.",
+        "--sequence",
+        "2"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2498,
+        "lastEventId": "4058885d-2360-47d0-b8c2-fe82870bcd5f",
+        "lastEventHash": "8906406cd5073aa907b852e6a679d6502f54c12ac0d6a10e1ee9b2cb11bb6c84"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-protected-context-2-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-protected-context",
+        "--id",
+        "harness-protected-context-2-1",
+        "--title",
+        "2.1 Preserve canonical native/MCP/graph/terminal receipts before display formatting and enforce acquisition limits truthfully; verify byte/value identity and incomplete-result scenarios.",
+        "--sequence",
+        "3"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2499,
+        "lastEventId": "d353d41e-d82c-4c26-b1cf-0514986fba75",
+        "lastEventHash": "73ec15be9bd81cfcf03f37111dd7a0d76a5029e94ff6cee3e101d8f99f62ca97"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-protected-context-2-2-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-protected-context",
+        "--id",
+        "harness-protected-context-2-2",
+        "--title",
+        "2.2 Replace destructive normalization/reduction and persist meaningful empty-text turns; verify pending versus terminal records, parallel groups, repeated turns and invalid-history outcomes.",
+        "--sequence",
+        "4"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2500,
+        "lastEventId": "15928594-a35d-4ec1-93b2-5493e8670492",
+        "lastEventHash": "802047254673972281f4fbe5488ea34e544ea03ef5d13a16d0a559e1d5a554ff"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-protected-context-2-3-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-protected-context",
+        "--id",
+        "harness-protected-context-2-3",
+        "--title",
+        "2.3 Add the pure budget planner and minimum production request-boundary enforcement for explicitly resolved counting/output contracts; verify final envelope/output limits and every entry point with supported fixture dispatch plus invalid/overflow rejection.",
+        "--sequence",
+        "5"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2501,
+        "lastEventId": "0bd34f56-d959-4ed7-a0f3-1832abf72169",
+        "lastEventHash": "c6530bf039c3ddbc3365d7b491b1d0b45ab5672ff778f01ff784830f8e397cc3"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-protected-context-2-4-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-protected-context",
+        "--id",
+        "harness-protected-context-2-4",
+        "--title",
+        "2.4 Restrict governed summarization to host-marked prose and charge shared usage; verify that protected bodies never enter summarizer inputs and all failure/cancellation cases retain originals.",
+        "--sequence",
+        "6"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2502,
+        "lastEventId": "9114f3c4-9342-4b46-9b05-4d2ccfa8ce9f",
+        "lastEventHash": "eab8b4d93d6ef1372a66a1412a368394df2a9392a0a7688c5d0418deff6a5a97"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-protected-context-2-5-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-protected-context",
+        "--id",
+        "harness-protected-context-2-5",
+        "--title",
+        "2.5 Integrate checkpoint/protection metadata and authorization invalidation; verify raw digests, legacy-incomplete behavior and revoked resume.",
+        "--sequence",
+        "7"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2503,
+        "lastEventId": "38d7b780-ed2c-441a-80e1-7e1bccbb41a4",
+        "lastEventHash": "93b911ab6b33482b9158b963c0f688d95c8da360cd4b94b4c3290a324af46f38"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-protected-context-3-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-protected-context",
+        "--id",
+        "harness-protected-context-3-1",
+        "--title",
+        "3.1 Run the applicable local unit checks for completed units and archive exact outputs; demonstrate final serialized-request fit or explicit outcome across all context strategies without claiming profile-wide certification.",
+        "--sequence",
+        "8"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2504,
+        "lastEventId": "3685ca92-7103-44ba-883e-515ea606c0f7",
+        "lastEventHash": "d39c9cc0173097cb36a21dceedf94920a260bcee8afc494a5f335dfefc1d50da"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "change",
+        "register",
+        "--command-id",
+        "gap-plan-change-harness-model-profiles-routing-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--id",
+        "harness-model-profiles-routing",
+        "--title",
+        "harness-model-profiles-routing",
+        "--sequence",
+        "2"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2505,
+        "lastEventId": "80a0d4cc-8e6b-45d7-bcde-442f055bf0e0",
+        "lastEventHash": "2150baca08241310ed940111e7148e8135e525544d138fff1dc74a39392e2299"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-model-profiles-routing-1-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-model-profiles-routing",
+        "--id",
+        "harness-model-profiles-routing-1-1",
+        "--title",
+        "1.1 Complete the exact provider/endpoint/model evidence matrix, official-source links, profile/alias revisions and counting/output contracts; verify no supported field relies only on family substring matching.",
+        "--sequence",
+        "1"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2506,
+        "lastEventId": "14e05f29-a6b5-4acd-aaf1-46ccaea2299f",
+        "lastEventHash": "6913935ec0a29c720b1ada1141ba270efb42ffcdccc88dd4ba9b1fce59be96bb"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-model-profiles-routing-1-2-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-model-profiles-routing",
+        "--id",
+        "harness-model-profiles-routing-1-2",
+        "--title",
+        "1.2 Freeze routing/compaction baseline datasets and numerical quality/cost/latency criteria; verify explicit model, tenant and shared-budget constraints are represented.",
+        "--sequence",
+        "2"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2507,
+        "lastEventId": "23d7ce69-a49d-46e5-a78e-d7e254d4370b",
+        "lastEventHash": "b6e927c1727e377b7dadb6d1b1c8e5dbc2740fd7e673d3348c455eb3d2940c46"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-model-profiles-routing-2-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-model-profiles-routing",
+        "--id",
+        "harness-model-profiles-routing-2-1",
+        "--title",
+        "2.1 Extend typed template resolution and compiler override propagation without new dependencies; verify exact/family/generic precedence, required slots and deterministic escaped rendering.",
+        "--sequence",
+        "3"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2508,
+        "lastEventId": "d339a2dd-aa62-405e-bc68-bfb2ca13b055",
+        "lastEventHash": "0d5c2a36f2d973b20d18f46525e756d2c34167e0a96031a3de8b6e94a5751abc"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-model-profiles-routing-2-2-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-model-profiles-routing",
+        "--id",
+        "harness-model-profiles-routing-2-2",
+        "--title",
+        "2.2 Apply endpoint-specific settings, serialization and output ceilings at the driver boundary; verify final outbound fixtures for every declared supported profile and unsupported settings.",
+        "--sequence",
+        "4"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2509,
+        "lastEventId": "170449fd-05a1-4ac9-9393-0106d7e5a598",
+        "lastEventHash": "2b5463bc89fffe3d3ccab05d48c48d38f7c9e68cbdad8d38ea0e0def9ab653ce"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-model-profiles-routing-2-3-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-model-profiles-routing",
+        "--id",
+        "harness-model-profiles-routing-2-3",
+        "--title",
+        "2.3 Connect initial/iteration/retry/failover/graph/resume preparation to canonical content; verify smaller-window failover and protected continuity incompatibility.",
+        "--sequence",
+        "5"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2510,
+        "lastEventId": "0fcdd917-f085-4ccd-813a-b7d71d23cf28",
+        "lastEventHash": "1f348b4565b178601f03715d3383e48e0092879e4140aebd2c6c2c4b0830c796"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-model-profiles-routing-2-4-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-model-profiles-routing",
+        "--id",
+        "harness-model-profiles-routing-2-4",
+        "--title",
+        "2.4 Connect governed task classification and host-derived requirements to production run-start routing; constrain ranking/fallback by policy, capabilities, health, protected fit and shared budgets; verify admission and task-outcome corpora.",
+        "--sequence",
+        "6"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2511,
+        "lastEventId": "e1ad64ec-09ce-4fce-9afa-f22cf6047275",
+        "lastEventHash": "f84edce39a0b057fedf63bb54ee71153a31ee46b3e999b814eb607e3ae7c1d72"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-model-profiles-routing-2-5-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-model-profiles-routing",
+        "--id",
+        "harness-model-profiles-routing-2-5",
+        "--title",
+        "2.5 Extend redacted manifests and cache identity; verify profile/template/counting identity, actual versus predicted usage and revocation.",
+        "--sequence",
+        "7"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2512,
+        "lastEventId": "dc456c62-6ab4-4ca3-9b91-50de1e32c5c8",
+        "lastEventHash": "c3f29300c6cb07d81a9ecec6b99c8beb9ee8a7928ca688815edcd6876018745b"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-model-profiles-routing-3-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-model-profiles-routing",
+        "--id",
+        "harness-model-profiles-routing-3-1",
+        "--title",
+        "3.1 Run request-level regressions and frozen routing/context comparisons locally; retain measured deltas, unmet gates and supported-destination limitations in the evidence matrix.",
+        "--sequence",
+        "8"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2513,
+        "lastEventId": "b340660e-a753-4efd-8d91-c6c783aed33c",
+        "lastEventHash": "95530db95b350237f81f875e751b1f49e5b6b08ffcf76bc1748d6b3026d7691e"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "change",
+        "register",
+        "--command-id",
+        "gap-plan-change-harness-task-graph-lifecycle-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--id",
+        "harness-task-graph-lifecycle",
+        "--title",
+        "harness-task-graph-lifecycle",
+        "--sequence",
+        "3"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2514,
+        "lastEventId": "f99d4b1e-3b79-451a-a4fb-481c82354ed9",
+        "lastEventHash": "c0c1edbba9c44e76dbeaf2aff6efc36e5f46ac1e0a9e9efa19c8eaa5d52b91d7"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-task-graph-lifecycle-1-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-task-graph-lifecycle",
+        "--id",
+        "harness-task-graph-lifecycle-1-1",
+        "--title",
+        "1.1 Complete the two mandatory targeted external-candidate surveys for durable A2A recovery and graph/agent observability; verify source-backed adopt/adapt/build decisions and finalized recovery/event mechanisms before implementation planning.",
+        "--sequence",
+        "1"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2515,
+        "lastEventId": "551eb755-9a2e-44fe-97db-ac5a6f51c0c4",
+        "lastEventHash": "de93010e93e20ca70edf54815fedea671e438c11a95da5e1f07ca715fb160fbe"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-task-graph-lifecycle-1-2-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-task-graph-lifecycle",
+        "--id",
+        "harness-task-graph-lifecycle-1-2",
+        "--title",
+        "1.2 Map host-owned identity transitions and crash boundaries to exact edit files and fixtures; verify manager/orchestrator ownership follows predecessor changes.",
+        "--sequence",
+        "2"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2516,
+        "lastEventId": "7f9d4d45-53c2-487b-af20-a7ab4450445d",
+        "lastEventHash": "573eed21d153d7f1e9b9eb37209b9c5180bde30635e4d16208ccf0807dcfb270"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-task-graph-lifecycle-2-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-task-graph-lifecycle",
+        "--id",
+        "harness-task-graph-lifecycle-2-1",
+        "--title",
+        "2.1 Persist owner-scoped A2A task/context-to-run/thread mapping through the existing service; verify cross-protocol lookup, artifacts and cross-tenant rejection.",
+        "--sequence",
+        "3"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2517,
+        "lastEventId": "50d81e82-37e9-43f3-bb50-8664a025a0a8",
+        "lastEventHash": "2fd1d67120114647b58f067a3e26a163e298d4739df107f09d6e946c9048b936"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-task-graph-lifecycle-2-2-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-task-graph-lifecycle",
+        "--id",
+        "harness-task-graph-lifecycle-2-2",
+        "--title",
+        "2.2 Implement researched creation/enqueue/publication recovery; verify one logical run under injected boundary crashes and explicit uncertain external completion.",
+        "--sequence",
+        "4"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2518,
+        "lastEventId": "4e5bb995-dbe3-4948-a6c3-9bef3d7f4b62",
+        "lastEventHash": "b6e517172e2a7284a184211f5be82a4828e34d4559ff147e63f3cb2f2c1c3ec6"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-task-graph-lifecycle-2-3-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-task-graph-lifecycle",
+        "--id",
+        "harness-task-graph-lifecycle-2-3",
+        "--title",
+        "2.3 Propagate graph/node/iteration/tool/child correlation through existing events; verify causal ordering, terminal uniqueness and cursor replay.",
+        "--sequence",
+        "5"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2519,
+        "lastEventId": "e9b782d4-a0b2-4d4e-b07f-7ed3abf4c97b",
+        "lastEventHash": "bd55fff926068beca8c4099a275a8620343f548dccba19228a94133c78bce990"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-task-graph-lifecycle-2-4-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-task-graph-lifecycle",
+        "--id",
+        "harness-task-graph-lifecycle-2-4",
+        "--title",
+        "2.4 Connect approval suspension/deny and checkpoint recovery to canonical receipts; verify no denied or completed action executes on resume.",
+        "--sequence",
+        "6"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2520,
+        "lastEventId": "a2b13748-ecd3-42d0-9cf5-d9047f365c4e",
+        "lastEventHash": "879b78b0872c6fc732131bb371efe19839932c4ddda08a11533e992f9bf19fe1"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-task-graph-lifecycle-2-5-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-task-graph-lifecycle",
+        "--id",
+        "harness-task-graph-lifecycle-2-5",
+        "--title",
+        "2.5 Unify shared limits/accounting and cancellation cleanup across graph and children; verify budget/iteration exhaustion, non-dispatch reservation release and visible unresolved remote work.",
+        "--sequence",
+        "7"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2521,
+        "lastEventId": "621d9115-3faa-4e60-a940-2cfb83033291",
+        "lastEventHash": "a4709f3525728fe92ee3ba8b8034b47dd271d236b38f4f183ece91b51152fcc7"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-task-graph-lifecycle-3-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-task-graph-lifecycle",
+        "--id",
+        "harness-task-graph-lifecycle-3-1",
+        "--title",
+        "3.1 Run local cross-protocol and graph integration fixtures at the prescribed tier; retain ordered traces for success, failure, approval, cancellation, restart and exhaustion.",
+        "--sequence",
+        "8"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2522,
+        "lastEventId": "cff6c2ea-a4c8-41c5-8cd3-7a6692c08f7a",
+        "lastEventHash": "e5c806834737e52ea4858fb84920b6ea79b4ccbd1b3ecea6df82fd73d130ce58"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "change",
+        "register",
+        "--command-id",
+        "gap-plan-change-harness-skill-activation-quality-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--id",
+        "harness-skill-activation-quality",
+        "--title",
+        "harness-skill-activation-quality",
+        "--sequence",
+        "4"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2523,
+        "lastEventId": "4b9f4e84-6be3-4cf4-ab92-982d79e431a5",
+        "lastEventHash": "26c448335cd3541c30b04d4fc26dcc143c2ca47ffdc263ad72ac5235961d4be6"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-skill-activation-quality-1-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-skill-activation-quality",
+        "--id",
+        "harness-skill-activation-quality-1-1",
+        "--title",
+        "1.1 Complete the mandatory external skill-selection/evaluation candidate survey and record a supported reuse decision before implementation planning; verify provenance and pin compatibility.",
+        "--sequence",
+        "1"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2524,
+        "lastEventId": "72055d88-bb56-444d-818d-e6cd785f6ae1",
+        "lastEventHash": "46e9273166f87be2a559005d85cda6f490176eb2be6188ff3fe352ecbf01cfd2"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-skill-activation-quality-1-2-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-skill-activation-quality",
+        "--id",
+        "harness-skill-activation-quality-1-2",
+        "--title",
+        "1.2 Freeze dataset/labels, exhaustive oracle, baseline and numerical acceptance criteria for every required metric; verify positive/negative/ambiguous/explicit/scope/long-context coverage and the existing 99% Recall@10 gate.",
+        "--sequence",
+        "2"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2525,
+        "lastEventId": "6d0b9d8b-ddf7-4a6e-acf2-a58acb656b31",
+        "lastEventHash": "1f773e58596036a0f0375b8223937c063e060f9347740c9f5aea86d9a06f3cdd"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-skill-activation-quality-2-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-skill-activation-quality",
+        "--id",
+        "harness-skill-activation-quality-2-1",
+        "--title",
+        "2.1 Preserve scoped explicit activation in the existing services; verify conversation > agent > global precedence and governed rejection.",
+        "--sequence",
+        "3"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2526,
+        "lastEventId": "bc7ec0a4-a6b6-42a6-9e39-e350da09cb07",
+        "lastEventHash": "8774ee730c9f7aef08f9239a841d9b589b507729d11899e3b5fa3b1495af6a90"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-skill-activation-quality-2-2-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-skill-activation-quality",
+        "--id",
+        "harness-skill-activation-quality-2-2",
+        "--title",
+        "2.2 Retain immutable active skill versions and reattach before final budget validation; verify exact body, revocation and overflow scenarios.",
+        "--sequence",
+        "4"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2527,
+        "lastEventId": "af494d4d-481f-4398-b165-a4348eb4e2bd",
+        "lastEventHash": "bb886a7b044e0f2b91c5a1696b2ec62608e5f55929fbb846de59cf5873717812"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-skill-activation-quality-2-3-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-skill-activation-quality",
+        "--id",
+        "harness-skill-activation-quality-2-3",
+        "--title",
+        "2.3 Add outcome-aware local evaluation and prompt-only attribution; verify task success and actual tool use remain separate and existing total usage is not double counted.",
+        "--sequence",
+        "5"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2528,
+        "lastEventId": "4363cd1e-ee96-4870-b7b5-03c22d7596c6",
+        "lastEventHash": "a753cf3fb3b92683fa249c54ef3383800b9ff2ec0905fd2dc8ca5aca897eff0d"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-skill-activation-quality-3-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-skill-activation-quality",
+        "--id",
+        "harness-skill-activation-quality-3-1",
+        "--title",
+        "3.1 Run baseline-versus-candidate measurements locally and retain all metric outputs; keep candidate omission/ranking changes gated when thresholds fail.",
+        "--sequence",
+        "6"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2529,
+        "lastEventId": "1c286498-7d50-4e6b-9df6-fd7de0a284dc",
+        "lastEventHash": "211ca33584b4acb3fdae9251135ba2e54751a28288afaaf2f6410fe591e546bd"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "change",
+        "register",
+        "--command-id",
+        "gap-plan-change-harness-knowledge-evidence-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--id",
+        "harness-knowledge-evidence",
+        "--title",
+        "harness-knowledge-evidence",
+        "--sequence",
+        "5"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2530,
+        "lastEventId": "421df10e-6093-4a59-98e7-2ad5dd8e1e9e",
+        "lastEventHash": "46fbf9b39b612e9d563b7f588ae58f07165d0a96a599c030db178f082c8fe2af"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-knowledge-evidence-1-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-knowledge-evidence",
+        "--id",
+        "harness-knowledge-evidence-1-1",
+        "--title",
+        "1.1 Complete the mandatory external evidence-verification candidate survey and settle the algorithm/reuse decision before implementation planning; verify source-backed rationale.",
+        "--sequence",
+        "1"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2531,
+        "lastEventId": "a287e11a-344c-419d-b143-4e46e87892cd",
+        "lastEventHash": "9dce8cd27f70ce1490a030c7d1fd2ee04ad37ab9f12d9c800f30d61aa72d9065"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-knowledge-evidence-1-2-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-knowledge-evidence",
+        "--id",
+        "harness-knowledge-evidence-1-2",
+        "--title",
+        "1.2 Freeze evidence fixtures and verdict criteria with source versions and access states; verify supported/missing/conflicting/stale/tenant/revocation/injection coverage.",
+        "--sequence",
+        "2"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2532,
+        "lastEventId": "ad76401f-d8b7-4299-aaaa-f047f3031571",
+        "lastEventHash": "d32eb735ac61a9a0341adadae0edf525373394010562d661d8fbae7695de1c01"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-knowledge-evidence-2-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-knowledge-evidence",
+        "--id",
+        "harness-knowledge-evidence-2-1",
+        "--title",
+        "2.1 Recheck authorization at retrieval/use/retry/resume and invalidate derivatives; verify captured outbound and audit projections contain no revoked or cross-tenant evidence.",
+        "--sequence",
+        "3"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2533,
+        "lastEventId": "397e20c3-be0c-44fb-bd1d-7cff321c9dbe",
+        "lastEventHash": "9d8ba4f7ff64b75861f06b91453e5b72910d8f9821211dd64dc81be0aaebc5e0"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-knowledge-evidence-2-2-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-knowledge-evidence",
+        "--id",
+        "harness-knowledge-evidence-2-2",
+        "--title",
+        "2.2 Link claims to authorized evidence and emit supported/insufficient/conflicting/stale verdicts through existing services; verify against the frozen oracle beyond lexical overlap.",
+        "--sequence",
+        "4"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2534,
+        "lastEventId": "a8068590-623e-445e-b4be-e3b19078fc55",
+        "lastEventHash": "8f1fe6f9fc91f9c3e58f8909926fc47516004b74d5a7a2cf9c03bffc331fdf50"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-knowledge-evidence-2-3-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-knowledge-evidence",
+        "--id",
+        "harness-knowledge-evidence-2-3",
+        "--title",
+        "2.3 Preserve ingestion, hybrid retrieval, embedding support and the existing knowledge journey; verify production-path regression fixtures without redesigning UI.",
+        "--sequence",
+        "5"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2535,
+        "lastEventId": "729e9762-8280-496a-8147-db87c8084f68",
+        "lastEventHash": "e3d68002ff54309d41aedb9823d063c98ff97fe54519bca68e4eef1506366990"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-knowledge-evidence-3-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-knowledge-evidence",
+        "--id",
+        "harness-knowledge-evidence-3-1",
+        "--title",
+        "3.1 Run local evidence and checkpoint-resume integration cases at the prescribed tier; retain source/claim decisions and injection/authorization traces.",
+        "--sequence",
+        "6"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2536,
+        "lastEventId": "d554c518-9127-4532-ac14-79322c2b287f",
+        "lastEventHash": "22e1258aef0217a7d5552f3c05590029bfdc61596d94212a4993ef4221b1f29a"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "change",
+        "register",
+        "--command-id",
+        "gap-plan-change-harness-governed-evaluation-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--id",
+        "harness-governed-evaluation",
+        "--title",
+        "harness-governed-evaluation",
+        "--sequence",
+        "6"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2537,
+        "lastEventId": "51b9469e-7b6b-445d-9c15-9e89adabb345",
+        "lastEventHash": "12b88bcff9c9765fff18710cdaa887bb4651d537ab2deaa1f00b0d6afde17168"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-governed-evaluation-1-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-governed-evaluation",
+        "--id",
+        "harness-governed-evaluation-1-1",
+        "--title",
+        "1.1 Complete the mandatory external agentic-evaluation candidate survey and record a supported reuse decision before implementation planning; verify no replacement framework is assumed.",
+        "--sequence",
+        "1"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2538,
+        "lastEventId": "1b3fb04f-623b-4504-8bda-a85e58bcecf7",
+        "lastEventHash": "d463505cbfbd32cfacf099ef6f3bbe1554481b3fadbade0b97f158355f996d7e"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-governed-evaluation-1-2-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-governed-evaluation",
+        "--id",
+        "harness-governed-evaluation-1-2",
+        "--title",
+        "1.2 Register the separate local Tier 3 certification milestone as a prerequisite for phase completion, inventory supported profiles/live requirements and identify exact historical failures/coverage metric; verify the Plan contains all gates before runtime edits.",
+        "--sequence",
+        "2"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2539,
+        "lastEventId": "6836b26b-b64f-46a8-9121-fca6aa84b6a0",
+        "lastEventHash": "9c230c4d001b027b4a93c70deab75fbe87d3c29e5a9493f1701f35edffc89732"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-governed-evaluation-1-3-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-governed-evaluation",
+        "--id",
+        "harness-governed-evaluation-1-3",
+        "--title",
+        "1.3 Inventory workflows and invoked scripts for observed product-test violations; verify the delivered inventory and, only if edits are needed, run pnpm github-actions-policy:validate before and after them without bypassing failures.",
+        "--sequence",
+        "3"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2540,
+        "lastEventId": "d2f126cb-4527-40b5-b31e-50c75db98728",
+        "lastEventHash": "a837a6d0bff27366f2bf331f24fab9d4f49adfa80f418edcaebe72fb06c13510"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-governed-evaluation-2-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-governed-evaluation",
+        "--id",
+        "harness-governed-evaluation-2-1",
+        "--title",
+        "2.1 Extend the existing runner with the governed production target and deterministic fixtures from earlier changes; verify task/tool/approval/graph/history/cancellation/budget scoring on real host traces.",
+        "--sequence",
+        "4"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2541,
+        "lastEventId": "063a4b6a-8e95-46da-96ad-801c7c4b200b",
+        "lastEventHash": "7e679dc753b029c597f53330c95bf16b8de2d555dd974d7abf7c181a6a7a2218"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-governed-evaluation-2-2-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-governed-evaluation",
+        "--id",
+        "harness-governed-evaluation-2-2",
+        "--title",
+        "2.2 Add strict local baseline/delta gating and seeded regression cases; verify each seeded fault exits nonzero and completion-only suites remain compatible.",
+        "--sequence",
+        "5"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2542,
+        "lastEventId": "5fef7958-229b-421a-8e73-cd8b5929feb1",
+        "lastEventHash": "3391a7bfc72476427f2fbf448d67fec16adf69eb7b23804365c16b8bb5eb4bab"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-governed-evaluation-2-3-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-governed-evaluation",
+        "--id",
+        "harness-governed-evaluation-2-3",
+        "--title",
+        "2.3 After task 1.2 identifies each historical failure or records evidence-backed supersession, run each exact reproduction command and measure coverage with unchanged denominator/exclusions and 60% gates; fix only reproduced in-scope defects and retain reports.",
+        "--sequence",
+        "6"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2543,
+        "lastEventId": "0bda413a-121b-4760-b61a-b5274dac57ce",
+        "lastEventHash": "ecefb5bb544878b532e71d664fb778914b59aed6d2b3d9e1fa2703430d78b30a"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-governed-evaluation-3-1-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-governed-evaluation",
+        "--id",
+        "harness-governed-evaluation-3-1",
+        "--title",
+        "3.1 Run phase Tier 2 checks after units complete and separately execute the registered local Tier 3 milestone when eligible; verify all supported-profile and pending-live rows have evidence or remain blockers.",
+        "--sequence",
+        "7"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2544,
+        "lastEventId": "f11f9283-30b5-4456-9b66-672620e7a933",
+        "lastEventHash": "bed99901ad65bcdc0210ea655b4352a73df99379f31b25d6ef412151c956fe9c"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "task",
+        "register",
+        "--command-id",
+        "gap-plan-task-harness-governed-evaluation-3-2-20260916",
+        "--phase",
+        "runtime-harness-gap-closure",
+        "--change",
+        "harness-governed-evaluation",
+        "--id",
+        "harness-governed-evaluation-3-2",
+        "--title",
+        "3.2 Assemble F1\u2013F8 claim/evidence matrix with commands, revisions, profiles, baselines, metrics and traces; verify no blocked row, stale report or baseline update is counted as successful certification.",
+        "--sequence",
+        "8"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2545,
+        "lastEventId": "93b70ce4-f77c-4928-a9ac-00e40b6d206c",
+        "lastEventHash": "88c2a821fedd6f217d280d09e1f19c2222b3d46fbbcc89c40d3b9cf317ec08b7"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "phase",
+        "create",
+        "--command-id",
+        "gap-plan-certification-phase-20260916",
+        "--id",
+        "runtime-harness-profile-certification",
+        "--title",
+        "Local runtime harness profile certification milestone",
+        "--parent",
+        "runtime-harness-gap-closure"
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2546,
+        "lastEventId": "ca388a36-398e-41b5-be4c-e9777ec3fa35",
+        "lastEventHash": "92787067e8b7696da5aaa3052c29140c7d3214a9161e8f5d3fa4f1c223586b79"
+      }
+    },
+    {
+      "command": [
+        "prometheus",
+        "kbd",
+        "--path",
+        ".",
+        "decision",
+        "record",
+        "--command-id",
+        "gap-plan-certification-dependency-20260916",
+        "--id",
+        "harness-gap-completion-requires-profile-certification",
+        "--summary",
+        "runtime-harness-gap-closure may begin ordered implementation after reviewed Plan gates. Final phase completion requires completed child milestone runtime-harness-profile-certification and its local Tier3 evidence receipt. Parent Tier2 candidate readiness, not parent completion, is the milestone entry gate. See .kbd-orchestrator/phases/runtime-harness-gap-closure/profile-certification.md. Missing stable-profile/platform/live evidence blocks completion; no deployment or release authorized."
+      ],
+      "exitCode": 0,
+      "outputSelectedFields": {
+        "committedLocally": true,
+        "controlPlane": "disabled",
+        "revision": 2547,
+        "lastEventId": "7d145874-e461-49f7-915f-467de1a40fac",
+        "lastEventHash": "ad4ea5a61aa31fc5c5e474b7ff5c4c984db5f2f1cb6fdeaaab5ed0525e8b84da"
+      }
+    }
+  ]
+}

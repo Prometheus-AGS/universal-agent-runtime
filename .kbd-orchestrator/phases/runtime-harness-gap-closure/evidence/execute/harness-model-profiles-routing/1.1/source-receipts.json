@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "task": "harness-model-profiles-routing-1-1",
+  "capturedAt": "2026-09-18T15:36:00Z",
+  "secretHandling": "No credential was read or retained. Durable hashes cover provider data after removing api_key. Official-page hashes cover public response bodies.",
+  "candidateSources": {
+    "src/uar/runtime/prompt/assemble.rs": "0f00235a91e8203ec8dfee984cce612969c3f6a0619620bdb45fe28f0ae85c2e",
+    "src/uar/runtime/prompt/fragment.rs": "7c19f0785b933f83bebb67834120b3ddaa38feb7d38e2bd4d907cd0887dbd603",
+    "openspec/changes/harness-model-profiles-routing/specs/prompt-assembly/spec.md": "f411a9bfdecf895fea44f2b5d844215c2b7c20d404f3b9b82698b67745396482"
+  },
+  "runtime": {
+    "effectiveProviderRegistry": {
+      "url": "http://127.0.0.1:1906/api/uar/providers",
+      "httpStatus": 200,
+      "canonicalJsonSha256": "e084f6fb946426a40b1dfd21773a5f4ef69d2f2a086218e5b15cf80b5e7d4e91"
+    },
+    "durableProviders": {
+      "url": "http://127.0.0.1:1906/api/uar/settings/providers",
+      "httpStatus": 200,
+      "redactedCanonicalSetSha256": "dc7e54bcf742d72fee773d4dacaaf22d5c5e68d9829075f757e227fbe93d58d7",
+      "records": {
+        "alibaba": "e26ef68d28ad2b4cbd47e84d55b7e0f4dbd46af4912f2110307130020d0fcdc2",
+        "ferrox-local": "22d0147c4d846c47ec909780da33c1e98516d25d5aaf8852e4a86422b0feeeac",
+        "kimi-for-coding": "cf1798e5a972778d831d1077a7b3c04f6309a95572db4be302d1d08b84bcb056",
+        "local-openai-proxy": "d0ad0fe9a30057d8bfd1b912710895ea6f70e2ae64ed0ed084b8a55dd4949db2",
+        "minimax": "212aae4dfba9dbde9d657e79d1bfde42c795be760a1299a1fa74d525e0f4192d",
+        "zai": "775ca5157b3cddc4915b7fcc4e329675bc0c34a53b5a9e7be6c3b1e2124d7ff6"
+      }
+    },
+    "ferrox": {
+      "modelsUrl": "http://127.0.0.1:8899/v1/models",
+      "httpStatus": 200,
+      "canonicalJsonSha256": "3fe1d218d3f9491a5e85d7f5a5c8127df2b66a0aac0a370772335733f524290e",
+      "sourceCommit": "0bdcbc44f1674cd0b84975a29a80bb4f64d093af",
+      "binarySha256": "116c9e35476102a5e5f734929fead80b586e10d3337b72cecfabfbdebf459470",
+      "modelArtifact": {
+        "bytes": 5444832032,
+        "sha256": "98266f7c5ada4873f0a4d117e9fd61f374d1b136542a0f613cb63e4535607a89"
+      },
+      "tokenizerProbe": {
+        "url": "http://127.0.0.1:8899/v1/tokenize",
+        "prompt": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\n",
+        "count": 9,
+        "tokens": [151644, 872, 198, 9707, 151645, 198, 151644, 77091, 198]
+      }
+    },
+    "openaiProxy": {
+      "modelsUrl": "http://127.0.0.1:8181/v1/models",
+      "httpStatus": 200,
+      "canonicalJsonSha256": "f1a29ea67d35bacbc3b03734f354fd2fcd50ce30ebe848e884606a7132c0041f",
+      "sourceCommit": "7833663d3b46f7467f2017f2cce392c09ec1b7ac",
+      "binarySha256": "2806d24df19d8cd2dacbed1d807c3f5d52f78c9816b1523ae2da2ef7f0407214",
+      "effectiveBackend": "ChatGptCodex",
+      "outboundUrl": "https://chatgpt.com/backend-api/codex/responses",
+      "sourceFindings": [
+        "ChatGptCodex emits Responses input and strips temperature, top_p and max_output_tokens.",
+        "Exact catalogue/alias lookup occurs before a gpt-5.* passthrough; the passthrough is not accepted as certification evidence."
+      ]
+    }
+  },
+  "officialSources": [
+    {"url": "https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct", "httpStatus": 200, "bytes": 281503, "sha256": "3a470917d01f5c3528d836b01a1f5c3e84c5838f4bd514058ed095d109c6417a"},
+    {"url": "https://developers.openai.com/api/docs/models/gpt-5.4", "httpStatus": 200, "bytes": 432992, "sha256": "c853d7f14d9b1b7f4dc221b5fa5ecbec7daccfc88e80bd3d135ebb3f5fc1e0e5"},
+    {"url": "https://developers.openai.com/api/docs/guides/token-counting", "httpStatus": 200, "bytes": 547779, "sha256": "1b318680847446aab96641dbba286594ed2e981f286b5d7f41d4aabc2a692977"},
+    {"url": "https://www.kimi.com/code/docs/en/kimi-code/models.html", "httpStatus": 200, "bytes": 69143, "sha256": "18492338d93fd2400ad2aac85babd22fdb11be01734351c83846a3669c6e4a88"},
+    {"url": "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/config-files", "httpStatus": 200, "bytes": 147211, "sha256": "4e10b6885e4010b95dbf2ddf14c1b561b553663f3a943e1d7608bcd6623241fe"},
+    {"url": "https://platform.minimax.io/docs/api-reference/text-openai-api", "httpStatus": 200, "bytes": 667817, "sha256": "b9f88bc9a57d0ff8fa3f2505f784f6706f7fda35d375f491d2bb56deb58625eb"},
+    {"url": "https://platform.minimax.io/docs/api-reference/text-chat-openai", "httpStatus": 200, "bytes": 688055, "sha256": "aeced6255d204bf4f77bd8ed3fdd52219a128c1581828cb7b3d3587487b4aeb9"},
+    {"url": "https://platform.minimax.io/docs/api-reference/responses-input-tokens", "httpStatus": 200, "bytes": 657560, "sha256": "df8c7deaa1c5172bb7daf2bff50039ae9b86229771b1315b4d0c6c8453c8978c"},
+    {"url": "https://www.alibabacloud.com/help/en/model-studio/qwen3-8-max", "httpStatus": 200, "bytes": 44353, "sha256": "8ee0fde2f54d0c2edb15ae84d9999e1c65463cc02f667f2361438013f9b6b4c4"},
+    {"url": "https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions", "httpStatus": 200, "bytes": 142039, "sha256": "760cd207e06c8b6f4648d4b571db4627049df2e35ab26c112122b855343f23ad"},
+    {"url": "https://www.alibabacloud.com/help/en/model-studio/text-generation", "httpStatus": 200, "bytes": 96657, "sha256": "9fdc187073523bba01de8499337d038be8188aeddf4a52ccab1c1d3d67276f04"},
+    {"url": "https://docs.z.ai/guides/llm/glm-5.2", "httpStatus": 200, "bytes": 525473, "sha256": "3f22dcee9dff6a68b0eac1f283d882ff489e5c3bb05313b867b65581be65586e"},
+    {"url": "https://docs.z.ai/guides/overview/concept-param", "httpStatus": 200, "bytes": 298672, "sha256": "1b1cdda3c9df18f78812614c5820fed5a97da03ee23310e86757037e7e577bd2"},
+    {"url": "https://docs.z.ai/api-reference/llm/chat-completion", "httpStatus": 200, "bytes": 558904, "sha256": "4f43b9d9f84c8185d46e821057ffb5c4a4f3bdd9dbfbf081a93cb0b6e6d189cf"},
+    {"url": "https://docs.z.ai/api-reference/tools/tokenizer", "httpStatus": 200, "bytes": 398308, "sha256": "51f8a1c583ca406ddc109459d9150be2c7b47dd97e33cbe6ad8824847d54b8d3"}
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "change": "harness-model-profiles-routing",
+  "task": "2.1",
+  "candidate": {
+    "head": "226d4a0af89811975662cf3f203c699f70e8cebc"
+  },
+  "productFiles": {
+    "src/llm/prompt_dialect.rs": "2a2d5aa830b558f4394ff1349d7925c7fe581bf5a37755dfd50bd6d12c138319",
+    "src/uar/compiler/ir.rs": "54d82bf24fcd36b6e0067a71c509e20f21b5f55afbee92c4978d6d38632cdb07",
+    "src/uar/compiler/stages/s08_emit.rs": "50ea1c2a9feb74a079b2db30831f6ae7c59224d2cfbfef6524393f18075a0117",
+    "src/uar/runtime/prompt/mod.rs": "8683c7812a95124a4c9559245c319ca2eeb5c6203411b1bffac1e9a3e9532211",
+    "src/uar/runtime/prompt/fragment.rs": "7314a86ac92e88673d22e148ce582ff6d0f9203a51b5ee2b627f41cd6f2e1706",
+    "src/uar/runtime/prompt/assemble.rs": "0578a22105c1d49445c0772ce760534612824ffa68b62f328b55515aa36967d5",
+    "tests/prompt_assembly.rs": "c98aa12a6000fa8cb752ce2db83a874f030c407916f2b2aa25df6823239752c6"
+  },
+  "artifacts": {
+    "implementation.patch": "47dad355be1e9856346c461708bb33b5bc477da025762e85a764c98c4620d588",
+    "summary.md": "990c836c805dcdd512499329037b397c4ef7be6345db0c89ca3aedcc1fb577de",
+    "command-receipts.json": "49e44d5bf311b3f3dfaa66423ecd75617dd0a3dcaec3b2e8bc56596c020c3846",
+    "critic-round1.json": "f9f91f2e065240906d9b23ea579cc5edd4010b90eeb5b09c16380ee843980fae",
+    "critic-final.json": "f925bdf1362d0f06f97f690f5bb40b5c795e95383861e0a214a4c02f9b971442",
+    "cargo-check.log": "aabed6f1f90267d2f7029ef68ec0cefd9c3efc22f5dd3323f92425ca31efad2a",
+    "cargo-check.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "prompt_assembly-initial-failure.log": "c962d46c90951e3a93e8ada13e0d51a22e81c92ef8a877f9fe0e374e4275b2e3",
+    "prompt_assembly-initial-failure.exit": "39b8dc3fc8b44765c8e6f1adee04c5b465e555ab791cc42d0d9e810d5b64297c",
+    "prompt_assembly.log": "30b2a4198ac6fe2b309c5a2a972d75a78756077ea6a008a92facea83f303186e",
+    "prompt_assembly.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "model_path_resiliency.log": "b75d23c4c176ee4bda7cd73a60fd08963ba774f16390b0ec894cc7af8e50e0ce",
+    "model_path_resiliency.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "cargo-fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cargo-fmt.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "diff-check.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "openspec-validate.json": "e032da08cc2732110332e9c4db68b2ce1348bf0fc25a58730b609b0808927d47",
+    "openspec-validate.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  "result": {
+    "promptAssemblyPassed": 12,
+    "modelPathResiliencyPassed": 12,
+    "strictOpenSpecPassed": 1,
+    "newDependencies": 0
+  },
+  "review": {
+    "isolatedArtifactCritic": "PASS",
+    "finalFindings": [],
+    "correctedFindings": [
+      "plain user content could emit host-owned marker syntax",
+      "compiler fixture did not prove template-only parser/compiler/emitter propagation",
+      "blank profile and destination identities or revisions could resolve"
+    ]
+  },
+  "claimBoundary": "This unit implements and verifies typed resolution, validation, rendering and compiler propagation. Endpoint settings and serialization remain task 2.2; production entry-point wiring remains task 2.3; no live provider profile is certified here."
+}

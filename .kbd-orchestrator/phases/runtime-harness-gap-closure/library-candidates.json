@@ -1,0 +1,257 @@
+{
+  "phase": "runtime-harness-gap-closure",
+  "generated_at": "2026-09-16T19:39:57.309Z",
+  "research_budget": {
+    "max_queries_per_tier": 8,
+    "max_minutes": 20,
+    "queries_used": {
+      "tier1": 4,
+      "tier2": 8,
+      "tier3": 4,
+      "tier4": 7
+    }
+  },
+  "gaps_addressed": [
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8"
+  ],
+  "candidates": [
+    {
+      "id": "cand-001",
+      "name": "Existing UAR typed prompt/turn, routing, persistence and governed evaluation seams",
+      "kind": "pattern",
+      "repo_url": "https://github.com/Prometheus-AGS/universal-agent-runtime",
+      "registry": "none",
+      "fit_for_gap": "F1-F8; especially destination templates, protected budget planning and production-host verification",
+      "verdict": "adapt",
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/226d4a0af89811975662cf3f203c699f70e8cebc/src/uar/runtime/prompt/assemble.rs",
+          "claim": "Inspected local source renders typed fragments with two family preference booleans; extend existing seam."
+        },
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/226d4a0af89811975662cf3f203c699f70e8cebc/src/uar/runtime/context/reduce.rs",
+          "claim": "Inspected reducer can drop severed tool groups; new protected preservation requires a stronger contract."
+        },
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/226d4a0af89811975662cf3f203c699f70e8cebc/src/llm/liter_driver.rs",
+          "claim": "Existing Liter adapter remains the inference boundary; versions.toml pins Liter1.18.2."
+        }
+      ],
+      "risks": [
+        "Canonical spec currently requires ingest truncation and permits whole-group dropping; explicit deltas required.",
+        "Behavior and compile health remain unverified in this stage."
+      ],
+      "decision_rationale": "Preserve capability inversion and established host integration; implement missing contracts rather than replacing runtime."
+    },
+    {
+      "id": "cand-002",
+      "name": "tiktoken-rs (existing 0.12.0 dependency)",
+      "kind": "library",
+      "repo_url": "https://github.com/zurawiki/tiktoken-rs",
+      "registry": "crates",
+      "fit_for_gap": "F2/F3 model-keyed text tokenization inside destination accounting",
+      "verdict": "adapt",
+      "license": "MIT",
+      "maintenance": {
+        "last_observed_push": "2026-07-01T02:49:07Z",
+        "stars": 406,
+        "open_issues": 9,
+        "latest_registry_release": "UNKNOWN: TLS/HTTP403 retrieval failures"
+      },
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/zurawiki/tiktoken-rs",
+          "claim": "Repository search confirms Rust tokenizer project and MIT license."
+        },
+        {
+          "tier": 2,
+          "source_url": "https://github.com/zurawiki/tiktoken-rs/blob/main/_autodocs/api-reference-initialization.md",
+          "claim": "Context7 identifies model-to-tokenizer lookup; main documentation does not certify pinned-version whole-request or multimodal accounting."
+        },
+        {
+          "tier": 3,
+          "source_url": "https://crates.io/api/v1/crates/tiktoken-rs",
+          "claim": "Registry retrieval failed TLS validation and HTTP403; no current release claim is made."
+        }
+      ],
+      "risks": [
+        "Not a complete provider request counter.",
+        "Fallback encoding is not a proof of a hard bound.",
+        "Tool schemas, multimodal content, framing and output reservation require host accounting."
+      ],
+      "decision_rationale": "Reuse existing dependency via a counting adapter; retain0.12.0 and verify exact pinned behavior before implementation."
+    },
+    {
+      "id": "cand-003",
+      "name": "Hugging Face model chat-template conventions",
+      "kind": "pattern",
+      "repo_url": "https://github.com/huggingface/transformers",
+      "registry": "none",
+      "fit_for_gap": "F2/F3 raw-inference model-specific serialization and tool representation",
+      "verdict": "reference",
+      "evidence": [
+        {
+          "tier": 2,
+          "source_url": "https://huggingface.co/docs/transformers/main/en/chat_templating",
+          "claim": "Official guide explains differing model control tokens and duplicate-special-token hazards."
+        },
+        {
+          "tier": 2,
+          "source_url": "https://huggingface.co/docs/transformers/main/en/chat_extras",
+          "claim": "Official guide describes tool schemas, calls and results within model chat formatting."
+        }
+      ],
+      "risks": [
+        "Main documentation is not a pinned UAR dependency contract.",
+        "Hosted chat endpoints may own chat serialization; applying raw templates twice is incorrect."
+      ],
+      "decision_rationale": "Reference model-owned serialization semantics; do not introduce Transformers or Python into the host."
+    },
+    {
+      "id": "cand-004",
+      "name": "MiniJinja",
+      "kind": "library",
+      "repo_url": "https://github.com/mitsuhiko/minijinja",
+      "registry": "crates",
+      "fit_for_gap": "F2 optional future declarative template engine",
+      "verdict": "reference",
+      "license": "Apache-2.0",
+      "maintenance": {
+        "last_observed_push": "2026-09-15T23:14:49Z",
+        "stars": 2771,
+        "open_issues": 21,
+        "latest_registry_release": "UNKNOWN: TLS/HTTP403 retrieval failures"
+      },
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/mitsuhiko/minijinja",
+          "claim": "Repository search identifies a Rust Jinja-compatible template engine."
+        },
+        {
+          "tier": 2,
+          "source_url": "https://github.com/mitsuhiko/minijinja/blob/main/src/template.rs",
+          "claim": "Context7 surfaced template inspection interfaces on main; no pinned compatibility or sandbox guarantee established."
+        },
+        {
+          "tier": 3,
+          "source_url": "https://crates.io/api/v1/crates/minijinja",
+          "claim": "Registry retrieval failed; version and MSRV not certified."
+        }
+      ],
+      "risks": [
+        "Programmable templates introduce complexity beyond proven requirements.",
+        "Version, feature gates and execution/output limits require separate verification before adoption."
+      ],
+      "decision_rationale": "Current typed renderer can implement versioned model templates; defer adding an engine until a concrete unsupported template requirement exists."
+    },
+    {
+      "id": "cand-005",
+      "name": "LLMLingua",
+      "kind": "library",
+      "repo_url": "https://github.com/microsoft/LLMLingua",
+      "registry": "pypi",
+      "fit_for_gap": "F3 lossy prompt compression alternative",
+      "verdict": "reject",
+      "license": "MIT",
+      "maintenance": {
+        "last_observed_push": "2026-09-10T23:37:23Z",
+        "stars": 6665,
+        "open_issues": 121
+      },
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/microsoft/LLMLingua",
+          "claim": "Repository search identifies a prompt-compression project."
+        },
+        {
+          "tier": 4,
+          "source_url": "https://github.com/microsoft/LLMLingua",
+          "claim": "Project describes removing nonessential tokens. Inference: as-is whole-prompt compression does not meet this phase's protected-data preservation contract."
+        }
+      ],
+      "risks": [
+        "Lossy protected-data compression is prohibited regardless of aggregate task-quality scores.",
+        "No phase-specific performance or preservation evaluation was run."
+      ],
+      "decision_rationale": "Reject as the runtime budget/preservation solution. A future prose-only compressor would still need the host protection boundary and separate evidence."
+    },
+    {
+      "id": "cand-006",
+      "name": "Rig",
+      "kind": "framework",
+      "repo_url": "https://github.com/0xPlaygrounds/rig",
+      "registry": "crates",
+      "fit_for_gap": "F1/F6/F7 alternative Rust LLM application framework",
+      "verdict": "reject",
+      "license": "MIT",
+      "maintenance": {
+        "last_observed_push": "2026-09-16T19:02:09Z",
+        "stars": 8648,
+        "open_issues": 99
+      },
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/0xPlaygrounds/rig",
+          "claim": "Repository search identifies a modular Rust LLM application framework; detailed API evaluation not pursued after scope rejection."
+        }
+      ],
+      "risks": [
+        "Replacing existing governed UAR/Liter architecture is outside phase scope.",
+        "No evidence establishes an as-is match for UAR's protected-data contract."
+      ],
+      "decision_rationale": "Retain current host seams and dependency authority rather than undertake a framework migration."
+    }
+  ],
+  "build_required": [
+    {
+      "need": "F2 versioned provider/endpoint/model templates and per-attempt request preparation",
+      "why_no_candidate": "A template engine cannot decide UAR policy precedence, exact endpoint compatibility, mandatory fragment retention or safe failover."
+    },
+    {
+      "need": "F3 pure protected-context budget planner, whole-request counting and lossless group preservation",
+      "why_no_candidate": "Tokenizers count selected representations; they do not classify host data, reserve output, govern summarization or handle protected overflow."
+    },
+    {
+      "need": "F3 canonical raw tool-result acquisition and incomplete-history migration",
+      "why_no_candidate": "Existing ingestion truncates; preservation requires host-owned records and explicit resource-limit outcomes before formatting."
+    },
+    {
+      "need": "F1 task/capability/budget routing integration",
+      "why_no_candidate": "Must extend the existing policy-aware router using actual prepared-request feasibility, not add a separate framework."
+    },
+    {
+      "need": "F4 durable A2A task correlation and restart/idempotency evidence — PLANNING BLOCKED pending targeted external-candidate evaluation",
+      "why_no_candidate": "Existing thread persistence is the provisional integration baseline. External lifecycle alternatives were not surveyed; this records a host binding/recovery need, not proof that no adoptable component exists."
+    },
+    {
+      "need": "F5 representative skill activation dataset and acceptance metrics — PLANNING BLOCKED pending targeted external-candidate evaluation",
+      "why_no_candidate": "A UAR-specific labeled baseline is required. External skill-evaluation alternatives were not surveyed; any component choice remains open pending a concrete need."
+    },
+    {
+      "need": "F6 shared graph/child trace correlation and lifecycle evidence — PLANNING BLOCKED pending targeted external-candidate evaluation",
+      "why_no_candidate": "Existing event contracts need validation/integration. External observability alternatives were not surveyed; this is not a completed build-versus-adopt comparison."
+    },
+    {
+      "need": "F7 evidence-to-answer verification and access-at-use contract — PLANNING BLOCKED pending targeted external-candidate evaluation",
+      "why_no_candidate": "Host-specific tenant/revocation/provenance integration is required. External verification components were not surveyed; adopt-versus-build remains open for targeted research before selecting a new mechanism."
+    },
+    {
+      "need": "F6/F8 production-host agentic evaluation, coverage reconciliation and separate profile-certification milestone — PLANNING BLOCKED pending targeted external-candidate evaluation",
+      "why_no_candidate": "Existing completion evaluations need governed-host integration and local evidence. External agentic-eval alternatives were not surveyed; the current runner is provisional, not a claim that no adoptable harness exists."
+    }
+  ]
+}

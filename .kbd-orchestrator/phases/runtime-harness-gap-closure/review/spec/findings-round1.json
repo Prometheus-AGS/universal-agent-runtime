@@ -1,0 +1,31 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "gpt-5.5",
+  "producer_model": "gpt-6",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/runtime-harness-gap-closure/spec.md",
+      "line": 0,
+      "claim": "The spec does not preserve or account for the required feedback-source.txt file.",
+      "evidence": "The goals require: \"Preserve the supplied feedback as feedback-source.txt in this directory.\" The provided file_tree lists `.kbd-orchestrator/phases/runtime-harness-gap-closure/spec.md` and `spec-manifest.json` but no `.kbd-orchestrator/phases/runtime-harness-gap-closure/feedback-source.txt`, and the artifact contains no task or blocker to create or verify it.",
+      "suggested_fix": "Add the preserved feedback-source.txt to the phase directory and manifest, or add an explicit blocking prerequisite that prevents Plan acceptance until it exists and is verified."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/runtime-harness-gap-closure/spec.md",
+      "line": 0,
+      "claim": "The spec claims review and verification outputs exist in paths that are absent from the packet inventory.",
+      "evidence": "The spec states: \"Review results and exact validation outputs live under review/spec/ and evidence/spec-verification.json.\" The file_tree and collection inventory include only the spec index, manifest, and OpenSpec change artifacts; no `review/spec/` files or `evidence/spec-verification.json` are listed.",
+      "suggested_fix": "Either include those files in the sibling set and manifest or change the statement to a future requirement/blocker rather than a present-tense claim."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

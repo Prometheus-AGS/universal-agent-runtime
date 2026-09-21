@@ -1,0 +1,35 @@
+{
+  "stage": "analyze",
+  "at": "2026-09-16T19:46:06.300397+00:00",
+  "tier": 0,
+  "schema": "Draft2020-12 library-candidates schema PASS",
+  "candidates": 6,
+  "feedback_ids": [
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8"
+  ],
+  "analysis_source_hashes_unchanged": 20,
+  "planning_prerequisites": 5,
+  "whitespace": "PASS",
+  "product_status": "unchanged",
+  "arithmetic": "32000-4000-1000=27000;27000-22000=5000;28000>27000;16000-4000-1000=11000",
+  "reviews": {
+    "native_source_critic": "PASS",
+    "cross_model_final": "PASS;0 critical;1 warning carried as planning prerequisite",
+    "anti_theater_final_score": 0.0803571417927742
+  },
+  "not_run": [
+    "Rust compile",
+    "runtime tests",
+    "coverage",
+    "live providers",
+    "supported profiles"
+  ],
+  "build_health": "UNKNOWN; prior assessment check interrupted exit143"
+}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "change": "harness-model-profiles-routing",
+  "task": "harness-model-profiles-routing-2-2",
+  "commands": [
+    {
+      "tier": 0,
+      "command": "RUSTC_WRAPPER= cargo check --locked --no-default-features --features server-full",
+      "exitCode": 0,
+      "evidence": ["cargo-check.log", "cargo-check.exit"]
+    },
+    {
+      "tier": 1,
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test model_path_resiliency",
+      "exitCode": 0,
+      "observed": "18 passed; 0 failed",
+      "evidence": ["model_path_resiliency.log", "model_path_resiliency.exit"]
+    },
+    {
+      "tier": 1,
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test prompt_assembly",
+      "exitCode": 0,
+      "observed": "12 passed; 0 failed",
+      "evidence": ["prompt_assembly.log", "prompt_assembly.exit"]
+    },
+    {
+      "tier": "hygiene",
+      "command": "cargo fmt --all -- --check",
+      "exitCode": 0,
+      "evidence": ["cargo-fmt.log", "cargo-fmt.exit"]
+    },
+    {
+      "tier": "hygiene",
+      "command": "git diff --check -- src/llm/mod.rs src/llm/liter_driver.rs tests/model_path_resiliency.rs tests/prompt_assembly.rs",
+      "exitCode": 0,
+      "evidence": ["diff-check.log", "diff-check.exit"]
+    },
+    {
+      "tier": "spec",
+      "command": "openspec validate harness-model-profiles-routing --strict",
+      "exitCode": 0,
+      "observed": "Change 'harness-model-profiles-routing' is valid",
+      "evidence": ["openspec-validate.log", "openspec-validate.exit"]
+    }
+  ]
+}

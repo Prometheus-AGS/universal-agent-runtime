@@ -1,0 +1,23 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "gpt-5.5",
+  "producer_model": "gpt-6",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "The analysis recommends provisional build/extend decisions for F4-F8 while explicitly admitting the relevant external solution categories were not surveyed.",
+      "evidence": "analysis.md says, \"External alternatives for F4-F8 lifecycle, observability, knowledge and evaluation were not independently surveyed in this pass,\" while library-candidates.json still lists build_required items for F4, F5, F6, F7, and F6/F8 with rationales such as \"External lifecycle alternatives were not surveyed\" and \"External agentic-eval alternatives were not surveyed.\"",
+      "suggested_fix": "Before Plan relies on these build_required entries, add targeted candidate evaluation for lifecycle/A2A correlation, observability/trace correlation, skill-evaluation datasets/harnesses, knowledge verification/RAG evaluation, and agentic-eval harnesses, or mark those plan areas as blocked pending follow-up research."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

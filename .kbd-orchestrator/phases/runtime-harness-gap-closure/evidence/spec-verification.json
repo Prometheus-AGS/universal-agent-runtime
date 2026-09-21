@@ -1,0 +1,222 @@
+{
+  "tier": 0,
+  "kind": "spec_artifacts_only",
+  "changes": [
+    {
+      "change": "harness-protected-context",
+      "command": "openspec validate harness-protected-context --strict --json --no-interactive",
+      "exitCode": 0,
+      "output": {
+        "items": [
+          {
+            "id": "harness-protected-context",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 10
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "harness-model-profiles-routing",
+      "command": "openspec validate harness-model-profiles-routing --strict --json --no-interactive",
+      "exitCode": 0,
+      "output": {
+        "items": [
+          {
+            "id": "harness-model-profiles-routing",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 10
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "harness-task-graph-lifecycle",
+      "command": "openspec validate harness-task-graph-lifecycle --strict --json --no-interactive",
+      "exitCode": 0,
+      "output": {
+        "items": [
+          {
+            "id": "harness-task-graph-lifecycle",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 9
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "harness-skill-activation-quality",
+      "command": "openspec validate harness-skill-activation-quality --strict --json --no-interactive",
+      "exitCode": 0,
+      "output": {
+        "items": [
+          {
+            "id": "harness-skill-activation-quality",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 9
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "harness-knowledge-evidence",
+      "command": "openspec validate harness-knowledge-evidence --strict --json --no-interactive",
+      "exitCode": 0,
+      "output": {
+        "items": [
+          {
+            "id": "harness-knowledge-evidence",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 8
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "harness-governed-evaluation",
+      "command": "openspec validate harness-governed-evaluation --strict --json --no-interactive",
+      "exitCode": 0,
+      "output": {
+        "items": [
+          {
+            "id": "harness-governed-evaluation",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 10
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    }
+  ],
+  "scenarios": 85,
+  "uncheckedTasks": 44,
+  "runtimeTestsRun": false,
+  "buildHealth": "UNKNOWN (prior interrupted compile exit 143)",
+  "review": "pending_final_round",
+  "sourceAttachmentByteEquality": true
+}

@@ -1,0 +1,52 @@
+{
+  "task": "harness-protected-context-1-2",
+  "baselineRevision": "226d4a0af89811975662cf3f203c699f70e8cebc",
+  "baselineWorktree": "/Users/gqadonis/.claude/worktrees/runtime-harness-baseline",
+  "adapterSha256": "5aa484538a593b143b49e1f27aeff2be09938132bcba8d2cc83049bd25703ed3",
+  "adapterFiles": [
+    "tests/context_history_integrity.rs",
+    "tests/support/harness_context.rs"
+  ],
+  "runtimeSourceDiff": [],
+  "toolchain": {
+    "rustc": "rustc 1.99.0-nightly (b6839f4d0 2026-07-17)",
+    "cargo": "cargo 1.99.0-nightly (59800466c 2026-07-07)"
+  },
+  "checks": [
+    {
+      "command": "env RUSTC_WRAPPER= CARGO_TARGET_DIR=/Users/gqadonis/.cache/uar-cargo-targets/runtime-harness-baseline CARGO_BUILD_JOBS=1 cargo test --quiet --locked --no-default-features --features server-full --test context_history_integrity",
+      "exitCode": 0,
+      "result": "15 passed; 0 failed; 2 ignored"
+    },
+    {
+      "command": "env RUSTC_WRAPPER= CARGO_TARGET_DIR=/Users/gqadonis/.cache/uar-cargo-targets/runtime-harness-baseline CARGO_BUILD_JOBS=1 cargo test --quiet --locked --no-default-features --features server-full --test context_history_integrity baseline_ -- --ignored --nocapture",
+      "exitCode": 0,
+      "result": "2 passed; 0 failed; 15 filtered out"
+    },
+    {
+      "command": "env RUSTC_WRAPPER= CARGO_TARGET_DIR=/Users/gqadonis/.cache/uar-cargo-targets/runtime-harness-baseline CARGO_BUILD_JOBS=1 cargo test --quiet --locked --no-default-features --features server-full --test test_context_strategy",
+      "exitCode": 0,
+      "result": "4 passed; 0 failed"
+    },
+    {
+      "command": "git diff --check -- tests/context_history_integrity.rs && cargo fmt --all -- --check",
+      "exitCode": 0,
+      "result": "no output"
+    }
+  ],
+  "observedBaselineDefects": [
+    {
+      "fixture": "baseline_sliding_window_drops_the_protected_tool_group",
+      "observation": "SlidingWindow reduction omits the complete empty-text assistant tool-call/result group."
+    },
+    {
+      "fixture": "baseline_display_truncation_discards_protected_middle_bytes",
+      "observation": "Pre-history display formatting changes the protected payload bytes and removes the middle marker."
+    }
+  ],
+  "captureControl": {
+    "fixture": "final_request_capture_decodes_empty_text_assistant_tool_turn",
+    "observation": "The request capture helper decodes a typed empty-text assistant tool-call turn at final provider dispatch."
+  },
+  "infrastructureNote": "The cold server-full build completed on the external Cargo build volume. A later sccache client stopped advancing for eight minutes with no compiler child, counter movement or file writes; that Cargo process was interrupted with exit 130, and the same scoped command was rerun with RUSTC_WRAPPER disabled. Only the successful wrapper-disabled commands above are verification evidence."
+}

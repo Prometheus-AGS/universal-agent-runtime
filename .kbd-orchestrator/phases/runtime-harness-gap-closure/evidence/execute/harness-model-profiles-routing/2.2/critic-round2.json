@@ -1,0 +1,12 @@
+{
+  "reviewer": "artifact-critic",
+  "isolation": "artifact-only",
+  "verdict": "BLOCK",
+  "findings": [
+    {
+      "severity": "major",
+      "finding": "The success fixture checked selected fields and therefore did not prove complete final outbound-body equivalence."
+    }
+  ],
+  "resolution": "The fixture now compares the complete captured JSON object and its exact key set, then matches the captured HTTP bytes to the prepared request SHA-256, byte length, and token count."
+}

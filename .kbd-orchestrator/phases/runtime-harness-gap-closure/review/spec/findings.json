@@ -1,0 +1,24 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "gpt-5.5",
+  "producer_model": "gpt-6",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [],
+  "checked_classes": [
+    "complete sibling set \u2014 packet includes spec.md, manifest, all six OpenSpec changes, proposals, designs, tasks, capability deltas, reference specs, and verification evidence; manifest artifact count matches the provided artifact inventory",
+    "F1-F8 traceability \u2014 spec.md maps every feedback area F1 through F8 to named changes and scenario groups, including split F3 P0/P1 and F6/F8 evaluation coverage",
+    "testability \u2014 each capability delta contains concrete SHALL requirements with scenario-level WHEN/THEN criteria, and task files require fixture/evidence mapping before execution rather than relying on vague acceptance",
+    "MODIFIED/REMOVED contract migration \u2014 existing contradictory eval CI and tool-history requirements are explicitly REMOVED with migration targets, and modified requirements preserve or replace prior scenarios with new explicit outcomes",
+    "dependency and ordering consistency \u2014 manifest dependencies and spec.md implementation order are consistent as harness-protected-context \u2192 model-profiles-routing \u2192 task-graph-lifecycle \u2192 skill-activation-quality \u2192 knowledge-evidence \u2192 governed-evaluation",
+    "research prerequisite enforcement \u2014 spec.md and affected design/tasks preserve the analyze-stage warning by blocking F4-F8 implementation commitments until the five targeted external-candidate evaluations are recorded",
+    "project constraints \u2014 artifact keeps mutations host-owned, preserves dependency pins/current UI, keeps product verification local, limits GitHub Actions to deployment validation, preserves Recall@10 >=99% and frontend coverage >=60%, and treats Tier 3 as a separate local milestone required for phase completion",
+    "scope consistency \u2014 changes are tied to stated goals and assessment/analysis handoffs; no dependency upgrade, dashboard removal, marketplace/channel expansion, deployment, release, or runtime fix claim is introduced"
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

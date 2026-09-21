@@ -1,0 +1,9 @@
+# Model-profile evidence gate
+
+Task `harness-model-profiles-routing-1-1` inventories six durable providers and thirteen exact configured model IDs. It separates configured state from effective runtime state, records redacted provider revisions, binds local deployments to source, binary and model hashes, and retains public official-source response hashes.
+
+Every model row has an exact provider/base/endpoint/model key plus template, endpoint-settings, counting and output contracts. Templates declare required and conditional canonical slots, supported roles and explicit unsupported-role outcomes. Synthesized aliases are revision-bound and dispatch-ineligible until they resolve a complete canonical identity. No field is supported from a family substring. The inspected local proxy contains a `gpt-5.*` passthrough after exact catalogue lookup; the matrix explicitly rejects that passthrough as evidence and inventories only exact IDs returned by the pinned endpoint.
+
+No profile is certified for guaranteed-fit dispatch yet. Ferrox can count exact rendered prompt bytes but cannot yet prove the complete message/tool envelope or an independent output ceiling. The effective ChatGPT subscription proxy strips `max_output_tokens` and exposes no matching preflight count. The four remote providers are effectively disabled and lack complete live wire/count receipts. Tasks 2.1 and 2.2 must produce exact template and final-request fixtures before any profile becomes supported.
+
+The retained deterministic verifier recomputes candidate source, durable settings, live local endpoint, executable and GGUF hashes; validates every exact-model reference and explicit unsupported outcome; and exits zero. Strict OpenSpec validation passes. The isolated artifact critic returned `PASS` with no findings after the verifier receipt correction.

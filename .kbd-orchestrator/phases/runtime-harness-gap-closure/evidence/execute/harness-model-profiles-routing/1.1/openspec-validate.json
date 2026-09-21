@@ -1,0 +1,30 @@
+{
+  "items": [
+    {
+      "id": "harness-model-profiles-routing",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 18
+    }
+  ],
+  "summary": {
+    "totals": {
+      "items": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "byType": {
+      "change": {
+        "items": 1,
+        "passed": 1,
+        "failed": 0
+      }
+    }
+  },
+  "version": "1.0",
+  "root": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+    "source": "nearest"
+  }
+}

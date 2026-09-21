@@ -1,0 +1,31 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "gpt-5.5",
+  "producer_model": "gpt-6",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The plan requires crash durability evidence for both Postgres and Surreal but only defines a Postgres persistence supplement, leaving Surreal durability unowned.",
+      "evidence": "The plan states: \"Postgres and Surreal each need the crash suite.\" The certification coverage matrix later lists only \"Postgres persistence supplement | `cargo test --locked --no-default-features --features server-full,postgres-backend --test a2a_thread_service`\" and contains no corresponding Surreal supplement or command.",
+      "suggested_fix": "Add a Surreal persistence certification row and execution-map ownership with the exact feature flags, fixture setup, crash-boundary coverage, evidence directory, and completion gate; make phase completion block on both Postgres and Surreal crash receipts."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The final governed-evaluation task claims to run Tier 2 and the separate Tier 3 milestone, but its bound verification command covers only one Rust test, so the executable gate can pass without the required completion checks.",
+      "evidence": "The plan says \"execution-map.json binds all 44 tasks to files, fixtures, outputs and all 85 scenarios\" and lists Tier 2 commands: `cargo fmt --all -- --check`, `cargo test --locked --no-default-features --features server-full`, `pnpm build`, `pnpm test`, and `pnpm -C frontend test:coverage`, plus Tier 3 as the separate `runtime-harness-profile-certification` milestone. But execution-map task `harness-governed-evaluation` `3.1` is titled \"Run phase Tier 2 checks after units complete and separately execute the registered local Tier 3 milestone when eligible\" while its `verification` array contains only `cargo test --locked --no-default-features --features server-full --test harness_governed_evaluation`.",
+      "suggested_fix": "Bind task 3.1 to the full Tier 2 command set and to an explicit required Tier 3 milestone receipt check, or split the Tier 2 and Tier 3 gates into separate tasks with non-ambiguous commands and artifacts."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

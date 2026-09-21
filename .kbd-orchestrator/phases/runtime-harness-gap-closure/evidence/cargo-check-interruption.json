@@ -1,0 +1,12 @@
+{
+  "command": "cargo check --locked --no-default-features --features server-full",
+  "status": "interrupted",
+  "elapsed": "34:41",
+  "reason": "Assessment-only compile did not finish within the assessment observation window; build health remains UNKNOWN, not a compiler failure.",
+  "timestamp": "2026-09-16T19:25:23.719099+00:00",
+  "owned_pids": [
+    12994,
+    12996,
+    98612
+  ]
+}

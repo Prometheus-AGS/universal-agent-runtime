@@ -1,0 +1,72 @@
+I'll look into what "Universal Agent Runtime" refers to — both in your internal sources and publicly.
+
+I found the internal repo. Let me dig deeper into the architecture docs and codebase.
+
+## Bottom line
+
+**Yes — architecturally, UAR is genuinely well-built as an agentic runtime kernel. But its feature set only partially matches what a premier agent harness needs in 2026.** The foundation (execution lifecycle, typed streaming, governance, tools, multi-tenancy, supply-chain hygiene) is strong and ahead of most open harnesses; the *intelligence layer* — model routing, prompt dialects, context strategy, skill activation — is where your own analysis says it falls short of Claude Code / Codex / OpenCode parity [[41]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/docs/uar-next.md). That self-assessment in `docs/uar-next.md` is, as far as I can see, accurate.
+
+---
+
+## What's architecturally strong
+
+> "UAR is a single Rust/Axum process that owns inference routing, agent execution, governance, retrieval, and event distribution… the frontend never talks to providers, tools, or storage directly — everything crosses one governed REST/SSE boundary." [[42]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/README.md)
+
+The structural decisions that matter for a harness are sound:
+
+Pillar	Evidence	Verdict
+**Clean layering / seams**	Transport-free `uar::admin::*` services with HTTP delegating to them, so embedded (Tauri/mobile) and served deployments share one implementation — "they cannot drift" [[19]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/200)	✅ Excellent
+**Typed event model**	AG-UI as the event vocabulary, A2UI as a validated declarative rendering contract; unknown component types fail closed, no model-provided HTML/JS ever executes [[42]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/README.md)	✅ Excellent
+**Run lifecycle**	Per-run broadcast channels, 512-event replay buffer, cancellation via per-run `CancellationToken` (explicit, disconnect, shutdown) with a distinct `Cancelled` terminal event [[4]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/23)	✅ Excellent
+**Resumable streaming**	Server resume via `last_event_id` + client `Last-Event-ID` reconnect with dedup and no duplicate POSTs [[16]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/26)	✅ Strong
+**Governance**	Cedar policy engine, hot-reloaded PolicySet, "Deny is final" — a Cedar `Deny` cannot be overridden by user approval; tools get schema validation, policy gating, and audit [[42]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/README.md); loopback-only verified runtimes can run Governance Off with fail-closed recovery [[18]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/274)	✅ Strong
+**Provider abstraction**	`liter-llm`: 142+ providers (316 catalog entries), compile-time model catalog, zero runtime network calls — called "the UAR's crown jewel" in your own analysis [[41]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/docs/uar-next.md)[[42]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/README.md)	✅ Excellent
+**Agent distribution**	8-stage PMPO compiler: UAR-AGENT-MD → signed (Ed25519) `AgentDescriptor`, a unique differentiator no other harness has [[41]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/docs/uar-next.md)	✅ Differentiator
+**Security posture**	JWT/JWKS verification with issuer/audience/rotation, tenant identity derived only from verified claims, AES-256-GCM multi-tenant credential store, fail-closed init, SSRF-guarded `web_fetch` [[13]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/253)[[147]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/5)[[19]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/200)	✅ Strong
+**Operational maturity**	OTLP tracing, per-LLM latency histograms, per-request cost, sandbox/MCP metrics [[5]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/24)[[29]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/30); graceful shutdown with executor-independent watchdog and truthful exit markers (the SIGKILL/137 defect was found and fixed) [[2]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/255)	✅ Strong
+**Eval harness**	Scorer trait + rule scorers (incl. sycophancy), runner, persistence, delta-vs-baseline regression with non-zero exit as a CI gate [[8]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/34)[[40]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/36)[[7]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/37)	✅ Good foundation
+**Supply chain**	SBOMs (CycloneDX/SPDX), Sigstore keyless signing, in-toto SLSA provenance, independent local re-verification [[42]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/README.md)	✅ Rare in this space
+
+That's a legitimately strong harness *chassis* — arguably stronger on governance, tenancy, and lifecycle than Claude Code or OpenCode.
+
+---
+
+## Where the feature set falls short
+
+Your own `uar-next.md` names the critical gaps, and the PR history corroborates them:
+
+**1. No dynamic model routing.** UAR can *connect* to 142+ providers but can't *choose* between them by task type, cost, or capability — "the core competitive advantage of modern harnesses" [[41]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/docs/uar-next.md). Capability routing is Stable, but adaptive learned routing is still Experimental [[42]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/README.md).
+
+**2. No per-model prompt dialects.** `liter-llm` normalizes API calls but treats models as interchangeable — no XML envelopes for Claude, JSON-schema discipline for OpenAI, `preserve_thinking` for Kimi, `thinking_mode` for GLM [[41]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/docs/uar-next.md). This is real lost performance.
+
+**3. Context management is model-uniform — and has known correctness defects.** This is the most concrete harness-level weakness I found:
+> "Context trimming can orphan a tool-call/tool-result pair (`context/manager.rs:86-141`) — trims by token count with no pairing awareness." [[148]](https://github.com/Know-Me-Tools/know-me-system/pull/4)
+
+…plus `RunManager` dropping empty-content assistant turns [[148]](https://github.com/Know-Me-Tools/know-me-system/pull/4)[[30]](https://github.com/Know-Me-Tools/know-me-system/pull/2). Either can independently produce malformed-history failures on long conversations — exactly the regime an agent harness lives in. There's also no first-class compaction/summarization strategy per model, which uar-next flags as Gap 3 [[41]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/docs/uar-next.md).
+
+**4. AG-UI and A2A coexist but don't integrate** — both protocols are implemented, but there's no unified task model; they're separate subsystems [[41]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/docs/uar-next.md). (A2A storage is at least tenant-partitioned .)
+
+**5. Skill system is storage-centric, not activation-centric.** Skills are stored and governed well (four kinds, scoped precedence: conversation > agent > global ), but *activation accuracy* — the hard problem — lags Claude Code/OpenCode [[41]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/docs/uar-next.md).
+
+**6. Orchestration depth is thin.** The workflow is described as a "basic (10-iteration tool loop)" vs LibreFang's approval-gate workflow engine [[41]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/docs/uar-next.md). Graph execution exists (cancellation covers it [[4]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/23)), but per-iteration `RuntimeStep` events explicitly skip the graph path [[6]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/29), and the eval harness runs a **tool-less** orchestrator [[7]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/37) — so you're not yet evaluating agentic behavior end-to-end with tools.
+
+**7. RAG is bolted-on.** Hybrid RRF + lexical verification + citations + 5 embedding backends is respectable [[42]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/README.md), but it lacks the 2026 "knowledge runtime" pattern (verification, reasoning, access control, audit as one layer) [[41]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/docs/uar-next.md).
+
+**8. Verification debt.** Many features shipped "pending live env" confirmation [[5]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/24)[[6]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/29)[[16]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/26), routine testing is explicitly *not* in GitHub Actions [[2]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/255), frontend coverage is 33.68% vs a 60% target [[150]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/209), and behavioral evidence is scoped to the `server-full` profile only . Two `uar::eval` failures were also noted as pre-existing [[19]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/200).
+
+---
+
+## Verdict on your question
+
+- **Well architected?** ✅ Yes — layered seams, typed/fail-closed protocols, transport-free services, governed tool execution, and honest verification culture. As a runtime *kernel*, it's in good shape.
+- **Relevant feature set for an agentic harness?** ⚠️ Roughly 70%. Execution, tools/MCP, HITL approvals, streaming, cancellation, memory CRUD, eval, telemetry, tenancy: all present. Missing or immature: intelligent routing, dialect adaptation, pairing-aware/compacting context management, unified A2A/AG-UI task model, activation-centric skills, sub-agent/graph observability, and agentic (tool-inclusive) evals.
+
+## What I'd prioritize
+
+1. **Fix context correctness first** — pairing-aware trimming + stop dropping empty assistant turns [[148]](https://github.com/Know-Me-Tools/know-me-system/pull/4). A harness that can corrupt its own history can't be trusted for long-horizon agent loops.
+2. **Add the `Router` module** between API and `liter-llm` exactly as uar-next proposes (task classifier → capability registry → cost model → failover) [[41]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/docs/uar-next.md).
+3. **Model-aware context strategy** — compaction, positional-bias-aware placement, per-model chunking [[41]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/docs/uar-next.md).
+4. **Unify the task model** across AG-UI/A2A, and extend `RuntimeStep` to the graph path [[41]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/docs/uar-next.md)[[6]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/29).
+5. **Make evals agentic** — run suites with tools enabled so the regression gate measures harness behavior, not just completion quality [[7]](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/37).
+
+The uar-next.md "harness kernel / agent OS" division of responsibility [[41]](https://raw.githubusercontent.com/Prometheus-AGS/universal-agent-runtime/main/docs/uar-next.md) is the right strategic frame: UAR's strengths are all kernel-shaped; the marketplace/channel/workflow concerns belong elsewhere.

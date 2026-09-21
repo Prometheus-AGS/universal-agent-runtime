@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "change": "harness-model-profiles-routing",
+  "task": "2.2",
+  "candidate": {
+    "head": "226d4a0af89811975662cf3f203c699f70e8cebc"
+  },
+  "productFiles": {
+    "src/llm/mod.rs": "8a3b09d3d7898e9a31910177167762a8eddf3bcef2e889885c89e1f6ff9a6567",
+    "src/llm/liter_driver.rs": "1a5fdea32ef5658f956c58f5c5331dd0eca13040721e5e75bb54b60a7da5ec51",
+    "tests/model_path_resiliency.rs": "cb7fc0333951880ca082e307db283cf790e0116cffbd39d2c42b9bdc38300b51",
+    "tests/prompt_assembly.rs": "c98aa12a6000fa8cb752ce2db83a874f030c407916f2b2aa25df6823239752c6"
+  },
+  "artifacts": {
+    "implementation.patch": "d677e01c6eec05b78198176352d0d2ecdf1ccd85ac25c1c704168e9fd132fb9f",
+    "summary.md": "bdfc23c520290eb9d3abe57fc3827990618ffbb26a102bccc824052fc06a924e",
+    "command-receipts.json": "0429970819de7a424d04a68d583dc95aa2d377a2398fe2a34abc575d4159f8a3",
+    "critic-round1.json": "d329150c411434e08f4db466d5322506d4a496fa226e5cd5403bd7cdc9c73ba9",
+    "critic-round2.json": "7eef9e898535c8782c5756d5e0751c215b671f5f8665d469fcda37bdca0bb675",
+    "critic-final.json": "b8ac744e70fc2afa60db68787ca72fedd4ba2c0fb18ac02d35572e502934b786",
+    "intermediate-failure.json": "40b17ee4e854fdf19a61ee3ac0da1ba755914947589f184eb0871250f906c329",
+    "cargo-check.log": "72d24fc5565733cdd6491a403d4a82bffb955dc82b186397b5194a2d76e8bf41",
+    "cargo-check.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "model_path_resiliency.log": "322aa14e404b8943e126c2bd0917d997f43e6a563b49ea1e324a2f335bca8883",
+    "model_path_resiliency.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "prompt_assembly.log": "09bc5191bd020dc53225028cad7f0af50c3bd99fd5c8cac20188bd53be0c63e4",
+    "prompt_assembly.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "cargo-fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cargo-fmt.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "diff-check.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "openspec-validate.log": "d24461ca7ae9721c3125f1a90ce56fd7cf7f9b2b2046678b46ce4f9a9f2ffbf4",
+    "openspec-validate.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  "result": {
+    "modelPathResiliencyPassed": 18,
+    "promptAssemblyPassed": 12,
+    "strictOpenSpecPassed": 1,
+    "newDependencies": 0
+  },
+  "review": {
+    "isolatedArtifactCritic": "PASS",
+    "finalFindings": [],
+    "correctedFindings": [
+      "validated serialization was not proven to be dispatched",
+      "declared output ceiling could dispatch without a budget contract",
+      "profile was not fully endpoint and provider bound",
+      "Anthropic plus-one transform could overflow",
+      "success fixture did not compare the complete outbound body"
+    ]
+  },
+  "claimBoundary": "Only the deterministic explicitly bound synthetic OpenAI-compatible profile is certified. Production provider profiles and task entry-point wiring remain task 2.3, and Anthropic profiled dispatch remains unsupported without complete final-wire counting."
+}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "task": "harness-model-profiles-routing-2-1",
+  "commands": [
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test prompt_assembly",
+      "exitCode": 101,
+      "output": "prompt_assembly-initial-failure.log",
+      "outcome": "Observed fixture assertion compile failure; corrected by pattern-matching the typed error without changing production code."
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo check --locked --no-default-features --features server-full",
+      "exitCode": 0,
+      "output": "cargo-check.log"
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test prompt_assembly",
+      "exitCode": 0,
+      "output": "prompt_assembly.log",
+      "result": {"passed": 12, "failed": 0, "ignored": 0}
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test model_path_resiliency",
+      "exitCode": 0,
+      "output": "model_path_resiliency.log",
+      "result": {"passed": 12, "failed": 0, "ignored": 0}
+    },
+    {
+      "command": "cargo fmt --all -- --check",
+      "exitCode": 0,
+      "output": "cargo-fmt.log"
+    },
+    {
+      "command": "git diff --check -- <task files>",
+      "exitCode": 0,
+      "output": "diff-check.log"
+    },
+    {
+      "command": "openspec validate harness-model-profiles-routing --strict --json",
+      "exitCode": 0,
+      "output": "openspec-validate.json",
+      "result": {"passed": 1, "failed": 0}
+    }
+  ]
+}

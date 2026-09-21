@@ -1,0 +1,42 @@
+[
+  {
+    "command": [
+      "prometheus",
+      "kbd",
+      "--path",
+      ".",
+      "stage",
+      "transition",
+      "--command-id",
+      "harness-gap-plan-complete-20260916",
+      "--phase",
+      "runtime-harness-gap-closure",
+      "--id",
+      "plan",
+      "--status",
+      "complete"
+    ],
+    "exitCode": 0,
+    "committedLocally": true,
+    "revision": 2548
+  },
+  {
+    "command": [
+      "prometheus",
+      "kbd",
+      "--path",
+      ".",
+      "phase",
+      "activate",
+      "--command-id",
+      "harness-gap-plan-next-execute-20260916",
+      "--id",
+      "runtime-harness-gap-closure",
+      "--exact-next-work",
+      "/kbd-execute runtime-harness-gap-closure"
+    ],
+    "exitCode": 0,
+    "committedLocally": true,
+    "revision": 2549
+  }
+]

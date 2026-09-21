@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "projectionContractVersion": 2,
+  "sourceRevision": 2584,
+  "derivedRevision": 2584,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2180,
+    "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
+    "525ede94-ad4e-4580-84da-627cba8991cb": 27,
+    "80130eb1-95f8-4039-8976-71bdce23779c": 61,
+    "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
+    "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
+    "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
+    "97ebf967-3be8-4123-a4ac-06a0caeede59": 12,
+    "af186a6c-4b8c-4fba-bf44-abcabf91ec8a": 22,
+    "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
+    "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
+  },
+  "conflictCount": 0,
+  "phase": "runtime-harness-gap-closure",
+  "phaseId": "runtime-harness-gap-closure",
+  "parentPhase": null,
+  "last_updated": "2026-09-21T10:04:29.927208Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 6,
+  "changes_completed": 1,
+  "implementation_total": 6,
+  "implementation_completed": 1,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 1,
+      "total": 6,
+      "status": "IN_PROGRESS"
+    },
+    "evidence": {
+      "status": "IN_PROGRESS",
+      "summary": "Zero-length-Ping child evidence complete: one immutable observation stopped on a second empty Ping; authentication and broader readiness evidence remain unresolved. Existing project warnings preserved.",
+      "blockers": []
+    },
+    "certification": {
+      "status": "IN_PROGRESS",
+      "summary": "Zero-length-Ping diagnostic locally accepted: 39/39 tests, strict spec validation and independent review with two warnings/three suggestions. Producer identity unverified. Project readiness/release certification, deferred 429 and coverage warnings remain unresolved.",
+      "blockers": []
+    },
+    "publication": {
+      "status": "IN_PROGRESS",
+      "summary": "Zero-length-Ping OpenSpec change created and implementation complete; Reflect, sync/archive remain pending. No release, commit or push in this child Execute phase; broader publication status unchanged.",
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "harness-protected-context",
+      "title": "harness-protected-context",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 8,
+      "tasks_done": 8,
+      "last_task_completed": "3.1 Run the applicable local unit checks for completed units and archive exact outputs; demonstrate final serialized-request fit or explicit outcome across all context strategies without claiming profile-wide certification.",
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "harness-model-profiles-routing",
+      "title": "harness-model-profiles-routing",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 8,
+      "tasks_done": 5,
+      "last_task_completed": "2.3 Connect initial/iteration/retry/failover/graph/resume preparation to canonical content; verify smaller-window failover and protected continuity incompatibility.",
+      "next_task_pending": "2.4 Connect governed task classification and host-derived requirements to production run-start routing; constrain ranking/fallback by policy, capabilities, health, protected fit and shared budgets; verify admission and task-outcome corpora.",
+      "blockers": []
+    },
+    {
+      "id": "harness-task-graph-lifecycle",
+      "title": "harness-task-graph-lifecycle",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 8,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "1.1 Complete the two mandatory targeted external-candidate surveys for durable A2A recovery and graph/agent observability; verify source-backed adopt/adapt/build decisions and finalized recovery/event mechanisms before implementation planning.",
+      "blockers": []
+    },
+    {
+      "id": "harness-skill-activation-quality",
+      "title": "harness-skill-activation-quality",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 6,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "1.1 Complete the mandatory external skill-selection/evaluation candidate survey and record a supported reuse decision before implementation planning; verify provenance and pin compatibility.",
+      "blockers": []
+    },
+    {
+      "id": "harness-knowledge-evidence",
+      "title": "harness-knowledge-evidence",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 6,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "1.1 Complete the mandatory external evidence-verification candidate survey and settle the algorithm/reuse decision before implementation planning; verify source-backed rationale.",
+      "blockers": []
+    },
+    {
+      "id": "harness-governed-evaluation",
+      "title": "harness-governed-evaluation",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 8,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "1.1 Complete the mandatory external agentic-evaluation candidate survey and record a supported reuse decision before implementation planning; verify no replacement framework is assumed.",
+      "blockers": []
+    }
+  ],
+  "children": {
+    "runtime-harness-profile-certification": {
+      "status": "PENDING",
+      "changes_completed": 0,
+      "changes_total": 0,
+      "implementation_completed": 0,
+      "implementation_total": 0,
+      "certification_status": "NOT_TRACKED",
+      "handoff": null,
+      "completed_at": null
+    }
+  },
+  "migrationStatus": null
+}

@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "phase": "runtime-harness-gap-closure",
+  "change": "harness-protected-context",
+  "task": "2.2",
+  "revision": "226d4a0af89811975662cf3f203c699f70e8cebc",
+  "status": "PASS",
+  "commands": [
+    {
+      "command": "RUSTC_WRAPPER= cargo check --locked --no-default-features --features server-full",
+      "tier": 0,
+      "exitCode": 0,
+      "observed": "Finished dev profile in 13m 12s with no warnings"
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test context_history_integrity",
+      "tier": 1,
+      "exitCode": 0,
+      "observed": "22 passed; 0 failed; 2 ignored; finished in 1.53s after 20m 55s build"
+    },
+    {
+      "command": "RUSTC_WRAPPER= cargo test --locked --no-default-features --features server-full --test test_context_strategy",
+      "tier": 1,
+      "exitCode": 0,
+      "observed": "4 passed; 0 failed; 0 ignored; finished in 0.12s after 13m 43s build"
+    },
+    {
+      "command": "cargo fmt --all -- --check && git diff --check && openspec validate harness-protected-context --strict",
+      "tier": 0,
+      "exitCode": 0,
+      "observed": "Formatting and diff checks emitted no findings; OpenSpec reported the change valid"
+    }
+  ],
+  "sourceSha256": {
+    "src/uar/runtime/context/normalize.rs": "278bdf0130d1af80ad2a6614cf06fd1532b7fa5a8ec7ccd8bb16937f658ee727",
+    "src/uar/runtime/context/reduce.rs": "03865b60292f5525ed4595fb02840df309eeaef72d8b8cef8735a14c39b6b8f5",
+    "src/uar/runtime/turn/builtin.rs": "a66d275de329324dc5526360534302339d263bcc847e0d4dbf187f413703a016",
+    "src/uar/runtime/manager.rs": "83ca733986c01ea6d28d374a1d0c252f561848895d845abf2a5a058ea2d06b04",
+    "src/llm/orchestrator.rs": "b7f3019f8ec9ae3c191e1918d1196dfc0b047951c5787e46977eb45229ac2b24",
+    "tests/context_history_integrity.rs": "94c4badf1d065715b647be0e4930740b15d362fa94055e65b2ea4742f703d2cc"
+  },
+  "review": {
+    "initialVerdict": "FAIL",
+    "initialCriticalFindings": 2,
+    "corrections": [
+      "Persist pending assistant tool calls and block unresolved resume dispatch",
+      "Persist typed terminal error provenance before provider dispatch"
+    ],
+    "finalVerdict": "PASS",
+    "finalFindings": 0
+  },
+  "unverified": [
+    "Live external provider behavior",
+    "Postgres terminal receipt persistence",
+    "Crash/restart recovery beyond the local session and temporary Surreal fixtures"
+  ]
+}

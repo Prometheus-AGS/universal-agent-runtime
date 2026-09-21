@@ -1,0 +1,217 @@
+{
+  "phase": "runtime-harness-gap-closure",
+  "stage": "spec",
+  "backend": "openspec",
+  "status": "specified_not_implemented",
+  "executionRequires": "accepted KBD Plan with prerequisites resolved",
+  "index": ".kbd-orchestrator/phases/runtime-harness-gap-closure/spec.md",
+  "changes": [
+    {
+      "name": "harness-protected-context",
+      "path": "openspec/changes/harness-protected-context",
+      "dependsOn": [],
+      "artifacts": [
+        {
+          "path": "openspec/changes/harness-protected-context/.openspec.yaml",
+          "sha256": "50c36dfa766b2fc52e8a7d270b1d67cc487bcd95d1b4c8a5f929d62738e3c77e"
+        },
+        {
+          "path": "openspec/changes/harness-protected-context/design.md",
+          "sha256": "8f70cc4298a79d633eb1122e76d92db0bdc980f8faf91bee912c802320b526fc"
+        },
+        {
+          "path": "openspec/changes/harness-protected-context/proposal.md",
+          "sha256": "a2d5e81b8e69a591b02583ea237bb7d0bf93d913c7ba684e2c05f51869bfd1d1"
+        },
+        {
+          "path": "openspec/changes/harness-protected-context/specs/conversation-history-integrity/spec.md",
+          "sha256": "d9f0d1c475520373c8e0e59886eee0db3b4e654defe6b9270440af563f2d3b62"
+        },
+        {
+          "path": "openspec/changes/harness-protected-context/specs/protected-context-budget/spec.md",
+          "sha256": "cd0ce3cc09f2162440dacc47bb669fe0bac8271ddc1e1f93caa2b5f4574be5b6"
+        },
+        {
+          "path": "openspec/changes/harness-protected-context/tasks.md",
+          "sha256": "a060f648009e0105c0e372896324595ab3b18a9321f1e292fd0d972211e04619"
+        }
+      ]
+    },
+    {
+      "name": "harness-model-profiles-routing",
+      "path": "openspec/changes/harness-model-profiles-routing",
+      "dependsOn": [
+        "harness-protected-context"
+      ],
+      "artifacts": [
+        {
+          "path": "openspec/changes/harness-model-profiles-routing/.openspec.yaml",
+          "sha256": "50c36dfa766b2fc52e8a7d270b1d67cc487bcd95d1b4c8a5f929d62738e3c77e"
+        },
+        {
+          "path": "openspec/changes/harness-model-profiles-routing/design.md",
+          "sha256": "91d9450ed086aa404f943a78d5fdcfdded8c3acb48610affd03ce508686a3da6"
+        },
+        {
+          "path": "openspec/changes/harness-model-profiles-routing/proposal.md",
+          "sha256": "b6012bb9f478f2337680f9d121f3274e2be19c98dba718397c4fda4f34906ea1"
+        },
+        {
+          "path": "openspec/changes/harness-model-profiles-routing/specs/model-path-resiliency/spec.md",
+          "sha256": "bd1c9db50bf245031fb7f6ce4930a3731602822c67a566724cc73526350ff81a"
+        },
+        {
+          "path": "openspec/changes/harness-model-profiles-routing/specs/prompt-assembly/spec.md",
+          "sha256": "f411a9bfdecf895fea44f2b5d844215c2b7c20d404f3b9b82698b67745396482"
+        },
+        {
+          "path": "openspec/changes/harness-model-profiles-routing/tasks.md",
+          "sha256": "ed3a190bbc80e4e26bce2861d0aff5aea67dea169d120be79d128723bbc2e311"
+        }
+      ]
+    },
+    {
+      "name": "harness-task-graph-lifecycle",
+      "path": "openspec/changes/harness-task-graph-lifecycle",
+      "dependsOn": [
+        "harness-model-profiles-routing"
+      ],
+      "artifacts": [
+        {
+          "path": "openspec/changes/harness-task-graph-lifecycle/.openspec.yaml",
+          "sha256": "50c36dfa766b2fc52e8a7d270b1d67cc487bcd95d1b4c8a5f929d62738e3c77e"
+        },
+        {
+          "path": "openspec/changes/harness-task-graph-lifecycle/design.md",
+          "sha256": "95f81efb198522a90c3e0a3dc6618734029f38fbe94d991b436ead567305f8f4"
+        },
+        {
+          "path": "openspec/changes/harness-task-graph-lifecycle/proposal.md",
+          "sha256": "2efb83a1bdcd66ee996e50decc9f4c36edf87b293ab166c5cfb3bd1814624d5c"
+        },
+        {
+          "path": "openspec/changes/harness-task-graph-lifecycle/specs/agent-thread-kernel/spec.md",
+          "sha256": "8a15b08a706223e32729cdbcc3bb3dfa1b2d44985a6e3e5c4b55ef2b6f59b280"
+        },
+        {
+          "path": "openspec/changes/harness-task-graph-lifecycle/specs/multi-agent-orchestration/spec.md",
+          "sha256": "c26c0a13ffb5c61cb2282c80c6236c8c04f2d3e306351fcff84500be8546ada8"
+        },
+        {
+          "path": "openspec/changes/harness-task-graph-lifecycle/tasks.md",
+          "sha256": "60f4e57c0acb50e985d684e4f2b11cc5a47c5ec123be35651383d6dc3184723d"
+        }
+      ]
+    },
+    {
+      "name": "harness-skill-activation-quality",
+      "path": "openspec/changes/harness-skill-activation-quality",
+      "dependsOn": [
+        "harness-task-graph-lifecycle"
+      ],
+      "artifacts": [
+        {
+          "path": "openspec/changes/harness-skill-activation-quality/.openspec.yaml",
+          "sha256": "50c36dfa766b2fc52e8a7d270b1d67cc487bcd95d1b4c8a5f929d62738e3c77e"
+        },
+        {
+          "path": "openspec/changes/harness-skill-activation-quality/design.md",
+          "sha256": "6412b7555d44e06d2c51a6d4a898733b74fc46446665ddda3b4d28279c7184d6"
+        },
+        {
+          "path": "openspec/changes/harness-skill-activation-quality/proposal.md",
+          "sha256": "de9f1878c9bbed00d3d383bdbb873db89c5e55eb935bf3492b2342c331bed60e"
+        },
+        {
+          "path": "openspec/changes/harness-skill-activation-quality/specs/skill-activation-runtime/spec.md",
+          "sha256": "a1171893aa7cb6852fdd9147b8da94e7b9a4d5c45ff2be4abbd3ab8bd928867a"
+        },
+        {
+          "path": "openspec/changes/harness-skill-activation-quality/tasks.md",
+          "sha256": "801d10f9c24049d61ee161567b7209884c48990c171b254c72dc9fe2760f5e3a"
+        }
+      ]
+    },
+    {
+      "name": "harness-knowledge-evidence",
+      "path": "openspec/changes/harness-knowledge-evidence",
+      "dependsOn": [
+        "harness-skill-activation-quality"
+      ],
+      "artifacts": [
+        {
+          "path": "openspec/changes/harness-knowledge-evidence/.openspec.yaml",
+          "sha256": "50c36dfa766b2fc52e8a7d270b1d67cc487bcd95d1b4c8a5f929d62738e3c77e"
+        },
+        {
+          "path": "openspec/changes/harness-knowledge-evidence/design.md",
+          "sha256": "4e9999de109ddba50a7ee61e0733c7a0d65ef75f8fc77167d196294a8519f396"
+        },
+        {
+          "path": "openspec/changes/harness-knowledge-evidence/proposal.md",
+          "sha256": "ca756a311fdc925b812594958cd1c37a74a24be983c9aa07e155889de83ea5a5"
+        },
+        {
+          "path": "openspec/changes/harness-knowledge-evidence/specs/knowledge-rag-product-certification/spec.md",
+          "sha256": "313f96d91eb19f73553a3396f968f67aad3ba903657353c16fd68c9866d10919"
+        },
+        {
+          "path": "openspec/changes/harness-knowledge-evidence/specs/rag-provenance/spec.md",
+          "sha256": "72eac06d5cedc75702cda3e93d83aae2b62a8bc9a4d8b5c888841151a8267fa8"
+        },
+        {
+          "path": "openspec/changes/harness-knowledge-evidence/tasks.md",
+          "sha256": "25e040229dbab538f418ba6295a1f7be6c041dfe3562bb6fa10a22b63dbb3bb6"
+        }
+      ]
+    },
+    {
+      "name": "harness-governed-evaluation",
+      "path": "openspec/changes/harness-governed-evaluation",
+      "dependsOn": [
+        "harness-knowledge-evidence"
+      ],
+      "artifacts": [
+        {
+          "path": "openspec/changes/harness-governed-evaluation/.openspec.yaml",
+          "sha256": "50c36dfa766b2fc52e8a7d270b1d67cc487bcd95d1b4c8a5f929d62738e3c77e"
+        },
+        {
+          "path": "openspec/changes/harness-governed-evaluation/design.md",
+          "sha256": "03d263da24bb658177605901b4e5cc467a9f980ed89ec507b0079975bbd72ecf"
+        },
+        {
+          "path": "openspec/changes/harness-governed-evaluation/proposal.md",
+          "sha256": "dce9ad771d90e4c0bb41bd1094b395da6b862b5939041a05123341290daeee9b"
+        },
+        {
+          "path": "openspec/changes/harness-governed-evaluation/specs/eval-harness/spec.md",
+          "sha256": "b90ae57736023ec9def6aa8893b8a677fb03f4cec3cfa8d0f93df451f2caac58"
+        },
+        {
+          "path": "openspec/changes/harness-governed-evaluation/specs/runtime-profile-certification/spec.md",
+          "sha256": "8e7f887fd8b60be213c80a4ab0d588165e9091073c527a95f715ce268503ba4f"
+        },
+        {
+          "path": "openspec/changes/harness-governed-evaluation/tasks.md",
+          "sha256": "11c431287e4125a275ae3c7bb67f1135ad2e17827767782068791ec42314a239"
+        }
+      ]
+    }
+  ],
+  "researchPrerequisites": [
+    "durable A2A recovery",
+    "graph/agent observability",
+    "skill-selection evaluation",
+    "RAG evidence verification",
+    "tool-inclusive agentic evaluation"
+  ],
+  "zeeSpec": "inactive_unknown_acceptable",
+  "inputs": [
+    {
+      "path": ".kbd-orchestrator/phases/runtime-harness-gap-closure/feedback-source.txt",
+      "sha256": "5a478d7a091cd0e337ab64b15cb41b17cf869adf09f51ea07f07b75ef65f4efe",
+      "attachmentByteEqualityVerified": true
+    }
+  ]
+}

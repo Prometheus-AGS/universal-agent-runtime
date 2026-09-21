@@ -1,0 +1,63 @@
+{
+  "tier": 0,
+  "stage": "plan",
+  "openspec": [
+    {
+      "command": "openspec validate harness-protected-context --strict",
+      "exitCode": 0,
+      "output": "Change 'harness-protected-context' is valid\n"
+    },
+    {
+      "command": "openspec validate harness-model-profiles-routing --strict",
+      "exitCode": 0,
+      "output": "Change 'harness-model-profiles-routing' is valid\n"
+    },
+    {
+      "command": "openspec validate harness-task-graph-lifecycle --strict",
+      "exitCode": 0,
+      "output": "Change 'harness-task-graph-lifecycle' is valid\n"
+    },
+    {
+      "command": "openspec validate harness-skill-activation-quality --strict",
+      "exitCode": 0,
+      "output": "Change 'harness-skill-activation-quality' is valid\n"
+    },
+    {
+      "command": "openspec validate harness-knowledge-evidence --strict",
+      "exitCode": 0,
+      "output": "Change 'harness-knowledge-evidence' is valid\n"
+    },
+    {
+      "command": "openspec validate harness-governed-evaluation --strict",
+      "exitCode": 0,
+      "output": "Change 'harness-governed-evaluation' is valid\n"
+    }
+  ],
+  "json": "PASS",
+  "taskCount": 44,
+  "scenarioCount": 85,
+  "pathScope": "PASS",
+  "whitespace": "PASS",
+  "productDiffPaths": [],
+  "runtimeChecks": "NOT_RUN; not eligible in Plan",
+  "buildHealth": "UNKNOWN; prior interrupted exit 143",
+  "remainingGates": [
+    "actual baseline captures",
+    "effective deployed model inventory and endpoint/count evidence",
+    "historical routing failure identity",
+    "current coverage",
+    "separate stable-profile/platform/live certification"
+  ],
+  "revision": "final post-review corrections",
+  "routingTaskCases": 8,
+  "reviewPacketSha256": "5a57150a8e04756adf5d7ad8358dc90c861c213e1be522e4f4994b19d75209a3",
+  "correctionChecks": "10/10 PASS",
+  "finalPacketSha256": "cfdb4854809ffb27adbfdbbded26bf8fbfcef9c654f514d16a393d90510ff2b2",
+  "reviewLimitation": "Final correction deltas have local artifact checks only; no third independent review. Execute task 1.1 must verify final hashes and these checks.",
+  "deploymentPolicy": {
+    "command": "pnpm github-actions-policy:validate",
+    "exitCode": 0,
+    "output": "GitHub Actions policy validation passed (deployment workflows only; Pages publisher: docs.yml).",
+    "timing": "Executed earlier in this Plan turn; no workflow or invoked script edited."
+  }
+}
