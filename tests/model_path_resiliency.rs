@@ -17,11 +17,14 @@ use axum::{
 };
 use backon::BackoffBuilder;
 use futures::{Stream, StreamExt};
+use sha2::{Digest, Sha256};
 use tokio::sync::RwLock;
 use tower::ServiceExt;
 use universal_agent_runtime::config::{FailoverConfig, FallbackModel, LlmConfig};
 use universal_agent_runtime::llm::{
-    LiterLlmDriver, LlmDriver, LlmRequest, Orchestrator, ProviderError, ProviderErrorKind,
+    DestinationRequestPreparation, DestinationRequestPreparations, EndpointRequestProfile,
+    EndpointRequestTransform, LiterLlmDriver, LlmDriver, LlmRequest, Message, MessageContent,
+    MessageRole, Orchestrator, ProtectedContinuity, ProviderError, ProviderErrorKind,
     health::ProviderHealthMonitor, mock_driver::MockLlmDriver,
 };
 use universal_agent_runtime::mcp::registry::McpRegistry;
@@ -32,9 +35,21 @@ use universal_agent_runtime::uar::domain::events::NormalizedEvent as RunEvent;
 use universal_agent_runtime::uar::rag::embeddings::{
     EmbeddingBackend, UnavailableEmbeddingBackend,
 };
+use universal_agent_runtime::uar::runtime::context::{
+    budget::{
+        DestinationLimits, OutputCeilingField, RequestBudgetContract, SYNTHETIC_EXACT_MODEL,
+        WireContract, endpoint_fingerprint,
+    },
+    token_service::{SerializedCountingContract, TokenService},
+    truncate::TruncationPolicy,
+};
 use universal_agent_runtime::uar::runtime::manager::RunManager;
 use universal_agent_runtime::uar::runtime::matching::VectorMatcher;
-use universal_agent_runtime::uar::runtime::native_skill::NativeSkillRegistry;
+use universal_agent_runtime::uar::runtime::native_skill::{NativeSkill, NativeSkillRegistry};
+use universal_agent_runtime::uar::runtime::prompt::{
+    Authority, PromptFragment, PromptRole, PromptSection, PromptTemplateLayout,
+    PromptTemplateProfile, PromptTemplateSelector, Retention,
+};
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
 use universal_agent_runtime::uar::security::claims::{UserClaims, UserContext};
 use universal_agent_runtime::uar::settings::resilience_policy::ResiliencePolicy;
@@ -46,6 +61,83 @@ use wiremock::{
 #[derive(Debug, Default)]
 struct FailingDriver {
     calls: AtomicUsize,
+}
+
+#[derive(Debug, Default)]
+struct RetryCaptureDriver {
+    calls: AtomicUsize,
+    requests: Mutex<Vec<LlmRequest>>,
+}
+
+#[async_trait]
+impl LlmDriver for RetryCaptureDriver {
+    async fn stream(
+        &self,
+        request: LlmRequest,
+    ) -> anyhow::Result<Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>> {
+        self.requests.lock().expect("requests lock").push(request);
+        if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+            return Err(ProviderError::new(
+                Some(503),
+                ProviderErrorKind::Overloaded,
+                None,
+                "retry fixture unavailable",
+            )
+            .into());
+        }
+        Ok(Box::pin(futures::stream::iter([
+            Ok(NormalizedEvent::MessageDelta {
+                text: "prepared retry succeeded".to_string(),
+            }),
+            Ok(NormalizedEvent::Done),
+        ])))
+    }
+}
+
+#[derive(Debug, Default)]
+struct CountingSuccessDriver {
+    calls: AtomicUsize,
+}
+
+struct CanonicalLoopSkill;
+
+#[async_trait]
+impl NativeSkill for CanonicalLoopSkill {
+    fn name(&self) -> &str {
+        "canonical_loop_result"
+    }
+
+    fn description(&self) -> &str {
+        "Returns a large result for canonical iteration coverage"
+    }
+
+    fn parameters_schema(&self) -> serde_json::Value {
+        serde_json::json!({"type": "object", "additionalProperties": false})
+    }
+
+    fn output_limit(&self) -> Option<TruncationPolicy> {
+        Some(TruncationPolicy::Bytes(128))
+    }
+
+    async fn execute(&self, _: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+        Ok(serde_json::json!({"payload": "x".repeat(2_000)}))
+    }
+}
+
+#[async_trait]
+impl LlmDriver for CountingSuccessDriver {
+    async fn stream(
+        &self,
+        _: LlmRequest,
+    ) -> anyhow::Result<Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>> {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        Ok(Box::pin(futures::stream::iter([
+            Ok(NormalizedEvent::MessageDelta {
+                text: "fallback should not dispatch".to_string(),
+            }),
+            Ok(NormalizedEvent::Done),
+        ])))
+    }
 }
 
 #[async_trait]
@@ -281,7 +373,871 @@ fn direct_liter_request() -> LlmRequest {
         thinking_config: None,
         anthropic_system: None,
         extra_params: None,
+        budget_contract: None,
     }
+}
+
+fn exact_endpoint_profile(
+    base_url: &str,
+    model: &str,
+    transform: EndpointRequestTransform,
+    allowed_request_fields: &[&str],
+    output_ceiling: Option<OutputCeilingField>,
+) -> EndpointRequestProfile {
+    EndpointRequestProfile {
+        profile_id: format!("fixture-{model}"),
+        profile_revision: "fixture-profile-v1".to_string(),
+        provider_id: model
+            .split_once('/')
+            .expect("fixture model has a provider identity")
+            .0
+            .to_string(),
+        endpoint_kind: "fixture-chat".to_string(),
+        endpoint_fingerprint: endpoint_fingerprint(base_url),
+        qualified_model: model.to_string(),
+        wire_model: model.to_string(),
+        model_revision: "fixture-model-v1".to_string(),
+        settings_revision: "fixture-settings-v1".to_string(),
+        transform,
+        allowed_request_fields: allowed_request_fields
+            .iter()
+            .map(|field| (*field).to_string())
+            .collect(),
+        output_ceiling,
+    }
+}
+
+fn exact_budget_contract(
+    base_url: &str,
+    model: &str,
+    output_ceiling: OutputCeilingField,
+    output_tokens: i64,
+) -> RequestBudgetContract {
+    RequestBudgetContract {
+        destination_model: model.to_string(),
+        destination_endpoint_fingerprint: endpoint_fingerprint(base_url),
+        limits: DestinationLimits {
+            context_tokens: 8_192,
+            independent_input_tokens: Some(7_680),
+            host_input_tokens: None,
+            output_tokens,
+            additional_reasoning_tokens: 0,
+            count_uncertainty_tokens: 0,
+        },
+        counting: SerializedCountingContract::ExactCl100kJsonV1,
+        wire: WireContract::SyntheticOpenAiCompatibleChatV1,
+        output_ceiling,
+    }
+}
+
+fn canonical_host_fragment(content: &str) -> PromptFragment {
+    PromptFragment::new(
+        "host-contract",
+        PromptSection::HostInstructions,
+        "fixture-host",
+        Authority::Host,
+        PromptRole::System,
+        Retention::Session,
+        content,
+    )
+}
+
+fn destination_preparation(
+    base_url: &str,
+    model: &str,
+    budget_contract: RequestBudgetContract,
+    layout: PromptTemplateLayout,
+    compatible_continuity: Vec<ProtectedContinuity>,
+) -> DestinationRequestPreparation {
+    let (provider_id, model_id) = model
+        .split_once('/')
+        .expect("fixture model has provider and model identities");
+    DestinationRequestPreparation {
+        destination: universal_agent_runtime::llm::prompt_dialect::TemplateDestination {
+            provider_id: provider_id.to_string(),
+            endpoint_kind: "fixture-chat".to_string(),
+            model_id: model_id.to_string(),
+            model_revision: "fixture-model-v1".to_string(),
+            verified_family_revision: None,
+            generic_contract_eligible: false,
+        },
+        template: PromptTemplateProfile {
+            id: format!("template-{model}"),
+            revision: "fixture-template-v1".to_string(),
+            selector: PromptTemplateSelector::Exact {
+                provider_id: provider_id.to_string(),
+                endpoint_kind: "fixture-chat".to_string(),
+                model_id: model_id.to_string(),
+                model_revision: "fixture-model-v1".to_string(),
+            },
+            layout,
+            required_slots: vec![PromptSection::HostInstructions],
+            supported_roles: vec![PromptRole::System],
+            wire_contract_id: "fixture-wire-v1".to_string(),
+        },
+        request_profile: exact_endpoint_profile(
+            base_url,
+            model,
+            EndpointRequestTransform::OpenAiCompatibleChatV1,
+            &[
+                "model",
+                "messages",
+                "parallel_tool_calls",
+                "stream_options",
+                "max_completion_tokens",
+                "stream",
+            ],
+            Some(OutputCeilingField::MaxCompletionTokens),
+        ),
+        budget_contract,
+        exact_settings: None,
+        compatible_continuity,
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn retry_reprepares_exact_template_from_canonical_history() {
+    let model = "provider/model";
+    let base_url = "http://retry-preparation.invalid/v1";
+    let preparation = destination_preparation(
+        base_url,
+        model,
+        exact_budget_contract(
+            base_url,
+            model,
+            OutputCeilingField::MaxCompletionTokens,
+            512,
+        ),
+        PromptTemplateLayout::StructuredXml,
+        Vec::new(),
+    );
+    let preparations = Arc::new(
+        DestinationRequestPreparations::new(vec![preparation])
+            .expect("exact retry preparation is valid"),
+    );
+    let driver = Arc::new(RetryCaptureDriver::default());
+    let canonical_history = vec![Message {
+        role: MessageRole::User,
+        content: MessageContent::text("canonical retry input"),
+        tool_call_id: None,
+        tool_calls: None,
+    }];
+    let orchestrator = Orchestrator::from_driver(
+        LlmConfig {
+            model: model.to_string(),
+            resolved_provider_id: Some("provider".to_string()),
+            ..LlmConfig::default()
+        },
+        Arc::new(McpRegistry::empty()),
+        Arc::new(NativeSkillRegistry::new()),
+        driver.clone(),
+    )
+    .with_destination_preparations(
+        preparations,
+        canonical_history,
+        vec![canonical_host_fragment("canonical host policy")],
+    )
+    .with_resilience_policy(ResiliencePolicy {
+        retries_enabled: true,
+        retry_max_attempts: 2,
+        retry_base_delay_ms: 1,
+        retry_max_delay_ms: 1,
+        retry_jitter_mode: "none".to_string(),
+        retry_budget_ms: 10,
+        ..ResiliencePolicy::default()
+    });
+
+    let events = orchestrator
+        .chat_with_history(vec![
+            Message {
+                role: MessageRole::System,
+                content: MessageContent::text("stale rendered system"),
+                tool_call_id: None,
+                tool_calls: None,
+            },
+            Message {
+                role: MessageRole::User,
+                content: MessageContent::text("stale reduced input"),
+                tool_call_id: None,
+                tool_calls: None,
+            },
+        ])
+        .await
+        .expect("prepared retry starts")
+        .collect::<Vec<_>>()
+        .await;
+    assert!(events.iter().any(|event| matches!(
+        event,
+        NormalizedEvent::MessageDelta { text } if text == "prepared retry succeeded"
+    )));
+
+    let requests = driver.requests.lock().expect("requests lock");
+    assert_eq!(requests.len(), 2);
+    assert_eq!(requests[0].messages, requests[1].messages);
+    assert!(
+        requests[0].messages[0]["content"]
+            .as_str()
+            .expect("rendered system content")
+            .contains("canonical host policy")
+    );
+    assert_eq!(requests[0].messages[1]["content"], "canonical retry input");
+    assert!(
+        requests[0]
+            .messages
+            .iter()
+            .all(|message| message["content"] != "stale reduced input")
+    );
+    assert_eq!(
+        requests[0]
+            .budget_contract
+            .as_ref()
+            .expect("retry request has exact budget")
+            .destination_model,
+        model
+    );
+}
+
+#[tokio::test]
+async fn tool_iteration_reprepares_from_untruncated_canonical_result() {
+    let model = "provider/model";
+    let base_url = "http://iteration-preparation.invalid/v1";
+    let preparations = Arc::new(
+        DestinationRequestPreparations::new(vec![destination_preparation(
+            base_url,
+            model,
+            exact_budget_contract(
+                base_url,
+                model,
+                OutputCeilingField::MaxCompletionTokens,
+                512,
+            ),
+            PromptTemplateLayout::Plain,
+            Vec::new(),
+        )])
+        .expect("exact iteration preparation is valid"),
+    );
+    let driver = Arc::new(MockLlmDriver::new(vec![
+        vec![
+            NormalizedEvent::ToolCallDelta {
+                call_index: 0,
+                id: Some("canonical-loop-call".to_string()),
+                name: Some("canonical_loop_result".to_string()),
+                arguments_delta: Some("{}".to_string()),
+            },
+            NormalizedEvent::ToolCallComplete {
+                call_index: 0,
+                id: "canonical-loop-call".to_string(),
+                name: "canonical_loop_result".to_string(),
+                arguments_json: "{}".to_string(),
+            },
+            NormalizedEvent::Done,
+        ],
+        vec![
+            NormalizedEvent::MessageDelta {
+                text: "iteration complete".to_string(),
+            },
+            NormalizedEvent::Done,
+        ],
+    ]));
+    let native_skills = Arc::new(NativeSkillRegistry::new());
+    native_skills
+        .register(CanonicalLoopSkill)
+        .await
+        .expect("canonical loop skill registers");
+    let canonical_history = vec![Message {
+        role: MessageRole::User,
+        content: MessageContent::text("run the canonical loop tool"),
+        tool_call_id: None,
+        tool_calls: None,
+    }];
+    let events = Orchestrator::from_driver(
+        LlmConfig {
+            model: model.to_string(),
+            resolved_provider_id: Some("provider".to_string()),
+            ..LlmConfig::default()
+        },
+        Arc::new(McpRegistry::empty()),
+        native_skills,
+        driver.clone(),
+    )
+    .with_destination_preparations(
+        preparations,
+        canonical_history.clone(),
+        vec![canonical_host_fragment("canonical iteration policy")],
+    )
+    .chat_with_history(canonical_history)
+    .await
+    .expect("canonical iteration starts")
+    .collect::<Vec<_>>()
+    .await;
+
+    let displayed = events
+        .iter()
+        .find_map(|event| match event {
+            NormalizedEvent::ToolResult {
+                name,
+                content,
+                success: true,
+                ..
+            } if name == "canonical_loop_result" => Some(content),
+            _ => None,
+        })
+        .expect("tool result is emitted");
+    assert!(displayed.len() <= 128);
+    assert!(displayed.starts_with("Warning: truncated output"));
+
+    let requests = driver.requests();
+    assert_eq!(requests.len(), 2);
+    let canonical_result = requests[1]
+        .messages
+        .iter()
+        .find(|message| message["role"] == "tool")
+        .and_then(|message| message["content"].as_str())
+        .expect("second attempt contains the canonical tool result");
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(canonical_result)
+            .expect("canonical result remains typed JSON"),
+        serde_json::json!({"payload": "x".repeat(2_000)})
+    );
+}
+
+#[tokio::test]
+async fn smaller_window_failover_rejects_protected_canonical_content_before_http() {
+    let server = MockServer::start().await;
+    let base_url = format!("{}/v1", server.uri());
+    let fallback_model = SYNTHETIC_EXACT_MODEL;
+    let config = liter_llm::ClientConfigBuilder::new("fixture-key")
+        .base_url(base_url.clone())
+        .max_retries(0)
+        .build();
+    let fallback_driver = Arc::new(
+        LiterLlmDriver::new(config, fallback_model.to_string(), Some(false))
+            .expect("build fallback driver")
+            .with_endpoint_profile(exact_endpoint_profile(
+                &base_url,
+                fallback_model,
+                EndpointRequestTransform::OpenAiCompatibleChatV1,
+                &[
+                    "model",
+                    "messages",
+                    "parallel_tool_calls",
+                    "stream_options",
+                    "max_completion_tokens",
+                    "stream",
+                ],
+                Some(OutputCeilingField::MaxCompletionTokens),
+            ))
+            .expect("bind fallback profile"),
+    );
+    let primary_model = "primary/model";
+    let primary = Arc::new(FailingDriver::default());
+    let mut fallback_budget = exact_budget_contract(
+        &base_url,
+        fallback_model,
+        OutputCeilingField::MaxCompletionTokens,
+        10,
+    );
+    fallback_budget.limits.context_tokens = 64;
+    fallback_budget.limits.independent_input_tokens = Some(54);
+    let preparations = Arc::new(
+        DestinationRequestPreparations::new(vec![
+            destination_preparation(
+                &base_url,
+                primary_model,
+                exact_budget_contract(
+                    &base_url,
+                    primary_model,
+                    OutputCeilingField::MaxCompletionTokens,
+                    512,
+                ),
+                PromptTemplateLayout::Plain,
+                Vec::new(),
+            ),
+            destination_preparation(
+                &base_url,
+                fallback_model,
+                fallback_budget,
+                PromptTemplateLayout::StructuredXml,
+                Vec::new(),
+            ),
+        ])
+        .expect("primary and fallback preparations are valid"),
+    );
+    let protected_payload = serde_json::json!({"protected": "x".repeat(8_000)}).to_string();
+    let canonical_history = vec![Message {
+        role: MessageRole::User,
+        content: MessageContent::text(protected_payload.clone()),
+        tool_call_id: None,
+        tool_calls: None,
+    }];
+    let failover = FailoverConfig {
+        enabled: true,
+        fallback_models: vec![FallbackModel {
+            model: fallback_model.to_string(),
+            api_key: None,
+            base_url: Some(base_url.clone()),
+        }],
+        ..FailoverConfig::default()
+    };
+    let events = Orchestrator::from_driver(
+        LlmConfig {
+            model: primary_model.to_string(),
+            resolved_provider_id: Some("primary".to_string()),
+            ..LlmConfig::default()
+        },
+        Arc::new(McpRegistry::empty()),
+        Arc::new(NativeSkillRegistry::new()),
+        primary.clone(),
+    )
+    .with_failover(fallback_driver, failover)
+    .with_destination_preparations(
+        preparations,
+        canonical_history,
+        vec![canonical_host_fragment("retain every protected byte")],
+    )
+    .with_resilience_policy(ResiliencePolicy {
+        retries_enabled: false,
+        ..ResiliencePolicy::default()
+    })
+    .chat(&protected_payload)
+    .await
+    .expect("failover run starts")
+    .collect::<Vec<_>>()
+    .await;
+
+    assert_eq!(primary.calls.load(Ordering::SeqCst), 1);
+    assert!(events.iter().any(|event| matches!(
+        event,
+        NormalizedEvent::Error { message, .. } if message.contains("ProtectedOverflow")
+    )));
+    assert!(
+        server
+            .received_requests()
+            .await
+            .expect("wiremock recording")
+            .is_empty()
+    );
+}
+
+#[tokio::test]
+async fn incompatible_opaque_continuity_blocks_fallback_before_driver_call() {
+    let primary_model = "primary/model";
+    let fallback_model = "fallback/model";
+    let base_url = "http://continuity.invalid/v1";
+    let continuity = ProtectedContinuity {
+        provider_id: "primary".to_string(),
+        endpoint_kind: "fixture-chat".to_string(),
+        protocol_revision: "signed-reasoning-v1".to_string(),
+    };
+    let preparations = Arc::new(
+        DestinationRequestPreparations::new(vec![
+            destination_preparation(
+                base_url,
+                primary_model,
+                exact_budget_contract(
+                    base_url,
+                    primary_model,
+                    OutputCeilingField::MaxCompletionTokens,
+                    512,
+                ),
+                PromptTemplateLayout::Plain,
+                vec![continuity.clone()],
+            ),
+            destination_preparation(
+                base_url,
+                fallback_model,
+                exact_budget_contract(
+                    base_url,
+                    fallback_model,
+                    OutputCeilingField::MaxCompletionTokens,
+                    512,
+                ),
+                PromptTemplateLayout::Plain,
+                Vec::new(),
+            ),
+        ])
+        .expect("continuity fixture preparations are valid"),
+    );
+    let primary = Arc::new(FailingDriver::default());
+    let fallback = Arc::new(CountingSuccessDriver::default());
+    let failover = FailoverConfig {
+        enabled: true,
+        fallback_models: vec![FallbackModel {
+            model: fallback_model.to_string(),
+            api_key: None,
+            base_url: None,
+        }],
+        ..FailoverConfig::default()
+    };
+    let events = Orchestrator::from_driver(
+        LlmConfig {
+            model: primary_model.to_string(),
+            resolved_provider_id: Some("primary".to_string()),
+            ..LlmConfig::default()
+        },
+        Arc::new(McpRegistry::empty()),
+        Arc::new(NativeSkillRegistry::new()),
+        primary.clone(),
+    )
+    .with_failover(fallback.clone(), failover)
+    .with_destination_preparations(
+        preparations,
+        vec![Message {
+            role: MessageRole::User,
+            content: MessageContent::text("continue signed turn"),
+            tool_call_id: None,
+            tool_calls: None,
+        }],
+        vec![canonical_host_fragment("preserve opaque continuity")],
+    )
+    .with_protected_continuity(continuity)
+    .with_resilience_policy(ResiliencePolicy {
+        retries_enabled: false,
+        ..ResiliencePolicy::default()
+    })
+    .chat("continue signed turn")
+    .await
+    .expect("continuity run starts")
+    .collect::<Vec<_>>()
+    .await;
+
+    assert_eq!(primary.calls.load(Ordering::SeqCst), 1);
+    assert_eq!(fallback.calls.load(Ordering::SeqCst), 0);
+    assert!(events.iter().any(|event| matches!(
+        event,
+        NormalizedEvent::Error { message, .. }
+            if message.contains("incompatible with protected continuity")
+    )));
+}
+
+#[tokio::test]
+async fn exact_profile_captures_final_outbound_body_and_reserved_output_ceiling() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/v1/chat/completions"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("Content-Type", "text/event-stream")
+                .set_body_raw("data: [DONE]\n\n", "text/event-stream"),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let base_url = format!("{}/v1", server.uri());
+    let config = liter_llm::ClientConfigBuilder::new("fixture-key")
+        .base_url(base_url.clone())
+        .max_retries(0)
+        .build();
+    let profile = exact_endpoint_profile(
+        &base_url,
+        SYNTHETIC_EXACT_MODEL,
+        EndpointRequestTransform::OpenAiCompatibleChatV1,
+        &[
+            "model",
+            "messages",
+            "parallel_tool_calls",
+            "stream_options",
+            "max_completion_tokens",
+            "stream",
+        ],
+        Some(OutputCeilingField::MaxCompletionTokens),
+    );
+    let driver = LiterLlmDriver::new(config, SYNTHETIC_EXACT_MODEL.to_string(), Some(false))
+        .expect("build exact-profile driver")
+        .with_endpoint_profile(profile)
+        .expect("bind exact endpoint profile");
+    let mut request = direct_liter_request();
+    request.budget_contract = Some(RequestBudgetContract::synthetic_exact(&base_url));
+    let receipt = driver
+        .profiled_wire_receipt(&request)
+        .expect("profiled request produces a redacted wire receipt");
+
+    let mut stream = driver
+        .stream(request)
+        .await
+        .expect("profiled exact request dispatches");
+    while stream.next().await.is_some() {}
+
+    let requests = server
+        .received_requests()
+        .await
+        .expect("wiremock request recording is enabled");
+    assert_eq!(requests.len(), 1);
+    let body: serde_json::Value =
+        serde_json::from_slice(&requests[0].body).expect("captured request is JSON");
+    assert_eq!(
+        body,
+        serde_json::json!({
+            "model": SYNTHETIC_EXACT_MODEL,
+            "messages": [{
+                "role": "user",
+                "content": "exercise the provider HTTP boundary"
+            }],
+            "parallel_tool_calls": false,
+            "stream_options": {"include_usage": true},
+            "max_completion_tokens": 512,
+            "stream": true
+        }),
+        "the captured body must equal the complete supported wire fixture"
+    );
+    let digest = Sha256::digest(&requests[0].body);
+    let actual_sha256 = digest
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    assert_eq!(receipt.sha256, actual_sha256);
+    assert_eq!(receipt.serialized_bytes, requests[0].body.len());
+    let captured_count = TokenService::count_serialized(
+        SerializedCountingContract::ExactCl100kJsonV1,
+        &requests[0].body,
+    )
+    .expect("captured final request uses the exact counting contract");
+    assert_eq!(receipt.counted_tokens, Some(captured_count.tokens));
+}
+
+#[tokio::test]
+async fn exact_profile_rejects_an_unlisted_setting_before_dispatch() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind unused endpoint");
+    let base_url = format!(
+        "http://{}/v1",
+        listener.local_addr().expect("endpoint address")
+    );
+    let config = liter_llm::ClientConfigBuilder::new("fixture-key")
+        .base_url(base_url.clone())
+        .max_retries(0)
+        .build();
+    let profile = exact_endpoint_profile(
+        &base_url,
+        "openai/settings-fixture",
+        EndpointRequestTransform::OpenAiCompatibleChatV1,
+        &["model", "messages", "stream_options", "stream"],
+        None,
+    );
+    let driver = LiterLlmDriver::new(config, "openai/settings-fixture".to_string(), None)
+        .expect("build settings fixture driver")
+        .with_endpoint_profile(profile)
+        .expect("bind settings fixture profile");
+    let mut request = direct_liter_request();
+    request.extra_params = Some(serde_json::json!({"temperature": 0.2}));
+
+    let error = match driver.stream(request).await {
+        Ok(_) => panic!("unlisted endpoint settings must fail before dispatch"),
+        Err(error) => error,
+    };
+    assert!(
+        error
+            .to_string()
+            .contains("unsupported setting `temperature`")
+    );
+    assert!(
+        tokio::time::timeout(Duration::from_millis(50), listener.accept())
+            .await
+            .is_err(),
+        "invalid settings must not open a provider connection"
+    );
+}
+
+#[tokio::test]
+async fn anthropic_transform_growth_above_the_reserved_ceiling_is_rejected_before_dispatch() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind unused Anthropic endpoint");
+    let base_url = format!(
+        "http://{}/v1",
+        listener.local_addr().expect("endpoint address")
+    );
+    let model = "anthropic/ceiling-fixture";
+    let config = liter_llm::ClientConfigBuilder::new("fixture-key")
+        .base_url(base_url.clone())
+        .max_retries(0)
+        .build();
+    let profile = exact_endpoint_profile(
+        &base_url,
+        model,
+        EndpointRequestTransform::AnthropicMessagesV1,
+        &["model", "messages", "max_tokens", "stream"],
+        Some(OutputCeilingField::MaxTokens),
+    );
+    let driver = LiterLlmDriver::new(config, model.to_string(), None)
+        .expect("build Anthropic ceiling fixture driver")
+        .with_endpoint_profile(profile)
+        .expect("bind Anthropic endpoint profile");
+    let mut request = direct_liter_request();
+    request.extra_params = Some(serde_json::json!({"reasoning_effort": "high"}));
+    request.budget_contract = Some(exact_budget_contract(
+        &base_url,
+        model,
+        OutputCeilingField::MaxTokens,
+        512,
+    ));
+
+    let error = match driver.stream(request).await {
+        Ok(_) => panic!("transform growth above the reservation must fail before dispatch"),
+        Err(error) => error,
+    };
+    assert!(
+        error
+            .to_string()
+            .contains("would raise max_tokens to 16385, above the reserved output ceiling 512")
+    );
+    assert!(
+        tokio::time::timeout(Duration::from_millis(50), listener.accept())
+            .await
+            .is_err(),
+        "an under-reserved transformed request must not open a provider connection"
+    );
+}
+
+#[tokio::test]
+async fn profiled_ceiling_without_a_budget_is_rejected_before_dispatch() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind unused profiled endpoint");
+    let base_url = format!(
+        "http://{}/v1",
+        listener.local_addr().expect("endpoint address")
+    );
+    let profile = exact_endpoint_profile(
+        &base_url,
+        "openai/missing-budget-fixture",
+        EndpointRequestTransform::OpenAiCompatibleChatV1,
+        &[
+            "model",
+            "messages",
+            "stream_options",
+            "max_completion_tokens",
+            "stream",
+        ],
+        Some(OutputCeilingField::MaxCompletionTokens),
+    );
+    let config = liter_llm::ClientConfigBuilder::new("fixture-key")
+        .base_url(base_url)
+        .max_retries(0)
+        .build();
+    let driver = LiterLlmDriver::new(config, "openai/missing-budget-fixture".to_string(), None)
+        .expect("build missing-budget fixture driver")
+        .with_endpoint_profile(profile)
+        .expect("bind missing-budget profile");
+
+    let error = match driver.stream(direct_liter_request()).await {
+        Ok(_) => panic!("a declared ceiling requires a matching request budget"),
+        Err(error) => error,
+    };
+    assert!(error.to_string().contains("has no budget contract"));
+    assert!(
+        tokio::time::timeout(Duration::from_millis(50), listener.accept())
+            .await
+            .is_err(),
+        "a missing reservation must not open a provider connection"
+    );
+}
+
+#[tokio::test]
+async fn endpoint_profile_rejects_wrong_endpoint_and_divergent_wire_model() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind unused exact endpoint");
+    let base_url = format!(
+        "http://{}/v1",
+        listener.local_addr().expect("endpoint address")
+    );
+    let model = "openai/binding-fixture";
+    let config = liter_llm::ClientConfigBuilder::new("fixture-key")
+        .base_url(base_url.clone())
+        .max_retries(0)
+        .build();
+    let wrong_endpoint = exact_endpoint_profile(
+        "http://127.0.0.1:1/v1",
+        model,
+        EndpointRequestTransform::OpenAiCompatibleChatV1,
+        &["model", "messages", "stream_options", "stream"],
+        None,
+    );
+    let error = LiterLlmDriver::new(config.clone(), model.to_string(), None)
+        .expect("build exact endpoint driver")
+        .with_endpoint_profile(wrong_endpoint)
+        .expect_err("another endpoint fingerprint must be rejected");
+    assert!(
+        error
+            .to_string()
+            .contains("does not match the driver endpoint")
+    );
+
+    let mut divergent = exact_endpoint_profile(
+        &base_url,
+        model,
+        EndpointRequestTransform::OpenAiCompatibleChatV1,
+        &["model", "messages", "stream_options", "stream"],
+        None,
+    );
+    divergent.wire_model = "binding-fixture".to_string();
+    let error = LiterLlmDriver::new(config, model.to_string(), None)
+        .expect("build divergent model driver")
+        .with_endpoint_profile(divergent)
+        .expect_err("a separately transformed wire model must remain unsupported");
+    assert!(
+        error
+            .to_string()
+            .contains("identical qualified and wire model")
+    );
+    assert!(
+        tokio::time::timeout(Duration::from_millis(50), listener.accept())
+            .await
+            .is_err(),
+        "profile binding failures must not open a provider connection"
+    );
+}
+
+#[tokio::test]
+async fn anthropic_thinking_budget_overflow_is_rejected_before_dispatch() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind unused Anthropic endpoint");
+    let base_url = format!(
+        "http://{}/v1",
+        listener.local_addr().expect("endpoint address")
+    );
+    let model = "anthropic/overflow-fixture";
+    let profile = exact_endpoint_profile(
+        &base_url,
+        model,
+        EndpointRequestTransform::AnthropicMessagesV1,
+        &["model", "messages", "max_tokens", "stream"],
+        Some(OutputCeilingField::MaxTokens),
+    );
+    let config = liter_llm::ClientConfigBuilder::new("fixture-key")
+        .base_url(base_url.clone())
+        .max_retries(0)
+        .build();
+    let driver = LiterLlmDriver::new(config, model.to_string(), None)
+        .expect("build Anthropic overflow fixture driver")
+        .with_endpoint_profile(profile)
+        .expect("bind Anthropic overflow profile");
+    let mut request = direct_liter_request();
+    request.extra_params = Some(serde_json::json!({
+        "thinking": {"type": "enabled", "budget_tokens": u64::MAX}
+    }));
+    request.budget_contract = Some(exact_budget_contract(
+        &base_url,
+        model,
+        OutputCeilingField::MaxTokens,
+        512,
+    ));
+
+    let error = match driver.stream(request).await {
+        Ok(_) => panic!("overflowing transformed output must fail before dispatch"),
+        Err(error) => error,
+    };
+    assert!(error.to_string().contains("overflows max_tokens"));
+    assert!(
+        tokio::time::timeout(Duration::from_millis(50), listener.accept())
+            .await
+            .is_err(),
+        "an overflowing transform must not open a provider connection"
+    );
 }
 
 async fn retry_after_case(respect_retry_after: bool) -> (Duration, usize, Vec<NormalizedEvent>) {
@@ -841,6 +1797,126 @@ async fn interrupted_turn_is_persisted_and_replayed_to_the_next_model_request() 
                 && text.contains("[TurnInterrupted: provider_error]")
         })
     }));
+}
+
+#[tokio::test]
+async fn partial_tool_call_is_persisted_and_blocks_resume_dispatch() {
+    let driver = Arc::new(MockLlmDriver::new(vec![vec![
+        NormalizedEvent::ToolCallDelta {
+            call_index: 0,
+            id: Some("partial-call".to_string()),
+            name: Some("partial_tool".to_string()),
+            arguments_delta: Some("{\"unfinished\":".to_string()),
+        },
+        NormalizedEvent::Error {
+            message: "provider stream interrupted before tool-call completion".to_string(),
+            code: Some("PROVIDER_INTERRUPTED".to_string()),
+        },
+    ]]));
+    let sessions = SessionStore::new();
+    let manager = run_manager(driver.clone(), sessions.clone()).await;
+    let session_id = "partial-tool-call-turn";
+
+    let first_run = manager
+        .start_run(
+            default_agent(),
+            "start a partial tool call".to_string(),
+            Some(session_id.to_string()),
+            None,
+            Vec::new(),
+        )
+        .await;
+    wait_for_run(&manager, &first_run).await;
+
+    let session = sessions
+        .get(session_id)
+        .expect("partial tool-call session remains available");
+    let pending = session
+        .messages()
+        .into_iter()
+        .find_map(|message| {
+            message.tool_calls.and_then(|calls| {
+                calls.into_iter().find(|call| call.id == "partial-call")
+            })
+        })
+        .expect("partial tool call is retained as unresolved history");
+    assert_eq!(pending.function.name, "partial_tool");
+    assert_eq!(pending.function.arguments, "{\"unfinished\":");
+
+    let resumed_run = manager
+        .start_run(
+            default_agent(),
+            "resume without replaying partial work".to_string(),
+            Some(session_id.to_string()),
+            None,
+            Vec::new(),
+        )
+        .await;
+    wait_for_run(&manager, &resumed_run).await;
+
+    assert_eq!(
+        driver.requests().len(),
+        1,
+        "unresolved partial calls must block resume before provider dispatch"
+    );
+}
+
+#[tokio::test]
+async fn legacy_unbudgeted_dispatch_is_labeled_in_context_and_artifacts() {
+    let driver = Arc::new(MockLlmDriver::new(vec![vec![
+        NormalizedEvent::MessageDelta {
+            text: "legacy response".to_string(),
+        },
+        NormalizedEvent::Done,
+    ]]));
+    let manager = run_manager(driver.clone(), SessionStore::new()).await;
+
+    let run_id = manager
+        .start_run(
+            default_agent(),
+            "use the uncapped legacy provider".to_string(),
+            None,
+            None,
+            Vec::new(),
+        )
+        .await;
+    wait_for_run(&manager, &run_id).await;
+
+    let requests = driver.requests();
+    assert_eq!(requests.len(), 1);
+    assert!(requests[0].budget_contract.is_none());
+
+    let run = manager
+        .get_run(&run_id)
+        .await
+        .expect("completed unbudgeted run remains inspectable");
+    let manifests = run.context["attempt_manifests"]
+        .as_array()
+        .expect("attempt manifests are persisted in run context");
+    assert!(manifests.iter().any(|manifest| {
+        manifest["budgeting"]["label"] == "legacy_unbudgeted"
+            && manifest["budgeting"]["contract_present"] == false
+            && manifest["budgeting"]["fit_guarantee"] == false
+    }));
+
+    let history = manager
+        .history_since(&run_id, None)
+        .await
+        .expect("completed run retains attempt artifact history");
+    let artifact = history
+        .iter()
+        .find_map(|event| match &event.event {
+            RunEvent::Artifact { artifact, .. }
+                if artifact.artifact_type == "attempt_manifest" =>
+            {
+                Some(artifact)
+            }
+            _ => None,
+        })
+        .expect("legacy attempt emits a typed attempt manifest artifact");
+    let payload: serde_json::Value =
+        serde_json::from_str(&artifact.content).expect("attempt manifest is JSON");
+    assert_eq!(payload["budgeting"]["label"], "legacy_unbudgeted");
 }
 
 #[tokio::test]

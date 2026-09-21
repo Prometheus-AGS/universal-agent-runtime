@@ -1,6 +1,31 @@
 use crate::llm::Message;
 use tiktoken_rs::{CoreBPE, bpe_for_model, cl100k_base_singleton, o200k_base_singleton};
 
+/// Evidentiary strength of a token count.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CountQuality {
+    Exact,
+    ValidatedUpperBound,
+    Approximate,
+}
+
+/// A count plus the contract revision that produced it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CountedTokens {
+    pub tokens: u64,
+    pub quality: CountQuality,
+    pub revision: String,
+}
+
+/// Supported contracts for a complete serialized request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SerializedCountingContract {
+    /// Exact cl100k tokenization of deterministic UTF-8 JSON bytes.
+    ExactCl100kJsonV1,
+    /// The same local estimate without a proven destination framing contract.
+    ApproximateCl100kJsonV1,
+}
+
 /// Which tiktoken encoding a model resolves to.
 ///
 /// `Cl100kFallback` is distinct from `Cl100kBase`: both count with the same
@@ -42,6 +67,33 @@ const REPLY_PRIMING_OVERHEAD: usize = 3;
 pub struct TokenService;
 
 impl TokenService {
+    /// Count one complete serialized request under an explicit framing contract.
+    ///
+    /// # Errors
+    /// Returns an error when the supplied bytes are not UTF-8 JSON text.
+    pub fn count_serialized(
+        contract: SerializedCountingContract,
+        request_bytes: &[u8],
+    ) -> Result<CountedTokens, std::str::Utf8Error> {
+        let request = std::str::from_utf8(request_bytes)?;
+        let tokens = cl100k_base_singleton()
+            .encode_with_special_tokens(request)
+            .len() as u64;
+        let (quality, revision) = match contract {
+            SerializedCountingContract::ExactCl100kJsonV1 => {
+                (CountQuality::Exact, "exact-cl100k-json-v1")
+            }
+            SerializedCountingContract::ApproximateCl100kJsonV1 => {
+                (CountQuality::Approximate, "approximate-cl100k-json-v1")
+            }
+        };
+        Ok(CountedTokens {
+            tokens,
+            quality,
+            revision: revision.to_string(),
+        })
+    }
+
     /// Resolve a model identifier to its tiktoken encoding.
     ///
     /// Accepts either a bare model id or a `provider/model` pair; the provider

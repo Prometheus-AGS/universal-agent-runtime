@@ -67,7 +67,13 @@ impl GraphNode for CheckpointNode {
         // Persist checkpoint if a persistence layer is available.
         if let Some(db) = &ctx.persistence {
             let thread_id = ctx.session_id.as_deref().unwrap_or(&ctx.run_id);
-            let cp = Checkpoint::new(&ctx.run_id, thread_id, &self.id, &state);
+            let cp = Checkpoint::new(
+                &ctx.run_id,
+                thread_id,
+                &self.id,
+                &state,
+                &ctx.checkpoint_authorization_digest,
+            );
             if let Err(e) = db.save_checkpoint(&cp).await {
                 warn!(
                     run_id = %ctx.run_id,

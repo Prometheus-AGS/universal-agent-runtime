@@ -14,7 +14,11 @@
 //! `chat_template_kwargs` split) are surfaced as flags for the driver, not
 //! hardcoded, since the correct wrapper depends on the endpoint.
 
+use std::fmt;
+
 use serde_json::{Value, json};
+
+use crate::uar::runtime::prompt::{PromptTemplateProfile, PromptTemplateSelector};
 
 /// The prompt dialect a model family prefers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,7 +40,11 @@ pub enum PromptDialect {
 }
 
 impl PromptDialect {
-    /// Detect the dialect from a `provider/model` or bare model id.
+    /// Detect a legacy rendering hint from a `provider/model` or bare model id.
+    ///
+    /// This function does not establish template, setting, counting, or wire
+    /// compatibility. Dispatch preparation uses [`PromptTemplateResolver`],
+    /// whose family matches require an explicit reviewed family revision.
     #[must_use]
     pub fn detect(model_id: &str) -> Self {
         let m = model_id.to_ascii_lowercase();
@@ -88,6 +96,361 @@ impl PromptDialect {
             Self::Generic => "generic",
         }
     }
+}
+
+/// Exact trusted-host destination identity used for template resolution.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TemplateDestination {
+    pub provider_id: String,
+    pub endpoint_kind: String,
+    pub model_id: String,
+    pub model_revision: String,
+    /// Reviewed compatibility identity. Never inferred from `model_id`.
+    pub verified_family_revision: Option<String>,
+    /// True only after the host has established the generic contract's
+    /// required endpoint capabilities and limits.
+    pub generic_contract_eligible: bool,
+}
+
+/// Origin of a host-constrained template override.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TemplateOverrideProvenance {
+    Descriptor,
+    Operator,
+}
+
+/// One requested template override carried from a trusted compiler/operator
+/// boundary. The model cannot create this value.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TemplateOverrideRequest {
+    pub template_id: String,
+    pub provenance: TemplateOverrideProvenance,
+}
+
+/// Host policy allow-list for descriptor and operator template overrides.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct TemplateOverridePolicy {
+    pub allowed_template_ids: Vec<String>,
+}
+
+impl TemplateOverridePolicy {
+    #[must_use]
+    pub fn allows(&self, template_id: &str) -> bool {
+        self.allowed_template_ids
+            .iter()
+            .any(|allowed| allowed == template_id)
+    }
+}
+
+/// Why one profile won resolution.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TemplateResolutionSource {
+    DescriptorOverride,
+    OperatorOverride,
+    ExactProfile,
+    VerifiedFamilyProfile,
+    GenericProfile,
+}
+
+/// Profile and provenance selected for one destination.
+#[derive(Debug, Clone, Copy)]
+pub struct ResolvedPromptTemplate<'a> {
+    pub profile: &'a PromptTemplateProfile,
+    pub source: TemplateResolutionSource,
+}
+
+/// Explicit profile resolution failure. No variant authorizes dispatch.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TemplateResolutionError {
+    InvalidDestinationIdentity {
+        field: &'static str,
+    },
+    InvalidProfileIdentity {
+        profile_id: String,
+        field: &'static str,
+    },
+    OverrideForbidden {
+        template_id: String,
+    },
+    UnknownOverride {
+        template_id: String,
+    },
+    IncompatibleOverride {
+        template_id: String,
+    },
+    AmbiguousMatch {
+        scope: &'static str,
+        profile_ids: Vec<String>,
+    },
+    UnsupportedProfile {
+        provider_id: String,
+        endpoint_kind: String,
+        model_id: String,
+        model_revision: String,
+    },
+}
+
+impl fmt::Display for TemplateResolutionError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidDestinationIdentity { field } => {
+                write!(formatter, "template destination has an empty `{field}`")
+            }
+            Self::InvalidProfileIdentity { profile_id, field } => write!(
+                formatter,
+                "prompt template `{profile_id}` has an empty `{field}`"
+            ),
+            Self::OverrideForbidden { template_id } => {
+                write!(
+                    formatter,
+                    "template override `{template_id}` is forbidden by host policy"
+                )
+            }
+            Self::UnknownOverride { template_id } => {
+                write!(
+                    formatter,
+                    "template override `{template_id}` is not registered"
+                )
+            }
+            Self::IncompatibleOverride { template_id } => write!(
+                formatter,
+                "template override `{template_id}` is incompatible with the exact destination"
+            ),
+            Self::AmbiguousMatch { scope, profile_ids } => write!(
+                formatter,
+                "multiple {scope} prompt templates match: {}",
+                profile_ids.join(", ")
+            ),
+            Self::UnsupportedProfile {
+                provider_id,
+                endpoint_kind,
+                model_id,
+                model_revision,
+            } => write!(
+                formatter,
+                "no supported prompt template for provider `{provider_id}`, endpoint `{endpoint_kind}`, model `{model_id}` revision `{model_revision}`"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for TemplateResolutionError {}
+
+/// Deterministic exact/family/generic template registry.
+#[derive(Debug, Clone, Default)]
+pub struct PromptTemplateResolver {
+    profiles: Vec<PromptTemplateProfile>,
+}
+
+impl PromptTemplateResolver {
+    #[must_use]
+    pub fn new(profiles: Vec<PromptTemplateProfile>) -> Self {
+        Self { profiles }
+    }
+
+    pub fn resolve<'a>(
+        &'a self,
+        destination: &TemplateDestination,
+        requested_override: Option<&TemplateOverrideRequest>,
+        override_policy: &TemplateOverridePolicy,
+    ) -> Result<ResolvedPromptTemplate<'a>, TemplateResolutionError> {
+        validate_destination(destination)?;
+        for profile in &self.profiles {
+            validate_profile(profile)?;
+        }
+
+        if let Some(requested) = requested_override {
+            if !override_policy.allows(&requested.template_id) {
+                return Err(TemplateResolutionError::OverrideForbidden {
+                    template_id: requested.template_id.clone(),
+                });
+            }
+            let matches = self
+                .profiles
+                .iter()
+                .filter(|profile| profile.id == requested.template_id)
+                .collect::<Vec<_>>();
+            let profile = unique_profile("override", matches)?.ok_or_else(|| {
+                TemplateResolutionError::UnknownOverride {
+                    template_id: requested.template_id.clone(),
+                }
+            })?;
+            if !selector_matches(&profile.selector, destination) {
+                return Err(TemplateResolutionError::IncompatibleOverride {
+                    template_id: requested.template_id.clone(),
+                });
+            }
+            let source = match requested.provenance {
+                TemplateOverrideProvenance::Descriptor => {
+                    TemplateResolutionSource::DescriptorOverride
+                }
+                TemplateOverrideProvenance::Operator => TemplateResolutionSource::OperatorOverride,
+            };
+            return Ok(ResolvedPromptTemplate { profile, source });
+        }
+
+        for (scope, source, predicate) in [
+            (
+                "exact",
+                TemplateResolutionSource::ExactProfile,
+                is_exact as fn(&PromptTemplateSelector) -> bool,
+            ),
+            (
+                "verified-family",
+                TemplateResolutionSource::VerifiedFamilyProfile,
+                is_verified_family as fn(&PromptTemplateSelector) -> bool,
+            ),
+            (
+                "generic",
+                TemplateResolutionSource::GenericProfile,
+                is_generic as fn(&PromptTemplateSelector) -> bool,
+            ),
+        ] {
+            let matches = self
+                .profiles
+                .iter()
+                .filter(|profile| predicate(&profile.selector))
+                .filter(|profile| selector_matches(&profile.selector, destination))
+                .collect::<Vec<_>>();
+            if let Some(profile) = unique_profile(scope, matches)? {
+                return Ok(ResolvedPromptTemplate { profile, source });
+            }
+        }
+
+        Err(TemplateResolutionError::UnsupportedProfile {
+            provider_id: destination.provider_id.clone(),
+            endpoint_kind: destination.endpoint_kind.clone(),
+            model_id: destination.model_id.clone(),
+            model_revision: destination.model_revision.clone(),
+        })
+    }
+}
+
+fn validate_destination(destination: &TemplateDestination) -> Result<(), TemplateResolutionError> {
+    for (field, value) in [
+        ("provider_id", destination.provider_id.as_str()),
+        ("endpoint_kind", destination.endpoint_kind.as_str()),
+        ("model_id", destination.model_id.as_str()),
+        ("model_revision", destination.model_revision.as_str()),
+    ] {
+        if value.trim().is_empty() {
+            return Err(TemplateResolutionError::InvalidDestinationIdentity { field });
+        }
+    }
+    if destination
+        .verified_family_revision
+        .as_deref()
+        .is_some_and(|revision| revision.trim().is_empty())
+    {
+        return Err(TemplateResolutionError::InvalidDestinationIdentity {
+            field: "verified_family_revision",
+        });
+    }
+    Ok(())
+}
+
+fn validate_profile(profile: &PromptTemplateProfile) -> Result<(), TemplateResolutionError> {
+    for (field, value) in [
+        ("id", profile.id.as_str()),
+        ("revision", profile.revision.as_str()),
+        ("wire_contract_id", profile.wire_contract_id.as_str()),
+    ] {
+        if value.trim().is_empty() {
+            return Err(TemplateResolutionError::InvalidProfileIdentity {
+                profile_id: profile.id.clone(),
+                field,
+            });
+        }
+    }
+
+    let identities = match &profile.selector {
+        PromptTemplateSelector::Exact {
+            provider_id,
+            endpoint_kind,
+            model_id,
+            model_revision,
+        } => vec![
+            ("provider_id", provider_id.as_str()),
+            ("endpoint_kind", endpoint_kind.as_str()),
+            ("model_id", model_id.as_str()),
+            ("model_revision", model_revision.as_str()),
+        ],
+        PromptTemplateSelector::VerifiedFamily {
+            provider_id,
+            endpoint_kind,
+            family_revision,
+        } => vec![
+            ("provider_id", provider_id.as_str()),
+            ("endpoint_kind", endpoint_kind.as_str()),
+            ("family_revision", family_revision.as_str()),
+        ],
+        PromptTemplateSelector::Generic { endpoint_kind } => {
+            vec![("endpoint_kind", endpoint_kind.as_str())]
+        }
+    };
+    for (field, value) in identities {
+        if value.trim().is_empty() {
+            return Err(TemplateResolutionError::InvalidProfileIdentity {
+                profile_id: profile.id.clone(),
+                field,
+            });
+        }
+    }
+    Ok(())
+}
+
+fn unique_profile<'a>(
+    scope: &'static str,
+    matches: Vec<&'a PromptTemplateProfile>,
+) -> Result<Option<&'a PromptTemplateProfile>, TemplateResolutionError> {
+    match matches.as_slice() {
+        [] => Ok(None),
+        [profile] => Ok(Some(*profile)),
+        profiles => Err(TemplateResolutionError::AmbiguousMatch {
+            scope,
+            profile_ids: profiles.iter().map(|profile| profile.id.clone()).collect(),
+        }),
+    }
+}
+
+fn selector_matches(selector: &PromptTemplateSelector, destination: &TemplateDestination) -> bool {
+    match selector {
+        PromptTemplateSelector::Exact {
+            provider_id,
+            endpoint_kind,
+            model_id,
+            model_revision,
+        } => {
+            provider_id == &destination.provider_id
+                && endpoint_kind == &destination.endpoint_kind
+                && model_id == &destination.model_id
+                && model_revision == &destination.model_revision
+        }
+        PromptTemplateSelector::VerifiedFamily {
+            provider_id,
+            endpoint_kind,
+            family_revision,
+        } => {
+            provider_id == &destination.provider_id
+                && endpoint_kind == &destination.endpoint_kind
+                && destination.verified_family_revision.as_ref() == Some(family_revision)
+        }
+        PromptTemplateSelector::Generic { endpoint_kind } => {
+            destination.generic_contract_eligible && endpoint_kind == &destination.endpoint_kind
+        }
+    }
+}
+
+const fn is_exact(selector: &PromptTemplateSelector) -> bool {
+    matches!(selector, PromptTemplateSelector::Exact { .. })
+}
+
+const fn is_verified_family(selector: &PromptTemplateSelector) -> bool {
+    matches!(selector, PromptTemplateSelector::VerifiedFamily { .. })
+}
+
+const fn is_generic(selector: &PromptTemplateSelector) -> bool {
+    matches!(selector, PromptTemplateSelector::Generic { .. })
 }
 
 /// Options controlling dialect parameter generation for one request.

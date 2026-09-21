@@ -1,80 +1,83 @@
-//! Conversation-history normalization applied before every provider request.
+//! Lossless conversation-history validation before provider requests.
 //!
-//! Enforces two invariants on a message list:
-//!
-//! 1. every assistant tool call has exactly one tool result;
-//! 2. every tool result corresponds to an assistant tool call.
-//!
-//! A call without a result gets a synthetic, typed `cancelled` result inserted
-//! after the call's result block, so the provider never sees a dangling call. A
-//! result without a call is removed, so the provider never sees an orphaned
-//! output (both shapes produce HTTP 400 from OpenAI- and Anthropic-style APIs).
-//!
-//! The design follows the invariant set in Codex CLI's
-//! `core/src/context_manager/normalize.rs` (Apache-2.0), including the
-//! reverse-index insertion so earlier positions stay valid while inserting.
-//! No Codex code is vendored; the message model here is UAR's own.
+//! Validation never repairs history by deleting records or inventing tool
+//! outcomes. A missing, orphaned, duplicate, or misplaced record is returned as
+//! an explicit error so the host can recover it from durable state or block the
+//! request without changing canonical history.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use anyhow::Context as _;
 
 use crate::llm::{Message, MessageContent, MessageRole};
 
-/// Substring present in every synthetic cancelled result body.
-///
-/// The body is a small JSON object; this constant is the `status` field so a
-/// caller can recognize a synthetic result without parsing.
+/// Substring present in every explicitly recorded cancelled result body.
 pub const SYNTHETIC_CANCELLED_MARKER: &str = "\"status\":\"cancelled\"";
 
-/// Substring present in every synthetic error result body.
+/// Substring present in every explicitly recorded error result body.
 pub const SYNTHETIC_ERROR_MARKER: &str = "\"status\":\"error\"";
 
-/// Why a synthetic tool result was inserted.
+/// A terminal outcome proven by durable host state.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SyntheticReason {
-    /// The call never produced a result before the turn ended.
+    /// The durable host record proves the call was cancelled.
     Cancelled,
-    /// The call failed before a result could be recorded.
+    /// The durable host record proves the call failed.
     Error(String),
 }
 
-/// What [`normalize_history`] changed.
+/// Counts observed while validating a complete history.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct NormalizeReport {
-    /// Call ids that received a synthetic result, in history order.
-    pub synthesized: Vec<String>,
-    /// Call ids (or `""` when absent) of removed orphan results, in history order.
-    pub removed: Vec<String>,
+    /// Number of assistant tool calls validated.
+    pub tool_calls: usize,
+    /// Number of matching tool results validated.
+    pub tool_results: usize,
 }
 
 impl NormalizeReport {
-    /// True when nothing was changed.
+    /// True when every counted call has one result.
     #[must_use]
     pub fn is_clean(&self) -> bool {
-        self.synthesized.is_empty() && self.removed.is_empty()
+        self.tool_calls == self.tool_results
     }
 }
 
-/// Build the synthetic tool result recorded for a call that has no real result.
+/// Why canonical history cannot be sent to a provider.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum HistoryValidationError {
+    /// Two calls claim the same identity.
+    #[error("conflicting tool call identity '{call_id}'")]
+    ConflictingCallIdentity { call_id: String },
+    /// A completed call has no recorded result.
+    #[error("tool call '{call_id}' has no result; terminal state is unproven")]
+    MissingResult { call_id: String },
+    /// A result has no call anywhere in canonical history.
+    #[error("tool result '{call_id}' has no matching call")]
+    OrphanResult { call_id: String },
+    /// A tool result has no identity.
+    #[error("tool result at history index {index} has no tool_call_id")]
+    ResultWithoutIdentity { index: usize },
+    /// More than one result claims the same call.
+    #[error("tool call '{call_id}' has duplicate results")]
+    DuplicateResult { call_id: String },
+    /// A result exists but is outside the contiguous result block for its call.
+    #[error("tool result '{call_id}' is not adjacent to its owning assistant call")]
+    MisplacedResult { call_id: String },
+}
+
+/// Build a typed terminal result after the host has verified durable evidence.
 ///
-/// # Examples
-///
-/// ```
-/// use universal_agent_runtime::uar::runtime::context::normalize::{
-///     synthetic_tool_result, SyntheticReason, SYNTHETIC_CANCELLED_MARKER,
-/// };
-/// let m = synthetic_tool_result("c1", &SyntheticReason::Cancelled);
-/// assert_eq!(m.tool_call_id.as_deref(), Some("c1"));
-/// assert!(m.content.as_text().unwrap().contains(SYNTHETIC_CANCELLED_MARKER));
-/// ```
+/// This helper does not inspect history and is never called by validation. Its
+/// caller owns the proof that the call is terminal and must persist provenance
+/// with the canonical receipt before adding the returned record.
 #[must_use]
 pub fn synthetic_tool_result(call_id: &str, reason: &SyntheticReason) -> Message {
     let body = match reason {
         SyntheticReason::Cancelled => serde_json::json!({
             "status": "cancelled",
             "tool_call_id": call_id,
-            "message": "tool call did not return a result before the turn ended",
+            "message": "durable host state records the tool call as cancelled",
         }),
         SyntheticReason::Error(detail) => serde_json::json!({
             "status": "error",
@@ -90,154 +93,127 @@ pub fn synthetic_tool_result(call_id: &str, reason: &SyntheticReason) -> Message
     }
 }
 
-/// Normalize `messages` in place so every tool call has exactly one result and
-/// every result has a call. Returns what changed.
+/// Validate canonical tool call/result structure without modifying `messages`.
 ///
-/// Orphan results are removed first, so a later assistant call with the same id
-/// cannot accidentally adopt a stale output. Missing results are then
-/// synthesized as `cancelled`, walking assistant messages from the end so that
-/// insertions never shift an index the walk has yet to visit.
-///
-/// # Examples
-///
-/// ```
-/// use universal_agent_runtime::llm::{Message, MessageContent, MessageRole};
-/// use universal_agent_runtime::uar::runtime::context::normalize::normalize_history;
-/// let mut history = vec![Message {
-///     role: MessageRole::Tool,
-///     content: MessageContent::text("orphan"),
-///     tool_call_id: Some("x".into()),
-///     tool_calls: None,
-/// }];
-/// let report = normalize_history(&mut history);
-/// assert!(history.is_empty());
-/// assert_eq!(report.removed, vec!["x".to_string()]);
-/// ```
-pub fn normalize_history(messages: &mut Vec<Message>) -> NormalizeReport {
-    let mut report = NormalizeReport::default();
-
-    // A result belongs to a call only when it is in the contiguous tool-result
-    // block immediately following that assistant message. Global id matching is
-    // insufficient: a late result would otherwise survive and a second result
-    // would be synthesized beside the call.
-    let mut valid_result_indices = HashSet::new();
-    for (assistant_index, message) in messages.iter().enumerate() {
-        if message.role != MessageRole::Assistant {
-            continue;
-        }
-        let owned_ids: HashSet<&str> = message
-            .tool_calls
-            .iter()
-            .flatten()
-            .map(|call| call.id.as_str())
-            .collect();
-        if owned_ids.is_empty() {
-            continue;
-        }
-
-        let mut seen = HashSet::new();
-        let mut result_index = assistant_index + 1;
-        while result_index < messages.len() && messages[result_index].role == MessageRole::Tool {
-            if let Some(id) = messages[result_index].tool_call_id.as_deref()
-                && owned_ids.contains(id)
-                && seen.insert(id)
-            {
-                valid_result_indices.insert(result_index);
+/// Each assistant call owns the contiguous block of tool messages immediately
+/// following it. Calls and results must be one-to-one, and call identities must
+/// be unique across the history.
+pub fn normalize_history(messages: &[Message]) -> Result<NormalizeReport, HistoryValidationError> {
+    let mut call_owners = HashMap::new();
+    let mut result_positions: HashMap<&str, Vec<usize>> = HashMap::new();
+    let mut tool_calls = 0usize;
+    for (index, message) in messages.iter().enumerate() {
+        for call in message.tool_calls.iter().flatten() {
+            tool_calls += 1;
+            if call_owners.insert(call.id.as_str(), index).is_some() {
+                return Err(HistoryValidationError::ConflictingCallIdentity {
+                    call_id: call.id.clone(),
+                });
             }
-            result_index += 1;
+        }
+        if message.role == MessageRole::Tool
+            && let Some(call_id) = message.tool_call_id.as_deref()
+        {
+            result_positions.entry(call_id).or_default().push(index);
         }
     }
 
-    // Invariant 2: remove orphaned, misplaced, and duplicate results.
-    let mut original_index = 0;
-    messages.retain(|m| {
-        let keep = m.role != MessageRole::Tool || valid_result_indices.contains(&original_index);
-        if !keep {
-            report
-                .removed
-                .push(m.tool_call_id.clone().unwrap_or_default());
+    let mut tool_results = 0usize;
+    let mut index = 0usize;
+    while index < messages.len() {
+        let message = &messages[index];
+        if message.role == MessageRole::Assistant {
+            let owned: Vec<&str> = message
+                .tool_calls
+                .iter()
+                .flatten()
+                .map(|call| call.id.as_str())
+                .collect();
+            if !owned.is_empty() {
+                let owned_set: HashSet<&str> = owned.iter().copied().collect();
+                let mut seen = HashSet::new();
+                let mut result_index = index + 1;
+                while result_index < messages.len()
+                    && messages[result_index].role == MessageRole::Tool
+                {
+                    let result_id = messages[result_index].tool_call_id.as_deref().ok_or(
+                        HistoryValidationError::ResultWithoutIdentity {
+                            index: result_index,
+                        },
+                    )?;
+                    if !owned_set.contains(result_id) {
+                        return Err(if call_owners.contains_key(result_id) {
+                            HistoryValidationError::MisplacedResult {
+                                call_id: result_id.to_string(),
+                            }
+                        } else {
+                            HistoryValidationError::OrphanResult {
+                                call_id: result_id.to_string(),
+                            }
+                        });
+                    }
+                    if !seen.insert(result_id) {
+                        return Err(HistoryValidationError::DuplicateResult {
+                            call_id: result_id.to_string(),
+                        });
+                    }
+                    tool_results += 1;
+                    result_index += 1;
+                }
+                if let Some(missing) = owned.into_iter().find(|id| !seen.contains(id)) {
+                    return Err(if result_positions.contains_key(missing) {
+                        HistoryValidationError::MisplacedResult {
+                            call_id: missing.to_string(),
+                        }
+                    } else {
+                        HistoryValidationError::MissingResult {
+                            call_id: missing.to_string(),
+                        }
+                    });
+                }
+                index = result_index;
+                continue;
+            }
         }
-        original_index += 1;
-        keep
-    });
 
-    // Invariant 1: every call has exactly one result. Walk assistant messages
-    // from the end so insertions after index `i` never move an unvisited one.
-    let assistant_positions: Vec<usize> = messages
-        .iter()
-        .enumerate()
-        .filter(|(_, m)| m.role == MessageRole::Assistant && m.tool_calls.is_some())
-        .map(|(i, _)| i)
-        .collect();
-
-    // Filled back-to-front: each assistant message's ids are prepended as a
-    // block, so the final vector is in history order.
-    let mut synthesized: Vec<String> = Vec::new();
-    for &i in assistant_positions.iter().rev() {
-        let ids: Vec<String> = messages[i]
-            .tool_calls
-            .iter()
-            .flatten()
-            .map(|c| c.id.clone())
-            .collect();
-
-        // The result block is the run of Tool messages immediately after the call.
-        let mut block_end = i + 1;
-        while block_end < messages.len() && messages[block_end].role == MessageRole::Tool {
-            block_end += 1;
+        if message.role == MessageRole::Tool {
+            let result_id = message
+                .tool_call_id
+                .as_deref()
+                .ok_or(HistoryValidationError::ResultWithoutIdentity { index })?;
+            return Err(if call_owners.contains_key(result_id) {
+                HistoryValidationError::MisplacedResult {
+                    call_id: result_id.to_string(),
+                }
+            } else {
+                HistoryValidationError::OrphanResult {
+                    call_id: result_id.to_string(),
+                }
+            });
         }
-        let present: HashSet<String> = messages[i + 1..block_end]
-            .iter()
-            .filter_map(|m| m.tool_call_id.clone())
-            .collect();
-
-        let mut insert_at = block_end;
-        let mut this_block: Vec<String> = Vec::new();
-        for id in ids.iter().filter(|id| !present.contains(id.as_str())) {
-            messages.insert(
-                insert_at,
-                synthetic_tool_result(id, &SyntheticReason::Cancelled),
-            );
-            insert_at += 1;
-            this_block.push(id.clone());
-        }
-        this_block.extend(synthesized);
-        synthesized = this_block;
+        index += 1;
     }
-    report.synthesized = synthesized;
 
-    report
+    Ok(NormalizeReport {
+        tool_calls,
+        tool_results,
+    })
 }
 
-/// Normalize the JSON message vector immediately before an [`LlmDriver`]
-/// request. Runtime call sites use this boundary helper so direct graph and
-/// protocol-adapter dispatches receive the same invariant enforcement as the
-/// orchestrator tool loop.
+/// Validate the JSON message vector immediately before an [`LlmDriver`]
+/// request. The input remains byte-for-byte unchanged on success and failure.
 ///
 /// [`LlmDriver`]: crate::llm::LlmDriver
 pub fn normalize_provider_messages(
-    messages: &mut Vec<serde_json::Value>,
+    messages: &[serde_json::Value],
 ) -> anyhow::Result<NormalizeReport> {
-    let mut typed: Vec<Message> = messages
+    let typed: Vec<Message> = messages
         .iter()
         .cloned()
         .map(serde_json::from_value)
         .collect::<Result<_, _>>()
         .context("provider history contains a message outside UAR's typed message contract")?;
-    let report = normalize_history(&mut typed);
-    *messages = typed
-        .iter()
-        .map(serde_json::to_value)
-        .collect::<Result<_, _>>()
-        .context("failed to serialize normalized provider history")?;
-    if !report.is_clean() {
-        tracing::warn!(
-            synthesized = report.synthesized.len(),
-            removed = report.removed.len(),
-            "Normalized tool-call history before provider dispatch"
-        );
-    }
-    Ok(report)
+    normalize_history(&typed).map_err(anyhow::Error::new)
 }
 
 #[cfg(test)]
@@ -261,7 +237,7 @@ mod tests {
             role: MessageRole::Assistant,
             content: MessageContent::text(""),
             tool_call_id: None,
-            tool_calls: Some(ids.iter().map(|i| call(i)).collect()),
+            tool_calls: Some(ids.iter().map(|id| call(id)).collect()),
         }
     }
 
@@ -275,32 +251,36 @@ mod tests {
     }
 
     #[test]
-    fn clean_history_is_untouched() {
-        let mut h = vec![assistant(&["a"]), result("a")];
-        let r = normalize_history(&mut h);
-        assert!(r.is_clean());
-        assert_eq!(h.len(), 2);
-        assert_eq!(h[0].role, MessageRole::Assistant);
-        assert_eq!(h[1].tool_call_id.as_deref(), Some("a"));
-        assert_eq!(h[1].content.as_text(), Some("ok"));
+    fn complete_parallel_history_is_valid() {
+        let history = vec![assistant(&["a", "b"]), result("b"), result("a")];
+        let report = normalize_history(&history).expect("parallel group is complete");
+        assert_eq!(report.tool_calls, 2);
+        assert_eq!(report.tool_results, 2);
     }
 
     #[test]
-    fn two_calls_in_a_row_each_get_their_results_in_order() {
-        let mut h = vec![assistant(&["a", "b"]), assistant(&["c"]), result("c")];
-        let r = normalize_history(&mut h);
-        assert_eq!(r.synthesized, vec!["a", "b"]);
-        assert_eq!(h[1].tool_call_id.as_deref(), Some("a"));
-        assert_eq!(h[2].tool_call_id.as_deref(), Some("b"));
-        assert_eq!(h[3].role, MessageRole::Assistant);
-        assert_eq!(h[4].tool_call_id.as_deref(), Some("c"));
+    fn missing_result_is_not_synthesized() {
+        let history = vec![assistant(&["a"])];
+        let before = serde_json::to_value(&history).expect("serialize history");
+        assert_eq!(
+            normalize_history(&history),
+            Err(HistoryValidationError::MissingResult {
+                call_id: "a".to_string(),
+            })
+        );
+        assert_eq!(serde_json::to_value(&history).unwrap(), before);
     }
 
     #[test]
-    fn duplicate_result_for_one_call_is_collapsed() {
-        let mut h = vec![assistant(&["a"]), result("a"), result("a")];
-        let r = normalize_history(&mut h);
-        assert_eq!(r.removed, vec!["a"]);
-        assert_eq!(h.len(), 2);
+    fn duplicate_result_is_not_removed() {
+        let history = vec![assistant(&["a"]), result("a"), result("a")];
+        let before = serde_json::to_value(&history).expect("serialize history");
+        assert_eq!(
+            normalize_history(&history),
+            Err(HistoryValidationError::DuplicateResult {
+                call_id: "a".to_string(),
+            })
+        );
+        assert_eq!(serde_json::to_value(&history).unwrap(), before);
     }
 }

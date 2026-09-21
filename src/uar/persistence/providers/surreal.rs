@@ -6,7 +6,10 @@ use crate::uar::domain::knowledge::{
 use crate::uar::domain::prompt_caching::UserPromptCachingSettings;
 use crate::uar::domain::skills::{Skill, SkillMatch};
 use crate::uar::persistence::PersistenceLayer;
-use crate::uar::persistence::agent_threads::{self, AgentThreadStoreError, PersistedAgentThread};
+use crate::uar::persistence::agent_threads::{
+    self, AgentThreadStoreError, CanonicalReceiptStoreError, CanonicalToolReceipt,
+    PersistedAgentThread,
+};
 use crate::uar::persistence::presentations::{self, PresentationStoreError};
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use anyhow::{Context, Result};
@@ -60,6 +63,12 @@ impl SurrealDbProvider {
 
         db.query(include_str!(
             "../../../../migrations/surrealdb/agent_threads.surql"
+        ))
+        .await?
+        .check()?;
+
+        db.query(include_str!(
+            "../../../../migrations/surrealdb/canonical_tool_receipts.surql"
         ))
         .await?
         .check()?;
@@ -232,6 +241,33 @@ fn check_agent_thread_write(mut response: surrealdb::IndexedResults) -> Result<(
         return Err(error.into());
     }
     Ok(())
+}
+
+fn canonical_receipt_payload(receipt: &CanonicalToolReceipt) -> Result<serde_json::Value> {
+    Ok(serde_json::json!({
+        "owner_id": receipt.owner_id,
+        "run_id": receipt.run_id,
+        "call_id": receipt.call_id,
+        "sequence": receipt.sequence,
+        "retained_bytes": receipt.retained_bytes,
+        "data": serde_json::to_string(receipt)?,
+    }))
+}
+
+fn canonical_receipt_write_needs_retry(mut response: surrealdb::IndexedResults) -> Result<bool> {
+    let errors = response.take_errors();
+    for error in errors.values() {
+        let message = error.to_string();
+        if message.contains("uar_canonical_receipt_conflict")
+            || message.contains("uar_canonical_receipt_exists")
+        {
+            return Ok(true);
+        }
+    }
+    if let Some((_, error)) = errors.into_iter().min_by_key(|(index, _)| *index) {
+        return Err(error.into());
+    }
+    Ok(false)
 }
 
 fn presentation_payload(record: &Presentation) -> Result<serde_json::Value> {
@@ -637,6 +673,100 @@ impl PersistenceLayer for SurrealDbProvider {
             &threads,
             owner_id,
             root_run_id,
+        )?)
+    }
+
+    async fn save_canonical_tool_receipt(
+        &self,
+        receipt: &CanonicalToolReceipt,
+    ) -> Result<CanonicalToolReceipt> {
+        receipt.validate()?;
+        let run_key =
+            crate::uar::persistence::tenant_storage_key(&receipt.owner_id, &receipt.run_id);
+        let receipt_id =
+            crate::uar::persistence::tenant_storage_key(&receipt.run_id, &receipt.call_id);
+        let receipt_key =
+            crate::uar::persistence::tenant_storage_key(&receipt.owner_id, &receipt_id);
+        for _ in 0..16 {
+            let existing = self
+                .list_canonical_tool_receipts(&receipt.owner_id, &receipt.run_id)
+                .await?;
+            if let Some(stored) = existing
+                .iter()
+                .find(|stored| stored.call_id == receipt.call_id)
+            {
+                return Ok(agent_threads::reconcile_canonical_receipt(stored, receipt)?);
+            }
+            let retained_before = existing.iter().try_fold(0_u64, |total, stored| {
+                total
+                    .checked_add(stored.retained_bytes)
+                    .ok_or(CanonicalReceiptStoreError::InvalidRecord)
+            })?;
+            let stored = receipt.clone().admit_to_run(retained_before)?;
+            let retained_after = retained_before
+                .checked_add(stored.retained_bytes)
+                .ok_or(CanonicalReceiptStoreError::InvalidRecord)?;
+            let response = self
+                .db
+                .query(
+                    "BEGIN TRANSACTION;
+                     LET $run = (SELECT * FROM type::record('canonical_tool_receipt_runs', $run_key))[0];
+                     IF $run = NONE AND $retained_before != 0 { THROW 'uar_canonical_receipt_conflict'; };
+                     IF $run != NONE AND $run.retained_bytes != $retained_before { THROW 'uar_canonical_receipt_conflict'; };
+                     LET $old = (SELECT * FROM type::record('canonical_tool_receipts', $receipt_key))[0];
+                     IF $old != NONE { THROW 'uar_canonical_receipt_exists'; };
+                     IF $run = NONE {
+                         CREATE type::record('canonical_tool_receipt_runs', $run_key) CONTENT $run_payload;
+                     } ELSE {
+                         UPDATE type::record('canonical_tool_receipt_runs', $run_key) SET retained_bytes = $retained_after;
+                     };
+                     CREATE type::record('canonical_tool_receipts', $receipt_key) CONTENT $receipt_payload;
+                     COMMIT TRANSACTION;",
+                )
+                .bind(("run_key", run_key.clone()))
+                .bind(("receipt_key", receipt_key.clone()))
+                .bind(("retained_before", retained_before as i64))
+                .bind(("retained_after", retained_after as i64))
+                .bind((
+                    "run_payload",
+                    serde_json::json!({
+                        "owner_id": receipt.owner_id,
+                        "run_id": receipt.run_id,
+                        "retained_bytes": retained_after,
+                    }),
+                ))
+                .bind(("receipt_payload", canonical_receipt_payload(&stored)?))
+                .await?;
+            if canonical_receipt_write_needs_retry(response)? {
+                continue;
+            }
+            return Ok(stored);
+        }
+        Err(CanonicalReceiptStoreError::Conflict.into())
+    }
+
+    async fn list_canonical_tool_receipts(
+        &self,
+        owner_id: &str,
+        run_id: &str,
+    ) -> Result<Vec<CanonicalToolReceipt>> {
+        let mut response = self
+            .db
+            .query(
+                "SELECT VALUE data FROM canonical_tool_receipts
+                 WHERE owner_id = $owner AND run_id = $run",
+            )
+            .bind(("owner", owner_id.to_string()))
+            .bind(("run", run_id.to_string()))
+            .await?
+            .check()?;
+        let rows: Vec<String> = response.take(0)?;
+        let receipts = rows
+            .into_iter()
+            .map(|data| serde_json::from_str(&data))
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(agent_threads::ordered_canonical_receipts(
+            receipts, owner_id, run_id,
         )?)
     }
 
@@ -1555,6 +1685,7 @@ impl PersistenceLayer for SurrealDbProvider {
         &self,
         checkpoint: &crate::uar::runtime::checkpoint::Checkpoint,
     ) -> Result<()> {
+        checkpoint.validate_integrity()?;
         let mut payload = to_db_value(checkpoint)?;
         // Store a redundant `_cp_id` field so list queries can recover the id
         // even when the SurrealDB driver serializes the RecordId opaquely.
@@ -1586,7 +1717,9 @@ impl PersistenceLayer for SurrealDbProvider {
                 if json.get("id").map_or(true, |v| v.is_null()) {
                     json["id"] = serde_json::Value::String(id.to_string());
                 }
-                let cp = serde_json::from_value(json).context("deserialise checkpoint")?;
+                let mut cp: crate::uar::runtime::checkpoint::Checkpoint =
+                    serde_json::from_value(json).context("deserialise checkpoint")?;
+                cp.restore_protected_values()?;
                 Ok(Some(cp))
             }
         }
@@ -1623,7 +1756,10 @@ impl PersistenceLayer for SurrealDbProvider {
                         json["id"] = serde_json::Value::String(fallback);
                     }
                 }
-                serde_json::from_value(json).map_err(anyhow::Error::from)
+                let mut checkpoint: crate::uar::runtime::checkpoint::Checkpoint =
+                    serde_json::from_value(json).map_err(anyhow::Error::from)?;
+                checkpoint.restore_protected_values()?;
+                Ok(checkpoint)
             })
             .collect()
     }

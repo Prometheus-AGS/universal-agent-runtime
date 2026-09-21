@@ -149,6 +149,15 @@ pub trait NativeSkill: Send + Sync {
         self.execute(args).await
     }
 
+    /// Remove host-only raw-stream metadata from a successful typed result.
+    /// Ordinary native skills have no separate byte streams.
+    fn take_canonical_receipt_data(
+        &self,
+        _result: &mut serde_json::Value,
+    ) -> anyhow::Result<NativeCanonicalReceiptData> {
+        Ok(NativeCanonicalReceiptData::default())
+    }
+
     /// Declare structured outputs from a successful result, before truncation.
     /// The trusted host owns publication; ordinary tools produce no artifacts.
     fn result_artifacts(
@@ -174,6 +183,29 @@ pub trait NativeSkill: Send + Sync {
             &content, policy, model,
         )
     }
+}
+
+#[derive(Debug)]
+pub struct NativeCanonicalReceiptData {
+    pub raw_segments: Vec<crate::uar::persistence::agent_threads::CanonicalRawSegment>,
+    pub acquisition_complete: bool,
+    pub observed_bytes: u64,
+}
+
+impl Default for NativeCanonicalReceiptData {
+    fn default() -> Self {
+        Self {
+            raw_segments: Vec::new(),
+            acquisition_complete: true,
+            observed_bytes: 0,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct NativeExecutionResult {
+    pub(crate) value: serde_json::Value,
+    pub(crate) canonical: NativeCanonicalReceiptData,
 }
 
 /// Opaque per-call Presentation capability. Only the trusted run host can
@@ -245,7 +277,7 @@ pub(crate) async fn execute_native(
     skill: &dyn NativeSkill,
     args: serde_json::Value,
     context: &NativeExecutionContext,
-) -> anyhow::Result<serde_json::Value> {
+) -> anyhow::Result<NativeExecutionResult> {
     if let Some(policy) = &context.thread_policy {
         anyhow::ensure!(
             context
@@ -267,6 +299,7 @@ pub(crate) async fn execute_native(
             return Err(error);
         }
     };
+    let canonical = skill.take_canonical_receipt_data(&mut result)?;
     if let Some(collector) = &context.artifact_collector {
         let owner = context
             .verified_owner
@@ -288,7 +321,10 @@ pub(crate) async fn execute_native(
             fields.remove("a2uiMessages");
         }
     }
-    Ok(result)
+    Ok(NativeExecutionResult {
+        value: result,
+        canonical,
+    })
 }
 
 /// Registry holding all registered native skills, keyed by their name.

@@ -7,7 +7,10 @@ use crate::uar::domain::policy::ConversationPolicyRecord;
 use crate::uar::domain::prompt_caching::UserPromptCachingSettings;
 use crate::uar::domain::skills::{Skill, SkillMatch};
 use crate::uar::persistence::PersistenceLayer;
-use crate::uar::persistence::agent_threads::{self, AgentThreadStoreError, PersistedAgentThread};
+use crate::uar::persistence::agent_threads::{
+    self, AgentThreadStoreError, CanonicalReceiptStoreError, CanonicalToolReceipt,
+    PersistedAgentThread,
+};
 use crate::uar::persistence::presentations::{self, PresentationStoreError};
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use anyhow::Result;
@@ -291,6 +294,97 @@ impl PersistenceLayer for PostgresProvider {
             &threads,
             owner_id,
             root_run_id,
+        )?)
+    }
+
+    async fn save_canonical_tool_receipt(
+        &self,
+        receipt: &CanonicalToolReceipt,
+    ) -> Result<CanonicalToolReceipt> {
+        receipt.validate()?;
+        let mut transaction = self.pool.begin().await?;
+        sqlx::query(
+            "INSERT INTO canonical_tool_receipt_runs (owner_id, run_id, retained_bytes)
+             VALUES ($1, $2, 0) ON CONFLICT DO NOTHING",
+        )
+        .bind(&receipt.owner_id)
+        .bind(&receipt.run_id)
+        .execute(&mut *transaction)
+        .await?;
+        let retained_before: i64 = sqlx::query(
+            "SELECT retained_bytes FROM canonical_tool_receipt_runs
+             WHERE owner_id = $1 AND run_id = $2 FOR UPDATE",
+        )
+        .bind(&receipt.owner_id)
+        .bind(&receipt.run_id)
+        .fetch_one(&mut *transaction)
+        .await?
+        .try_get("retained_bytes")?;
+        let existing = sqlx::query(
+            "SELECT data FROM canonical_tool_receipts
+             WHERE owner_id = $1 AND run_id = $2 AND call_id = $3",
+        )
+        .bind(&receipt.owner_id)
+        .bind(&receipt.run_id)
+        .bind(&receipt.call_id)
+        .fetch_optional(&mut *transaction)
+        .await?;
+        if let Some(row) = existing {
+            let stored: CanonicalToolReceipt = serde_json::from_value(row.try_get("data")?)?;
+            let stored = agent_threads::reconcile_canonical_receipt(&stored, receipt)?;
+            transaction.commit().await?;
+            return Ok(stored);
+        }
+        let retained_before = u64::try_from(retained_before)
+            .map_err(|_| CanonicalReceiptStoreError::InvalidRecord)?;
+        let stored = receipt.clone().admit_to_run(retained_before)?;
+        let inserted = sqlx::query(
+            "INSERT INTO canonical_tool_receipts
+             (owner_id, run_id, call_id, sequence, retained_bytes, data)
+             VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING",
+        )
+        .bind(&stored.owner_id)
+        .bind(&stored.run_id)
+        .bind(&stored.call_id)
+        .bind(stored.sequence as i64)
+        .bind(stored.retained_bytes as i64)
+        .bind(serde_json::to_value(&stored)?)
+        .execute(&mut *transaction)
+        .await?;
+        if inserted.rows_affected() != 1 {
+            return Err(CanonicalReceiptStoreError::Conflict.into());
+        }
+        sqlx::query(
+            "UPDATE canonical_tool_receipt_runs SET retained_bytes = retained_bytes + $1
+             WHERE owner_id = $2 AND run_id = $3",
+        )
+        .bind(stored.retained_bytes as i64)
+        .bind(&stored.owner_id)
+        .bind(&stored.run_id)
+        .execute(&mut *transaction)
+        .await?;
+        transaction.commit().await?;
+        Ok(stored)
+    }
+
+    async fn list_canonical_tool_receipts(
+        &self,
+        owner_id: &str,
+        run_id: &str,
+    ) -> Result<Vec<CanonicalToolReceipt>> {
+        let rows = sqlx::query(
+            "SELECT data FROM canonical_tool_receipts WHERE owner_id = $1 AND run_id = $2",
+        )
+        .bind(owner_id)
+        .bind(run_id)
+        .fetch_all(&self.pool)
+        .await?;
+        let mut receipts = Vec::with_capacity(rows.len());
+        for row in rows {
+            receipts.push(serde_json::from_value(row.try_get("data")?)?);
+        }
+        Ok(agent_threads::ordered_canonical_receipts(
+            receipts, owner_id, run_id,
         )?)
     }
 

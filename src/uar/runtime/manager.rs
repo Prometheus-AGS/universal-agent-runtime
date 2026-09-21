@@ -174,6 +174,49 @@ impl RunDialogue {
     }
 }
 
+fn redacted_checkpoint_dialogue(session: &crate::session::Session) -> RunDialogue {
+    let mut state = session.to_state();
+    state.messages.clear();
+    state.system_prompt = None;
+    RunDialogue(crate::session::Session::from_state(state))
+}
+
+fn pre_resolved_policy_for_run(
+    is_checkpoint_resume: bool,
+    inherited_policy: Option<EffectiveRunPolicy>,
+    requested_policy: Option<EffectiveRunPolicy>,
+) -> Option<EffectiveRunPolicy> {
+    if is_checkpoint_resume {
+        None
+    } else {
+        inherited_policy.or(requested_policy)
+    }
+}
+
+#[cfg(test)]
+mod checkpoint_dialogue_tests {
+    use super::{pre_resolved_policy_for_run, redacted_checkpoint_dialogue};
+
+    #[test]
+    fn revoked_checkpoint_dialogue_excludes_warm_session_content() {
+        let session = crate::session::SessionStore::new().create_for_user("alice");
+        session.add_user_message("previously-authorized-sentinel");
+        session.set_system_prompt("private-system-sentinel");
+
+        let dialogue = redacted_checkpoint_dialogue(&session);
+
+        assert!(dialogue.0.messages().is_empty());
+        assert!(dialogue.0.system_prompt().is_none());
+    }
+
+    #[test]
+    fn checkpoint_resume_ignores_a_stale_pre_resolved_policy() {
+        let stale = crate::uar::domain::policy::resolve_run_policy(Default::default());
+
+        assert!(pre_resolved_policy_for_run(true, None, Some(stale)).is_none());
+    }
+}
+
 #[derive(Debug)]
 struct RunStreamState {
     run: Run,
@@ -351,6 +394,9 @@ pub struct RunManager {
     /// deployments that keep provider credentials and local model runtimes
     /// outside UAR while letting UAR own the agent/tool/skill loop.
     primary_driver: Option<Arc<dyn LlmDriver>>,
+    /// Exact host-reviewed per-destination preparation contracts. Configured
+    /// runtimes fail closed when a selected primary or fallback has no profile.
+    destination_preparations: Option<Arc<crate::llm::DestinationRequestPreparations>>,
     /// Serialized root approval channels, shared with hosted descendants.
     /// Only the authenticated host resolver can deliver a decision.
     approvals: ApprovalBroker,
@@ -744,6 +790,7 @@ impl RunManager {
             ),
             a2ui_backbone: crate::uar::a2ui::realtime::InMemoryReplayBackbone::new(),
             primary_driver: None,
+            destination_preparations: None,
             approvals: ApprovalBroker::default(),
             root_cancellation: CancellationToken::new(),
             run_cancellations: Arc::new(RwLock::new(HashMap::new())),
@@ -1048,6 +1095,18 @@ impl RunManager {
     #[must_use]
     pub fn with_llm_driver(mut self, driver: Arc<dyn LlmDriver>) -> Self {
         self.primary_driver = Some(driver);
+        self
+    }
+
+    /// Install exact model/template/settings contracts resolved by the trusted
+    /// host. The manager supplies unreduced canonical history to this registry
+    /// for ordinary, graph and checkpoint-resume execution.
+    #[must_use]
+    pub fn with_destination_preparations(
+        mut self,
+        preparations: Arc<crate::llm::DestinationRequestPreparations>,
+    ) -> Self {
+        self.destination_preparations = Some(preparations);
         self
     }
 
@@ -1737,6 +1796,7 @@ impl RunManager {
         memory_hits: Vec<MemoryItem>,
         restored_history: Vec<Message>,
         restored_state: crate::uar::runtime::graph::GraphState,
+        checkpoint_authorization_digest: String,
     ) -> String {
         self.execute_request(crate::uar::runtime::turn::RunExecutionRequest {
             artifact,
@@ -1753,8 +1813,12 @@ impl RunManager {
             host_usage_grant: None,
             host_sandbox_constraint: None,
             seed_history: Vec::new(),
-            restored_state: Some(restored_state),
-            checkpoint_history: Some(restored_history),
+            checkpoint_resume: Some(crate::uar::runtime::turn::CheckpointResume {
+                state: restored_state,
+                history: restored_history,
+                authorization_digest: checkpoint_authorization_digest,
+            }),
+            inherited_history: None,
             skill_attachments: Vec::new(),
             working_directory: None,
         })
@@ -2027,8 +2091,8 @@ impl RunManager {
             resolved_policy,
             presentation_negotiation,
             seed_history,
-            restored_state,
-            checkpoint_history,
+            checkpoint_resume,
+            inherited_history,
             skill_attachments: _,
             working_directory,
             verified_owner,
@@ -2038,6 +2102,17 @@ impl RunManager {
             host_usage_grant,
             host_sandbox_constraint,
         } = request;
+        let is_checkpoint_resume = checkpoint_resume.is_some();
+        let (restored_state, checkpoint_history, checkpoint_authorization_digest) =
+            match checkpoint_resume {
+                Some(resume) => (
+                    Some(resume.state),
+                    Some(resume.history),
+                    Some(resume.authorization_digest),
+                ),
+                None => (None, None, None),
+            };
+        let supplied_history = checkpoint_history.as_ref().or(inherited_history.as_ref());
         let append_input = plan.append_input;
         let skill_attachments = plan.requested_skill_ids;
         let input = input.unwrap_or_default();
@@ -2213,7 +2288,8 @@ impl RunManager {
                 && thread.artifact_id == artifact.id
                 && user_id.as_deref() == Some(thread.owner_id.as_str())
                 && session_id.as_deref() == Some(thread.thread_id.as_str())
-                && checkpoint_history.is_some()
+                && inherited_history.is_some()
+                && !is_checkpoint_resume
                 && host_cancellation.is_some()
                 && bindings.approvals.root_run_id() == thread.root_run_id
                 && bindings.policy.approval_root_run_id() == thread.root_run_id
@@ -2337,17 +2413,7 @@ impl RunManager {
         // the host-supplied history so the model receives prior context rather
         // than only the current message. Only seed when empty so warm sessions
         // (which already accumulated their turns) are never duplicated.
-        if let Some(history) = &checkpoint_history {
-            // Resuming creates a branch from the named checkpoint. Replace a
-            // warm in-process session rather than silently keeping messages
-            // that occurred after that checkpoint.
-            session.clear();
-            for message in history {
-                if message.role != MessageRole::System {
-                    session.add_message(message.clone());
-                }
-            }
-        } else if session.message_count() == 0 {
+        if supplied_history.is_none() && session.message_count() == 0 {
             for message in &seed_history {
                 match message.role.as_str() {
                     "assistant" => session.add_assistant_message(&message.content),
@@ -2361,11 +2427,14 @@ impl RunManager {
             }
         }
 
-        let mut effective_policy = match inherited
-            .as_ref()
-            .map(|bindings| bindings.policy.effective().clone())
-            .or(resolved_policy)
-        {
+        let pre_resolved_policy = pre_resolved_policy_for_run(
+            is_checkpoint_resume,
+            inherited
+                .as_ref()
+                .map(|bindings| bindings.policy.effective().clone()),
+            resolved_policy,
+        );
+        let mut effective_policy = match pre_resolved_policy {
             Some(policy) => policy,
             None => {
                 self.resolve_effective_policy_with_catalog(
@@ -2426,6 +2495,67 @@ impl RunManager {
 
         if inherited.is_none() {
             self.backfill_effective_model(&mut effective_policy).await;
+        }
+
+        let checkpoint_authorization_valid = match checkpoint_authorization_digest.as_deref() {
+            Some(expected) => {
+                crate::uar::runtime::checkpoint::authorization_digest(&effective_policy) == expected
+            }
+            None => !is_checkpoint_resume,
+        };
+        if !checkpoint_authorization_valid {
+            let dialogue = redacted_checkpoint_dialogue(&session);
+            let run = Run {
+                run_id: run_id.clone(),
+                agent_id: artifact.id.clone(),
+                conversation_id: Some(session.id().to_string()),
+                user_id: user_id.clone(),
+                status: RunStatus::Error,
+                context: serde_json::json!({
+                    "error_code": "checkpoint_authorization_revoked"
+                }),
+            };
+            {
+                let mut runs = self.active_runs.write().await;
+                runs.insert(
+                    run_id.clone(),
+                    RunStreamState {
+                        run,
+                        verified_owner: verified_owner.clone(),
+                        presentations: Some(Arc::clone(&presentation_snapshot)),
+                        dialogue,
+                        sender: tx.clone(),
+                        history: Arc::clone(&history),
+                        completion: emitter.completion.as_ref().map(Arc::downgrade),
+                        delegation: None,
+                    },
+                );
+            }
+            emitter
+                .emit(NormalizedEvent::Error {
+                    run_id: run_id.clone(),
+                    code: "checkpoint_authorization_revoked".into(),
+                    message: "Checkpoint authorization is no longer valid".into(),
+                })
+                .await;
+            emitter
+                .emit(NormalizedEvent::RunDone {
+                    run_id: run_id.clone(),
+                })
+                .await;
+            self.run_cancellations.write().await.remove(&run_id);
+            return run_id;
+        }
+
+        if let Some(history) = supplied_history {
+            // Authorization has been re-established. Only now may the branch
+            // replace a warm session with the checkpoint's protected history.
+            session.clear();
+            for message in history {
+                if message.role != MessageRole::System {
+                    session.add_message(message.clone());
+                }
+            }
         }
 
         // 2. Add User Message
@@ -3430,7 +3560,7 @@ impl RunManager {
             prefers_xml_envelope: prompt_dialect.prefers_xml_envelope(),
             markdown_averse: prompt_dialect.markdown_averse(),
         };
-        if let Some(restored_history) = checkpoint_history {
+        if let Some(restored_history) = checkpoint_history.or(inherited_history) {
             messages.extend(
                 restored_history
                     .into_iter()
@@ -3482,6 +3612,9 @@ impl RunManager {
         {
             crate::uar::context::ContextStrategy::Summarize { .. }
             | crate::uar::context::ContextStrategy::Hierarchical { .. } => {
+                // `primary()` is the run's captured BudgetedModelDriver. Summary
+                // requests therefore share root request/token/cost, deadline,
+                // and cancellation accounting with ordinary model calls.
                 Some(model_bindings.primary())
             }
             _ => None,
@@ -3529,16 +3662,37 @@ impl RunManager {
             }
         };
         let legacy_reduction = if harness_config.mode != crate::config::HarnessMode::Typed {
-            Some(
-                crate::uar::runtime::context::reduce::reduce_history(
-                    messages,
-                    &effective_strategy,
-                    &context_model,
-                    context_limit - world_reserved_tokens,
-                    summarization_driver.as_deref(),
-                )
-                .await,
+            match crate::uar::runtime::context::reduce::reduce_history(
+                messages,
+                &effective_strategy,
+                &context_model,
+                context_limit - world_reserved_tokens,
+                summarization_driver.as_deref(),
             )
+            .await
+            {
+                Ok(reduction) => Some(reduction),
+                Err(error) => {
+                    if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                        state.run.status = RunStatus::Error;
+                    }
+                    activation_context.lock().await.record_outcomes(false);
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: run_id.clone(),
+                            code: error.code().into(),
+                            message: error.to_string(),
+                        })
+                        .await;
+                    emitter
+                        .emit(NormalizedEvent::RunDone {
+                            run_id: run_id.clone(),
+                        })
+                        .await;
+                    self.run_cancellations.write().await.remove(&run_id);
+                    return run_id;
+                }
+            }
         } else {
             None
         };
@@ -3595,7 +3749,7 @@ impl RunManager {
                 policy: effective_policy.clone(),
                 memory_hits: memory_hits.clone(),
                 prepared_fragments,
-                history: unrendered_history,
+                history: unrendered_history.clone(),
                 prepared_history: legacy_reduction
                     .as_ref()
                     .map(|(history, _)| history.clone()),
@@ -3618,6 +3772,14 @@ impl RunManager {
                     options: render_options,
                     skill_budget: harness_config.skill_reattachment,
                     driver: summarization_driver.clone(),
+                    // Production summarization stays disabled until the
+                    // destination model profile supplies an exact final-wire
+                    // request contract for this helper call.
+                    summary_budget_contract: None,
+                    // Session/checkpoint messages currently carry no durable
+                    // prose-eligibility metadata. Unknown content is protected
+                    // until the trusted host supplies explicit marks.
+                    eligible_prose: Vec::new(),
                 },
             );
             // Reducer -> world state -> bounded active bodies, in one context stage.
@@ -3695,14 +3857,6 @@ impl RunManager {
             };
         if let Some(update) = &world_update {
             world_state.commit(update).await;
-        }
-        if !reduce_report.normalize.is_clean() {
-            tracing::warn!(
-                run_id = %run_id,
-                synthesized = reduce_report.normalize.synthesized.len(),
-                removed = reduce_report.normalize.removed.len(),
-                "Repaired tool-call pairs before dispatch"
-            );
         }
         if let Some(act) = reduce_report.context_action {
             emitter.emit(NormalizedEvent::ContextAction(act)).await;
@@ -3973,6 +4127,7 @@ impl RunManager {
                 .with_tool_execution_mode(artifact.policy.tools.execution_mode.clone())
                 .with_resilience_policy(self.resilience_policy.clone())
                 .with_resolved_turn(Arc::clone(&resolved_turn))
+                .with_canonical_receipt_store(self.persistence.clone())
                 .with_world_state(Arc::clone(&world_state))
                 .with_skill_activation(
                     Arc::clone(&activation_context),
@@ -3986,6 +4141,14 @@ impl RunManager {
                         .prompt_caching_enabled
                         .then(crate::llm::anthropic_cache::CacheStrategy::default),
                 );
+            let o = match &self.destination_preparations {
+                Some(preparations) => o.with_destination_preparations(
+                    Arc::clone(preparations),
+                    unrendered_history.clone(),
+                    prompt_fragments.clone(),
+                ),
+                None => o,
+            };
             let o = match sandbox {
                 Some(binding) => o.with_sandbox(
                     binding.runner(),
@@ -4255,6 +4418,10 @@ impl RunManager {
         let runs_for_completion = Arc::clone(&self.active_runs);
         let cleanup_run_id = run_id.clone();
         let skill_reattachment_budget = harness_config.skill_reattachment;
+        let canonical_graph_history = self
+            .destination_preparations
+            .is_some()
+            .then(|| unrendered_history.clone());
 
         // Run-level span: child LLM-call and tool-call spans created within the
         // task attach under this, producing a run → llm → tool trace tree.
@@ -4362,8 +4529,11 @@ impl RunManager {
                         budget: skill_reattachment_budget,
                         cost_tracking: cost_tracking_enabled,
                     });
+                let checkpoint_authorization_digest =
+                    crate::uar::runtime::checkpoint::authorization_digest(&effective_policy);
                 let graph_ctx = crate::uar::runtime::graph::GraphContext {
                     run_id: execute_run_id.clone(),
+                    checkpoint_authorization_digest: checkpoint_authorization_digest.clone(),
                     session_id: Some(execution_session.id().to_string()),
                     llm_config: llm_config_for_graph,
                     driver: graph_driver,
@@ -4374,9 +4544,15 @@ impl RunManager {
                 };
 
                 let mut initial_state = restored_state.unwrap_or_default();
+                initial_state.set(
+                    crate::uar::runtime::checkpoint::CHECKPOINT_AUTHORIZATION_DIGEST_KEY,
+                    checkpoint_authorization_digest,
+                );
                 // Preserve the checkpoint's data bag and iteration while using
                 // the fully assembled, normalized history for the resumed call.
-                initial_state.messages = messages
+                initial_state.messages = canonical_graph_history
+                    .as_ref()
+                    .unwrap_or(&messages)
                     .iter()
                     .map(|msg| serde_json::to_value(msg).unwrap_or_default())
                     .collect();
@@ -4538,6 +4714,10 @@ impl RunManager {
             let mut accumulated_tool_calls: Vec<crate::llm::ToolCall> = Vec::new();
             let mut tool_call_indices: HashMap<String, usize> = HashMap::new();
             let mut tool_call_names: HashMap<String, String> = HashMap::new();
+            let mut partial_tool_calls: std::collections::BTreeMap<
+                usize,
+                (Option<String>, Option<String>, String),
+            > = std::collections::BTreeMap::new();
 
             // Token usage tracking — accumulated across all LLM calls in this run.
             let mut total_input_tokens: u32 = 0;
@@ -4566,6 +4746,26 @@ impl RunManager {
                                 None => break,
                             },
                         };
+                        if let crate::normalized::NormalizedEvent::Custom {
+                            source,
+                            event_name,
+                            payload,
+                        } = &base_event
+                            && source == "uar.request"
+                            && event_name == "attempt_manifest"
+                        {
+                            if let Some(state) =
+                                runs_for_completion.write().await.get_mut(&execute_run_id)
+                                && let Some(context) = state.run.context.as_object_mut()
+                            {
+                                let manifests = context
+                                    .entry("attempt_manifests".to_string())
+                                    .or_insert_with(|| serde_json::json!([]));
+                                if let Some(manifests) = manifests.as_array_mut() {
+                                    manifests.push(payload.clone());
+                                }
+                            }
+                        }
                         // Map base NormalizedEvent to domain NormalizedEvent with run_id
                         let uar_event = match base_event {
                             crate::normalized::NormalizedEvent::MessageDelta { text } => {
@@ -4638,6 +4838,35 @@ impl RunManager {
                                 source,
                                 event_name,
                                 payload,
+                            } if source == "uar.request" && event_name == "attempt_manifest" => {
+                                Some(NormalizedEvent::Artifact {
+                                    run_id: execute_run_id.clone(),
+                                    artifact: ArtifactPayload {
+                                        artifact_id: format!(
+                                            "attempt-manifest-{}-{}",
+                                            execute_run_id,
+                                            payload
+                                                .get("destination_model")
+                                                .and_then(serde_json::Value::as_str)
+                                                .unwrap_or("unknown")
+                                        ),
+                                        artifact_type: "attempt_manifest".to_string(),
+                                        title: "Provider attempt manifest".to_string(),
+                                        content: payload.to_string(),
+                                        language: Some("json".to_string()),
+                                        metadata: serde_json::json!({
+                                            "source": source,
+                                            "budgeting_label": payload
+                                                .pointer("/budgeting/label")
+                                                .and_then(serde_json::Value::as_str),
+                                        }),
+                                    },
+                                })
+                            }
+                            crate::normalized::NormalizedEvent::Custom {
+                                source,
+                                event_name,
+                                payload,
                             } => Some(NormalizedEvent::Artifact {
                                 run_id: execute_run_id.clone(),
                                 artifact: ArtifactPayload {
@@ -4661,11 +4890,21 @@ impl RunManager {
                                 name,
                                 arguments_delta,
                             } => {
-                                if let (Some(tid), Some(delta)) = (id, arguments_delta) {
+                                let partial = partial_tool_calls.entry(call_index).or_default();
+                                if let Some(tid) = &id {
+                                    partial.0 = Some(tid.clone());
                                     tool_call_indices.insert(tid.clone(), call_index);
-                                    if let Some(tool_name) = name {
-                                        tool_call_names.insert(tid.clone(), tool_name);
+                                }
+                                if let Some(tool_name) = &name {
+                                    partial.1 = Some(tool_name.clone());
+                                    if let Some(tid) = &partial.0 {
+                                        tool_call_names.insert(tid.clone(), tool_name.clone());
                                     }
+                                }
+                                if let Some(delta) = &arguments_delta {
+                                    partial.2.push_str(delta);
+                                }
+                                if let (Some(tid), Some(delta)) = (id, arguments_delta) {
                                     Some(NormalizedEvent::ToolDelta {
                                         run_id: execute_run_id.clone(),
                                         call_index,
@@ -4682,6 +4921,7 @@ impl RunManager {
                                 name,
                                 arguments_json,
                             } => {
+                                partial_tool_calls.remove(&call_index);
                                 tool_call_indices.insert(id.clone(), call_index);
                                 tool_call_names.insert(id.clone(), name.clone());
                                 accumulated_tool_calls.push(crate::llm::ToolCall {
@@ -4793,16 +5033,29 @@ impl RunManager {
 
                                 // Asynchronously persist a checkpoint after each tool call.
                                 if let Some(db) = persistence_for_run.clone() {
-                                    let cp = crate::uar::runtime::checkpoint::Checkpoint {
-                                        id: uuid::Uuid::new_v4().to_string(),
-                                        run_id: execute_run_id.clone(),
-                                        thread_id: execution_session.id().to_string(),
-                                        node_id: format!("tool_loop_{tool_call_count}"),
+                                    let checkpoint_state = crate::uar::runtime::graph::GraphState {
+                                        data: std::collections::HashMap::new(),
+                                        messages: execution_session
+                                            .messages()
+                                            .iter()
+                                            .map(|message| {
+                                                serde_json::to_value(message)
+                                                    .expect("Message serialization is infallible")
+                                            })
+                                            .collect(),
                                         iteration: tool_call_count as u32,
-                                        state: serde_json::Value::Null,
-                                        messages: vec![],
-                                        created_at: chrono::Utc::now().to_rfc3339(),
                                     };
+                                    let checkpoint_authorization_digest =
+                                        crate::uar::runtime::checkpoint::authorization_digest(
+                                            &effective_policy,
+                                        );
+                                    let cp = crate::uar::runtime::checkpoint::Checkpoint::new(
+                                        &execute_run_id,
+                                        execution_session.id(),
+                                        format!("tool_loop_{tool_call_count}"),
+                                        &checkpoint_state,
+                                        &checkpoint_authorization_digest,
+                                    );
                                     tokio::spawn(async move {
                                         if let Err(e) = db.save_checkpoint(&cp).await {
                                             tracing::warn!(
@@ -4873,7 +5126,67 @@ impl RunManager {
             }
 
             let mut interrupted_fragment = None;
-            if !accumulated_content.is_empty() {
+            for (_call_index, (id, name, arguments)) in partial_tool_calls {
+                let (Some(id), Some(name)) = (id, name) else {
+                    continue;
+                };
+                if accumulated_tool_calls.iter().any(|call| call.id == id) {
+                    continue;
+                }
+                accumulated_tool_calls.push(crate::llm::ToolCall {
+                    id,
+                    call_type: "function".to_string(),
+                    function: crate::llm::ToolCallFunction { name, arguments },
+                });
+            }
+            let pending_tool_call_ids = accumulated_tool_calls
+                .iter()
+                .map(|call| call.id.clone())
+                .collect::<Vec<_>>();
+            if !accumulated_tool_calls.is_empty() {
+                if !run_cancelled && !run_failed {
+                    run_failed = true;
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: execute_run_id.clone(),
+                            code: "pending_tool_calls_unsettled".into(),
+                            message: "Provider stream ended before pending tool calls reached a durable terminal result".into(),
+                        })
+                        .await;
+                }
+                if run_cancelled || run_failed {
+                    interrupted_fragment = Some(
+                        TurnInterrupted {
+                            run_id: execute_run_id.clone(),
+                            reason: if run_cancelled {
+                                TurnInterruptionReason::Cancelled
+                            } else {
+                                TurnInterruptionReason::ProviderError
+                            },
+                        }
+                        .into_fragment(),
+                    );
+                }
+                dialogue.record(&execution_session, |history| {
+                    history.add_assistant_with_tool_calls(
+                        if accumulated_content.is_empty() {
+                            None
+                        } else {
+                            Some(accumulated_content.clone())
+                        },
+                        accumulated_tool_calls.clone(),
+                    )
+                });
+                if let Some(db) = &persistence_for_run
+                    && let Err(error) = db.save_session(&execution_session).await
+                {
+                    tracing::warn!(
+                        run_id = %execute_run_id,
+                        error = %error,
+                        "Failed to persist pending assistant tool turn"
+                    );
+                }
+            } else if !accumulated_content.is_empty() {
                 if run_cancelled || run_failed {
                     let fragment = TurnInterrupted {
                         run_id: execute_run_id.clone(),
@@ -4924,6 +5237,14 @@ impl RunManager {
                     && let Some(context) = state.run.context.as_object_mut()
                 {
                     context.insert("turn_interrupted".to_string(), serde_json::json!(fragment));
+                }
+                if !pending_tool_call_ids.is_empty()
+                    && let Some(context) = state.run.context.as_object_mut()
+                {
+                    context.insert(
+                        "pending_tool_calls".to_string(),
+                        serde_json::json!(pending_tool_call_ids),
+                    );
                 }
             }
 

@@ -1,6 +1,7 @@
 use super::summarizer;
+use super::summarizer::HostMarkedProseSpan;
 use super::token_service::TokenService;
-use crate::llm::{LlmDriver, Message, MessageContent, MessageRole};
+use crate::llm::{LlmDriver, Message, MessageRole};
 use crate::uar::domain::context::{ContextAction, ContextConfig, ContextStrategy};
 use tracing::{info, warn};
 
@@ -36,8 +37,9 @@ impl ContextManager {
     /// Check if context management is needed and apply the configured strategy.
     /// Returns the (potentially modified) messages and an action report if changes were made.
     ///
-    /// When using `ProgressiveSummarization`, an `LlmDriver` must be provided
-    /// to generate summaries. If `None`, falls back to `KeepFirstLast`.
+    /// When using `ProgressiveSummarization`, a governed `LlmDriver` and
+    /// explicit host prose marks are both required. Otherwise history remains
+    /// unchanged.
     pub async fn apply(
         &self,
         messages: Vec<Message>,
@@ -53,6 +55,21 @@ impl ContextManager {
         messages: Vec<Message>,
         model_token_limit: usize,
         driver: Option<&dyn LlmDriver>,
+    ) -> (Vec<Message>, Option<ContextAction>) {
+        self.apply_with_marked_prose(messages, model_token_limit, driver, None, &[])
+            .await
+    }
+
+    /// Apply context management while allowing only trusted-host-marked prose
+    /// spans to enter progressive summarization. Span indices address
+    /// `messages`. Unknown and unmarked content remains protected.
+    pub async fn apply_with_marked_prose(
+        &self,
+        messages: Vec<Message>,
+        model_token_limit: usize,
+        driver: Option<&dyn LlmDriver>,
+        request_budget_contract: Option<&super::budget::RequestBudgetContract>,
+        eligible_prose: &[HostMarkedProseSpan],
     ) -> (Vec<Message>, Option<ContextAction>) {
         let current_tokens = self.count_messages(&messages);
         // Use configured max or model limit - buffer (e.g. 1000 tokens for output)
@@ -88,14 +105,13 @@ impl ContextManager {
                         effective_max,
                         current_tokens,
                         drv,
+                        request_budget_contract,
+                        eligible_prose,
                     )
                     .await
                 } else {
-                    warn!(
-                        "ProgressiveSummarization requires LLM driver; falling back to KeepFirstLast"
-                    );
-                    self.apply_keep_first_last(messages, effective_max, current_tokens)
-                        .await
+                    warn!("ProgressiveSummarization has no governed driver; retaining originals");
+                    (messages, None)
                 }
             }
             _ => (messages, None),
@@ -228,17 +244,18 @@ impl ContextManager {
         token_budget: usize,
         original_tokens: usize,
         driver: &dyn LlmDriver,
+        request_budget_contract: Option<&super::budget::RequestBudgetContract>,
+        eligible_prose: &[HostMarkedProseSpan],
     ) -> (Vec<Message>, Option<ContextAction>) {
-        // Strategy: keep system prompt + summarize older messages + keep recent tail
-        let mut head = Vec::new();
+        // Only marked spans in the older prefix may be replaced. System,
+        // recent, unmarked, tool-bearing, and structured messages remain.
         let mut budget = token_budget;
 
-        // 1. Preserve system messages
+        // 1. Account for leading system messages.
         for msg in &messages {
             if msg.role == MessageRole::System {
                 let t = self.count_string(msg.content.as_text().unwrap_or("")) + 3;
                 if t < budget {
-                    head.push(msg.clone());
                     budget -= t;
                 }
             } else {
@@ -271,52 +288,53 @@ impl ContextManager {
         tail.reverse();
         let tail_start = non_system.len().saturating_sub(tail.len());
 
-        // 4. Summarize the messages NOT in the tail
-        let to_summarize: Vec<Message> = non_system[..tail_start]
+        let leading_systems = messages
             .iter()
-            .map(|m| (*m).clone())
-            .collect();
-
-        let summary_generated;
-        if !to_summarize.is_empty() {
-            match summarizer::summarize_messages(&to_summarize, driver).await {
-                Ok(summary_text) => {
-                    info!(
-                        summarized_count = to_summarize.len(),
-                        "Progressive summarization complete"
-                    );
-                    head.push(Message {
-                        role: MessageRole::Assistant,
-                        content: MessageContent::text(&format!(
-                            "[Summary of previous conversation]\n{summary_text}"
-                        )),
-                        tool_call_id: None,
-                        tool_calls: None,
-                    });
-                    summary_generated = true;
-                }
-                Err(e) => {
-                    warn!("Summarization failed: {e}; falling back to truncation");
-                    summary_generated = false;
-                }
-            }
-        } else {
-            summary_generated = false;
+            .take_while(|message| message.role == MessageRole::System)
+            .count();
+        let prefix_end = leading_systems + tail_start;
+        let candidates = eligible_prose
+            .iter()
+            .filter(|span| span.start >= leading_systems && span.end <= prefix_end)
+            .cloned()
+            .collect::<Vec<_>>();
+        if candidates.is_empty() {
+            return (messages, None);
         }
+        let Some(request_budget_contract) = request_budget_contract else {
+            warn!("ProgressiveSummarization has no request budget contract; retaining originals");
+            return (messages, None);
+        };
 
-        head.extend(tail);
+        let summary_budget = self.config.summary_budget.unwrap_or(summary_budget);
+        let summarized = match summarizer::summarize_marked_prose(
+            &messages,
+            &candidates,
+            driver,
+            &self.model,
+            request_budget_contract,
+            summary_budget,
+        )
+        .await
+        {
+            Ok(summarized) => summarized,
+            Err(error) => {
+                warn!(%error, "Progressive summarization failed; retaining originals");
+                return (messages, None);
+            }
+        };
 
-        let removed_count = messages.len() - head.len();
-        let tokens_saved = original_tokens.saturating_sub(self.count_messages(&head));
+        let removed_count = messages.len().saturating_sub(summarized.len());
+        let tokens_saved = original_tokens.saturating_sub(self.count_messages(&summarized));
 
         (
-            head,
+            summarized,
             Some(ContextAction {
                 strategy: ContextStrategy::ProgressiveSummarization,
                 messages_removed: removed_count,
                 tokens_saved,
                 was_applied: true,
-                summary_generated,
+                summary_generated: true,
             }),
         )
     }
@@ -326,6 +344,7 @@ impl ContextManager {
 mod tests {
     #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
+    use crate::llm::MessageContent;
 
     fn make_msg(content: &str, role: MessageRole) -> Message {
         Message {
@@ -349,7 +368,8 @@ mod tests {
         let mut messages = Vec::new();
         messages.push(make_msg("System Prompt", MessageRole::System)); // ~4 tokens
         for i in 0..10 {
-            messages.push(make_msg(&format!("Message {i}"), MessageRole::User)); // ~4 tokens each
+            messages.push(make_msg(&format!("Message {i}"), MessageRole::User));
+            // ~4 tokens each
         }
         // Total ~ 4 + 40 = 44 tokens roughly.
         // Wait, "Message X" is small.

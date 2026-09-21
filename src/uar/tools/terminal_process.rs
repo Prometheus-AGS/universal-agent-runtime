@@ -2,12 +2,14 @@
 //! lifetime boundary, not process-tree isolation or a delegated shell grant.
 
 use std::collections::{BTreeMap, VecDeque};
+use std::fmt::Write as _;
 use std::io;
 use std::process::{ExitStatus, Stdio};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use futures::FutureExt;
+use sha2::{Digest, Sha256};
 use tokio::io::{AsyncRead, AsyncReadExt};
 use tokio::process::{Child, Command};
 use tokio::sync::Mutex;
@@ -15,7 +17,10 @@ use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 use tracing::Instrument;
 
+use crate::uar::persistence::agent_threads::MAX_CANONICAL_RECEIPT_BYTES;
 use crate::uar::runtime::context::truncate::DEFAULT_OUTPUT_BYTE_BUDGET;
+
+const RAW_STREAM_ACQUISITION_LIMIT: usize = (MAX_CANONICAL_RECEIPT_BYTES / 2) as usize;
 
 #[derive(Debug, Clone, thiserror::Error)]
 pub(crate) enum TerminalProcessError {
@@ -40,6 +45,17 @@ pub(crate) struct TerminalOutput {
     pub(crate) stderr: String,
     pub(crate) stdout_bytes: u64,
     pub(crate) stderr_bytes: u64,
+    pub(crate) stdout_raw: Option<Vec<u8>>,
+    pub(crate) stderr_raw: Option<Vec<u8>>,
+    pub(crate) stdout_sha256: String,
+    pub(crate) stderr_sha256: String,
+}
+
+struct CapturedOutput {
+    display: String,
+    raw: Option<Vec<u8>>,
+    byte_len: u64,
+    sha256: String,
 }
 
 #[derive(Clone)]
@@ -307,14 +323,18 @@ async fn execute_owned(
             .stderr
             .take()
             .ok_or_else(|| io::Error::other("Missing terminal stderr"))?;
-        let ((stdout, stdout_bytes), (stderr, stderr_bytes), status) =
+        let (stdout, stderr, status) =
             tokio::try_join!(capture_output(stdout), capture_output(stderr), child.wait(),)?;
         Ok::<_, io::Error>(TerminalOutput {
             status,
-            stdout,
-            stderr,
-            stdout_bytes,
-            stderr_bytes,
+            stdout: stdout.display,
+            stderr: stderr.display,
+            stdout_bytes: stdout.byte_len,
+            stderr_bytes: stderr.byte_len,
+            stdout_raw: stdout.raw,
+            stderr_raw: stderr.raw,
+            stdout_sha256: stdout.sha256,
+            stderr_sha256: stderr.sha256,
         })
     };
     let result = tokio::select! {
@@ -341,13 +361,15 @@ async fn execute_owned(
     }
 }
 
-async fn capture_output(mut reader: impl AsyncRead + Unpin) -> io::Result<(String, u64)> {
-    // Retain head and tail while draining the pipe, so a verbose command cannot
-    // allocate unbounded memory or deadlock waiting for its reader to resume.
+async fn capture_output(mut reader: impl AsyncRead + Unpin) -> io::Result<CapturedOutput> {
+    // Drain every byte while hashing the full stream. Exact bytes are retained
+    // only within the acquisition ceiling; presentation keeps its own preview.
     let head_limit = DEFAULT_OUTPUT_BYTE_BUDGET / 2;
     let tail_limit = DEFAULT_OUTPUT_BYTE_BUDGET - head_limit;
     let mut head = Vec::with_capacity(head_limit);
     let mut tail = VecDeque::with_capacity(tail_limit);
+    let mut raw = Some(Vec::new());
+    let mut digest = Sha256::new();
     let mut total = 0_u64;
     let mut chunk = [0_u8; 8192];
     loop {
@@ -355,7 +377,19 @@ async fn capture_output(mut reader: impl AsyncRead + Unpin) -> io::Result<(Strin
         if count == 0 {
             break;
         }
+        digest.update(&chunk[..count]);
         total = total.saturating_add(count as u64);
+        if let Some(bytes) = raw.as_mut() {
+            if bytes
+                .len()
+                .checked_add(count)
+                .is_some_and(|len| len <= RAW_STREAM_ACQUISITION_LIMIT)
+            {
+                bytes.extend_from_slice(&chunk[..count]);
+            } else {
+                raw = None;
+            }
+        }
         let prefix = count.min(head_limit - head.len());
         head.extend_from_slice(&chunk[..prefix]);
         for byte in &chunk[prefix..count] {
@@ -365,18 +399,69 @@ async fn capture_output(mut reader: impl AsyncRead + Unpin) -> io::Result<(Strin
             tail.push_back(*byte);
         }
     }
+    let digest = digest.finalize();
+    let mut sha256 = String::with_capacity(71);
+    sha256.push_str("sha256:");
+    for byte in digest {
+        write!(&mut sha256, "{byte:02x}").expect("writing to a String cannot fail");
+    }
     let omitted = total.saturating_sub((head.len() + tail.len()) as u64);
     if omitted == 0 {
         head.extend(tail);
-        return Ok((String::from_utf8_lossy(&head).into_owned(), total));
+        return Ok(CapturedOutput {
+            display: String::from_utf8_lossy(&head).into_owned(),
+            raw,
+            byte_len: total,
+            sha256,
+        });
     }
     let tail = tail.into_iter().collect::<Vec<_>>();
-    Ok((
-        format!(
+    Ok(CapturedOutput {
+        display: format!(
             "{}\n[... {omitted} bytes omitted ...]\n{}",
             String::from_utf8_lossy(&head),
             String::from_utf8_lossy(&tail)
         ),
-        total,
-    ))
+        raw,
+        byte_len: total,
+        sha256,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn digest(bytes: &[u8]) -> String {
+        let mut value = String::from("sha256:");
+        for byte in Sha256::digest(bytes) {
+            write!(&mut value, "{byte:02x}").expect("writing to a String cannot fail");
+        }
+        value
+    }
+
+    #[tokio::test]
+    async fn capture_preserves_exact_crlf_and_non_utf8_bytes() {
+        let bytes = b"first\r\nsecond\xff\0";
+        let captured = capture_output(&bytes[..]).await.unwrap();
+
+        assert_eq!(captured.raw.as_deref(), Some(bytes.as_slice()));
+        assert_eq!(captured.byte_len, bytes.len() as u64);
+        assert_eq!(captured.sha256, digest(bytes));
+        assert_eq!(
+            captured.display.as_bytes(),
+            b"first\r\nsecond\xef\xbf\xbd\0"
+        );
+    }
+
+    #[tokio::test]
+    async fn capture_over_limit_keeps_full_digest_and_explicitly_drops_raw_bytes() {
+        let bytes = vec![b'x'; RAW_STREAM_ACQUISITION_LIMIT + 1];
+        let captured = capture_output(&bytes[..]).await.unwrap();
+
+        assert!(captured.raw.is_none());
+        assert_eq!(captured.byte_len, bytes.len() as u64);
+        assert_eq!(captured.sha256, digest(&bytes));
+        assert!(captured.display.contains("bytes omitted"));
+    }
 }

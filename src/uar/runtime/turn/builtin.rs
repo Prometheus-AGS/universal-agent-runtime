@@ -202,6 +202,13 @@ pub struct ContextStage {
     pub options: RenderOptions,
     pub skill_budget: crate::config::SkillReattachmentBudget,
     pub driver: Option<Arc<dyn LlmDriver>>,
+    /// Proven final-wire allowance for governed summary requests. Without it,
+    /// marked prose remains unchanged.
+    pub summary_budget_contract:
+        Option<crate::uar::runtime::context::budget::RequestBudgetContract>,
+    /// Trusted-host marks over `AssemblyInputs::history`. Empty means every
+    /// history record is protected from summarization.
+    pub eligible_prose: Vec<crate::uar::runtime::context::summarizer::HostMarkedProseSpan>,
 }
 
 impl std::fmt::Debug for ContextStage {
@@ -243,14 +250,21 @@ impl ContextContributor for ContextStage {
         } else {
             let mut history = vec![system];
             history.extend(inputs.history.clone());
-            let (history, report) = crate::uar::runtime::context::reduce::reduce_history(
-                history,
-                &self.strategy,
-                &self.model,
-                self.context_limit.saturating_sub(self.reserved_tokens),
-                self.driver.as_deref(),
-            )
-            .await;
+            let (history, report) =
+                crate::uar::runtime::context::reduce::reduce_history_with_marked_prose(
+                    history,
+                    &self.strategy,
+                    &self.model,
+                    self.context_limit.saturating_sub(self.reserved_tokens),
+                    self.driver.as_deref(),
+                    self.summary_budget_contract.as_ref(),
+                    &self.eligible_prose,
+                )
+                .await
+                .map_err(|error| AssemblyError::ContributorFailed {
+                    name: self.name().to_string(),
+                    message: error.to_string(),
+                })?;
             (history, Some(report))
         };
         let mut budgets = inputs.budgets.clone();

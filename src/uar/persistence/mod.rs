@@ -17,7 +17,7 @@ pub mod presentations;
 pub mod providers;
 
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
-use agent_threads::PersistedAgentThread;
+use agent_threads::{CanonicalToolReceipt, PersistedAgentThread};
 
 pub(crate) fn tenant_storage_key(owner_id: &str, resource_id: &str) -> String {
     format!("{}:{owner_id}:{resource_id}", owner_id.len())
@@ -265,6 +265,20 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     /// List immutable edges in canonical path/child-ID order. No deletion API is
     /// exposed: lineage remains available for recovery and lifetime accounting.
     async fn list_agent_edges(&self, owner_id: &str, root_run_id: &str) -> Result<Vec<AgentEdge>>;
+
+    /// Append one immutable pre-format tool result. A repeated call ID is
+    /// idempotent only when its canonical payload identity is unchanged.
+    async fn save_canonical_tool_receipt(
+        &self,
+        receipt: &CanonicalToolReceipt,
+    ) -> Result<CanonicalToolReceipt>;
+
+    /// List one owner's canonical receipts for a run in stable execution order.
+    async fn list_canonical_tool_receipts(
+        &self,
+        owner_id: &str,
+        run_id: &str,
+    ) -> Result<Vec<CanonicalToolReceipt>>;
 
     async fn save_agent(&self, agent: &crate::uar::domain::artifact::AgentArtifact) -> Result<()>;
     /// Persist a merged agent only while the stored artifact matches the read

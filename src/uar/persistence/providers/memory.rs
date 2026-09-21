@@ -8,7 +8,9 @@ use anyhow::{Context, Result};
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use crate::uar::persistence::agent_threads::{self, AgentThreadStoreError, PersistedAgentThread};
+use crate::uar::persistence::agent_threads::{
+    self, AgentThreadStoreError, CanonicalToolReceipt, PersistedAgentThread,
+};
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 
 use crate::{
@@ -43,6 +45,7 @@ pub struct InMemoryProvider {
     documents: RwLock<HashMap<String, KnowledgeDocument>>,
     agents: RwLock<HashMap<String, AgentArtifact>>,
     agent_threads: RwLock<AgentThreadStore>,
+    canonical_tool_receipts: RwLock<HashMap<String, Vec<CanonicalToolReceipt>>>,
     memories: RwLock<Vec<Memory>>,
     /// Registered settings types keyed by their slug (e.g. `run_policy`).
     settings_types: RwLock<HashMap<String, SettingsType>>,
@@ -294,6 +297,38 @@ impl PersistenceLayer for InMemoryProvider {
             &records,
             owner_id,
             root_run_id,
+        )?)
+    }
+
+    async fn save_canonical_tool_receipt(
+        &self,
+        receipt: &CanonicalToolReceipt,
+    ) -> Result<CanonicalToolReceipt> {
+        let key = crate::uar::persistence::tenant_storage_key(&receipt.owner_id, &receipt.run_id);
+        let mut runs = write(&self.canonical_tool_receipts)?;
+        let receipts = runs.entry(key).or_default();
+        let stored = agent_threads::prepare_canonical_receipt(receipts, receipt)?;
+        if !receipts
+            .iter()
+            .any(|existing| existing.call_id == stored.call_id)
+        {
+            receipts.push(stored.clone());
+        }
+        Ok(stored)
+    }
+
+    async fn list_canonical_tool_receipts(
+        &self,
+        owner_id: &str,
+        run_id: &str,
+    ) -> Result<Vec<CanonicalToolReceipt>> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, run_id);
+        let receipts = read(&self.canonical_tool_receipts)?
+            .get(&key)
+            .cloned()
+            .unwrap_or_default();
+        Ok(agent_threads::ordered_canonical_receipts(
+            receipts, owner_id, run_id,
         )?)
     }
 
@@ -637,6 +672,75 @@ impl PersistenceLayer for InMemoryProvider {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn canonical_receipt(
+        owner_id: &str,
+        run_id: &str,
+        sequence: u64,
+        call_id: &str,
+        value: &str,
+    ) -> CanonicalToolReceipt {
+        CanonicalToolReceipt::acquire(
+            owner_id,
+            run_id,
+            sequence,
+            call_id,
+            "fixture.tool",
+            crate::uar::persistence::agent_threads::CanonicalReceiptSource::Native,
+            serde_json::json!({"value": value}),
+            [],
+            true,
+            0,
+        )
+        .expect("fixture receipt should be valid")
+    }
+
+    #[tokio::test]
+    async fn canonical_receipts_are_ordered_partitioned_and_immutable() {
+        let provider = InMemoryProvider::new();
+        let later = canonical_receipt("alice", "run-1", 2, "call-2", "later");
+        let first = canonical_receipt("alice", "run-1", 1, "call-1", "first");
+
+        provider.save_canonical_tool_receipt(&later).await.unwrap();
+        provider.save_canonical_tool_receipt(&first).await.unwrap();
+        assert_eq!(
+            provider.save_canonical_tool_receipt(&first).await.unwrap(),
+            first
+        );
+        let receipts = provider
+            .list_canonical_tool_receipts("alice", "run-1")
+            .await
+            .unwrap();
+        assert_eq!(
+            receipts
+                .iter()
+                .map(|receipt| receipt.call_id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["call-1", "call-2"]
+        );
+        assert!(
+            provider
+                .list_canonical_tool_receipts("bob", "run-1")
+                .await
+                .unwrap()
+                .is_empty()
+        );
+
+        let changed = canonical_receipt("alice", "run-1", 1, "call-1", "changed");
+        assert!(
+            provider
+                .save_canonical_tool_receipt(&changed)
+                .await
+                .is_err()
+        );
+        assert_eq!(
+            provider
+                .list_canonical_tool_receipts("alice", "run-1")
+                .await
+                .unwrap(),
+            receipts
+        );
+    }
 
     #[tokio::test]
     async fn sessions_round_trip_without_durable_storage() {

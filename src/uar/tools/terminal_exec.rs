@@ -3,10 +3,13 @@
 use crate::uar::runtime::native_skill::NativeSkill;
 use crate::uar::tools::descriptor::{ToolEffect, ToolSource};
 use async_trait::async_trait;
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use serde_json::{Value, json};
 use std::time::Duration;
 use tokio::process::Command;
 use tokio::time::timeout;
+
+const TERMINAL_RECEIPT_FIELD: &str = "_uar_terminal_receipt";
 
 #[derive(Debug)]
 pub struct TerminalExecTool {
@@ -141,6 +144,57 @@ impl NativeSkill for TerminalExecTool {
         self.execute_in_scope(args, context.terminal_scope.as_ref())
             .await
     }
+
+    fn take_canonical_receipt_data(
+        &self,
+        result: &mut Value,
+    ) -> anyhow::Result<crate::uar::runtime::native_skill::NativeCanonicalReceiptData> {
+        let Some(metadata) = result
+            .as_object_mut()
+            .and_then(|fields| fields.remove(TERMINAL_RECEIPT_FIELD))
+        else {
+            return Ok(Default::default());
+        };
+        let segment = |name: &str| -> anyhow::Result<_> {
+            let value = metadata
+                .get(name)
+                .ok_or_else(|| anyhow::anyhow!("Terminal receipt has no {name} segment"))?;
+            let byte_len = value
+                .get("byte_len")
+                .and_then(Value::as_u64)
+                .ok_or_else(|| anyhow::anyhow!("Terminal receipt has invalid {name} length"))?;
+            let sha256 = value
+                .get("sha256")
+                .and_then(Value::as_str)
+                .ok_or_else(|| anyhow::anyhow!("Terminal receipt has invalid {name} digest"))?;
+            let bytes = value
+                .get("bytes_base64")
+                .and_then(Value::as_str)
+                .map(|encoded| BASE64.decode(encoded))
+                .transpose()?;
+            Ok(
+                crate::uar::persistence::agent_threads::CanonicalRawSegment::from_acquisition(
+                    name,
+                    bytes,
+                    byte_len,
+                    sha256.to_owned(),
+                )?,
+            )
+        };
+        Ok(
+            crate::uar::runtime::native_skill::NativeCanonicalReceiptData {
+                raw_segments: vec![segment("stdout")?, segment("stderr")?],
+                acquisition_complete: metadata
+                    .get("acquisition_complete")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false),
+                observed_bytes: metadata
+                    .get("observed_bytes")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(u64::MAX),
+            },
+        )
+    }
 }
 
 impl TerminalExecTool {
@@ -184,15 +238,34 @@ impl TerminalExecTool {
         cmd.kill_on_drop(true);
         if let Some(scope) = scope {
             return match scope.execute(cmd, Duration::from_secs(cmd_timeout)).await {
-                Ok(output) => Ok(json!({
-                    "ok": output.status.success(),
-                    "exit_code": output.status.code().unwrap_or(-1),
-                    "stdout": output.stdout,
-                    "stderr": output.stderr,
-                    "stdout_bytes": output.stdout_bytes,
-                    "stderr_bytes": output.stderr_bytes,
-                    "command": command
-                })),
+                Ok(output) => {
+                    let acquisition_complete =
+                        output.stdout_raw.is_some() && output.stderr_raw.is_some();
+                    let observed_bytes = output.stdout_bytes.saturating_add(output.stderr_bytes);
+                    Ok(json!({
+                        "ok": output.status.success(),
+                        "exit_code": output.status.code().unwrap_or(-1),
+                        "stdout": output.stdout,
+                        "stderr": output.stderr,
+                        "stdout_bytes": output.stdout_bytes,
+                        "stderr_bytes": output.stderr_bytes,
+                        "command": command,
+                        (TERMINAL_RECEIPT_FIELD): {
+                            "acquisition_complete": acquisition_complete,
+                            "observed_bytes": observed_bytes,
+                            "stdout": {
+                                "bytes_base64": output.stdout_raw.map(|bytes| BASE64.encode(bytes)),
+                                "byte_len": output.stdout_bytes,
+                                "sha256": output.stdout_sha256,
+                            },
+                            "stderr": {
+                                "bytes_base64": output.stderr_raw.map(|bytes| BASE64.encode(bytes)),
+                                "byte_len": output.stderr_bytes,
+                                "sha256": output.stderr_sha256,
+                            }
+                        }
+                    }))
+                }
                 Err(error) => {
                     Ok(json!({"ok": false, "error": error.to_string(), "command": command}))
                 }

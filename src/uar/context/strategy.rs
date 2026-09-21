@@ -1,4 +1,4 @@
-use crate::llm::{LlmDriver, Message, MessageContent, MessageRole};
+use crate::llm::{LlmDriver, Message, MessageRole};
 use serde::{Deserialize, Serialize};
 
 /// Context management strategy for controlling how conversation history is
@@ -148,13 +148,38 @@ pub fn trim_history(
 
 /// Async counterpart of [`trim_history`]: runs LLM-backed summarization for
 /// the strategies that need it, with the system message pinned out of reach.
+/// Without explicit host marks, summarization leaves history unchanged.
 pub async fn trim_history_with_summarization(
     system: Option<Message>,
     history: Vec<Message>,
     strategy: &ContextStrategy,
     driver: Option<&dyn LlmDriver>,
 ) -> Vec<Message> {
-    let trimmed = trim_with_summarization(history, strategy, driver).await;
+    let trimmed = trim_with_marked_prose(history, strategy, driver, "", None, &[]).await;
+    prepend_pinned(system, trimmed)
+}
+
+/// Apply a declared strategy while allowing the trusted host to identify the
+/// only prose spans that summarization may replace. Span indices address
+/// `history`, excluding the separately pinned system message.
+pub async fn trim_history_with_marked_prose(
+    system: Option<Message>,
+    history: Vec<Message>,
+    strategy: &ContextStrategy,
+    driver: Option<&dyn LlmDriver>,
+    model: &str,
+    request_budget_contract: Option<&crate::uar::runtime::context::budget::RequestBudgetContract>,
+    eligible_prose: &[crate::uar::runtime::context::summarizer::HostMarkedProseSpan],
+) -> Vec<Message> {
+    let trimmed = trim_with_marked_prose(
+        history,
+        strategy,
+        driver,
+        model,
+        request_budget_contract,
+        eligible_prose,
+    )
+    .await;
     prepend_pinned(system, trimmed)
 }
 
@@ -237,18 +262,10 @@ pub fn trim_count<T: Clone>(items: Vec<T>, strategy: &ContextStrategy) -> Vec<T>
             }
         }
 
-        // Real Summarize/Hierarchical behavior needs an LLM call and is
-        // therefore async — see `trim_with_summarization`. This sync entry
-        // point (and `Auto` reached unresolved) fall back to a generous
-        // sliding window, same as before CH-05.
-        ContextStrategy::Summarize { .. } | ContextStrategy::Hierarchical { .. } => {
-            const FALLBACK: usize = 50;
-            if items.len() <= FALLBACK {
-                items
-            } else {
-                items[items.len() - FALLBACK..].to_vec()
-            }
-        }
+        // Summarization requires explicit host-owned eligibility metadata and
+        // an async governed model call. A sync caller has neither, so unknown
+        // content stays protected rather than being truncated as a fallback.
+        ContextStrategy::Summarize { .. } | ContextStrategy::Hierarchical { .. } => items,
 
         ContextStrategy::Auto => {
             trim_count(items, &strategy_for_model(DEFAULT_AUTO_CONTEXT_TOKENS))
@@ -290,17 +307,9 @@ pub fn apply_strategy(
             }
         }
 
-        // No `apply_strategy` caller currently needs real LLM summarization
-        // (see `trim_with_summarization` for the `Message`-typed real path
-        // used by `RunManager`) — this JSON-`Value` entry point keeps the
-        // pre-CH-05 sliding-window fallback.
+        // JSON values carry no trusted eligibility metadata. Preserve them.
         ContextStrategy::Summarize { .. } | ContextStrategy::Hierarchical { .. } => {
-            const FALLBACK_MAX: usize = 50;
-            if messages.len() <= FALLBACK_MAX {
-                messages.to_vec()
-            } else {
-                messages[messages.len() - FALLBACK_MAX..].to_vec()
-            }
+            messages.to_vec()
         }
 
         ContextStrategy::Auto => {
@@ -362,116 +371,121 @@ pub fn resolve_effective_strategy(
     }
 }
 
-/// Real Summarize/Hierarchical implementation (CH-05): calls
-/// [`crate::uar::runtime::context::summarizer::summarize_messages`] (an
-/// existing LLM-backed summarizer already used by the token-budget
-/// `ContextManager`) instead of the sliding-window fallback `trim_count`
-/// uses. Falls back to `trim_count`'s sliding-window behavior when no
-/// `driver` is supplied, or when a summarization call fails/returns nothing
-/// — a flaky or absent driver must never break a run by dropping history
-/// outright.
-///
-/// `Hierarchical` produces a genuine three-tier result: the most recent
-/// `short_term_turns` messages are kept verbatim; everything older is split
-/// in half and each half is summarized with its own LLM pass (long-term:
-/// the older half, mid-term: the newer-but-not-recent half) when there's
-/// enough of it to benefit from two distinct compression passes, else the
-/// whole older bulk gets one mid-term-only pass. Placement follows the
-/// lost-in-the-middle mitigation ([`keep_first_last`]'s principle, fable
-/// §13) structurally: long-term facts lead (high-attention head), verbatim
-/// recent turns trail (high-attention tail — and causally required to be
-/// last), the mid-term summary sits between the two as the least-attended,
-/// least-critical tier by design.
+/// Compatibility entry point for callers without host-owned eligibility
+/// metadata. Unknown content is protected by default, so summarizing strategies
+/// leave it unchanged.
 pub async fn trim_with_summarization(
     messages: Vec<Message>,
     strategy: &ContextStrategy,
     driver: Option<&dyn LlmDriver>,
 ) -> Vec<Message> {
-    fn summary_message(label: &str, text: &str) -> Message {
-        Message {
-            role: MessageRole::System,
-            content: MessageContent::text(format!("[{label}]\n{text}")),
-            tool_call_id: None,
-            tool_calls: None,
-        }
-    }
+    trim_with_marked_prose(messages, strategy, driver, "", None, &[]).await
+}
 
+/// Summarize only trusted-host-marked prose that is old enough for the
+/// configured strategy. Unmarked messages stay in their original position.
+/// Any missing driver or failed/cancelled/invalid/over-budget summary returns
+/// the original message vector without a truncation fallback.
+pub async fn trim_with_marked_prose(
+    messages: Vec<Message>,
+    strategy: &ContextStrategy,
+    driver: Option<&dyn LlmDriver>,
+    model: &str,
+    request_budget_contract: Option<&crate::uar::runtime::context::budget::RequestBudgetContract>,
+    eligible_prose: &[crate::uar::runtime::context::summarizer::HostMarkedProseSpan],
+) -> Vec<Message> {
     match strategy {
-        ContextStrategy::Summarize { threshold, .. } => {
+        ContextStrategy::Summarize {
+            threshold,
+            summary_max_tokens,
+            ..
+        } => {
             if messages.len() <= *threshold {
                 return messages;
             }
             let Some(driver) = driver else {
-                return trim_count(messages, strategy);
+                return messages;
+            };
+            let Some(request_budget_contract) = request_budget_contract else {
+                return messages;
             };
             let split = messages.len().saturating_sub(*threshold);
-            let (old, recent) = messages.split_at(split);
-            match crate::uar::runtime::context::summarizer::summarize_messages(old, driver).await {
-                Ok(summary) if !summary.is_empty() => {
-                    let mut out = Vec::with_capacity(recent.len() + 1);
-                    out.push(summary_message("Earlier conversation summary", &summary));
-                    out.extend_from_slice(recent);
-                    out
+            let candidates = eligible_prose
+                .iter()
+                .filter(|span| span.end <= split)
+                .cloned()
+                .collect::<Vec<_>>();
+            if candidates.is_empty() {
+                return messages;
+            }
+            match crate::uar::runtime::context::summarizer::summarize_marked_prose(
+                &messages,
+                &candidates,
+                driver,
+                model,
+                request_budget_contract,
+                *summary_max_tokens,
+            )
+            .await
+            {
+                Ok(summary) => summary,
+                Err(error) => {
+                    tracing::warn!(%error, "Host-marked summarization failed; retaining originals");
+                    messages
                 }
-                _ => trim_count(messages, strategy),
             }
         }
 
         ContextStrategy::Hierarchical {
-            short_term_turns, ..
+            short_term_turns,
+            mid_term_summary_tokens,
+            long_term_facts_tokens,
         } => {
             if messages.len() <= *short_term_turns {
                 return messages;
             }
             let Some(driver) = driver else {
-                return trim_count(messages, strategy);
+                return messages;
+            };
+            let Some(request_budget_contract) = request_budget_contract else {
+                return messages;
             };
             let recent_split = messages.len().saturating_sub(*short_term_turns);
-            let (older, recent) = messages.split_at(recent_split);
-
-            let (long_term_source, mid_term_source): (&[Message], &[Message]) = if older.len() > 4 {
-                let mid_split = older.len() / 2;
-                (&older[..mid_split], &older[mid_split..])
-            } else {
-                (&[], older)
-            };
-
-            let mut synthetic = Vec::new();
-            if !long_term_source.is_empty()
-                && let Ok(facts) = crate::uar::runtime::context::summarizer::summarize_messages(
-                    long_term_source,
-                    driver,
-                )
-                .await
-                && !facts.is_empty()
+            let candidates = eligible_prose
+                .iter()
+                .filter(|span| span.end <= recent_split)
+                .cloned()
+                .collect::<Vec<_>>();
+            if candidates.is_empty() {
+                return messages;
+            }
+            let summary_budget = (*mid_term_summary_tokens).min(*long_term_facts_tokens);
+            match crate::uar::runtime::context::summarizer::summarize_marked_prose(
+                &messages,
+                &candidates,
+                driver,
+                model,
+                request_budget_contract,
+                summary_budget,
+            )
+            .await
             {
-                synthetic.push(summary_message("Long-term facts", &facts));
+                Ok(summary) => summary,
+                Err(error) => {
+                    tracing::warn!(%error, "Host-marked hierarchical summarization failed; retaining originals");
+                    messages
+                }
             }
-            if !mid_term_source.is_empty()
-                && let Ok(summary) = crate::uar::runtime::context::summarizer::summarize_messages(
-                    mid_term_source,
-                    driver,
-                )
-                .await
-                && !summary.is_empty()
-            {
-                synthetic.push(summary_message("Recent-history summary", &summary));
-            }
-
-            if synthetic.is_empty() {
-                // Both summarization calls failed/produced nothing — fall
-                // back rather than silently dropping all older context.
-                return trim_count(messages, strategy);
-            }
-            synthetic.extend_from_slice(recent);
-            synthetic
         }
 
         ContextStrategy::Auto => {
-            Box::pin(trim_with_summarization(
+            Box::pin(trim_with_marked_prose(
                 messages,
                 &strategy_for_model(DEFAULT_AUTO_CONTEXT_TOKENS),
                 driver,
+                model,
+                request_budget_contract,
+                eligible_prose,
             ))
             .await
         }
@@ -500,6 +514,12 @@ pub fn keep_first_last<T: Clone>(items: &[T], head: usize, tail: usize) -> Vec<T
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::llm::MessageContent;
+    use crate::uar::runtime::context::budget::{RequestBudgetContract, SYNTHETIC_EXACT_MODEL};
+
+    fn summary_contract() -> RequestBudgetContract {
+        RequestBudgetContract::synthetic_exact("http://summary.invalid/v1")
+    }
 
     fn msgs(n: usize) -> Vec<serde_json::Value> {
         (0..n)
@@ -560,7 +580,7 @@ mod tests {
     }
 
     #[test]
-    fn summarize_falls_back_to_sliding_window() {
+    fn summarize_without_host_marks_preserves_unknown_messages() {
         let m = msgs(60);
         let result = apply_strategy(
             &m,
@@ -570,7 +590,7 @@ mod tests {
                 model: None,
             },
         );
-        assert_eq!(result.len(), 50);
+        assert_eq!(result.len(), 60);
     }
 
     #[test]
@@ -612,8 +632,9 @@ mod tests {
     #[tokio::test]
     async fn summarize_with_driver_produces_real_summary_plus_recent_tail() {
         let driver = crate::llm::mock_driver::MockLlmDriver::echo();
+        let contract = summary_contract();
         let m = typed_msgs(10);
-        let result = trim_with_summarization(
+        let result = trim_with_marked_prose(
             m,
             &ContextStrategy::Summarize {
                 threshold: 3,
@@ -621,6 +642,15 @@ mod tests {
                 model: None,
             },
             Some(&driver),
+            SYNTHETIC_EXACT_MODEL,
+            Some(&contract),
+            &[
+                crate::uar::runtime::context::summarizer::HostMarkedProseSpan::new(
+                    "older-prose",
+                    0,
+                    7,
+                ),
+            ],
         )
         .await;
         // 1 synthetic summary message + the last 3 kept verbatim.
@@ -639,7 +669,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn summarize_without_driver_falls_back_to_sliding_window() {
+    async fn summarize_without_driver_retains_originals() {
         let m = typed_msgs(10);
         let result = trim_with_summarization(
             m,
@@ -651,8 +681,7 @@ mod tests {
             None,
         )
         .await;
-        // Falls back to trim_count's Summarize arm: 50-msg fallback window,
-        // no-op here since we only have 10.
+        // Missing governed driver cannot trigger a destructive fallback.
         assert_eq!(result.len(), 10);
     }
 
@@ -677,8 +706,9 @@ mod tests {
     #[tokio::test]
     async fn hierarchical_with_driver_produces_three_tiers() {
         let driver = crate::llm::mock_driver::MockLlmDriver::echo();
+        let contract = summary_contract();
         let m = typed_msgs(20);
-        let result = trim_with_summarization(
+        let result = trim_with_marked_prose(
             m,
             &ContextStrategy::Hierarchical {
                 short_term_turns: 4,
@@ -686,24 +716,26 @@ mod tests {
                 long_term_facts_tokens: 200,
             },
             Some(&driver),
+            SYNTHETIC_EXACT_MODEL,
+            Some(&contract),
+            &[
+                crate::uar::runtime::context::summarizer::HostMarkedProseSpan::new(
+                    "long-term-prose",
+                    0,
+                    8,
+                ),
+                crate::uar::runtime::context::summarizer::HostMarkedProseSpan::new(
+                    "mid-term-prose",
+                    8,
+                    16,
+                ),
+            ],
         )
         .await;
         // long-term-facts + mid-term-summary + 4 verbatim recent turns.
         assert_eq!(result.len(), 6);
-        assert!(
-            result[0]
-                .content
-                .as_text()
-                .unwrap()
-                .contains("Long-term facts")
-        );
-        assert!(
-            result[1]
-                .content
-                .as_text()
-                .unwrap()
-                .contains("Recent-history summary")
-        );
+        assert_eq!(result[0].content.as_text(), Some("Hello from mock!"));
+        assert_eq!(result[1].content.as_text(), Some("Hello from mock!"));
         assert_eq!(result[2].content.as_text().unwrap(), "msg-16");
         assert_eq!(result[5].content.as_text().unwrap(), "msg-19");
         // Both the long-term and mid-term tiers each triggered one call.
@@ -713,9 +745,10 @@ mod tests {
     #[tokio::test]
     async fn hierarchical_small_older_bulk_is_mid_term_only() {
         let driver = crate::llm::mock_driver::MockLlmDriver::echo();
+        let contract = summary_contract();
         // 4 short-term + 3 older = only one summarization pass (older.len() <= 4).
         let m = typed_msgs(7);
-        let result = trim_with_summarization(
+        let result = trim_with_marked_prose(
             m,
             &ContextStrategy::Hierarchical {
                 short_term_turns: 4,
@@ -723,17 +756,20 @@ mod tests {
                 long_term_facts_tokens: 200,
             },
             Some(&driver),
+            SYNTHETIC_EXACT_MODEL,
+            Some(&contract),
+            &[
+                crate::uar::runtime::context::summarizer::HostMarkedProseSpan::new(
+                    "older-prose",
+                    0,
+                    3,
+                ),
+            ],
         )
         .await;
         // 1 mid-term summary + 4 verbatim recent turns.
         assert_eq!(result.len(), 5);
-        assert!(
-            result[0]
-                .content
-                .as_text()
-                .unwrap()
-                .contains("Recent-history summary")
-        );
+        assert_eq!(result[0].content.as_text(), Some("Hello from mock!"));
         assert_eq!(driver.call_count(), 1);
     }
 
@@ -773,10 +809,25 @@ mod tests {
         // *before* calling `trim_with_summarization` — that resolved
         // strategy is what actually triggers summarization.
         let driver = crate::llm::mock_driver::MockLlmDriver::echo();
+        let contract = summary_contract();
         let m = typed_msgs(500);
         let resolved = resolve_effective_strategy(&ContextStrategy::Auto, Some(250_000));
         assert!(matches!(resolved, ContextStrategy::Summarize { .. }));
-        let result = trim_with_summarization(m, &resolved, Some(&driver)).await;
+        let result = trim_with_marked_prose(
+            m,
+            &resolved,
+            Some(&driver),
+            SYNTHETIC_EXACT_MODEL,
+            Some(&contract),
+            &[
+                crate::uar::runtime::context::summarizer::HostMarkedProseSpan::new(
+                    "older-prose",
+                    0,
+                    100,
+                ),
+            ],
+        )
+        .await;
         assert!(driver.call_count() > 0);
         assert!(result.len() < 500);
     }

@@ -37,7 +37,10 @@ pub use catalog::ModelCatalog;
 pub use external_driver::{ExternalDriverHandler, ExternalDriverStream, ExternalLlmDriver};
 pub use health::{ProviderHealthMonitor, ProviderHealthSnapshot};
 pub use liter_driver::LiterLlmDriver;
-pub use orchestrator::{Orchestrator, ToolApprovalGate, ToolApprovalResult};
+pub use orchestrator::{
+    DestinationRequestPreparation, DestinationRequestPreparations, Orchestrator,
+    ProtectedContinuity, ToolApprovalGate, ToolApprovalResult,
+};
 pub use provider_error::{ProviderError, ProviderErrorKind};
 pub use registry::{ProviderConfig, ProviderRegistry};
 pub use router::ModelRouter;
@@ -264,6 +267,52 @@ pub struct ToolCallFunction {
     pub arguments: String,
 }
 
+/// Provider transform applied after Liter serializes the common chat request.
+///
+/// Profiles are resolved by the trusted host for one exact endpoint and model.
+/// This enum records wire behavior; it does not infer compatibility from a
+/// provider or model name.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EndpointRequestTransform {
+    /// Liter's OpenAI-compatible chat body with `extra_body` merged at the
+    /// top level and the streaming flag controlled by the transport.
+    OpenAiCompatibleChatV1,
+    /// Liter's Anthropic Messages transform, including the documented
+    /// extended-thinking output adjustment.
+    AnthropicMessagesV1,
+}
+
+/// Exact, versioned endpoint settings contract selected by the trusted host.
+///
+/// `allowed_request_fields` names final top-level wire fields. An absent
+/// `output_ceiling` means the profile is intentionally unable to support a
+/// guaranteed-fit dispatch until evidence establishes an enforceable limit.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EndpointRequestProfile {
+    pub profile_id: String,
+    pub profile_revision: String,
+    pub provider_id: String,
+    pub endpoint_kind: String,
+    /// Fingerprint of the exact normalized endpoint bound to the driver.
+    pub endpoint_fingerprint: String,
+    pub qualified_model: String,
+    /// Exact model value emitted after the pinned provider transform.
+    pub wire_model: String,
+    pub model_revision: String,
+    pub settings_revision: String,
+    pub transform: EndpointRequestTransform,
+    pub allowed_request_fields: Vec<String>,
+    pub output_ceiling: Option<crate::uar::runtime::context::budget::OutputCeilingField>,
+}
+
+/// Redacted proof of the exact profiled serialization validated before dispatch.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProfiledWireReceipt {
+    pub sha256: String,
+    pub serialized_bytes: usize,
+    pub counted_tokens: Option<u64>,
+}
+
 /// Request to an LLM driver.
 #[derive(Debug, Clone)]
 pub struct LlmRequest {
@@ -286,6 +335,9 @@ pub struct LlmRequest {
     /// into liter-llm's `ChatCompletionRequest::extra_body` by
     /// [`LiterLlmDriver`]; ignored by drivers that don't support it.
     pub extra_params: Option<serde_json::Value>,
+    /// Optional proven destination budget contract. Leaf drivers enforce this
+    /// against their final wire representation immediately before dispatch.
+    pub budget_contract: Option<crate::uar::runtime::context::budget::RequestBudgetContract>,
 }
 
 /// Trait for LLM streaming drivers.

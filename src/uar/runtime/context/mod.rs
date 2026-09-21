@@ -1,3 +1,4 @@
+pub mod budget;
 pub mod manager;
 pub mod normalize;
 pub mod reduce;

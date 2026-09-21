@@ -37,7 +37,8 @@ impl Authority {
             Self::Host => ("<uar-host-content>\n", "\n</uar-host-content>"),
             Self::Skill => ("<uar-skill-content>\n", "\n</uar-skill-content>"),
             Self::Retrieved => ("<uar-retrieved-content>\n", "\n</uar-retrieved-content>"),
-            Self::System | Self::Policy | Self::User => ("", ""),
+            Self::User => ("<uar-user-content>\n", "\n</uar-user-content>"),
+            Self::System | Self::Policy => ("", ""),
         }
     }
 }
@@ -127,17 +128,31 @@ impl PromptFragment {
             return self.content.clone();
         }
 
-        let content = if self.authority == Authority::Host {
-            // Project files cannot close the host envelope to imitate policy.
-            self.content
-                .replace('&', "&amp;")
-                .replace('<', "&lt;")
-                .replace('>', "&gt;")
-        } else {
-            self.content.clone()
-        };
+        // Host, skill, and retrieval data cannot close their host-owned
+        // envelopes to imitate a higher-authority fragment.
+        let content = escape_xml(&self.content);
         format!("{start}{content}{end}")
     }
+
+    /// Render inside a structured template while keeping host-owned marker
+    /// elements and escaping every data-bearing fragment body.
+    #[must_use]
+    pub fn structured_content(&self) -> String {
+        let (start, end) = self.markers();
+        let content = escape_xml(&self.content);
+        if start.is_empty() && end.is_empty() {
+            content
+        } else {
+            format!("{start}{content}{end}")
+        }
+    }
+}
+
+fn escape_xml(content: &str) -> String {
+    content
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }
 
 /// Stable SHA-256 identity over the response role, fragment kind, and body.

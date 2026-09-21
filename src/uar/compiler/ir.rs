@@ -773,6 +773,11 @@ pub struct PromptDialectSection {
     /// `generic`. Absent = auto-detect from the resolved model id.
     #[serde(default)]
     pub dialect: Option<String>,
+    /// Optional data-only prompt template ID. The compiler preserves this
+    /// request; trusted-host policy and exact destination compatibility decide
+    /// whether it may override the registered profile at request preparation.
+    #[serde(default)]
+    pub template: Option<String>,
     #[serde(default)]
     pub wants_reasoning: bool,
     #[serde(default)]

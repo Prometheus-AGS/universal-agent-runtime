@@ -143,6 +143,22 @@ async fn open_driver_stream(
     ))
 }
 
+fn prepend_attempt_manifest(
+    stream: DriverEventStream,
+    manifest: serde_json::Value,
+) -> DriverEventStream {
+    Box::pin(
+        futures::stream::once(async move {
+            Ok(NormalizedEvent::Custom {
+                source: "uar.request".to_string(),
+                event_name: "attempt_manifest".to_string(),
+                payload: manifest,
+            })
+        })
+        .chain(stream),
+    )
+}
+
 /// Result of a tool approval gate check.
 #[derive(Debug, Clone)]
 pub enum ToolApprovalResult {
@@ -219,11 +235,22 @@ pub struct Orchestrator {
     tool_output_policy: crate::uar::runtime::context::truncate::TruncationPolicy,
     /// Per-run cache strategy copied into every policy-bearing tool-loop request.
     cache_strategy: Option<CacheStrategy>,
+    /// Host-resolved final-wire budget contract copied into every request.
+    request_budget_contract: Option<crate::uar::runtime::context::budget::RequestBudgetContract>,
+    /// Exact model/template/settings contracts used to rebuild every provider
+    /// attempt from canonical history.
+    destination_preparations: Option<Arc<DestinationRequestPreparations>>,
+    /// Unrendered, unreduced messages captured by the trusted host. Completed
+    /// tool records are appended to this stream, never to a prepared view only.
+    canonical_history: Option<Vec<Message>>,
+    canonical_fragments: Option<Vec<crate::uar::runtime::prompt::PromptFragment>>,
+    protected_continuity: Option<ProtectedContinuity>,
     skill_activation: Option<SkillActivationRuntime>,
     resolved_turn: Option<Arc<crate::uar::runtime::turn::ResolvedTurn>>,
     mcp_preflight: Option<Arc<crate::mcp::preflight::McpPreflight>>,
     shadow_turn: Option<(Arc<crate::uar::runtime::turn::ResolvedTurn>, Vec<Message>)>,
     world_state: Option<Arc<crate::uar::runtime::world_state::runtime::WorldStateRuntime>>,
+    canonical_receipt_store: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
 }
 
 #[derive(Clone)]
@@ -242,6 +269,137 @@ struct FailoverTarget {
     driver: Arc<dyn LlmDriver>,
 }
 
+/// Opaque provider state that must survive only through an explicitly
+/// compatible destination. The body remains in canonical host storage; this
+/// identity prevents transparent failover from rewriting or inventing it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProtectedContinuity {
+    pub provider_id: String,
+    pub endpoint_kind: String,
+    pub protocol_revision: String,
+}
+
+/// Exact host-reviewed preparation contract for one destination model.
+#[derive(Debug, Clone)]
+pub struct DestinationRequestPreparation {
+    pub destination: super::prompt_dialect::TemplateDestination,
+    pub template: crate::uar::runtime::prompt::PromptTemplateProfile,
+    pub request_profile: super::EndpointRequestProfile,
+    pub budget_contract: crate::uar::runtime::context::budget::RequestBudgetContract,
+    pub exact_settings: Option<serde_json::Value>,
+    pub compatible_continuity: Vec<ProtectedContinuity>,
+}
+
+impl DestinationRequestPreparation {
+    fn qualified_model(&self) -> String {
+        format!(
+            "{}/{}",
+            self.destination.provider_id, self.destination.model_id
+        )
+    }
+
+    fn validate(&self) -> anyhow::Result<()> {
+        let qualified_model = self.qualified_model();
+        anyhow::ensure!(
+            self.request_profile.qualified_model == qualified_model,
+            "Destination preparation request profile belongs to another model"
+        );
+        anyhow::ensure!(
+            self.request_profile.provider_id == self.destination.provider_id
+                && self.request_profile.endpoint_kind == self.destination.endpoint_kind
+                && self.request_profile.model_revision == self.destination.model_revision,
+            "Destination preparation identities do not match the request profile"
+        );
+        anyhow::ensure!(
+            self.budget_contract.destination_model == qualified_model,
+            "Destination preparation budget belongs to another model"
+        );
+        anyhow::ensure!(
+            self.budget_contract.destination_endpoint_fingerprint
+                == self.request_profile.endpoint_fingerprint,
+            "Destination preparation budget belongs to another endpoint"
+        );
+        anyhow::ensure!(
+            self.request_profile.output_ceiling == Some(self.budget_contract.output_ceiling),
+            "Destination preparation output ceiling does not match its budget"
+        );
+        super::prompt_dialect::PromptTemplateResolver::new(vec![self.template.clone()]).resolve(
+            &self.destination,
+            None,
+            &super::prompt_dialect::TemplateOverridePolicy::default(),
+        )?;
+        Ok(())
+    }
+}
+
+/// Immutable destination contracts captured by the trusted run host.
+#[derive(Debug, Clone, Default)]
+pub struct DestinationRequestPreparations {
+    profiles: BTreeMap<String, DestinationRequestPreparation>,
+}
+
+impl DestinationRequestPreparations {
+    /// Validate and index exact destination profiles.
+    pub fn new(profiles: Vec<DestinationRequestPreparation>) -> anyhow::Result<Self> {
+        let mut indexed = BTreeMap::new();
+        for profile in profiles {
+            profile.validate()?;
+            let model = profile.qualified_model();
+            anyhow::ensure!(
+                indexed.insert(model.clone(), profile).is_none(),
+                "Duplicate destination preparation for model `{model}`"
+            );
+        }
+        Ok(Self { profiles: indexed })
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.profiles.is_empty()
+    }
+
+    fn prepare(
+        &self,
+        model: &str,
+        mut request: LlmRequest,
+        canonical_messages: &[serde_json::Value],
+        fragments: &[crate::uar::runtime::prompt::PromptFragment],
+        continuity: Option<&ProtectedContinuity>,
+    ) -> anyhow::Result<LlmRequest> {
+        let profile = self
+            .profiles
+            .get(model)
+            .ok_or_else(|| anyhow::anyhow!("No exact request preparation for `{model}`"))?;
+        if let Some(continuity) = continuity {
+            anyhow::ensure!(
+                profile.compatible_continuity.contains(continuity),
+                "Destination `{model}` is incompatible with protected continuity `{}/{}/{}`",
+                continuity.provider_id,
+                continuity.endpoint_kind,
+                continuity.protocol_revision
+            );
+        }
+        let rendered =
+            crate::uar::runtime::prompt::render_with_template(fragments, &profile.template)?;
+        let system = serde_json::json!({"role": "system", "content": rendered});
+        let mut messages = canonical_messages.to_vec();
+        if messages
+            .first()
+            .and_then(|message| message.get("role"))
+            .and_then(serde_json::Value::as_str)
+            == Some("system")
+        {
+            messages[0] = system;
+        } else {
+            messages.insert(0, system);
+        }
+        request.messages = messages;
+        request.extra_params.clone_from(&profile.exact_settings);
+        request.budget_contract = Some(profile.budget_contract.clone());
+        Ok(request)
+    }
+}
+
 #[allow(clippy::missing_fields_in_debug)]
 impl std::fmt::Debug for Orchestrator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -255,30 +413,98 @@ impl std::fmt::Debug for Orchestrator {
 impl Orchestrator {
     async fn execute_direct_tool(
         &self,
+        sequence: u64,
         call_id: &str,
         provider_name: &str,
         arguments: &serde_json::Value,
         output_policy: crate::uar::runtime::context::truncate::TruncationPolicy,
-    ) -> anyhow::Result<String> {
+    ) -> anyhow::Result<(String, String, bool)> {
         if let Some(native) = self.native_skills.get(provider_name).await {
-            crate::uar::runtime::native_skill::execute_native(
+            let execution = match crate::uar::runtime::native_skill::execute_native(
                 native.as_ref(),
                 arguments.clone(),
                 &self.native_execution_context(call_id),
             )
             .await
-            .map(|value| native.format_result(&value, output_policy, &self.llm_config.model))
+            {
+                Ok(execution) => execution,
+                Err(error) => {
+                    let content = self
+                        .preserve_terminal_tool_failure(
+                            sequence,
+                            call_id,
+                            provider_name,
+                            crate::uar::persistence::agent_threads::CanonicalReceiptSource::Native,
+                            error.to_string(),
+                        )
+                        .await?;
+                    return Ok((content.clone(), content, false));
+                }
+            };
+            let source = if provider_name == "terminal_exec" {
+                crate::uar::persistence::agent_threads::CanonicalReceiptSource::Terminal
+            } else {
+                crate::uar::persistence::agent_threads::CanonicalReceiptSource::Native
+            };
+            let value = self
+                .preserve_canonical_tool_result(
+                    sequence,
+                    call_id,
+                    provider_name,
+                    source,
+                    execution.value,
+                    execution.canonical.raw_segments,
+                    execution.canonical.acquisition_complete,
+                    execution.canonical.observed_bytes,
+                )
+                .await?;
+            let canonical = serde_json::to_string(&value)?;
+            let display = native.format_result(&value, output_policy, &self.llm_config.model);
+            Ok((canonical, display, true))
         } else {
-            self.call_mcp_tool(call_id, provider_name, arguments.clone())
+            let source = if self.mcp.is_native_tool(provider_name) {
+                crate::uar::persistence::agent_threads::CanonicalReceiptSource::Native
+            } else {
+                crate::uar::persistence::agent_threads::CanonicalReceiptSource::Mcp
+            };
+            let value = match self
+                .call_mcp_tool(call_id, provider_name, arguments.clone())
                 .await
-                .map(|value| serde_json::to_string(&value).unwrap_or_default())
-                .map(|content| {
-                    crate::uar::runtime::context::truncate::formatted_truncate_for_model(
-                        &content,
-                        output_policy,
-                        &self.llm_config.model,
-                    )
-                })
+            {
+                Ok(value) => value,
+                Err(error) => {
+                    let content = self
+                        .preserve_terminal_tool_failure(
+                            sequence,
+                            call_id,
+                            provider_name,
+                            source,
+                            error.to_string(),
+                        )
+                        .await?;
+                    return Ok((content.clone(), content, false));
+                }
+            };
+            let value = self
+                .preserve_canonical_tool_result(
+                    sequence,
+                    call_id,
+                    provider_name,
+                    source,
+                    value,
+                    Vec::new(),
+                    true,
+                    0,
+                )
+                .await?;
+            let canonical = serde_json::to_string(&value)?;
+            let display =
+                crate::uar::runtime::context::truncate::formatted_truncate_for_model(
+                    &canonical,
+                    output_policy,
+                    &self.llm_config.model,
+                );
+            Ok((canonical, display, true))
         }
     }
 
@@ -331,11 +557,17 @@ impl Orchestrator {
             resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy::default(),
             tool_output_policy: crate::uar::runtime::context::truncate::TruncationPolicy::default(),
             cache_strategy: None,
+            request_budget_contract: None,
+            destination_preparations: None,
+            canonical_history: None,
+            canonical_fragments: None,
+            protected_continuity: None,
             skill_activation: None,
             resolved_turn: None,
             mcp_preflight: None,
             shadow_turn: None,
             world_state: None,
+            canonical_receipt_store: None,
         }
     }
 
@@ -362,6 +594,92 @@ impl Orchestrator {
         self
     }
 
+    /// Attach a trusted-host-resolved final-wire budget contract to every
+    /// request preparation performed by this orchestrator.
+    #[must_use]
+    pub fn with_request_budget_contract(
+        mut self,
+        contract: crate::uar::runtime::context::budget::RequestBudgetContract,
+    ) -> Self {
+        self.request_budget_contract = Some(contract);
+        self
+    }
+
+    /// Attach exact destination contracts and the immutable canonical history
+    /// from which every initial, retry, failover, graph, resume and loop request
+    /// is prepared.
+    #[must_use]
+    pub fn with_destination_preparations(
+        mut self,
+        preparations: Arc<DestinationRequestPreparations>,
+        canonical_history: Vec<Message>,
+        canonical_fragments: Vec<crate::uar::runtime::prompt::PromptFragment>,
+    ) -> Self {
+        self.destination_preparations = Some(preparations);
+        self.canonical_history = Some(canonical_history);
+        self.canonical_fragments = Some(canonical_fragments);
+        self
+    }
+
+    /// Bind opaque provider continuity retained by the trusted host.
+    #[must_use]
+    pub fn with_protected_continuity(mut self, continuity: ProtectedContinuity) -> Self {
+        self.protected_continuity = Some(continuity);
+        self
+    }
+
+    fn prepare_attempt(
+        &self,
+        model: &str,
+        request: LlmRequest,
+        canonical_messages: &[serde_json::Value],
+        fragments: &[crate::uar::runtime::prompt::PromptFragment],
+    ) -> anyhow::Result<LlmRequest> {
+        match &self.destination_preparations {
+            Some(preparations) => preparations.prepare(
+                model,
+                request,
+                canonical_messages,
+                fragments,
+                self.protected_continuity.as_ref(),
+            ),
+            None => Ok(request),
+        }
+    }
+
+    fn attempt_manifest(&self, model: &str, request: &LlmRequest) -> serde_json::Value {
+        match &self.destination_preparations {
+            Some(preparations) => {
+                let preparation = preparations.profiles.get(model);
+                serde_json::json!({
+                    "schema_version": "uar.attempt-manifest.v1",
+                    "destination_model": model,
+                    "budgeting": {
+                        "label": "budgeted",
+                        "contract_present": request.budget_contract.is_some(),
+                    },
+                    "template": preparation.map(|profile| serde_json::json!({
+                        "id": profile.template.id,
+                        "revision": profile.template.revision,
+                        "wire_contract_id": profile.template.wire_contract_id,
+                    })),
+                    "request_profile_revision": preparation
+                        .map(|profile| profile.request_profile.profile_revision.clone()),
+                })
+            }
+            None => serde_json::json!({
+                "schema_version": "uar.attempt-manifest.v1",
+                "destination_model": model,
+                "budgeting": {
+                    "label": "legacy_unbudgeted",
+                    "contract_present": false,
+                    "fit_guarantee": false,
+                },
+                "warning": "Provider dispatch is using the legacy unbudgeted path",
+            }),
+        }
+    }
+
     #[must_use]
     pub fn with_resolved_turn(
         mut self,
@@ -369,6 +687,103 @@ impl Orchestrator {
     ) -> Self {
         self.resolved_turn = Some(turn);
         self
+    }
+
+    /// Persist pre-format tool results through the trusted host's run store.
+    #[must_use]
+    pub fn with_canonical_receipt_store(
+        mut self,
+        store: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
+    ) -> Self {
+        self.canonical_receipt_store = store;
+        self
+    }
+
+    async fn preserve_canonical_tool_result(
+        &self,
+        sequence: u64,
+        call_id: &str,
+        tool: &str,
+        source: crate::uar::persistence::agent_threads::CanonicalReceiptSource,
+        value: serde_json::Value,
+        raw_segments: Vec<crate::uar::persistence::agent_threads::CanonicalRawSegment>,
+        acquisition_complete: bool,
+        observed_bytes: u64,
+    ) -> anyhow::Result<serde_json::Value> {
+        let Some(store) = &self.canonical_receipt_store else {
+            return Ok(value);
+        };
+        let turn = self
+            .resolved_turn
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Canonical receipt store has no resolved turn"))?;
+        let receipt =
+            crate::uar::persistence::agent_threads::CanonicalToolReceipt::acquire_with_segments(
+                turn.environment().owner_id.clone(),
+                turn.environment().run_id.clone(),
+                sequence,
+                call_id,
+                tool,
+                source,
+                value,
+                raw_segments,
+                acquisition_complete,
+                observed_bytes,
+            )?;
+        let stored = store.save_canonical_tool_receipt(&receipt).await?;
+        stored.typed_value.ok_or_else(|| {
+            anyhow::anyhow!(
+                "Canonical tool result was not retained: {:?}",
+                stored.completeness
+            )
+        })
+    }
+
+    async fn preserve_terminal_tool_failure(
+        &self,
+        sequence: u64,
+        call_id: &str,
+        tool: &str,
+        source: crate::uar::persistence::agent_threads::CanonicalReceiptSource,
+        error: String,
+    ) -> anyhow::Result<String> {
+        let value = serde_json::json!({
+            "status": "error",
+            "tool_call_id": call_id,
+            "tool": tool,
+            "provenance": {
+                "source": source,
+                "terminal_state": "failed",
+                "observed_by": "trusted_host"
+            },
+            "message": error,
+        });
+        let stored = self
+            .preserve_canonical_tool_result(
+                sequence,
+                call_id,
+                tool,
+                source,
+                value,
+                Vec::new(),
+                true,
+                0,
+            )
+            .await?;
+        serde_json::to_string(&stored).map_err(Into::into)
+    }
+
+    fn canonical_source_for(
+        tool: &str,
+        descriptor: &crate::uar::tools::descriptor::ToolDescriptor,
+    ) -> crate::uar::persistence::agent_threads::CanonicalReceiptSource {
+        if tool == "terminal_exec" {
+            crate::uar::persistence::agent_threads::CanonicalReceiptSource::Terminal
+        } else if descriptor.source == crate::uar::tools::descriptor::ToolSource::Mcp {
+            crate::uar::persistence::agent_threads::CanonicalReceiptSource::Mcp
+        } else {
+            crate::uar::persistence::agent_threads::CanonicalReceiptSource::Native
+        }
     }
 
     /// Use the host-prepared projection for all MCP advertisement and execution.
@@ -487,13 +902,27 @@ impl Orchestrator {
         } else {
             host.call_mcp_tool(&call_id, name, arguments).await
         };
-        let success = result.is_ok();
-        let content = match result {
-            Ok(result) => serde_json::to_string(&result)?,
-            Err(_) => "Graph MCP tool execution failed".to_owned(),
+        let (canonical_content, success) = match result {
+            Ok(result) => match host
+                .preserve_canonical_tool_result(
+                    u64::from(step) << 32,
+                    &call_id,
+                    name,
+                    crate::uar::persistence::agent_threads::CanonicalReceiptSource::Graph,
+                    result,
+                    Vec::new(),
+                    true,
+                    0,
+                )
+                .await
+            {
+                Ok(result) => (serde_json::to_string(&result)?, true),
+                Err(error) => (format!("Canonical receipt error: {error}"), false),
+            },
+            Err(_) => ("Graph MCP tool execution failed".to_owned(), false),
         };
-        let content = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
-            &content,
+        let display_content = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
+            &canonical_content,
             descriptor.output_limit.unwrap_or(host.tool_output_policy),
             &host.llm_config.model,
         );
@@ -503,12 +932,12 @@ impl Orchestrator {
                 call_index: step as usize,
                 tool_call_id: call_id,
                 tool: name.to_owned(),
-                output: serde_json::Value::String(content.clone()),
+                output: serde_json::Value::String(display_content.clone()),
                 ok: success,
             })
             .await;
-        anyhow::ensure!(success, "{content}");
-        Ok(content)
+        anyhow::ensure!(success, "{display_content}");
+        Ok(canonical_content)
     }
 
     #[must_use]
@@ -925,6 +1354,15 @@ impl Orchestrator {
                 .iter()
                 .map(|m| serde_json::to_value(m).unwrap_or_default())
                 .collect();
+            let canonical_messages = if require_terminal {
+                &messages
+            } else {
+                orchestrator.canonical_history.as_ref().unwrap_or(&messages)
+            };
+            let mut canonical_message_json: Vec<serde_json::Value> = canonical_messages
+                .iter()
+                .map(|message| serde_json::to_value(message).unwrap_or_default())
+                .collect();
 
             tracing::debug!(
                 request_id = %request_id,
@@ -953,8 +1391,10 @@ impl Orchestrator {
 
                 let mut request_messages = message_json.clone();
                 let mut active_bodies = Vec::new();
-                let mut step_fragments = orchestrator.resolved_turn.as_ref().map(|turn| {
-                    turn.fragments().iter().filter(|fragment| {
+                let mut step_fragments = orchestrator.canonical_fragments.as_deref()
+                    .or_else(|| orchestrator.resolved_turn.as_ref().map(|turn| turn.fragments()))
+                    .map(|fragments| {
+                    fragments.iter().filter(|fragment| {
                         fragment.retention != crate::uar::runtime::prompt::Retention::Reclaimable
                             && (iteration == 1 || fragment.section != crate::uar::runtime::prompt::PromptSection::WorldState)
                     }).cloned().collect::<Vec<_>>()
@@ -1003,11 +1443,19 @@ impl Orchestrator {
                         }
                     } else { 0 };
                     let (mut history, rewritten) = if iteration > 1 {
-                        let (history, report) = crate::uar::runtime::context::reduce::reduce_history(
+                        match crate::uar::runtime::context::reduce::reduce_history(
                             history, &activation.strategy, &activation.model,
                             activation.context_limit - world_reserved_tokens, Some(orchestrator.driver.as_ref()),
-                        ).await;
-                        (history, report.history_rewritten)
+                        ).await {
+                            Ok((history, report)) => (history, report.history_rewritten),
+                            Err(error) => {
+                                yield NormalizedEvent::Error {
+                                    message: error.to_string(),
+                                    code: Some(error.code().to_ascii_uppercase()),
+                                };
+                                break;
+                            }
+                        }
                     } else {
                         (history, false)
                     };
@@ -1098,7 +1546,7 @@ impl Orchestrator {
                         );
                         yield NormalizedEvent::Error {
                             message: error.to_string(),
-                            code: Some("HISTORY_NORMALIZATION_FAILED".to_string()),
+                            code: Some("INVALID_HISTORY".to_string()),
                         };
                         break;
                     }
@@ -1118,7 +1566,7 @@ impl Orchestrator {
                             hard: orchestrator.llm_config.thinking_budget.unwrap_or(0) > 4096,
                         },
                     );
-                let req = LlmRequest {
+                let base_req = LlmRequest {
                     messages: request_messages,
                     tools: tools.clone(),
                     cache_strategy: orchestrator.cache_strategy.clone(),
@@ -1128,6 +1576,23 @@ impl Orchestrator {
                         .as_object()
                         .filter(|o| !o.is_empty())
                         .map(|_| dialect_params.clone()),
+                    budget_contract: orchestrator.request_budget_contract.clone(),
+                };
+                let primary_model = orchestrator.llm_config.model.clone();
+                let req = match orchestrator.prepare_attempt(
+                    &primary_model,
+                    base_req.clone(),
+                    &canonical_message_json,
+                    &step_fragments,
+                ) {
+                    Ok(request) => request,
+                    Err(error) => {
+                        yield NormalizedEvent::Error {
+                            message: error.to_string(),
+                            code: Some("DESTINATION_PREPARATION_FAILED".into()),
+                        };
+                        break;
+                    }
                 };
 
                 let resolved_step = if let Some(turn) = &orchestrator.resolved_turn {
@@ -1138,7 +1603,7 @@ impl Orchestrator {
                     match crate::uar::runtime::turn::ResolvedStep::new(
                         Arc::clone(turn), step, req.clone(), (*descriptors).clone(),
                         Arc::clone(&orchestrator.mcp), skill_usage.skills.clone(), budgets,
-                        step_fragments,
+                        step_fragments.clone(),
                     ).and_then(|snapshot| match &orchestrator.mcp_preflight {
                         Some(preflight) => snapshot.with_mcp_preflight(Arc::clone(preflight)),
                         None => Ok(snapshot),
@@ -1191,6 +1656,8 @@ impl Orchestrator {
                     };
                     snapshot.request().clone()
                 } else { req };
+                let mut attempt_source = base_req;
+                attempt_source.tools.clone_from(&req.tools);
 
                 // Log the full request being sent to the LLM
                 tracing::debug!(
@@ -1221,7 +1688,11 @@ impl Orchestrator {
                         1
                     };
                     let retry_driver = Arc::clone(&orchestrator.driver);
-                    let retry_request = req.clone();
+                    let retry_orchestrator = orchestrator.clone();
+                    let retry_source = attempt_source.clone();
+                    let retry_canonical = canonical_message_json.clone();
+                    let retry_fragments = step_fragments.clone();
+                    let retry_model = primary_model.clone();
                     let stream_start_timeout =
                         std::time::Duration::from_millis(policy.stream_start_timeout_ms);
                     let stream_idle_timeout =
@@ -1231,15 +1702,27 @@ impl Orchestrator {
                     let mut attempt = 1_u32;
                     let primary = (|| {
                         let driver = Arc::clone(&retry_driver);
-                        let request = retry_request.clone();
+                        let orchestrator = retry_orchestrator.clone();
+                        let source = retry_source.clone();
+                        let canonical = retry_canonical.clone();
+                        let fragments = retry_fragments.clone();
+                        let model = retry_model.clone();
                         async move {
-                            open_driver_stream(
+                            let request = orchestrator.prepare_attempt(
+                                &model,
+                                source,
+                                &canonical,
+                                &fragments,
+                            )?;
+                            let manifest = orchestrator.attempt_manifest(&model, &request);
+                            let stream = open_driver_stream(
                                 driver.as_ref(),
                                 request,
                                 stream_start_timeout,
                                 stream_idle_timeout,
                             )
-                            .await
+                            .await?;
+                            Ok(prepend_attempt_manifest(stream, manifest))
                         }
                     })
                     .retry(policy.retry_backoff_builder())
@@ -1320,13 +1803,27 @@ impl Orchestrator {
                                     fallback_model = %fallback.model,
                                     "Primary LLM driver failed; attempting fallback",
                                 );
-                                match open_driver_stream(
-                                    fallback.driver.as_ref(),
-                                    req.clone(),
-                                    stream_start_timeout,
-                                    stream_idle_timeout,
-                                )
-                                .await
+                                let fallback_result = match orchestrator.prepare_attempt(
+                                    &fallback.model,
+                                    attempt_source.clone(),
+                                    &canonical_message_json,
+                                    &step_fragments,
+                                ) {
+                                    Ok(request) => {
+                                        let manifest = orchestrator
+                                            .attempt_manifest(&fallback.model, &request);
+                                        open_driver_stream(
+                                            fallback.driver.as_ref(),
+                                            request,
+                                            stream_start_timeout,
+                                            stream_idle_timeout,
+                                        )
+                                        .await
+                                        .map(|stream| prepend_attempt_manifest(stream, manifest))
+                                    }
+                                    Err(error) => Err(error),
+                                };
+                                match fallback_result
                                 {
                                     Ok(s) => {
                                         if let Some(health) = &orchestrator.health_monitor {
@@ -1590,6 +2087,12 @@ impl Orchestrator {
                         })
                     }).collect::<Vec<_>>()
                 }));
+                canonical_message_json.push(
+                    message_json
+                        .last()
+                        .cloned()
+                        .expect("assistant tool-call record was just appended"),
+                );
 
                 tracing::debug!(
                     request_id = %request_id,
@@ -1674,15 +2177,30 @@ impl Orchestrator {
                     );
                     let executions = futures::stream::iter(tool_calls.iter().cloned().zip(
                         batch_descriptors.iter().cloned(),
-                    ).zip(admitted_calls.drain(..)).map(|((call, descriptor), arguments)| {
+                    ).zip(admitted_calls.drain(..)).enumerate().map(|(index, ((call, descriptor), arguments))| {
                         let orchestrator = orchestrator.clone();
                         let execution_gate = Arc::clone(&execution_gate);
                         let key_gates = Arc::clone(&key_gates);
+                        let sequence = (u64::from(step) << 32) | index as u64;
                         async move {
                             let arguments = match arguments {
                                 Ok(arguments) => arguments,
                                 Err(error) => {
-                                    return (call, error, false);
+                                    let source = Self::canonical_source_for(
+                                        &call.function.name,
+                                        &descriptor,
+                                    );
+                                    let outcome = orchestrator
+                                        .preserve_terminal_tool_failure(
+                                            sequence,
+                                            &call.id,
+                                            &call.function.name,
+                                            source,
+                                            error,
+                                        )
+                                        .await
+                                        .map(|content| (content.clone(), content, false));
+                                    return (call, outcome);
                                 }
                             };
                             let output_policy = descriptor
@@ -1698,6 +2216,7 @@ impl Orchestrator {
                                     let _key = key_gate.lock().await;
                                     orchestrator
                                         .execute_direct_tool(
+                                            sequence,
                                             &call.id,
                                             &call.function.name,
                                             &arguments,
@@ -1707,6 +2226,7 @@ impl Orchestrator {
                                 } else {
                                     orchestrator
                                         .execute_direct_tool(
+                                            sequence,
                                             &call.id,
                                             &call.function.name,
                                             &arguments,
@@ -1718,6 +2238,7 @@ impl Orchestrator {
                                 let _write = execution_gate.write().await;
                                 orchestrator
                                     .execute_direct_tool(
+                                        sequence,
                                         &call.id,
                                         &call.function.name,
                                         &arguments,
@@ -1725,25 +2246,24 @@ impl Orchestrator {
                                     )
                                     .await
                             };
-                            let (content, success) = match outcome {
-                                Ok(content) => (content, true),
-                                Err(error) => (
-                                    crate::uar::runtime::context::truncate::formatted_truncate_for_model(
-                                        &format!("Error: {error}"),
-                                        output_policy,
-                                        &orchestrator.llm_config.model,
-                                    ),
-                                    false,
-                                ),
-                            };
-                            (call, content, success)
+                            (call, outcome)
                         }
                     }))
                     .buffered(8)
                     .collect::<Vec<_>>()
                     .await;
 
-                    for (call, content, success) in executions {
+                    for (call, outcome) in executions {
+                        let (canonical_content, content, success) = match outcome {
+                            Ok(outcome) => outcome,
+                            Err(error) => {
+                                yield NormalizedEvent::Error {
+                                    message: error.to_string(),
+                                    code: Some("TERMINAL_RESULT_PERSISTENCE_FAILED".to_string()),
+                                };
+                                return;
+                            }
+                        };
                         yield NormalizedEvent::ToolResult {
                             id: call.id.clone(),
                             name: call.function.name.clone(),
@@ -1754,6 +2274,11 @@ impl Orchestrator {
                             "role": "tool",
                             "tool_call_id": call.id,
                             "content": content
+                        }));
+                        canonical_message_json.push(serde_json::json!({
+                            "role": "tool",
+                            "tool_call_id": call.id,
+                            "content": canonical_content
                         }));
                     }
                     yield NormalizedEvent::RuntimeStep {
@@ -1768,21 +2293,15 @@ impl Orchestrator {
                 // sequentially to preserve policy and side-effect ordering.
                 for (idx, tool_call) in tool_calls.iter().enumerate() {
                     let tool_name = &tool_call.function.name;
+                    let sequence = (u64::from(step) << 32) | idx as u64;
                     let Some(descriptor) = descriptors.get(tool_name) else {
-                        let content =
-                            "Error: no descriptor exists for the requested tool".to_string();
-                        yield NormalizedEvent::ToolResult {
-                            id: tool_call.id.clone(),
-                            name: tool_name.clone(),
-                            content: content.clone(),
-                            success: false,
+                        yield NormalizedEvent::Error {
+                            message: format!(
+                                "No descriptor exists for requested tool '{tool_name}'"
+                            ),
+                            code: Some("UNKNOWN_TOOL_STATE_UNRECOVERED".to_string()),
                         };
-                        message_json.push(serde_json::json!({
-                            "role": "tool",
-                            "tool_call_id": tool_call.id,
-                            "content": content
-                        }));
-                        continue;
+                        return;
                     };
                     let preadmitted = admitted_calls.pop_front();
                     let admitted_by_host = preadmitted.is_some();
@@ -1791,7 +2310,29 @@ impl Orchestrator {
                             .map_err(|error| error.model_result().to_string())
                     }) {
                         Ok(arguments) => arguments,
-                        Err(content) => {
+                        Err(error) => {
+                            let source = Self::canonical_source_for(tool_name, descriptor);
+                            let content = match orchestrator
+                                .preserve_terminal_tool_failure(
+                                    sequence,
+                                    &tool_call.id,
+                                    tool_name,
+                                    source,
+                                    error,
+                                )
+                                .await
+                            {
+                                Ok(content) => content,
+                                Err(error) => {
+                                    yield NormalizedEvent::Error {
+                                        message: error.to_string(),
+                                        code: Some(
+                                            "TERMINAL_RESULT_PERSISTENCE_FAILED".to_string(),
+                                        ),
+                                    };
+                                    return;
+                                }
+                            };
                             yield NormalizedEvent::ToolResult {
                                 id: tool_call.id.clone(),
                                 name: tool_name.clone(),
@@ -1803,6 +2344,12 @@ impl Orchestrator {
                                 "tool_call_id": tool_call.id,
                                 "content": content
                             }));
+                            canonical_message_json.push(
+                                message_json
+                                    .last()
+                                    .cloned()
+                                    .expect("invalid tool result was just appended"),
+                            );
                             continue;
                         }
                     };
@@ -1836,7 +2383,29 @@ impl Orchestrator {
                                 reason = %reason,
                                 "Tool call rejected by approval gate"
                             );
-                            let rejection_content = format!("Tool call rejected: {reason}");
+                            let rejection = format!("Tool call rejected: {reason}");
+                            let source = Self::canonical_source_for(tool_name, descriptor);
+                            let rejection_content = match orchestrator
+                                .preserve_terminal_tool_failure(
+                                    sequence,
+                                    &tool_call.id,
+                                    tool_name,
+                                    source,
+                                    rejection,
+                                )
+                                .await
+                            {
+                                Ok(content) => content,
+                                Err(error) => {
+                                    yield NormalizedEvent::Error {
+                                        message: error.to_string(),
+                                        code: Some(
+                                            "TERMINAL_RESULT_PERSISTENCE_FAILED".to_string(),
+                                        ),
+                                    };
+                                    return;
+                                }
+                            };
                             yield NormalizedEvent::ToolResult {
                                 id: tool_call.id.clone(),
                                 name: tool_name.clone(),
@@ -1848,6 +2417,12 @@ impl Orchestrator {
                                 "tool_call_id": tool_call.id,
                                 "content": rejection_content
                             }));
+                            canonical_message_json.push(
+                                message_json
+                                    .last()
+                                    .cloned()
+                                    .expect("rejected tool result was just appended"),
+                            );
                             continue;
                         }
                     }
@@ -1857,8 +2432,18 @@ impl Orchestrator {
                     let sandbox_attempt = sandbox_required.then(|| orchestrator.sandbox_runner.clone()).flatten()
                         .filter(|runner| runner.enforces_isolation());
 
-                    let (content, success) = if sandbox_required && sandbox_attempt.is_none() {
-                        ("Tool execution rejected: required sandbox isolation is unavailable".to_string(), false)
+                    let outcome: anyhow::Result<(String, String, bool)> = if sandbox_required && sandbox_attempt.is_none() {
+                        let error = "Tool execution rejected: required sandbox isolation is unavailable";
+                        orchestrator
+                            .preserve_terminal_tool_failure(
+                                sequence,
+                                &tool_call.id,
+                                tool_name,
+                                crate::uar::persistence::agent_threads::CanonicalReceiptSource::Sandbox,
+                                error.to_string(),
+                            )
+                            .await
+                            .map(|content| (content.clone(), content, false))
                     } else if let Some(runner) = sandbox_attempt {
                         let request = match orchestrator.native_skills.get(tool_name).await {
                             Some(tool) => tool.sandbox_request(arguments.clone()),
@@ -1879,99 +2464,84 @@ impl Orchestrator {
                                 None => Err(crate::sandbox::execution::SandboxExecutionError::Unavailable),
                             };
                             match outcome {
-                                Ok(result) => (format!("exit_code: {}\nstdout:\n{}\nstderr:\n{}",
-                                    result.exit_code, result.stdout, result.stderr), result.exit_code == 0),
-                                Err(error) => (format!("Sandbox execution error: {error}"), false),
+                                Ok(result) => {
+                                    let value = serde_json::json!({
+                                        "exit_code": result.exit_code,
+                                        "stdout": result.stdout.clone(),
+                                        "stderr": result.stderr.clone(),
+                                    });
+                                    orchestrator.preserve_canonical_tool_result(
+                                        sequence,
+                                        &tool_call.id,
+                                        tool_name,
+                                        crate::uar::persistence::agent_threads::CanonicalReceiptSource::Sandbox,
+                                        value,
+                                        Vec::new(),
+                                        true,
+                                        0,
+                                    ).await.and_then(|stored| {
+                                        let canonical = serde_json::to_string(&stored)?;
+                                        if result.exit_code == 0 {
+                                            Ok((canonical, format!("exit_code: {}\nstdout:\n{}\nstderr:\n{}",
+                                                result.exit_code, result.stdout, result.stderr), true))
+                                        } else {
+                                            Ok((canonical, serde_json::json!({
+                                                "status": "error",
+                                                "tool_call_id": tool_call.id,
+                                                "tool": tool_name,
+                                                "provenance": {
+                                                    "source": "sandbox",
+                                                    "terminal_state": "failed",
+                                                    "observed_by": "trusted_host"
+                                                },
+                                                "result": stored,
+                                            }).to_string(), false))
+                                        }
+                                    })
+                                }
+                                Err(error) => orchestrator
+                                    .preserve_terminal_tool_failure(
+                                        sequence,
+                                        &tool_call.id,
+                                        tool_name,
+                                        crate::uar::persistence::agent_threads::CanonicalReceiptSource::Sandbox,
+                                        error.to_string(),
+                                    )
+                                    .await
+                                    .map(|content| (content.clone(), content, false)),
                             }
                         } else {
-                            ("Tool execution rejected: no sandbox adapter for this tool call".to_string(), false)
+                            let error = "Tool execution rejected: no sandbox adapter for this tool call";
+                            orchestrator
+                                .preserve_terminal_tool_failure(
+                                    sequence,
+                                    &tool_call.id,
+                                    tool_name,
+                                    crate::uar::persistence::agent_threads::CanonicalReceiptSource::Sandbox,
+                                    error.to_string(),
+                                )
+                                .await
+                                .map(|content| (content.clone(), content, false))
                         }
                     } else {
-                        // Priority: check native skills first, then fall back to MCP
-                        if let Some(native_skill) = orchestrator.native_skills.get(tool_name).await {
-                            tracing::info!(
-                                request_id = %request_id,
-                                iteration = iteration,
-                                tool_id = %tool_call.id,
-                                tool_name = %tool_name,
-                                "Executing via native skill (bypassing MCP)"
-                            );
-                            match crate::uar::runtime::native_skill::execute_native(
-                                native_skill.as_ref(), arguments.clone(), &orchestrator.native_execution_context(&tool_call.id),
-                            ).await {
-                                Ok(result) => {
-                                    let content = native_skill.format_result(
-                                        &result,
-                                        output_policy,
-                                        &orchestrator.llm_config.model,
-                                    );
-                                    tracing::info!(
-                                        request_id = %request_id,
-                                        tool_id = %tool_call.id,
-                                        tool_name = %tool_name,
-                                        result_length = content.len(),
-                                        "Native skill execution succeeded"
-                                    );
-                                    (content, true)
-                                }
-                                Err(e) => {
-                                    let error_msg = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
-                                        &format!("Native skill error: {e}"),
-                                        output_policy,
-                                        &orchestrator.llm_config.model,
-                                    );
-                                    tracing::error!(
-                                        request_id = %request_id,
-                                        tool_id = %tool_call.id,
-                                        tool_name = %tool_name,
-                                        error = %e,
-                                        "Native skill execution failed"
-                                    );
-                                    (error_msg, false)
-                                }
-                            }
-                        } else {
-                            match orchestrator.call_mcp_tool(&tool_call.id, tool_name, arguments.clone()).await {
-                                Ok(result) => {
-                                    let content = serde_json::to_string(&result).unwrap_or_default();
-                                    let content = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
-                                        &content,
-                                        output_policy,
-                                        &orchestrator.llm_config.model,
-                                    );
-                                    tracing::info!(
-                                        request_id = %request_id,
-                                        iteration = iteration,
-                                        tool_id = %tool_call.id,
-                                        tool_name = %tool_name,
-                                        result_length = content.len(),
-                                        "Tool call succeeded"
-                                    );
-                                    tracing::debug!(
-                                        request_id = %request_id,
-                                        tool_id = %tool_call.id,
-                                        result = %content,
-                                        "Tool call result"
-                                    );
-                                    (content, true)
-                                }
-                                Err(e) => {
-                                    let error_msg = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
-                                        &format!("Error: {e}"),
-                                        output_policy,
-                                        &orchestrator.llm_config.model,
-                                    );
-                                    tracing::error!(
-                                        request_id = %request_id,
-                                        iteration = iteration,
-                                        tool_id = %tool_call.id,
-                                        tool_name = %tool_name,
-                                        error = %e,
-                                        "Tool call failed"
-                                    );
-                                    (error_msg, false)
-                                }
-                            }
+                        orchestrator
+                            .execute_direct_tool(
+                                sequence,
+                                &tool_call.id,
+                                tool_name,
+                                &arguments,
+                                output_policy,
+                            )
+                            .await
+                    };
+                    let (canonical_content, content, success) = match outcome {
+                        Ok(outcome) => outcome,
+                        Err(error) => {
+                            yield NormalizedEvent::Error {
+                                message: error.to_string(),
+                                code: Some("TERMINAL_RESULT_PERSISTENCE_FAILED".to_string()),
+                            };
+                            return;
                         }
                     };
                     let content =
@@ -1994,6 +2564,11 @@ impl Orchestrator {
                         "role": "tool",
                         "tool_call_id": tool_call.id,
                         "content": content
+                    }));
+                    canonical_message_json.push(serde_json::json!({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": canonical_content
                     }));
 
                     tracing::debug!(
@@ -2050,6 +2625,7 @@ impl Orchestrator {
             thinking_config: None,
             anthropic_system: None,
             extra_params: None,
+            budget_contract: self.request_budget_contract.clone(),
         };
 
         // Stream from the driver and collect message deltas
@@ -2111,6 +2687,8 @@ mod tests {
     struct SearchSkill {
         calls: Arc<AtomicUsize>,
     }
+
+    struct LargeResultSkill;
 
     #[test]
     fn resolved_provider_identity_survives_bare_model_for_explicit_base_url() {
@@ -2185,6 +2763,86 @@ mod tests {
             self.calls.fetch_add(1, Ordering::SeqCst);
             Ok(serde_json::json!({"result": args["query"]}))
         }
+    }
+
+    #[async_trait::async_trait]
+    impl NativeSkill for LargeResultSkill {
+        fn name(&self) -> &str {
+            "large_result"
+        }
+
+        fn description(&self) -> &str {
+            "Returns a large deterministic result"
+        }
+
+        fn parameters_schema(&self) -> serde_json::Value {
+            serde_json::json!({"type": "object"})
+        }
+
+        async fn execute(&self, _: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+            Ok(serde_json::json!({"payload": "x".repeat(20_000)}))
+        }
+    }
+
+    #[tokio::test]
+    async fn direct_tool_preserves_canonical_value_before_display_truncation() {
+        use crate::uar::domain::policy::{PolicyResolutionInput, resolve_run_policy};
+        use crate::uar::persistence::PersistenceLayer;
+        use crate::uar::persistence::providers::memory::InMemoryProvider;
+        use crate::uar::runtime::context::truncate::TruncationPolicy;
+        use crate::uar::runtime::turn::{ResolvedTurn, TurnEnvironment};
+
+        let native_skills = Arc::new(NativeSkillRegistry::new());
+        native_skills.register(LargeResultSkill).await.unwrap();
+        let store: Arc<dyn PersistenceLayer> = Arc::new(InMemoryProvider::new());
+        let turn = Arc::new(ResolvedTurn::new(
+            crate::uar::defaults::default_agent(),
+            resolve_run_policy(PolicyResolutionInput::default()),
+            TurnEnvironment {
+                run_id: "receipt-run".to_owned(),
+                owner_id: "receipt-owner".to_owned(),
+                session_id: "receipt-session".to_owned(),
+            },
+            LlmConfig::default(),
+            Vec::new(),
+        ));
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            native_skills,
+            Arc::new(MockLlmDriver::echo()),
+        )
+        .with_resolved_turn(turn)
+        .with_canonical_receipt_store(Some(Arc::clone(&store)));
+
+        let (canonical, displayed, success) = orchestrator
+            .execute_direct_tool(
+                1,
+                "large-call",
+                "large_result",
+                &serde_json::json!({}),
+                TruncationPolicy::Bytes(256),
+            )
+            .await
+            .unwrap();
+        assert!(success);
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&canonical).unwrap(),
+            serde_json::json!({"payload": "x".repeat(20_000)})
+        );
+        assert!(displayed.len() <= 256);
+        assert!(
+            displayed.starts_with(crate::uar::runtime::context::truncate::WARNING_HEADER_PREFIX)
+        );
+        let receipts = store
+            .list_canonical_tool_receipts("receipt-owner", "receipt-run")
+            .await
+            .unwrap();
+        assert_eq!(receipts.len(), 1);
+        assert_eq!(
+            receipts[0].typed_value,
+            Some(serde_json::json!({"payload": "x".repeat(20_000)}))
+        );
     }
 
     #[tokio::test]

@@ -9,8 +9,8 @@
 //! [`reduce_history`] is now the only way a run reduces history. It runs the
 //! structural stage and the token-budget stage in order, from the single
 //! operator-declared strategy, with the system message pinned out of reach of
-//! both, and normalizes tool-call pairs once at the end so the provider never
-//! receives a dangling call or an orphaned result.
+//! both. Canonical tool groups are validated before reduction and must survive
+//! byte-for-byte or the reduction returns an explicit overflow.
 //!
 //! The operator-facing [`crate::uar::context::ContextStrategy`] remains the
 //! only declared strategy. The internal
@@ -19,76 +19,113 @@
 
 use crate::llm::{LlmDriver, Message};
 use crate::uar::context::{
-    ContextStrategy as DeclaredStrategy, split_pinned_system, trim_history_with_summarization,
+    ContextStrategy as DeclaredStrategy, split_pinned_system, trim_history_with_marked_prose,
 };
 use crate::uar::domain::context::{
     ContextAction, ContextConfig, ContextStrategy as BudgetStrategy,
 };
 
 use super::manager::ContextManager;
-use super::normalize::{NormalizeReport, normalize_history};
+use super::normalize::{HistoryValidationError, NormalizeReport, normalize_history};
+use super::summarizer::HostMarkedProseSpan;
+use super::token_service::TokenService;
 
-fn merge_normalize_report(target: &mut NormalizeReport, mut source: NormalizeReport) {
-    target.synthesized.append(&mut source.synthesized);
-    target.removed.append(&mut source.removed);
+#[derive(Debug)]
+struct ProtectedGroup {
+    identities: Vec<String>,
+    records: Vec<serde_json::Value>,
 }
 
-/// Drop any tool-call group that a reducer only partially retained. The input
-/// has already been normalized, so each assistant call group is complete before
-/// reduction. Dropping a partial group keeps the token/window bound intact;
-/// restoring its missing half could exceed the budget that caused the cut.
-fn drop_severed_tool_groups(original: &[Message], reduced: &mut Vec<Message>) {
-    let groups: Vec<Vec<String>> = original
-        .iter()
-        .filter_map(|message| {
-            let ids: Vec<String> = message
-                .tool_calls
-                .iter()
-                .flatten()
-                .map(|call| call.id.clone())
-                .collect();
-            (!ids.is_empty()).then_some(ids)
-        })
-        .collect();
-
-    for ids in groups {
-        let assistant_index = reduced.iter().position(|message| {
-            let present: Vec<&str> = message
-                .tool_calls
-                .iter()
-                .flatten()
-                .map(|call| call.id.as_str())
-                .collect();
-            present.len() == ids.len() && ids.iter().all(|id| present.contains(&id.as_str()))
-        });
-
-        let complete = assistant_index.is_some_and(|index| {
-            let mut present = Vec::new();
-            let mut result_index = index + 1;
-            while result_index < reduced.len()
-                && reduced[result_index].role == crate::llm::MessageRole::Tool
-            {
-                if let Some(id) = reduced[result_index].tool_call_id.as_deref() {
-                    present.push(id);
-                }
-                result_index += 1;
+fn protected_groups(messages: &[Message]) -> Vec<ProtectedGroup> {
+    let mut groups = Vec::new();
+    for (index, message) in messages.iter().enumerate() {
+        let call_ids: Vec<String> = message
+            .tool_calls
+            .iter()
+            .flatten()
+            .map(|call| call.id.clone())
+            .collect();
+        let protects_multimodal = matches!(
+            &message.content,
+            crate::llm::MessageContent::Parts { content } if !content.is_empty()
+        );
+        if call_ids.is_empty() && !protects_multimodal {
+            continue;
+        }
+        let mut end = index + 1;
+        if !call_ids.is_empty() {
+            while end < messages.len() && messages[end].role == crate::llm::MessageRole::Tool {
+                end += 1;
             }
-            present.len() == ids.len() && ids.iter().all(|id| present.contains(&id.as_str()))
+        }
+        groups.push(ProtectedGroup {
+            identities: if call_ids.is_empty() {
+                vec![format!("assistant_history_index_{index}")]
+            } else {
+                call_ids
+            },
+            records: messages[index..end]
+                .iter()
+                .map(|record| {
+                    serde_json::to_value(record).expect("Message serialization is infallible")
+                })
+                .collect(),
         });
+    }
+    groups
+}
 
-        if !complete {
-            reduced.retain(|message| {
-                let is_group_assistant = message
-                    .tool_calls
-                    .iter()
-                    .flatten()
-                    .any(|call| ids.contains(&call.id));
-                let is_group_result = message
-                    .tool_call_id
-                    .as_ref()
-                    .is_some_and(|id| ids.contains(id));
-                !is_group_assistant && !is_group_result
+fn verify_protected_groups(
+    groups: &[ProtectedGroup],
+    reduced: &[Message],
+) -> Result<(), ReduceHistoryError> {
+    let reduced: Vec<serde_json::Value> = reduced
+        .iter()
+        .map(|message| serde_json::to_value(message).expect("Message serialization is infallible"))
+        .collect();
+    let mut search_from = 0usize;
+    for group in groups {
+        let Some(relative_index) = reduced[search_from..]
+            .windows(group.records.len())
+            .position(|window| window == group.records)
+        else {
+            return Err(ReduceHistoryError::ProtectedHistoryOverflow {
+                protected_records: group.identities.clone(),
             });
+        };
+        search_from += relative_index + group.records.len();
+    }
+    Ok(())
+}
+
+/// Why a history cannot be prepared within the requested reduction policy.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum ReduceHistoryError {
+    /// Canonical history is malformed and must be recovered before dispatch.
+    #[error("invalid history: {0}")]
+    InvalidHistory(#[from] HistoryValidationError),
+    /// A reducer would remove, alter, or reorder protected history.
+    #[error("protected history does not fit without loss: {protected_records:?}")]
+    ProtectedHistoryOverflow { protected_records: Vec<String> },
+    /// The intact prepared history exceeds the applicable destination input
+    /// allowance. No truncation fallback is permitted for protected originals.
+    #[error(
+        "context requires {required_tokens} tokens but the input allowance is {input_allowance}"
+    )]
+    ContextOverflow {
+        required_tokens: usize,
+        input_allowance: usize,
+    },
+}
+
+impl ReduceHistoryError {
+    /// Stable event code for the explicit preparation failure.
+    #[must_use]
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::InvalidHistory(_) => "invalid_history",
+            Self::ProtectedHistoryOverflow { .. } => "protected_history_overflow",
+            Self::ContextOverflow { .. } => "context_overflow",
         }
     }
 }
@@ -96,12 +133,12 @@ fn drop_severed_tool_groups(original: &[Message], reduced: &mut Vec<Message>) {
 /// What [`reduce_history`] did to a run's history.
 #[derive(Debug, Clone, Default)]
 pub struct ReduceReport {
-    /// Any structural, token-budget, summarization, or normalization rewrite.
+    /// Any structural, token-budget, or summarization rewrite.
     /// World-state baselines must be rendered in full after this signal.
     pub history_rewritten: bool,
     /// The token-budget stage's report, when it changed anything.
     pub context_action: Option<ContextAction>,
-    /// What normalization repaired, if anything.
+    /// Counts from lossless history validation.
     pub normalize: NormalizeReport,
 }
 
@@ -161,8 +198,8 @@ fn budget_config(declared: &DeclaredStrategy, context_limit: usize) -> ContextCo
     config
 }
 
-/// Reduce a run's history once: structural stage, token-budget stage, then
-/// tool-call normalization, with the system message pinned throughout.
+/// Reduce a run's history once: lossless validation, structural stage, token
+/// budget, then protected-group verification, with the system message pinned.
 ///
 /// `messages` is the full list including the system message at index 0 when
 /// one is present. The returned list is what the provider receives.
@@ -172,38 +209,75 @@ pub async fn reduce_history(
     model: &str,
     context_limit: usize,
     driver: Option<&dyn LlmDriver>,
-) -> (Vec<Message>, ReduceReport) {
+) -> Result<(Vec<Message>, ReduceReport), ReduceHistoryError> {
+    reduce_history_with_marked_prose(messages, declared, model, context_limit, driver, None, &[])
+        .await
+}
+
+/// Reduce history while permitting only explicitly host-marked prose ranges
+/// to enter summarization. Span indices address conversation history after the
+/// optional leading system message is removed.
+pub async fn reduce_history_with_marked_prose(
+    messages: Vec<Message>,
+    declared: &DeclaredStrategy,
+    model: &str,
+    context_limit: usize,
+    driver: Option<&dyn LlmDriver>,
+    request_budget_contract: Option<&super::budget::RequestBudgetContract>,
+    eligible_prose: &[HostMarkedProseSpan],
+) -> Result<(Vec<Message>, ReduceReport), ReduceHistoryError> {
     let original_history = serde_json::json!(&messages);
-    let mut normalized_messages = messages;
-    let mut normalize = normalize_history(&mut normalized_messages);
-    let normalized_original = normalized_messages.clone();
-    let (system, history) = split_pinned_system(normalized_messages);
+    let normalize = normalize_history(&messages)?;
+    let protected = protected_groups(&messages);
+    let (system, history) = split_pinned_system(messages);
 
     // Stage 1, structural: message-count trimming and LLM summarization.
-    let after_structural = trim_history_with_summarization(system, history, declared, driver).await;
+    let after_structural = trim_history_with_marked_prose(
+        system,
+        history,
+        declared,
+        driver,
+        model,
+        request_budget_contract,
+        eligible_prose,
+    )
+    .await;
 
     // Stage 2, token budget: enforce the model's window. The manager preserves
     // system messages itself, so the pinned message can travel with the list.
-    let manager = ContextManager::for_model(budget_config(declared, context_limit), model);
+    let config = budget_config(declared, context_limit);
+    let input_allowance = config
+        .max_tokens
+        .unwrap_or(context_limit.saturating_sub(1_000));
+    let manager = ContextManager::for_model(config, model);
     let (after_budget, context_action) = manager
-        .apply_with_driver(after_structural, context_limit, driver)
+        // Structural summarization has already consumed the marks. Generated
+        // summaries do not inherit eligibility implicitly and cannot recurse.
+        .apply_with_marked_prose(after_structural, context_limit, driver, None, &[])
         .await;
 
-    // Stage 3: drop any tool-call group the reducers only partly retained,
-    // then enforce the provider-facing invariants once more.
-    let mut final_messages = after_budget;
-    drop_severed_tool_groups(&normalized_original, &mut final_messages);
-    merge_normalize_report(&mut normalize, normalize_history(&mut final_messages));
+    // Stage 3: reducers may not remove, alter, or reorder protected records.
+    // Returning the error leaves the caller's canonical source untouched.
+    let final_messages = after_budget;
+    verify_protected_groups(&protected, &final_messages)?;
+    normalize_history(&final_messages)?;
+    let required_tokens = TokenService::count_messages(model, &final_messages);
+    if required_tokens > input_allowance {
+        return Err(ReduceHistoryError::ContextOverflow {
+            required_tokens,
+            input_allowance,
+        });
+    }
 
     let history_rewritten = original_history != serde_json::json!(&final_messages);
-    (
+    Ok((
         final_messages,
         ReduceReport {
             history_rewritten,
             context_action,
             normalize,
         },
-    )
+    ))
 }
 
 #[cfg(test)]
@@ -254,7 +328,8 @@ mod tests {
             4_000,
             None,
         )
-        .await;
+        .await
+        .expect("plain history reduces");
 
         assert_eq!(out[0].role, MessageRole::System);
         assert_eq!(out[0].content.as_text(), Some("identity and skills"));
@@ -262,7 +337,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn severed_tool_pair_is_repaired_after_reduction() {
+    async fn severed_tool_pair_returns_protected_overflow() {
         let call = ToolCall {
             id: "c1".to_string(),
             call_type: "function".to_string(),
@@ -275,7 +350,7 @@ mod tests {
         for i in 0..40 {
             messages.push(msg(MessageRole::User, &format!("turn-{i}")));
         }
-        // A call whose result the window will cut away.
+        // A call with no result is invalid before any reducer runs.
         messages.push(Message {
             role: MessageRole::Assistant,
             content: MessageContent::text(""),
@@ -283,18 +358,21 @@ mod tests {
             tool_calls: Some(vec![call]),
         });
 
-        let (out, report) = reduce_history(
+        let error = reduce_history(
             messages,
             &DeclaredStrategy::SlidingWindow { max_messages: 5 },
             "openai/gpt-4o",
             4_000,
             None,
         )
-        .await;
+        .await
+        .expect_err("missing result is never synthesized");
 
-        assert_eq!(report.normalize.synthesized, vec!["c1".to_string()]);
-        let last = out.last().expect("history is non-empty");
-        assert_eq!(last.role, MessageRole::Tool);
-        assert_eq!(last.tool_call_id.as_deref(), Some("c1"));
+        assert_eq!(
+            error,
+            ReduceHistoryError::InvalidHistory(HistoryValidationError::MissingResult {
+                call_id: "c1".to_string(),
+            })
+        );
     }
 }
