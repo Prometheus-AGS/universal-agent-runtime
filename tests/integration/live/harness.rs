@@ -5,7 +5,7 @@
 //! include several whose constructors are non-obvious — see
 //! `openspec/changes/live-integration-baseline-coverage/appstate-field-plan.md`
 //! for that research), this harness calls the actual public
-//! `universal_agent_runtime::server::start_server_sidecar_with_listeners` entry point against
+//! `universal_agent_runtime::server::start_server_with_listeners` entry point against
 //! a config built entirely from an
 //! explicit temp YAML file. This is both simpler and a stronger proof: the
 //! baseline cases exercise the real sidecar boot path, not a hand-approximated
@@ -21,7 +21,7 @@ use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 use universal_agent_runtime::config::Cli;
 use universal_agent_runtime::config_manager::ConfigManager;
-use universal_agent_runtime::server::start_server_sidecar_with_listeners_and_shutdowns;
+use universal_agent_runtime::server::start_server_with_listeners_and_shutdowns;
 
 static TRACING_INIT: Once = Once::new();
 static SCRATCH_SWEEP: Once = Once::new();
@@ -561,7 +561,7 @@ async fn boot_test_server_inner(
                     .expect("register harness listener with Tokio");
                 let grpc_listener = tokio::net::TcpListener::from_std(grpc_listener)
                     .expect("register harness gRPC listener with Tokio");
-                let result = start_server_sidecar_with_listeners_and_shutdowns(
+                let result = start_server_with_listeners_and_shutdowns(
                     config,
                     listener,
                     grpc_listener,

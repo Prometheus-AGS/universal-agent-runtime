@@ -1,0 +1,26 @@
+=== 1.4a build probe WITH test-probes ===
+
+warning: `universal-agent-runtime` (lib) generated 1 warning (run `cargo fix --lib -p universal-agent-runtime` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14m 04s
+[1.4a] exit=0
+=== 1.4b build probe WITHOUT test-probes (must be refused) ===
+error: target `uar-env-probe` in package `universal-agent-runtime` requires the features: `test-probes`
+Consider enabling them by passing, e.g., `--features="test-probes"`
+[1.4b] exit=101
+=== live harness (rename check) ===
+2026-09-23T19:15:11.642597Z  WARN universal_agent_runtime::server: Embedding backend is unavailable; chat and agent interfaces will start without vector retrieval backend=fastembed error=embedding backend is not available: unknown or disabled embedding backend: fastembed
+2026-09-23T19:15:12.466134Z  WARN universal_agent_runtime::uar::runtime::skills::storage::filesystem: failed to load standard agent skill manifest path=/Users/gqadonis/.TOOLS/skills/agents/caveman-explore/SKILL.md error_kind="invalid-manifest"
+2026-09-23T19:15:12.547632Z  WARN universal_agent_runtime::uar::runtime::skills::storage::filesystem: failed to load standard agent skill manifest path=/Users/gqadonis/Projects/prometheus/prometheus-skill-pack/skills/imported/prometheus-entity-management/.agents/skills/npm-release-and-cleanup/SKILL.md error_kind="invalid-manifest"
+2026-09-23T19:15:12.550781Z  WARN universal_agent_runtime::uar::runtime::skills::storage::filesystem: failed to load standard agent skill manifest path=/Users/gqadonis/Projects/prometheus/prometheus-skill-pack/skills/imported/prometheus-entity-management/.claude/skills/npm-release-and-cleanup/SKILL.md error_kind="invalid-manifest"
+2026-09-23T19:15:13.426311Z  WARN universal_agent_runtime::uar::runtime::skills::storage::filesystem: could not inspect standard agent skill alias target path=/Users/gqadonis/.TOOLS/skills/agents/sync-push error_kind=NotFound
+2026-09-23T19:15:13.433300Z  WARN universal_agent_runtime::uar::runtime::skills::storage::filesystem: could not inspect standard agent skill alias target path=/Users/gqadonis/.TOOLS/skills/agents/sync-peers error_kind=NotFound
+2026-09-23T19:15:13.436538Z  WARN universal_agent_runtime::uar::runtime::skills::storage::filesystem: could not inspect standard agent skill alias target path=/Users/gqadonis/.TOOLS/skills/agents/sync-status error_kind=NotFound
+2026-09-23T19:15:22.678248Z  WARN universal_agent_runtime::server: Failed to load policies from directory — using permissive default error=Cedar governance is unavailable: rebuild with `cedar-governance`
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 93 filtered out; finished in 11.52s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 90 filtered out; finished in 36.98s
+[harness] exit=0
+=== 4.3 lib unit tests: governance runtime_control + security middleware ===
+running 24 tests
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 706 filtered out; finished in 0.03s
+[4.3] exit=0
+[batch] done 14:19 free=18.7GB

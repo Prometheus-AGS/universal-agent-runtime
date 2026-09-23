@@ -2101,11 +2101,15 @@ pub async fn start_server_sidecar(
 /// startup. It is intended for supervisors and integration harnesses that need
 /// collision-free ephemeral ports for every ingress.
 ///
+/// Not a sidecar entry point: it installs no launch-token guard, keeps CORS and the
+/// A2A gRPC listener, and must not be exposed to untrusted local clients. Use
+/// [`start_server_sidecar`] for the host-authenticated sidecar.
+///
 /// # Errors
 ///
 /// Returns an error when runtime initialization or serving fails, or when the
 /// supervising process drops the readiness receiver before startup completes.
-pub async fn start_server_sidecar_with_listeners(
+pub async fn start_server_with_listeners(
     config_manager: Arc<ConfigManager>,
     listener: tokio::net::TcpListener,
     a2a_grpc_listener: tokio::net::TcpListener,
@@ -2127,11 +2131,15 @@ pub async fn start_server_sidecar_with_listeners(
     .await
 }
 
-/// Start the sidecar with caller-owned listener and process shutdown signals.
+/// Start the server with caller-owned listeners and process shutdown signals.
 ///
 /// This variant is intended for supervisors that own the complete server
 /// lifecycle and must await resource cleanup before releasing the process.
-pub async fn start_server_sidecar_with_listeners_and_shutdowns(
+///
+/// Not a sidecar entry point: it installs no launch-token guard, keeps CORS and the
+/// A2A gRPC listener, and must not be exposed to untrusted local clients. Use
+/// [`start_server_sidecar`] for the host-authenticated sidecar.
+pub async fn start_server_with_listeners_and_shutdowns(
     config_manager: Arc<ConfigManager>,
     listener: tokio::net::TcpListener,
     a2a_grpc_listener: tokio::net::TcpListener,
