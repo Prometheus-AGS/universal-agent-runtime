@@ -1,0 +1,42 @@
+## Why
+
+the-boss will run `uar-sidecar` as a fourth agent runtime (decision D4, revision 3). Today any local process or web page that finds the sidecar's loopback port can drive it: JWT is off (`src/bin/uar-sidecar.rs:58-63,103-105`), anonymous requests pass (`src/uar/security/middleware.rs:33-43,136-143`), CORS allows any origin (`src/server.rs:1803,2232-2236`), and the sidecar also opens a `[::1]` twin listener (`server.rs:500-508,1960-1990`), an A2A gRPC listener (`server.rs:510-533`) and the operator SPA (`server.rs:1680-1692`). A loopback port is not an authentication boundary. A browser page can reach it through DNS rebinding or a simple CORS request, and any process of any user on the machine can connect.
+
+There is a second, less visible problem. With JWT off and a loopback host, the governance authority classifies the sidecar as "local, governance optional" and seeds `governance.enabled = false` (`src/uar/governance/runtime_control.rs:442-459,482-488`). In that posture UAR bypasses run-policy tool denial and risk-based approval. D1 relies on both: the-boss maps `disabledTools` to `policy.tools.deny` and answers approvals. The sidecar would silently ignore them.
+
+## What Changes
+
+- **BREAKING (sidecar protocol).** The sidecar reads a 256-bit launch token as the first line of stdin, before it binds a socket. No line, EOF, or a malformed line ends the process with a non-zero exit and no `READY`. The token is held only in memory. It is never read from environment variables, argv, files or config, and never written anywhere.
+- Every HTTP request to the sidecar port — every route, including `/health`, `/readyz`, `/metrics`, SSE streams, MCP endpoints and unknown paths — must carry `Authorization: Bearer <token>`, compared in constant time. The header is removed before the request reaches inner layers.
+- The sidecar rejects any request whose `Host` is not `127.0.0.1:<port>` or `localhost:<port>`, and any request that carries an `Origin` header. It sends no CORS headers.
+- Sidecar mode does not bind the `[::1]` twin listener or the A2A gRPC listener, and does not serve the operator SPA or static files.
+- Sidecar mode keeps tool governance mandatory. The host token counts as installed authentication, so the governance posture is `Required` and a persisted `governance.enabled = false` is normalized to `true`.
+- Every child process the sidecar spawns (stdio MCP servers, terminal tool commands, provisioning commands) gets `stdin` closed (null) unless the child protocol needs a pipe, and stdio MCP children get the allowlisted environment already used by the snapshot path (`src/mcp/registry.rs:678-684,803-832`). **BREAKING for standalone stdio MCP users (operator decision 2026-09-23: approved).** The allowlisted environment and null stdin apply in standalone UAR as well as in sidecar mode. A standalone stdio MCP server that relied on an undeclared inherited variable (for example `HOME`) must now declare it in its definition. A stdio MCP child's stdin stays its MCP protocol pipe, which the protocol requires; it is never the UAR process's own stdin.
+- Add `GET /api/uar/capabilities`: UAR version, AG-UI profile and revision, and a list of named capability flags a host checks at startup. None exists today: `/health` returns only `{"status":"ok"}` (`src/server.rs:2420-2422`), and the version appears only in the OpenAPI document (`src/uar/api/openapi.rs:16`), which is compiled only with `api-docs` (`src/server.rs:1401-1405`). the-boss's D2 version gate needs it. In sidecar mode it requires the launch token like every other route.
+- The existing default of JWT off in the sidecar (`fix-sidecar-loopback-auth`) stays. The host token replaces JWT as the sidecar's authentication, it does not add to it. The token authenticates the **host**, not a user or session: every sidecar request still resolves to the `anonymous` principal (`src/uar/security/middleware.rs:13-27,36-42`). Per-session identity is the sibling change `sidecar-session-principal`.
+- One sidecar process serves every the-boss session through one stdout stream, so the sidecar's defaults drop features that mix content across sessions:
+  - The default log filter is `info` instead of `info,universal_agent_runtime=debug` (`src/uar/telemetry/mod.rs:68-69`). At the default level no log line carries prompt messages, tool arguments or credentials; today debug lines print full messages and tool arguments (`src/llm/orchestrator.rs:1662-1668,2066-2071`). An explicit `RUST_LOG` stays authoritative.
+  - Skill evolution is forced off (`skill_evolution.enabled`; default already `false`, `src/config.rs:2377-2379`; trigger at `src/uar/runtime/manager.rs:5443-5460`).
+  - The UAR memory system is forced off (`memory.enabled`, `src/config.rs:1045-1047`, service built at `src/server.rs:777`) until `sidecar-session-principal` provides per-session scoping.
+  - The global MCP server list is empty: the sidecar does not load `mcp.json` (`src/server.rs:800-804`) or hydrate `mcp.servers` (`src/server.rs:1046`), and refuses global MCP server mutation. Tools arrive as run-scoped MCP servers (D1, separate change).
+
+## Capabilities
+
+### New Capabilities
+- `sidecar-launch-security`: launch-token handoff over stdin, per-request token/Host/Origin enforcement on the sidecar port, reduced listener surface in sidecar mode, token confinement (no argv, env, file, log or child exposure), child-process environment and stdin rules in every mode, and the capabilities endpoint a host reads at startup.
+
+### Modified Capabilities
+- `jwt-hardening`: the requirement "Optional JWT permits an exact local governance-optional posture" gains a fourth condition — the process is not a token-authenticated sidecar — and a scenario for it.
+
+## Impact
+
+- **Code:** `src/bin/uar-sidecar.rs` (stdin token read before bind; pass the token to the server; sidecar config overrides), `src/uar/telemetry/mod.rs` (caller-chosen default filter), `src/server.rs` (`start_server_sidecar` signature, companion/A2A/SPA/CORS gating, outermost guard layer, no global MCP load in sidecar mode), `src/uar/api/mcp_admin.rs` and `src/uar/admin/mcp.rs` (refuse global mutation in sidecar mode), a new guard module under `src/uar/security/`, `src/uar/governance/runtime_control.rs` (record host-token authentication; new status reason), `src/mcp/registry.rs:616-633,1255-1283` and `src/mcp/stdio_client.rs:34-45` (allowlisted child environment), `src/uar/tools/terminal_exec.rs:224-237` and `src/uar/orchestrator/provisioning.rs:388,409,424,494,592` (null stdin).
+- **APIs:** one new read-only route, `GET /api/uar/capabilities` (new module `src/uar/api/capabilities.rs`, mounted in `src/server.rs` beside `/health`). Sidecar requests without the token now get 401; with a bad `Host` or any `Origin`, 403.
+- **Runtime UX:** none for standalone UAR, except that stdio MCP servers relying on undeclared inherited variables fail to connect until the variable is declared (accepted by the operator on 2026-09-23). The operator SPA is not reachable through the sidecar; the-boss's UI is the only UI.
+- **Provider compatibility:** unaffected. No provider, model routing or liter-llm path changes.
+- **Realtime state:** SSE streams (`/api/uar/runs/{id}/stream`, `/api/uar/sync/stream`) require the token like every other route; event content is unchanged.
+- **Governance:** the sidecar reports governance `Required` with a new reason code `host_token_required`. Approval and run-policy denial events reach the-boss as D1 expects.
+- **Depends on / depended on by:** `sidecar-session-principal` (per-session principal; re-enables memory in sidecar mode), the D1 run-scoped MCP server and credential changes, `encrypt-persisted-secrets`, `surreal-scoped-signin-and-embedded-fallback`. This change does not wait for them.
+- **Dependencies:** none at runtime. `secrecy` (direct, `Cargo.toml:505`) holds the token. Tests add `sysinfo` as a dev-dependency pinned to the version already in `Cargo.lock` (0.37.2); that edit follows `versions.toml` rules.
+- **the-boss (out of this repo):** must generate the token, write it as the first stdin line, send it on every request, and connect to `127.0.0.1:<port>` (the `[::1]` twin is gone).
+- **KBD workflow state:** yes. This change belongs to the-boss child phase `the-boss-universal-agent-runtime` (step 2); the phase `progress.json` in `prometheus-skills-mini` must list it. This repository's `.kbd-orchestrator/` is not updated by this authoring pass.

@@ -1830,3 +1830,48 @@ Protected messages and tool schemas must survive typed adaptation field-for-fiel
 Persisted checkpoint resume state, canonical history and authorization identity cross the shared run boundary as one crate-private bundle. A resumed run always resolves current policy again; caller-supplied resolved policy cannot authorize old checkpoint content. Inherited child canonical history uses a distinct field and the already captured inherited policy, so child turns do not masquerade as persisted resumes.
 
 Checkpoint raw JSON is authoritative after its byte digests and embedded authorization binding validate. Database-normalized structured values are replaced from that envelope before restoration. Rejected resumes keep a redacted run dialogue, so warm-session content cannot leak through the failed run. Legacy rows without complete protection metadata remain explicitly non-resumable.
+
+## 2026-09-23 — UAR as a the-boss sidecar agent runtime: operator decisions for the ten sidecar changes
+
+Context: the-boss (Electron) embeds `uar-sidecar` as a fourth agent runtime and stays in control of agent
+definitions, credentials, tools and approvals while UAR runs the loop. Decisions D1–D4 (revision 3) and their
+review record live in the prometheus-skills-mini repo under
+`.kbd-orchestrator/phases/the-boss-shipping-and-settings/children/the-boss-universal-agent-runtime/`.
+Changes: `sidecar-launch-security`, `encrypt-persisted-secrets`, `surreal-scoped-signin-and-embedded-fallback`,
+`run-scoped-credentials-and-mcp-servers`, `run-request-host-context`, `agui-runs-stream-fidelity`,
+`sidecar-session-principal`, `skill-matching-llm-and-local-embedding`, `agentic-chunking`,
+`sidecar-release-pipeline`.
+
+Operator decisions:
+- The sidecar authenticates its host with a per-launch token read from stdin; per-session identity is a
+  host-asserted principal accepted only on token-authenticated requests. No cross-session UAR memory in
+  sidecar mode; the host supplies memory through its own MCP tools.
+- Provider credentials (kind, base URL, key) and MCP servers are run-scoped, never persisted; the host
+  re-attaches them on every resume and continuation.
+- Secrets at rest use one sealed format inside settings, keyed from the OS store (Keychain, Windows
+  Credential Manager, Secret Service); no key file. Rollback to an older UAR requires re-entering secrets.
+- Stdio MCP children get an allowlisted environment and never read UAR's own stdin, in standalone UAR too.
+- The legacy intent classifier is dead on production paths; its stubs are not built and it is marked legacy.
+  SkillService `llm` binds the run's model before matching (a cross-provider skill `preferred_model` is
+  ignored and recorded); `local_embedding` becomes a distinct on-device matcher.
+- Knowledge bases with no explicit chunking strategy keep semantic chunking at threshold 0.5 for new
+  uploads; only an explicit choice changes it.
+- The sidecar release workflow is tag-triggered, builds test-disabled, and is added to the GitHub Actions
+  policy allowlist with an exception sentence in `docs/release-verification.md`.
+- `panic = "unwind"` is kept in the release profile because run finalization, sandbox and terminal cleanup
+  rely on catching panics (coordinator decision; departs from the compass profile).
+- A `GET /api/uar/capabilities` endpoint advertises version, AG-UI profile revision and capability flags so a
+  host can refuse an incompatible sidecar.
+
+Open: the amended `agentic-chunking` design (per-KB explicit-strategy marker, numbered-unit boundaries)
+awaits operator approval before implementation.
+
+## 2026-09-23 — UAR knowledge bases for the-boss agents; agentic chunking design approved
+
+Supersedes the "Open" line of the previous entry. The operator approved the amended `agentic-chunking`
+design (numbered-unit boundaries, 8,000-character windows, exact reconstruction, recursive-512 fallback,
+per-KB explicit-strategy marker; unmarked KBs keep semantic 0.5). UAR agents in the-boss use UAR knowledge
+bases owned by the session principal, not the host's own KB tools, so UAR chunking, retrieval and citations
+apply. Because sidecar mode persists no provider keys, KB ingestion accepts a request-scoped model credential
+with the run credential's shape and rules; without one, an agentic KB falls back to recursive chunking and
+reports the fallback instead of succeeding silently.
