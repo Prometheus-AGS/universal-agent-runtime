@@ -1,6 +1,10 @@
 //! Electron sidecar entry-point for the Universal Agent Runtime.
 //!
 //! Differences from `main.rs`:
+//! - Reads a 256-bit launch token (64 lowercase hex characters) as the first
+//!   line of stdin before binding anything, and requires it on every request.
+//!   A missing or malformed line exits with status 2. The token is held only
+//!   in memory; it is never read from the environment, argv or a file.
 //! - Binds to `127.0.0.1:0` so the OS assigns a free ephemeral port.
 //! - Retains the OS-assigned listener through initialization and emits exactly
 //!   one `READY:{port}` line only after the HTTP application is ready to serve.
@@ -21,17 +25,52 @@
 //! the runtime has spawned its workers — is unsound. `main` is deliberately
 //! synchronous and builds the runtime by hand.
 
-use std::io::Write as _;
+use std::io::{BufRead as _, Read as _, Write as _};
 use std::net::SocketAddr;
 use std::pin::Pin;
 
 use clap::Parser as _;
 use dotenvy::dotenv;
+use secrecy::zeroize::Zeroize as _;
 use tokio::io::AsyncReadExt as _;
 use universal_agent_runtime::config::{Cli, LogFormat};
 use universal_agent_runtime::config_manager::ConfigManager;
 use universal_agent_runtime::server;
 use universal_agent_runtime::uar;
+use universal_agent_runtime::uar::security::sidecar_guard::{
+    InvalidLaunchToken, SidecarLaunchToken,
+};
+
+/// Longest accepted token line: 64 hex characters, `\r`, `\n`.
+const MAX_TOKEN_LINE_BYTES: u64 = 66;
+
+/// Exit status when the launch token is missing or malformed.
+const INVALID_TOKEN_EXIT_STATUS: i32 = 2;
+
+/// Read the launch token from the first stdin line.
+///
+/// The read is bounded, so a host that never sends a newline cannot make the
+/// sidecar buffer without limit. The raw bytes are zeroized after parsing.
+/// Bytes after the first line stay in the standard-library stdin buffer, which
+/// the EOF watcher in [`run_sidecar`] reads through the same handle.
+///
+/// # Errors
+///
+/// Returns [`InvalidLaunchToken`] on end-of-file, a read error, or a line that
+/// is not exactly a launch token.
+fn read_launch_token() -> Result<SidecarLaunchToken, InvalidLaunchToken> {
+    let mut line = Vec::new();
+    let read = std::io::stdin()
+        .lock()
+        .take(MAX_TOKEN_LINE_BYTES)
+        .read_until(b'\n', &mut line);
+    let token = match read {
+        Ok(_) => SidecarLaunchToken::from_line(&line),
+        Err(_) => Err(InvalidLaunchToken),
+    };
+    line.zeroize();
+    token
+}
 
 /// Decide whether the sidecar should default JWT enforcement to off.
 ///
@@ -62,12 +101,18 @@ fn should_disable_sidecar_jwt(
     uar_jwt_required.is_none() && legacy_jwt_required.is_none()
 }
 
-/// The listener bound during synchronous bootstrap, handed to the runtime.
+/// The launch token and the listener bound during synchronous bootstrap,
+/// handed to the runtime.
 struct SidecarBootstrap {
+    token: SidecarLaunchToken,
     listener: std::net::TcpListener,
 }
 
 /// Synchronous pre-runtime bootstrap: every environment write lives here.
+///
+/// The launch token is read after the environment writes and before any socket
+/// is bound. A missing or malformed token ends the process with status 2 and a
+/// fixed message that never echoes the received bytes.
 ///
 /// # Errors
 ///
@@ -103,7 +148,19 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
         if disable_sidecar_jwt {
             std::env::set_var("UAR_SECURITY__JWT_REQUIRED", "false");
         }
+        // One sidecar serves every host session. Features that mix content
+        // across sessions stay off regardless of configuration files.
+        std::env::set_var("UAR_SKILL_EVOLUTION__ENABLED", "false");
+        std::env::set_var("UAR_MEMORY__ENABLED", "false");
     }
+
+    let token = match read_launch_token() {
+        Ok(token) => token,
+        Err(error) => {
+            eprintln!("UAR sidecar refused to start: {error}");
+            std::process::exit(INVALID_TOKEN_EXIT_STATUS);
+        }
+    };
 
     // Bind once and retain ownership until Axum begins serving. This removes
     // the port-stealing race that existed when startup dropped and re-bound the
@@ -120,7 +177,7 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
         std::env::set_var("UAR_SERVER__PORT", port.to_string());
     }
 
-    Ok(SidecarBootstrap { listener })
+    Ok(SidecarBootstrap { token, listener })
 }
 
 /// Await readiness, failing fast if the server stops first.
@@ -165,7 +222,10 @@ fn main() {
 
 async fn run_sidecar(bootstrap: SidecarBootstrap) {
     let log_format = LogFormat::Json;
-    let otel_provider = match uar::telemetry::init(&log_format) {
+    // Plain `info` by default: debug lines carry prompts and tool arguments,
+    // and one sidecar log stream serves every host session. An explicit
+    // `RUST_LOG` stays authoritative.
+    let otel_provider = match uar::telemetry::init(&log_format, "info") {
         Ok(provider) => provider,
         Err(error) => {
             eprintln!("Failed to initialize UAR sidecar telemetry: {error:#}");
@@ -186,7 +246,8 @@ async fn run_sidecar(bootstrap: SidecarBootstrap) {
     };
 
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel();
-    let server = server::start_server_sidecar(config_manager, listener, ready_tx, None);
+    let server =
+        server::start_server_sidecar(config_manager, listener, bootstrap.token, ready_tx, None);
     tokio::pin!(server);
     let ready_addr = match await_server_readiness(ready_rx, server.as_mut()).await {
         Ok(addr) => addr,

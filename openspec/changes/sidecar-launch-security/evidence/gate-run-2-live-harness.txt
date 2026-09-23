@@ -1,0 +1,169 @@
+warning: unused variable: `a2a_grpc_listener`
+   --> src/server.rs:540:9
+    |
+540 |     let a2a_grpc_listener = if sidecar_mode {
+    |         ^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_a2a_grpc_listener`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `universal-agent-runtime` (lib) generated 1 warning (run `cargo fix --lib -p universal-agent-runtime` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 50.11s
+     Running tests/integration.rs (/Volumes/my-passport/cargo-build/4a/8e0717ca42c200/debug/deps/integration-6e14844ac99c3f1b)
+
+running 4 tests
+test live::harness::tests::process_server_helper ... ok
+UAR_SHUTDOWN outcome=graceful_complete
+test live::harness::tests::chat_completion_flows_through_the_real_server_to_the_stub ... ok
+
+running 1 test
+test live::harness::tests::process_server_helper ... [2m2026-09-23T18:25:48.658372Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m LLM configuration loaded [3mmodel[0m[2m=[0mopenai/gpt-5.4-mini
+[2m2026-09-23T18:25:48.658428Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m UAR startup progress [3mstep[0m[2m=[0m1 [3mstage[0m[2m=[0m"governance_preflight"
+[2m2026-09-23T18:25:48.658512Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m UAR startup progress [3mstep[0m[2m=[0m2 [3mstage[0m[2m=[0m"primary_listener_bound"
+[2m2026-09-23T18:25:48.658539Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m UAR startup progress [3mstep[0m[2m=[0m3 [3mstage[0m[2m=[0m"companion_listener"
+[2m2026-09-23T18:25:48.659828Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Dual-stack companion listener bound [3maddress[0m[2m=[0m::1:52659
+[2m2026-09-23T18:25:48.660017Z[0m [33m WARN[0m [2muniversal_agent_runtime::server[0m[2m:[0m Embedding backend is unavailable; chat and agent interfaces will start without vector retrieval [3mbackend[0m[2m=[0mfastembed [3merror[0m[2m=[0membedding backend is not available: unknown or disabled embedding backend: fastembed
+[2m2026-09-23T18:25:48.660064Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::persistence::providers::surreal[0m[2m:[0m Connecting to SurrealDB: surrealkv:///var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmp0ECsvx/surrealkv
+[2m2026-09-23T18:25:48.660556Z[0m [32m INFO[0m [2msurrealdb::core::kvs::ds[0m[2m:[0m Starting kvs store at absolute path surrealkv:/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmp0ECsvx/surrealkv
+[2m2026-09-23T18:25:48.661353Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Enabling value log separation: true
+[2m2026-09-23T18:25:48.661375Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Setting value log max file size: 536870912
+[2m2026-09-23T18:25:48.661382Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Setting value log threshold: 4096
+[2m2026-09-23T18:25:48.661387Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Versioning enabled: false with retention period: 0ns
+[2m2026-09-23T18:25:48.661395Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Versioning with versioned_index: false
+[2m2026-09-23T18:25:48.661401Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Setting max memtable size: 4294967296
+[2m2026-09-23T18:25:48.661406Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Setting block cache capacity: 33285996544
+[2m2026-09-23T18:25:48.661418Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Setting block size: 65536
+[2m2026-09-23T18:25:48.661854Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m === Starting LSM tree initialization ===
+[2m2026-09-23T18:25:48.661865Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Database path: "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmp0ECsvx/surrealkv"
+[2m2026-09-23T18:25:48.675337Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Manifest state: log_number=0, last_sequence=0
+[2m2026-09-23T18:25:48.675409Z[0m [32m INFO[0m [2msurrealkv::wal::recovery[0m[2m:[0m Starting WAL recovery from directory: "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmp0ECsvx/surrealkv/wal"
+[2m2026-09-23T18:25:48.675550Z[0m [32m INFO[0m [2msurrealkv::wal::recovery[0m[2m:[0m Replaying WAL segments #00000000000000000000 to #00000000000000000000
+[2m2026-09-23T18:25:48.675684Z[0m [32m INFO[0m [2msurrealkv::wal::recovery[0m[2m:[0m WAL recovery complete: 0 batches across 0 segments, 0 memtables created, max_seq_num=None
+[2m2026-09-23T18:25:48.675768Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m === LSM tree initialization complete ===
+[2m2026-09-23T18:25:48.687322Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Sync mode: every transaction commit
+[2m2026-09-23T18:25:48.687357Z[0m [32m INFO[0m [2msurrealdb::core::kvs::surrealkv[0m[2m:[0m Grouped commit: enabled (timeout=5000000ns, wait_threshold=12, max_batch_size=4096)
+[2m2026-09-23T18:25:48.687404Z[0m [32m INFO[0m [2msurrealdb::core::kvs::ds[0m[2m:[0m Started surrealkv kvs store
+[2m2026-09-23T18:25:48.775943Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::persistence::providers::surreal[0m[2m:[0m SurrealDB using ns='uar' db='uar'
+[2m2026-09-23T18:25:49.443418Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::persistence::providers::surreal[0m[2m:[0m SurrealDB connected successfully
+[2m2026-09-23T18:25:49.456041Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::defaults[0m[2m:[0m Created default knowledge base: default (cd511a56-c76e-4e8b-8262-bf6850770392)
+[2m2026-09-23T18:25:49.456089Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Default knowledge base ensured.
+[2m2026-09-23T18:25:49.468791Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::defaults[0m[2m:[0m Built-in agent seeded/refreshed [3magent_id[0m[2m=[0mdefault-agent
+[2m2026-09-23T18:25:49.474826Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::defaults[0m[2m:[0m Built-in agent seeded/refreshed [3magent_id[0m[2m=[0morchestrator-agent
+[2m2026-09-23T18:25:49.510555Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Persistence and RAG enabled.
+[2m2026-09-23T18:25:49.510600Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Memory system disabled (UAR_MEMORY__ENABLED not set)
+[2m2026-09-23T18:25:49.512493Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Native tools (memory_save, memory_recall, memory_list, memory_delete_by_id, memory_update_by_id, memory_history) registered — active=false
+[2m2026-09-23T18:25:49.512778Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m MCP tool discovered [3mtool[0m[2m=[0mnative__memory_save
+[2m2026-09-23T18:25:49.512811Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m MCP tool discovered [3mtool[0m[2m=[0mnative__memory_recall
+[2m2026-09-23T18:25:49.512818Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m MCP tool discovered [3mtool[0m[2m=[0mnative__memory_list
+[2m2026-09-23T18:25:49.512823Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m MCP tool discovered [3mtool[0m[2m=[0mnative__memory_delete_by_id
+[2m2026-09-23T18:25:49.512828Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m MCP tool discovered [3mtool[0m[2m=[0mnative__memory_update_by_id
+[2m2026-09-23T18:25:49.512833Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m MCP tool discovered [3mtool[0m[2m=[0mnative__memory_history
+[2m2026-09-23T18:25:49.512916Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::native_skill[0m[2m:[0m Registering native skill [3mskill_name[0m[2m=[0mnative_echo
+[2m2026-09-23T18:25:49.512946Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::native_skill[0m[2m:[0m Registering native skill [3mskill_name[0m[2m=[0mnative_system_info
+[2m2026-09-23T18:25:49.513112Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::native_skill[0m[2m:[0m Registering native skill [3mskill_name[0m[2m=[0ma2ui_render
+[2m2026-09-23T18:25:49.513155Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::native_skill[0m[2m:[0m Registering native skill [3mskill_name[0m[2m=[0mpresentation_render
+[2m2026-09-23T18:25:49.513232Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::native_skill[0m[2m:[0m Registering native skill [3mskill_name[0m[2m=[0muar.compile
+[2m2026-09-23T18:25:49.513259Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::native_skill[0m[2m:[0m Registering native skill [3mskill_name[0m[2m=[0muar.session.update_section
+[2m2026-09-23T18:25:49.513277Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::native_skill[0m[2m:[0m Registering native skill [3mskill_name[0m[2m=[0muar.session.check_completeness
+[2m2026-09-23T18:25:49.513297Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::native_skill[0m[2m:[0m Registering native skill [3mskill_name[0m[2m=[0muar.session.compile
+[2m2026-09-23T18:25:49.513324Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::native_skill[0m[2m:[0m Registering native skill [3mskill_name[0m[2m=[0msession_search
+[2m2026-09-23T18:25:49.513332Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::native_skills[0m[2m:[0m Registered session_search native tool
+[2m2026-09-23T18:25:49.513336Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::native_skills[0m[2m:[0m Built-in native skills registration complete
+[2m2026-09-23T18:25:49.513346Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Native skill registry initialized with 9 skills
+[2m2026-09-23T18:25:49.521889Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::skills::service[0m[2m:[0m Added skill storage provider: Local Skills (fs-skills)
+[2m2026-09-23T18:25:49.521929Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Configured standard agent skills source [3msource[0m[2m=[0m/Users/gqadonis/.agents/skills
+[2m2026-09-23T18:25:49.521938Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::skills::service[0m[2m:[0m Added skill storage provider: Standard Agent Skills (agent-skills)
+[2m2026-09-23T18:25:49.521945Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::skills::service[0m[2m:[0m Added skill storage provider: Database Skills (db-skills)
+[2m2026-09-23T18:25:49.521952Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m UAR startup progress [3mstep[0m[2m=[0m6 [3mstage[0m[2m=[0m"skill_service_init"
+[2m2026-09-23T18:25:49.522806Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::skills::storage::filesystem[0m[2m:[0m Loaded skill from filesystem: Sample Filesystem Skill
+[2m2026-09-23T18:25:49.523032Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::skills::storage::filesystem[0m[2m:[0m Loaded skill from filesystem: db_helper
+[2m2026-09-23T18:25:49.523075Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::skills::storage::filesystem[0m[2m:[0m FilesystemStorageProvider 'Local Skills': loaded 2 skills from "skills"
+[2m2026-09-23T18:25:49.523087Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::skills::service[0m[2m:[0m Loaded 2 skills from provider 'Local Skills'
+[2m2026-09-23T18:25:49.552833Z[0m [33m WARN[0m [2muniversal_agent_runtime::uar::runtime::skills::storage::filesystem[0m[2m:[0m failed to load standard agent skill manifest [3mpath[0m[2m=[0m/Users/gqadonis/.TOOLS/skills/agents/caveman-explore/SKILL.md [3merror_kind[0m[2m=[0m"invalid-manifest"
+[2m2026-09-23T18:25:49.821106Z[0m [33m WARN[0m [2muniversal_agent_runtime::uar::runtime::skills::storage::filesystem[0m[2m:[0m failed to load standard agent skill manifest [3mpath[0m[2m=[0m/Users/gqadonis/Projects/prometheus/prometheus-skill-pack/skills/imported/prometheus-entity-management/.agents/skills/npm-release-and-cleanup/SKILL.md [3merror_kind[0m[2m=[0m"invalid-manifest"
+[2m2026-09-23T18:25:49.831625Z[0m [33m WARN[0m [2muniversal_agent_runtime::uar::runtime::skills::storage::filesystem[0m[2m:[0m failed to load standard agent skill manifest [3mpath[0m[2m=[0m/Users/gqadonis/Projects/prometheus/prometheus-skill-pack/skills/imported/prometheus-entity-management/.claude/skills/npm-release-and-cleanup/SKILL.md [3merror_kind[0m[2m=[0m"invalid-manifest"
+[2m2026-09-23T18:25:52.395521Z[0m [33m WARN[0m [2muniversal_agent_runtime::uar::runtime::skills::storage::filesystem[0m[2m:[0m could not inspect standard agent skill alias target [3mpath[0m[2m=[0m/Users/gqadonis/.TOOLS/skills/agents/sync-push [3merror_kind[0m[2m=[0mNotFound
+[2m2026-09-23T18:25:52.414111Z[0m [33m WARN[0m [2muniversal_agent_runtime::uar::runtime::skills::storage::filesystem[0m[2m:[0m could not inspect standard agent skill alias target [3mpath[0m[2m=[0m/Users/gqadonis/.TOOLS/skills/agents/sync-peers [3merror_kind[0m[2m=[0mNotFound
+[2m2026-09-23T18:25:52.425759Z[0m [33m WARN[0m [2muniversal_agent_runtime::uar::runtime::skills::storage::filesystem[0m[2m:[0m could not inspect standard agent skill alias target [3mpath[0m[2m=[0m/Users/gqadonis/.TOOLS/skills/agents/sync-status [3merror_kind[0m[2m=[0mNotFound
+[2m2026-09-23T18:25:52.698129Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::skills::storage::filesystem[0m[2m:[0m scanned standard agent skills directory [3msource[0m[2m=[0m/Users/gqadonis/.agents/skills [3mdiscovered[0m[2m=[0m1259 [3mrejected[0m[2m=[0m6
+[2m2026-09-23T18:25:52.702617Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::skills::storage::filesystem[0m[2m:[0m FilesystemStorageProvider 'Standard Agent Skills': loaded 1259 skills from "/Users/gqadonis/.agents/skills"
+[2m2026-09-23T18:25:52.702659Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::skills::service[0m[2m:[0m Loaded 1259 skills from provider 'Standard Agent Skills'
+[2m2026-09-23T18:25:52.704351Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::skills::service[0m[2m:[0m Loaded 0 skills from provider 'Database Skills'
+[2m2026-09-23T18:25:52.704462Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::skills::service[0m[2m:[0m SkillService initialized: 1261 total skills
+[2m2026-09-23T18:25:52.704704Z[0m [31mERROR[0m [2muniversal_agent_runtime::uar::runtime::skills::registry[0m[2m:[0m Failed to generate embedding for skill db_helper: local embeddings are unavailable: rebuild with `local-models` — persisting without one; vector search will not match it until it is re-embedded
+[2m2026-09-23T18:25:52.716803Z[0m [31mERROR[0m [2muniversal_agent_runtime::uar::runtime::skills::registry[0m[2m:[0m Failed to generate embedding for skill sample-filesystem-skill: local embeddings are unavailable: rebuild with `local-models` — persisting without one; vector search will not match it until it is re-embedded
+[2m2026-09-23T18:26:00.651962Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::skills::service[0m[2m:[0m reconciled standard agent skills [3mprovider[0m[2m=[0m"agent-skills" [3mdiscovered[0m[2m=[0m1259 [3madded[0m[2m=[0m1259 [3mupdated[0m[2m=[0m0 [3munchanged[0m[2m=[0m0
+[2m2026-09-23T18:26:00.659200Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::skills::builtin_loader[0m[2m:[0m discovered builtin manifest skills [3mcount[0m[2m=[0m0 [3mroots[0m[2m=[0m0 [3mpack_source[0m[2m=[0mEmbeddedSubmodule [3mpack_root[0m[2m=[0mcrates/prometheus-skill-system/skills [3mpack_version[0m[2m=[0m"<unknown>" [3mmcp_servers_detected[0m[2m=[0m""
+[2m2026-09-23T18:26:00.659248Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Resolved active skill-pack root [3msource[0m[2m=[0mEmbeddedSubmodule [3mroot[0m[2m=[0mcrates/prometheus-skill-system/skills [3mversion[0m[2m=[0m"<unknown>" [3mskill_count[0m[2m=[0m0
+[2m2026-09-23T18:26:00.659272Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m UAR startup progress [3mstep[0m[2m=[0m7 [3mstage[0m[2m=[0m"provider_registry_seed"
+[2m2026-09-23T18:26:02.212311Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::settings::manager[0m[2m:[0m Settings bootstrapped from config into DB [3mseeded[0m[2m=[0m169 [3mupdated[0m[2m=[0m0 [3mdrift[0m[2m=[0m0 [3mtypes[0m[2m=[0m31
+[2m2026-09-23T18:26:02.213282Z[0m [33m WARN[0m [2muniversal_agent_runtime::uar::governance::runtime_control[0m[2m:[0m Tool governance is inactive for this loopback-only process [3mevent[0m[2m=[0m"governance.inactive_local_mode" [3mboot_instance_id[0m[2m=[0m473c6fe0-44c8-4422-b033-23d2cb53d219 [3mconfigured_host[0m[2m=[0m127.0.0.1 [3mbound_addresses[0m[2m=[0m127.0.0.1:52660,[::1]:52659,127.0.0.1:52659 [3mjwt_required[0m[2m=[0mfalse [3meffective_enabled[0m[2m=[0mfalse [3mbypassed_gates[0m[2m=[0m"cedar,run_policy,risk_approval"
+[2m2026-09-23T18:26:02.213335Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Settings bootstrapped from config into DB [3mseeded[0m[2m=[0m169 [3mupdated[0m[2m=[0m0 [3mdrift[0m[2m=[0m0 [3mtypes[0m[2m=[0m31
+[2m2026-09-23T18:26:02.222404Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::settings::manager[0m[2m:[0m Seeded previously unknown providers into UAR storage [3mseeded[0m[2m=[0m1
+[2m2026-09-23T18:26:02.226793Z[0m [32m INFO[0m [2muniversal_agent_runtime::llm::registry[0m[2m:[0m Registering custom provider [3mprovider_id[0m[2m=[0mopenai [3mbase_url[0m[2m=[0mhttp://127.0.0.1:52658/v1 [3mmodels[0m[2m=[0m1 [3mdefault_model[0m[2m=[0mSome("gpt-5.4-mini")
+[2m2026-09-23T18:26:02.226895Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Governance boot posture finalized [3mboot_instance_id[0m[2m=[0m473c6fe0-44c8-4422-b033-23d2cb53d219 [3mrevision[0m[2m=[0m10 [3meffective_enabled[0m[2m=[0mfalse [3mmay_disable[0m[2m=[0mtrue
+[2m2026-09-23T18:26:02.226906Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m UAR startup progress [3mstep[0m[2m=[0m5 [3mstage[0m[2m=[0m"governance_engine"
+[2m2026-09-23T18:26:02.226917Z[0m [33m WARN[0m [2muniversal_agent_runtime::server[0m[2m:[0m No policy engine is compiled in — every X-Agent-Id request is authorized. Rebuild with `cedar-governance` to enforce policy. [3mfeature[0m[2m=[0m"cedar-governance"
+[2m2026-09-23T18:26:02.226929Z[0m [33m WARN[0m [2muniversal_agent_runtime::server[0m[2m:[0m Failed to load policies from directory — using permissive default [3merror[0m[2m=[0mCedar governance is unavailable: rebuild with `cedar-governance`
+[2m2026-09-23T18:26:02.325042Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::runtime::manager[0m[2m:[0m Intent classifier initialized [3mbackend[0m[2m=[0mTfidf [3mtopk[0m[2m=[0m5 [3maccept_threshold[0m[2m=[0m0.5
+[2m2026-09-23T18:26:02.525203Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Actor collaboration system initialized
+[2m2026-09-23T18:26:02.525257Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m API key service initialized
+[2m2026-09-23T18:26:02.525263Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Initializing Compiler Service with persistent storage
+[2m2026-09-23T18:26:02.525272Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Compiler service initialized
+[2m2026-09-23T18:26:02.525707Z[0m [32m INFO[0m [2mprometheus_parking_lot::core::worker_pool::native[0m[2m:[0m WorkerPool initialized with dedicated OS threads (no-polling design) [3mworker_count[0m[2m=[0m10 [3mmax_units[0m[2m=[0m1000 [3mmax_queue_depth[0m[2m=[0m100
+[2m2026-09-23T18:26:02.525737Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::rag::ingestion_worker[0m[2m:[0m Ingestion worker pool initialized [3mworker_count[0m[2m=[0m10 [3mmax_queue_depth[0m[2m=[0m100
+[2m2026-09-23T18:26:02.525746Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Shared ingestion worker pool initialized (single instance)
+[2m2026-09-23T18:26:02.528516Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m ACP server enabled [3mpath[0m[2m=[0m/acp
+[2m2026-09-23T18:26:02.530398Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Server started [3maddress[0m[2m=[0m127.0.0.1:52659 [3mshutdown_timeout_secs[0m[2m=[0m30
+[2m2026-09-23T18:26:02.530416Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m UAR startup progress [3mstep[0m[2m=[0m8 [3mstage[0m[2m=[0m"serving_http"
+[2m2026-09-23T18:26:02.531094Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Dual-stack companion listener serving [3maddress[0m[2m=[0m[::1]:52659
+[2m2026-09-23T18:26:02.584756Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Shutdown signal received — cancelling in-flight runs and draining ingestion pool [3mtimeout_secs[0m[2m=[0m30
+[2m2026-09-23T18:26:02.584847Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::rag::ingestion_worker[0m[2m:[0m Signalling ingestion worker pool shutdown
+[2m2026-09-23T18:26:02.584864Z[0m [32m INFO[0m [2mprometheus_parking_lot::core::worker_pool::native[0m[2m:[0m Shutting down worker pool
+[2m2026-09-23T18:26:02.584940Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::realtime::surreal_bus[0m[2m:[0m live stream supervisor shutting down [3mtopic[0m[2m=[0mknowledge_bases
+[2m2026-09-23T18:26:02.584966Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::realtime::surreal_bus[0m[2m:[0m live stream supervisor shutting down [3mtopic[0m[2m=[0mknowledge_documents
+[2m2026-09-23T18:26:02.584982Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::realtime::surreal_bus[0m[2m:[0m live stream supervisor shutting down [3mtopic[0m[2m=[0magents
+[2m2026-09-23T18:26:02.584993Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::realtime::surreal_bus[0m[2m:[0m live stream supervisor shutting down [3mtopic[0m[2m=[0mproviders
+[2m2026-09-23T18:26:02.585002Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::realtime::surreal_bus[0m[2m:[0m live stream supervisor shutting down [3mtopic[0m[2m=[0mmodels
+[2m2026-09-23T18:26:02.585012Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::realtime::surreal_bus[0m[2m:[0m live stream supervisor shutting down [3mtopic[0m[2m=[0mskills
+[2m2026-09-23T18:26:02.585021Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::realtime::surreal_bus[0m[2m:[0m live stream supervisor shutting down [3mtopic[0m[2m=[0msettings
+[2m2026-09-23T18:26:02.585030Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::realtime::surreal_bus[0m[2m:[0m live stream supervisor shutting down [3mtopic[0m[2m=[0mthreads
+[2m2026-09-23T18:26:02.585040Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::realtime::surreal_bus[0m[2m:[0m live stream supervisor shutting down [3mtopic[0m[2m=[0mmemory
+[2m2026-09-23T18:26:02.585050Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::realtime::surreal_bus[0m[2m:[0m live stream supervisor shutting down [3mtopic[0m[2m=[0mcompiler_sessions
+[2m2026-09-23T18:26:02.585083Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Async resources shut down
+[2m2026-09-23T18:26:02.585094Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Draining in-flight HTTP connections [3mtimeout_secs[0m[2m=[0m30
+[2m2026-09-23T18:26:02.585605Z[0m [32m INFO[0m [2mprometheus_parking_lot::core::worker_pool::native[0m[2m:[0m Worker pool shut down complete [3mworker_count[0m[2m=[0m10
+[2m2026-09-23T18:26:02.585622Z[0m [32m INFO[0m [2muniversal_agent_runtime::uar::rag::ingestion_worker[0m[2m:[0m Ingestion worker pool shut down
+[2m2026-09-23T18:26:02.586326Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m HTTP listeners stopped
+[2m2026-09-23T18:26:02.586346Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Ingestion pool shut down
+[2m2026-09-23T18:26:02.598487Z[0m [33m WARN[0m [2msurrealkv::lsm[0m[2m:[0m No runtime available for closing the store correctly
+[2m2026-09-23T18:26:02.603366Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Shutting down LSM tree...
+[2m2026-09-23T18:26:02.603437Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Flushing all memtables on shutdown (flush_on_close=true)
+[2m2026-09-23T18:26:02.603447Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Flushing all memtables for shutdown...
+[2m2026-09-23T18:26:02.603457Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Flushing active memtable last (newest data): size=9514619
+[2m2026-09-23T18:26:02.637359Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Manifest updated atomically: table_id=1, log_number=1, last_sequence=1651
+[2m2026-09-23T18:26:02.637727Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Active memtable flushed: table_id=1, file_size=1383042
+[2m2026-09-23T18:26:02.637739Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m All memtables flushed successfully for shutdown
+[2m2026-09-23T18:26:02.637747Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m All memtables flushed successfully on shutdown
+[2m2026-09-23T18:26:02.637753Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Closing WAL: active_log_number=0
+[2m2026-09-23T18:26:02.642645Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Cleaned up 1 obsolete WAL files during shutdown
+[2m2026-09-23T18:26:02.651915Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m === LSM tree shutdown complete === log_number=1, last_sequence=1651
+[2m2026-09-23T18:26:02.652151Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Shutting down LSM tree...
+[2m2026-09-23T18:26:02.656765Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Flushing all memtables on shutdown (flush_on_close=true)
+[2m2026-09-23T18:26:02.656783Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Flushing all memtables for shutdown...
+[2m2026-09-23T18:26:02.656791Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m All memtables flushed successfully for shutdown
+[2m2026-09-23T18:26:02.656797Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m All memtables flushed successfully on shutdown
+[2m2026-09-23T18:26:02.656802Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m Closing WAL: active_log_number=0
+[2m2026-09-23T18:26:02.662367Z[0m [32m INFO[0m [2msurrealkv::lsm[0m[2m:[0m === LSM tree shutdown complete === log_number=1, last_sequence=1651
+[2m2026-09-23T18:26:02.662856Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m SurrealKV lock released before normal completion [3mpath[0m[2m=[0m/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmp0ECsvx/surrealkv/LOCK
+[2m2026-09-23T18:26:02.663027Z[0m [32m INFO[0m [2muniversal_agent_runtime::server[0m[2m:[0m Server shutdown completed within the graceful deadline
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 93 filtered out; finished in 14.07s
+
+test live::harness::tests::caller_owned_http_cancellation_remains_nonterminating_before_sigint ... ok
+UAR_SHUTDOWN outcome=graceful_complete
+test live::harness::tests::boots_and_answers_health_check ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 90 filtered out; finished in 41.73s
+
+[cargo] exit=0

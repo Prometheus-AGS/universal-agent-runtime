@@ -74,6 +74,7 @@ use crate::uar::{
     security::{
         api_keys::{ApiKeyService, InMemoryApiKeyStorage},
         claims::UserContext,
+        sidecar_guard::{SidecarGuard, SidecarLaunchToken},
     },
 };
 
@@ -307,7 +308,18 @@ async fn request_span_layer(request: Request, next: Next) -> Response {
 
 /// Start the Axum server with the provided configuration manager.
 pub async fn start_server(config_manager: Arc<ConfigManager>) -> anyhow::Result<()> {
-    start_server_with_listener(config_manager, None, None, None, None, None, None, true).await
+    start_server_with_listener(
+        config_manager,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        true,
+        None,
+    )
+    .await
 }
 
 #[cfg(windows)]
@@ -324,6 +336,7 @@ pub(crate) async fn start_server_with_shutdown(
         None,
         Some(process_shutdown),
         true,
+        None,
     )
     .await
 }
@@ -337,6 +350,7 @@ async fn start_server_with_listener(
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
     process_shutdown: Option<tokio_util::sync::CancellationToken>,
     enforce_process_deadline: bool,
+    launch_token: Option<SidecarLaunchToken>,
 ) -> anyhow::Result<()> {
     let config = config_manager.current();
     let embedded_lock = surrealkv_lock_path(
@@ -355,6 +369,7 @@ async fn start_server_with_listener(
             http_shutdown,
             process_shutdown,
             shutdown_coordinator.clone(),
+            launch_token,
         )
         .await;
 
@@ -450,6 +465,7 @@ async fn run_server_with_listener(
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
     process_shutdown: Option<tokio_util::sync::CancellationToken>,
     shutdown_coordinator: ShutdownCoordinator,
+    launch_token: Option<SidecarLaunchToken>,
 ) -> anyhow::Result<()> {
     // UAR owns the process-level jsonwebtoken provider. Install it at the
     // shared startup funnel so in-process clients cannot initialize another
@@ -484,6 +500,9 @@ async fn run_server_with_listener(
     let (governance_mutation, governance_gate, governance_status) =
         uar::governance::runtime_control::governance_runtime_handles(&config.server.host);
     governance_mutation.record_installed_authentication(config.security.jwt_required);
+    if launch_token.is_some() {
+        governance_mutation.record_host_token_authentication();
+    }
     governance_mutation.declare_ingress("primary-http")?;
     let listener = match listener {
         Some(listener) => listener,
@@ -496,9 +515,18 @@ async fn run_server_with_listener(
     let primary_addr = listener.local_addr()?;
     let mut ingress_proofs =
         vec![governance_mutation.register_bound_ingress("primary-http", primary_addr)?];
+    // A token-authenticated sidecar exposes exactly this one listener, with
+    // every request checked by the outermost guard layer.
+    let sidecar_guard =
+        launch_token.map(|token| Arc::new(SidecarGuard::new(token, primary_addr.port())));
+    let sidecar_mode = sidecar_guard.is_some();
 
     info!(name: "startup.step", step = 3, stage = "companion_listener", "UAR startup progress");
-    let companion = bind_companion_listener(&config.server.host, primary_addr.port()).await;
+    let companion = if sidecar_mode {
+        None
+    } else {
+        bind_companion_listener(&config.server.host, primary_addr.port()).await
+    };
     if let Some(companion_listener) = &companion {
         governance_mutation.declare_ingress("companion-http")?;
         ingress_proofs.push(
@@ -509,7 +537,9 @@ async fn run_server_with_listener(
 
     #[cfg(feature = "a2a-transport")]
     info!(name: "startup.step", step = 4, stage = "a2a_grpc_listener", "UAR startup progress");
-    let a2a_grpc_listener = {
+    let a2a_grpc_listener = if sidecar_mode {
+        None
+    } else {
         governance_mutation.declare_ingress("a2a-grpc")?;
         let listener = match _a2a_grpc_listener {
             Some(listener) => listener,
@@ -529,7 +559,7 @@ async fn run_server_with_listener(
         };
         ingress_proofs
             .push(governance_mutation.register_bound_ingress("a2a-grpc", listener.local_addr()?)?);
-        listener
+        Some(listener)
     };
     let governance_admission_tokens =
         governance_mutation.seal_ingress_inventory(&ingress_proofs)?;
@@ -800,7 +830,11 @@ async fn run_server_with_listener(
     let mcp_config_path = mcp_config_path
         .as_deref()
         .unwrap_or_else(|| std::path::Path::new("mcp.json"));
-    let mut mcp_registry =
+    let mut mcp_registry = if sidecar_mode {
+        // A sidecar has no global MCP servers: tools arrive with each run.
+        info!("Sidecar mode — global MCP configuration is not loaded");
+        McpRegistry::empty()
+    } else {
         match McpRegistry::load_from_file(mcp_config_path.to_string_lossy().as_ref()).await {
             Ok(registry) => registry,
             Err(e) => {
@@ -812,7 +846,8 @@ async fn run_server_with_listener(
                 );
                 McpRegistry::empty()
             }
-        };
+        }
+    };
 
     // Register memory tools — live service if enabled, no-op shims otherwise.
     let save_tool = Arc::new(crate::uar::tools::memory::MemorySaveTool::new(
@@ -995,11 +1030,14 @@ async fn run_server_with_listener(
     // inventory is sealed, and before RunManager or any serve loop is exposed.
     let settings_manager: Option<Arc<crate::uar::settings::manager::SettingsManager>> =
         if let Some(p) = &persistence {
-            let mgr = Arc::new(
-                crate::uar::settings::manager::SettingsManager::new(Arc::clone(p))
-                    .with_governance_runtime(governance_mutation.clone(), governance_status.clone())
-                    .with_realtime_bus(live_bus.clone()),
-            );
+            let mgr = crate::uar::settings::manager::SettingsManager::new(Arc::clone(p))
+                .with_governance_runtime(governance_mutation.clone(), governance_status.clone())
+                .with_realtime_bus(live_bus.clone());
+            let mgr = Arc::new(if sidecar_mode {
+                mgr.with_sidecar_feature_locks()
+            } else {
+                mgr
+            });
             let governance_bootstrap = async {
                 let persisted = mgr
                     .load_optional_persisted_value("governance.enabled")
@@ -1043,7 +1081,10 @@ async fn run_server_with_listener(
                     {
                         tracing::error!(error = ?e, "Failed to hydrate provider registry from settings database");
                     }
-                    if let Err(e) = crate::uar::api::mcp_admin::hydrate_registry(&mcp, &mgr).await {
+                    if !sidecar_mode
+                        && let Err(e) =
+                            crate::uar::api::mcp_admin::hydrate_registry(&mcp, &mgr).await
+                    {
                         tracing::error!(error = ?e, "Failed to hydrate MCP registry from settings database");
                     }
 
@@ -1407,6 +1448,10 @@ async fn run_server_with_listener(
         .route("/health", get(liveness_handler))
         .route("/healthz", get(liveness_handler))
         .route("/readyz", get(readiness_handler))
+        .route(
+            "/api/uar/capabilities",
+            get(uar::api::capabilities::capabilities_handler),
+        )
         .route("/.well-known/uar-config", get(uar_config_schema_handler))
         .route(
             "/.well-known/uar-config/reload",
@@ -1670,27 +1715,35 @@ async fn run_server_with_listener(
         .route("/v1/messages", post(api_messages))
         .route("/v1/models", get(api_v1_models))
         .route("/v1/models/{model_id}", get(api_v1_model_detail))
-        .route("/metrics", get(api_metrics))
-        // ── SPA client-side routes ────────────────────────────────────────────
-        // These paths are handled by React Router in the browser. When a user
-        // hard-refreshes or navigates directly to one of them, the browser sends
-        // a real GET request to the server. We explicitly serve index.html so
-        // that React Router can take over and render the correct view.
-        // Without this, ServeDir's not_found_service can race with the 404 path
-        // in some middleware configurations and leak a 404 to the browser.
-        .route("/", get(spa_index_handler))
-        .route("/threads", get(spa_index_handler))
-        .route("/admin", get(spa_index_handler))
-        .route("/admin/{*path}", get(spa_index_handler))
-        .route("/about", get(spa_index_handler))
-        // Serve the React SPA from static/.
-        // ServeDir serves /assets/*, /favicon.svg, /manifest.json etc. with correct MIME types.
-        // The not_found_service fallback delivers index.html for any other unknown paths.
-        .fallback_service({
-            let dir = resolve_static_dir();
-            let index = dir.join("index.html");
-            ServeDir::new(dir).not_found_service(ServeFile::new(index))
-        })
+        .route("/metrics", get(api_metrics));
+    // A sidecar serves no operator SPA or static files: the host's UI is the
+    // only UI, and unmatched paths fall through to a plain 404.
+    let app = if sidecar_mode {
+        app
+    } else {
+        app
+            // ── SPA client-side routes ────────────────────────────────────────
+            // These paths are handled by React Router in the browser. When a user
+            // hard-refreshes or navigates directly to one of them, the browser sends
+            // a real GET request to the server. We explicitly serve index.html so
+            // that React Router can take over and render the correct view.
+            // Without this, ServeDir's not_found_service can race with the 404 path
+            // in some middleware configurations and leak a 404 to the browser.
+            .route("/", get(spa_index_handler))
+            .route("/threads", get(spa_index_handler))
+            .route("/admin", get(spa_index_handler))
+            .route("/admin/{*path}", get(spa_index_handler))
+            .route("/about", get(spa_index_handler))
+            // Serve the React SPA from static/.
+            // ServeDir serves /assets/*, /favicon.svg, /manifest.json etc. with correct MIME types.
+            // The not_found_service fallback delivers index.html for any other unknown paths.
+            .fallback_service({
+                let dir = resolve_static_dir();
+                let index = dir.join("index.html");
+                ServeDir::new(dir).not_found_service(ServeFile::new(index))
+            })
+    };
+    let app = app
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             uar::security::middleware::auth_middleware,
@@ -1799,8 +1852,15 @@ async fn run_server_with_listener(
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             uar::security::rate_limit::rate_limit_middleware,
-        ))
-        .layer(build_permissive_cors_layer())
+        ));
+    // A sidecar sends no CORS headers: its guard rejects every request that
+    // carries an `Origin`, and no browser page may talk to it.
+    let app = if sidecar_mode {
+        app
+    } else {
+        app.layer(build_permissive_cors_layer())
+    };
+    let app = app
         .layer(axum::middleware::from_fn(
             |req: Request, next: Next| async move {
                 let method = req.method().to_string();
@@ -1814,13 +1874,22 @@ async fn run_server_with_listener(
             },
         ))
         .with_state(state);
+    // Outermost layer: the launch-token guard runs before every route, the
+    // nested ACP service, the fallback and every other layer.
+    let app = match sidecar_guard {
+        Some(guard) => app.layer(axum::middleware::from_fn_with_state(
+            guard,
+            uar::security::sidecar_guard::enforce,
+        )),
+        None => app,
+    };
 
     // ── A2A v0.3 gRPC transport ──────────────────────────────────────────────
     // Spawns a gRPC server on a separate port (default 50051) alongside HTTP,
     // sharing the root run-cancellation token so it drains at the same moment
     // in-flight runs are aborted (see the shutdown signal handler below).
     #[cfg(feature = "a2a-transport")]
-    let grpc_handle = {
+    let grpc_handle = if let Some(a2a_grpc_listener) = a2a_grpc_listener {
         let grpc_addr = a2a_grpc_listener.local_addr()?;
         let grpc_admission = governance_admission_tokens
             .iter()
@@ -1836,7 +1905,7 @@ async fn run_server_with_listener(
             crate::uar::api::a2a::grpc::GrpcAgentService::new(Arc::clone(&a2a_state));
         let grpc_shutdown = run_cancellation_root.clone();
         info!(name: "a2a.grpc.serving", address = %grpc_addr, "A2A gRPC transport serving");
-        tokio::spawn(async move {
+        Some(tokio::spawn(async move {
             let result = tonic::transport::Server::builder()
                 .add_service(grpc_service.into_server())
                 .serve_with_incoming_shutdown(
@@ -1850,7 +1919,9 @@ async fn run_server_with_listener(
             if let Err(e) = result {
                 tracing::error!(error = %e, "A2A gRPC server error");
             }
-        })
+        }))
+    } else {
+        None
     };
 
     if governance_admission_tokens
@@ -1932,7 +2003,9 @@ async fn run_server_with_listener(
     .await;
 
     #[cfg(feature = "a2a-transport")]
-    if let Err(e) = grpc_handle.await {
+    if let Some(grpc_handle) = grpc_handle
+        && let Err(e) = grpc_handle.await
+    {
         tracing::error!(error = %e, "A2A gRPC task panicked");
     }
 
@@ -1985,11 +2058,17 @@ async fn bind_companion_listener(host: &str, port: u16) -> Option<tokio::net::Tc
     }
 }
 
-/// Start the server with a caller-provided, already-bound listener.
+/// Start the supervised sidecar on a caller-provided, already-bound listener.
 ///
 /// The readiness sender fires only after configuration, persistence, routes,
 /// and the HTTP application are initialized. The listener remains owned by the
 /// server for the entire startup path, so no other process can claim its port.
+///
+/// `launch_token` authenticates the host that launched the sidecar. Every
+/// request must carry it, name `127.0.0.1:{port}` or `localhost:{port}` as its
+/// authority, and carry no `Origin`. Sidecar mode also binds no companion or
+/// A2A gRPC listener, serves no operator SPA or CORS headers, keeps tool
+/// governance mandatory, and keeps the global MCP server list empty.
 ///
 /// # Errors
 ///
@@ -1998,6 +2077,7 @@ async fn bind_companion_listener(host: &str, port: u16) -> Option<tokio::net::Tc
 pub async fn start_server_sidecar(
     config_manager: Arc<ConfigManager>,
     listener: tokio::net::TcpListener,
+    launch_token: SidecarLaunchToken,
     ready: tokio::sync::oneshot::Sender<std::net::SocketAddr>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
 ) -> anyhow::Result<()> {
@@ -2010,6 +2090,7 @@ pub async fn start_server_sidecar(
         http_shutdown,
         None,
         true,
+        Some(launch_token),
     )
     .await
 }
@@ -2041,6 +2122,7 @@ pub async fn start_server_sidecar_with_listeners(
         http_shutdown,
         None,
         true,
+        None,
     )
     .await
 }
@@ -2067,6 +2149,7 @@ pub async fn start_server_sidecar_with_listeners_and_shutdowns(
         http_shutdown,
         process_shutdown,
         false,
+        None,
     )
     .await
 }

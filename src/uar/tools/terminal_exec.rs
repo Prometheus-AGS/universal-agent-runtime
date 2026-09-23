@@ -233,6 +233,8 @@ impl TerminalExecTool {
                 }
             }
         }
+        // A tool command must never read the UAR process's own stdin.
+        cmd.stdin(std::process::Stdio::null());
         cmd.stdout(std::process::Stdio::piped());
         cmd.stderr(std::process::Stdio::piped());
         cmd.kill_on_drop(true);

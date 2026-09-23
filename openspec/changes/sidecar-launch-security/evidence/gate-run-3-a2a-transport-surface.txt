@@ -1,0 +1,13 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 30.68s
+     Running tests/sidecar_launch_security.rs (/Volumes/my-passport/cargo-build/4a/8e0717ca42c200/debug/deps/sidecar_launch_security-0b507caa2d30f6a1)
+
+running 5 tests
+test surface::sidecar_owns_exactly_one_listening_socket ... ok
+test surface::operator_ui_not_served_in_sidecar_mode ... ok
+test governance::sidecar_governance_required_with_host_token_reason ... ok
+test surface::standalone_server_keeps_companion_grpc_and_spa ... ok
+test governance::standalone_loopback_without_jwt_remains_governance_optional ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 29 filtered out; finished in 11.23s
+
+[cargo] exit=0

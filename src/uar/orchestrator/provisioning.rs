@@ -387,6 +387,7 @@ async fn install_via_native_package_manager(
     };
     let status = Command::new(program)
         .args(&args)
+        .stdin(std::process::Stdio::null())
         .status()
         .await
         .with_context(|| format!("spawning {program} to install {package}"))?;
@@ -409,6 +410,7 @@ async fn git_install(
         let status = Command::new("git")
             .args(["clone", "--depth", "1", spec.url])
             .arg(&clone_dir)
+            .stdin(std::process::Stdio::null())
             .status()
             .await
             .with_context(|| format!("cloning {}", spec.url))?;
@@ -424,6 +426,7 @@ async fn git_install(
     let status = Command::new(program)
         .args(args)
         .current_dir(&clone_dir)
+        .stdin(std::process::Stdio::null())
         .status()
         .await
         .with_context(|| format!("running build command for {name}"))?;
@@ -496,6 +499,7 @@ async fn fetch_prebuilt(
         .arg(&archive_path)
         .arg("-C")
         .arg(&extract_dir)
+        .stdin(std::process::Stdio::null())
         .status()
         .await
         .with_context(|| format!("extracting {}", archive_path.display()))?;

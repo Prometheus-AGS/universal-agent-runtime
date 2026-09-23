@@ -55,6 +55,13 @@ name = "test_db_setup"
 path = "src/bin/test_db_setup.rs"
 required-features = ["server"]
 
+# Test-only child process that records what a spawned child can observe
+# (argv, environment, stdin). Never part of a release feature set.
+[[bin]]
+name = "uar-env-probe"
+path = "src/bin/uar-env-probe.rs"
+required-features = ["test-probes"]
+
 # Cookbook examples live in docs/cookbook/runtime/ but are built as examples of
 # the runtime crate so they share the workspace build cache.
 [[example]]
@@ -101,6 +108,18 @@ name = "burn_embedding_test"
 path = "tests/burn_embedding_test.rs"
 required-features = ["local-models"]
 
+# Sidecar launch-security contract tests launch the real sidecar and the
+# `uar-env-probe` child, so they need both binaries built.
+[[test]]
+name = "sidecar_launch_security"
+path = "tests/sidecar_launch_security.rs"
+required-features = ["server", "test-probes"]
+
+[[test]]
+name = "mcp_child_environment"
+path = "tests/mcp_child_environment.rs"
+required-features = ["server", "test-probes"]
+
 # CH-20: Criterion benchmarks for the router/dialect/context hot path.
 # harness = false because Criterion drives its own main().
 [[bench]]
@@ -129,6 +148,9 @@ tokio-test = "0.4"
 rustls = { version = "0.23.37", features = ["ring"] }
 criterion = { version = "0.8.2", features = ["html_reports", "async_tokio"] }
 proptest = "1.6"
+# Process-table inspection for the sidecar token-confinement tests. Same
+# version and feature set surrealdb-core already resolves, so no new lock entry.
+sysinfo = { version = "=0.37.2", default-features = false, features = ["system"] }
 
 [build-dependencies]
 tonic-build = "0.14"
@@ -222,6 +244,8 @@ tauri = []
 wasm-runtime = ["dep:wasmtime", "dep:wasmtime-wasi"]
 ## HashiCorp Vault KV-v2 config source. Off by default; enables `vault://...` URLs.
 vault = ["dep:vaultrs"]
+## Test-only probe binaries (`uar-env-probe`). Never enable in a release build.
+test-probes = []
 
 
 [dependencies]

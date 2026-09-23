@@ -613,17 +613,54 @@ fn service_shutdown_complete(slot: &SharedClientService, service: &DynClientServ
             .all(|retired| retired.is_transport_closed())
 }
 
+/// Process variables every stdio MCP child receives. Anything else, including
+/// application credentials, reaches a child only when its definition declares it.
+const STDIO_LAUNCH_ALLOWLIST: [&str; 8] = [
+    "PATH",
+    "PATHEXT",
+    "SYSTEMROOT",
+    "WINDIR",
+    "COMSPEC",
+    "TMPDIR",
+    "TEMP",
+    "TMP",
+];
+
+/// The allowlisted subset of an environment, read through `lookup`.
+fn stdio_launch_environment(
+    lookup: impl Fn(&std::ffi::OsStr) -> Option<std::ffi::OsString>,
+) -> BTreeMap<std::ffi::OsString, std::ffi::OsString> {
+    STDIO_LAUNCH_ALLOWLIST
+        .iter()
+        .filter_map(|key| {
+            lookup(std::ffi::OsStr::new(key)).map(|value| (std::ffi::OsString::from(key), value))
+        })
+        .collect()
+}
+
+/// A stdio MCP child command with the allowlisted process environment plus the
+/// definition's declared, already-expanded variables, and nothing else.
+fn stdio_child_command(
+    program: impl AsRef<std::ffi::OsStr>,
+    args: &[String],
+    declared: HashMap<String, String>,
+) -> Command {
+    let mut command = Command::new(program);
+    command
+        .args(args)
+        .env_clear()
+        .envs(stdio_launch_environment(|key| std::env::var_os(key)))
+        .envs(declared);
+    command
+}
+
 async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<DynClientService> {
     entry.validate_sandbox_policy(name)?;
     match entry {
         McpServerEntry::Stdio {
             command, args, env, ..
         } => {
-            let mut cmd = Command::new(resolve_mcp_command(command));
-            cmd.args(args);
-            for (key, value) in expand_env_map(env) {
-                cmd.env(key, value);
-            }
+            let cmd = stdio_child_command(resolve_mcp_command(command), args, expand_env_map(env));
             let transport = TokioChildProcess::new(cmd)
                 .with_context(|| format!("failed to spawn stdio MCP server '{name}'"))?;
             ().serve(transport)
@@ -804,25 +841,8 @@ fn snapshot_child_environment(
     request: &McpBindingRequest,
     declared: &HashMap<String, String>,
 ) -> BTreeMap<std::ffi::OsString, std::ffi::OsString> {
-    const LAUNCH_KEYS: &[&str] = &[
-        "PATH",
-        "PATHEXT",
-        "SYSTEMROOT",
-        "WINDIR",
-        "COMSPEC",
-        "TMPDIR",
-        "TEMP",
-        "TMP",
-    ];
     let captured = request.environment().variables();
-    let mut environment = LAUNCH_KEYS
-        .iter()
-        .filter_map(|key| {
-            captured
-                .get(std::ffi::OsStr::new(key))
-                .map(|value| (std::ffi::OsString::from(key), value.clone()))
-        })
-        .collect::<BTreeMap<_, _>>();
+    let mut environment = stdio_launch_environment(|key| captured.get(key).cloned());
     for key in declared.keys() {
         if let Some(value) = captured.get(std::ffi::OsStr::new(key)) {
             environment.insert(std::ffi::OsString::from(key), value.clone());
@@ -1268,12 +1288,7 @@ impl McpRegistry {
                         }
                     }
                 }
-                let mut cmd = Command::new(&command_path);
-                cmd.args(args);
-
-                for (k, v) in env {
-                    cmd.env(k, v);
-                }
+                let cmd = stdio_child_command(&command_path, args, env);
 
                 // rmcp docs show TokioChildProcess + configure pattern for adding args
                 let transport = TokioChildProcess::new(cmd)?;

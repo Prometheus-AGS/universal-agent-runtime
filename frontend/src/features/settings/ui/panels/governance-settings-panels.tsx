@@ -127,6 +127,8 @@ const GOVERNANCE_REASON_LABELS: Record<GovernanceStatusReason, string> = {
     "The configured listener host is not localhost or 127.0.0.1.",
   authentication_unverified: "The installed authentication mode is unknown.",
   jwt_required: "JWT authentication is active for this process.",
+  host_token_required:
+    "This process is a sidecar authenticated by its host's launch token.",
   ingress_inventory_unsealed:
     "The runtime has not sealed its tool-capable ingress inventory.",
   ingress_proof_missing: "A tool-capable ingress is missing its bound-address proof.",

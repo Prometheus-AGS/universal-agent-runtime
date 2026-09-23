@@ -9,6 +9,8 @@ pub mod adapters;
 #[cfg(feature = "server")]
 pub mod auth;
 #[cfg(feature = "server")]
+pub mod capabilities;
+#[cfg(feature = "server")]
 pub mod compiler;
 #[cfg(feature = "server")]
 pub mod credentials;

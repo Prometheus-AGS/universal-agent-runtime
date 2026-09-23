@@ -61,12 +61,18 @@ fn build_otlp_provider() -> Option<SdkTracerProvider> {
 /// The log format is controlled by `UAR_SERVER__LOG_FORMAT` or the `server.log_format`
 /// config key. Defaults to JSON for Kubernetes log aggregator compatibility.
 ///
+/// `default_directive` is the filter used when `RUST_LOG` is unset; an
+/// explicit `RUST_LOG` always wins.
+///
 /// Returns the OTLP [`SdkTracerProvider`] when trace export is active, so the
 /// caller can `shutdown()` it on exit to flush buffered spans; `None` otherwise.
 #[must_use]
-pub fn init(log_format: &LogFormat) -> anyhow::Result<Option<SdkTracerProvider>> {
-    let filter_layer = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info,universal_agent_runtime=debug"));
+pub fn init(
+    log_format: &LogFormat,
+    default_directive: &str,
+) -> anyhow::Result<Option<SdkTracerProvider>> {
+    let filter_layer =
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(default_directive));
 
     let writer = if let Some(path) = std::env::var_os("UAR_LOG_FILE") {
         let path = std::path::PathBuf::from(path);

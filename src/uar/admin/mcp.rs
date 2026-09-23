@@ -97,6 +97,17 @@ pub async fn list(
         .collect()
 }
 
+/// A token-authenticated sidecar keeps the global MCP server list empty.
+fn refuse_in_sidecar_mode(manager: &SettingsManager) -> Result<(), String> {
+    if manager.sidecar_feature_locks() {
+        return Err(format!(
+            "{}: global MCP server definitions are disabled in sidecar mode",
+            crate::uar::settings::manager::SIDECAR_GLOBAL_MCP_DISABLED
+        ));
+    }
+    Ok(())
+}
+
 async fn write(
     manager: &Arc<SettingsManager>,
     servers: &HashMap<String, StoredMcpServer>,
@@ -126,6 +137,7 @@ pub async fn save(
         .validate_sandbox_policy(&name)
         .map_err(|error| error.to_string())?;
     let manager = manager.ok_or_else(|| "UAR settings storage is unavailable".to_string())?;
+    refuse_in_sidecar_mode(manager)?;
 
     let mut servers = list(registry, Some(manager)).await;
     let connected = registry.server_names().iter().any(|item| item == &name);
@@ -165,6 +177,7 @@ pub async fn delete(
     name: &str,
 ) -> Result<SaveResult, String> {
     let manager = manager.ok_or_else(|| "UAR settings storage is unavailable".to_string())?;
+    refuse_in_sidecar_mode(manager)?;
     let mut servers = list(registry, Some(manager)).await;
     servers.remove(name);
     write(manager, &servers).await?;

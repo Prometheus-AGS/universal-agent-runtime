@@ -13278,6 +13278,7 @@ dependencies = [
  "surreal-memory",
  "surrealdb",
  "sycophancy-core",
+ "sysinfo",
  "tempfile",
  "text-splitter",
  "thiserror 2.0.20",

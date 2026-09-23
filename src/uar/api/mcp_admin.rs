@@ -94,8 +94,31 @@ pub fn build_router() -> Router<AppState> {
         .route("/servers/{name}", put(save_server).delete(delete_server))
 }
 
+/// A token-authenticated sidecar has no global MCP servers: tools arrive with
+/// each run, and one sidecar serves every host session.
+fn sidecar_locked(state: &AppState) -> bool {
+    state
+        .settings_manager
+        .as_ref()
+        .is_some_and(|manager| manager.sidecar_feature_locks())
+}
+
+fn sidecar_mutation_refused() -> axum::response::Response {
+    (
+        StatusCode::CONFLICT,
+        Json(json!({
+            "error": {
+                "code": crate::uar::settings::manager::SIDECAR_GLOBAL_MCP_DISABLED,
+                "message": "global MCP server definitions are disabled in sidecar mode",
+            }
+        })),
+    )
+        .into_response()
+}
+
 async fn stored_servers(state: &AppState) -> HashMap<String, StoredMcpServer> {
     if let Some(manager) = &state.settings_manager
+        && !manager.sidecar_feature_locks()
         && let Some(value) = manager.get_value(SETTINGS_KEY).await
         && let Ok(servers) = serde_json::from_value(value)
     {
@@ -187,6 +210,9 @@ async fn save_server(
     Path(path_name): Path<String>,
     Json(mut request): Json<SaveMcpServerRequest>,
 ) -> impl IntoResponse {
+    if sidecar_locked(&state) {
+        return sidecar_mutation_refused();
+    }
     if request.name.trim().is_empty() {
         request.name = path_name.clone();
     }
@@ -235,6 +261,9 @@ async fn delete_server(
     State(state): State<AppState>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
+    if sidecar_locked(&state) {
+        return sidecar_mutation_refused();
+    }
     state.mcp.remove_server(&name);
     state.run_manager.invalidate_mcp_server(&name).await;
     let mut servers = stored_servers(&state).await;

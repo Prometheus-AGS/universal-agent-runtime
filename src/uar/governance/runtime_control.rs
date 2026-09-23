@@ -48,6 +48,8 @@ pub enum GovernanceStatusReason {
     ConfiguredHostNotAllowed,
     AuthenticationUnverified,
     JwtRequired,
+    /// The process is a supervised sidecar authenticated by a host launch token.
+    HostTokenRequired,
     IngressInventoryUnsealed,
     IngressProofMissing,
     BoundIngressNotLoopback,
@@ -82,6 +84,7 @@ impl GovernanceRuntimeSnapshot {
                 GovernanceStatusReason::ConfiguredHostNotAllowed
                     | GovernanceStatusReason::AuthenticationUnverified
                     | GovernanceStatusReason::JwtRequired
+                    | GovernanceStatusReason::HostTokenRequired
                     | GovernanceStatusReason::IngressInventoryUnsealed
                     | GovernanceStatusReason::IngressProofMissing
                     | GovernanceStatusReason::BoundIngressNotLoopback
@@ -226,6 +229,7 @@ struct State {
     mutation_available: bool,
     configured_host: String,
     jwt_required: Option<bool>,
+    host_token_required: bool,
     declared_ingresses: BTreeSet<String>,
     registrations: BTreeMap<String, Registration>,
     sealed: bool,
@@ -313,6 +317,7 @@ pub fn governance_runtime_handles(
             mutation_available: false,
             configured_host: configured_host.into(),
             jwt_required: None,
+            host_token_required: false,
             declared_ingresses: BTreeSet::new(),
             registrations: BTreeMap::new(),
             sealed: false,
@@ -357,6 +362,15 @@ impl GovernanceMutationHandle {
     pub fn record_installed_authentication(&self, jwt_required: bool) {
         let mut state = write_state(&self.shared);
         state.jwt_required = Some(jwt_required);
+        state.revision = state.revision.saturating_add(1);
+    }
+
+    /// Record that a host launch token authenticates this process (sidecar
+    /// mode). The token counts as installed authentication, so governance
+    /// cannot become operator-optional; `jwt_required` keeps its true value.
+    pub fn record_host_token_authentication(&self) {
+        let mut state = write_state(&self.shared);
+        state.host_token_required = true;
         state.revision = state.revision.saturating_add(1);
     }
 
@@ -446,6 +460,11 @@ impl GovernanceMutationHandle {
         }
         if jwt_required {
             state.reasons.insert(GovernanceStatusReason::JwtRequired);
+        }
+        if state.host_token_required {
+            state
+                .reasons
+                .insert(GovernanceStatusReason::HostTokenRequired);
         }
         if state
             .registrations

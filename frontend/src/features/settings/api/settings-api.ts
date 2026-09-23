@@ -14,6 +14,7 @@ export type GovernanceStatusReason =
   | "configured_host_not_allowed"
   | "authentication_unverified"
   | "jwt_required"
+  | "host_token_required"
   | "ingress_inventory_unsealed"
   | "ingress_proof_missing"
   | "bound_ingress_not_loopback"
@@ -131,6 +132,7 @@ const GOVERNANCE_REASON_CODES = new Set<GovernanceStatusReason>([
   "configured_host_not_allowed",
   "authentication_unverified",
   "jwt_required",
+  "host_token_required",
   "ingress_inventory_unsealed",
   "ingress_proof_missing",
   "bound_ingress_not_loopback",
@@ -140,6 +142,7 @@ const GOVERNANCE_MANDATORY_REASON_CODES = new Set<GovernanceStatusReason>([
   "configured_host_not_allowed",
   "authentication_unverified",
   "jwt_required",
+  "host_token_required",
   "ingress_inventory_unsealed",
   "ingress_proof_missing",
   "bound_ingress_not_loopback",

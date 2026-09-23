@@ -39,9 +39,13 @@ impl DisabledTelemetryProvider {
 /// Mirrors the telemetry build's writer selection (`UAR_LOG_FILE` else
 /// stdout) and default filter, so switching the feature on or off changes
 /// what is EXPORTED, never whether the process can be observed at all.
-pub fn init(log_format: &LogFormat) -> anyhow::Result<Option<DisabledTelemetryProvider>> {
-    let filter_layer = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info,universal_agent_runtime=debug"));
+/// `default_directive` applies when `RUST_LOG` is unset.
+pub fn init(
+    log_format: &LogFormat,
+    default_directive: &str,
+) -> anyhow::Result<Option<DisabledTelemetryProvider>> {
+    let filter_layer =
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(default_directive));
 
     let writer = if let Some(path) = std::env::var_os("UAR_LOG_FILE") {
         let path = std::path::PathBuf::from(path);

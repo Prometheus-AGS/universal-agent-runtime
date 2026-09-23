@@ -76,7 +76,15 @@ pub struct SettingsManager {
     governance_status: Option<GovernanceStatusHandle>,
     realtime_bus: Option<Arc<dyn crate::uar::realtime::RealtimeBus>>,
     governance_mutation_lock: Mutex<()>,
+    sidecar_feature_locks: bool,
 }
+
+/// Settings a token-authenticated sidecar keeps off: they mix content across
+/// the host's sessions, which share one sidecar process.
+const SIDECAR_LOCKED_OFF_SETTINGS: [&str; 2] = ["skill_evolution.enabled", "memory.enabled"];
+
+/// Error code returned when a sidecar refuses global MCP server mutation.
+pub const SIDECAR_GLOBAL_MCP_DISABLED: &str = "sidecar_mode_global_mcp_disabled";
 
 impl SettingsManager {
     /// Create a new manager wrapping the given persistence layer.
@@ -88,7 +96,23 @@ impl SettingsManager {
             governance_status: None,
             realtime_bus: None,
             governance_mutation_lock: Mutex::new(()),
+            sidecar_feature_locks: false,
         }
+    }
+
+    /// Lock what a token-authenticated sidecar must keep off: skill evolution,
+    /// the memory system, and the global MCP server list.
+    #[must_use]
+    pub fn with_sidecar_feature_locks(mut self) -> Self {
+        self.sidecar_feature_locks = true;
+        self
+    }
+
+    /// Whether this manager belongs to a token-authenticated sidecar, where
+    /// global MCP server definitions may not be created, changed or deleted.
+    #[must_use]
+    pub fn sidecar_feature_locks(&self) -> bool {
+        self.sidecar_feature_locks
     }
 
     /// Attach the trusted governance mutation authority used by the server boot.
@@ -486,6 +510,12 @@ impl SettingsManager {
     }
 
     async fn set_value_locked(&self, key: &str, value: Value) -> Result<()> {
+        if self.sidecar_feature_locks
+            && SIDECAR_LOCKED_OFF_SETTINGS.contains(&key)
+            && value.as_bool() != Some(false)
+        {
+            anyhow::bail!("{key} cannot be enabled in sidecar mode");
+        }
         let governance_enabled = if key == "governance.enabled" {
             let enabled = value
                 .as_bool()

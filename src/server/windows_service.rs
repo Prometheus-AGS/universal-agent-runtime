@@ -91,17 +91,18 @@ fn run_service() -> anyhow::Result<()> {
         0,
     ))?;
 
-    let otel_provider = match uar::telemetry::init(&bootstrap.log_format) {
-        Ok(provider) => provider,
-        Err(error) => {
-            status_handle.set_service_status(status(
-                ServiceState::Stopped,
-                ServiceControlAccept::empty(),
-                1,
-            ))?;
-            return Err(error);
-        }
-    };
+    let otel_provider =
+        match uar::telemetry::init(&bootstrap.log_format, "info,universal_agent_runtime=debug") {
+            Ok(provider) => provider,
+            Err(error) => {
+                status_handle.set_service_status(status(
+                    ServiceState::Stopped,
+                    ServiceControlAccept::empty(),
+                    1,
+                ))?;
+                return Err(error);
+            }
+        };
     uar::telemetry::metrics::init();
 
     let runtime = tokio::runtime::Builder::new_multi_thread()

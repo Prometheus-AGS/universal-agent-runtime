@@ -1,0 +1,120 @@
+warning: unused variable: `a2a_grpc_listener`
+   --> src/server.rs:540:9
+    |
+540 |     let a2a_grpc_listener = if sidecar_mode {
+    |         ^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_a2a_grpc_listener`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `universal-agent-runtime` (lib) generated 1 warning (run `cargo fix --lib -p universal-agent-runtime` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 48.01s
+     Running tests/mcp_child_environment.rs (/Volumes/my-passport/cargo-build/4a/8e0717ca42c200/debug/deps/mcp_child_environment-08a716c8e6dea464)
+
+running 10 tests
+test child_process_helper ... ok
+test stub_llm::tests::models_health_check_endpoint_ok ... ok
+test stub_llm::tests::missing_fixture_returns_clear_404 ... ok
+test stub_llm::tests::grounded_content_requires_the_expected_system_context ... ok
+test stub_llm::tests::non_streaming_content_round_trip ... ok
+test stub_llm::tests::streaming_content_emits_sse_chunks_and_done ... ok
+test stub_llm::tests::tool_call_fixture_round_trips_non_streaming ... ok
+test stdio_mcp_children_get_allowlisted_env_on_every_spawn_path ... ok
+test child_processes_read_eof_from_stdin ... ok
+test standalone_stdio_mcp_child_env_and_terminal_stdin ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.14s
+
+     Running tests/settings_persistence.rs (/Volumes/my-passport/cargo-build/4a/8e0717ca42c200/debug/deps/settings_persistence-60bafa2aefb54430)
+
+running 47 tests
+test governance_batch_orders_master_transitions_around_policy_validation ... ok
+test governance_api_returns_per_key_results_and_authoritative_status_token ... ok
+test governance_status_api_reports_mutation_unavailable_as_fail_closed ... ok
+test governance_notification_failure_does_not_rollback_commit ... ok
+test concurrent_governance_batch_and_single_writer_finish_in_one_serial_order ... ok
+test governance_notification_is_scheduled_after_runtime_publication ... ok
+test api_owned_off_survives_fail_closed_rollback_and_forward_restart ... ok
+test mgr_concurrent_reads_are_safe ... ok
+test governance_preference_defaults_off_toggles_resets_and_survives_restart ... ok
+test mgr_core_schema_covers_app_config_namespaces_and_document_defaults ... ok
+test ineligible_restart_normalizes_stale_governance_off_before_finalization ... ok
+test mgr_config_change_overwrites_non_api_setting ... ok
+test mgr_drift_detected_on_reboot ... ok
+test mgr_first_boot_seeds_all_core_namespaces ... ok
+test mgr_get_type ... ok
+test mgr_get_typed_deserialises_correctly ... ok
+test mgr_get_value_returns_none_for_unknown_key ... ok
+test mgr_get_with_meta ... ok
+test mgr_initialize_accepts_local_memory_embedding_provider ... ok
+test mgr_initialize_rejects_unknown_memory_embedding_provider ... ok
+test mgr_list_all_with_meta ... ok
+test mgr_list_drift_returns_empty_when_no_drift ... ok
+test mgr_list_types ... ok
+test mgr_list_namespace ... ok
+test mgr_prompt_caching_round_trips_without_reseed_overwrite ... ok
+test mgr_provider_upsert_load_and_hydrate_registry ... ok
+test mgr_register_extension ... ok
+test mgr_schema_generated_invalid_values_are_rejected ... ok
+test mgr_reinitialize_is_idempotent ... ok
+test mgr_reset_to_default ... ok
+test provider_delete_nonexistent_is_not_an_error ... ok
+test mgr_set_value_and_get ... ok
+test mgr_schema_generated_namespace_values_round_trip ... ok
+test provider_delete_setting ... ok
+test mgr_set_value_on_missing_key_returns_err ... ok
+test provider_get_setting_returns_none_for_missing ... ok
+test prompt_caching_admin_namespace_has_no_generic_read_bypass ... ok
+test mgr_set_value_updates_db_not_just_cache ... ok
+test provider_get_type_returns_none_for_missing ... ok
+test provider_list_settings_filtered_by_type_key ... ok
+test provider_list_types ... ok
+test provider_schema_validation_accepts_valid_data ... ok
+test provider_schema_validation_rejects_invalid_data ... ok
+test provider_upsert_and_get_type ... ok
+test provider_upsert_get_list_settings ... ok
+test provider_upsert_is_idempotent_for_type ... ok
+test provider_upsert_updates_existing_setting ... ok
+
+test result: ok. 47 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 57.10s
+
+     Running tests/sidecar_launch_security.rs (/Volumes/my-passport/cargo-build/4a/8e0717ca42c200/debug/deps/sidecar_launch_security-22c36c8bcf4aaa39)
+
+running 34 tests
+test capabilities::capabilities_route_is_not_auth_exempt_in_standalone ... ok
+test features::sidecar_forces_skill_evolution_memory_and_global_mcp_off ... ok
+test capabilities::capabilities_route_requires_launch_token_and_reports_version ... ok
+test confinement::token_absent_from_output_logs_files_and_responses ... ok
+test features::sidecar_default_logs_contain_no_prompt_or_tool_argument_canary ... ok
+test features::sidecar_authorized_request_is_anonymous_principal ... ok
+test confinement::token_absent_from_argv_and_env_of_sidecar_and_children ... ok
+test features::sidecar_honors_explicit_rust_log ... ok
+test governance::sidecar_governance_required_with_host_token_reason ... ok
+test features::sidecar_rejects_global_mcp_mutation_and_feature_enable ... ok
+test governance::sidecar_run_policy_denied_tool_is_not_executed ... ok
+test governance::sidecar_normalizes_persisted_governance_off_and_refuses_off ... ok
+test governance::standalone_loopback_without_jwt_remains_governance_optional ... ok
+test guard::any_origin_rejected_with_valid_token ... ok
+test guard::every_route_rejects_missing_token ... ok
+test stub_llm::tests::grounded_content_requires_the_expected_system_context ... ok
+test stub_llm::tests::missing_fixture_returns_clear_404 ... ok
+test stub_llm::tests::models_health_check_endpoint_ok ... ok
+test stub_llm::tests::non_streaming_content_round_trip ... ok
+test stub_llm::tests::streaming_content_emits_sse_chunks_and_done ... ok
+test stub_llm::tests::tool_call_fixture_round_trips_non_streaming ... ok
+test guard::every_route_rejects_wrong_token ... ok
+test guard::foreign_host_rejected_with_valid_token ... ok
+test guard::no_cors_headers_on_any_response ... ok
+test token::launch_ignores_token_shaped_environment_variable ... ok
+test token::launch_with_malformed_token_exits_nonzero_without_echo ... ok
+test guard::sse_streams_reject_without_token_and_write_no_events ... ok
+test token::launch_without_token_line_exits_nonzero_without_ready ... ok
+test guard::previous_launch_token_is_rejected ... ok
+test surface::operator_ui_not_served_in_sidecar_mode ... ok
+test surface::sidecar_owns_exactly_one_listening_socket ... ok
+test surface::standalone_server_keeps_companion_grpc_and_spa ... ok
+test token::stdin_eof_after_ready_exits_cleanly ... ok
+test token::launch_with_valid_token_prints_single_ready ... ok
+
+test result: ok. 34 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 45.08s
+
+[cargo] exit=0

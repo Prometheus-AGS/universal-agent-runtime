@@ -57,13 +57,14 @@ async fn main() {
         return;
     }
 
-    let otel_provider = match uar::telemetry::init(&log_format) {
-        Ok(provider) => provider,
-        Err(error) => {
-            eprintln!("Failed to initialize telemetry: {error:#}");
-            std::process::exit(1);
-        }
-    };
+    let otel_provider =
+        match uar::telemetry::init(&log_format, "info,universal_agent_runtime=debug") {
+            Ok(provider) => provider,
+            Err(error) => {
+                eprintln!("Failed to initialize telemetry: {error:#}");
+                std::process::exit(1);
+            }
+        };
     uar::telemetry::metrics::init();
 
     let config_manager = match ConfigManager::load(cli).await {

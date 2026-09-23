@@ -1,0 +1,1099 @@
+warning: unused variable: `a2a_grpc_listener`
+   --> src/server.rs:512:9
+    |
+512 |     let a2a_grpc_listener = {
+    |         ^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_a2a_grpc_listener`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `universal-agent-runtime` (lib) generated 1 warning (run `cargo fix --lib -p universal-agent-runtime` to apply 1 suggestion)
+warning: field `stub` is never read
+  --> tests/sidecar_launch_security.rs:76:9
+   |
+72 | pub(crate) struct Sidecar {
+   |                   ------- field in this struct
+...
+76 |     pub stub: StubLlmServer,
+   |         ^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `universal-agent-runtime` (test "sidecar_launch_security") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 28.70s
+     Running tests/mcp_child_environment.rs (/Volumes/my-passport/cargo-build/4a/8e0717ca42c200/debug/deps/mcp_child_environment-08a716c8e6dea464)
+
+running 10 tests
+test child_process_helper ... ok
+test stub_llm::tests::models_health_check_endpoint_ok ... ok
+test stub_llm::tests::missing_fixture_returns_clear_404 ... ok
+test stub_llm::tests::grounded_content_requires_the_expected_system_context ... ok
+test stub_llm::tests::non_streaming_content_round_trip ... ok
+test stub_llm::tests::streaming_content_emits_sse_chunks_and_done ... ok
+test stub_llm::tests::tool_call_fixture_round_trips_non_streaming ... ok
+test stdio_mcp_children_get_allowlisted_env_on_every_spawn_path ... FAILED
+test child_processes_read_eof_from_stdin ... FAILED
+test standalone_stdio_mcp_child_env_and_terminal_stdin ... FAILED
+
+failures:
+
+---- stdio_mcp_children_get_allowlisted_env_on_every_spawn_path stdout ----
+
+thread 'stdio_mcp_children_get_allowlisted_env_on_every_spawn_path' (58358323) panicked at tests/mcp_child_environment.rs:251:5:
+connect_configured_server: undeclared parent variable inherited
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- child_processes_read_eof_from_stdin stdout ----
+
+thread 'child_processes_read_eof_from_stdin' (58358321) panicked at tests/mcp_child_environment.rs:306:13:
+assertion `left == right` failed: terminal tool read the host's stdin
+  left: String("bytes:40")
+ right: "eof"
+
+---- standalone_stdio_mcp_child_env_and_terminal_stdin stdout ----
+
+thread 'standalone_stdio_mcp_child_env_and_terminal_stdin' (58358322) panicked at tests/mcp_child_environment.rs:251:5:
+standalone stdio MCP server: undeclared parent variable inherited
+
+
+failures:
+    child_processes_read_eof_from_stdin
+    standalone_stdio_mcp_child_env_and_terminal_stdin
+    stdio_mcp_children_get_allowlisted_env_on_every_spawn_path
+
+test result: FAILED. 7 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.24s
+
+error: test failed, to rerun pass `--test mcp_child_environment`
+     Running tests/sidecar_launch_security.rs (/Volumes/my-passport/cargo-build/4a/8e0717ca42c200/debug/deps/sidecar_launch_security-22c36c8bcf4aaa39)
+
+running 34 tests
+test capabilities::capabilities_route_is_not_auth_exempt_in_standalone ... FAILED
+test capabilities::capabilities_route_requires_launch_token_and_reports_version ... FAILED
+test confinement::token_absent_from_output_logs_files_and_responses ... ok
+test features::sidecar_authorized_request_is_anonymous_principal ... ok
+test features::sidecar_default_logs_contain_no_prompt_or_tool_argument_canary ... FAILED
+test features::sidecar_forces_skill_evolution_memory_and_global_mcp_off ... FAILED
+test confinement::token_absent_from_argv_and_env_of_sidecar_and_children ... FAILED
+test features::sidecar_honors_explicit_rust_log ... ok
+test features::sidecar_rejects_global_mcp_mutation_and_feature_enable ... FAILED
+test governance::sidecar_governance_required_with_host_token_reason ... FAILED
+test governance::sidecar_run_policy_denied_tool_is_not_executed ... FAILED
+test governance::sidecar_normalizes_persisted_governance_off_and_refuses_off ... FAILED
+test governance::standalone_loopback_without_jwt_remains_governance_optional ... ok
+test guard::any_origin_rejected_with_valid_token ... FAILED
+test guard::every_route_rejects_missing_token ... FAILED
+test stub_llm::tests::grounded_content_requires_the_expected_system_context ... ok
+test stub_llm::tests::missing_fixture_returns_clear_404 ... ok
+test stub_llm::tests::models_health_check_endpoint_ok ... ok
+test stub_llm::tests::non_streaming_content_round_trip ... ok
+test stub_llm::tests::streaming_content_emits_sse_chunks_and_done ... ok
+test stub_llm::tests::tool_call_fixture_round_trips_non_streaming ... ok
+test guard::every_route_rejects_wrong_token ... FAILED
+test guard::foreign_host_rejected_with_valid_token ... FAILED
+test guard::no_cors_headers_on_any_response ... FAILED
+test guard::previous_launch_token_is_rejected ... FAILED
+test guard::sse_streams_reject_without_token_and_write_no_events ... FAILED
+test token::launch_ignores_token_shaped_environment_variable ... FAILED
+test surface::operator_ui_not_served_in_sidecar_mode ... FAILED
+test surface::sidecar_owns_exactly_one_listening_socket ... FAILED
+test surface::standalone_server_keeps_companion_grpc_and_spa ... ok
+test token::launch_with_malformed_token_exits_nonzero_without_echo ... FAILED
+test token::launch_without_token_line_exits_nonzero_without_ready ... FAILED
+test token::stdin_eof_after_ready_exits_cleanly ... ok
+test token::launch_with_valid_token_prints_single_ready ... FAILED
+
+failures:
+
+---- capabilities::capabilities_route_is_not_auth_exempt_in_standalone stdout ----
+
+thread 'capabilities::capabilities_route_is_not_auth_exempt_in_standalone' (58359340) panicked at tests/sidecar_launch_security/capabilities.rs:154:5:
+assertion `left == right` failed: {"error":{"code":"api_route_not_found","message":"API route not found","type":"invalid_request_error"}}
+  left: 404
+ right: 200
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- capabilities::capabilities_route_requires_launch_token_and_reports_version stdout ----
+
+thread 'capabilities::capabilities_route_requires_launch_token_and_reports_version' (58359341) panicked at tests/sidecar_launch_security/capabilities.rs:60:5:
+assertion `left == right` failed: {"error":{"code":"api_route_not_found","message":"API route not found","type":"invalid_request_error"}}
+  left: 404
+ right: 401
+
+---- features::sidecar_default_logs_contain_no_prompt_or_tool_argument_canary stdout ----
+
+thread 'features::sidecar_default_logs_contain_no_prompt_or_tool_argument_canary' (58359345) panicked at tests/sidecar_launch_security/features.rs:59:9:
+UAR_LOG_FILE carries conversation content: [
+    "{\"timestamp\":\"2026-09-23T17:59:56.360976Z\",\"level\":\"DEBUG\",\"fields\":{\"message\":\"Sending request to LLM driver\",\"request_id\":\"7a766ba1-be4f-45e1-8ce8-8eb884f0923f\",\"iteration\":1,\"messages\":\"[Object {\\\"content\\\": String(\\\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\\\\n\\\\n[EFFECTIVE RUN POLICY]\\\\n{\\\\\\\"agent_id\\\\\\\":\\\\\\\"sidecar-contract-agent\\\\\\\",\\\\\\\"chat_mode\\\\\\\":\\\\\\\"agent\\\\\\\",\\\\\\\"context_strategy\\\\\\\":{\\\\\\\"max_messages\\\\\\\":20,\\\\\\\"type\\\\\\\":\\\\\\\"sliding_window\\\\\\\"},\\\\\\\"knowledge_bases\\\\\\\":{\\\\\\\"ids\\\\\\\":[\\\\\\\"b93821f7-7dca-45e3-8be8-9941dccbd800\\\\\\\",\\\\\\\"default\\\\\\\"],\\\\\\\"mode\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"agent\\\\\\\"},\\\\\\\"mcp_servers\\\\\\\":{\\\\\\\"ids\\\\\\\":[],\\\\\\\"mode\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"legacy\\\\\\\"},\\\\\\\"memory_enabled\\\\\\\":true,\\\\\\\"model\\\\\\\":{\\\\\\\"model_id\\\\\\\":\\\\\\\"gpt-5.4-mini\\\\\\\",\\\\\\\"provider_id\\\\\\\":\\\\\\\"openai\\\\\\\"},\\\\\\\"presentations\\\\\\\":{\\\\\\\"ids\\\\\\\":[],\\\\\\\"mode\\\\\\\":\\\\\\\"none\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"legacy\\\\\\\"},\\\\\\\"prompt_caching_enabled\\\\\\\":false,\\\\\\\"provenance\\\\\\\":{\\\\\\\"agent_id\\\\\\\":\\\\\\\"agent\\\\\\\",\\\\\\\"chat_mode\\\\\\\":\\\\\\\"agent\\\\\\\",\\\\\\\"context_strategy\\\\\\\":\\\\\\\"legacy\\\\\\\",\\\\\\\"memory_enabled\\\\\\\":\\\\\\\"agent\\\\\\\",\\\\\\\"model\\\\\\\":\\\\\\\"legacy\\\\\\\",\\\\\\\"prompt_caching_enabled\\\\\\\":\\\\\\\"global\\\\\\\",\\\\\\\"tool_approval\\\\\\\":\\\\\\\"legacy\\\\\\\"},\\\\\\\"skills\\\\\\\":{\\\\\\\"ids\\\\\\\":[],\\\\\\\"mode\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"agent\\\\\\\"},\\\\\\\"tool_approval\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"tools\\\\\\\":{\\\\\\\"ids\\\\\\\":[\\\\\\\"a2ui_render\\\\\\\",\\\\\\\"native__memory_delete_by_id\\\\\\\",\\\\\\\"native__memory_history\\\\\\\",\\\\\\\"native__memory_list\\\\\\\",\\\\\\\"native__memory_recall\\\\\\\",\\\\\\\"native__memory_save\\\\\\\",\\\\\\\"native__memory_update_by_id\\\\\\\",\\\\\\\"native_echo\\\\\\\",\\\\\\\"native_system_info\\\\\\\",\\\\\\\"session_search\\\\\\\",\\\\\\\"terminal_exec\\\\\\\",\\\\\\\"uar_compile\\\\\\\",\\\\\\\"uar_session_check_completeness\\\\\\\",\\\\\\\"uar_session_compile\\\\\\\",\\\\\\\"uar_session_update_section\\\\\\\"],\\\\\\\"mode\\\\\\\":\\\\\\\"selected\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"agent\\\\\\\"},\\\\\\\"version\\\\\\\":1,\\\\\\\"warnings\\\\\\\":[]}\\\"), \\\"role\\\": String(\\\"system\\\")}, Object {\\\"content\\\": String(\\\"please echo CANARY-4a86360473234e59bd3c953a81e1d3fb\\\"), \\\"role\\\": String(\\\"user\\\")}, Object {\\\"content\\\": String(\\\"<uar-host-content>\\\\n[WORLD STATE: current_time / full]\\\\nThis replaces the previous current-time section.\\\\n{\\\\\\\"granularity_seconds\\\\\\\":60,\\\\\\\"timezone\\\\\\\":\\\\\\\"UTC\\\\\\\",\\\\\\\"unix_time_bucket\\\\\\\":29836439}\\\\n</uar-host-content>\\\"), \\\"role\\\": String(\\\"system\\\")}, Object {\\\"content\\\": String(\\\"<uar-host-content>\\\\n[WORLD STATE: environment / full]\\\\nThis replaces the previous environment section.\\\\n{\\\\\\\"architecture\\\\\\\":\\\\\\\"aarch64\\\\\\\",\\\\\\\"cwd\\\\\\\":\\\\\\\"/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-OcDPR3/work\\\\\\\",\\\\\\\"platform\\\\\\\":\\\\\\\"macos\\\\\\\",\\\\\\\"workspace_roots\\\\\\\":[]}\\\\n</uar-host-content>\\\"), \\\"role\\\": String(\\\"system\\\")}, Object {\\\"content\\\": String(\\\"<uar-host-content>\\\\n[WORLD STATE: permissions / full]\\\\nThis replaces the previous permissions summary; enforced policy remains authoritative.\\\\n{\\\\\\\"knowledge_bases\\\\\\\":{\\\\\\\"ids\\\\\\\":[\\\\\\\"b93821f7-7dca-45e3-8be8-9941dccbd800\\\\\\\",\\\\\\\"default\\\\\\\"],\\\\\\\"mode\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"agent\\\\\\\"},\\\\\\\"mcp_servers\\\\\\\":{\\\\\\\"ids\\\\\\\":[],\\\\\\\"mode\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"legacy\\\\\\\"},\\\\\\\"memory_enabled\\\\\\\":true,\\\\\\\"skills\\\\\\\":{\\\\\\\"ids\\\\\\\":[],\\\\\\\"mode\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"agent\\\\\\\"},\\\\\\\"tool_approval\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"tools\\\\\\\":{\\\\\\\"ids\\\\\\\":[\\\\\\\"a2ui_render\\\\\\\",\\\\\\\"native__memory_delete_by_id\\\\\\\",\\\\\\\"native__memory_history\\\\\\\",\\\\\\\"native__memory_list\\\\\\\",\\\\\\\"native__memory_recall\\\\\\\",\\\\\\\"native__memory_save\\\\\\\",\\\\\\\"native__memory_update_by_id\\\\\\\",\\\\\\\"native_echo\\\\\\\",\\\\\\\"native_system_info\\\\\\\",\\\\\\\"session_search\\\\\\\",\\\\\\\"terminal_exec\\\\\\\",\\\\\\\"uar_compile\\\\\\\",\\\\\\\"uar_session_check_completeness\\\\\\\",\\\\\\\"uar_session_compile\\\\\\\",\\\\\\\"uar_session_update_section\\\\\\\"],\\\\\\\"mode\\\\\\\":\\\\\\\"selected\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"agent\\\\\\\"}}\\\\n</uar-host-content>\\\"), \\\"role\\\": String(\\\"system\\\")}, Object {\\\"content\\\": String(\\\"<uar-host-content>\\\\n[WORLD STATE: project_instructions / full]\\\\nThis replaces the previous project instructions; system and enforced policy remain authoritative.\\\\n{\\\\\\\"files\\\\\\\":[]}\\\\n</uar-host-content>\\\"), \\\"role\\\": String(\\\"system\\\")}]\",\"tool_count\":16},\"target\":\"universal_agent_runtime::llm::orchestrator\",\"line_number\":1662,\"span\":{\"agent_id\":\"sidecar-contract-agent\",\"run_id\":\"4ddbb0d4-85f2-4dde-aaf0-332b35af2c04\",\"name\":\"run\"},\"spans\":[{\"agent_id\":\"none\",\"request_id\":\"97588c69-29d9-4a3f-8288-af61da2472cc\",\"run_id\":\"4ddbb0d4-85f2-4dde-aaf0-332b35af2c04\",\"name\":\"http_request\"},{\"agent_id\":\"sidecar-contract-agent\",\"run_id\":\"4ddbb0d4-85f2-4dde-aaf0-332b35af2c04\",\"name\":\"run\"}]}",
+    "{\"timestamp\":\"2026-09-23T17:59:56.392753Z\",\"level\":\"DEBUG\",\"fields\":{\"message\":\"Tool call arguments\",\"request_id\":\"7a766ba1-be4f-45e1-8ce8-8eb884f0923f\",\"tool_id\":\"call_stub_0\",\"arguments\":\"{\\\"command\\\":\\\"echo CANARY-4a86360473234e59bd3c953a81e1d3fb\\\"}\"},\"target\":\"universal_agent_runtime::llm::orchestrator\",\"line_number\":2066,\"span\":{\"agent_id\":\"sidecar-contract-agent\",\"run_id\":\"4ddbb0d4-85f2-4dde-aaf0-332b35af2c04\",\"name\":\"run\"},\"spans\":[{\"agent_id\":\"none\",\"request_id\":\"97588c69-29d9-4a3f-8288-af61da2472cc\",\"run_id\":\"4ddbb0d4-85f2-4dde-aaf0-332b35af2c04\",\"name\":\"http_request\"},{\"agent_id\":\"sidecar-contract-agent\",\"run_id\":\"4ddbb0d4-85f2-4dde-aaf0-332b35af2c04\",\"name\":\"run\"}]}",
+    "{\"timestamp\":\"2026-09-23T17:59:56.494814Z\",\"level\":\"DEBUG\",\"fields\":{\"message\":\"Sending request to LLM driver\",\"request_id\":\"7a766ba1-be4f-45e1-8ce8-8eb884f0923f\",\"iteration\":2,\"messages\":\"[Object {\\\"content\\\": String(\\\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\\\\n\\\\n[EFFECTIVE RUN POLICY]\\\\n{\\\\\\\"agent_id\\\\\\\":\\\\\\\"sidecar-contract-agent\\\\\\\",\\\\\\\"chat_mode\\\\\\\":\\\\\\\"agent\\\\\\\",\\\\\\\"context_strategy\\\\\\\":{\\\\\\\"max_messages\\\\\\\":20,\\\\\\\"type\\\\\\\":\\\\\\\"sliding_window\\\\\\\"},\\\\\\\"knowledge_bases\\\\\\\":{\\\\\\\"ids\\\\\\\":[\\\\\\\"b93821f7-7dca-45e3-8be8-9941dccbd800\\\\\\\",\\\\\\\"default\\\\\\\"],\\\\\\\"mode\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"agent\\\\\\\"},\\\\\\\"mcp_servers\\\\\\\":{\\\\\\\"ids\\\\\\\":[],\\\\\\\"mode\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"legacy\\\\\\\"},\\\\\\\"memory_enabled\\\\\\\":true,\\\\\\\"model\\\\\\\":{\\\\\\\"model_id\\\\\\\":\\\\\\\"gpt-5.4-mini\\\\\\\",\\\\\\\"provider_id\\\\\\\":\\\\\\\"openai\\\\\\\"},\\\\\\\"presentations\\\\\\\":{\\\\\\\"ids\\\\\\\":[],\\\\\\\"mode\\\\\\\":\\\\\\\"none\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"legacy\\\\\\\"},\\\\\\\"prompt_caching_enabled\\\\\\\":false,\\\\\\\"provenance\\\\\\\":{\\\\\\\"agent_id\\\\\\\":\\\\\\\"agent\\\\\\\",\\\\\\\"chat_mode\\\\\\\":\\\\\\\"agent\\\\\\\",\\\\\\\"context_strategy\\\\\\\":\\\\\\\"legacy\\\\\\\",\\\\\\\"memory_enabled\\\\\\\":\\\\\\\"agent\\\\\\\",\\\\\\\"model\\\\\\\":\\\\\\\"legacy\\\\\\\",\\\\\\\"prompt_caching_enabled\\\\\\\":\\\\\\\"global\\\\\\\",\\\\\\\"tool_approval\\\\\\\":\\\\\\\"legacy\\\\\\\"},\\\\\\\"skills\\\\\\\":{\\\\\\\"ids\\\\\\\":[],\\\\\\\"mode\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"agent\\\\\\\"},\\\\\\\"tool_approval\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"tools\\\\\\\":{\\\\\\\"ids\\\\\\\":[\\\\\\\"a2ui_render\\\\\\\",\\\\\\\"native__memory_delete_by_id\\\\\\\",\\\\\\\"native__memory_history\\\\\\\",\\\\\\\"native__memory_list\\\\\\\",\\\\\\\"native__memory_recall\\\\\\\",\\\\\\\"native__memory_save\\\\\\\",\\\\\\\"native__memory_update_by_id\\\\\\\",\\\\\\\"native_echo\\\\\\\",\\\\\\\"native_system_info\\\\\\\",\\\\\\\"session_search\\\\\\\",\\\\\\\"terminal_exec\\\\\\\",\\\\\\\"uar_compile\\\\\\\",\\\\\\\"uar_session_check_completeness\\\\\\\",\\\\\\\"uar_session_compile\\\\\\\",\\\\\\\"uar_session_update_section\\\\\\\"],\\\\\\\"mode\\\\\\\":\\\\\\\"selected\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"agent\\\\\\\"},\\\\\\\"version\\\\\\\":1,\\\\\\\"warnings\\\\\\\":[]}\\\"), \\\"role\\\": String(\\\"system\\\")}, Object {\\\"content\\\": String(\\\"please echo CANARY-4a86360473234e59bd3c953a81e1d3fb\\\"), \\\"role\\\": String(\\\"user\\\")}, Object {\\\"content\\\": String(\\\"<uar-host-content>\\\\n[WORLD STATE: current_time / full]\\\\nThis replaces the previous current-time section.\\\\n{\\\\\\\"granularity_seconds\\\\\\\":60,\\\\\\\"timezone\\\\\\\":\\\\\\\"UTC\\\\\\\",\\\\\\\"unix_time_bucket\\\\\\\":29836439}\\\\n</uar-host-content>\\\"), \\\"role\\\": String(\\\"system\\\")}, Object {\\\"content\\\": String(\\\"<uar-host-content>\\\\n[WORLD STATE: environment / full]\\\\nThis replaces the previous environment section.\\\\n{\\\\\\\"architecture\\\\\\\":\\\\\\\"aarch64\\\\\\\",\\\\\\\"cwd\\\\\\\":\\\\\\\"/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-OcDPR3/work\\\\\\\",\\\\\\\"platform\\\\\\\":\\\\\\\"macos\\\\\\\",\\\\\\\"workspace_roots\\\\\\\":[]}\\\\n</uar-host-content>\\\"), \\\"role\\\": String(\\\"system\\\")}, Object {\\\"content\\\": String(\\\"<uar-host-content>\\\\n[WORLD STATE: permissions / full]\\\\nThis replaces the previous permissions summary; enforced policy remains authoritative.\\\\n{\\\\\\\"knowledge_bases\\\\\\\":{\\\\\\\"ids\\\\\\\":[\\\\\\\"b93821f7-7dca-45e3-8be8-9941dccbd800\\\\\\\",\\\\\\\"default\\\\\\\"],\\\\\\\"mode\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"agent\\\\\\\"},\\\\\\\"mcp_servers\\\\\\\":{\\\\\\\"ids\\\\\\\":[],\\\\\\\"mode\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"legacy\\\\\\\"},\\\\\\\"memory_enabled\\\\\\\":true,\\\\\\\"skills\\\\\\\":{\\\\\\\"ids\\\\\\\":[],\\\\\\\"mode\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"agent\\\\\\\"},\\\\\\\"tool_approval\\\\\\\":\\\\\\\"auto\\\\\\\",\\\\\\\"tools\\\\\\\":{\\\\\\\"ids\\\\\\\":[\\\\\\\"a2ui_render\\\\\\\",\\\\\\\"native__memory_delete_by_id\\\\\\\",\\\\\\\"native__memory_history\\\\\\\",\\\\\\\"native__memory_list\\\\\\\",\\\\\\\"native__memory_recall\\\\\\\",\\\\\\\"native__memory_save\\\\\\\",\\\\\\\"native__memory_update_by_id\\\\\\\",\\\\\\\"native_echo\\\\\\\",\\\\\\\"native_system_info\\\\\\\",\\\\\\\"session_search\\\\\\\",\\\\\\\"terminal_exec\\\\\\\",\\\\\\\"uar_compile\\\\\\\",\\\\\\\"uar_session_check_completeness\\\\\\\",\\\\\\\"uar_session_compile\\\\\\\",\\\\\\\"uar_session_update_section\\\\\\\"],\\\\\\\"mode\\\\\\\":\\\\\\\"selected\\\\\\\",\\\\\\\"source\\\\\\\":\\\\\\\"agent\\\\\\\"}}\\\\n</uar-host-content>\\\"), \\\"role\\\": String(\\\"system\\\")}, Object {\\\"content\\\": String(\\\"<uar-host-content>\\\\n[WORLD STATE: project_instructions / full]\\\\nThis replaces the previous project instructions; system and enforced policy remain authoritative.\\\\n{\\\\\\\"files\\\\\\\":[]}\\\\n</uar-host-content>\\\"), \\\"role\\\": String(\\\"system\\\")}, Object {\\\"content\\\": String(\\\"\\\"), \\\"role\\\": String(\\\"assistant\\\"), \\\"tool_calls\\\": Array [Object {\\\"function\\\": Object {\\\"arguments\\\": String(\\\"{\\\\\\\"command\\\\\\\":\\\\\\\"echo CANARY-4a86360473234e59bd3c953a81e1d3fb\\\\\\\"}\\\"), \\\"name\\\": String(\\\"terminal_exec\\\")}, \\\"id\\\": String(\\\"call_stub_0\\\"), \\\"type\\\": String(\\\"function\\\")}]}, Object {\\\"content\\\": String(\\\"{\\\\\\\"command\\\\\\\":\\\\\\\"echo CANARY-4a86360473234e59bd3c953a81e1d3fb\\\\\\\",\\\\\\\"exit_code\\\\\\\":0,\\\\\\\"ok\\\\\\\":true,\\\\\\\"stderr\\\\\\\":\\\\\\\"\\\\\\\",\\\\\\\"stderr_bytes\\\\\\\":0,\\\\\\\"stdout\\\\\\\":\\\\\\\"CANARY-4a86360473234e59bd3c953a81e1d3fb\\\\\\\\n\\\\\\\",\\\\\\\"stdout_bytes\\\\\\\":40}\\\"), \\\"role\\\": String(\\\"tool\\\"), \\\"tool_call_id\\\": String(\\\"call_stub_0\\\")}]\",\"tool_count\":16},\"target\":\"universal_agent_runtime::llm::orchestrator\",\"line_number\":1662,\"span\":{\"agent_id\":\"sidecar-contract-agent\",\"run_id\":\"4ddbb0d4-85f2-4dde-aaf0-332b35af2c04\",\"name\":\"run\"},\"spans\":[{\"agent_id\":\"none\",\"request_id\":\"97588c69-29d9-4a3f-8288-af61da2472cc\",\"run_id\":\"4ddbb0d4-85f2-4dde-aaf0-332b35af2c04\",\"name\":\"http_request\"},{\"agent_id\":\"sidecar-contract-agent\",\"run_id\":\"4ddbb0d4-85f2-4dde-aaf0-332b35af2c04\",\"name\":\"run\"}]}",
+]
+
+---- features::sidecar_forces_skill_evolution_memory_and_global_mcp_off stdout ----
+
+thread 'features::sidecar_forces_skill_evolution_memory_and_global_mcp_off' (58359429) panicked at tests/sidecar_launch_security/features.rs:193:5:
+assertion `left == right` failed: global MCP servers listed
+  left: ["file-probe", "seeded-probe"]
+ right: []
+
+---- confinement::token_absent_from_argv_and_env_of_sidecar_and_children stdout ----
+
+thread 'confinement::token_absent_from_argv_and_env_of_sidecar_and_children' (58359342) panicked at tests/sidecar_launch_security/confinement.rs:137:5:
+no child with a readable inherited environment was observed: [ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }, ProcessView { pid: 43613, cmd: ["sleep", "3"], environ: [] }, ProcessView { pid: 43611, cmd: ["sh", "-c", "'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3"], environ: [] }]
+event: agui.artifact
+id: 1
+data: {"artifact_id":"run-policy-e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73","artifact_type":"effective_run_policy","content":"[{\"createSurface\":{\"catalogId\":\"urn:uar:a2ui:catalog:1\",\"surfaceId\":\"run-policy-e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73\"},\"version\":\"v0.9.1\"},{\"updateComponents\":{\"components\":[{\"component\":\"Text\",\"id\":\"title\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"component\":\"Text\",\"id\":\"subtitle\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"component\":\"Text\",\"id\":\"overview-heading\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"component\":\"Text\",\"id\":\"chat-mode\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"model\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"agent\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"],\"component\":\"Column\",\"id\":\"overview-column\"},{\"child\":\"overview-column\",\"component\":\"Card\",\"id\":\"overview-card\"},{\"component\":\"Text\",\"id\":\"capabilities-heading\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"component\":\"Text\",\"id\":\"skills\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"tools\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"mcp-servers\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"knowledge-bases\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"],\"component\":\"Column\",\"id\":\"capabilities-column\"},{\"child\":\"capabilities-column\",\"component\":\"Card\",\"id\":\"capabilities-card\"},{\"component\":\"Text\",\"id\":\"runtime-heading\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"component\":\"Text\",\"id\":\"memory\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"prompt-caching\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"context\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"approval\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"],\"component\":\"Column\",\"id\":\"runtime-column\"},{\"child\":\"runtime-column\",\"component\":\"Card\",\"id\":\"runtime-card\"},{\"component\":\"Text\",\"id\":\"warnings-heading\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"component\":\"Text\",\"id\":\"warnings\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"children\":[\"warnings-heading\",\"warnings\"],\"component\":\"Column\",\"id\":\"warnings-column\"},{\"child\":\"warnings-column\",\"component\":\"Card\",\"id\":\"warnings-card\"},{\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"],\"component\":\"Column\",\"id\":\"root\"}],\"surfaceId\":\"run-policy-e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73\"},\"version\":\"v0.9.1\"},{\"updateDataModel\":{\"path\":\"/\",\"surfaceId\":\"run-policy-e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73\",\"value\":{\"agent\":\"Agent · sidecar-contract-agent\",\"approval\":\"Tool approval · auto\",\"chatMode\":\"Chat mode · agent\",\"context\":\"Context · sliding window\",\"knowledgeBases\":\"Knowledge bases · auto · 2 available · agent scope\",\"mcpServers\":\"MCP servers · auto · 0 available · legacy scope\",\"memory\":\"Memory · on\",\"model\":\"Model · openai / gpt-5.4-mini\",\"promptCaching\":\"Prompt caching · off\",\"skills\":\"Skills · auto · 0 available · agent scope\",\"subtitle\":\"Resolved policy v1 · A2UI v0.9.1\",\"title\":\"Effective run policy\",\"tools\":\"Tools · selected · 15 available · agent scope\",\"warnings\":\"No policy warnings.\",\"warningsHeading\":\"Warnings · 0\"}},\"version\":\"v0.9.1\"}]","kind":"artifact","language":"a2ui","metadata":{"catalog_id":"urn:uar:a2ui:catalog:1","profile":"uar.a2ui/1","protocol_version":"v0.9.1","version":1,"warnings":[]},"phase":"complete","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73","title":"Effective run policy"}
+
+event: agui.state.patch
+id: 2
+data: {"kind":"state","patch":[{"op":"add","path":"/presentation","value":{"admission_fallback_reason":null,"client_display":"unconfirmed","effective_mode":"legacy","eligible_templates":[],"fallback_reason":null,"generation_failed":false,"published_templates":[],"receipt_status":"available","requested_mode":null,"run_outcome":"running","surface_published":false,"version":1}}],"phase":"patch","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73"}
+
+event: agui.artifact
+id: 3
+data: {"artifact_id":"turn-manifest-e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73","artifact_type":"turn_manifest","content":"{\"budgets\":{\"context_window_tokens\":400000,\"rendered_bytes\":2816,\"rendered_characters\":2816},\"counts\":{\"by_authority\":{\"host\":4,\"policy\":1,\"system\":1},\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"world_state\":4},\"total\":6},\"fragments\":[{\"authority\":\"system\",\"content_hash\":\"e9f6bc3f98833b312aa5f17108f5459fab5e8cfce631a3a48ed23a35ed5b413e\",\"id\":\"agent.identity\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"agent_identity\",\"source\":\"artifact:sidecar-contract-agent\"},{\"authority\":\"policy\",\"content_hash\":\"8d5a14e0ec8f606d2b6dfe30629906b5cb012f60312abc5d43966b5fbec201c3\",\"id\":\"policy.effective\",\"retention\":\"turn\",\"role\":\"system\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\"},{\"authority\":\"host\",\"content_hash\":\"5b754fa0a67e1b44b9c61879932ddbfcf1d5a45ef5d1ea6a34fe44020b49ff8e\",\"id\":\"world_state.current_time\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"},{\"authority\":\"host\",\"content_hash\":\"92361eb81991272710d543aaf81bf073f2e4ecbf5658ec2c2ca97ad41fe76f4d\",\"id\":\"world_state.environment\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"},{\"authority\":\"host\",\"content_hash\":\"d9b5aeb47b75fb26d35a98fcd9e354a2cd8085bc05f016723d5bd6c94fda8365\",\"id\":\"world_state.permissions\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"},{\"authority\":\"host\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\",\"id\":\"world_state.project_instructions\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"}],\"manifest_hash\":\"bbe8330bf0d8df3b34215f146e0c6d33a685d584af433ccd20279244f06cfac6\",\"schema_version\":1,\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"session_search\",\"terminal_exec\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}","kind":"artifact","language":"json","metadata":{"fragment_count":6,"manifest_hash":"bbe8330bf0d8df3b34215f146e0c6d33a685d584af433ccd20279244f06cfac6","schema_version":1},"phase":"complete","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73","title":"Turn manifest"}
+
+event: agui.stream.start
+id: 4
+data: {"agent_id":"sidecar-contract-agent","kind":"stream","phase":"start","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73"}
+
+event: agui.state.patch
+id: 5
+data: {"kind":"state","patch":[{"op":"replace","path":"/run","value":{"conversation_id":"f9431a43-99ec-452c-a6ae-72486e868da4","run_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73","status":"running"}}],"phase":"patch","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73"}
+
+event: agui.artifact
+id: 7
+data: {"artifact_id":"uar.turn:resolved_step","artifact_type":"provider_event","content":"{\"payload\":{\"manifest\":{\"budgets\":{\"context_window_tokens\":400000,\"rendered_bytes\":2838,\"rendered_characters\":2838},\"counts\":{\"by_authority\":{\"host\":4,\"policy\":1,\"system\":1},\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"world_state\":4},\"total\":6},\"fragments\":[{\"authority\":\"system\",\"content_hash\":\"e9f6bc3f98833b312aa5f17108f5459fab5e8cfce631a3a48ed23a35ed5b413e\",\"id\":\"agent.identity\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"agent_identity\",\"source\":\"artifact:sidecar-contract-agent\"},{\"authority\":\"policy\",\"content_hash\":\"8d5a14e0ec8f606d2b6dfe30629906b5cb012f60312abc5d43966b5fbec201c3\",\"id\":\"policy.effective\",\"retention\":\"turn\",\"role\":\"system\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\"},{\"authority\":\"host\",\"content_hash\":\"5b754fa0a67e1b44b9c61879932ddbfcf1d5a45ef5d1ea6a34fe44020b49ff8e\",\"id\":\"world_state.current_time\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"},{\"authority\":\"host\",\"content_hash\":\"92361eb81991272710d543aaf81bf073f2e4ecbf5658ec2c2ca97ad41fe76f4d\",\"id\":\"world_state.environment\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"},{\"authority\":\"host\",\"content_hash\":\"d9b5aeb47b75fb26d35a98fcd9e354a2cd8085bc05f016723d5bd6c94fda8365\",\"id\":\"world_state.permissions\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"},{\"authority\":\"host\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\",\"id\":\"world_state.project_instructions\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"}],\"manifest_hash\":\"6d5797ea7538f2356d5d6c1e80654bb31f75b71874efc170b3057e113a96d6b3\",\"schema_version\":1,\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"session_search\",\"terminal_exec\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]},\"mcp_catalog\":[],\"model\":\"gpt-5.4-mini\",\"step\":1},\"source\":\"uar.turn\"}","kind":"artifact","language":"json","metadata":{"source":"external_llm_driver"},"phase":"complete","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73","title":"resolved_step"}
+
+event: agui.artifact
+id: 8
+data: {"artifact_id":"attempt-manifest-e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73-gpt-5.4-mini","artifact_type":"attempt_manifest","content":"{\"budgeting\":{\"contract_present\":false,\"fit_guarantee\":false,\"label\":\"legacy_unbudgeted\"},\"destination_model\":\"gpt-5.4-mini\",\"schema_version\":\"uar.attempt-manifest.v1\",\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}","kind":"artifact","language":"json","metadata":{"budgeting_label":"legacy_unbudgeted","source":"uar.request"},"phase":"complete","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73","title":"Provider attempt manifest"}
+
+event: agui.tool_call.delta
+id: 9
+data: {"call_index":0,"delta":{"arguments":"\"{\\\"command\\\":\\\"'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3\\\"}\""},"id":"call_stub_0","kind":"tool_call","phase":"delta","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73"}
+
+event: agui.tool_call.complete
+id: 10
+data: {"arguments_json":"{\"command\":\"'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3\"}","call_index":0,"id":"call_stub_0","kind":"tool_call","name":"terminal_exec","phase":"complete","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73"}
+
+event: agui.tool_result
+id: 11
+data: {"call_index":0,"content":"{\"command\":\"'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpsjpWrM/terminal.jsonl' && sleep 3\",\"exit_code\":0,\"ok\":true,\"stderr\":\"\",\"stderr_bytes\":0,\"stdout\":\"\",\"stdout_bytes\":0}","id":"call_stub_0","kind":"tool_result","name":"terminal_exec","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73","success":true}
+
+event: agui.artifact
+id: 14
+data: {"artifact_id":"uar.turn:resolved_step","artifact_type":"provider_event","content":"{\"payload\":{\"manifest\":{\"budgets\":{\"context_window_tokens\":400000,\"rendered_bytes\":3119,\"rendered_characters\":3119},\"counts\":{\"by_authority\":{\"policy\":1,\"system\":1},\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1},\"total\":2},\"fragments\":[{\"authority\":\"system\",\"content_hash\":\"e9f6bc3f98833b312aa5f17108f5459fab5e8cfce631a3a48ed23a35ed5b413e\",\"id\":\"agent.identity\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"agent_identity\",\"source\":\"artifact:sidecar-contract-agent\"},{\"authority\":\"policy\",\"content_hash\":\"8d5a14e0ec8f606d2b6dfe30629906b5cb012f60312abc5d43966b5fbec201c3\",\"id\":\"policy.effective\",\"retention\":\"turn\",\"role\":\"system\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\"}],\"manifest_hash\":\"bc11423302afb216bdaac8fea4daea18d4bdf5af09ff98daab6b164dd7e9e42f\",\"schema_version\":1,\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"session_search\",\"terminal_exec\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]},\"mcp_catalog\":[],\"model\":\"gpt-5.4-mini\",\"step\":2},\"source\":\"uar.turn\"}","kind":"artifact","language":"json","metadata":{"source":"external_llm_driver"},"phase":"complete","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73","title":"resolved_step"}
+
+event: agui.artifact
+id: 15
+data: {"artifact_id":"attempt-manifest-e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73-gpt-5.4-mini","artifact_type":"attempt_manifest","content":"{\"budgeting\":{\"contract_present\":false,\"fit_guarantee\":false,\"label\":\"legacy_unbudgeted\"},\"destination_model\":\"gpt-5.4-mini\",\"schema_version\":\"uar.attempt-manifest.v1\",\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}","kind":"artifact","language":"json","metadata":{"budgeting_label":"legacy_unbudgeted","source":"uar.request"},"phase":"complete","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73","title":"Provider attempt manifest"}
+
+event: agui.message.delta
+id: 16
+data: {"delta":{"text":"done"},"kind":"message","phase":"delta","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73"}
+
+event: agui.state.patch
+id: 17
+data: {"kind":"state","patch":[{"op":"add","path":"/presentation","value":{"admission_fallback_reason":null,"client_display":"unconfirmed","effective_mode":"legacy","eligible_templates":[],"fallback_reason":null,"generation_failed":false,"published_templates":[],"receipt_status":"available","requested_mode":null,"run_outcome":"finished","surface_published":false,"version":1}}],"phase":"patch","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73"}
+
+event: agui.done
+id: 18
+data: {"kind":"done","request_id":"e7a96d49-a0a9-4bf1-9f8d-5353e4a8ed73"}
+
+
+
+---- features::sidecar_rejects_global_mcp_mutation_and_feature_enable stdout ----
+
+thread 'features::sidecar_rejects_global_mcp_mutation_and_feature_enable' (58359966) panicked at tests/sidecar_launch_security/features.rs:265:5:
+assertion `left == right` failed: PUT status
+  left: 200
+ right: 409
+
+---- governance::sidecar_governance_required_with_host_token_reason stdout ----
+
+thread 'governance::sidecar_governance_required_with_host_token_reason' (58360130) panicked at tests/sidecar_launch_security/governance.rs:42:5:
+assertion `left == right` failed: {"boot_instance_id":"4e3af6bd-fec7-444c-a742-5674015ec6ad","bound_addresses":["127.0.0.1:59273","[::1]:59274","127.0.0.1:59274"],"configured_host":"127.0.0.1","effective_enabled":false,"effective_state":"off","jwt_required":false,"may_disable":true,"mutation_available":true,"phase":"off","reasons":[],"revision":10}
+  left: String("off")
+ right: "required"
+
+---- governance::sidecar_run_policy_denied_tool_is_not_executed stdout ----
+
+thread 'governance::sidecar_run_policy_denied_tool_is_not_executed' (58360222) panicked at tests/sidecar_launch_security/governance.rs:146:5:
+tool executed under a deny policy
+event: agui.artifact
+id: 1
+data: {"artifact_id":"run-policy-ae6c3054-7e23-4746-82bc-d30b4e5c405c","artifact_type":"effective_run_policy","content":"[{\"createSurface\":{\"catalogId\":\"urn:uar:a2ui:catalog:1\",\"surfaceId\":\"run-policy-ae6c3054-7e23-4746-82bc-d30b4e5c405c\"},\"version\":\"v0.9.1\"},{\"updateComponents\":{\"components\":[{\"component\":\"Text\",\"id\":\"title\",\"text\":{\"path\":\"/title\"},\"variant\":\"h2\"},{\"component\":\"Text\",\"id\":\"subtitle\",\"text\":{\"path\":\"/subtitle\"},\"variant\":\"caption\"},{\"component\":\"Text\",\"id\":\"overview-heading\",\"text\":\"Execution\",\"variant\":\"h3\"},{\"component\":\"Text\",\"id\":\"chat-mode\",\"text\":{\"path\":\"/chatMode\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"model\",\"text\":{\"path\":\"/model\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"agent\",\"text\":{\"path\":\"/agent\"},\"variant\":\"body\"},{\"children\":[\"overview-heading\",\"chat-mode\",\"model\",\"agent\"],\"component\":\"Column\",\"id\":\"overview-column\"},{\"child\":\"overview-column\",\"component\":\"Card\",\"id\":\"overview-card\"},{\"component\":\"Text\",\"id\":\"capabilities-heading\",\"text\":\"Available capabilities\",\"variant\":\"h3\"},{\"component\":\"Text\",\"id\":\"skills\",\"text\":{\"path\":\"/skills\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"tools\",\"text\":{\"path\":\"/tools\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"mcp-servers\",\"text\":{\"path\":\"/mcpServers\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"knowledge-bases\",\"text\":{\"path\":\"/knowledgeBases\"},\"variant\":\"body\"},{\"children\":[\"capabilities-heading\",\"skills\",\"tools\",\"mcp-servers\",\"knowledge-bases\"],\"component\":\"Column\",\"id\":\"capabilities-column\"},{\"child\":\"capabilities-column\",\"component\":\"Card\",\"id\":\"capabilities-card\"},{\"component\":\"Text\",\"id\":\"runtime-heading\",\"text\":\"Runtime controls\",\"variant\":\"h3\"},{\"component\":\"Text\",\"id\":\"memory\",\"text\":{\"path\":\"/memory\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"prompt-caching\",\"text\":{\"path\":\"/promptCaching\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"context\",\"text\":{\"path\":\"/context\"},\"variant\":\"body\"},{\"component\":\"Text\",\"id\":\"approval\",\"text\":{\"path\":\"/approval\"},\"variant\":\"body\"},{\"children\":[\"runtime-heading\",\"memory\",\"prompt-caching\",\"context\",\"approval\"],\"component\":\"Column\",\"id\":\"runtime-column\"},{\"child\":\"runtime-column\",\"component\":\"Card\",\"id\":\"runtime-card\"},{\"component\":\"Text\",\"id\":\"warnings-heading\",\"text\":{\"path\":\"/warningsHeading\"},\"variant\":\"h3\"},{\"component\":\"Text\",\"id\":\"warnings\",\"text\":{\"path\":\"/warnings\"},\"variant\":\"body\"},{\"children\":[\"warnings-heading\",\"warnings\"],\"component\":\"Column\",\"id\":\"warnings-column\"},{\"child\":\"warnings-column\",\"component\":\"Card\",\"id\":\"warnings-card\"},{\"children\":[\"title\",\"subtitle\",\"overview-card\",\"capabilities-card\",\"runtime-card\",\"warnings-card\"],\"component\":\"Column\",\"id\":\"root\"}],\"surfaceId\":\"run-policy-ae6c3054-7e23-4746-82bc-d30b4e5c405c\"},\"version\":\"v0.9.1\"},{\"updateDataModel\":{\"path\":\"/\",\"surfaceId\":\"run-policy-ae6c3054-7e23-4746-82bc-d30b4e5c405c\",\"value\":{\"agent\":\"Agent · sidecar-contract-agent\",\"approval\":\"Tool approval · deny\",\"chatMode\":\"Chat mode · agent\",\"context\":\"Context · sliding window\",\"knowledgeBases\":\"Knowledge bases · auto · 2 available · agent scope\",\"mcpServers\":\"MCP servers · auto · 0 available · legacy scope\",\"memory\":\"Memory · on\",\"model\":\"Model · openai / gpt-5.4-mini\",\"promptCaching\":\"Prompt caching · off\",\"skills\":\"Skills · auto · 0 available · agent scope\",\"subtitle\":\"Resolved policy v1 · A2UI v0.9.1\",\"title\":\"Effective run policy\",\"tools\":\"Tools · selected · 15 available · agent scope\",\"warnings\":\"No policy warnings.\",\"warningsHeading\":\"Warnings · 0\"}},\"version\":\"v0.9.1\"}]","kind":"artifact","language":"a2ui","metadata":{"catalog_id":"urn:uar:a2ui:catalog:1","profile":"uar.a2ui/1","protocol_version":"v0.9.1","version":1,"warnings":[]},"phase":"complete","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c","title":"Effective run policy"}
+
+event: agui.state.patch
+id: 2
+data: {"kind":"state","patch":[{"op":"add","path":"/presentation","value":{"admission_fallback_reason":null,"client_display":"unconfirmed","effective_mode":"legacy","eligible_templates":[],"fallback_reason":null,"generation_failed":false,"published_templates":[],"receipt_status":"available","requested_mode":null,"run_outcome":"running","surface_published":false,"version":1}}],"phase":"patch","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c"}
+
+event: agui.artifact
+id: 3
+data: {"artifact_id":"turn-manifest-ae6c3054-7e23-4746-82bc-d30b4e5c405c","artifact_type":"turn_manifest","content":"{\"budgets\":{\"context_window_tokens\":400000,\"rendered_bytes\":2815,\"rendered_characters\":2815},\"counts\":{\"by_authority\":{\"host\":4,\"policy\":1,\"system\":1},\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"world_state\":4},\"total\":6},\"fragments\":[{\"authority\":\"system\",\"content_hash\":\"e9f6bc3f98833b312aa5f17108f5459fab5e8cfce631a3a48ed23a35ed5b413e\",\"id\":\"agent.identity\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"agent_identity\",\"source\":\"artifact:sidecar-contract-agent\"},{\"authority\":\"policy\",\"content_hash\":\"302e04eacf1af1693ab273fba53ebaf1ea27a8405ae2bbc4b154231f18171482\",\"id\":\"policy.effective\",\"retention\":\"turn\",\"role\":\"system\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\"},{\"authority\":\"host\",\"content_hash\":\"992962a09e5030d8425d98377ce9b894422e27803935bddd190635f612312c75\",\"id\":\"world_state.current_time\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"},{\"authority\":\"host\",\"content_hash\":\"4f344eb213fdf26ab0ef910b3c6fb25e90690975b8689e142f9911eee3eaa611\",\"id\":\"world_state.environment\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"},{\"authority\":\"host\",\"content_hash\":\"e18258324464bbfb01282a608b71afe90ad187648f30ed092da37483a5626c5e\",\"id\":\"world_state.permissions\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"},{\"authority\":\"host\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\",\"id\":\"world_state.project_instructions\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"}],\"manifest_hash\":\"4e555ec0be243973b367920d3a052e835d05c7a72a1b07b71db3850614cf76e5\",\"schema_version\":1,\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"session_search\",\"terminal_exec\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]}","kind":"artifact","language":"json","metadata":{"fragment_count":6,"manifest_hash":"4e555ec0be243973b367920d3a052e835d05c7a72a1b07b71db3850614cf76e5","schema_version":1},"phase":"complete","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c","title":"Turn manifest"}
+
+event: agui.stream.start
+id: 4
+data: {"agent_id":"sidecar-contract-agent","kind":"stream","phase":"start","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c"}
+
+event: agui.state.patch
+id: 5
+data: {"kind":"state","patch":[{"op":"replace","path":"/run","value":{"conversation_id":"dd1051b8-887e-4a20-bc66-47a9ea6c423f","run_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c","status":"running"}}],"phase":"patch","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c"}
+
+event: agui.artifact
+id: 7
+data: {"artifact_id":"uar.turn:resolved_step","artifact_type":"provider_event","content":"{\"payload\":{\"manifest\":{\"budgets\":{\"context_window_tokens\":400000,\"rendered_bytes\":2847,\"rendered_characters\":2847},\"counts\":{\"by_authority\":{\"host\":4,\"policy\":1,\"system\":1},\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1,\"world_state\":4},\"total\":6},\"fragments\":[{\"authority\":\"system\",\"content_hash\":\"e9f6bc3f98833b312aa5f17108f5459fab5e8cfce631a3a48ed23a35ed5b413e\",\"id\":\"agent.identity\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"agent_identity\",\"source\":\"artifact:sidecar-contract-agent\"},{\"authority\":\"policy\",\"content_hash\":\"302e04eacf1af1693ab273fba53ebaf1ea27a8405ae2bbc4b154231f18171482\",\"id\":\"policy.effective\",\"retention\":\"turn\",\"role\":\"system\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\"},{\"authority\":\"host\",\"content_hash\":\"992962a09e5030d8425d98377ce9b894422e27803935bddd190635f612312c75\",\"id\":\"world_state.current_time\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"},{\"authority\":\"host\",\"content_hash\":\"4f344eb213fdf26ab0ef910b3c6fb25e90690975b8689e142f9911eee3eaa611\",\"id\":\"world_state.environment\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"},{\"authority\":\"host\",\"content_hash\":\"e18258324464bbfb01282a608b71afe90ad187648f30ed092da37483a5626c5e\",\"id\":\"world_state.permissions\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"},{\"authority\":\"host\",\"content_hash\":\"ae02a71f9847b4174f62323d69e05ded8921eb7d1ee73ca6c34f99f55ed16dad\",\"id\":\"world_state.project_instructions\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"world_state\",\"source\":\"host.world_state\"}],\"manifest_hash\":\"e1db93db386e7c43924142d603e029bf4f27bec11bce472f8d48e2b997b50ec7\",\"schema_version\":1,\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"session_search\",\"terminal_exec\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]},\"mcp_catalog\":[],\"model\":\"gpt-5.4-mini\",\"step\":1},\"source\":\"uar.turn\"}","kind":"artifact","language":"json","metadata":{"source":"external_llm_driver"},"phase":"complete","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c","title":"resolved_step"}
+
+event: agui.artifact
+id: 8
+data: {"artifact_id":"attempt-manifest-ae6c3054-7e23-4746-82bc-d30b4e5c405c-gpt-5.4-mini","artifact_type":"attempt_manifest","content":"{\"budgeting\":{\"contract_present\":false,\"fit_guarantee\":false,\"label\":\"legacy_unbudgeted\"},\"destination_model\":\"gpt-5.4-mini\",\"schema_version\":\"uar.attempt-manifest.v1\",\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}","kind":"artifact","language":"json","metadata":{"budgeting_label":"legacy_unbudgeted","source":"uar.request"},"phase":"complete","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c","title":"Provider attempt manifest"}
+
+event: agui.tool_call.delta
+id: 9
+data: {"call_index":0,"delta":{"arguments":"\"{\\\"command\\\":\\\"'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpFhghqM/deny-all.jsonl'\\\"}\""},"id":"call_stub_0","kind":"tool_call","phase":"delta","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c"}
+
+event: agui.tool_call.complete
+id: 10
+data: {"arguments_json":"{\"command\":\"'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpFhghqM/deny-all.jsonl'\"}","call_index":0,"id":"call_stub_0","kind":"tool_call","name":"terminal_exec","phase":"complete","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c"}
+
+event: agui.tool_result
+id: 11
+data: {"call_index":0,"content":"{\"command\":\"'/Users/gqadonis/Projects/prometheus/worktrees/uar-the-boss-sidecar/target/debug/uar-env-probe' '/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpFhghqM/deny-all.jsonl'\",\"exit_code\":0,\"ok\":true,\"stderr\":\"\",\"stderr_bytes\":0,\"stdout\":\"\",\"stdout_bytes\":0}","id":"call_stub_0","kind":"tool_result","name":"terminal_exec","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c","success":true}
+
+event: agui.artifact
+id: 14
+data: {"artifact_id":"uar.turn:resolved_step","artifact_type":"provider_event","content":"{\"payload\":{\"manifest\":{\"budgets\":{\"context_window_tokens\":400000,\"rendered_bytes\":3117,\"rendered_characters\":3117},\"counts\":{\"by_authority\":{\"policy\":1,\"system\":1},\"by_section\":{\"agent_identity\":1,\"enforced_policy\":1},\"total\":2},\"fragments\":[{\"authority\":\"system\",\"content_hash\":\"e9f6bc3f98833b312aa5f17108f5459fab5e8cfce631a3a48ed23a35ed5b413e\",\"id\":\"agent.identity\",\"retention\":\"session\",\"role\":\"system\",\"section\":\"agent_identity\",\"source\":\"artifact:sidecar-contract-agent\"},{\"authority\":\"policy\",\"content_hash\":\"302e04eacf1af1693ab273fba53ebaf1ea27a8405ae2bbc4b154231f18171482\",\"id\":\"policy.effective\",\"retention\":\"turn\",\"role\":\"system\",\"section\":\"enforced_policy\",\"source\":\"effective_run_policy\"}],\"manifest_hash\":\"39380f987f8d28dbbd898c82d71f344c817a4ea86022ae6f8af79c0578c01d5c\",\"schema_version\":1,\"selected_skills\":[],\"selected_tools\":[\"a2ui_render\",\"activate_skill\",\"native__memory_delete_by_id\",\"native__memory_history\",\"native__memory_list\",\"native__memory_recall\",\"native__memory_save\",\"native__memory_update_by_id\",\"native_echo\",\"native_system_info\",\"session_search\",\"terminal_exec\",\"uar_compile\",\"uar_session_check_completeness\",\"uar_session_compile\",\"uar_session_update_section\"],\"warnings\":[]},\"mcp_catalog\":[],\"model\":\"gpt-5.4-mini\",\"step\":2},\"source\":\"uar.turn\"}","kind":"artifact","language":"json","metadata":{"source":"external_llm_driver"},"phase":"complete","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c","title":"resolved_step"}
+
+event: agui.artifact
+id: 15
+data: {"artifact_id":"attempt-manifest-ae6c3054-7e23-4746-82bc-d30b4e5c405c-gpt-5.4-mini","artifact_type":"attempt_manifest","content":"{\"budgeting\":{\"contract_present\":false,\"fit_guarantee\":false,\"label\":\"legacy_unbudgeted\"},\"destination_model\":\"gpt-5.4-mini\",\"schema_version\":\"uar.attempt-manifest.v1\",\"warning\":\"Provider dispatch is using the legacy unbudgeted path\"}","kind":"artifact","language":"json","metadata":{"budgeting_label":"legacy_unbudgeted","source":"uar.request"},"phase":"complete","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c","title":"Provider attempt manifest"}
+
+event: agui.message.delta
+id: 16
+data: {"delta":{"text":"done"},"kind":"message","phase":"delta","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c"}
+
+event: agui.state.patch
+id: 17
+data: {"kind":"state","patch":[{"op":"add","path":"/presentation","value":{"admission_fallback_reason":null,"client_display":"unconfirmed","effective_mode":"legacy","eligible_templates":[],"fallback_reason":null,"generation_failed":false,"published_templates":[],"receipt_status":"available","requested_mode":null,"run_outcome":"finished","surface_published":false,"version":1}}],"phase":"patch","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c"}
+
+event: agui.done
+id: 18
+data: {"kind":"done","request_id":"ae6c3054-7e23-4746-82bc-d30b4e5c405c"}
+
+
+
+---- governance::sidecar_normalizes_persisted_governance_off_and_refuses_off stdout ----
+
+thread 'governance::sidecar_normalizes_persisted_governance_off_and_refuses_off' (58360168) panicked at tests/sidecar_launch_security/governance.rs:77:5:
+assertion `left == right` failed
+  left: Bool(false)
+ right: Bool(true)
+
+---- guard::any_origin_rejected_with_valid_token stdout ----
+
+thread 'guard::any_origin_rejected_with_valid_token' (58360492) panicked at tests/sidecar_launch_security/guard.rs:205:9:
+assertion `left == right` failed: Origin null
+  left: 200
+ right: 403
+
+---- guard::every_route_rejects_missing_token stdout ----
+
+thread 'guard::every_route_rejects_missing_token' (58360542) panicked at tests/sidecar_launch_security/guard.rs:49:5:
+not 401: [
+    "GET / -> 503",
+    "GET /api/live/dummy -> 404",
+    "GET /api/openapi.json -> 404",
+    "GET /api/uar/auth/keys -> 200",
+    "GET /api/uar/capabilities -> 404",
+    "GET /api/uar/knowledge-bases -> 200",
+    "GET /api/uar/knowledge-bases/dummy/documents -> 404",
+    "GET /api/uar/mcp/health -> 200",
+    "GET /api/uar/providers -> 200",
+    "GET /api/uar/runs/dummy-run/stream -> 404",
+    "GET /api/uar/runs/dummy/stream -> 404",
+    "GET /api/uar/skills -> 200",
+    "GET /api/uar/sync/stream -> 200",
+    "GET /health -> 200",
+    "GET /healthz -> 200",
+    "GET /metrics -> 404",
+    "GET /no-such-path-488872d8fcef478a80aa320bf5e0e197 -> 404",
+    "GET /readyz -> 200",
+    "GET /v1/models -> 200",
+    "GET /v1/models/dummy -> 404",
+    "POST /acp -> 415",
+    "POST /api/uar/auth/exchange -> 400",
+    "POST /api/uar/auth/keys -> 415",
+    "POST /api/uar/knowledge-bases -> 415",
+    "POST /api/uar/knowledge-bases/dummy/documents -> 400",
+    "POST /api/uar/knowledge-bases/dummy/search -> 415",
+    "POST /api/uar/providers -> 415",
+    "POST /api/uar/runs -> 415",
+    "POST /api/uar/skills -> 415",
+    "POST /api/uar/skills/refresh -> 200",
+    "POST /api/uar/skills/reload -> 200",
+    "POST /mcp/memory -> 404",
+    "POST /mcp/uar -> 406",
+    "POST /v1/chat/completions -> 415",
+    "POST /v1/messages -> 415",
+]
+
+---- guard::every_route_rejects_wrong_token stdout ----
+
+thread 'guard::every_route_rejects_wrong_token' (58360594) panicked at tests/sidecar_launch_security/guard.rs:68:5:
+not 401: [
+    "[Bearer] GET / -> 503",
+    "[Bearer] GET /api/live/dummy -> 404",
+    "[Bearer] GET /api/openapi.json -> 404",
+    "[Bearer] GET /api/uar/auth/keys -> 200",
+    "[Bearer] GET /api/uar/capabilities -> 404",
+    "[Bearer] GET /api/uar/knowledge-bases -> 200",
+    "[Bearer] GET /api/uar/knowledge-bases/dummy/documents -> 404",
+    "[Bearer] GET /api/uar/mcp/health -> 200",
+    "[Bearer] GET /api/uar/providers -> 200",
+    "[Bearer] GET /api/uar/runs/dummy-run/stream -> 404",
+    "[Bearer] GET /api/uar/runs/dummy/stream -> 404",
+    "[Bearer] GET /api/uar/skills -> 200",
+    "[Bearer] GET /api/uar/sync/stream -> 200",
+    "[Bearer] GET /health -> 200",
+    "[Bearer] GET /healthz -> 200",
+    "[Bearer] GET /metrics -> 404",
+    "[Bearer] GET /no-such-path-9273b60be7e3440397d69d05f505b97f -> 404",
+    "[Bearer] GET /readyz -> 200",
+    "[Bearer] GET /v1/models -> 200",
+    "[Bearer] GET /v1/models/dummy -> 404",
+    "[Bearer] POST /acp -> 415",
+    "[Bearer] POST /api/uar/auth/exchange -> 400",
+    "[Bearer] POST /api/uar/auth/keys -> 415",
+    "[Bearer] POST /api/uar/knowledge-bases -> 415",
+    "[Bearer] POST /api/uar/knowledge-bases/dummy/documents -> 400",
+    "[Bearer] POST /api/uar/knowledge-bases/dummy/search -> 415",
+    "[Bearer] POST /api/uar/providers -> 415",
+    "[Bearer] POST /api/uar/runs -> 415",
+    "[Bearer] POST /api/uar/skills -> 415",
+    "[Bearer] POST /api/uar/skills/refresh -> 200",
+    "[Bearer] POST /api/uar/skills/reload -> 200",
+    "[Bearer] POST /mcp/memory -> 404",
+    "[Bearer] POST /mcp/uar -> 406",
+    "[Bearer] POST /v1/chat/completions -> 415",
+    "[Bearer] POST /v1/messages -> 415",
+    "[Basic] GET / -> 503",
+    "[Basic] GET /api/live/dummy -> 404",
+    "[Basic] GET /api/openapi.json -> 404",
+    "[Basic] GET /api/uar/auth/keys -> 200",
+    "[Basic] GET /api/uar/capabilities -> 404",
+    "[Basic] GET /api/uar/knowledge-bases -> 200",
+    "[Basic] GET /api/uar/knowledge-bases/dummy/documents -> 404",
+    "[Basic] GET /api/uar/mcp/health -> 200",
+    "[Basic] GET /api/uar/providers -> 200",
+    "[Basic] GET /api/uar/runs/dummy-run/stream -> 404",
+    "[Basic] GET /api/uar/runs/dummy/stream -> 404",
+    "[Basic] GET /api/uar/skills -> 200",
+    "[Basic] GET /api/uar/sync/stream -> 200",
+    "[Basic] GET /health -> 200",
+    "[Basic] GET /healthz -> 200",
+    "[Basic] GET /metrics -> 404",
+    "[Basic] GET /no-such-path-07eea70854b24b2385063d2462fef800 -> 404",
+    "[Basic] GET /readyz -> 200",
+    "[Basic] GET /v1/models -> 200",
+    "[Basic] GET /v1/models/dummy -> 404",
+    "[Basic] POST /acp -> 415",
+    "[Basic] POST /api/uar/auth/exchange -> 400",
+    "[Basic] POST /api/uar/auth/keys -> 415",
+    "[Basic] POST /api/uar/knowledge-bases -> 415",
+    "[Basic] POST /api/uar/knowledge-bases/dummy/documents -> 400",
+    "[Basic] POST /api/uar/knowledge-bases/dummy/search -> 415",
+    "[Basic] POST /api/uar/providers -> 415",
+    "[Basic] POST /api/uar/runs -> 415",
+    "[Basic] POST /api/uar/skills -> 415",
+    "[Basic] POST /api/uar/skills/refresh -> 200",
+    "[Basic] POST /api/uar/skills/reload -> 200",
+    "[Basic] POST /mcp/memory -> 404",
+    "[Basic] POST /mcp/uar -> 406",
+    "[Basic] POST /v1/chat/completions -> 415",
+    "[Basic] POST /v1/messages -> 415",
+    "[bearer] GET / -> 503",
+    "[bearer] GET /api/live/dummy -> 404",
+    "[bearer] GET /api/openapi.json -> 404",
+    "[bearer] GET /api/uar/auth/keys -> 200",
+    "[bearer] GET /api/uar/capabilities -> 404",
+    "[bearer] GET /api/uar/knowledge-bases -> 200",
+    "[bearer] GET /api/uar/knowledge-bases/dummy/documents -> 404",
+    "[bearer] GET /api/uar/mcp/health -> 200",
+    "[bearer] GET /api/uar/providers -> 200",
+    "[bearer] GET /api/uar/runs/dummy-run/stream -> 404",
+    "[bearer] GET /api/uar/runs/dummy/stream -> 404",
+    "[bearer] GET /api/uar/skills -> 200",
+    "[bearer] GET /api/uar/sync/stream -> 200",
+    "[bearer] GET /health -> 200",
+    "[bearer] GET /healthz -> 200",
+    "[bearer] GET /metrics -> 404",
+    "[bearer] GET /no-such-path-ecf83219894b47c09bc66f8a9bcdbe46 -> 404",
+    "[bearer] GET /readyz -> 200",
+    "[bearer] GET /v1/models -> 200",
+    "[bearer] GET /v1/models/dummy -> 404",
+    "[bearer] POST /acp -> 415",
+    "[bearer] POST /api/uar/auth/exchange -> 400",
+    "[bearer] POST /api/uar/auth/keys -> 415",
+    "[bearer] POST /api/uar/knowledge-bases -> 415",
+    "[bearer] POST /api/uar/knowledge-bases/dummy/documents -> 400",
+    "[bearer] POST /api/uar/knowledge-bases/dummy/search -> 415",
+    "[bearer] POST /api/uar/providers -> 415",
+    "[bearer] POST /api/uar/runs -> 415",
+    "[bearer] POST /api/uar/skills -> 415",
+    "[bearer] POST /api/uar/skills/refresh -> 200",
+    "[bearer] POST /api/uar/skills/reload -> 200",
+    "[bearer] POST /mcp/memory -> 404",
+    "[bearer] POST /mcp/uar -> 406",
+    "[bearer] POST /v1/chat/completions -> 415",
+    "[bearer] POST /v1/messages -> 415",
+    "[<empty>] GET / -> 503",
+    "[<empty>] GET /api/live/dummy -> 404",
+    "[<empty>] GET /api/openapi.json -> 404",
+    "[<empty>] GET /api/uar/auth/keys -> 200",
+    "[<empty>] GET /api/uar/capabilities -> 404",
+    "[<empty>] GET /api/uar/knowledge-bases -> 200",
+    "[<empty>] GET /api/uar/knowledge-bases/dummy/documents -> 404",
+    "[<empty>] GET /api/uar/mcp/health -> 200",
+    "[<empty>] GET /api/uar/providers -> 200",
+    "[<empty>] GET /api/uar/runs/dummy-run/stream -> 404",
+    "[<empty>] GET /api/uar/runs/dummy/stream -> 404",
+    "[<empty>] GET /api/uar/skills -> 200",
+    "[<empty>] GET /api/uar/sync/stream -> 200",
+    "[<empty>] GET /health -> 200",
+    "[<empty>] GET /healthz -> 200",
+    "[<empty>] GET /metrics -> 404",
+    "[<empty>] GET /no-such-path-a255483fc8ee423bbe4a9803649d8b19 -> 404",
+    "[<empty>] GET /readyz -> 200",
+    "[<empty>] GET /v1/models -> 200",
+    "[<empty>] GET /v1/models/dummy -> 404",
+    "[<empty>] POST /acp -> 415",
+    "[<empty>] POST /api/uar/auth/exchange -> 400",
+    "[<empty>] POST /api/uar/auth/keys -> 415",
+    "[<empty>] POST /api/uar/knowledge-bases -> 415",
+    "[<empty>] POST /api/uar/knowledge-bases/dummy/documents -> 400",
+    "[<empty>] POST /api/uar/knowledge-bases/dummy/search -> 415",
+    "[<empty>] POST /api/uar/providers -> 415",
+    "[<empty>] POST /api/uar/runs -> 415",
+    "[<empty>] POST /api/uar/skills -> 415",
+    "[<empty>] POST /api/uar/skills/refresh -> 200",
+    "[<empty>] POST /api/uar/skills/reload -> 200",
+    "[<empty>] POST /mcp/memory -> 404",
+    "[<empty>] POST /mcp/uar -> 406",
+    "[<empty>] POST /v1/chat/completions -> 415",
+    "[<empty>] POST /v1/messages -> 415",
+]
+
+---- guard::foreign_host_rejected_with_valid_token stdout ----
+
+thread 'guard::foreign_host_rejected_with_valid_token' (58360791) panicked at tests/sidecar_launch_security/guard.rs:158:13:
+assertion `left == right` failed: Host attacker.example /readyz
+  left: 200
+ right: 403
+
+---- guard::no_cors_headers_on_any_response stdout ----
+
+thread 'guard::no_cors_headers_on_any_response' (58360864) panicked at tests/sidecar_launch_security/guard.rs:284:5:
+CORS headers present: [
+    "GET /: [\"access-control-allow-origin\"]",
+    "GET /api/live/dummy: [\"access-control-allow-origin\"]",
+    "GET /api/openapi.json: [\"access-control-allow-origin\"]",
+    "GET /api/uar/auth/keys: [\"access-control-allow-origin\"]",
+    "GET /api/uar/capabilities: [\"access-control-allow-origin\"]",
+    "GET /api/uar/knowledge-bases: [\"access-control-allow-origin\"]",
+    "GET /api/uar/knowledge-bases/dummy/documents: [\"access-control-allow-origin\"]",
+    "GET /api/uar/mcp/health: [\"access-control-allow-origin\"]",
+    "GET /api/uar/providers: [\"access-control-allow-origin\"]",
+    "GET /api/uar/runs/dummy-run/stream: [\"access-control-allow-origin\"]",
+    "GET /api/uar/runs/dummy/stream: [\"access-control-allow-origin\"]",
+    "GET /api/uar/skills: [\"access-control-allow-origin\"]",
+    "GET /api/uar/sync/stream: [\"access-control-allow-origin\"]",
+    "GET /health: [\"access-control-allow-origin\"]",
+    "GET /healthz: [\"access-control-allow-origin\"]",
+    "GET /metrics: [\"access-control-allow-origin\"]",
+    "GET /no-such-path-618e485b88fc45578910a865152b364f: [\"access-control-allow-origin\"]",
+    "GET /readyz: [\"access-control-allow-origin\"]",
+    "GET /v1/models: [\"access-control-allow-origin\"]",
+    "GET /v1/models/dummy: [\"access-control-allow-origin\"]",
+    "POST /acp: [\"access-control-allow-origin\"]",
+    "POST /api/uar/auth/exchange: [\"access-control-allow-origin\"]",
+    "POST /api/uar/auth/keys: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases/dummy/documents: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases/dummy/search: [\"access-control-allow-origin\"]",
+    "POST /api/uar/providers: [\"access-control-allow-origin\"]",
+    "POST /api/uar/runs: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills/refresh: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills/reload: [\"access-control-allow-origin\"]",
+    "POST /mcp/memory: [\"access-control-allow-origin\"]",
+    "POST /mcp/uar: [\"access-control-allow-origin\"]",
+    "POST /v1/chat/completions: [\"access-control-allow-origin\"]",
+    "POST /v1/messages: [\"access-control-allow-origin\"]",
+    "GET /: [\"access-control-allow-origin\"]",
+    "GET /api/live/dummy: [\"access-control-allow-origin\"]",
+    "GET /api/openapi.json: [\"access-control-allow-origin\"]",
+    "GET /api/uar/auth/keys: [\"access-control-allow-origin\"]",
+    "GET /api/uar/capabilities: [\"access-control-allow-origin\"]",
+    "GET /api/uar/knowledge-bases: [\"access-control-allow-origin\"]",
+    "GET /api/uar/knowledge-bases/dummy/documents: [\"access-control-allow-origin\"]",
+    "GET /api/uar/mcp/health: [\"access-control-allow-origin\"]",
+    "GET /api/uar/providers: [\"access-control-allow-origin\"]",
+    "GET /api/uar/runs/dummy-run/stream: [\"access-control-allow-origin\"]",
+    "GET /api/uar/runs/dummy/stream: [\"access-control-allow-origin\"]",
+    "GET /api/uar/skills: [\"access-control-allow-origin\"]",
+    "GET /api/uar/sync/stream: [\"access-control-allow-origin\"]",
+    "GET /health: [\"access-control-allow-origin\"]",
+    "GET /healthz: [\"access-control-allow-origin\"]",
+    "GET /metrics: [\"access-control-allow-origin\"]",
+    "GET /no-such-path-4149b6a21490452fba993921e877eb3e: [\"access-control-allow-origin\"]",
+    "GET /readyz: [\"access-control-allow-origin\"]",
+    "GET /v1/models: [\"access-control-allow-origin\"]",
+    "GET /v1/models/dummy: [\"access-control-allow-origin\"]",
+    "POST /acp: [\"access-control-allow-origin\"]",
+    "POST /api/uar/auth/exchange: [\"access-control-allow-origin\"]",
+    "POST /api/uar/auth/keys: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases/dummy/documents: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases/dummy/search: [\"access-control-allow-origin\"]",
+    "POST /api/uar/providers: [\"access-control-allow-origin\"]",
+    "POST /api/uar/runs: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills/refresh: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills/reload: [\"access-control-allow-origin\"]",
+    "POST /mcp/memory: [\"access-control-allow-origin\"]",
+    "POST /mcp/uar: [\"access-control-allow-origin\"]",
+    "POST /v1/chat/completions: [\"access-control-allow-origin\"]",
+    "POST /v1/messages: [\"access-control-allow-origin\"]",
+    "GET /: [\"access-control-allow-origin\"]",
+    "GET /api/live/dummy: [\"access-control-allow-origin\"]",
+    "GET /api/openapi.json: [\"access-control-allow-origin\"]",
+    "GET /api/uar/auth/keys: [\"access-control-allow-origin\"]",
+    "GET /api/uar/capabilities: [\"access-control-allow-origin\"]",
+    "GET /api/uar/knowledge-bases: [\"access-control-allow-origin\"]",
+    "GET /api/uar/knowledge-bases/dummy/documents: [\"access-control-allow-origin\"]",
+    "GET /api/uar/mcp/health: [\"access-control-allow-origin\"]",
+    "GET /api/uar/providers: [\"access-control-allow-origin\"]",
+    "GET /api/uar/runs/dummy-run/stream: [\"access-control-allow-origin\"]",
+    "GET /api/uar/runs/dummy/stream: [\"access-control-allow-origin\"]",
+    "GET /api/uar/skills: [\"access-control-allow-origin\"]",
+    "GET /api/uar/sync/stream: [\"access-control-allow-origin\"]",
+    "GET /health: [\"access-control-allow-origin\"]",
+    "GET /healthz: [\"access-control-allow-origin\"]",
+    "GET /metrics: [\"access-control-allow-origin\"]",
+    "GET /no-such-path-2148689c66bd4bf79333eda0f9d30a3b: [\"access-control-allow-origin\"]",
+    "GET /readyz: [\"access-control-allow-origin\"]",
+    "GET /v1/models: [\"access-control-allow-origin\"]",
+    "GET /v1/models/dummy: [\"access-control-allow-origin\"]",
+    "POST /acp: [\"access-control-allow-origin\"]",
+    "POST /api/uar/auth/exchange: [\"access-control-allow-origin\"]",
+    "POST /api/uar/auth/keys: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases/dummy/documents: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases/dummy/search: [\"access-control-allow-origin\"]",
+    "POST /api/uar/providers: [\"access-control-allow-origin\"]",
+    "POST /api/uar/runs: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills/refresh: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills/reload: [\"access-control-allow-origin\"]",
+    "POST /mcp/memory: [\"access-control-allow-origin\"]",
+    "POST /mcp/uar: [\"access-control-allow-origin\"]",
+    "POST /v1/chat/completions: [\"access-control-allow-origin\"]",
+    "POST /v1/messages: [\"access-control-allow-origin\"]",
+    "GET /: [\"access-control-allow-origin\"]",
+    "GET /api/live/dummy: [\"access-control-allow-origin\"]",
+    "GET /api/openapi.json: [\"access-control-allow-origin\"]",
+    "GET /api/uar/auth/keys: [\"access-control-allow-origin\"]",
+    "GET /api/uar/capabilities: [\"access-control-allow-origin\"]",
+    "GET /api/uar/knowledge-bases: [\"access-control-allow-origin\"]",
+    "GET /api/uar/knowledge-bases/dummy/documents: [\"access-control-allow-origin\"]",
+    "GET /api/uar/mcp/health: [\"access-control-allow-origin\"]",
+    "GET /api/uar/providers: [\"access-control-allow-origin\"]",
+    "GET /api/uar/runs/dummy-run/stream: [\"access-control-allow-origin\"]",
+    "GET /api/uar/runs/dummy/stream: [\"access-control-allow-origin\"]",
+    "GET /api/uar/skills: [\"access-control-allow-origin\"]",
+    "GET /api/uar/sync/stream: [\"access-control-allow-origin\"]",
+    "GET /health: [\"access-control-allow-origin\"]",
+    "GET /healthz: [\"access-control-allow-origin\"]",
+    "GET /metrics: [\"access-control-allow-origin\"]",
+    "GET /no-such-path-d322d53f2d8a4cc4a3f744c6bc7ae33e: [\"access-control-allow-origin\"]",
+    "GET /readyz: [\"access-control-allow-origin\"]",
+    "GET /v1/models: [\"access-control-allow-origin\"]",
+    "GET /v1/models/dummy: [\"access-control-allow-origin\"]",
+    "POST /acp: [\"access-control-allow-origin\"]",
+    "POST /api/uar/auth/exchange: [\"access-control-allow-origin\"]",
+    "POST /api/uar/auth/keys: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases/dummy/documents: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases/dummy/search: [\"access-control-allow-origin\"]",
+    "POST /api/uar/providers: [\"access-control-allow-origin\"]",
+    "POST /api/uar/runs: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills/refresh: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills/reload: [\"access-control-allow-origin\"]",
+    "POST /mcp/memory: [\"access-control-allow-origin\"]",
+    "POST /mcp/uar: [\"access-control-allow-origin\"]",
+    "POST /v1/chat/completions: [\"access-control-allow-origin\"]",
+    "POST /v1/messages: [\"access-control-allow-origin\"]",
+    "GET /: [\"access-control-allow-origin\"]",
+    "GET /api/live/dummy: [\"access-control-allow-origin\"]",
+    "GET /api/openapi.json: [\"access-control-allow-origin\"]",
+    "GET /api/uar/auth/keys: [\"access-control-allow-origin\"]",
+    "GET /api/uar/capabilities: [\"access-control-allow-origin\"]",
+    "GET /api/uar/knowledge-bases: [\"access-control-allow-origin\"]",
+    "GET /api/uar/knowledge-bases/dummy/documents: [\"access-control-allow-origin\"]",
+    "GET /api/uar/mcp/health: [\"access-control-allow-origin\"]",
+    "GET /api/uar/providers: [\"access-control-allow-origin\"]",
+    "GET /api/uar/runs/dummy-run/stream: [\"access-control-allow-origin\"]",
+    "GET /api/uar/runs/dummy/stream: [\"access-control-allow-origin\"]",
+    "GET /api/uar/skills: [\"access-control-allow-origin\"]",
+    "GET /api/uar/sync/stream: [\"access-control-allow-origin\"]",
+    "GET /health: [\"access-control-allow-origin\"]",
+    "GET /healthz: [\"access-control-allow-origin\"]",
+    "GET /metrics: [\"access-control-allow-origin\"]",
+    "GET /no-such-path-f52b79f9ad3f489b97a13cd240b83deb: [\"access-control-allow-origin\"]",
+    "GET /readyz: [\"access-control-allow-origin\"]",
+    "GET /v1/models: [\"access-control-allow-origin\"]",
+    "GET /v1/models/dummy: [\"access-control-allow-origin\"]",
+    "POST /acp: [\"access-control-allow-origin\"]",
+    "POST /api/uar/auth/exchange: [\"access-control-allow-origin\"]",
+    "POST /api/uar/auth/keys: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases/dummy/documents: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases/dummy/search: [\"access-control-allow-origin\"]",
+    "POST /api/uar/providers: [\"access-control-allow-origin\"]",
+    "POST /api/uar/runs: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills/refresh: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills/reload: [\"access-control-allow-origin\"]",
+    "POST /mcp/memory: [\"access-control-allow-origin\"]",
+    "POST /mcp/uar: [\"access-control-allow-origin\"]",
+    "POST /v1/chat/completions: [\"access-control-allow-origin\"]",
+    "POST /v1/messages: [\"access-control-allow-origin\"]",
+    "GET /: [\"access-control-allow-origin\"]",
+    "GET /api/live/dummy: [\"access-control-allow-origin\"]",
+    "GET /api/openapi.json: [\"access-control-allow-origin\"]",
+    "GET /api/uar/auth/keys: [\"access-control-allow-origin\"]",
+    "GET /api/uar/capabilities: [\"access-control-allow-origin\"]",
+    "GET /api/uar/knowledge-bases: [\"access-control-allow-origin\"]",
+    "GET /api/uar/knowledge-bases/dummy/documents: [\"access-control-allow-origin\"]",
+    "GET /api/uar/mcp/health: [\"access-control-allow-origin\"]",
+    "GET /api/uar/providers: [\"access-control-allow-origin\"]",
+    "GET /api/uar/runs/dummy-run/stream: [\"access-control-allow-origin\"]",
+    "GET /api/uar/runs/dummy/stream: [\"access-control-allow-origin\"]",
+    "GET /api/uar/skills: [\"access-control-allow-origin\"]",
+    "GET /api/uar/sync/stream: [\"access-control-allow-origin\"]",
+    "GET /health: [\"access-control-allow-origin\"]",
+    "GET /healthz: [\"access-control-allow-origin\"]",
+    "GET /metrics: [\"access-control-allow-origin\"]",
+    "GET /no-such-path-ff48d57555e84fa2b48db8e4863789a2: [\"access-control-allow-origin\"]",
+    "GET /readyz: [\"access-control-allow-origin\"]",
+    "GET /v1/models: [\"access-control-allow-origin\"]",
+    "GET /v1/models/dummy: [\"access-control-allow-origin\"]",
+    "POST /acp: [\"access-control-allow-origin\"]",
+    "POST /api/uar/auth/exchange: [\"access-control-allow-origin\"]",
+    "POST /api/uar/auth/keys: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases/dummy/documents: [\"access-control-allow-origin\"]",
+    "POST /api/uar/knowledge-bases/dummy/search: [\"access-control-allow-origin\"]",
+    "POST /api/uar/providers: [\"access-control-allow-origin\"]",
+    "POST /api/uar/runs: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills/refresh: [\"access-control-allow-origin\"]",
+    "POST /api/uar/skills/reload: [\"access-control-allow-origin\"]",
+    "POST /mcp/memory: [\"access-control-allow-origin\"]",
+    "POST /mcp/uar: [\"access-control-allow-origin\"]",
+    "POST /v1/chat/completions: [\"access-control-allow-origin\"]",
+    "POST /v1/messages: [\"access-control-allow-origin\"]",
+    "GET /readyz Host=attacker.example: [\"access-control-allow-origin\"]",
+    "GET /readyz Host=[::1]:59369: [\"access-control-allow-origin\"]",
+    "GET /readyz Origin=null: [\"access-control-allow-origin\"]",
+    "GET /readyz Origin=http://127.0.0.1:59369: [\"access-control-allow-origin\"]",
+    "GET /readyz Origin=http://localhost:59369: [\"access-control-allow-origin\"]",
+    "GET /readyz Origin=https://example.com: [\"access-control-allow-origin\"]",
+    "OPTIONS /api/uar/runs: [\"access-control-allow-methods\", \"access-control-allow-headers\", \"access-control-allow-origin\"]",
+]
+
+---- guard::previous_launch_token_is_rejected stdout ----
+
+thread 'guard::previous_launch_token_is_rejected' (58360973) panicked at tests/sidecar_launch_security/guard.rs:102:5:
+previous token not rejected: [
+    "GET / -> 503",
+    "GET /api/live/dummy -> 404",
+    "GET /api/openapi.json -> 404",
+    "GET /api/uar/auth/keys -> 200",
+    "GET /api/uar/capabilities -> 404",
+    "GET /api/uar/knowledge-bases -> 200",
+    "GET /api/uar/knowledge-bases/dummy/documents -> 404",
+    "GET /api/uar/mcp/health -> 200",
+    "GET /api/uar/providers -> 200",
+    "GET /api/uar/runs/dummy-run/stream -> 404",
+    "GET /api/uar/runs/dummy/stream -> 404",
+    "GET /api/uar/skills -> 200",
+    "GET /api/uar/sync/stream -> 200",
+    "GET /health -> 200",
+    "GET /healthz -> 200",
+    "GET /metrics -> 404",
+    "GET /no-such-path-09c2ad8b0e214304a97d4ef5f470212c -> 404",
+    "GET /readyz -> 200",
+    "GET /v1/models -> 200",
+    "GET /v1/models/dummy -> 404",
+    "POST /acp -> 415",
+    "POST /api/uar/auth/exchange -> 400",
+    "POST /api/uar/auth/keys -> 415",
+    "POST /api/uar/knowledge-bases -> 415",
+    "POST /api/uar/knowledge-bases/dummy/documents -> 400",
+    "POST /api/uar/knowledge-bases/dummy/search -> 415",
+    "POST /api/uar/providers -> 415",
+    "POST /api/uar/runs -> 415",
+    "POST /api/uar/skills -> 415",
+    "POST /api/uar/skills/refresh -> 200",
+    "POST /api/uar/skills/reload -> 200",
+    "POST /mcp/memory -> 404",
+    "POST /mcp/uar -> 406",
+    "POST /v1/chat/completions -> 415",
+    "POST /v1/messages -> 415",
+]
+
+---- guard::sse_streams_reject_without_token_and_write_no_events stdout ----
+
+thread 'guard::sse_streams_reject_without_token_and_write_no_events' (58361099) panicked at tests/sidecar_launch_security/guard.rs:125:13:
+assertion `left == right` failed: /api/uar/runs/dummy-run/stream: 
+  left: 404
+ right: 401
+
+---- token::launch_ignores_token_shaped_environment_variable stdout ----
+
+thread 'token::launch_ignores_token_shaped_environment_variable' (58361323) panicked at tests/sidecar_launch_security/token.rs:113:28:
+sidecar still running
+{"timestamp":"2026-09-23T18:00:15.912668Z","level":"INFO","fields":{"message":"LLM configuration loaded","model":"openai/gpt-5.4-mini"},"target":"universal_agent_runtime::server","line_number":474}
+{"timestamp":"2026-09-23T18:00:15.917178Z","level":"INFO","fields":{"message":"UAR startup progress","step":1,"stage":"governance_preflight"},"target":"universal_agent_runtime::server","line_number":483}
+{"timestamp":"2026-09-23T18:00:15.922301Z","level":"INFO","fields":{"message":"UAR startup progress","step":2,"stage":"primary_listener_bound"},"target":"universal_agent_runtime::server","line_number":495}
+{"timestamp":"2026-09-23T18:00:15.927348Z","level":"INFO","fields":{"message":"UAR startup progress","step":3,"stage":"companion_listener"},"target":"universal_agent_runtime::server","line_number":500}
+{"timestamp":"2026-09-23T18:00:15.927564Z","level":"INFO","fields":{"message":"Dual-stack companion listener bound","address":"::1:59845"},"target":"universal_agent_runtime::server","line_number":1969}
+{"timestamp":"2026-09-23T18:00:15.932653Z","level":"WARN","fields":{"message":"Embedding backend is unavailable; chat and agent interfaces will start without vector retrieval","backend":"fastembed","error":"embedding backend is not available: unknown or disabled embedding backend: fastembed"},"target":"universal_agent_runtime::server","line_number":544}
+{"timestamp":"2026-09-23T18:00:15.936621Z","level":"INFO","fields":{"message":"Connecting to SurrealDB: surrealkv:///var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-NG1ljE/data"},"target":"universal_agent_runtime::uar::persistence::providers::surreal","line_number":43}
+{"timestamp":"2026-09-23T18:00:15.941221Z","level":"INFO","fields":{"message":"Starting kvs store at absolute path surrealkv:/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-NG1ljE/data"},"target":"surrealdb::core::kvs::ds","line_number":636}
+{"timestamp":"2026-09-23T18:00:15.946188Z","level":"INFO","fields":{"message":"Enabling value log separation: true"},"target":"surrealdb::core::kvs::surrealkv","line_number":76}
+{"timestamp":"2026-09-23T18:00:15.949915Z","level":"INFO","fields":{"message":"Setting value log max file size: 536870912"},"target":"surrealdb::core::kvs::surrealkv","line_number":80}
+{"timestamp":"2026-09-23T18:00:15.955197Z","level":"INFO","fields":{"message":"Setting value log threshold: 4096"},"target":"surrealdb::core::kvs::surrealkv","line_number":84}
+{"timestamp":"2026-09-23T18:00:15.955232Z","level":"INFO","fields":{"message":"Versioning enabled: false with retention period: 0ns"},"target":"surrealdb::core::kvs::surrealkv","line_number":89}
+{"timestamp":"2026-09-23T18:00:15.955257Z","level":"INFO","fields":{"message":"Versioning with versioned_index: false"},"target":"surrealdb::core::kvs::surrealkv","line_number":94}
+{"timestamp":"2026-09-23T18:00:15.955272Z","level":"INFO","fields":{"message":"Setting max memtable size: 4294967296"},"target":"surrealdb::core::kvs::surrealkv","line_number":98}
+{"timestamp":"2026-09-23T18:00:15.955287Z","level":"INFO","fields":{"message":"Setting block cache capacity: 33285996544"},"target":"surrealdb::core::kvs::surrealkv","line_number":101}
+{"timestamp":"2026-09-23T18:00:15.965354Z","level":"INFO","fields":{"message":"Setting block size: 65536"},"target":"surrealdb::core::kvs::surrealkv","line_number":104}
+{"timestamp":"2026-09-23T18:00:15.999339Z","level":"INFO","fields":{"message":"=== Starting LSM tree initialization ===","log.target":"surrealkv::lsm","log.module_path":"surrealkv::lsm","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/lsm.rs","log.line":1161},"target":"surrealkv::lsm","line_number":1161}
+{"timestamp":"2026-09-23T18:00:16.004365Z","level":"INFO","fields":{"message":"Database path: \"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-NG1ljE/data\"","log.target":"surrealkv::lsm","log.module_path":"surrealkv::lsm","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/lsm.rs","log.line":1162},"target":"surrealkv::lsm","line_number":1162}
+{"timestamp":"2026-09-23T18:00:16.054917Z","level":"INFO","fields":{"message":"Manifest state: log_number=0, last_sequence=0","log.target":"surrealkv::lsm","log.module_path":"surrealkv::lsm","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/lsm.rs","log.line":1201},"target":"surrealkv::lsm","line_number":1201}
+{"timestamp":"2026-09-23T18:00:16.058848Z","level":"INFO","fields":{"message":"Starting WAL recovery from directory: \"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-NG1ljE/data/wal\"","log.target":"surrealkv::wal::recovery","log.module_path":"surrealkv::wal::recovery","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/wal/recovery.rs","log.line":71},"target":"surrealkv::wal::recovery","line_number":71}
+{"timestamp":"2026-09-23T18:00:16.059062Z","level":"INFO","fields":{"message":"Replaying WAL segments #00000000000000000000 to #00000000000000000000","log.target":"surrealkv::wal::recovery","log.module_path":"surrealkv::wal::recovery","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/wal/recovery.rs","log.line":117},"target":"surrealkv::wal::recovery","line_number":117}
+{"timestamp":"2026-09-23T18:00:16.064204Z","level":"INFO","fields":{"message":"WAL recovery complete: 0 batches across 0 segments, 0 memtables created, max_seq_num=None","log.target":"surrealkv::wal::recovery","log.module_path":"surrealkv::wal::recovery","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/wal/recovery.rs","log.line":252},"target":"surrealkv::wal::recovery","line_number":252}
+{"timestamp":"2026-09-23T18:00:16.069250Z","level":"INFO","fields":{"message":"=== LSM tree initialization complete ===","log.target":"surrealkv::lsm","log.module_path":"surrealkv::lsm","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/lsm.rs","log.line":1285},"target":"surrealkv::lsm","line_number":1285}
+{"timestamp":"2026-09-23T18:00:16.107681Z","level":"INFO","fields":{"message":"Sync mode: every transaction commit"},"target":"surrealdb::core::kvs::surrealkv","line_number":114}
+{"timestamp":"2026-09-23T18:00:16.107907Z","level":"INFO","fields":{"message":"Grouped commit: enabled (timeout=5000000ns, wait_threshold=12, max_batch_size=4096)"},"target":"surrealdb::core::kvs::surrealkv","line_number":119}
+{"timestamp":"2026-09-23T18:00:16.113172Z","level":"INFO","fields":{"message":"Started surrealkv kvs store"},"target":"surrealdb::core::kvs::ds","line_number":714}
+{"timestamp":"2026-09-23T18:00:16.260251Z","level":"INFO","fields":{"message":"SurrealDB using ns='uar' db='uar'"},"target":"universal_agent_runtime::uar::persistence::providers::surreal","line_number":62}
+{"timestamp":"2026-09-23T18:00:18.635817Z","level":"INFO","fields":{"message":"SurrealDB connected successfully"},"target":"universal_agent_runtime::uar::persistence::providers::surreal","line_number":88}
+{"timestamp":"2026-09-23T18:00:18.636487Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"agents"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:18.636489Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"models"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:18.636489Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"knowledge_documents"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:18.636578Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"knowledge_bases"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:18.636579Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"threads"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:18.636676Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"providers"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:18.636731Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"compiler_sessions"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:18.636761Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"settings"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:18.636795Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"memory"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:18.636929Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"skills"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:18.693485Z","level":"INFO","fields":{"message":"Created default knowledge base: default (5095c126-709c-4837-83f5-8595289605cd)"},"target":"universal_agent_runtime::uar::defaults","line_number":285}
+{"timestamp":"2026-09-23T18:00:18.694384Z","level":"INFO","fields":{"message":"Default knowledge base ensured."},"target":"universal_agent_runtime::server","line_number":763}
+{"timestamp":"2026-09-23T18:00:18.725613Z","level":"INFO","fields":{"message":"Built-in agent seeded/refreshed","agent_id":"default-agent"},"target":"universal_agent_runtime::uar::defaults","line_number":197}
+{"timestamp":"2026-09-23T18:00:18.746276Z","level":"INFO","fields":{"message":"Built-in agent seeded/refreshed","agent_id":"orchestrator-agent"},"target":"universal_agent_runtime::uar::defaults","line_number":197}
+{"timestamp":"2026-09-23T18:00:18.822576Z","level":"INFO","fields":{"message":"Persistence and RAG enabled."},"target":"universal_agent_runtime::server","line_number":773}
+{"timestamp":"2026-09-23T18:00:18.827114Z","level":"INFO","fields":{"message":"Memory system disabled (UAR_MEMORY__ENABLED not set)"},"target":"universal_agent_runtime::server","line_number":794}
+{"timestamp":"2026-09-23T18:00:18.827239Z","level":"WARN","fields":{"message":"Could not load MCP config — starting with empty MCP registry. Tools from the configured file will not be available until it is created.","error":"No such file or directory (os error 2)","path":"mcp.json"},"target":"universal_agent_runtime::server","line_number":807}
+{"timestamp":"2026-09-23T18:00:18.839660Z","level":"INFO","fields":{"message":"Native tools (memory_save, memory_recall, memory_list, memory_delete_by_id, memory_update_by_id, memory_history) registered — active=false"},"target":"universal_agent_runtime::server","line_number":843}
+{"timestamp":"2026-09-23T18:00:18.843086Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_save"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:18.847987Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_recall"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:18.853546Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_list"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:18.877115Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_delete_by_id"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:18.877150Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_update_by_id"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:18.878483Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_history"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:18.878775Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"native_echo"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:18.878903Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"native_system_info"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:18.879711Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"a2ui_render"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:18.883523Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"presentation_render"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:18.892816Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"uar.compile"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:18.893029Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"uar.session.update_section"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:18.893062Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"uar.session.check_completeness"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:18.893089Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"uar.session.compile"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:18.893150Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"terminal_exec"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:18.898336Z","level":"INFO","fields":{"message":"Registered terminal_exec native tool","shell":"sh","use_sandbox":false},"target":"universal_agent_runtime::uar::runtime::native_skills","line_number":130}
+{"timestamp":"2026-09-23T18:00:18.904038Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"session_search"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:18.904133Z","level":"INFO","fields":{"message":"Registered session_search native tool"},"target":"universal_agent_runtime::uar::runtime::native_skills","line_number":147}
+{"timestamp":"2026-09-23T18:00:18.904168Z","level":"INFO","fields":{"message":"Built-in native skills registration complete"},"target":"universal_agent_runtime::uar::runtime::native_skills","line_number":155}
+{"timestamp":"2026-09-23T18:00:18.904222Z","level":"INFO","fields":{"message":"Native skill registry initialized with 10 skills"},"target":"universal_agent_runtime::server","line_number":872}
+{"timestamp":"2026-09-23T18:00:18.909635Z","level":"INFO","fields":{"message":"Added skill storage provider: Local Skills (fs-skills)"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":197}
+{"timestamp":"2026-09-23T18:00:18.909957Z","level":"INFO","fields":{"message":"Configured standard agent skills source","source":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-NG1ljE/home/.agents/skills"},"target":"universal_agent_runtime::server","line_number":897}
+{"timestamp":"2026-09-23T18:00:18.909983Z","level":"INFO","fields":{"message":"Added skill storage provider: Standard Agent Skills (agent-skills)"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":197}
+{"timestamp":"2026-09-23T18:00:18.909999Z","level":"INFO","fields":{"message":"Added skill storage provider: Database Skills (db-skills)"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":197}
+{"timestamp":"2026-09-23T18:00:18.910025Z","level":"INFO","fields":{"message":"UAR startup progress","step":6,"stage":"skill_service_init"},"target":"universal_agent_runtime::server","line_number":922}
+{"timestamp":"2026-09-23T18:00:18.910080Z","level":"WARN","fields":{"message":"Skills directory not found: \"skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":66}
+{"timestamp":"2026-09-23T18:00:18.910368Z","level":"INFO","fields":{"message":"FilesystemStorageProvider 'Local Skills': loaded 0 skills from \"skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":655}
+{"timestamp":"2026-09-23T18:00:18.915363Z","level":"INFO","fields":{"message":"Loaded 0 skills from provider 'Local Skills'"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":237}
+{"timestamp":"2026-09-23T18:00:18.915497Z","level":"WARN","fields":{"message":"standard agent skills directory not found; preserving durable skills","path":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-NG1ljE/home/.agents/skills"},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":252}
+{"timestamp":"2026-09-23T18:00:18.924392Z","level":"INFO","fields":{"message":"scanned standard agent skills directory","source":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-NG1ljE/home/.agents/skills","discovered":0,"rejected":0},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":256}
+{"timestamp":"2026-09-23T18:00:18.935457Z","level":"INFO","fields":{"message":"FilesystemStorageProvider 'Standard Agent Skills': loaded 0 skills from \"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-NG1ljE/home/.agents/skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":655}
+{"timestamp":"2026-09-23T18:00:18.941044Z","level":"INFO","fields":{"message":"Loaded 0 skills from provider 'Standard Agent Skills'"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":237}
+{"timestamp":"2026-09-23T18:00:18.988092Z","level":"INFO","fields":{"message":"Loaded 0 skills from provider 'Database Skills'"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":237}
+{"timestamp":"2026-09-23T18:00:18.994067Z","level":"INFO","fields":{"message":"SkillService initialized: 0 total skills"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":254}
+{"timestamp":"2026-09-23T18:00:18.994125Z","level":"WARN","fields":{"message":"Skills directory not found: \"skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":66}
+{"timestamp":"2026-09-23T18:00:18.994147Z","level":"INFO","fields":{"message":"FilesystemStorageProvider 'Local Skills': loaded 0 skills from \"skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":655}
+{"timestamp":"2026-09-23T18:00:18.999639Z","level":"WARN","fields":{"message":"standard agent skills directory not found; preserving durable skills","path":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-NG1ljE/home/.agents/skills"},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":252}
+{"timestamp":"2026-09-23T18:00:19.004297Z","level":"INFO","fields":{"message":"scanned standard agent skills directory","source":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-NG1ljE/home/.agents/skills","discovered":0,"rejected":0},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":256}
+{"timestamp":"2026-09-23T18:00:19.009433Z","level":"INFO","fields":{"message":"FilesystemStorageProvider 'Standard Agent Skills': loaded 0 skills from \"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-NG1ljE/home/.agents/skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":655}
+{"timestamp":"2026-09-23T18:00:19.009667Z","level":"INFO","fields":{"message":"reconciled standard agent skills","provider":"agent-skills","discovered":0,"added":0,"updated":0,"unchanged":0},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":420}
+{"timestamp":"2026-09-23T18:00:19.014767Z","level":"INFO","fields":{"message":"discovered builtin manifest skills","count":0,"roots":1,"pack_source":"EnvOverride","pack_root":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-NG1ljE/no-skills","pack_version":"<unknown>","mcp_servers_detected":""},"target":"universal_agent_runtime::uar::runtime::skills::builtin_loader","line_number":347}
+{"timestamp":"2026-09-23T18:00:19.020665Z","level":"INFO","fields":{"message":"Resolved active skill-pack root","source":"EnvOverride","root":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-NG1ljE/no-skills","version":"<unknown>","skill_count":0},"target":"universal_agent_runtime::server","line_number":949}
+{"timestamp":"2026-09-23T18:00:19.024562Z","level":"INFO","fields":{"message":"UAR startup progress","step":7,"stage":"provider_registry_seed"},"target":"universal_agent_runtime::server","line_number":964}
+
+
+---- surface::operator_ui_not_served_in_sidecar_mode stdout ----
+
+thread 'surface::operator_ui_not_served_in_sidecar_mode' (58361163) panicked at tests/sidecar_launch_security/surface.rs:159:9:
+assertion `left == right` failed: /
+  left: 200
+ right: 404
+
+---- surface::sidecar_owns_exactly_one_listening_socket stdout ----
+
+thread 'surface::sidecar_owns_exactly_one_listening_socket' (58361201) panicked at tests/sidecar_launch_security/surface.rs:123:5:
+assertion `left == right` failed: listening sockets
+  left: ["127.0.0.1:59600", "[::1]:59600", "127.0.0.1:59599"]
+ right: ["127.0.0.1:59600"]
+
+---- token::launch_with_malformed_token_exits_nonzero_without_echo stdout ----
+
+thread 'token::launch_with_malformed_token_exits_nonzero_without_echo' (58362019) panicked at tests/sidecar_launch_security/token.rs:83:32:
+short: sidecar still running
+{"timestamp":"2026-09-23T18:00:19.453312Z","level":"INFO","fields":{"message":"LLM configuration loaded","model":"openai/gpt-5.4-mini"},"target":"universal_agent_runtime::server","line_number":474}
+{"timestamp":"2026-09-23T18:00:19.455219Z","level":"INFO","fields":{"message":"UAR startup progress","step":1,"stage":"governance_preflight"},"target":"universal_agent_runtime::server","line_number":483}
+{"timestamp":"2026-09-23T18:00:19.460321Z","level":"INFO","fields":{"message":"UAR startup progress","step":2,"stage":"primary_listener_bound"},"target":"universal_agent_runtime::server","line_number":495}
+{"timestamp":"2026-09-23T18:00:19.465462Z","level":"INFO","fields":{"message":"UAR startup progress","step":3,"stage":"companion_listener"},"target":"universal_agent_runtime::server","line_number":500}
+{"timestamp":"2026-09-23T18:00:19.470633Z","level":"INFO","fields":{"message":"Dual-stack companion listener bound","address":"::1:59911"},"target":"universal_agent_runtime::server","line_number":1969}
+{"timestamp":"2026-09-23T18:00:19.474615Z","level":"WARN","fields":{"message":"Embedding backend is unavailable; chat and agent interfaces will start without vector retrieval","backend":"fastembed","error":"embedding backend is not available: unknown or disabled embedding backend: fastembed"},"target":"universal_agent_runtime::server","line_number":544}
+{"timestamp":"2026-09-23T18:00:19.478856Z","level":"INFO","fields":{"message":"Connecting to SurrealDB: surrealkv:///var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-uzgaMy/data"},"target":"universal_agent_runtime::uar::persistence::providers::surreal","line_number":43}
+{"timestamp":"2026-09-23T18:00:19.484394Z","level":"INFO","fields":{"message":"Starting kvs store at absolute path surrealkv:/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-uzgaMy/data"},"target":"surrealdb::core::kvs::ds","line_number":636}
+{"timestamp":"2026-09-23T18:00:19.489478Z","level":"INFO","fields":{"message":"Enabling value log separation: true"},"target":"surrealdb::core::kvs::surrealkv","line_number":76}
+{"timestamp":"2026-09-23T18:00:19.494029Z","level":"INFO","fields":{"message":"Setting value log max file size: 536870912"},"target":"surrealdb::core::kvs::surrealkv","line_number":80}
+{"timestamp":"2026-09-23T18:00:19.499127Z","level":"INFO","fields":{"message":"Setting value log threshold: 4096"},"target":"surrealdb::core::kvs::surrealkv","line_number":84}
+{"timestamp":"2026-09-23T18:00:19.504369Z","level":"INFO","fields":{"message":"Versioning enabled: false with retention period: 0ns"},"target":"surrealdb::core::kvs::surrealkv","line_number":89}
+{"timestamp":"2026-09-23T18:00:19.509440Z","level":"INFO","fields":{"message":"Versioning with versioned_index: false"},"target":"surrealdb::core::kvs::surrealkv","line_number":94}
+{"timestamp":"2026-09-23T18:00:19.513382Z","level":"INFO","fields":{"message":"Setting max memtable size: 4294967296"},"target":"surrealdb::core::kvs::surrealkv","line_number":98}
+{"timestamp":"2026-09-23T18:00:19.513423Z","level":"INFO","fields":{"message":"Setting block cache capacity: 33285996544"},"target":"surrealdb::core::kvs::surrealkv","line_number":101}
+{"timestamp":"2026-09-23T18:00:19.513459Z","level":"INFO","fields":{"message":"Setting block size: 65536"},"target":"surrealdb::core::kvs::surrealkv","line_number":104}
+{"timestamp":"2026-09-23T18:00:19.543135Z","level":"INFO","fields":{"message":"=== Starting LSM tree initialization ===","log.target":"surrealkv::lsm","log.module_path":"surrealkv::lsm","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/lsm.rs","log.line":1161},"target":"surrealkv::lsm","line_number":1161}
+{"timestamp":"2026-09-23T18:00:19.543329Z","level":"INFO","fields":{"message":"Database path: \"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-uzgaMy/data\"","log.target":"surrealkv::lsm","log.module_path":"surrealkv::lsm","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/lsm.rs","log.line":1162},"target":"surrealkv::lsm","line_number":1162}
+{"timestamp":"2026-09-23T18:00:19.625165Z","level":"INFO","fields":{"message":"Manifest state: log_number=0, last_sequence=0","log.target":"surrealkv::lsm","log.module_path":"surrealkv::lsm","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/lsm.rs","log.line":1201},"target":"surrealkv::lsm","line_number":1201}
+{"timestamp":"2026-09-23T18:00:19.639732Z","level":"INFO","fields":{"message":"Starting WAL recovery from directory: \"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-uzgaMy/data/wal\"","log.target":"surrealkv::wal::recovery","log.module_path":"surrealkv::wal::recovery","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/wal/recovery.rs","log.line":71},"target":"surrealkv::wal::recovery","line_number":71}
+{"timestamp":"2026-09-23T18:00:19.651603Z","level":"INFO","fields":{"message":"Replaying WAL segments #00000000000000000000 to #00000000000000000000","log.target":"surrealkv::wal::recovery","log.module_path":"surrealkv::wal::recovery","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/wal/recovery.rs","log.line":117},"target":"surrealkv::wal::recovery","line_number":117}
+{"timestamp":"2026-09-23T18:00:19.664224Z","level":"INFO","fields":{"message":"WAL recovery complete: 0 batches across 0 segments, 0 memtables created, max_seq_num=None","log.target":"surrealkv::wal::recovery","log.module_path":"surrealkv::wal::recovery","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/wal/recovery.rs","log.line":252},"target":"surrealkv::wal::recovery","line_number":252}
+{"timestamp":"2026-09-23T18:00:19.668685Z","level":"INFO","fields":{"message":"=== LSM tree initialization complete ===","log.target":"surrealkv::lsm","log.module_path":"surrealkv::lsm","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/lsm.rs","log.line":1285},"target":"surrealkv::lsm","line_number":1285}
+{"timestamp":"2026-09-23T18:00:19.777489Z","level":"INFO","fields":{"message":"Sync mode: every transaction commit"},"target":"surrealdb::core::kvs::surrealkv","line_number":114}
+{"timestamp":"2026-09-23T18:00:19.784460Z","level":"INFO","fields":{"message":"Grouped commit: enabled (timeout=5000000ns, wait_threshold=12, max_batch_size=4096)"},"target":"surrealdb::core::kvs::surrealkv","line_number":119}
+{"timestamp":"2026-09-23T18:00:19.805964Z","level":"INFO","fields":{"message":"Started surrealkv kvs store"},"target":"surrealdb::core::kvs::ds","line_number":714}
+{"timestamp":"2026-09-23T18:00:19.984721Z","level":"INFO","fields":{"message":"SurrealDB using ns='uar' db='uar'"},"target":"universal_agent_runtime::uar::persistence::providers::surreal","line_number":62}
+{"timestamp":"2026-09-23T18:00:22.374826Z","level":"INFO","fields":{"message":"SurrealDB connected successfully"},"target":"universal_agent_runtime::uar::persistence::providers::surreal","line_number":88}
+{"timestamp":"2026-09-23T18:00:22.392851Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"skills"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:22.392942Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"settings"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:22.393087Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"threads"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:22.393259Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"memory"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:22.393390Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"knowledge_bases"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:22.393429Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"compiler_sessions"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:22.393688Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"agents"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:22.393728Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"knowledge_documents"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:22.394023Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"providers"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:22.408526Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"models"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:22.458146Z","level":"INFO","fields":{"message":"Created default knowledge base: default (84e4dde6-32cf-4204-a08a-ea54a0596050)"},"target":"universal_agent_runtime::uar::defaults","line_number":285}
+{"timestamp":"2026-09-23T18:00:22.473303Z","level":"INFO","fields":{"message":"Default knowledge base ensured."},"target":"universal_agent_runtime::server","line_number":763}
+{"timestamp":"2026-09-23T18:00:22.523110Z","level":"INFO","fields":{"message":"Built-in agent seeded/refreshed","agent_id":"default-agent"},"target":"universal_agent_runtime::uar::defaults","line_number":197}
+{"timestamp":"2026-09-23T18:00:22.550434Z","level":"INFO","fields":{"message":"Built-in agent seeded/refreshed","agent_id":"orchestrator-agent"},"target":"universal_agent_runtime::uar::defaults","line_number":197}
+{"timestamp":"2026-09-23T18:00:22.676184Z","level":"INFO","fields":{"message":"Persistence and RAG enabled."},"target":"universal_agent_runtime::server","line_number":773}
+{"timestamp":"2026-09-23T18:00:22.679997Z","level":"INFO","fields":{"message":"Memory system disabled (UAR_MEMORY__ENABLED not set)"},"target":"universal_agent_runtime::server","line_number":794}
+{"timestamp":"2026-09-23T18:00:22.699524Z","level":"WARN","fields":{"message":"Could not load MCP config — starting with empty MCP registry. Tools from the configured file will not be available until it is created.","error":"No such file or directory (os error 2)","path":"mcp.json"},"target":"universal_agent_runtime::server","line_number":807}
+{"timestamp":"2026-09-23T18:00:22.716182Z","level":"INFO","fields":{"message":"Native tools (memory_save, memory_recall, memory_list, memory_delete_by_id, memory_update_by_id, memory_history) registered — active=false"},"target":"universal_agent_runtime::server","line_number":843}
+{"timestamp":"2026-09-23T18:00:22.719794Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_save"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:22.719837Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_recall"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:22.719852Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_list"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:22.719866Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_delete_by_id"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:22.720065Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_update_by_id"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:22.725452Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_history"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:22.732657Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"native_echo"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:22.739445Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"native_system_info"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:22.759337Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"a2ui_render"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:22.765057Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"presentation_render"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:22.769041Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"uar.compile"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:22.769155Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"uar.session.update_section"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:22.784402Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"uar.session.check_completeness"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:22.794826Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"uar.session.compile"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:22.802091Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"terminal_exec"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:22.811602Z","level":"INFO","fields":{"message":"Registered terminal_exec native tool","shell":"sh","use_sandbox":false},"target":"universal_agent_runtime::uar::runtime::native_skills","line_number":130}
+{"timestamp":"2026-09-23T18:00:22.811894Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"session_search"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:22.811935Z","level":"INFO","fields":{"message":"Registered session_search native tool"},"target":"universal_agent_runtime::uar::runtime::native_skills","line_number":147}
+{"timestamp":"2026-09-23T18:00:22.811968Z","level":"INFO","fields":{"message":"Built-in native skills registration complete"},"target":"universal_agent_runtime::uar::runtime::native_skills","line_number":155}
+{"timestamp":"2026-09-23T18:00:22.812004Z","level":"INFO","fields":{"message":"Native skill registry initialized with 10 skills"},"target":"universal_agent_runtime::server","line_number":872}
+{"timestamp":"2026-09-23T18:00:22.818712Z","level":"INFO","fields":{"message":"Added skill storage provider: Local Skills (fs-skills)"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":197}
+{"timestamp":"2026-09-23T18:00:22.822939Z","level":"INFO","fields":{"message":"Configured standard agent skills source","source":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-uzgaMy/home/.agents/skills"},"target":"universal_agent_runtime::server","line_number":897}
+{"timestamp":"2026-09-23T18:00:22.828352Z","level":"INFO","fields":{"message":"Added skill storage provider: Standard Agent Skills (agent-skills)"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":197}
+{"timestamp":"2026-09-23T18:00:22.838615Z","level":"INFO","fields":{"message":"Added skill storage provider: Database Skills (db-skills)"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":197}
+{"timestamp":"2026-09-23T18:00:22.845829Z","level":"INFO","fields":{"message":"UAR startup progress","step":6,"stage":"skill_service_init"},"target":"universal_agent_runtime::server","line_number":922}
+{"timestamp":"2026-09-23T18:00:22.851721Z","level":"WARN","fields":{"message":"Skills directory not found: \"skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":66}
+{"timestamp":"2026-09-23T18:00:22.855834Z","level":"INFO","fields":{"message":"FilesystemStorageProvider 'Local Skills': loaded 0 skills from \"skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":655}
+{"timestamp":"2026-09-23T18:00:22.855933Z","level":"INFO","fields":{"message":"Loaded 0 skills from provider 'Local Skills'"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":237}
+{"timestamp":"2026-09-23T18:00:22.856501Z","level":"WARN","fields":{"message":"standard agent skills directory not found; preserving durable skills","path":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-uzgaMy/home/.agents/skills"},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":252}
+{"timestamp":"2026-09-23T18:00:22.867302Z","level":"INFO","fields":{"message":"scanned standard agent skills directory","source":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-uzgaMy/home/.agents/skills","discovered":0,"rejected":0},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":256}
+{"timestamp":"2026-09-23T18:00:22.872638Z","level":"INFO","fields":{"message":"FilesystemStorageProvider 'Standard Agent Skills': loaded 0 skills from \"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-uzgaMy/home/.agents/skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":655}
+{"timestamp":"2026-09-23T18:00:22.884610Z","level":"INFO","fields":{"message":"Loaded 0 skills from provider 'Standard Agent Skills'"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":237}
+{"timestamp":"2026-09-23T18:00:22.898493Z","level":"INFO","fields":{"message":"Loaded 0 skills from provider 'Database Skills'"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":237}
+{"timestamp":"2026-09-23T18:00:22.909332Z","level":"INFO","fields":{"message":"SkillService initialized: 0 total skills"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":254}
+{"timestamp":"2026-09-23T18:00:22.927730Z","level":"WARN","fields":{"message":"Skills directory not found: \"skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":66}
+{"timestamp":"2026-09-23T18:00:22.932544Z","level":"INFO","fields":{"message":"FilesystemStorageProvider 'Local Skills': loaded 0 skills from \"skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":655}
+{"timestamp":"2026-09-23T18:00:22.934560Z","level":"WARN","fields":{"message":"standard agent skills directory not found; preserving durable skills","path":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-uzgaMy/home/.agents/skills"},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":252}
+{"timestamp":"2026-09-23T18:00:22.940438Z","level":"INFO","fields":{"message":"scanned standard agent skills directory","source":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-uzgaMy/home/.agents/skills","discovered":0,"rejected":0},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":256}
+{"timestamp":"2026-09-23T18:00:22.940528Z","level":"INFO","fields":{"message":"FilesystemStorageProvider 'Standard Agent Skills': loaded 0 skills from \"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-uzgaMy/home/.agents/skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":655}
+{"timestamp":"2026-09-23T18:00:22.940839Z","level":"INFO","fields":{"message":"reconciled standard agent skills","provider":"agent-skills","discovered":0,"added":0,"updated":0,"unchanged":0},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":420}
+{"timestamp":"2026-09-23T18:00:22.944701Z","level":"INFO","fields":{"message":"discovered builtin manifest skills","count":0,"roots":1,"pack_source":"EnvOverride","pack_root":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-uzgaMy/no-skills","pack_version":"<unknown>","mcp_servers_detected":""},"target":"universal_agent_runtime::uar::runtime::skills::builtin_loader","line_number":347}
+{"timestamp":"2026-09-23T18:00:22.948769Z","level":"INFO","fields":{"message":"Resolved active skill-pack root","source":"EnvOverride","root":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-uzgaMy/no-skills","version":"<unknown>","skill_count":0},"target":"universal_agent_runtime::server","line_number":949}
+{"timestamp":"2026-09-23T18:00:22.959578Z","level":"INFO","fields":{"message":"UAR startup progress","step":7,"stage":"provider_registry_seed"},"target":"universal_agent_runtime::server","line_number":964}
+
+
+---- token::launch_without_token_line_exits_nonzero_without_ready stdout ----
+
+thread 'token::launch_without_token_line_exits_nonzero_without_ready' (58362499) panicked at tests/sidecar_launch_security/token.rs:54:28:
+sidecar still running
+{"timestamp":"2026-09-23T18:00:21.098969Z","level":"INFO","fields":{"message":"LLM configuration loaded","model":"openai/gpt-5.4-mini"},"target":"universal_agent_runtime::server","line_number":474}
+{"timestamp":"2026-09-23T18:00:21.099989Z","level":"INFO","fields":{"message":"UAR startup progress","step":1,"stage":"governance_preflight"},"target":"universal_agent_runtime::server","line_number":483}
+{"timestamp":"2026-09-23T18:00:21.105454Z","level":"INFO","fields":{"message":"UAR startup progress","step":2,"stage":"primary_listener_bound"},"target":"universal_agent_runtime::server","line_number":495}
+{"timestamp":"2026-09-23T18:00:21.110416Z","level":"INFO","fields":{"message":"UAR startup progress","step":3,"stage":"companion_listener"},"target":"universal_agent_runtime::server","line_number":500}
+{"timestamp":"2026-09-23T18:00:21.110777Z","level":"INFO","fields":{"message":"Dual-stack companion listener bound","address":"::1:59929"},"target":"universal_agent_runtime::server","line_number":1969}
+{"timestamp":"2026-09-23T18:00:21.115614Z","level":"WARN","fields":{"message":"Embedding backend is unavailable; chat and agent interfaces will start without vector retrieval","backend":"fastembed","error":"embedding backend is not available: unknown or disabled embedding backend: fastembed"},"target":"universal_agent_runtime::server","line_number":544}
+{"timestamp":"2026-09-23T18:00:21.120503Z","level":"INFO","fields":{"message":"Connecting to SurrealDB: surrealkv:///var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-8gDTcj/data"},"target":"universal_agent_runtime::uar::persistence::providers::surreal","line_number":43}
+{"timestamp":"2026-09-23T18:00:21.121077Z","level":"INFO","fields":{"message":"Starting kvs store at absolute path surrealkv:/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-8gDTcj/data"},"target":"surrealdb::core::kvs::ds","line_number":636}
+{"timestamp":"2026-09-23T18:00:21.124971Z","level":"INFO","fields":{"message":"Enabling value log separation: true"},"target":"surrealdb::core::kvs::surrealkv","line_number":76}
+{"timestamp":"2026-09-23T18:00:21.128874Z","level":"INFO","fields":{"message":"Setting value log max file size: 536870912"},"target":"surrealdb::core::kvs::surrealkv","line_number":80}
+{"timestamp":"2026-09-23T18:00:21.128909Z","level":"INFO","fields":{"message":"Setting value log threshold: 4096"},"target":"surrealdb::core::kvs::surrealkv","line_number":84}
+{"timestamp":"2026-09-23T18:00:21.128926Z","level":"INFO","fields":{"message":"Versioning enabled: false with retention period: 0ns"},"target":"surrealdb::core::kvs::surrealkv","line_number":89}
+{"timestamp":"2026-09-23T18:00:21.128947Z","level":"INFO","fields":{"message":"Versioning with versioned_index: false"},"target":"surrealdb::core::kvs::surrealkv","line_number":94}
+{"timestamp":"2026-09-23T18:00:21.128973Z","level":"INFO","fields":{"message":"Setting max memtable size: 4294967296"},"target":"surrealdb::core::kvs::surrealkv","line_number":98}
+{"timestamp":"2026-09-23T18:00:21.128984Z","level":"INFO","fields":{"message":"Setting block cache capacity: 33285996544"},"target":"surrealdb::core::kvs::surrealkv","line_number":101}
+{"timestamp":"2026-09-23T18:00:21.129006Z","level":"INFO","fields":{"message":"Setting block size: 65536"},"target":"surrealdb::core::kvs::surrealkv","line_number":104}
+{"timestamp":"2026-09-23T18:00:21.159598Z","level":"INFO","fields":{"message":"=== Starting LSM tree initialization ===","log.target":"surrealkv::lsm","log.module_path":"surrealkv::lsm","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/lsm.rs","log.line":1161},"target":"surrealkv::lsm","line_number":1161}
+{"timestamp":"2026-09-23T18:00:21.163665Z","level":"INFO","fields":{"message":"Database path: \"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-8gDTcj/data\"","log.target":"surrealkv::lsm","log.module_path":"surrealkv::lsm","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/lsm.rs","log.line":1162},"target":"surrealkv::lsm","line_number":1162}
+{"timestamp":"2026-09-23T18:00:21.225372Z","level":"INFO","fields":{"message":"Manifest state: log_number=0, last_sequence=0","log.target":"surrealkv::lsm","log.module_path":"surrealkv::lsm","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/lsm.rs","log.line":1201},"target":"surrealkv::lsm","line_number":1201}
+{"timestamp":"2026-09-23T18:00:21.225423Z","level":"INFO","fields":{"message":"Starting WAL recovery from directory: \"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-8gDTcj/data/wal\"","log.target":"surrealkv::wal::recovery","log.module_path":"surrealkv::wal::recovery","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/wal/recovery.rs","log.line":71},"target":"surrealkv::wal::recovery","line_number":71}
+{"timestamp":"2026-09-23T18:00:21.225527Z","level":"INFO","fields":{"message":"Replaying WAL segments #00000000000000000000 to #00000000000000000000","log.target":"surrealkv::wal::recovery","log.module_path":"surrealkv::wal::recovery","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/wal/recovery.rs","log.line":117},"target":"surrealkv::wal::recovery","line_number":117}
+{"timestamp":"2026-09-23T18:00:21.225660Z","level":"INFO","fields":{"message":"WAL recovery complete: 0 batches across 0 segments, 0 memtables created, max_seq_num=None","log.target":"surrealkv::wal::recovery","log.module_path":"surrealkv::wal::recovery","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/wal/recovery.rs","log.line":252},"target":"surrealkv::wal::recovery","line_number":252}
+{"timestamp":"2026-09-23T18:00:21.230075Z","level":"INFO","fields":{"message":"=== LSM tree initialization complete ===","log.target":"surrealkv::lsm","log.module_path":"surrealkv::lsm","log.file":"/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/surrealkv-0.21.2/src/lsm.rs","log.line":1285},"target":"surrealkv::lsm","line_number":1285}
+{"timestamp":"2026-09-23T18:00:21.263860Z","level":"INFO","fields":{"message":"Sync mode: every transaction commit"},"target":"surrealdb::core::kvs::surrealkv","line_number":114}
+{"timestamp":"2026-09-23T18:00:21.264078Z","level":"INFO","fields":{"message":"Grouped commit: enabled (timeout=5000000ns, wait_threshold=12, max_batch_size=4096)"},"target":"surrealdb::core::kvs::surrealkv","line_number":119}
+{"timestamp":"2026-09-23T18:00:21.264403Z","level":"INFO","fields":{"message":"Started surrealkv kvs store"},"target":"surrealdb::core::kvs::ds","line_number":714}
+{"timestamp":"2026-09-23T18:00:21.406390Z","level":"INFO","fields":{"message":"SurrealDB using ns='uar' db='uar'"},"target":"universal_agent_runtime::uar::persistence::providers::surreal","line_number":62}
+{"timestamp":"2026-09-23T18:00:23.857654Z","level":"INFO","fields":{"message":"SurrealDB connected successfully"},"target":"universal_agent_runtime::uar::persistence::providers::surreal","line_number":88}
+{"timestamp":"2026-09-23T18:00:23.858416Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"models"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:23.858416Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"knowledge_bases"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:23.858416Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"providers"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:23.858434Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"settings"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:23.858416Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"knowledge_documents"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:23.858439Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"compiler_sessions"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:23.858490Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"memory"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:23.858548Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"agents"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:23.858559Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"skills"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:23.858929Z","level":"DEBUG","fields":{"message":"table not yet created; waiting for first write","topic":"threads"},"target":"universal_agent_runtime::uar::realtime::surreal_bus","line_number":149}
+{"timestamp":"2026-09-23T18:00:23.892618Z","level":"INFO","fields":{"message":"Created default knowledge base: default (5112aa4d-5928-4e5e-a814-317b745ebca2)"},"target":"universal_agent_runtime::uar::defaults","line_number":285}
+{"timestamp":"2026-09-23T18:00:23.897453Z","level":"INFO","fields":{"message":"Default knowledge base ensured."},"target":"universal_agent_runtime::server","line_number":763}
+{"timestamp":"2026-09-23T18:00:23.939232Z","level":"INFO","fields":{"message":"Built-in agent seeded/refreshed","agent_id":"default-agent"},"target":"universal_agent_runtime::uar::defaults","line_number":197}
+{"timestamp":"2026-09-23T18:00:23.971342Z","level":"INFO","fields":{"message":"Built-in agent seeded/refreshed","agent_id":"orchestrator-agent"},"target":"universal_agent_runtime::uar::defaults","line_number":197}
+{"timestamp":"2026-09-23T18:00:24.060157Z","level":"INFO","fields":{"message":"Persistence and RAG enabled."},"target":"universal_agent_runtime::server","line_number":773}
+{"timestamp":"2026-09-23T18:00:24.070060Z","level":"INFO","fields":{"message":"Memory system disabled (UAR_MEMORY__ENABLED not set)"},"target":"universal_agent_runtime::server","line_number":794}
+{"timestamp":"2026-09-23T18:00:24.070246Z","level":"WARN","fields":{"message":"Could not load MCP config — starting with empty MCP registry. Tools from the configured file will not be available until it is created.","error":"No such file or directory (os error 2)","path":"mcp.json"},"target":"universal_agent_runtime::server","line_number":807}
+{"timestamp":"2026-09-23T18:00:24.072233Z","level":"INFO","fields":{"message":"Native tools (memory_save, memory_recall, memory_list, memory_delete_by_id, memory_update_by_id, memory_history) registered — active=false"},"target":"universal_agent_runtime::server","line_number":843}
+{"timestamp":"2026-09-23T18:00:24.077163Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_save"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:24.083371Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_recall"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:24.088491Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_list"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:24.095433Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_delete_by_id"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:24.107426Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_update_by_id"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:24.107511Z","level":"INFO","fields":{"message":"MCP tool discovered","tool":"native__memory_history"},"target":"universal_agent_runtime::server","line_number":861}
+{"timestamp":"2026-09-23T18:00:24.107734Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"native_echo"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:24.107881Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"native_system_info"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:24.108253Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"a2ui_render"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:24.108296Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"presentation_render"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:24.108377Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"uar.compile"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:24.108411Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"uar.session.update_section"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:24.112303Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"uar.session.check_completeness"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:24.112542Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"uar.session.compile"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:24.112655Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"terminal_exec"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:24.117086Z","level":"INFO","fields":{"message":"Registered terminal_exec native tool","shell":"sh","use_sandbox":false},"target":"universal_agent_runtime::uar::runtime::native_skills","line_number":130}
+{"timestamp":"2026-09-23T18:00:24.123628Z","level":"INFO","fields":{"message":"Registering native skill","skill_name":"session_search"},"target":"universal_agent_runtime::uar::runtime::native_skill","line_number":437}
+{"timestamp":"2026-09-23T18:00:24.129233Z","level":"INFO","fields":{"message":"Registered session_search native tool"},"target":"universal_agent_runtime::uar::runtime::native_skills","line_number":147}
+{"timestamp":"2026-09-23T18:00:24.133051Z","level":"INFO","fields":{"message":"Built-in native skills registration complete"},"target":"universal_agent_runtime::uar::runtime::native_skills","line_number":155}
+{"timestamp":"2026-09-23T18:00:24.133126Z","level":"INFO","fields":{"message":"Native skill registry initialized with 10 skills"},"target":"universal_agent_runtime::server","line_number":872}
+{"timestamp":"2026-09-23T18:00:24.139256Z","level":"INFO","fields":{"message":"Added skill storage provider: Local Skills (fs-skills)"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":197}
+{"timestamp":"2026-09-23T18:00:24.144254Z","level":"INFO","fields":{"message":"Configured standard agent skills source","source":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-8gDTcj/home/.agents/skills"},"target":"universal_agent_runtime::server","line_number":897}
+{"timestamp":"2026-09-23T18:00:24.149475Z","level":"INFO","fields":{"message":"Added skill storage provider: Standard Agent Skills (agent-skills)"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":197}
+{"timestamp":"2026-09-23T18:00:24.157697Z","level":"INFO","fields":{"message":"Added skill storage provider: Database Skills (db-skills)"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":197}
+{"timestamp":"2026-09-23T18:00:24.157836Z","level":"INFO","fields":{"message":"UAR startup progress","step":6,"stage":"skill_service_init"},"target":"universal_agent_runtime::server","line_number":922}
+{"timestamp":"2026-09-23T18:00:24.158356Z","level":"WARN","fields":{"message":"Skills directory not found: \"skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":66}
+{"timestamp":"2026-09-23T18:00:24.162734Z","level":"INFO","fields":{"message":"FilesystemStorageProvider 'Local Skills': loaded 0 skills from \"skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":655}
+{"timestamp":"2026-09-23T18:00:24.162876Z","level":"INFO","fields":{"message":"Loaded 0 skills from provider 'Local Skills'"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":237}
+{"timestamp":"2026-09-23T18:00:24.163553Z","level":"WARN","fields":{"message":"standard agent skills directory not found; preserving durable skills","path":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-8gDTcj/home/.agents/skills"},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":252}
+{"timestamp":"2026-09-23T18:00:24.168003Z","level":"INFO","fields":{"message":"scanned standard agent skills directory","source":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-8gDTcj/home/.agents/skills","discovered":0,"rejected":0},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":256}
+{"timestamp":"2026-09-23T18:00:24.170079Z","level":"INFO","fields":{"message":"FilesystemStorageProvider 'Standard Agent Skills': loaded 0 skills from \"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-8gDTcj/home/.agents/skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":655}
+{"timestamp":"2026-09-23T18:00:24.173349Z","level":"INFO","fields":{"message":"Loaded 0 skills from provider 'Standard Agent Skills'"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":237}
+{"timestamp":"2026-09-23T18:00:24.180952Z","level":"INFO","fields":{"message":"Loaded 0 skills from provider 'Database Skills'"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":237}
+{"timestamp":"2026-09-23T18:00:24.187635Z","level":"INFO","fields":{"message":"SkillService initialized: 0 total skills"},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":254}
+{"timestamp":"2026-09-23T18:00:24.192308Z","level":"WARN","fields":{"message":"Skills directory not found: \"skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":66}
+{"timestamp":"2026-09-23T18:00:24.192386Z","level":"INFO","fields":{"message":"FilesystemStorageProvider 'Local Skills': loaded 0 skills from \"skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":655}
+{"timestamp":"2026-09-23T18:00:24.193838Z","level":"WARN","fields":{"message":"standard agent skills directory not found; preserving durable skills","path":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-8gDTcj/home/.agents/skills"},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":252}
+{"timestamp":"2026-09-23T18:00:24.198666Z","level":"INFO","fields":{"message":"scanned standard agent skills directory","source":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-8gDTcj/home/.agents/skills","discovered":0,"rejected":0},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":256}
+{"timestamp":"2026-09-23T18:00:24.206204Z","level":"INFO","fields":{"message":"FilesystemStorageProvider 'Standard Agent Skills': loaded 0 skills from \"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-8gDTcj/home/.agents/skills\""},"target":"universal_agent_runtime::uar::runtime::skills::storage::filesystem","line_number":655}
+{"timestamp":"2026-09-23T18:00:24.212563Z","level":"INFO","fields":{"message":"reconciled standard agent skills","provider":"agent-skills","discovered":0,"added":0,"updated":0,"unchanged":0},"target":"universal_agent_runtime::uar::runtime::skills::service","line_number":420}
+{"timestamp":"2026-09-23T18:00:24.218570Z","level":"INFO","fields":{"message":"discovered builtin manifest skills","count":0,"roots":1,"pack_source":"EnvOverride","pack_root":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-8gDTcj/no-skills","pack_version":"<unknown>","mcp_servers_detected":""},"target":"universal_agent_runtime::uar::runtime::skills::builtin_loader","line_number":347}
+{"timestamp":"2026-09-23T18:00:24.232149Z","level":"INFO","fields":{"message":"Resolved active skill-pack root","source":"EnvOverride","root":"/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-sidecar-contract-8gDTcj/no-skills","version":"<unknown>","skill_count":0},"target":"universal_agent_runtime::server","line_number":949}
+{"timestamp":"2026-09-23T18:00:24.232588Z","level":"INFO","fields":{"message":"UAR startup progress","step":7,"stage":"provider_registry_seed"},"target":"universal_agent_runtime::server","line_number":964}
+
+
+---- token::launch_with_valid_token_prints_single_ready stdout ----
+
+thread 'token::launch_with_valid_token_prints_single_ready' (58362332) panicked at tests/sidecar_launch_security/token.rs:37:5:
+assertion `left == right` failed: {"checks":{"mcp":{"status":"ok","tools":6},"postgres":"ok","surrealdb":"not_configured"},"status":"ready"}
+  left: 200
+ right: 401
+
+
+failures:
+    capabilities::capabilities_route_is_not_auth_exempt_in_standalone
+    capabilities::capabilities_route_requires_launch_token_and_reports_version
+    confinement::token_absent_from_argv_and_env_of_sidecar_and_children
+    features::sidecar_default_logs_contain_no_prompt_or_tool_argument_canary
+    features::sidecar_forces_skill_evolution_memory_and_global_mcp_off
+    features::sidecar_rejects_global_mcp_mutation_and_feature_enable
+    governance::sidecar_governance_required_with_host_token_reason
+    governance::sidecar_normalizes_persisted_governance_off_and_refuses_off
+    governance::sidecar_run_policy_denied_tool_is_not_executed
+    guard::any_origin_rejected_with_valid_token
+    guard::every_route_rejects_missing_token
+    guard::every_route_rejects_wrong_token
+    guard::foreign_host_rejected_with_valid_token
+    guard::no_cors_headers_on_any_response
+    guard::previous_launch_token_is_rejected
+    guard::sse_streams_reject_without_token_and_write_no_events
+    surface::operator_ui_not_served_in_sidecar_mode
+    surface::sidecar_owns_exactly_one_listening_socket
+    token::launch_ignores_token_shaped_environment_variable
+    token::launch_with_malformed_token_exits_nonzero_without_echo
+    token::launch_with_valid_token_prints_single_ready
+    token::launch_without_token_line_exits_nonzero_without_ready
+
+test result: FAILED. 12 passed; 22 failed; 0 ignored; 0 measured; 0 filtered out; finished in 43.26s
+
+error: test failed, to rerun pass `--test sidecar_launch_security`
+error: 2 targets failed:
+    `--test mcp_child_environment`
+    `--test sidecar_launch_security`
+[cargo] exit=101
