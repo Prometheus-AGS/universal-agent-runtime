@@ -120,6 +120,18 @@ name = "mcp_child_environment"
 path = "tests/mcp_child_environment.rs"
 required-features = ["server", "test-probes"]
 
+# Session-principal contract tests reuse the sidecar process harness.
+[[test]]
+name = "sidecar_session_principal"
+path = "tests/sidecar_session_principal.rs"
+required-features = ["server", "test-probes"]
+
+# Retention tests read the `/metrics` gauges, which need `telemetry`.
+[[test]]
+name = "run_retention"
+path = "tests/run_retention.rs"
+required-features = ["server", "test-probes", "telemetry"]
+
 # CH-20: Criterion benchmarks for the router/dialect/context hot path.
 # harness = false because Criterion drives its own main().
 [[bench]]

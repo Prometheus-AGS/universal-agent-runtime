@@ -184,11 +184,7 @@ async fn api_tool_approval(
     Path(run_id): Path<String>,
     Json(body): Json<ToolApprovalRequest>,
 ) -> impl IntoResponse {
-    if manager
-        .get_run_for_user(&user.user_id, &run_id)
-        .await
-        .is_none()
-    {
+    if manager.get_run_for_context(&user, &run_id).await.is_none() {
         return (
             StatusCode::NOT_FOUND,
             Json(serde_json::json!({ "resolved": false })),
@@ -224,18 +220,14 @@ async fn api_cancel_run(
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
-    if manager
-        .get_run_for_user(&user.user_id, &run_id)
-        .await
-        .is_none()
-    {
+    if manager.get_run_for_context(&user, &run_id).await.is_none() {
         return (
             StatusCode::NOT_FOUND,
             Json(serde_json::json!({ "cancelled": false })),
         )
             .into_response();
     }
-    let cancelled = manager.cancel_run_for_user(&user.user_id, &run_id).await;
+    let cancelled = manager.cancel_run_for_context(&user, &run_id).await;
     Json(serde_json::json!({ "cancelled": cancelled })).into_response()
 }
 
@@ -248,7 +240,7 @@ async fn api_cancel_session_run(
     Path(session_id): Path<String>,
 ) -> impl IntoResponse {
     let cancelled = manager
-        .cancel_session_run_for_user(&user.user_id, &session_id)
+        .cancel_session_run_for_context(&user, &session_id)
         .await;
     Json(serde_json::json!({ "cancelled": cancelled }))
 }
@@ -270,11 +262,7 @@ async fn list_checkpoints(
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
-    if manager
-        .get_run_for_user(&user.user_id, &run_id)
-        .await
-        .is_none()
-    {
+    if manager.get_run_for_context(&user, &run_id).await.is_none() {
         return StatusCode::NOT_FOUND.into_response();
     }
     let Some(db) = &manager.persistence else {
@@ -318,11 +306,7 @@ async fn resume_run(
     Path(run_id): Path<String>,
     Json(req): Json<ResumeRequest>,
 ) -> impl IntoResponse {
-    if manager
-        .get_run_for_user(&user.user_id, &run_id)
-        .await
-        .is_none()
-    {
+    if manager.get_run_for_context(&user, &run_id).await.is_none() {
         return StatusCode::NOT_FOUND.into_response();
     }
     let input = req.input.unwrap_or_else(|| {
@@ -358,11 +342,7 @@ async fn resume_run_from_checkpoint(
     Path((run_id, checkpoint_id)): Path<(String, String)>,
     Json(req): Json<ResumeRequest>,
 ) -> impl IntoResponse {
-    if manager
-        .get_run_for_user(&user.user_id, &run_id)
-        .await
-        .is_none()
-    {
+    if manager.get_run_for_context(&user, &run_id).await.is_none() {
         return StatusCode::NOT_FOUND.into_response();
     }
     let Some(db) = &manager.persistence else {

@@ -1,4 +1,4 @@
-use crate::config::{LlmConfig, SkillEvolutionConfig};
+use crate::config::{LlmConfig, RunsConfig, SessionsConfig, SkillEvolutionConfig};
 use crate::llm::{LlmDriver, Message, MessageRole};
 use crate::mcp::binding_cache::McpBindingEnvironment;
 use crate::mcp::catalog::{McpCatalog, ServerAuthentication, ServerDefinition, ServerSource};
@@ -35,7 +35,7 @@ use futures::StreamExt;
 use std::{
     collections::{BTreeSet, HashMap, HashSet, VecDeque},
     sync::Arc,
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tokio::sync::{Mutex, RwLock, broadcast, oneshot};
 use tokio_util::sync::CancellationToken;
@@ -235,6 +235,9 @@ struct RunStreamState {
         >,
     >,
     delegation: Option<std::sync::Weak<crate::uar::runtime::turn::bindings::RunDelegationBindings>>,
+    started_at: Instant,
+    terminal_at: Option<Instant>,
+    last_detached_at: Option<Instant>,
 }
 
 #[derive(Clone, Debug)]
@@ -245,10 +248,22 @@ struct RunEventEmitter {
     history: Arc<Mutex<EventHistory>>,
     completion:
         Option<Arc<std::sync::Mutex<crate::uar::runtime::thread::execution::RunCompletionCapture>>>,
+    runs: std::sync::Weak<RwLock<ActiveRunMap>>,
 }
 
 impl RunEventEmitter {
     async fn emit(&self, event: NormalizedEvent) {
+        if matches!(
+            &event,
+            NormalizedEvent::RunDone { .. }
+                | NormalizedEvent::RunDoneWithUsage { .. }
+                | NormalizedEvent::Cancelled { .. }
+                | NormalizedEvent::Error { .. }
+        ) && let Some(runs) = self.runs.upgrade()
+            && let Some(state) = runs.write().await.get_mut(&self.run_id)
+        {
+            state.terminal_at.get_or_insert_with(Instant::now);
+        }
         let event =
             super::a2ui_output::enforce_output_ceiling(event, self.presentations.as_deref());
         let mut history = self.history.lock().await;
@@ -435,6 +450,8 @@ pub struct RunManager {
     settings_manager: Option<Arc<crate::uar::settings::manager::SettingsManager>>,
     /// Immutable authenticated UAR-peer bindings for governed remote children.
     a2a_peers: Arc<crate::uar::api::a2a::peer::TrustedA2APeers>,
+    run_retention: RunsConfig,
+    session_retention: SessionsConfig,
 }
 
 /// Memory mutation tool name sets — used to detect side effects in ToolEnd events.
@@ -802,6 +819,172 @@ impl RunManager {
             cost_budget: crate::uar::runtime::cost_budget::CostBudgetTracker::new(),
             resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy::default(),
             a2a_peers: Arc::new(crate::uar::api::a2a::peer::TrustedA2APeers::default()),
+            run_retention: RunsConfig::default(),
+            session_retention: SessionsConfig::default(),
+        }
+    }
+
+    #[must_use]
+    pub(crate) fn with_retention_config(
+        mut self,
+        runs: RunsConfig,
+        sessions: SessionsConfig,
+    ) -> Self {
+        self.run_retention = runs;
+        self.session_retention = sessions;
+        self
+    }
+
+    /// Start the one retention owner for run replay state and conversation sessions.
+    pub(crate) fn spawn_retention_sweeper(self: &Arc<Self>, shutdown: CancellationToken) {
+        let manager = Arc::clone(self);
+        let interval = Duration::from_secs(manager.run_retention.sweep_interval_secs.max(1));
+        tokio::spawn(async move {
+            let mut ticker = tokio::time::interval(interval);
+            ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+            ticker.tick().await;
+            loop {
+                tokio::select! {
+                    _ = shutdown.cancelled() => break,
+                    _ = ticker.tick() => manager.sweep_retained_state().await,
+                }
+            }
+        });
+    }
+
+    async fn sweep_retained_state(&self) {
+        let now = Instant::now();
+        let retention = Duration::from_secs(self.run_retention.retention_after_terminal_secs);
+        let mut evicted = Vec::new();
+        {
+            let mut runs = self.active_runs.write().await;
+            for state in runs.values_mut() {
+                let terminal = matches!(
+                    state.run.status,
+                    RunStatus::Done | RunStatus::Error | RunStatus::Cancelled
+                );
+                if terminal {
+                    state.terminal_at.get_or_insert(now);
+                    if state.sender.receiver_count() == 0 {
+                        state.last_detached_at.get_or_insert(now);
+                    } else {
+                        state.last_detached_at = None;
+                    }
+                }
+            }
+
+            let expired = runs
+                .iter()
+                .filter(|(_, state)| {
+                    let Some(terminal_at) = state.terminal_at else {
+                        return false;
+                    };
+                    let Some(detached_at) = state.last_detached_at else {
+                        return false;
+                    };
+                    let has_live_descendant = state
+                        .delegation
+                        .as_ref()
+                        .is_some_and(|delegation| delegation.upgrade().is_some());
+                    !has_live_descendant
+                        && now.duration_since(terminal_at.max(detached_at)) >= retention
+                })
+                .map(|(run_id, _)| run_id.clone())
+                .collect::<Vec<_>>();
+            for run_id in expired {
+                if runs.remove(&run_id).is_some() {
+                    evicted.push(run_id);
+                }
+            }
+
+            let cap = self.run_retention.max_retained_terminal;
+            if cap > 0 {
+                let terminal_count = runs
+                    .values()
+                    .filter(|state| state.terminal_at.is_some())
+                    .count();
+                if terminal_count > cap {
+                    let mut eligible = runs
+                        .iter()
+                        .filter(|(_, state)| {
+                            state.terminal_at.is_some()
+                                && state.sender.receiver_count() == 0
+                                && state
+                                    .delegation
+                                    .as_ref()
+                                    .is_none_or(|delegation| delegation.upgrade().is_none())
+                        })
+                        .map(|(run_id, state)| {
+                            (
+                                run_id.clone(),
+                                state.terminal_at.unwrap_or(state.started_at),
+                            )
+                        })
+                        .collect::<Vec<_>>();
+                    eligible.sort_by_key(|(_, terminal_at)| *terminal_at);
+                    for (run_id, _) in eligible.into_iter().take(terminal_count - cap) {
+                        if runs.remove(&run_id).is_some() {
+                            evicted.push(run_id);
+                        }
+                    }
+                }
+            }
+            #[allow(clippy::cast_precision_loss)]
+            crate::uar::telemetry::metrics::set_runs_retained(runs.len() as f64);
+        }
+
+        if !evicted.is_empty() {
+            for run_id in &evicted {
+                self.a2ui_backbone.remove(run_id);
+            }
+            let evicted = evicted.into_iter().collect::<HashSet<_>>();
+            self.session_current_run
+                .write()
+                .await
+                .retain(|_, run_id| !evicted.contains(run_id));
+        }
+
+        let idle_timeout = (self.session_retention.idle_timeout_secs > 0)
+            .then(|| Duration::from_secs(self.session_retention.idle_timeout_secs));
+        if idle_timeout.is_none() && self.session_retention.max_retained == 0 {
+            return;
+        }
+        let protected = {
+            let runs = self.active_runs.read().await;
+            runs.values()
+                .filter(|state| {
+                    !matches!(
+                        state.run.status,
+                        RunStatus::Done | RunStatus::Error | RunStatus::Cancelled
+                    )
+                })
+                .filter_map(|state| {
+                    let session_id = state.run.conversation_id.clone()?;
+                    let owner = state
+                        .run
+                        .user_id
+                        .clone()
+                        .unwrap_or_else(|| crate::session::ANONYMOUS_SESSION_OWNER.to_owned());
+                    Some((owner, session_id))
+                })
+                .collect::<HashSet<_>>()
+        };
+        let removed_sessions = self.sessions.cleanup_bounded(
+            idle_timeout,
+            self.session_retention.max_retained,
+            &protected,
+        );
+        if !removed_sessions.is_empty() {
+            let removed = removed_sessions
+                .into_iter()
+                .map(|(owner, session_id)| {
+                    crate::uar::persistence::tenant_storage_key(&owner, &session_id)
+                })
+                .collect::<HashSet<_>>();
+            self.session_current_run
+                .write()
+                .await
+                .retain(|session_key, _| !removed.contains(session_key));
         }
     }
 
@@ -1296,6 +1479,18 @@ impl RunManager {
         self.cancel_run(run_id).await
     }
 
+    /// Cancel only when the complete middleware-verified identity owns the run.
+    pub async fn cancel_run_for_context(
+        &self,
+        user: &crate::uar::security::claims::UserContext,
+        run_id: &str,
+    ) -> bool {
+        if self.get_run_for_context(user, run_id).await.is_none() {
+            return false;
+        }
+        self.cancel_run(run_id).await
+    }
+
     /// Cancel the current in-flight run associated with a conversation session.
     ///
     /// Service clients receive a stable session identifier before the first
@@ -1316,6 +1511,25 @@ impl RunManager {
         };
         match run_id {
             Some(run_id) => self.cancel_run_for_user(owner_id, &run_id).await,
+            None => false,
+        }
+    }
+
+    /// Cancel a session's current run only for the complete verified identity.
+    pub async fn cancel_session_run_for_context(
+        &self,
+        user: &crate::uar::security::claims::UserContext,
+        session_id: &str,
+    ) -> bool {
+        let session_key = crate::uar::persistence::tenant_storage_key(&user.user_id, session_id);
+        let run_id = self
+            .session_current_run
+            .read()
+            .await
+            .get(&session_key)
+            .cloned();
+        match run_id {
+            Some(run_id) => self.cancel_run_for_context(user, &run_id).await,
             None => false,
         }
     }
@@ -1894,6 +2108,9 @@ impl RunManager {
                     history,
                     completion: None,
                     delegation: None,
+                    started_at: Instant::now(),
+                    terminal_at: Some(Instant::now()),
+                    last_detached_at: None,
                 }
             });
             // Worker and preparation waiter can observe the same failed start.
@@ -1915,6 +2132,7 @@ impl RunManager {
                 sender: state.sender.clone(),
                 history: Arc::clone(&state.history),
                 completion: None,
+                runs: Arc::downgrade(&self.active_runs),
             }
         };
         emitter
@@ -2131,6 +2349,7 @@ impl RunManager {
             sender: tx.clone(),
             history: Arc::clone(&history),
             completion: completion.map(|capture| Arc::new(std::sync::Mutex::new(capture))),
+            runs: Arc::downgrade(&self.active_runs),
         };
         let completion_guard = crate::uar::runtime::thread::execution::RunCompletionGuard::new(
             emitter.completion.clone(),
@@ -2528,6 +2747,9 @@ impl RunManager {
                         history: Arc::clone(&history),
                         completion: emitter.completion.as_ref().map(Arc::downgrade),
                         delegation: None,
+                        started_at: Instant::now(),
+                        terminal_at: Some(Instant::now()),
+                        last_detached_at: None,
                     },
                 );
             }
@@ -2597,6 +2819,9 @@ impl RunManager {
                     history: Arc::clone(&history),
                     completion: emitter.completion.as_ref().map(Arc::downgrade),
                     delegation: None,
+                    started_at: Instant::now(),
+                    terminal_at: None,
+                    last_detached_at: None,
                 },
             );
         }

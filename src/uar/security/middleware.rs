@@ -7,8 +7,45 @@ use axum::{
     extract::{Request, State},
     http::{StatusCode, header},
     middleware::Next,
-    response::Response,
+    response::{IntoResponse, Response},
 };
+
+pub const SIDECAR_PRINCIPAL_HEADER: &str = "x-uar-principal";
+
+fn principal_error(code: &'static str) -> Response {
+    (
+        StatusCode::BAD_REQUEST,
+        [(header::CONTENT_TYPE, "application/json")],
+        format!(r#"{{"error":{{"code":"{code}"}}}}"#),
+    )
+        .into_response()
+}
+
+fn sidecar_principal(value: &str) -> Option<UserContext> {
+    let valid = !value.eq_ignore_ascii_case("anonymous")
+        && (1..=128).contains(&value.len())
+        && value
+            .as_bytes()
+            .iter()
+            .copied()
+            .enumerate()
+            .all(|(index, byte)| {
+                byte.is_ascii_alphanumeric()
+                    || (index > 0 && matches!(byte, b'.' | b'_' | b':' | b'-'))
+            });
+    valid.then(|| UserContext {
+        user_id: value.to_owned(),
+        tenant_id: None,
+        claims: UserClaims {
+            sub: value.to_owned(),
+            name: None,
+            roles: Some(vec!["host-session".to_owned()]),
+            tenant_id: None,
+            uar_instance_id: None,
+            exp: usize::MAX,
+        },
+    })
+}
 
 fn anonymous_context() -> UserContext {
     UserContext {
@@ -88,7 +125,25 @@ pub async fn auth_middleware(
     State(state): State<AppState>,
     mut request: Request,
     next: Next,
-) -> Result<Response, StatusCode> {
+) -> Result<Response, Response> {
+    let asserted_principal = request.headers_mut().remove(SIDECAR_PRINCIPAL_HEADER);
+    let host_authenticated = request
+        .extensions()
+        .get::<super::sidecar_guard::HostAuthenticated>()
+        .is_some();
+    if asserted_principal.is_some() && !host_authenticated {
+        return Err(principal_error("principal_header_not_allowed"));
+    }
+    let asserted_principal = asserted_principal
+        .map(|value| {
+            value
+                .to_str()
+                .ok()
+                .and_then(sidecar_principal)
+                .ok_or_else(|| principal_error("principal_invalid"))
+        })
+        .transpose()?;
+
     // Health probe endpoints must always be reachable without credentials
     // so that Kubernetes liveness and readiness probes pass.
     let path = request.uri().path();
@@ -102,7 +157,13 @@ pub async fn auth_middleware(
         .and_then(|h| h.to_str().ok());
 
     // Try JWT first
-    let mut context = resolve_user_context_with_config(&state.config.security, auth_header).await?;
+    let mut context = resolve_user_context_with_config(&state.config.security, auth_header)
+        .await
+        .map_err(|status| status.into_response())?;
+
+    if let Some(principal) = asserted_principal {
+        context = principal;
+    }
 
     // If still anonymous, try X-API-Key header
     if context.user_id == "anonymous" {
@@ -123,19 +184,19 @@ pub async fn auth_middleware(
                     Ok(None) => {
                         // Invalid key — if JWT is required, reject; otherwise stay anonymous
                         if state.config.security.jwt_required {
-                            return Err(StatusCode::UNAUTHORIZED);
+                            return Err(StatusCode::UNAUTHORIZED.into_response());
                         }
                     }
                     Err(_) => {
                         if state.config.security.jwt_required {
-                            return Err(StatusCode::UNAUTHORIZED);
+                            return Err(StatusCode::UNAUTHORIZED.into_response());
                         }
                     }
                 }
             }
         } else if state.config.security.jwt_required {
             // No auth at all and JWT required
-            return Err(StatusCode::UNAUTHORIZED);
+            return Err(StatusCode::UNAUTHORIZED.into_response());
         }
     }
 

@@ -34,15 +34,15 @@ async fn scoped_arguments(
     mut args: serde_json::Value,
     context: &crate::uar::runtime::native_skill::NativeExecutionContext,
     service: Option<&MemoryService>,
-    by_id: bool,
+    scope: MemoryScope,
 ) -> anyhow::Result<serde_json::Value> {
     if let Some(policy) = &context.thread_policy {
         check_memory_policy(policy)?;
     }
     let Some(owner) = &context.verified_owner else {
         anyhow::ensure!(
-            context.thread_policy.is_none(),
-            "Memory requires a verified delegated owner"
+            context.thread_policy.is_none() && scope == MemoryScope::OptionalOwner,
+            "memory_requires_verified_owner"
         );
         return Ok(args);
     };
@@ -55,7 +55,7 @@ async fn scoped_arguments(
             "Memory owner cannot be replaced by tool arguments"
         );
     }
-    if by_id {
+    if scope == MemoryScope::ById {
         let id = object
             .get("memory_id")
             .and_then(serde_json::Value::as_str)
@@ -83,6 +83,13 @@ async fn scoped_arguments(
     Ok(args)
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum MemoryScope {
+    OptionalOwner,
+    RequiredOwner,
+    ById,
+}
+
 #[derive(Debug)]
 pub struct MemorySaveTool {
     memory_service: Option<Arc<MemoryService>>,
@@ -108,8 +115,16 @@ impl NativeTool for MemorySaveTool {
         args: serde_json::Value,
         context: &crate::uar::runtime::native_skill::NativeExecutionContext,
     ) -> anyhow::Result<serde_json::Value> {
-        self.call(scoped_arguments(args, context, self.memory_service.as_deref(), false).await?)
-            .await
+        self.call(
+            scoped_arguments(
+                args,
+                context,
+                self.memory_service.as_deref(),
+                MemoryScope::OptionalOwner,
+            )
+            .await?,
+        )
+        .await
     }
 
     fn name(&self) -> &'static str {
@@ -221,8 +236,16 @@ impl NativeTool for MemoryListTool {
         args: serde_json::Value,
         context: &crate::uar::runtime::native_skill::NativeExecutionContext,
     ) -> anyhow::Result<serde_json::Value> {
-        self.call(scoped_arguments(args, context, self.memory_service.as_deref(), false).await?)
-            .await
+        self.call(
+            scoped_arguments(
+                args,
+                context,
+                self.memory_service.as_deref(),
+                MemoryScope::RequiredOwner,
+            )
+            .await?,
+        )
+        .await
     }
 
     fn name(&self) -> &'static str {
@@ -333,8 +356,16 @@ impl NativeTool for MemoryDeleteTool {
         args: serde_json::Value,
         context: &crate::uar::runtime::native_skill::NativeExecutionContext,
     ) -> anyhow::Result<serde_json::Value> {
-        self.call(scoped_arguments(args, context, self.memory_service.as_deref(), true).await?)
-            .await
+        self.call(
+            scoped_arguments(
+                args,
+                context,
+                self.memory_service.as_deref(),
+                MemoryScope::ById,
+            )
+            .await?,
+        )
+        .await
     }
 
     fn name(&self) -> &'static str {
@@ -406,8 +437,16 @@ impl NativeTool for MemoryUpdateTool {
         args: serde_json::Value,
         context: &crate::uar::runtime::native_skill::NativeExecutionContext,
     ) -> anyhow::Result<serde_json::Value> {
-        self.call(scoped_arguments(args, context, self.memory_service.as_deref(), true).await?)
-            .await
+        self.call(
+            scoped_arguments(
+                args,
+                context,
+                self.memory_service.as_deref(),
+                MemoryScope::ById,
+            )
+            .await?,
+        )
+        .await
     }
 
     fn name(&self) -> &'static str {
@@ -502,8 +541,16 @@ impl NativeTool for MemoryHistoryTool {
         args: serde_json::Value,
         context: &crate::uar::runtime::native_skill::NativeExecutionContext,
     ) -> anyhow::Result<serde_json::Value> {
-        self.call(scoped_arguments(args, context, self.memory_service.as_deref(), true).await?)
-            .await
+        self.call(
+            scoped_arguments(
+                args,
+                context,
+                self.memory_service.as_deref(),
+                MemoryScope::ById,
+            )
+            .await?,
+        )
+        .await
     }
 
     fn name(&self) -> &'static str {
@@ -591,8 +638,16 @@ impl NativeTool for MemoryRecallTool {
         args: serde_json::Value,
         context: &crate::uar::runtime::native_skill::NativeExecutionContext,
     ) -> anyhow::Result<serde_json::Value> {
-        self.call(scoped_arguments(args, context, self.memory_service.as_deref(), false).await?)
-            .await
+        self.call(
+            scoped_arguments(
+                args,
+                context,
+                self.memory_service.as_deref(),
+                MemoryScope::OptionalOwner,
+            )
+            .await?,
+        )
+        .await
     }
 
     fn name(&self) -> &'static str {

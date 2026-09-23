@@ -230,6 +230,12 @@ pub struct AppConfig {
     #[serde(default)]
     pub a2a: A2aConfig,
     pub resilience: ResilienceConfig,
+    /// Bounded in-process run state retained for stream replay and diagnostics.
+    #[serde(default)]
+    pub runs: RunsConfig,
+    /// Bounded in-process conversation sessions. Disabled by default outside a sidecar.
+    #[serde(default)]
+    pub sessions: SessionsConfig,
     pub persistence: PersistenceConfig,
     #[serde(default)]
     pub file_processing: FileProcessingConfig,
@@ -293,6 +299,33 @@ pub struct AppConfig {
     /// Can be overridden per-agent via agent policy extensions.
     #[serde(default)]
     pub context_strategy: crate::uar::context::ContextStrategy,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, schemars::JsonSchema)]
+#[serde(default)]
+pub struct RunsConfig {
+    pub retention_after_terminal_secs: u64,
+    pub max_retained_terminal: usize,
+    pub sweep_interval_secs: u64,
+}
+
+impl Default for RunsConfig {
+    fn default() -> Self {
+        Self {
+            retention_after_terminal_secs: 600,
+            max_retained_terminal: 1_000,
+            sweep_interval_secs: 30,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, Deserialize, schemars::JsonSchema)]
+#[serde(default)]
+pub struct SessionsConfig {
+    /// Zero disables idle-time eviction.
+    pub idle_timeout_secs: u64,
+    /// Zero disables the retained-session cap.
+    pub max_retained: usize,
 }
 
 /// Host-owned A2A peer trust. Graphs and agent artifacts can select only an

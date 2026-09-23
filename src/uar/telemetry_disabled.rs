@@ -139,6 +139,8 @@ pub mod metrics {
     pub fn record_eval_regression() {}
     pub fn record_tool_call(_tool_name: &str, _success: bool) {}
     pub fn set_active_sessions(_count: f64) {}
+    pub fn set_runs_retained(_count: f64) {}
+    pub fn set_a2ui_replay_runs(_count: f64) {}
     pub fn record_sandbox_created(_runner_type: &str, _language: &str) {}
     pub fn record_sandbox_execution(_language: &str, _exit_code_class: &str, _duration_secs: f64) {}
     pub fn set_active_sandboxes(_count: f64) {}

@@ -1,6 +1,6 @@
 //! Conversation thread and session storage.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
@@ -296,7 +296,7 @@ impl Session {
     }
 
     /// Update the last activity timestamp.
-    fn touch(&self) {
+    pub(crate) fn touch(&self) {
         let mut guard = self.inner.last_activity.write().unwrap();
         *guard = Utc::now();
     }
@@ -424,7 +424,9 @@ impl SessionStore {
         {
             let guard = self.inner.sessions.read().unwrap();
             if let Some(session) = guard.get(&(owner_id.to_string(), id.to_string())) {
-                return session.clone();
+                let session = session.clone();
+                session.touch();
+                return session;
             }
         }
 
@@ -476,6 +478,57 @@ impl SessionStore {
         guard.retain(|_, session| !session.is_expired_with_timeout(timeout));
         let removed = before - guard.len();
         if removed > 0 {
+            #[allow(clippy::cast_precision_loss)]
+            crate::uar::telemetry::metrics::set_active_sessions(guard.len() as f64);
+        }
+        removed
+    }
+
+    /// Remove idle or over-cap sessions that have no live run.
+    ///
+    /// `protected` is captured from the run manager immediately before this
+    /// lock is taken. The lock-held expiration and ordering checks make the
+    /// store mutation one atomic operation.
+    pub(crate) fn cleanup_bounded(
+        &self,
+        idle_timeout: Option<Duration>,
+        max_retained: usize,
+        protected: &HashSet<(String, String)>,
+    ) -> Vec<(String, String)> {
+        let mut guard = self.inner.sessions.write().unwrap();
+        let mut removed = Vec::new();
+
+        if let Some(timeout) = idle_timeout {
+            let idle = guard
+                .iter()
+                .filter(|(key, session)| {
+                    !protected.contains(*key) && session.is_expired_with_timeout(timeout)
+                })
+                .map(|(key, _)| key.clone())
+                .collect::<Vec<_>>();
+            for key in idle {
+                if guard.remove(&key).is_some() {
+                    removed.push(key);
+                }
+            }
+        }
+
+        if max_retained > 0 && guard.len() > max_retained {
+            let remove_count = guard.len() - max_retained;
+            let mut eligible = guard
+                .iter()
+                .filter(|(key, _)| !protected.contains(*key))
+                .map(|(key, session)| (key.clone(), *session.inner.last_activity.read().unwrap()))
+                .collect::<Vec<_>>();
+            eligible.sort_by_key(|(_, last_activity)| *last_activity);
+            for (key, _) in eligible.into_iter().take(remove_count) {
+                if guard.remove(&key).is_some() {
+                    removed.push(key);
+                }
+            }
+        }
+
+        if !removed.is_empty() {
             #[allow(clippy::cast_precision_loss)]
             crate::uar::telemetry::metrics::set_active_sessions(guard.len() as f64);
         }

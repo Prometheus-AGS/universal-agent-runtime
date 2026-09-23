@@ -128,16 +128,28 @@ impl InMemoryReplayBackbone {
     pub fn new() -> Arc<Self> {
         Arc::new(Self::default())
     }
+
+    /// Drop replay state once its owning run leaves the retention window.
+    pub(crate) fn remove(&self, run_id: &str) {
+        let mut history = self
+            .history
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        history.remove(run_id);
+        #[allow(clippy::cast_precision_loss)]
+        crate::uar::telemetry::metrics::set_a2ui_replay_runs(history.len() as f64);
+    }
 }
 
 impl A2uiReplayBackbone for InMemoryReplayBackbone {
     fn publish(&self, run_id: &str, op: StatePatchOp) {
-        self.history
+        let mut history = self
+            .history
             .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .entry(run_id.to_string())
-            .or_default()
-            .push(op);
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        history.entry(run_id.to_string()).or_default().push(op);
+        #[allow(clippy::cast_precision_loss)]
+        crate::uar::telemetry::metrics::set_a2ui_replay_runs(history.len() as f64);
     }
 
     fn replay(&self, run_id: &str) -> Vec<StatePatchOp> {

@@ -168,6 +168,8 @@ fn minimal_config() -> AppConfig {
             retryable_transport_errors: true,
             retry_budget_ms: 20_000,
         },
+        runs: Default::default(),
+        sessions: Default::default(),
         persistence: PersistenceConfig {
             provider: "surreal".to_string(),
             database_url: "surrealkv://test".to_string(),

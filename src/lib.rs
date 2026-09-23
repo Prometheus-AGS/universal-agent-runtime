@@ -80,6 +80,9 @@ use {
 #[derive(Clone, Debug)]
 #[cfg(feature = "server")]
 pub struct AppState {
+    /// True only for the launch-token-authenticated supervised sidecar.
+    /// Security locks must not depend on optional persistence services.
+    pub sidecar_mode: bool,
     /// MCP server registry for tool discovery and execution.
     #[allow(dead_code)]
     pub mcp: Arc<McpRegistry>,

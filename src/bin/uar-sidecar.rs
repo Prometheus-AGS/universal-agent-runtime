@@ -127,6 +127,9 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
         configured_uar_jwt.as_deref(),
         configured_legacy_jwt.as_deref(),
     );
+    let session_retention_unconfigured = std::env::var_os("UAR_SESSIONS__IDLE_TIMEOUT_SECS")
+        .is_none()
+        && std::env::var_os("UAR_SESSIONS__MAX_RETAINED").is_none();
 
     // Force loopback-only binding and JSON logs before config is loaded so the
     // config layer picks them up via env-var overrides.
@@ -147,6 +150,10 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
         std::env::set_var("UAR_SERVER__LOG_FORMAT", "json");
         if disable_sidecar_jwt {
             std::env::set_var("UAR_SECURITY__JWT_REQUIRED", "false");
+        }
+        if session_retention_unconfigured {
+            std::env::set_var("UAR_SESSIONS__IDLE_TIMEOUT_SECS", "1800");
+            std::env::set_var("UAR_SESSIONS__MAX_RETAINED", "1000");
         }
         // One sidecar serves every host session. Features that mix content
         // across sessions stay off regardless of configuration files.

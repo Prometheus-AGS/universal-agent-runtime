@@ -27,21 +27,21 @@ D1 falsifier map: F2 (session isolation in the shared process) → 1.4–1.9 her
 
 ## 2. Principal
 
-- [ ] 2.1 Insert the `HostAuthenticated` extension in the launch-token guard (coordinate with `sidecar-launch-security`); verify 1.1 standalone case.
-- [ ] 2.2 Accept and validate `X-UAR-Principal` in the auth middleware only with that extension; verify 1.1, 1.2.
-- [ ] 2.3 Confirm routes use the request principal for every owner check (no code change expected); verify 1.3, 1.4, 1.7, 1.8, 1.9.
+- [x] 2.1 Insert the `HostAuthenticated` extension in the launch-token guard (coordinate with `sidecar-launch-security`); verify 1.1 standalone case.
+- [x] 2.2 Accept and validate `X-UAR-Principal` in the auth middleware only with that extension; verify 1.1, 1.2.
+- [x] 2.3 Confirm routes use the request principal for every owner check (no code change expected); verify 1.3, 1.4, 1.7, 1.8, 1.9.
 
 ## 3. Memory
 
-- [ ] 3.1 Refuse `memory_list` and by-id tools without a verified owner in `scoped_arguments`; verify 1.5, 1.6.
+- [x] 3.1 Refuse `memory_list` and by-id tools without a verified owner in `scoped_arguments`; verify 1.5, 1.6.
 
 ## 4. Retention
 
-- [ ] 4.1 Add `terminal_at`, `last_detached_at`, the sweep, the cap and the settings; verify 1.10–1.12.
-- [ ] 4.2 Add `InMemoryReplayBackbone::remove` and clear `session_current_run`; verify 1.10, 1.13.
-- [ ] 4.3 Add the `uar_runs_retained` gauge; verify 1.10.
-- [ ] 4.4 Session eviction (design D5): extend `cleanup_expired_with_timeout` with the live-run predicate, the cap and the lock-held re-check; make `get_or_create_for_user` touch; call it from the D4 sweep; add `sessions.idle_timeout_secs` and `sessions.max_retained` (0 = off, standalone default off); set the sidecar defaults in `prepare_sidecar_process` only when the operator set neither. Verify 1.16–1.19.
-- [ ] 4.5 Add `session_principal` to the capabilities list (`sidecar-launch-security` design Decision 12) in the commit that completes sections 2–4. Verify 1.20.
+- [x] 4.1 Add `terminal_at`, `last_detached_at`, the sweep, the cap and the settings; verify 1.10–1.12.
+- [x] 4.2 Add `InMemoryReplayBackbone::remove` and clear `session_current_run`; verify 1.10, 1.13.
+- [x] 4.3 Add the `uar_runs_retained` gauge; verify 1.10.
+- [x] 4.4 Session eviction (design D5): extend `cleanup_expired_with_timeout` with the live-run predicate, the cap and the lock-held re-check; make `get_or_create_for_user` touch; call it from the D4 sweep; add `sessions.idle_timeout_secs` and `sessions.max_retained` (0 = off, standalone default off); set the sidecar defaults in `prepare_sidecar_process` only when the operator set neither. Verify 1.16–1.19.
+- [x] 4.5 Add `session_principal` to the capabilities list (`sidecar-launch-security` design Decision 12) in the commit that completes sections 2–4. Verify 1.20.
 
 ## 5. Phase-boundary verification
 

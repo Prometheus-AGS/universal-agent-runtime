@@ -31,7 +31,7 @@ pub const CAPABILITY_VOCABULARY: [&str; 9] = [
 
 /// Capabilities this binary implements. Each owning change adds its name in
 /// the same commit as the behaviour; none has landed yet.
-pub const IMPLEMENTED_CAPABILITIES: [&str; 0] = [];
+pub const IMPLEMENTED_CAPABILITIES: [&str; 1] = ["session_principal"];
 
 /// AG-UI profile section of [`CapabilitiesResponse`].
 #[derive(Debug, Serialize)]

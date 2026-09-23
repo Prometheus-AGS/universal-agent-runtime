@@ -1210,6 +1210,7 @@ async fn run_server_with_listener(
         .with_native_skills(Arc::clone(&native_skill_registry))
         .with_a2a_config(&config.a2a)
         .with_a2ui_backbone(Arc::clone(&a2ui_realtime_backbone))
+        .with_retention_config(config.runs, config.sessions)
         .with_message_context_strategy(config.context_strategy.clone())
         .with_governance_engine(Arc::clone(&governance_engine))
         .with_governance_gate(governance_gate.clone())
@@ -1232,6 +1233,7 @@ async fn run_server_with_listener(
     // in-flight runs (they emit a terminal `Cancelled` event) within the drain
     // window, instead of being killed abruptly at process teardown.
     let run_cancellation_root = run_manager.root_cancellation_token();
+    run_manager.spawn_retention_sweeper(run_cancellation_root.clone());
     let sandbox_manager = Arc::clone(&run_manager);
 
     // CH-03: periodic provider-health sweep, consuming the previously-dead
@@ -1315,6 +1317,7 @@ async fn run_server_with_listener(
     );
 
     let state = AppState {
+        sidecar_mode,
         mcp: Arc::clone(&mcp),
         orchestrator,
         sessions,
@@ -2358,7 +2361,7 @@ async fn handle_tool_call_approval(
         .unwrap_or(false);
     if state
         .run_manager
-        .get_run_for_user(&user.user_id, &run_id)
+        .get_run_for_context(&user, &run_id)
         .await
         .is_none()
     {

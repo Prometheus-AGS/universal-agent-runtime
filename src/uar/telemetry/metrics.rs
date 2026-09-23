@@ -200,6 +200,16 @@ pub fn set_active_sessions(count: f64) {
     gauge!("uar_active_sessions").set(count);
 }
 
+/// Set the number of run records retained for replay and diagnostics.
+pub fn set_runs_retained(count: f64) {
+    gauge!("uar_runs_retained").set(count);
+}
+
+/// Set the number of runs with retained A2UI replay state.
+pub fn set_a2ui_replay_runs(count: f64) {
+    gauge!("uar_a2ui_replay_runs").set(count);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Sandbox Metrics
 // ─────────────────────────────────────────────────────────────────────────────

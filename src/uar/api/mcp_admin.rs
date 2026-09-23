@@ -97,10 +97,11 @@ pub fn build_router() -> Router<AppState> {
 /// A token-authenticated sidecar has no global MCP servers: tools arrive with
 /// each run, and one sidecar serves every host session.
 fn sidecar_locked(state: &AppState) -> bool {
-    state
-        .settings_manager
-        .as_ref()
-        .is_some_and(|manager| manager.sidecar_feature_locks())
+    state.sidecar_mode
+        || state
+            .settings_manager
+            .as_ref()
+            .is_some_and(|manager| manager.sidecar_feature_locks())
 }
 
 fn sidecar_mutation_refused() -> axum::response::Response {
