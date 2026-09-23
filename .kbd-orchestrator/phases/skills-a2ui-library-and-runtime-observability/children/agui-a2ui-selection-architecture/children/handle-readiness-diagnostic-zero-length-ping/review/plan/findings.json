@@ -1,0 +1,29 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-6-astra",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The plan asserts the 15-second budgets without reverifying their provenance, which the Assess handoff explicitly required Plan to do.",
+      "evidence": "assess.handoff.json states: \"Plan must reverify collector predicates, the 15-second budget provenance, and buffered-first-frame behavior.\" The plan reverifies predicates (\"The old collector predicates were reverified from the accepted source\") and addresses buffered-first-frame handling, but for the timing budget it only asserts values \u2014 \"One monotonic 15-second sign-in-exchange deadline... This deliberately strengthens the canonical first-frame-header limit without enlarging it; the canonical 30-second total active-observation cap remains the outer bound\" \u2014 with no citation of where the 15-second figure comes from or confirmation it matches the accepted source. If the 15s figure is invented rather than derived from the canonical limits, the Execute-phase contract bakes in an unverified constant.",
+      "suggested_fix": "Add an explicit provenance note citing the accepted collector/spec source for the first-frame-header limit and showing how the 15s sign-in-exchange budget relates to it and to the 30s outer cap (e.g., TCP/upgrade 15s + sign-in exchange 15s = 30s), or state that 15s is a new value introduced by this change and justify it."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "Task 1's exit criterion on buffer clearing is not verifiable at Task 1's own boundary because the plan forbids running the suite that could test it until Task 4.",
+      "evidence": "Task 1 exit criteria include \"Buffers containing credentials, response content, mask keys or frame bytes are cleared on every terminal path\" while the same row restricts verification to \"Perform only Tier 0 format and syntax/static checks; do not run the synthetic suite yet.\" Terminal-path clearing is runtime behavior that static checks cannot demonstrate; the privacy/clearing assertions live in the Task 4 suite (\"receipt privacy, 64-KiB size and cardinality assertions\"). A reviewer at the Task 1 boundary has no defined means to accept or reject this criterion.",
+      "suggested_fix": "Rescope the Task 1 criterion to what Tier 0 can verify (e.g., \"clearing calls present on every terminal path, confirmed by code review against an enumerated terminal-path list\") and leave behavioral verification of clearing to the Task 4 suite explicitly."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

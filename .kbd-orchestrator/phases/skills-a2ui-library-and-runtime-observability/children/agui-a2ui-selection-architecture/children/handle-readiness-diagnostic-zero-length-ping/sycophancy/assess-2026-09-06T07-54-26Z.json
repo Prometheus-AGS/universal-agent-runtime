@@ -1,0 +1,15 @@
+{
+  "audit_trail": {
+    "agent_did": null,
+    "executed_at": "2026-09-06T07:54:26Z",
+    "hook_log": [],
+    "passes": 0,
+    "skill_id": "sycophancy.correction",
+    "strictness": "standard",
+    "version": "1.0.0"
+  },
+  "classifications": [],
+  "correction_mandatory": false,
+  "delta_summary": "The detect_sycophancy MCP tool was unavailable. A manual S-02/S-03/S-06 check found no flattering or agreement-first claims; independent k3 reviews supplied the adversarial findings. No numeric detector score is claimed.",
+  "tool_available": false
+}

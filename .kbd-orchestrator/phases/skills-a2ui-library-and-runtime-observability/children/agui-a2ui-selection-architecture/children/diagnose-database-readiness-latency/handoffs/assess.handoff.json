@@ -1,0 +1,13 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-09-05T11:52:37Z",
+  "outputs": [
+    "assessment.md",
+    "review/assess/packet.json",
+    "review/assess/findings.json"
+  ],
+  "nextStage": "analyze",
+  "summaryForNext": "Source confirms an unbounded skill-table read and misleading dependency checks, but their latency contribution is unmeasured; historical CLI timings combine connection/authentication/query work. Next run /kbd-plan diagnose-database-readiness-latency for bounded sequential read-only observations, confirming installed identity and effective adapter/namespace/database before probes; no fixes, restarts or product tests. Isolated native review PASS (0 findings), anti-theater PASS score0.0; same-model review is not cross-model certification; memory recall unavailable and inherited global completion fields are not diagnostic evidence.",
+  "skipped": false,
+  "skipReason": null
+}

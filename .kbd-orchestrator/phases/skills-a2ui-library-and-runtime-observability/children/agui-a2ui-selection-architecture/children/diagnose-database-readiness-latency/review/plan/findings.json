@@ -1,0 +1,22 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "gpt-6-astra",
+  "isolation_mode": "harness-native",
+  "producer_model": "gpt-6-astra",
+  "cross_model_check": "same-model-collision",
+  "findings": [],
+  "checked_classes": [
+    "Ordering errors \u2014 Identity confirmation precedes collector preparation and observations; attribution follows observations, independent review follows diagnosis, and Reflect follows Execute acceptance.",
+    "Missing dependencies \u2014 Tasks cover installed identity, bounded characterization, hypothesis assessment, remediation recommendations, and evidence review. Unavailable attribution is explicitly recorded without marking unresolved causal goals met.",
+    "Untestable acceptance criteria \u2014 Deliverables specify evidence fields, request counts, deadlines, size limits, stop conditions, skipped-operation records, and independent review.",
+    "Scope smuggling \u2014 Work remains confined to diagnostic artifacts, relevant source inspection, and bounded operational reads. Product fixes and unrelated lifecycle changes are explicitly excluded.",
+    "Constraint violations \u2014 Probes require subsequent Execute authorization; database record mutations, service interventions, product tests, inference requests, and dependency changes are prohibited.",
+    "Unsupported causal acceptance \u2014 The plan distinguishes client and server timing, identifies confounded explanations, requires counterevidence, and permits an explicitly inconclusive diagnosis."
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

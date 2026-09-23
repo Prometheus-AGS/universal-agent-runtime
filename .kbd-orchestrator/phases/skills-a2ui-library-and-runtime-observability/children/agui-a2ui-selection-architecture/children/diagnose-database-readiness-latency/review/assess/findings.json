@@ -1,0 +1,22 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "gpt-6-astra",
+  "isolation_mode": "harness-native",
+  "producer_model": "gpt-6-astra",
+  "cross_model_check": "same-model-collision",
+  "findings": [],
+  "checked_classes": [
+    "Missed goal coverage \u2014 bounded characterization, readiness tracing, timing attribution, competing explanations, diagnosis and remediation each have explicit gaps and progress status.",
+    "Unsupported or contradictory codebase claims \u2014 supplied source excerpts support the full-table read, embedding deserialization, dependency labels, presence-only memory check and readiness timeout eligibility; the file tree contains the remaining cited implementation and specification files, with no packet contradiction.",
+    "Vague findings \u2014 diagnostic gaps identify concrete unknowns, relevant implementation locations and the evidence needed to distinguish candidate explanations.",
+    "Goals restated as findings \u2014 the assessment connects goals to historical observations and source behavior, explicitly separating confirmed mechanisms from unmeasured latency contributions.",
+    "Scope and phase violations \u2014 current diagnostics remain deferred until a written plan; the assessment reports no product tests, service requests, fixes, restarts or prohibited mutations.",
+    "Premature causal conclusions \u2014 CLI setup costs, namespace uncertainty, installed identity and missing correlated timings are explicit limitations; neither database slowness nor full-table retrieval is asserted as the established root cause."
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

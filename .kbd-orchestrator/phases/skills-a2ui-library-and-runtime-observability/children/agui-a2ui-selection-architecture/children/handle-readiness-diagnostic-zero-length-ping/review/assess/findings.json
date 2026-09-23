@@ -1,0 +1,29 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-6-astra",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "claim": "The assessment makes stop conditions normative that are never defined or assessed in the artifact, leaving Plan unable to implement or test them without inventing definitions.",
+      "evidence": "Boundary item 7 requires stopping at 'unsafe credential source, privacy-cap failure or operator interruption,' and SPEC GAP SUMMARY states 'The 30-second active cap remains an outer bound.' No section assesses where the collector obtains credentials, what makes a credential source 'unsafe,' what the privacy cap is or how it is enforced, or where the 30-second cap originates. With prior_handoffs null in the packet, these predicates have no verifiable source, yet they are required behaviors and (per item 8) required test assertions.",
+      "suggested_fix": "Define each stop predicate inline (credential acquisition mechanism and rejection criteria, the concrete privacy-cap rule, the cap's origin and value) or explicitly cite the prior-child artifact that defines them so Plan can derive testable behavior."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "assessment.md",
+      "claim": "The required synthetic test list does not explicitly cover all stop conditions the SPEC GAP SUMMARY declares mandatory.",
+      "evidence": "SPEC GAP SUMMARY requires that 'A second Ping, Pong, Close, fragment, binary frame, reserved opcode, masked server frame, extension-marked frame, non-minimal length or oversized Text response must stop the attempt without retry,' but boundary item 8's required cases list only 'repeated Ping rejection, nonzero Ping rejection, unexpected control/data forms.' Close-from-server, masked server frame, non-minimal length encoding, and oversized Text response have no named test case; whether the catch-all 'unexpected control/data forms' covers them is ambiguous for the Plan stage.",
+      "suggested_fix": "Enumerate the required cases one-to-one with the stop conditions (Close, masked server frame, non-minimal length, oversized Text, fragment/binary/reserved-opcode) or state explicitly that the catch-all case is parameterized over each of them."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

@@ -1,1 +1,1 @@
-{"totalRuns":688,"failedRuns":0,"lastRun":{"ts":"2026-09-04T17:27:44Z","kind":"task","edge":"after","name":"thread-native-subagents:6.1","hookId":"kbd-memory-log","layer":"builtin","mode":"augment","status":0},"lastFailure":null}
+{"totalRuns":762,"failedRuns":0,"lastRun":{"ts":"2026-09-06T09:18:55Z","kind":"task","edge":"after","name":"handle-readiness-diagnostic-zero-length-ping:4.1","hookId":"legacy-change-complete","layer":"builtin","mode":"augment","status":0},"lastFailure":null}

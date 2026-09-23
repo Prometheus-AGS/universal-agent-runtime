@@ -1,0 +1,36 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-6-astra",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "claim": "The 15-second sign-in-exchange deadline is asserted without any stated source, while only the 30-second cap is traced to a canonical requirement.",
+      "evidence": "\"One shared 15-second sign-in-exchange deadline should start before the sign-in write... The 30-second active cap comes from the canonical single-attempt frame-observation requirement and remains the outer bound\" \u2014 the origin of the 15s value is never given (no prior-handoff citation, no canonical requirement reference), so Plan will propagate an untraceable magic number into the new OpenSpec delta it is instructed to create.",
+      "suggested_fix": "Cite the prior child's accepted requirement or evidence from which the 15-second value derives, or explicitly flag it as a new value Plan must justify in the delta."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "claim": "Line-precise behavioral claims about collector.mjs are unverifiable from the packet and, if wrong, will misdirect the Plan-stage copy-and-modify step.",
+      "evidence": "\"`collector.mjs:271-303` can send a masked Text RPC and parse one nonempty final unmasked Text response. It rejects the observed `0x89 0x00` structure at line 285 and would reject length zero at line 293\" \u2014 the file tree contains no collector.mjs contents and `prior_handoffs` is null, so nothing in the packet corroborates these line numbers; minimum boundary item 1 (\"Copy the diagnostic collector into this child\") depends on them being accurate.",
+      "suggested_fix": "Quote the actual rejecting conditionals from collector.mjs rather than bare line numbers, or mark the line citations as to-be-reverified at Plan time."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "assessment.md",
+      "claim": "The boundary does not state whether a zero-length Ping arriving before the sign-in write completes is in scope.",
+      "evidence": "Item 5 says \"Continue to one subsequent final, RSV-clear, unmasked Text response under the original sign-in-exchange deadline. If Text is the first response, accept the existing path without sending Pong,\" and the deadline \"start[s] before the sign-in write and cover[s] first-header read, Pong write and the single following response\" \u2014 but the accept/stop rule is only defined for frames after the write; a Ping interleaved with the write itself is neither explicitly admitted nor explicitly a stop condition.",
+      "suggested_fix": "Add one sentence to the boundary specifying whether the single-Ping allowance applies only after the sign-in write settles, or to any first header within the exchange window."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

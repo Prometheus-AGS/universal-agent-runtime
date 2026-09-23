@@ -2,10 +2,10 @@
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 2359,
-  "derivedRevision": 2359,
+  "sourceRevision": 2482,
+  "derivedRevision": 2482,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 1955,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2078,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -22,7 +22,7 @@
   "phase": "skills-a2ui-library-and-runtime-observability",
   "phaseId": "skills-a2ui-library-and-runtime-observability",
   "parentPhase": null,
-  "last_updated": "2026-09-05T08:11:11.385589Z",
+  "last_updated": "2026-09-16T18:44:15.929153Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 0,
   "changes_completed": 0,
@@ -36,18 +36,18 @@
       "status": "PENDING"
     },
     "evidence": {
-      "status": "COMPLETE",
-      "summary": "OpenSpec certification, rollback normalization/recovery, KBD execution, and append-only memory receipts recorded.",
+      "status": "IN_PROGRESS",
+      "summary": "Zero-length-Ping child evidence complete: one immutable observation stopped on a second empty Ping; authentication and broader readiness evidence remain unresolved. Existing project warnings preserved.",
       "blockers": []
     },
     "certification": {
-      "status": "COMPLETE",
-      "summary": "Authorized Tier 3 certification and installed live matrix passed; search-specific bypass is deterministic because no search MCP is installed.",
+      "status": "IN_PROGRESS",
+      "summary": "Zero-length-Ping diagnostic locally accepted: 39/39 tests, strict spec validation and independent review with two warnings/three suggestions. Producer identity unverified. Project readiness/release certification, deferred 429 and coverage warnings remain unresolved.",
       "blockers": []
     },
     "publication": {
-      "status": "COMPLETE",
-      "summary": "Origin carries forward and fail-closed rollback branches; PR 274 is open; OpenSpec archived at 42/42 with canonical specs synchronized.",
+      "status": "IN_PROGRESS",
+      "summary": "Zero-length-Ping OpenSpec change created and implementation complete; Reflect, sync/archive remain pending. No release, commit or push in this child Execute phase; broader publication status unchanged.",
       "blockers": []
     }
   },

@@ -1,0 +1,16 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "gpt-6-astra",
+  "isolation_mode": "harness-native",
+  "producer_model": "gpt-6-astra",
+  "cross_model_check": "same-model-collision",
+  "findings": [],
+  "checked_classes": [
+    "Ordering errors — identity confirmation precedes collector preparation and observations; attribution follows observations, and independent review follows diagnosis.",
+    "Missing dependencies — the plan covers installed identity, bounded reproduction, correlated timings, hypothesis evaluation, remediation recommendations, and review; unavailable evidence must remain explicitly unresolved.",
+    "Ambiguous acceptance criteria — tasks identify concrete deliverables, measurement fields, operation limits, stop conditions, and dispositions for skipped observations or inconclusive results.",
+    "Scope smuggling — diagnostic artifacts and bounded operational reads serve the stated goals; fixes, instrumentation changes, dependency additions, and service interventions are excluded.",
+    "Constraint violations — probes are deferred to explicitly requested Execute; the plan prohibits product edits, product tests, inference requests, database record mutations, service changes, and restarts."
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "observedAt": "2026-09-05T21:27:30.939Z",
+  "mode": "prepare",
+  "state": "ready_for_single_authorized_attempt",
+  "limits": {
+    "websocketUpgrades": 1,
+    "signinRequests": 1,
+    "framingPrefixBytes": 10,
+    "evidenceBytes": 65536,
+    "upgradeMs": 15000,
+    "frameHeaderMs": 15000,
+    "totalActiveMs": 30000
+  },
+  "continuity": {
+    "observedAt": "2026-09-05T21:27:31.647Z",
+    "sourceHead": "226d4a0af89811975662cf3f203c699f70e8cebc",
+    "inheritedEvidence": {
+      "observationSha256": "dbcac041a81e21775302e56a629daac3dd06eb7fdccb6229b928bfcef83abf09",
+      "collectorSha256": "5dbbe09b51e705681d4d9c4be0da8315500df2172095ed094c14888a9dd0f467"
+    },
+    "services": [
+      {
+        "executableSha256": "2e3d3ab62920d43e1c26b78fb77e1cd46c80c9c4e1cfc97d369c73be9e46cd4c",
+        "pidMatchesBaseline": true,
+        "startTimeMatchesBaseline": true,
+        "executablePathMatchesBaseline": true,
+        "executableDigestMatchesBaseline": true,
+        "listenersMatchBaseline": true
+      },
+      {
+        "executableSha256": "bf14960ed517bd6d3eced7d37cfbe2d4ff795266f59421df56f6b1ee3bf0876b",
+        "pidMatchesBaseline": true,
+        "startTimeMatchesBaseline": true,
+        "executablePathMatchesBaseline": true,
+        "executableDigestMatchesBaseline": true,
+        "listenersMatchBaseline": true
+      }
+    ],
+    "configurationFiles": [
+      {
+        "sha256": "52a4292ec7214882dd0d1f2eb6abcbac90f14ab1210b65a46f1a3db0b8ca6638",
+        "matchesBaseline": true
+      },
+      {
+        "sha256": "fb653612cd7c6d91128ecf1a9d6cebde43cd886580fec2711b5be0d209993524",
+        "matchesBaseline": true
+      },
+      {
+        "sha256": "330556b5376f5dc14832d4b52a610cff27dc382700f3bb12b8a09976a6e6508c",
+        "matchesBaseline": true
+      },
+      {
+        "sha256": "e6a4beac56d4c4d7532a6212d9c792746439c16e03224ffe9fc621b8816a7e3a",
+        "matchesBaseline": true
+      }
+    ],
+    "target": {
+      "host": "127.0.0.1",
+      "port": 28000,
+      "path": "/rpc",
+      "authenticationForm": "root_signin_literal",
+      "credentialValuesRetained": false
+    },
+    "gate": {
+      "matchesBaseline": true
+    },
+    "retainedSecrets": false
+  },
+  "stopReason": null,
+  "activeNetworkRequests": 0
+}

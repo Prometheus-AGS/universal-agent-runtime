@@ -1,0 +1,107 @@
+{
+  "observedAt": "2026-09-05T13:53:20.171Z",
+  "stage": "Execute task1.1",
+  "sourceHead": "226d4a0af89811975662cf3f203c699f70e8cebc",
+  "baselineReceipt": "docs/releases/local-install-2026-09-05.md",
+  "services": [
+    {
+      "label": "com.prometheus.universal-agent-runtime",
+      "pid": 34726,
+      "state": "running",
+      "executable": "/Users/gqadonis/.uar/bin/universal-agent-runtime",
+      "sha256": "2e3d3ab62920d43e1c26b78fb77e1cd46c80c9c4e1cfc97d369c73be9e46cd4c",
+      "startTime": "2026-09-05T03:52:14-07:00",
+      "elapsedAtObservation": "03:01:06",
+      "listeners": ["127.0.0.1:1906", "[::1]:1906", "127.0.0.1:50051"],
+      "baselinePidAndExecutableMatch": true
+    },
+    {
+      "label": "ai.prometheus.surrealdb-native",
+      "pid": 29223,
+      "state": "running",
+      "executable": "/opt/homebrew/bin/surreal",
+      "sha256": "bf14960ed517bd6d3eced7d37cfbe2d4ff795266f59421df56f6b1ee3bf0876b",
+      "startTime": "2026-09-05T03:49:08-07:00",
+      "elapsedAtObservation": "03:04:13",
+      "listeners": ["127.0.0.1:28000"],
+      "baselinePidMatch": true,
+      "baselineExecutableDigestComparison": "unavailable in deployment receipt"
+    }
+  ],
+  "configurationFiles": [
+    {
+      "path": "/Users/gqadonis/Library/LaunchAgents/com.prometheus.universal-agent-runtime.plist",
+      "sha256": "52a4292ec7214882dd0d1f2eb6abcbac90f14ab1210b65a46f1a3db0b8ca6638",
+      "matchesPriorRecordedHash": true
+    },
+    {
+      "path": "/Users/gqadonis/Library/LaunchAgents/ai.prometheus.surrealdb-native.plist",
+      "sha256": "fb653612cd7c6d91128ecf1a9d6cebde43cd886580fec2711b5be0d209993524",
+      "matchesPriorRecordedHash": true
+    },
+    {
+      "path": "/Users/gqadonis/.uar/service.env",
+      "sha256": "330556b5376f5dc14832d4b52a610cff27dc382700f3bb12b8a09976a6e6508c",
+      "mtime": "2026-08-29T05:24:36.136Z",
+      "matchesPriorRecordedHash": true
+    },
+    {
+      "path": "/Users/gqadonis/Projects/graph-explorer/.uar/config.yaml",
+      "sha256": "e6a4beac56d4c4d7532a6212d9c792746439c16e03224ffe9fc621b8816a7e3a",
+      "mtime": "2026-09-03T10:27:30.215Z",
+      "matchesPriorRecordedHash": true
+    }
+  ],
+  "target": {
+    "provider": "surreal",
+    "endpoint": "ws://127.0.0.1:28000",
+    "namespace": "uar",
+    "database": "runtime_openai_1536",
+    "provenance": "Explicit persistence fields in the LaunchAgent-selected custom config; service.env, home dotenv and launchctl inherited/configured environment show no persistence overrides.",
+    "authentication": {
+      "formInSource": "Root signin",
+      "applicationUsernameIsRoot": true,
+      "credentialsExplicitInApplicationConfig": true,
+      "credentialReferences": "Literal quoted values; neither Vault references nor interpolation",
+      "credentialValuesRetained": false,
+      "protocolVerifiedForCollector": false
+    }
+  },
+  "timeout": {
+    "derivedMilliseconds": 30000,
+    "disabled": false,
+    "provenance": "src/config.rs:1266-1269 explicit defaults; custom config has no resilience section; CLI has no timeout-disabled override; inspected service/home dotenv and launchctl environment have no resilience keys. src/server.rs:1774 captures this at router construction.",
+    "classification": "Source/configuration-derived, not an in-process settings measurement or observed request duration"
+  },
+  "dotenv": {
+    "workingDirectory": "/Users/gqadonis/.uar",
+    "workingDirectoryDotenvExists": false,
+    "parentDotenv": "/Users/gqadonis/.env",
+    "parentDotenvMtime": "2022-11-10T18:41:21.587Z",
+    "parentRelevantOverrideKeys": [],
+    "selectedEnvRelevantOverrideKeys": []
+  },
+  "commands": [
+    "git rev-parse HEAD",
+    "Node builtin fs and crypto SHA-256 reads of exact listed files",
+    "plutil -convert json -o - <exact service plist>, parsed internally; only allowlisted fields emitted",
+    "launchctl print gui/<current uid>/<exact service label>, parsed internally; no raw environment or arguments emitted",
+    "ps -p 34726,29223 -o pid=,lstart=,etime=,comm=",
+    "lsof -nP -a -p 34726,29223 -iTCP -sTCP:LISTEN",
+    "Node bounded-scope extraction of configuration fields and relevant environment key names; no application startup or dotenv import"
+  ],
+  "identityGate": {
+    "installedTargetAgreement": true,
+    "configurationProvenanceEstablished": true,
+    "activeProbesAuthorizedYet": false,
+    "remainingPrerequisite": "Task1.2 collector/protocol gate and fresh identity comparison immediately before collection",
+    "unresolved": [
+      "No direct read of the live process's internal configuration or reused connection state; source/file/LaunchAgent reconstruction is the stated provenance.",
+      "No current readiness or database-response observation; process/listener existence is not health.",
+      "Collector codec/authentication protocol and runtime capability remain to be verified in task1.2."
+    ]
+  },
+  "activeDiagnosticRequests": 0,
+  "productTestsRun": 0,
+  "serviceMutations": 0
+}

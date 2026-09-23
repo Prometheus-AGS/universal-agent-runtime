@@ -1,0 +1,50 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "unknown",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "unverified-producer-unknown",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "collector.mjs",
+      "claim": "writeFrame hardcodes the stop code 'signin_exchange_deadline', but it is also used to send the HTTP upgrade request, so an upgrade-phase write timeout or deadline expiry is recorded with a factually wrong phase label in the evidence receipt.",
+      "evidence": "writeFrame contains `requireThat(mono() < deadlineAt, 'signin_exchange_deadline')` and its timer does `finish(new Stop('signin_exchange_deadline'))`; runCollect calls `await writeFrame(socket, request, upgradeDeadline)` for the WebSocket upgrade request before any sign-in exchange exists. The spec's deadline scenarios require a sanitized stop reason that accurately reflects whether the sign-in write, Pong write, or upgrade exhausted the budget; here the upgrade-write path can only ever report the sign-in code.",
+      "suggested_fix": "Pass the timeout code into writeFrame (e.g., writeFrame(socket, frame, deadlineAt, code)) and use 'upgrade_deadline' for the handshake request and 'signin_exchange_deadline' for sign-in/Pong frames."
+    },
+    {
+      "severity": "WARNING",
+      "file": "collector.mjs",
+      "claim": "SocketReader collapses transport errors, peer half-close, and local destroy into the single stop code 'websocket_closed', losing the error/closed distinction the rest of the module maintains (e.g., waitForConnect distinguishes 'websocket_transport_error' from 'websocket_closed').",
+      "evidence": "The constructor sets `this.failed` on 'error' and `this.ended` on 'end', but readExact checks `requireThat(!this.failed && !this.ended && !this.socket.destroyed, 'websocket_closed')` \u2014 a socket 'error' event (transport failure) is reported identically to a clean peer close. Since the sanitized stopReason is the primary diagnostic output, a transport failure during a read would be misclassified.",
+      "suggested_fix": "Check `this.failed` first and fail with 'websocket_transport_error', reserving 'websocket_closed' for end/destroy."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "collector.mjs",
+      "claim": "gatherContinuity validates only `baseline.sourceHead` and `Array.isArray(baseline.services)`; a malformed `configurationFiles` (missing or non-array) or malformed per-service fields would throw an unclassified TypeError instead of the intended 'baseline_identity_shape' stop code.",
+      "evidence": "`requireThat(baseline.sourceHead && Array.isArray(baseline.services), 'baseline_identity_shape')` is immediately followed by `for (const item of baseline.configurationFiles)` and property accesses on `service.label`, `service.pid`, `service.startTime`, etc. with no shape checks; a non-array `configurationFiles` throws TypeError, which safeCode maps to 'unclassified_local_failure', weakening the sanitized-reason guarantee.",
+      "suggested_fix": "Extend the shape gate to require Array.isArray(baseline.configurationFiles) and the presence of the expected service fields before use."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "collector.mjs",
+      "claim": "Dead code: CONTINUITY_PATH is defined but never referenced, and writeExclusiveJson is exported but never called by the collector or the test suite (tests exercise writeFdJson only).",
+      "evidence": "`const CONTINUITY_PATH = path.join(EVIDENCE_DIR, 'continuity.json');` has no other occurrence in the diff; `writeExclusiveJson` appears only in its definition and the export list, while collector.test.mjs imports writeFdJson and the runCollect flow uses writeFdJson exclusively.",
+      "suggested_fix": "Remove CONTINUITY_PATH and either delete writeExclusiveJson or add a test/consumer justifying its export."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "collector.mjs",
+      "claim": "report.counters.signinRequests is set to 1 before the sign-in write settles, so on a local construction/write failure the receipt records a sign-in request that may never have reached the peer.",
+      "evidence": "In exchange: `report.counters.signinRequests = 1; await sendSignin(...)` \u2014 if sendSignin throws (signin_request_size, websocket_transport_error, deadline), the persisted counter still claims one request. Given the receipt's counters are the cardinality evidence for the one-attempt contract, the counter conflates 'attempted locally' with 'written to the peer'.",
+      "suggested_fix": "Rename or split the counter (e.g., signinRequestWriteAttempts vs signinRequestsWritten) and increment the written counter only after the write settles, mirroring pongWriteAttempts/pongWritesCompleted."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-09-05T13:36:23Z",
+  "outputs": [
+    "plan.md",
+    "review/plan/packet-final.json",
+    "review/plan/findings.json"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "One diagnostic OpenSpec change, five strictly sequential tasks: identity, collector, observations, attribution, independent acceptance; Reflect follows Execute. Strict OpenSpec validation and isolated plan review passed with zero findings; same-model limitation retained. Execute requires a new user request and enforces one active request, at most two rounds/360s, stop-on-first-error, bounded sanitized responses and no product tests, inference, fixes or service changes; inconclusive findings must not claim root-cause or readiness recovery.",
+  "skipped": false,
+  "skipReason": null
+}

@@ -1,0 +1,50 @@
+{
+  "task": "2.1",
+  "tier": "Tier0 evidence integrity checks; operational observations are not product tests",
+  "receipt": "observations.json",
+  "receiptSha256": "dbcac041a81e21775302e56a629daac3dd06eb7fdccb6229b928bfcef83abf09",
+  "collectorSha256": "5dbbe09b51e705681d4d9c4be0da8315500df2172095ed094c14888a9dd0f467",
+  "collectorExitCode": 0,
+  "collectorState": "stopped",
+  "stopReason": "unsupported_websocket_frame",
+  "result": "PASS_BOUNDED_EVIDENCE_CONTRACT_NOT_DIAGNOSIS",
+  "checks": {
+    "jsonParse": "PASS",
+    "receiptBytes": 9616,
+    "receiptLimitBytes": 1048576,
+    "exactOperationOrder": "PASS",
+    "attemptedOperations": 4,
+    "skippedOperations": 20,
+    "stopAfterFirstFailure": "PASS",
+    "allSkippedReasonsExplicit": "PASS",
+    "observedOperationTimesWithinCaps": "PASS",
+    "operationMetadataAllowlist": "PASS",
+    "completeReceiptManuallyInspectedForRawPayloads": true,
+    "identityComparisonsPassed": 5,
+    "passiveSnapshots": 2,
+    "snapshotPressureValues": [1, 1],
+    "eachLogTailAtMost262144Bytes": "PASS",
+    "collectionWallMsBeforeFinalPassive": 7019,
+    "totalWallMsIncludingFinalPassive": 7059,
+    "collectorReruns": 0
+  },
+  "counts": {
+    "databaseHealthRequests": 1,
+    "uarLivenessRequests": 1,
+    "websocketSessionAttempts": 1,
+    "signinAttempts": 1,
+    "namespaceSelections": 0,
+    "queryRequests": 0,
+    "uarReadinessRequests": 0,
+    "completedRounds": 0
+  },
+  "limitations": [
+    "The collector completed recording a stopped attempt; exit0 does not mean a successful diagnostic round.",
+    "Sign-in was sent, but no authentication response was decoded. The0.748ms duration measures time until collector frame rejection, not authentication latency.",
+    "Frame type/flags and sign-in response byte count were not retained. Do not assert a ping, binary frame, malformed server response or rejected credentials.",
+    "WebSocket353.701ms includes connection and HTTP upgrade/header validation, not isolated TCP setup.",
+    "All namespace/query/readiness comparisons were prevented. Root cause and recovery remain unverified.",
+    "Pressure and process counters are sampled correlations. Bounded historical log categories are not a complete current error history.",
+    "No claim of server-side cancellation, sustained health or release certification."
+  ]
+}

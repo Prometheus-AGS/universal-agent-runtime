@@ -1,0 +1,392 @@
+{
+  "startedAt": "2026-09-05T15:00:18.191Z",
+  "state": "stopped",
+  "limits": {
+    "rounds": 2,
+    "totalMs": 360000,
+    "healthMs": 5000,
+    "readinessMs": 35000,
+    "sessionMs": 120000,
+    "setupMs": 15000,
+    "queryMs": 10000,
+    "responseBytes": 262144,
+    "logTailBytesPerFile": 262144,
+    "evidenceBytes": 1048576
+  },
+  "baselineIdentity": "identity.json",
+  "identityChecks": [
+    {
+      "observedAt": "2026-09-05T15:00:18.619Z",
+      "matchesBaseline": true,
+      "pids": [
+        34726,
+        29223
+      ]
+    },
+    {
+      "observedAt": "2026-09-05T15:00:21.591Z",
+      "matchesBaseline": true,
+      "pids": [
+        34726,
+        29223
+      ]
+    },
+    {
+      "observedAt": "2026-09-05T15:00:24.312Z",
+      "matchesBaseline": true,
+      "pids": [
+        34726,
+        29223
+      ]
+    },
+    {
+      "observedAt": "2026-09-05T15:00:24.583Z",
+      "matchesBaseline": true,
+      "pids": [
+        34726,
+        29223
+      ]
+    },
+    {
+      "observedAt": "2026-09-05T15:00:25.207Z",
+      "matchesBaseline": true,
+      "pids": [
+        34726,
+        29223
+      ]
+    }
+  ],
+  "snapshots": [
+    {
+      "round": 1,
+      "edge": "before",
+      "observedAt": "2026-09-05T15:00:21.235Z",
+      "processes": [
+        {
+          "pid": 34726,
+          "cpuPercent": 0,
+          "rssKiB": 14864,
+          "elapsed": "04:08:07"
+        },
+        {
+          "pid": 29223,
+          "cpuPercent": 0,
+          "rssKiB": 96672,
+          "elapsed": "04:11:13"
+        }
+      ],
+      "pressure": 1,
+      "memory": {
+        "Pages free": 8377,
+        "Pages active": 977085,
+        "Pages inactive": 972800,
+        "Pages wired down": 711552,
+        "Pages occupied by compressor": 1464699,
+        "Swapins": 8780998,
+        "Swapouts": 17775602
+      },
+      "io": [
+        {
+          "device": "disk0",
+          "kiBPerTransfer": 24.64,
+          "transfersSinceBoot": 903226187,
+          "megabytesSinceBoot": 21736693.99
+        },
+        {
+          "device": "disk11",
+          "kiBPerTransfer": 4.04,
+          "transfersSinceBoot": 120591,
+          "megabytesSinceBoot": 475.36
+        },
+        {
+          "device": "disk13",
+          "kiBPerTransfer": 4.01,
+          "transfersSinceBoot": 112552,
+          "megabytesSinceBoot": 441.12
+        },
+        {
+          "device": "disk15",
+          "kiBPerTransfer": 5.75,
+          "transfersSinceBoot": 201,
+          "megabytesSinceBoot": 1.13
+        }
+      ],
+      "ioScope": "Cumulative since boot, not instantaneous throughput"
+    },
+    {
+      "edge": "final_passive",
+      "observedAt": "2026-09-05T15:00:25.236Z",
+      "processes": [
+        {
+          "pid": 34726,
+          "cpuPercent": 0,
+          "rssKiB": 18992,
+          "elapsed": "04:08:11"
+        },
+        {
+          "pid": 29223,
+          "cpuPercent": 1.4,
+          "rssKiB": 99744,
+          "elapsed": "04:11:17"
+        }
+      ],
+      "pressure": 1,
+      "memory": {
+        "Pages free": 8899,
+        "Pages active": 977701,
+        "Pages inactive": 974196,
+        "Pages wired down": 716155,
+        "Pages occupied by compressor": 1457598,
+        "Swapins": 8780998,
+        "Swapouts": 17775602
+      },
+      "io": [
+        {
+          "device": "disk0",
+          "kiBPerTransfer": 24.64,
+          "transfersSinceBoot": 903229772,
+          "megabytesSinceBoot": 21736734.04
+        },
+        {
+          "device": "disk11",
+          "kiBPerTransfer": 4.04,
+          "transfersSinceBoot": 120591,
+          "megabytesSinceBoot": 475.36
+        },
+        {
+          "device": "disk13",
+          "kiBPerTransfer": 4.01,
+          "transfersSinceBoot": 112552,
+          "megabytesSinceBoot": 441.12
+        },
+        {
+          "device": "disk15",
+          "kiBPerTransfer": 5.75,
+          "transfersSinceBoot": 201,
+          "megabytesSinceBoot": 1.13
+        }
+      ],
+      "ioScope": "Cumulative since boot, not instantaneous throughput"
+    }
+  ],
+  "operations": [
+    {
+      "round": 1,
+      "name": "db_health",
+      "status": "ok",
+      "startedAt": "2026-09-05T15:00:21.597Z",
+      "deadlineMs": 5000,
+      "httpStatus": 200,
+      "responseBytes": 0,
+      "clientElapsedMs": 2458.477
+    },
+    {
+      "round": 1,
+      "name": "uar_health_before",
+      "status": "ok",
+      "startedAt": "2026-09-05T15:00:24.315Z",
+      "deadlineMs": 5000,
+      "httpStatus": 200,
+      "responseBytes": 15,
+      "clientElapsedMs": 6.861
+    },
+    {
+      "round": 1,
+      "name": "socket_open",
+      "status": "ok",
+      "startedAt": "2026-09-05T15:00:24.585Z",
+      "deadlineMs": 15000,
+      "responseBytes": 495,
+      "codec": "json",
+      "clientElapsedMs": 353.701
+    },
+    {
+      "round": 1,
+      "name": "signin",
+      "status": "failed",
+      "startedAt": "2026-09-05T15:00:25.211Z",
+      "deadlineMs": 15000,
+      "reason": "unsupported_websocket_frame",
+      "clientElapsedMs": 0.748
+    },
+    {
+      "round": 1,
+      "name": "use",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 1,
+      "name": "scalar_before_1",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 1,
+      "name": "scalar_before_2",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 1,
+      "name": "skills_limit_1",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 1,
+      "name": "skills_limit_32",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 1,
+      "name": "scalar_after",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 1,
+      "name": "uar_ready",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 1,
+      "name": "uar_health_after",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 2,
+      "name": "db_health",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 2,
+      "name": "uar_health_before",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 2,
+      "name": "socket_open",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 2,
+      "name": "signin",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 2,
+      "name": "use",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 2,
+      "name": "scalar_before_1",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 2,
+      "name": "scalar_before_2",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 2,
+      "name": "skills_limit_1",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 2,
+      "name": "skills_limit_32",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 2,
+      "name": "scalar_after",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 2,
+      "name": "uar_ready",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    },
+    {
+      "round": 2,
+      "name": "uar_health_after",
+      "status": "skipped",
+      "reason": "unsupported_websocket_frame"
+    }
+  ],
+  "stopReason": "unsupported_websocket_frame",
+  "cancellation": "Closing the client does not prove server cancellation",
+  "lastPressureCheck": {
+    "observedAt": "2026-09-05T15:00:25.211Z",
+    "value": 1
+  },
+  "collectionWallMsBeforeFinalPassive": 7019,
+  "logTails": [
+    {
+      "file": "/Users/gqadonis/.prometheus/logs/universal-agent-runtime/operational.log",
+      "bytesRead": 262144,
+      "categories": {},
+      "scope": "One bounded tail; timestamps may predate collection"
+    },
+    {
+      "file": "/Users/gqadonis/.prometheus/logs/universal-agent-runtime/stderr.log",
+      "bytesRead": 42195,
+      "categories": {},
+      "scope": "One bounded tail; timestamps may predate collection"
+    },
+    {
+      "file": "/Users/gqadonis/.prometheus/logs/surrealdb-native.stdout.log",
+      "bytesRead": 262144,
+      "categories": {
+        "timeout": {
+          "count": 45,
+          "firstTimestamp": "2026-08-26T16:34:50.556476Z",
+          "lastTimestamp": "2026-09-05T10:49:19.786470Z"
+        },
+        "serving": {
+          "count": 20,
+          "firstTimestamp": "2026-08-26T16:42:06.761261Z",
+          "lastTimestamp": "2026-09-05T10:50:47.514143Z"
+        }
+      },
+      "scope": "One bounded tail; timestamps may predate collection"
+    },
+    {
+      "file": "/Users/gqadonis/.prometheus/logs/surrealdb-native.stderr.log",
+      "bytesRead": 140049,
+      "categories": {
+        "error": {
+          "count": 688,
+          "firstTimestamp": "2026-08-08T17:04:52.495012Z",
+          "lastTimestamp": "2026-09-05T12:06:17.972902Z"
+        },
+        "timeout": {
+          "count": 264,
+          "firstTimestamp": "2026-08-09T20:53:11.668120Z",
+          "lastTimestamp": "2026-09-05T12:06:21.443810Z"
+        }
+      },
+      "scope": "One bounded tail; timestamps may predate collection"
+    }
+  ],
+  "finishedAt": "2026-09-05T15:00:25.258Z",
+  "totalWallMs": 7059,
+  "attemptedOperations": 4,
+  "skippedOperations": 20
+}

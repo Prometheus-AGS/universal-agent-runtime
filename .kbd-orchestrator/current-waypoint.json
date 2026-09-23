@@ -2,10 +2,10 @@
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 2584,
-  "derivedRevision": 2584,
+  "sourceRevision": 2585,
+  "derivedRevision": 2585,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2180,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2181,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -39,9 +39,9 @@
   "implementationCompleted": 116,
   "implementationTotal": 129,
   "planRevision": 7,
-  "revision": 2584,
+  "revision": 2585,
   "exactNextCommand": "/kbd-execute runtime-harness-gap-closure",
   "nextChange": "harness-model-profiles-routing",
   "nextTask": "harness-model-profiles-routing-2-4",
-  "updatedAt": "2026-09-21T10:04:29.927208Z"
+  "updatedAt": "2026-09-21T10:34:38.935974Z"
 }

@@ -1,0 +1,31 @@
+{
+  "stage": "Execute task1.2 source review, not final diagnosis acceptance",
+  "reviewer": "artifact_critic_collector",
+  "isolationMode": "harness-native artifact-only, no generation history",
+  "crossModelCheck": "Not claimed; native same-model review limitation retained",
+  "artifact": "collector.mjs",
+  "sha256": "5dbbe09b51e705681d4d9c4be0da8315500df2172095ed094c14888a9dd0f467",
+  "criteria": ["plan.md", "openspec diagnostic spec"],
+  "verdict": "PASS_SOURCE_REVIEW_ONLY",
+  "remainingFindings": [],
+  "resolvedWarnings": [
+    {
+      "finding": "Whole-session expiry could be delayed by synchronous identity checks between RPCs",
+      "resolution": "Asynchronous local commands, independent120s session timer, absolute budget checks and socket destruction on expiry"
+    },
+    {
+      "finding": "Failed responses discarded permitted HTTP/RPC/statement status, byte-count and statement-time metadata",
+      "resolution": "Allowlisted evidence populated before rejection; bodies and error messages remain discarded"
+    },
+    {
+      "finding": "Null statement became an unclassified local failure",
+      "resolution": "Non-null object shape validated before field access"
+    },
+    {
+      "finding": "An idle-session error could allow another attempted write against the known-failed socket",
+      "resolution": "Socket errors and unexpected closure stop collection immediately; RPC checks socket health before writing"
+    }
+  ],
+  "finalReviewerStatement": "No remaining concrete safety or evidence-contract findings in the current source. The earlier findings are resolved by statement-shape validation, socket-error stop handling, pre-write checks, independent session timing, and sanitized failure metadata retention.",
+  "verificationLimit": "Read-only source review. Collector transport was not executed; compatibility, live deadlines and diagnostic results remain unverified. This does not replace task3.1 independent diagnosis acceptance."
+}

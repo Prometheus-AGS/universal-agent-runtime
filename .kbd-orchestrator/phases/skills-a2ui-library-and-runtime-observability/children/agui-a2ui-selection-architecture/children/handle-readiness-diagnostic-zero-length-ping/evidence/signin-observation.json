@@ -1,0 +1,130 @@
+{
+  "startedAt": "2026-09-06T08:48:45.280Z",
+  "completedAt": "2026-09-06T08:49:02.196Z",
+  "state": "stopped",
+  "stopReason": "unsupported_websocket_frame",
+  "collectorSha256": "9c7e4385048ccf5ce64d62fb4e55823f11ca29740ef42292c575792fb8cafca2",
+  "continuity": {
+    "observedAt": "2026-09-06T08:48:46.341Z",
+    "sourceHead": "226d4a0af89811975662cf3f203c699f70e8cebc",
+    "inheritedEvidence": {
+      "observationSha256": "dbcac041a81e21775302e56a629daac3dd06eb7fdccb6229b928bfcef83abf09",
+      "collectorSha256": "5dbbe09b51e705681d4d9c4be0da8315500df2172095ed094c14888a9dd0f467",
+      "classifiedDigests": [
+        "0d54cdbdcd409a68db07201f1c456d23297bf5708aa3e7febf6903e9894e1fbb",
+        "95c915f92378c6630451eeb5405df11519ca8b2176a6369c6f42005dd2caa58f",
+        "3354bdb79099520f71454cef71d5259acdbfde50da8b2f7d05288d64abb4768d"
+      ]
+    },
+    "services": [
+      {
+        "executableSha256": "2e3d3ab62920d43e1c26b78fb77e1cd46c80c9c4e1cfc97d369c73be9e46cd4c",
+        "pidMatchesBaseline": true,
+        "startTimeMatchesBaseline": true,
+        "executablePathMatchesBaseline": true,
+        "executableDigestMatchesBaseline": true,
+        "listenersMatchBaseline": true
+      },
+      {
+        "executableSha256": "bf14960ed517bd6d3eced7d37cfbe2d4ff795266f59421df56f6b1ee3bf0876b",
+        "pidMatchesBaseline": true,
+        "startTimeMatchesBaseline": true,
+        "executablePathMatchesBaseline": true,
+        "executableDigestMatchesBaseline": true,
+        "listenersMatchBaseline": true
+      }
+    ],
+    "configurationFiles": [
+      {
+        "sha256": "52a4292ec7214882dd0d1f2eb6abcbac90f14ab1210b65a46f1a3db0b8ca6638",
+        "matchesBaseline": true
+      },
+      {
+        "sha256": "fb653612cd7c6d91128ecf1a9d6cebde43cd886580fec2711b5be0d209993524",
+        "matchesBaseline": true
+      },
+      {
+        "sha256": "330556b5376f5dc14832d4b52a610cff27dc382700f3bb12b8a09976a6e6508c",
+        "matchesBaseline": true
+      },
+      {
+        "sha256": "e6a4beac56d4c4d7532a6212d9c792746439c16e03224ffe9fc621b8816a7e3a",
+        "matchesBaseline": true
+      }
+    ],
+    "targetConfirmed": true,
+    "gate": {
+      "matchesBaseline": true
+    },
+    "retainedSecrets": false
+  },
+  "handshake": {
+    "httpStatus": 101,
+    "negotiatedSubprotocol": "json",
+    "extensionsRequested": false,
+    "extensionsResponsePresent": false
+  },
+  "frames": [
+    {
+      "fin": true,
+      "rsv1": false,
+      "rsv2": false,
+      "rsv3": false,
+      "opcode": 9,
+      "opcodeClass": "ping",
+      "masked": false,
+      "lengthEncoding": "7-bit",
+      "declaredLength": "0",
+      "minimalLengthEncoding": true,
+      "lengthMostSignificantBitZero": true,
+      "framingBytesConsumed": 2
+    },
+    {
+      "fin": true,
+      "rsv1": false,
+      "rsv2": false,
+      "rsv3": false,
+      "opcode": 9,
+      "opcodeClass": "ping",
+      "masked": false,
+      "lengthEncoding": "7-bit",
+      "declaredLength": "0",
+      "minimalLengthEncoding": true,
+      "lengthMostSignificantBitZero": true,
+      "framingBytesConsumed": 2
+    }
+  ],
+  "signinStatus": null,
+  "elapsedMs": 15853.493,
+  "exchangeElapsedMs": 6845.883,
+  "limits": {
+    "upgrades": 1,
+    "signinRequests": 1,
+    "pongWrites": 1,
+    "frames": 2,
+    "textBytes": 262144,
+    "evidenceBytes": 65536,
+    "upgradeMs": 15000,
+    "exchangeMs": 15000,
+    "totalActiveMs": 30000
+  },
+  "counters": {
+    "websocketUpgradeAttempts": 1,
+    "signinRequests": 1,
+    "pongWriteAttempts": 1,
+    "pongWritesCompleted": 1,
+    "frameHeadersObserved": 2,
+    "signinResponses": 0,
+    "payloadBytesIntentionallyRead": 0,
+    "payloadBytesRetained": 0,
+    "rawFramingBytesRetained": 0,
+    "credentialValuesRetained": 0,
+    "databaseQueries": 0,
+    "readinessRequests": 0,
+    "healthRequests": 0,
+    "inferenceRequests": 0,
+    "recordMutations": 0,
+    "serviceMutations": 0,
+    "retries": 0
+  }
+}

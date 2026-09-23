@@ -1,0 +1,11 @@
+{
+  "allowedWritePaths": [
+    ".kbd-orchestrator/phases/skills-a2ui-library-and-runtime-observability/children/agui-a2ui-selection-architecture/children/diagnose-database-readiness-latency/**",
+    ".prometheus/session-log.md",
+    ".prometheus/gotchas.md",
+    "openspec/changes/diagnose-database-readiness-latency/**"
+  ],
+  "deniedPaths": [],
+  "inheritsConstraints": true,
+  "__note": "Diagnosis artifacts and append-only learning only. Operator approved diagnostic OpenSpec records on 2026-09-05 during kbd-plan; this does not authorize probes during Plan, product code changes, restarts or fixes. Canonical KBD commands own generated lifecycle projections. Read relevant source and sanitized operational evidence; do not mutate application code, service configuration, credentials, database records, dependencies or running services. No inference requests or product test suites. Further scope expansion requires operator direction."
+}

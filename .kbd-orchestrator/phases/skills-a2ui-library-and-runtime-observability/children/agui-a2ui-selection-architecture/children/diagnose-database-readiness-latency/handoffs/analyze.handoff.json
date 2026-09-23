@@ -1,0 +1,9 @@
+{
+  "stage": "analyze",
+  "completedAt": "2026-09-05T11:52:37Z",
+  "outputs": [],
+  "nextStage": "spec",
+  "summaryForNext": "skipped: No dependency adoption or external library landscape question is needed to plan bounded observations of the existing runtime; proceed to diagnostic Plan, retrieving version-specific documentation only if a later hypothesis requires it.",
+  "skipped": true,
+  "skipReason": "No dependency adoption or external library landscape question is needed to plan bounded observations of the existing runtime; proceed to diagnostic Plan, retrieving version-specific documentation only if a later hypothesis requires it."
+}
