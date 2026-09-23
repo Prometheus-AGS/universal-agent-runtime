@@ -141,3 +141,17 @@ The handler lives in a new `src/uar/api/capabilities.rs` and is mounted beside `
 ## Open Questions
 
 1. Should `HOME` / `USERPROFILE` join the stdio MCP launch allowlist? Many Node/Python MCP servers need a home directory for caches. This does not change the spec (declared variables are always passed); it changes only the default list. Decide from the first real server that fails.
+
+## Known limitation (accepted after adversarial diff review round 3, 2026-09-23)
+
+The global-MCP 409 lock (`src/uar/api/mcp_admin.rs` `sidecar_locked`, `src/uar/admin/mcp.rs`
+`refuse_in_sidecar_mode`) is read from `SettingsManager::sidecar_feature_locks()`. `settings_manager` is
+`Option` in `AppState`, so a sidecar without a settings manager would not refuse global MCP mutations.
+This is not reachable today: the server always builds persistence (`src/server.rs:763`,
+`Some(Arc::clone(&persistence_layer))`) and therefore always builds the settings manager with the sidecar
+locks in sidecar mode (`src/server.rs:1031-1040`); the `None` case exists only in test constructions.
+Per the evidentiary standard no guard is added for an unreachable scenario. **Obligation carried
+forward:** any change that can leave the sidecar without persistence or without a settings manager — in
+particular `surreal-scoped-signin-and-embedded-fallback` — must either keep the settings manager present
+in sidecar mode or move the lock to an explicit sidecar-mode flag, and must add a contract test that
+global MCP `PUT`/`DELETE` still return 409 in that state.
