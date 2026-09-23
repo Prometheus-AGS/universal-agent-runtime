@@ -1631,3 +1631,11 @@ Confirm real computed width, not just document scrollWidth, because an ancestor
 can hide internal overflow. The Presentation metric deliberately excludes
 policy-summary artifacts; label it generated UI surface publication so visible
 diagnostic UI does not contradict an empty renderer-publication result.
+
+## 2026-09-05 — Validate archived OpenSpec changes through the archive-aware route
+
+After `openspec archive`, validating the dated archive name as an ordinary change
+can report `No deltas found` even when the archived delta is present. Use strict
+`openspec validate --archived --json`, inspect the exact target's `valid` result,
+and report unrelated legacy archive failures separately. Do not treat the global
+exit code as evidence that the newly archived target failed.

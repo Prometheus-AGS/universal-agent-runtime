@@ -1802,3 +1802,31 @@ UI/UX Pro Max's landing-page/glass recommendations were rejected as off-target;
 its accessibility and error-recovery guidance applies. No no-code builder,
 marketplace, arbitrary executable components or restored release gates enter
 this phase. Runtime tests remain at the end of the implemented phase.
+
+## 2026-09-16 — Runtime harness gap closure Plan decisions
+
+Keep the six Spec changes and 44 task units in a conservative total order. Change 1 now owns the minimum production preparation/output-envelope boundary, so its protected-context acceptance does not depend on change 2. Change 2 adds exact destination templates/settings and production task classification. The pure planner protects tool calls/results and all host-protected data; only eligible prose may be summarized. Unknown count bounds and protected overflow remain explicit outcomes. Acquisition policy separates 32,000-byte presentation from new 16 MiB receipt / 64 MiB run storage ceilings.
+
+Five external candidate surveys are complete: reference A2A Python SDK, OTel GenAI conventions, Anthropic skill evaluation, Ragas claim-level faithfulness and Inspect AI methods; adapt the existing UAR host/Liter boundaries instead of installing another runtime. Exact model deployment evidence remains unverified: six configured defaults are an initial inventory, not six certified destinations. Pinned Liter's Anthropic transform can raise max_tokens to thinking budget + 1, so final request captures must follow provider transformation. No dependency pin changes.
+
+Freeze 20 skill, 12 admission, 8 task-routing and 12 evidence cases plus context/crash matrices; actual baselines remain NOT_RUN. Preserve 99% Recall@10 and all four 60% frontend coverage gates. The two historical failure identities remain unresolved and require identification or evidence-backed supersession before the debt task passes. A separately registered local runtime-harness-profile-certification milestone must pass before final parent phase completion; missing stable-platform/live evidence blocks completion. Product checks remain local.
+
+Review used two fresh-context native critics and two distinct-model GPT-5.5 rounds. The final cross-model BLOCK and native warnings are retained without relabeling. Requested final corrections (Surreal crash ownership, complete Tier2/milestone binding, true CRLF, semantic coding oracles) have Tier0 checks; no third review was run under the skill's two-round cap. This limitation is carried into execution. No product code or runtime tests were changed/run; interrupted prior build health remains UNKNOWN. The uncomfortable case is a correct refusal when protected content or a verified counting contract cannot fit an authorized destination.
+
+## 2026-09-17 — Lossless history validation and terminal settlement
+
+Canonical history validation does not repair, delete, reorder or synthesize records. Invalid call/result histories and protected-content overflow return explicit outcomes before provider dispatch. The run manager persists empty-text assistant turns that contain calls and records unresolved call identities, so interruption and resume preserve the pending state.
+
+Trusted-host terminal failures use typed error results with call identity and provenance. When canonical storage is configured, the host persists that receipt before exposing it to later inference. If an external side effect completed but receipt persistence failed, the call remains unresolved and execution stops; silently inventing a replacement result would hide the ambiguous terminal state.
+
+## 2026-09-18 — Explicit final-wire budget contracts fail closed
+
+Budget certification is attached by the trusted host and binds an exact model, endpoint fingerprint, wire revision, counter revision, limits and output-cap field. A model string never selects a certified contract. Every orchestrator preparation carries the contract to the production leaf; a leaf either validates its own complete final representation or rejects before I/O.
+
+Protected messages and tool schemas must survive typed adaptation field-for-field. Provider-specific extra parameters cannot replace model, messages, tools, structured-output framing, stream controls or output ceilings. Unknown/lossy data, approximate counts, endpoint mismatch and protected overflow are explicit pre-dispatch outcomes. Real-provider profile resolution remains separate work; the synthetic exact fixture does not certify the configured fleet.
+
+## 2026-09-18 — Persisted checkpoint resume is an atomic host bundle
+
+Persisted checkpoint resume state, canonical history and authorization identity cross the shared run boundary as one crate-private bundle. A resumed run always resolves current policy again; caller-supplied resolved policy cannot authorize old checkpoint content. Inherited child canonical history uses a distinct field and the already captured inherited policy, so child turns do not masquerade as persisted resumes.
+
+Checkpoint raw JSON is authoritative after its byte digests and embedded authorization binding validate. Database-normalized structured values are replaced from that envelope before restoration. Rejected resumes keep a redacted run dialogue, so warm-session content cannot leak through the failed run. Legacy rows without complete protection metadata remain explicitly non-resumable.
