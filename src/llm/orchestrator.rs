@@ -498,12 +498,11 @@ impl Orchestrator {
                 )
                 .await?;
             let canonical = serde_json::to_string(&value)?;
-            let display =
-                crate::uar::runtime::context::truncate::formatted_truncate_for_model(
-                    &canonical,
-                    output_policy,
-                    &self.llm_config.model,
-                );
+            let display = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
+                &canonical,
+                output_policy,
+                &self.llm_config.model,
+            );
             Ok((canonical, display, true))
         }
     }

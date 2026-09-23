@@ -26,6 +26,7 @@ fn make_ctx_with_events(run_id: &str, events: Vec<NormalizedEvent>) -> GraphCont
 
     GraphContext {
         run_id: run_id.to_string(),
+        checkpoint_authorization_digest: "0".repeat(64),
         session_id: None,
         llm_config: universal_agent_runtime::config::LlmConfig::default(),
         driver,

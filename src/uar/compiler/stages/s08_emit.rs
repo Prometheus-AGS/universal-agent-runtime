@@ -23,7 +23,8 @@ fn uses_any_v2_section(ctx: &CompileContext) -> bool {
         || mr.preferred_provider.is_some();
 
     let pd = &ctx.ir.prompt_dialect;
-    let has_prompt_dialect = pd.dialect.is_some() || pd.wants_reasoning || pd.hard;
+    let has_prompt_dialect =
+        pd.dialect.is_some() || pd.template.is_some() || pd.wants_reasoning || pd.hard;
 
     let has_rag_configuration = ctx.ir.rag_configuration.enabled
         || ctx.ir.rag_configuration.decomposition

@@ -6,6 +6,16 @@ use crate::uar::domain::{
 };
 use crate::uar::runtime::{graph::GraphState, manager::SeedMessage};
 
+/// Complete host-verified material required to resume one persisted checkpoint.
+/// Keeping these values together makes partial or state-only restoration
+/// unrepresentable at the shared request boundary.
+#[derive(Debug, Clone)]
+pub struct CheckpointResume {
+    pub state: GraphState,
+    pub history: Vec<Message>,
+    pub authorization_digest: String,
+}
+
 /// Owned execution input shared by HTTP, embedded, and checkpoint adapters.
 #[derive(Debug, Clone)]
 pub struct RunExecutionRequest {
@@ -37,8 +47,12 @@ pub struct RunExecutionRequest {
     pub(crate) host_sandbox_constraint:
         Option<crate::uar::runtime::thread::policy_intersection::SandboxPermissions>,
     pub seed_history: Vec<SeedMessage>,
-    pub restored_state: Option<GraphState>,
-    pub checkpoint_history: Option<Vec<Message>>,
+    /// Persisted checkpoint restoration admitted by the trusted host. The
+    /// manager always resolves current policy again before accepting it.
+    pub(crate) checkpoint_resume: Option<CheckpointResume>,
+    /// Canonical child history captured with inherited host policy. This is not
+    /// persisted checkpoint material and does not use checkpoint authorization.
+    pub(crate) inherited_history: Option<Vec<Message>>,
     pub skill_attachments: Vec<String>,
     /// Host-selected cwd. This never grants workspace trust or file permissions.
     pub working_directory: Option<std::path::PathBuf>,
@@ -61,8 +75,8 @@ impl RunExecutionRequest {
             host_usage_grant: None,
             host_sandbox_constraint: None,
             seed_history: Vec::new(),
-            restored_state: None,
-            checkpoint_history: None,
+            checkpoint_resume: None,
+            inherited_history: None,
             skill_attachments: Vec::new(),
             working_directory: None,
         }

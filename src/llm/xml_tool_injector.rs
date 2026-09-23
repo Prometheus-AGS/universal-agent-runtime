@@ -108,6 +108,7 @@ mod tests {
             thinking_config: None,
             anthropic_system: None,
             extra_params: None,
+            budget_contract: None,
         }
     }
 

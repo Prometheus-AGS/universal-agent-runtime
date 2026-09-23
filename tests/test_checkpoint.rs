@@ -6,6 +6,9 @@ use universal_agent_runtime::uar::{
     runtime::{checkpoint::Checkpoint, graph::GraphState},
 };
 
+const TEST_AUTHORIZATION_DIGEST: &str =
+    "0000000000000000000000000000000000000000000000000000000000000000";
+
 async fn make_db() -> (Arc<dyn PersistenceLayer>, tempfile::TempDir) {
     let dir = tempfile::tempdir().expect("tempdir");
     let url = format!("surrealkv://{}", dir.path().to_str().unwrap());
@@ -32,7 +35,13 @@ async fn test_save_and_load_checkpoint() {
     let (db, _dir) = make_db().await;
 
     let state = make_state(3);
-    let cp = Checkpoint::new("run-1", "thread-1", "node-a", &state);
+    let cp = Checkpoint::new(
+        "run-1",
+        "thread-1",
+        "node-a",
+        &state,
+        TEST_AUTHORIZATION_DIGEST,
+    );
     let cp_id = cp.id.clone();
 
     db.save_checkpoint(&cp)
@@ -73,10 +82,22 @@ async fn test_list_checkpoints_for_run() {
     // Save 3 checkpoints for the same run and 1 for a different run.
     for i in 0u32..3 {
         let state = make_state(i);
-        let cp = Checkpoint::new("run-multi", "thread-1", format!("node-{i}"), &state);
+        let cp = Checkpoint::new(
+            "run-multi",
+            "thread-1",
+            format!("node-{i}"),
+            &state,
+            TEST_AUTHORIZATION_DIGEST,
+        );
         db.save_checkpoint(&cp).await.expect("save");
     }
-    let other = Checkpoint::new("run-other", "thread-2", "node-0", &make_state(0));
+    let other = Checkpoint::new(
+        "run-other",
+        "thread-2",
+        "node-0",
+        &make_state(0),
+        TEST_AUTHORIZATION_DIGEST,
+    );
     db.save_checkpoint(&other).await.expect("save other");
 
     let checkpoints = db
@@ -119,6 +140,7 @@ async fn test_checkpoint_node_persists_via_graph_context() {
 
     let ctx = GraphContext {
         run_id: "run-cp-test".to_string(),
+        checkpoint_authorization_digest: TEST_AUTHORIZATION_DIGEST.to_string(),
         session_id: Some("session-1".to_string()),
         llm_config: universal_agent_runtime::config::LlmConfig::default(),
         driver,

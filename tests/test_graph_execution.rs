@@ -63,6 +63,7 @@ fn make_ctx(run_id: &str) -> GraphContext {
 
     GraphContext {
         run_id: run_id.to_string(),
+        checkpoint_authorization_digest: "0".repeat(64),
         session_id: None,
         llm_config: universal_agent_runtime::config::LlmConfig::default(),
         driver,
@@ -119,6 +120,7 @@ async fn router_inherits_cache_strategy_and_llm_node_requires_tool_host() {
     ]));
     let ctx = GraphContext {
         run_id: "run-cache-policy".to_string(),
+        checkpoint_authorization_digest: "0".repeat(64),
         session_id: Some("session-cache-policy".to_string()),
         llm_config: universal_agent_runtime::config::LlmConfig::default(),
         driver: driver.clone(),

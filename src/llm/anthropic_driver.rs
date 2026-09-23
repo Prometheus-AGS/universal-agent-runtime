@@ -314,6 +314,12 @@ impl LlmDriver for AnthropicDriver {
         &self,
         req: LlmRequest,
     ) -> anyhow::Result<Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>> {
+        if req.budget_contract.is_some() {
+            return Err(ProviderError::invalid_request(
+                "Anthropic driver has no supported final-wire budget contract",
+            )
+            .into());
+        }
         let api_request = self.build_request_with_strategy(&req);
 
         let body = serde_json::to_string(&api_request)
@@ -464,6 +470,7 @@ mod tests {
             thinking_config: None,
             anthropic_system: None,
             extra_params: None,
+            budget_contract: None,
         }
     }
 

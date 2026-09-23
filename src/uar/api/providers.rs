@@ -393,6 +393,7 @@ async fn test_provider(
         thinking_config: None,
         anthropic_system: None,
         extra_params: None,
+        budget_contract: None,
     };
     crate::uar::runtime::context::normalize::normalize_provider_messages(
         &mut validation_request.messages,

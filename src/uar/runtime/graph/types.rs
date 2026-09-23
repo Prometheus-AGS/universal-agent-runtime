@@ -49,6 +49,8 @@ impl GraphState {
 pub struct GraphContext {
     /// Unique ID for this run.
     pub run_id: String,
+    /// Host-owned digest of the effective authorization policy for checkpoints.
+    pub checkpoint_authorization_digest: String,
     /// Optional session / thread ID.
     pub session_id: Option<String>,
     /// LLM configuration (model, provider, etc.).

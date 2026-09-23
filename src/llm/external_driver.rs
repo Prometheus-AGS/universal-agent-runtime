@@ -58,6 +58,12 @@ impl std::fmt::Debug for ExternalLlmDriver {
 #[async_trait]
 impl LlmDriver for ExternalLlmDriver {
     async fn stream(&self, req: LlmRequest) -> anyhow::Result<ExternalDriverStream> {
+        if req.budget_contract.is_some() {
+            return Err(ProviderError::invalid_request(
+                "External LLM driver has no supported final-wire budget contract",
+            )
+            .into());
+        }
         match (self.handler)(req).await {
             Ok(stream) => Ok(Box::pin(stream.map(|event| match event {
                 Ok(event) => Ok(event),
@@ -109,6 +115,7 @@ mod tests {
                 thinking_config: None,
                 anthropic_system: None,
                 extra_params: Some(serde_json::json!({"temperature": 0.2})),
+                budget_contract: None,
             })
             .await
             .expect("external driver stream starts");

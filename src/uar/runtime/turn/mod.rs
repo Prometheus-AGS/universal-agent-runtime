@@ -9,5 +9,5 @@ pub mod resolved;
 pub mod shadow;
 
 pub use plan::TurnAssemblyPlan;
-pub use request::RunExecutionRequest;
+pub use request::{CheckpointResume, RunExecutionRequest};
 pub use resolved::{ResolvedStep, ResolvedTurn, TurnEnvironment};

@@ -423,6 +423,10 @@ async fn resume_run_from_checkpoint(
     };
     let restored_state_keys = restored.data.len();
     let restored_messages = history.len();
+    let checkpoint_authorization_digest = checkpoint
+        .protection
+        .as_ref()
+        .and_then(|protection| protection.authorization_sha256.clone());
 
     let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(
         req.artifact,
@@ -435,8 +439,12 @@ async fn resume_run_from_checkpoint(
     };
     request.input = req.input;
     request.session_id = req.session_id;
-    request.checkpoint_history = Some(history);
-    request.restored_state = Some(restored);
+    request.checkpoint_resume = Some(crate::uar::runtime::turn::CheckpointResume {
+        state: restored,
+        history,
+        authorization_digest: checkpoint_authorization_digest
+            .expect("validated current checkpoint has authorization binding"),
+    });
     request.presentation_negotiation = req.presentation_negotiation;
     let new_run_id = manager.execute_request(request).await;
 

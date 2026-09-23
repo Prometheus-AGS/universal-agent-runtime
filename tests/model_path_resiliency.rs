@@ -1835,9 +1835,9 @@ async fn partial_tool_call_is_persisted_and_blocks_resume_dispatch() {
         .messages()
         .into_iter()
         .find_map(|message| {
-            message.tool_calls.and_then(|calls| {
-                calls.into_iter().find(|call| call.id == "partial-call")
-            })
+            message
+                .tool_calls
+                .and_then(|calls| calls.into_iter().find(|call| call.id == "partial-call"))
         })
         .expect("partial tool call is retained as unresolved history");
     assert_eq!(pending.function.name, "partial_tool");
@@ -1906,9 +1906,7 @@ async fn legacy_unbudgeted_dispatch_is_labeled_in_context_and_artifacts() {
     let artifact = history
         .iter()
         .find_map(|event| match &event.event {
-            RunEvent::Artifact { artifact, .. }
-                if artifact.artifact_type == "attempt_manifest" =>
-            {
+            RunEvent::Artifact { artifact, .. } if artifact.artifact_type == "attempt_manifest" => {
                 Some(artifact)
             }
             _ => None,
