@@ -1,0 +1,1349 @@
+//! Versioned inventory of UAR REST administration surfaces.
+//!
+//! Host applications use this metadata to expose only routes they independently
+//! allow and to explain the authority and lifecycle of each operation.
+
+use serde::Serialize;
+
+/// Schema revision for [`AdministrationCapabilities`].
+pub const ADMINISTRATION_SCHEMA_VERSION: u32 = 1;
+
+/// Navigation group for an administration surface.
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AdministrationGroup {
+    Runtime,
+    Agents,
+    Experience,
+    Administration,
+}
+
+/// Authority required to invoke an administration method.
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AdministrationScope {
+    Public,
+    Admin,
+    Owner,
+    Host,
+}
+
+/// Point at which a successful mutation takes effect.
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ApplyMode {
+    Read,
+    Live,
+    NextTurn,
+    Restart,
+    HostControlled,
+    Unavailable,
+}
+
+/// Runtime availability of an administration surface.
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SurfaceAvailability {
+    Available,
+    HostControlled,
+    FeatureGated,
+    Retired,
+}
+
+/// Canonical route metadata for one UAR operation.
+#[derive(Debug, Serialize)]
+pub struct AdministrationMethod {
+    pub id: &'static str,
+    pub method: &'static str,
+    pub path: &'static str,
+    pub scope: AdministrationScope,
+    pub apply: ApplyMode,
+}
+
+/// Related UAR operations presented as one administration destination.
+#[derive(Debug, Serialize)]
+pub struct AdministrationSurface {
+    pub id: &'static str,
+    pub group: AdministrationGroup,
+    pub availability: SurfaceAvailability,
+    pub methods: Vec<AdministrationMethod>,
+}
+
+/// Versioned administration manifest returned by the capabilities endpoint.
+#[derive(Debug, Serialize)]
+pub struct AdministrationCapabilities {
+    pub schema_version: u32,
+    pub scopes: [&'static str; 4],
+    pub surfaces: Vec<AdministrationSurface>,
+}
+
+fn method(
+    id: &'static str,
+    verb: &'static str,
+    path: &'static str,
+    scope: AdministrationScope,
+    apply: ApplyMode,
+) -> AdministrationMethod {
+    AdministrationMethod {
+        id,
+        method: verb,
+        path,
+        scope,
+        apply,
+    }
+}
+
+macro_rules! endpoint {
+    ($id:expr, $verb:expr, $path:expr, $scope:expr, $apply:expr) => {
+        method($id, $verb, $path, $scope, $apply)
+    };
+}
+
+fn surface(
+    id: &'static str,
+    group: AdministrationGroup,
+    availability: SurfaceAvailability,
+    methods: Vec<AdministrationMethod>,
+) -> AdministrationSurface {
+    AdministrationSurface {
+        id,
+        group,
+        availability,
+        methods,
+    }
+}
+
+/// Returns the canonical UAR administration manifest for this runtime build.
+pub fn administration_capabilities() -> AdministrationCapabilities {
+    use AdministrationGroup::{Administration, Agents, Experience, Runtime};
+    use AdministrationScope::{Admin, Host, Owner, Public};
+    use ApplyMode::{HostControlled, Live, NextTurn, Read, Restart, Unavailable};
+    use SurfaceAvailability::{Available, FeatureGated, HostControlled as HostSurface, Retired};
+
+    let mut runtime_settings = vec![
+        endpoint!(
+            "settings.types.list",
+            "GET",
+            "/api/uar/settings/types",
+            Admin,
+            Read
+        ),
+        endpoint!(
+            "settings.types.read",
+            "GET",
+            "/api/uar/settings/types/{key}",
+            Admin,
+            Read
+        ),
+        endpoint!(
+            "settings.types.create",
+            "POST",
+            "/api/uar/settings/types",
+            Admin,
+            Restart
+        ),
+        endpoint!("settings.list", "GET", "/api/uar/settings", Admin, Read),
+        endpoint!(
+            "settings.read",
+            "GET",
+            "/api/uar/settings/{key}",
+            Admin,
+            Read
+        ),
+        endpoint!(
+            "settings.update",
+            "PUT",
+            "/api/uar/settings/{key}",
+            Admin,
+            NextTurn
+        ),
+        endpoint!(
+            "settings.reset",
+            "DELETE",
+            "/api/uar/settings/{key}",
+            Admin,
+            NextTurn
+        ),
+        endpoint!(
+            "settings.drift",
+            "GET",
+            "/api/uar/settings/drift",
+            Admin,
+            Read
+        ),
+        endpoint!(
+            "settings.presentation_policy.read",
+            "GET",
+            "/api/uar/settings/presentation-policy",
+            Admin,
+            Read
+        ),
+        endpoint!(
+            "settings.presentation_policy.update",
+            "PUT",
+            "/api/uar/settings/presentation-policy",
+            Admin,
+            NextTurn
+        ),
+        endpoint!(
+            "settings.user.read",
+            "GET",
+            "/api/uar/user/settings",
+            Owner,
+            Read
+        ),
+        endpoint!(
+            "settings.user.update",
+            "PUT",
+            "/api/uar/user/settings",
+            Owner,
+            NextTurn
+        ),
+        endpoint!(
+            "settings.reload",
+            "POST",
+            "/.well-known/uar-config/reload",
+            Admin,
+            Live
+        ),
+    ];
+    for (read_id, update_id, path) in [
+        (
+            "settings.namespace.server.read",
+            "settings.namespace.server.update",
+            "/api/uar/settings/server",
+        ),
+        (
+            "settings.namespace.security.read",
+            "settings.namespace.security.update",
+            "/api/uar/settings/security",
+        ),
+        (
+            "settings.namespace.resilience.read",
+            "settings.namespace.resilience.update",
+            "/api/uar/settings/resilience",
+        ),
+        (
+            "settings.namespace.persistence.read",
+            "settings.namespace.persistence.update",
+            "/api/uar/settings/persistence",
+        ),
+        (
+            "settings.namespace.file_processing.read",
+            "settings.namespace.file_processing.update",
+            "/api/uar/settings/file-processing",
+        ),
+        (
+            "settings.namespace.vision.read",
+            "settings.namespace.vision.update",
+            "/api/uar/settings/vision",
+        ),
+        (
+            "settings.namespace.models.read",
+            "settings.namespace.models.update",
+            "/api/uar/settings/models",
+        ),
+        (
+            "settings.namespace.knowledge_bases.read",
+            "settings.namespace.knowledge_bases.update",
+            "/api/uar/settings/knowledge-bases",
+        ),
+        (
+            "settings.namespace.intent_classifier.read",
+            "settings.namespace.intent_classifier.update",
+            "/api/uar/settings/intent-classifier",
+        ),
+        (
+            "settings.namespace.providers.read",
+            "settings.namespace.providers.update",
+            "/api/uar/settings/providers",
+        ),
+        (
+            "settings.namespace.llm.read",
+            "settings.namespace.llm.update",
+            "/api/uar/settings/llm",
+        ),
+        (
+            "settings.namespace.unstructured.read",
+            "settings.namespace.unstructured.update",
+            "/api/uar/settings/unstructured",
+        ),
+        (
+            "settings.namespace.kreuzberg.read",
+            "settings.namespace.kreuzberg.update",
+            "/api/uar/settings/kreuzberg",
+        ),
+        (
+            "settings.namespace.context_management.read",
+            "settings.namespace.context_management.update",
+            "/api/uar/settings/context-management",
+        ),
+        (
+            "settings.namespace.context_strategy.read",
+            "settings.namespace.context_strategy.update",
+            "/api/uar/settings/context-strategy",
+        ),
+        (
+            "settings.namespace.prompt_caching.read",
+            "settings.namespace.prompt_caching.update",
+            "/api/uar/settings/prompt-caching",
+        ),
+        (
+            "settings.namespace.rag.read",
+            "settings.namespace.rag.update",
+            "/api/uar/settings/rag",
+        ),
+        (
+            "settings.namespace.governance.read",
+            "settings.namespace.governance.update",
+            "/api/uar/settings/governance",
+        ),
+        (
+            "settings.namespace.agent_config.read",
+            "settings.namespace.agent_config.update",
+            "/api/uar/settings/agent-config",
+        ),
+        (
+            "settings.namespace.skill_config.read",
+            "settings.namespace.skill_config.update",
+            "/api/uar/settings/skill-config",
+        ),
+        (
+            "settings.namespace.mistral_ocr.read",
+            "settings.namespace.mistral_ocr.update",
+            "/api/uar/settings/mistral-ocr",
+        ),
+        (
+            "settings.namespace.memory.read",
+            "settings.namespace.memory.update",
+            "/api/uar/settings/memory",
+        ),
+        (
+            "settings.namespace.llm_failover.read",
+            "settings.namespace.llm_failover.update",
+            "/api/uar/settings/llm-failover",
+        ),
+        (
+            "settings.namespace.sandbox.read",
+            "settings.namespace.sandbox.update",
+            "/api/uar/settings/sandbox",
+        ),
+        (
+            "settings.namespace.native_tools.read",
+            "settings.namespace.native_tools.update",
+            "/api/uar/settings/native-tools",
+        ),
+        (
+            "settings.namespace.skill_evolution.read",
+            "settings.namespace.skill_evolution.update",
+            "/api/uar/settings/skill-evolution",
+        ),
+        (
+            "settings.namespace.sycophancy.read",
+            "settings.namespace.sycophancy.update",
+            "/api/uar/settings/sycophancy",
+        ),
+        (
+            "settings.namespace.acp.read",
+            "settings.namespace.acp.update",
+            "/api/uar/settings/acp",
+        ),
+    ] {
+        runtime_settings.push(endpoint!(read_id, "GET", path, Admin, Read));
+        runtime_settings.push(endpoint!(update_id, "PUT", path, Admin, NextTurn));
+    }
+
+    AdministrationCapabilities {
+        schema_version: ADMINISTRATION_SCHEMA_VERSION,
+        scopes: ["public", "admin", "owner", "host"],
+        surfaces: vec![
+            surface(
+                "overview",
+                Runtime,
+                Available,
+                vec![
+                    endpoint!(
+                        "capabilities.read",
+                        "GET",
+                        "/api/uar/capabilities",
+                        Public,
+                        Read
+                    ),
+                    endpoint!("health.read", "GET", "/health", Public, Read),
+                    endpoint!("health.compatibility.read", "GET", "/healthz", Public, Read),
+                    endpoint!("readiness.read", "GET", "/readyz", Public, Read),
+                    endpoint!(
+                        "persistence.read",
+                        "GET",
+                        "/api/config/persistence",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!("metrics.read", "GET", "/metrics", Admin, Read),
+                    endpoint!(
+                        "config.schema.read",
+                        "GET",
+                        "/.well-known/uar-config",
+                        Public,
+                        Read
+                    ),
+                    endpoint!(
+                        "security.contact.read",
+                        "GET",
+                        "/.well-known/security.txt",
+                        Public,
+                        Read
+                    ),
+                ],
+            ),
+            surface(
+                "providers-models",
+                Runtime,
+                Available,
+                vec![
+                    endpoint!("providers.list", "GET", "/api/uar/providers", Admin, Read),
+                    endpoint!(
+                        "providers.enabled",
+                        "GET",
+                        "/api/uar/providers/enabled",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "providers.health",
+                        "GET",
+                        "/api/uar/providers/health",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "providers.create",
+                        "POST",
+                        "/api/uar/providers",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "providers.read",
+                        "GET",
+                        "/api/uar/providers/{id}",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "providers.update",
+                        "PUT",
+                        "/api/uar/providers/{id}",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "providers.delete",
+                        "DELETE",
+                        "/api/uar/providers/{id}",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "providers.models",
+                        "GET",
+                        "/api/uar/providers/{id}/models",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "providers.test",
+                        "POST",
+                        "/api/uar/providers/{id}/test",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "providers.default",
+                        "POST",
+                        "/api/uar/providers/{id}/default",
+                        Admin,
+                        NextTurn
+                    ),
+                    endpoint!("models.list", "GET", "/api/models", Admin, Read),
+                    endpoint!("models.catalog", "GET", "/api/catalog", Admin, Read),
+                    endpoint!(
+                        "models.resolve",
+                        "GET",
+                        "/api/uar/resolve-model",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!("models.route", "POST", "/api/uar/route", Owner, Read),
+                    endpoint!("models.openai.list", "GET", "/v1/models", Owner, Read),
+                    endpoint!(
+                        "models.openai.read",
+                        "GET",
+                        "/v1/models/{model_id}",
+                        Owner,
+                        Read
+                    ),
+                ],
+            ),
+            surface("runtime-settings", Runtime, Available, runtime_settings),
+            surface(
+                "agents",
+                Agents,
+                Available,
+                vec![
+                    endpoint!("agents.list", "GET", "/api/agents", Admin, Read),
+                    endpoint!("agents.create", "POST", "/api/agents", Admin, Live),
+                    endpoint!("agents.read", "GET", "/api/agents/{id}", Admin, Read),
+                    endpoint!("agents.replace", "PUT", "/api/agents/{id}", Admin, NextTurn),
+                    endpoint!("agents.patch", "PATCH", "/api/agents/{id}", Admin, NextTurn),
+                    endpoint!(
+                        "agents.delete",
+                        "DELETE",
+                        "/api/agents/{id}",
+                        Admin,
+                        NextTurn
+                    ),
+                    endpoint!(
+                        "agents.discovery",
+                        "GET",
+                        "/api/uar/discovery/agents",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "agents.discovery.current",
+                        "GET",
+                        "/api/uar/discovery/sessions/{session_id}/agent",
+                        Owner,
+                        Read
+                    ),
+                ],
+            ),
+            surface(
+                "compiler",
+                Agents,
+                Available,
+                vec![
+                    endpoint!(
+                        "compiler.specs.list",
+                        "GET",
+                        "/api/uar/compiler/specs",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "compiler.specs.create",
+                        "POST",
+                        "/api/uar/compiler/specs",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "compiler.specs.read",
+                        "GET",
+                        "/api/uar/compiler/specs/{id}",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "compiler.specs.delete",
+                        "DELETE",
+                        "/api/uar/compiler/specs/{id}",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "compiler.specs.compile",
+                        "POST",
+                        "/api/uar/compiler/specs/{id}/compile",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "compiler.compile",
+                        "POST",
+                        "/api/uar/compiler/compile",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "compiler.register",
+                        "POST",
+                        "/api/uar/compiler/compile-and-register",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "compiler.reports.read",
+                        "GET",
+                        "/api/uar/compiler/reports/{id}",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "compiler.sessions.list",
+                        "GET",
+                        "/api/uar/compiler/sessions",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "compiler.sessions.create",
+                        "POST",
+                        "/api/uar/compiler/sessions",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "compiler.sessions.read",
+                        "GET",
+                        "/api/uar/compiler/sessions/{id}",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "compiler.sessions.cancel",
+                        "POST",
+                        "/api/uar/compiler/sessions/{id}/cancel",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "compiler.sessions.compile",
+                        "POST",
+                        "/api/uar/compiler/sessions/{id}/compile",
+                        Admin,
+                        Live
+                    ),
+                ],
+            ),
+            surface(
+                "skills",
+                Agents,
+                Available,
+                vec![
+                    endpoint!("skills.list", "GET", "/api/uar/skills", Admin, Read),
+                    endpoint!("skills.create", "POST", "/api/uar/skills", Admin, Live),
+                    endpoint!("skills.read", "GET", "/api/uar/skills/{id}", Admin, Read),
+                    endpoint!(
+                        "skills.update",
+                        "PUT",
+                        "/api/uar/skills/{id}",
+                        Admin,
+                        NextTurn
+                    ),
+                    endpoint!(
+                        "skills.delete",
+                        "DELETE",
+                        "/api/uar/skills/{id}",
+                        Admin,
+                        NextTurn
+                    ),
+                    endpoint!(
+                        "skills.toggle",
+                        "POST",
+                        "/api/uar/skills/{id}/toggle",
+                        Admin,
+                        NextTurn
+                    ),
+                    endpoint!("skills.match", "GET", "/api/uar/skills/match", Owner, Read),
+                    endpoint!(
+                        "skills.provenance",
+                        "GET",
+                        "/api/uar/skills/provenance",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "skills.update_check",
+                        "GET",
+                        "/api/uar/skills/update-check",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "skills.update_pack",
+                        "POST",
+                        "/api/uar/skills/update",
+                        Host,
+                        HostControlled
+                    ),
+                    endpoint!(
+                        "skills.refresh",
+                        "POST",
+                        "/api/uar/skills/refresh",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "skills.import",
+                        "POST",
+                        "/api/uar/skills/import",
+                        Host,
+                        HostControlled
+                    ),
+                    endpoint!(
+                        "skills.config.read",
+                        "GET",
+                        "/api/uar/skills/config",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "skills.config.update",
+                        "PUT",
+                        "/api/uar/skills/config",
+                        Admin,
+                        NextTurn
+                    ),
+                    endpoint!(
+                        "skills.agent.read",
+                        "GET",
+                        "/api/uar/agents/{id}/skills",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "skills.agent.update",
+                        "PUT",
+                        "/api/uar/agents/{id}/skills",
+                        Admin,
+                        NextTurn
+                    ),
+                    endpoint!(
+                        "skills.agent.add",
+                        "POST",
+                        "/api/uar/agents/{id}/skills/{skill_id}",
+                        Admin,
+                        NextTurn
+                    ),
+                    endpoint!(
+                        "skills.agent.remove",
+                        "DELETE",
+                        "/api/uar/agents/{id}/skills/{skill_id}",
+                        Admin,
+                        NextTurn
+                    ),
+                    endpoint!(
+                        "skills.discovery",
+                        "GET",
+                        "/api/uar/discovery/skills",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "skills.reload",
+                        "POST",
+                        "/api/uar/skills/reload",
+                        Host,
+                        HostControlled
+                    ),
+                ],
+            ),
+            surface(
+                "presentations",
+                Experience,
+                Available,
+                vec![
+                    endpoint!(
+                        "presentations.list",
+                        "GET",
+                        "/api/uar/presentations",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "presentations.create",
+                        "POST",
+                        "/api/uar/presentations",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "presentations.read",
+                        "GET",
+                        "/api/uar/presentations/{id}",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "presentations.update",
+                        "PUT",
+                        "/api/uar/presentations/{id}",
+                        Owner,
+                        NextTurn
+                    ),
+                    endpoint!(
+                        "presentations.delete",
+                        "DELETE",
+                        "/api/uar/presentations/{id}",
+                        Owner,
+                        NextTurn
+                    ),
+                    endpoint!(
+                        "a2ui.schemas.list",
+                        "GET",
+                        "/api/uar/a2ui/schemas",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "a2ui.schemas.read",
+                        "GET",
+                        "/api/uar/a2ui/schemas/{id}",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "a2ui.components.list",
+                        "GET",
+                        "/api/uar/a2ui/components",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "a2ui.components.promote",
+                        "POST",
+                        "/api/uar/a2ui/components",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "a2ui.artifact_response",
+                        "POST",
+                        "/api/uar/runs/{id}/artifact-response",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "a2ui.surface_replay",
+                        "GET",
+                        "/api/uar/runs/{id}/a2ui/surface-replay",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "a2ui.messages.submit",
+                        "POST",
+                        "/api/uar/runs/{id}/a2ui/messages",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "a2ui.actions.submit",
+                        "POST",
+                        "/api/uar/runs/{id}/a2ui/actions",
+                        Owner,
+                        Live
+                    ),
+                ],
+            ),
+            surface(
+                "runs",
+                Experience,
+                Available,
+                vec![
+                    endpoint!("runs.create", "POST", "/api/uar/runs", Owner, Live),
+                    endpoint!(
+                        "runs.stream",
+                        "GET",
+                        "/api/uar/runs/{id}/stream",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "runs.cancel",
+                        "POST",
+                        "/api/uar/runs/{id}/cancel",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "runs.approve",
+                        "POST",
+                        "/api/uar/runs/{id}/tool-approval",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "runs.checkpoints",
+                        "GET",
+                        "/api/uar/runs/{id}/checkpoints",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "runs.resume",
+                        "POST",
+                        "/api/uar/runs/{id}/resume",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "runs.resume_checkpoint",
+                        "POST",
+                        "/api/uar/runs/{id}/resume/{checkpoint_id}",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "runs.mcp_grant.revoke",
+                        "POST",
+                        "/api/uar/runs/{id}/mcp-grants/{server}/revoke",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "runs.approval",
+                        "POST",
+                        "/api/uar/runs/{id}/approval",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "sessions.cancel",
+                        "POST",
+                        "/api/uar/sessions/{id}/cancel",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "sessions.context_stats",
+                        "GET",
+                        "/api/uar/sessions/{id}/context-stats",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "sessions.agent_config.read",
+                        "GET",
+                        "/api/uar/sessions/{id}/agent-config",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "sessions.agent_config.update",
+                        "POST",
+                        "/api/uar/sessions/{id}/agent-config",
+                        Owner,
+                        NextTurn
+                    ),
+                    endpoint!(
+                        "sessions.effective_config",
+                        "GET",
+                        "/api/uar/sessions/{id}/effective-config",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "sessions.prompt_caching",
+                        "GET",
+                        "/api/uar/sessions/{id}/prompt-caching",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "conversations.policy.read",
+                        "GET",
+                        "/api/uar/conversations/{id}/policy",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "conversations.policy.update",
+                        "PUT",
+                        "/api/uar/conversations/{id}/policy",
+                        Owner,
+                        NextTurn
+                    ),
+                    endpoint!(
+                        "conversations.policy.reset",
+                        "DELETE",
+                        "/api/uar/conversations/{id}/policy",
+                        Owner,
+                        NextTurn
+                    ),
+                    endpoint!("actors.list", "GET", "/api/uar/actors", Owner, Read),
+                    endpoint!("actors.spawn", "POST", "/api/uar/actors", Owner, Live),
+                    endpoint!("actors.stop", "DELETE", "/api/uar/actors/{id}", Owner, Live),
+                    endpoint!(
+                        "actors.message",
+                        "POST",
+                        "/api/uar/actors/{id}/message",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "actors.collaborate",
+                        "POST",
+                        "/api/uar/actors/{id}/collaborate",
+                        Owner,
+                        Live
+                    ),
+                ],
+            ),
+            surface(
+                "knowledge",
+                Experience,
+                Available,
+                vec![
+                    endpoint!(
+                        "knowledge.list",
+                        "GET",
+                        "/api/uar/knowledge-bases",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "knowledge.create",
+                        "POST",
+                        "/api/uar/knowledge-bases",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "knowledge.read",
+                        "GET",
+                        "/api/uar/knowledge-bases/{id}",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "knowledge.update",
+                        "PUT",
+                        "/api/uar/knowledge-bases/{id}",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "knowledge.delete",
+                        "DELETE",
+                        "/api/uar/knowledge-bases/{id}",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "knowledge.documents",
+                        "GET",
+                        "/api/uar/knowledge-bases/{id}/documents",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "knowledge.upload",
+                        "POST",
+                        "/api/uar/knowledge-bases/{id}/documents",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "knowledge.document.read",
+                        "GET",
+                        "/api/uar/knowledge-bases/{id}/documents/{doc_id}",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "knowledge.document.delete",
+                        "DELETE",
+                        "/api/uar/knowledge-bases/{id}/documents/{doc_id}",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "knowledge.search",
+                        "POST",
+                        "/api/uar/knowledge-bases/{id}/search",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "memory.admin.list",
+                        "GET",
+                        "/api/admin/memories",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "memory.admin.create",
+                        "POST",
+                        "/api/admin/memories",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "memory.admin.bulk_delete",
+                        "DELETE",
+                        "/api/admin/memories",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "memory.admin.stats",
+                        "GET",
+                        "/api/admin/memories/stats",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "memory.admin.search",
+                        "GET",
+                        "/api/admin/memories/search",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "memory.admin.read",
+                        "GET",
+                        "/api/admin/memories/{id}",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "memory.admin.update",
+                        "PATCH",
+                        "/api/admin/memories/{id}",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "memory.admin.delete",
+                        "DELETE",
+                        "/api/admin/memories/{id}",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!("memory.search", "GET", "/api/memory", Owner, Read),
+                    endpoint!("memory.save", "POST", "/api/memory", Owner, Live),
+                ],
+            ),
+            surface(
+                "tools",
+                Administration,
+                HostSurface,
+                vec![
+                    endpoint!("tools.list", "GET", "/api/tools", Owner, Read),
+                    endpoint!(
+                        "tools.execute",
+                        "POST",
+                        "/api/tools/{name}/execute",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "tools.discovery",
+                        "GET",
+                        "/api/uar/discovery/tools",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!("mcp.health", "GET", "/api/uar/mcp/health", Admin, Read),
+                    endpoint!(
+                        "mcp.servers.list",
+                        "GET",
+                        "/api/uar/mcp/servers",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "mcp.servers.save",
+                        "PUT",
+                        "/api/uar/mcp/servers/{name}",
+                        Host,
+                        HostControlled
+                    ),
+                    endpoint!(
+                        "mcp.servers.delete",
+                        "DELETE",
+                        "/api/uar/mcp/servers/{name}",
+                        Host,
+                        HostControlled
+                    ),
+                ],
+            ),
+            surface(
+                "security",
+                Administration,
+                Available,
+                vec![
+                    endpoint!("auth.keys.list", "GET", "/api/uar/auth/keys", Admin, Read),
+                    endpoint!(
+                        "auth.keys.create",
+                        "POST",
+                        "/api/uar/auth/keys",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "auth.keys.revoke",
+                        "DELETE",
+                        "/api/uar/auth/keys/{id}",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "auth.keys.exchange",
+                        "POST",
+                        "/api/uar/auth/exchange",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "credentials.list",
+                        "GET",
+                        "/api/uar/credentials",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "credentials.set",
+                        "PUT",
+                        "/api/uar/credentials/{provider}",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "credentials.clear",
+                        "DELETE",
+                        "/api/uar/credentials/{provider}",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "governance.status",
+                        "GET",
+                        "/api/uar/settings/governance/status",
+                        Admin,
+                        Read
+                    ),
+                ],
+            ),
+            surface(
+                "protocols",
+                Administration,
+                FeatureGated,
+                vec![
+                    endpoint!(
+                        "protocols.a2a.card",
+                        "GET",
+                        "/.well-known/agent.json",
+                        Public,
+                        Read
+                    ),
+                    endpoint!(
+                        "protocols.a2a.agents",
+                        "GET",
+                        "/a2a/registry/agents",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "protocols.a2a.agent",
+                        "GET",
+                        "/a2a/registry/agents/{id}",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "protocols.a2a.register",
+                        "POST",
+                        "/a2a/registry/register",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "protocols.a2a.skills",
+                        "GET",
+                        "/a2a/registry/skills",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "protocols.a2a.rpc",
+                        "POST",
+                        "/a2a/agents/{agent_id}",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "protocols.a2a.compiler",
+                        "POST",
+                        "/a2a/compiler",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!("protocols.acp.connect", "POST", "/acp", Owner, Live),
+                    endpoint!("protocols.acp.stream", "POST", "/acp/stream", Owner, Live),
+                ],
+            ),
+            surface(
+                "diagnostics",
+                Administration,
+                Available,
+                vec![
+                    endpoint!("diagnostics.live", "GET", "/api/live", Admin, Live),
+                    endpoint!(
+                        "diagnostics.live.topic",
+                        "GET",
+                        "/api/live/{topic}",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "diagnostics.sync",
+                        "GET",
+                        "/api/uar/sync/stream",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "diagnostics.chat",
+                        "POST",
+                        "/api/chat/completion",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "diagnostics.title",
+                        "POST",
+                        "/api/generate-title",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!("diagnostics.upload", "POST", "/api/upload", Owner, Live),
+                    endpoint!(
+                        "diagnostics.attachment",
+                        "GET",
+                        "/api/attachments/{id}",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!("diagnostics.ingest", "POST", "/api/ingest", Owner, Live),
+                    endpoint!(
+                        "diagnostics.openai",
+                        "POST",
+                        "/v1/chat/completions",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!("diagnostics.anthropic", "POST", "/v1/messages", Owner, Live),
+                ],
+            ),
+            surface(
+                "legacy-api",
+                Administration,
+                Retired,
+                vec![
+                    endpoint!("legacy.chat", "ANY", "/api/chat", Public, Unavailable),
+                    endpoint!(
+                        "legacy.sessions",
+                        "ANY",
+                        "/api/sessions",
+                        Public,
+                        Unavailable
+                    ),
+                ],
+            ),
+        ],
+    }
+}

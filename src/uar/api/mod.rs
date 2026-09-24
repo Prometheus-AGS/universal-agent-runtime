@@ -7,6 +7,8 @@ pub mod acp;
 pub mod actors;
 pub mod adapters;
 #[cfg(feature = "server")]
+pub mod administration_capabilities;
+#[cfg(feature = "server")]
 pub mod auth;
 #[cfg(feature = "server")]
 pub mod capabilities;

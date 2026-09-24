@@ -54,6 +54,7 @@ pub struct CapabilitiesResponse {
     pub agui: AguiProfile,
     /// Sorted, duplicate-free names from [`CAPABILITY_VOCABULARY`].
     pub capabilities: Vec<&'static str>,
+    pub administration: super::administration_capabilities::AdministrationCapabilities,
 }
 
 /// `GET /api/uar/capabilities`
@@ -68,5 +69,6 @@ pub async fn capabilities_handler() -> Json<CapabilitiesResponse> {
             profile_revision: AGUI_PROFILE_REVISION,
         },
         capabilities,
+        administration: super::administration_capabilities::administration_capabilities(),
     })
 }
