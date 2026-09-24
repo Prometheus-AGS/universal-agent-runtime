@@ -2,7 +2,10 @@
 
 use crate::{
     AppState,
-    mcp::{config::McpServerEntry, registry::McpRegistry},
+    mcp::{
+        config::{McpHttpHeaderValue, McpServerEntry, RemoteHttpGrantPolicy},
+        registry::McpRegistry,
+    },
     uar::settings::manager::SettingsManager,
 };
 use axum::{
@@ -44,6 +47,10 @@ pub struct SaveMcpServerRequest {
     #[serde(default)]
     pub env: HashMap<String, String>,
     #[serde(default)]
+    pub headers: HashMap<String, McpHttpHeaderValue>,
+    #[serde(default)]
+    pub grant_policy: Option<RemoteHttpGrantPolicy>,
+    #[serde(default)]
     pub sandboxed: bool,
 }
 
@@ -71,7 +78,12 @@ impl SaveMcpServerRequest {
                 if url.is_empty() {
                     return Err("remote MCP server URL is required".into());
                 }
-                McpServerEntry::RemoteHttp { url, env: self.env }
+                McpServerEntry::RemoteHttp {
+                    url,
+                    env: self.env,
+                    headers: self.headers,
+                    grant_policy: self.grant_policy,
+                }
             }
             other => return Err(format!("unsupported MCP transport '{other}'")),
         };
@@ -184,13 +196,28 @@ fn public_server(name: &str, stored: &StoredMcpServer, state: &AppState) -> Valu
             "sandboxed": sandboxed,
             "tools": tools,
         }),
-        McpServerEntry::RemoteHttp { url, env } => json!({
+        McpServerEntry::RemoteHttp {
+            url,
+            env,
+            headers,
+            grant_policy,
+        } => json!({
             "name": name,
             "enabled": stored.enabled,
             "connected": connected,
             "transport": "remote_http",
             "url": url,
             "envKeys": env.keys().collect::<Vec<_>>(),
+            "headerNames": headers.keys().collect::<Vec<_>>(),
+            "headerSecretReferences": headers.iter().filter_map(|(name, value)| match value {
+                McpHttpHeaderValue::SecretRef { secret_ref, credential_revision } => Some(json!({
+                    "name": name,
+                    "secretRef": secret_ref,
+                    "credentialRevision": credential_revision,
+                })),
+                McpHttpHeaderValue::Literal(_) => None,
+            }).collect::<Vec<_>>(),
+            "grantPolicy": grant_policy,
             "tools": tools,
         }),
     }

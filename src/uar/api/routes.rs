@@ -127,7 +127,9 @@ fn canonical_working_directory(
     Ok(Some(canonical))
 }
 
-pub(crate) fn attach_host_resources(
+pub(crate) async fn attach_host_resources(
+    manager: &RunManager,
+    user: &UserContext,
     request: &mut crate::uar::runtime::turn::RunExecutionRequest,
     run_credentials: Option<Vec<crate::uar::runtime::turn::host::RunCredentialInput>>,
     mcp_servers: Option<Vec<crate::uar::runtime::turn::host::RunMcpServerInput>>,
@@ -187,8 +189,10 @@ pub(crate) fn attach_host_resources(
         request.run_credentials = Some(credentials);
     }
     if let Some(servers) = mcp_servers {
-        let servers = crate::uar::runtime::turn::host::RunMcpServers::from_inputs(servers)?;
-        let server_names = servers.names();
+        let server_names = servers
+            .iter()
+            .map(|server| server.name.trim().to_owned())
+            .collect::<std::collections::BTreeSet<_>>();
         if let Some(value) = request.artifact.extensions.get("mcp_servers")
             && !value.is_null()
         {
@@ -228,9 +232,12 @@ pub(crate) fn attach_host_resources(
                     "working directory is unavailable",
                 ))
             })?;
+        let (servers, resources) = manager
+            .admit_run_mcp_servers(servers, user, owner, cwd)
+            .await?;
         request.host_resources_marker.mcp_servers = server_names.into_iter().collect();
         request.host_secret_scrubber.extend(servers.scrubber());
-        request.mcp_resources = Some(servers.resources(owner, cwd)?);
+        request.mcp_resources = Some(resources);
     }
     Ok(())
 }
@@ -305,13 +312,16 @@ async fn create_run(
     request.skill_attachments = req.skill_attachments;
     request.presentation_negotiation = req.presentation_negotiation;
     attach_host_resources(
+        &manager,
+        &user,
         &mut request,
         req.run_credentials,
         req.mcp_servers,
         req.working_directory,
         req.reasoning_effort,
         req.history,
-    )?;
+    )
+    .await?;
     let run_id = manager.execute_request(request).await;
     let run_context = manager
         .get_run(&run_id)
@@ -743,6 +753,8 @@ async fn resume_run(
     request.presentation_negotiation = req.presentation_negotiation;
     inherit_host_context(&source_run, &mut request);
     if let Err(error) = attach_host_resources(
+        &manager,
+        &user,
         &mut request,
         req.run_credentials,
         req.mcp_servers,
@@ -750,8 +762,11 @@ async fn resume_run(
         req.reasoning_effort,
         None,
     )
-    .and_then(|()| require_matching_host_resources(&source_marker, &request))
+    .await
     {
+        return error.into_response();
+    }
+    if let Err(error) = require_matching_host_resources(&source_marker, &request) {
         return error.into_response();
     }
     let new_run_id = manager.execute_request(request).await;
@@ -880,6 +895,8 @@ async fn resume_run_from_checkpoint(
     request.presentation_negotiation = req.presentation_negotiation;
     inherit_host_context(&source_run, &mut request);
     if let Err(error) = attach_host_resources(
+        &manager,
+        &user,
         &mut request,
         req.run_credentials,
         req.mcp_servers,
@@ -887,8 +904,11 @@ async fn resume_run_from_checkpoint(
         req.reasoning_effort,
         None,
     )
-    .and_then(|()| require_matching_host_resources(&source_marker, &request))
+    .await
     {
+        return error.into_response();
+    }
+    if let Err(error) = require_matching_host_resources(&source_marker, &request) {
         return error.into_response();
     }
     let new_run_id = manager.execute_request(request).await;

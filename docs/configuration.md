@@ -280,10 +280,31 @@ Configure MCP (Model Context Protocol) tool servers in `mcp.json`:
       "env": {
         "TAVILY_API_KEY": "${TAVILY_API_KEY}"
       }
+    },
+    "tenant-tools": {
+      "url": "https://tools.example.com/mcp",
+      "headers": {
+        "X-Service": "uar",
+        "Authorization": {
+          "secret_ref": "env:TENANT_TOOLS_TOKEN",
+          "credential_revision": "2026-09-24"
+        }
+      },
+      "grant_policy": {
+        "trusted_hosts": ["gofast-bff"],
+        "required_scopes": ["tenant-tools:invoke"]
+      }
     }
   }
 }
 ```
+
+Literal headers are for non-secret metadata. Credential headers use an
+`env:` secret reference plus a non-secret revision so configuration and cache
+identity never contain the credential bytes. A remote run grant selects one
+registered server name, carries an opaque downstream credential and is accepted
+only from a verified `uar:mcp:delegate` host whose `uar_instance_id` appears in
+that server's `trusted_hosts`. The inbound UAR bearer is never forwarded.
 
 Tools are auto-namespaced (`time::now`, `tavily::search`) and available to every LLM call.
 

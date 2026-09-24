@@ -33,7 +33,7 @@ use crate::uar::runtime::skills::service::SkillService;
 use crate::uar::runtime::thread::approvals::{ApprovalBroker, ApprovalOutcome};
 use futures::StreamExt;
 use std::{
-    collections::{BTreeSet, HashMap, HashSet, VecDeque},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -1197,6 +1197,52 @@ impl RunManager {
             self.root_mcp_catalog().await?,
             Arc::clone(environment),
         )))
+    }
+
+    pub(crate) async fn admit_run_mcp_servers(
+        &self,
+        inputs: Vec<crate::uar::runtime::turn::host::RunMcpServerInput>,
+        user: &crate::uar::security::claims::UserContext,
+        owner: crate::uar::runtime::actor::messages::ActorOwner,
+        working_directory: std::path::PathBuf,
+    ) -> Result<
+        (
+            crate::uar::runtime::turn::host::RunMcpServers,
+            McpRunResources,
+        ),
+        crate::uar::runtime::turn::host::HostInputError,
+    > {
+        let catalog = if inputs.iter().any(|input| input.grant.is_some()) {
+            self.root_mcp_catalog().await.map_err(|_| {
+                crate::uar::runtime::turn::host::HostInputError::new(
+                    "run_mcp_destination_unavailable",
+                    "registered MCP destinations are unavailable",
+                )
+            })?
+        } else {
+            Arc::new(McpCatalog::default())
+        };
+        let environment = match &self.mcp_environment {
+            Some(environment) => Arc::clone(environment),
+            None => Arc::new(
+                McpBindingEnvironment::new(working_directory.clone(), BTreeMap::new()).map_err(
+                    |_| {
+                        crate::uar::runtime::turn::host::HostInputError::new(
+                            "working_directory_invalid",
+                            "working directory is invalid",
+                        )
+                    },
+                )?,
+            ),
+        };
+        let servers = crate::uar::runtime::turn::host::RunMcpServers::from_inputs(
+            inputs,
+            user,
+            &catalog,
+            &environment,
+        )?;
+        let resources = servers.resources(owner, working_directory, environment.as_ref())?;
+        Ok((servers, resources))
     }
 
     /// Server and tool identities known without granting a connection. Skills

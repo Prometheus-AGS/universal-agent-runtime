@@ -20,7 +20,7 @@ use super::binding_cache::{
     McpBindingRequest, McpBindingTicket,
 };
 use super::catalog::{McpCatalog, ServerAuthentication, ServerDefinition, ServerSource};
-use super::config::McpServerEntry;
+use super::config::{McpHttpHeaderValue, McpServerEntry, expand_from_environment};
 use super::lifecycle::McpLifecycleSubscription;
 use super::preflight::{McpPreflight, McpPreflightError, prepare_servers};
 use super::projection::{McpServerProjection, ProjectedMcpTool, ServerToolCatalog};
@@ -112,6 +112,52 @@ impl RunHttpHeaders {
         Ok(Self { bearer, custom })
     }
 
+    pub(crate) fn from_configuration(
+        configuration: &McpServerEntry,
+        environment: &McpBindingEnvironment,
+        overlay: Option<&std::collections::BTreeMap<String, secrecy::SecretString>>,
+    ) -> anyhow::Result<Self> {
+        let McpServerEntry::RemoteHttp { headers, .. } = configuration else {
+            anyhow::bail!("MCP HTTP headers require a remote HTTP server");
+        };
+        let mut resolved = std::collections::BTreeMap::new();
+        for (name, value) in headers {
+            let value = match value {
+                McpHttpHeaderValue::Literal(value) => secrecy::SecretString::from(
+                    expand_from_environment(value, environment.variables())?,
+                ),
+                McpHttpHeaderValue::SecretRef { secret_ref, .. } => {
+                    let variable = secret_ref
+                        .strip_prefix("env:")
+                        .ok_or_else(|| anyhow::anyhow!("MCP header secret reference is invalid"))?;
+                    let value = environment
+                        .variables()
+                        .get(std::ffi::OsStr::new(variable))
+                        .filter(|value| !value.is_empty())
+                        .ok_or_else(|| {
+                            anyhow::anyhow!("MCP header secret reference is unresolved")
+                        })?
+                        .to_str()
+                        .ok_or_else(|| anyhow::anyhow!("MCP header secret is not UTF-8"))?;
+                    secrecy::SecretString::from(value.to_owned())
+                }
+            };
+            resolved.insert(name.clone(), value);
+        }
+        if let Some(overlay) = overlay {
+            for (name, value) in overlay {
+                anyhow::ensure!(
+                    !resolved
+                        .keys()
+                        .any(|existing| existing.eq_ignore_ascii_case(name)),
+                    "MCP header is configured by both the destination and run grant"
+                );
+                resolved.insert(name.clone(), value.clone());
+            }
+        }
+        Self::parse(&resolved)
+    }
+
     pub(crate) fn apply(
         &self,
         mut config: rmcp::transport::streamable_http_client::StreamableHttpClientTransportConfig,
@@ -130,7 +176,7 @@ impl RunHttpHeaders {
 /// Run-owned connector. It can only connect the exact HTTP names captured in
 /// the request and has no process supervisor or global configuration access.
 pub(crate) struct RunMcpConnector {
-    headers: HashMap<String, RunHttpHeaders>,
+    headers: HashMap<String, std::collections::BTreeMap<String, secrecy::SecretString>>,
 }
 
 impl fmt::Debug for RunMcpConnector {
@@ -142,7 +188,9 @@ impl fmt::Debug for RunMcpConnector {
 }
 
 impl RunMcpConnector {
-    pub(crate) fn new(headers: HashMap<String, RunHttpHeaders>) -> Self {
+    pub(crate) fn new(
+        headers: HashMap<String, std::collections::BTreeMap<String, secrecy::SecretString>>,
+    ) -> Self {
         Self { headers }
     }
 }
@@ -154,13 +202,21 @@ impl McpConnector for RunMcpConnector {
         request: Arc<McpBindingRequest>,
     ) -> Result<ConnectedMcpServer, McpBindingError> {
         let name = request.definition().name();
-        let headers = self
+        let overlay = self
             .headers
             .get(name)
             .ok_or_else(|| McpBindingError::InvalidBinding {
                 server: name.to_owned(),
             })?;
-        McpRegistry::connect_http_binding_with_headers(request, headers).await
+        let headers = RunHttpHeaders::from_configuration(
+            request.definition().configuration(),
+            request.environment(),
+            Some(overlay),
+        )
+        .map_err(|_| McpBindingError::InvalidBinding {
+            server: name.to_owned(),
+        })?;
+        McpRegistry::connect_http_binding_with_headers(request, &headers).await
     }
 
     async fn shutdown(&self) -> anyhow::Result<()> {
@@ -178,7 +234,17 @@ impl McpConnector for ConfiguredMcpConnector {
             McpServerEntry::Stdio { .. } => {
                 McpRegistry::connect_stdio_binding(request, self.processes.clone()).await
             }
-            McpServerEntry::RemoteHttp { .. } => McpRegistry::connect_http_binding(request).await,
+            McpServerEntry::RemoteHttp { .. } => {
+                let headers = RunHttpHeaders::from_configuration(
+                    request.definition().configuration(),
+                    request.environment(),
+                    None,
+                )
+                .map_err(|_| McpBindingError::InvalidBinding {
+                    server: request.definition().name().to_owned(),
+                })?;
+                McpRegistry::connect_http_binding_with_headers(request, &headers).await
+            }
         }
     }
 

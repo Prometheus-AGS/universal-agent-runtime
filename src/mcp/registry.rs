@@ -27,7 +27,8 @@ use url::Url;
 use uuid::Uuid;
 
 use super::binding_cache::{
-    ConnectedMcpServer, McpBindingError, McpBindingRequest, lifecycle_failure,
+    ConnectedMcpServer, McpBindingEnvironment, McpBindingError, McpBindingRequest,
+    lifecycle_failure,
 };
 use super::catalog::ServerAuthentication;
 use super::lifecycle::McpLifecycle;
@@ -667,16 +668,36 @@ async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<Dy
                 .await
                 .with_context(|| format!("failed to connect stdio MCP server '{name}'"))
         }
-        McpServerEntry::RemoteHttp { url, env } => {
-            let env = expand_env_map(env);
-            let endpoint = resolve_remote_http_url(name, url, &env)?;
-            ().serve(StreamableHttpClientTransport::from_uri(
-                endpoint.to_string(),
-            ))
-            .await
-            .with_context(|| format!("failed to connect remote MCP server '{name}'"))
-        }
+        McpServerEntry::RemoteHttp { .. } => connect_configured_http(name, entry).await,
     }
+}
+
+async fn connect_configured_http(
+    name: &str,
+    entry: &McpServerEntry,
+) -> anyhow::Result<DynClientService> {
+    let McpServerEntry::RemoteHttp { url, env, .. } = entry else {
+        anyhow::bail!("MCP server '{name}' is not remote HTTP");
+    };
+    let expanded_env = expand_env_map(env);
+    let endpoint = resolve_remote_http_url(name, url, &expanded_env)?;
+    let directory = std::env::current_dir().context("MCP binding cwd is unavailable")?;
+    let environment =
+        McpBindingEnvironment::resolve(directory, std::env::vars_os().collect(), entry)?;
+    let headers = super::runtime::RunHttpHeaders::from_configuration(entry, &environment, None)?;
+    let client = reqwest_mcp::Client::builder()
+        .no_proxy()
+        .redirect(reqwest_mcp::redirect::Policy::none())
+        .build()?;
+    let transport_config = headers.apply(StreamableHttpClientTransportConfig::with_uri(
+        endpoint.to_string(),
+    ));
+    ().serve(StreamableHttpClientTransport::with_client(
+        client,
+        transport_config,
+    ))
+    .await
+    .with_context(|| format!("failed to connect remote MCP server '{name}'"))
 }
 
 async fn connect_stdio_snapshot(
@@ -1057,15 +1078,6 @@ impl McpRegistry {
         Self::connect_snapshot_binding(request, service, SnapshotTransport::Stdio(processes)).await
     }
 
-    /// Connect one remote HTTP server from immutable host inputs and discover
-    /// all pages. The concrete client ignores ambient proxy variables.
-    pub(crate) async fn connect_http_binding(
-        request: Arc<McpBindingRequest>,
-    ) -> Result<ConnectedMcpServer, McpBindingError> {
-        let service = connect_http_snapshot(&request, None).await?;
-        Self::connect_snapshot_binding(request, service, SnapshotTransport::RemoteHttp(None)).await
-    }
-
     /// Connect one run-scoped HTTP server with request-owned headers. Header
     /// values never enter the serializable definition or global cache.
     pub(crate) async fn connect_http_binding_with_headers(
@@ -1316,15 +1328,7 @@ impl McpRegistry {
                     .with_context(|| format!("failed to connect stdio MCP server '{name}'"))
             }
 
-            McpServerEntry::RemoteHttp { url, env } => {
-                let env = expand_env_map(env);
-                let endpoint = resolve_remote_http_url(name, url, &env)?;
-                ().serve(StreamableHttpClientTransport::from_uri(
-                    endpoint.to_string(),
-                ))
-                .await
-                .with_context(|| format!("failed to connect remote MCP server '{name}'"))
-            }
+            McpServerEntry::RemoteHttp { .. } => connect_configured_http(name, entry).await,
         }
     }
 

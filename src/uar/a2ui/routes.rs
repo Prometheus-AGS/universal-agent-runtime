@@ -187,6 +187,8 @@ async fn continue_run(
                 .into_response()
         })?;
     crate::uar::api::routes::attach_host_resources(
+        &state.run_manager,
+        user,
         &mut request,
         host.run_credentials,
         host.mcp_servers,
@@ -194,10 +196,10 @@ async fn continue_run(
         host.reasoning_effort,
         None,
     )
-    .and_then(|()| {
-        crate::uar::api::routes::require_matching_host_resources(&source_marker, &request)
-    })
+    .await
     .map_err(|error| error.into_response())?;
+    crate::uar::api::routes::require_matching_host_resources(&source_marker, &request)
+        .map_err(|error| error.into_response())?;
     Ok(state.run_manager.execute_request(request).await)
 }
 
