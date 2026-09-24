@@ -220,7 +220,10 @@ struct SnapshotBinding {
 #[derive(Clone)]
 enum SnapshotTransport {
     Stdio(StdioProcessSupervisor),
-    RemoteHttp(Option<super::runtime::RunHttpHeaders>),
+    RemoteHttp {
+        headers: Option<super::runtime::RunHttpHeaders>,
+        credential: Option<super::runtime::RunMcpCredentialLease>,
+    },
 }
 
 type SharedClientService = Arc<RwLock<ClientServiceState>>;
@@ -389,6 +392,30 @@ fn validate_bound_service(
         anyhow::bail!("Frozen MCP connection was replaced, revoked, or closed");
     }
     Ok(())
+}
+
+fn authorize_service_slot(slot: &SharedClientService, server: &str) -> Result<(), McpBindingError> {
+    let state = slot.read().map_err(|_| McpBindingError::InvalidBinding {
+        server: server.to_owned(),
+    })?;
+    let credential = state.snapshot.as_ref().and_then(|snapshot| {
+        if let SnapshotTransport::RemoteHttp { credential, .. } = &snapshot.transport {
+            credential.clone()
+        } else {
+            None
+        }
+    });
+    let result = credential.map_or(Ok(()), |credential| credential.authorize(server));
+    if result.is_err()
+        && let Some((lifecycle, generation)) = &state.lifecycle
+    {
+        lifecycle.transition(
+            *generation,
+            McpServerState::AuthRequired,
+            Some(McpStateReason::AuthenticationRequired),
+        );
+    }
+    result
 }
 
 fn new_service_slot(
@@ -935,7 +962,13 @@ async fn reconnect_snapshot(
         SnapshotTransport::Stdio(processes) => {
             connect_stdio_snapshot(&snapshot.request, processes).await?
         }
-        SnapshotTransport::RemoteHttp(headers) => {
+        SnapshotTransport::RemoteHttp {
+            headers,
+            credential,
+        } => {
+            if let Some(credential) = credential {
+                credential.authorize(snapshot.request.definition().name())?;
+            }
             connect_http_snapshot(&snapshot.request, headers.as_ref()).await?
         }
     };
@@ -1083,12 +1116,19 @@ impl McpRegistry {
     pub(crate) async fn connect_http_binding_with_headers(
         request: Arc<McpBindingRequest>,
         headers: &super::runtime::RunHttpHeaders,
+        credential: Option<super::runtime::RunMcpCredentialLease>,
     ) -> Result<ConnectedMcpServer, McpBindingError> {
+        if let Some(credential) = &credential {
+            credential.authorize(request.definition().name())?;
+        }
         let service = connect_http_snapshot(&request, Some(headers)).await?;
         Self::connect_snapshot_binding(
             request,
             service,
-            SnapshotTransport::RemoteHttp(Some(headers.clone())),
+            SnapshotTransport::RemoteHttp {
+                headers: Some(headers.clone()),
+                credential,
+            },
         )
         .await
     }
@@ -1490,6 +1530,7 @@ impl McpRegistry {
             .clone();
         let mut connections = HashMap::new();
         for (name, slot) in &slots {
+            authorize_service_slot(slot, name)?;
             let service = current_service(slot);
             validate_bound_service(slot, &service)?;
             connections.insert(name.clone(), service);
@@ -1580,6 +1621,7 @@ impl McpRegistry {
             let slot = slots
                 .get(server)
                 .ok_or_else(|| anyhow!("Required MCP service slot is unavailable"))?;
+            authorize_service_slot(slot, server)?;
             validate_bound_service(slot, service)?;
         }
         Ok(())
@@ -2195,6 +2237,7 @@ impl McpRegistry {
             .get(&server_name)
             .cloned()
             .ok_or_else(|| anyhow!("missing server handle: {server_name}"))?;
+        authorize_service_slot(&service_slot, &server_name)?;
         let service = match &self.bound_services {
             Some(bindings) => {
                 let bound = bindings

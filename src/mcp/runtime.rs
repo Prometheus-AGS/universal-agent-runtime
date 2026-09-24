@@ -4,7 +4,7 @@
 //! its cache generation; the first governed call waits for a matching live
 //! connection and rejects a changed catalog rather than executing stale metadata.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 use std::sync::Arc;
 use std::time::Duration;
@@ -173,25 +173,152 @@ impl RunHttpHeaders {
     }
 }
 
+/// One immutable credential lifetime shared by a run's root and narrowed
+/// local children. It contains no credential bytes and cannot be renewed in
+/// place; a trusted host must establish a fresh binding at a run boundary.
+#[derive(Clone)]
+pub(crate) struct RunMcpCredentialLease {
+    expires_at_unix: u64,
+    revoked: tokio_util::sync::CancellationToken,
+}
+
+impl fmt::Debug for RunMcpCredentialLease {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("RunMcpCredentialLease")
+            .field("expires_at_unix", &self.expires_at_unix)
+            .field("revoked", &self.revoked.is_cancelled())
+            .finish()
+    }
+}
+
+impl RunMcpCredentialLease {
+    pub(crate) fn new(expires_at_unix: u64) -> Self {
+        Self {
+            expires_at_unix,
+            revoked: tokio_util::sync::CancellationToken::new(),
+        }
+    }
+
+    pub(crate) fn authorize(&self, server: &str) -> Result<(), McpBindingError> {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|duration| duration.as_secs())
+            .unwrap_or(u64::MAX);
+        if self.revoked.is_cancelled() || now >= self.expires_at_unix {
+            self.revoked.cancel();
+            return Err(McpBindingError::AuthenticationRequired {
+                server: server.to_owned(),
+            });
+        }
+        Ok(())
+    }
+
+    pub(crate) fn revoke(&self) {
+        self.revoked.cancel();
+    }
+}
+
+#[derive(Clone)]
+pub(crate) struct RunMcpConnection {
+    headers: BTreeMap<String, secrecy::SecretString>,
+    credential: Option<RunMcpCredentialLease>,
+}
+
+impl fmt::Debug for RunMcpConnection {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("RunMcpConnection")
+            .field("header_count", &self.headers.len())
+            .field("credential", &self.credential)
+            .finish()
+    }
+}
+
+impl RunMcpConnection {
+    pub(crate) fn new(
+        headers: BTreeMap<String, secrecy::SecretString>,
+        credential: Option<RunMcpCredentialLease>,
+    ) -> Self {
+        Self {
+            headers,
+            credential,
+        }
+    }
+}
+
+/// Revocation handle retained by the authenticated run host. It can only
+/// revoke already-admitted server leases and cannot add or renew authority.
+#[derive(Clone, Default)]
+pub(crate) struct RunMcpGrantControl {
+    credentials: Arc<HashMap<String, RunMcpCredentialLease>>,
+}
+
+impl fmt::Debug for RunMcpGrantControl {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("RunMcpGrantControl")
+            .field("server_count", &self.credentials.len())
+            .finish()
+    }
+}
+
+impl RunMcpGrantControl {
+    pub(crate) fn from_connections(connections: &HashMap<String, RunMcpConnection>) -> Self {
+        Self {
+            credentials: Arc::new(
+                connections
+                    .iter()
+                    .filter_map(|(name, connection)| {
+                        connection
+                            .credential
+                            .clone()
+                            .map(|credential| (name.clone(), credential))
+                    })
+                    .collect(),
+            ),
+        }
+    }
+
+    pub(crate) fn revoke(&self, server: &str) -> bool {
+        let Some(credential) = self.credentials.get(server) else {
+            return false;
+        };
+        credential.revoke();
+        true
+    }
+
+    fn revoke_all(&self) {
+        for credential in self.credentials.values() {
+            credential.revoke();
+        }
+    }
+}
+
 /// Run-owned connector. It can only connect the exact HTTP names captured in
 /// the request and has no process supervisor or global configuration access.
 pub(crate) struct RunMcpConnector {
-    headers: HashMap<String, std::collections::BTreeMap<String, secrecy::SecretString>>,
+    connections: HashMap<String, RunMcpConnection>,
+    grants: RunMcpGrantControl,
 }
 
 impl fmt::Debug for RunMcpConnector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RunMcpConnector")
-            .field("server_count", &self.headers.len())
+            .field("server_count", &self.connections.len())
             .finish()
     }
 }
 
 impl RunMcpConnector {
     pub(crate) fn new(
-        headers: HashMap<String, std::collections::BTreeMap<String, secrecy::SecretString>>,
+        connections: HashMap<String, RunMcpConnection>,
+        grants: RunMcpGrantControl,
     ) -> Self {
-        Self { headers }
+        Self {
+            connections,
+            grants,
+        }
     }
 }
 
@@ -202,24 +329,30 @@ impl McpConnector for RunMcpConnector {
         request: Arc<McpBindingRequest>,
     ) -> Result<ConnectedMcpServer, McpBindingError> {
         let name = request.definition().name();
-        let overlay = self
-            .headers
-            .get(name)
-            .ok_or_else(|| McpBindingError::InvalidBinding {
-                server: name.to_owned(),
-            })?;
+        let connection =
+            self.connections
+                .get(name)
+                .ok_or_else(|| McpBindingError::InvalidBinding {
+                    server: name.to_owned(),
+                })?;
         let headers = RunHttpHeaders::from_configuration(
             request.definition().configuration(),
             request.environment(),
-            Some(overlay),
+            Some(&connection.headers),
         )
         .map_err(|_| McpBindingError::InvalidBinding {
             server: name.to_owned(),
         })?;
-        McpRegistry::connect_http_binding_with_headers(request, &headers).await
+        McpRegistry::connect_http_binding_with_headers(
+            request,
+            &headers,
+            connection.credential.clone(),
+        )
+        .await
     }
 
     async fn shutdown(&self) -> anyhow::Result<()> {
+        self.grants.revoke_all();
         Ok(())
     }
 }
@@ -243,7 +376,7 @@ impl McpConnector for ConfiguredMcpConnector {
                 .map_err(|_| McpBindingError::InvalidBinding {
                     server: request.definition().name().to_owned(),
                 })?;
-                McpRegistry::connect_http_binding_with_headers(request, &headers).await
+                McpRegistry::connect_http_binding_with_headers(request, &headers, None).await
             }
         }
     }
@@ -322,6 +455,7 @@ pub struct McpRunResources {
     catalog: Arc<McpCatalog>,
     environment: Arc<McpBindingEnvironment>,
     run_scoped_names: Option<Arc<std::collections::BTreeSet<String>>>,
+    run_grants: Option<RunMcpGrantControl>,
 }
 
 impl McpRunResources {
@@ -339,6 +473,7 @@ impl McpRunResources {
             catalog,
             environment,
             run_scoped_names: None,
+            run_grants: None,
         }
     }
 
@@ -350,6 +485,7 @@ impl McpRunResources {
         catalog: Arc<McpCatalog>,
         environment: Arc<McpBindingEnvironment>,
         names: std::collections::BTreeSet<String>,
+        run_grants: RunMcpGrantControl,
     ) -> Self {
         Self {
             owner,
@@ -357,6 +493,7 @@ impl McpRunResources {
             catalog,
             environment,
             run_scoped_names: Some(Arc::new(names)),
+            run_grants: Some(run_grants),
         }
     }
 
@@ -384,6 +521,10 @@ impl McpRunResources {
     /// configured catalog.
     pub(crate) fn run_scoped_names(&self) -> Option<&Arc<std::collections::BTreeSet<String>>> {
         self.run_scoped_names.as_ref()
+    }
+
+    pub(crate) fn run_grants(&self) -> Option<&RunMcpGrantControl> {
+        self.run_grants.as_ref()
     }
 }
 
@@ -552,6 +693,12 @@ impl McpRuntimeManager {
     pub async fn invalidate_server(&self, server: &str) {
         self.cache.invalidate_server(server);
         self.cache.reap_retired().await;
+    }
+
+    /// Publish that a run credential must be refreshed without selecting or
+    /// constructing a replacement credential.
+    pub(crate) fn require_authentication(&self, server: &str) {
+        self.cache.require_authentication(server);
     }
 }
 

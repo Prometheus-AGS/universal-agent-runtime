@@ -100,6 +100,9 @@ impl std::fmt::Debug for McpHttpHeaderValue {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RemoteHttpGrantPolicy {
+    /// Stable administrator-assigned destination identity retained across
+    /// credential renewal without exposing the endpoint or configuration hash.
+    pub destination_id: String,
     /// Authenticated host instance IDs allowed to delegate run credentials.
     pub trusted_hosts: BTreeSet<String>,
     /// Every scope named here must be present in the run grant.
@@ -176,6 +179,15 @@ impl McpServerEntry {
                 }
             }
             if let Some(policy) = grant_policy {
+                anyhow::ensure!(
+                    !policy.destination_id.trim().is_empty()
+                        && policy.destination_id.len() <= 128
+                        && policy.destination_id.bytes().all(|byte| {
+                            byte.is_ascii_alphanumeric()
+                                || matches!(byte, b'.' | b'_' | b':' | b'-')
+                        }),
+                    "MCP server {name:?} grant policy requires a valid destination ID"
+                );
                 anyhow::ensure!(
                     !policy.trusted_hosts.is_empty()
                         && policy

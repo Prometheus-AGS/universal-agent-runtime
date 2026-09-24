@@ -596,6 +596,24 @@ impl McpBindingCache {
         self.invalidate_matching(|candidate| candidate.server == server);
     }
 
+    /// Mark every live binding for one server as requiring host renewal. This
+    /// does not choose a replacement credential or replay an in-flight call.
+    pub(crate) fn require_authentication(&self, server: &str) {
+        let state = self
+            .state
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        for (key, entry) in &state.entries {
+            if key.server == server {
+                entry.lifecycle.transition(
+                    entry.generation,
+                    McpServerState::AuthRequired,
+                    Some(McpStateReason::AuthenticationRequired),
+                );
+            }
+        }
+    }
+
     /// Retire a disconnected transport but preserve its complete catalog for a
     /// later lazy start. Existing prepared steps are invalidated, not retargeted.
     ///

@@ -291,6 +291,7 @@ Configure MCP (Model Context Protocol) tool servers in `mcp.json`:
         }
       },
       "grant_policy": {
+        "destination_id": "tenant-tools-production",
         "trusted_hosts": ["gofast-bff"],
         "required_scopes": ["tenant-tools:invoke"]
       }
@@ -305,6 +306,46 @@ identity never contain the credential bytes. A remote run grant selects one
 registered server name, carries an opaque downstream credential and is accepted
 only from a verified `uar:mcp:delegate` host whose `uar_instance_id` appears in
 that server's `trusted_hosts`. The inbound UAR bearer is never forwarded.
+
+### Trusted host run-grant contract
+
+A BFF authenticates its human or tenant first, then calls UAR with a JWT that
+has the `uar:mcp:delegate` role and a verified `uar_instance_id`. The instance
+ID must be listed by the selected server's `grant_policy`; an ordinary user JWT
+or a model-supplied tenant argument cannot delegate outbound identity.
+
+For `POST /api/uar/runs`, each registered remote entry in `mcp_servers` omits
+`url` and supplies a grant:
+
+```json
+{
+  "name": "tenant-tools",
+  "grant": {
+    "credential_revision": "tenant-42:session-19",
+    "scopes": ["tenant-tools:invoke"],
+    "expires_at_unix": 1790280000,
+    "headers": {
+      "Authorization": "Bearer downstream-audience-bound-token"
+    }
+  }
+}
+```
+
+UAR resolves the URL from the administrator-registered destination, freezes
+the approved headers for initialization, discovery, calls, and reconnect, and
+isolates the binding by verified owner and credential revision. Grant metadata
+stored with a run contains no URL or credential bytes.
+
+Expiry stops new calls and reports `auth_required`; UAR never falls back to a
+global credential. Renew at a safe boundary by sending a fresh grant to the
+run resume endpoint. The renewed grant must retain the original destination
+and trusted host, may only narrow scopes, and must rotate `credential_revision`
+to extend its expiry. UAR establishes a new MCP session and never replays the
+failed or uncertain tool call. To revoke an active grant, call
+`POST /api/uar/runs/{run_id}/mcp-grants/{server}/revoke`; revocation cancels the
+run and requires an authenticated resume with a compatible grant. Run
+cancellation and completion revoke all retained run credentials and close
+their connections.
 
 Tools are auto-namespaced (`time::now`, `tavily::search`) and available to every LLM call.
 

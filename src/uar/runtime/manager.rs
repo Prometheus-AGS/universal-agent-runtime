@@ -1541,6 +1541,43 @@ impl RunManager {
         self.cancel_run(run_id).await
     }
 
+    /// Revoke one run-owned remote MCP credential for its exact verified
+    /// owner. Revocation cannot install a replacement; the host must resume at
+    /// a safe boundary with a compatible renewed grant.
+    pub(crate) async fn revoke_run_mcp_grant_for_context(
+        &self,
+        user: &crate::uar::security::claims::UserContext,
+        run_id: &str,
+        server: &str,
+    ) -> bool {
+        if self.get_run_for_context(user, run_id).await.is_none() {
+            return false;
+        }
+        let resources = self
+            .active_runs
+            .read()
+            .await
+            .get(run_id)
+            .and_then(|state| state.delegation.as_ref())
+            .and_then(std::sync::Weak::upgrade);
+        let Some(resources) = resources else {
+            return false;
+        };
+        let Some(grants) = &resources.run_mcp_grants else {
+            return false;
+        };
+        if !grants.revoke(server) {
+            return false;
+        }
+        if let Some(runtime) = &resources.run_scoped_mcp {
+            runtime.require_authentication(server);
+        }
+        resources.cancellation.cancel();
+        let _ = self.cancel_run(run_id).await;
+        tracing::info!(run_id = %run_id, server = %server, "Run MCP credential revoked");
+        true
+    }
+
     /// Cancel the current in-flight run associated with a conversation session.
     ///
     /// Service clients receive a stable session identifier before the first
@@ -3912,6 +3949,9 @@ impl RunManager {
                         .as_ref()
                         .filter(|resources| resources.run_scoped_names().is_some())
                         .map(|resources| resources.runtime().clone()),
+                    run_mcp_grants: mcp_resources
+                        .as_ref()
+                        .and_then(|resources| resources.run_grants().cloned()),
                 })
             }),
         );

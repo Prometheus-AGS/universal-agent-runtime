@@ -58,6 +58,7 @@ pub(crate) struct RunDelegationBindings {
     pub(crate) approvals: crate::uar::runtime::thread::approvals::RootApprovalChannel,
     pub(crate) cancellation: tokio_util::sync::CancellationToken,
     pub(crate) run_scoped_mcp: Option<crate::mcp::runtime::McpRuntimeManager>,
+    pub(crate) run_mcp_grants: Option<crate::mcp::runtime::RunMcpGrantControl>,
 }
 
 impl std::fmt::Debug for RunDelegationBindings {

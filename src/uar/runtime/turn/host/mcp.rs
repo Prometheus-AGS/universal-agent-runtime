@@ -11,7 +11,10 @@ use super::HostInputError;
 use crate::mcp::binding_cache::{McpBindingCache, McpBindingEnvironment};
 use crate::mcp::catalog::{McpCatalog, ServerAuthentication, ServerDefinition, ServerSource};
 use crate::mcp::config::{McpServerEntry, RemoteHttpGrantPolicy, expand_from_environment};
-use crate::mcp::runtime::{McpRunResources, McpRuntimeManager, RunHttpHeaders, RunMcpConnector};
+use crate::mcp::runtime::{
+    McpRunResources, McpRuntimeManager, RunHttpHeaders, RunMcpConnection, RunMcpConnector,
+    RunMcpCredentialLease, RunMcpGrantControl,
+};
 use crate::uar::runtime::actor::messages::ActorOwner;
 
 #[derive(Clone, Deserialize)]
@@ -64,6 +67,8 @@ struct RunMcpServer {
     authentication: ServerAuthentication,
     secret_values: Vec<SecretString>,
     headers: BTreeMap<String, SecretString>,
+    credential: Option<RunMcpCredentialLease>,
+    grant_marker: Option<super::HostMcpGrantMarker>,
 }
 
 /// Complete request-owned MCP universe. It deliberately has no Serialize impl.
@@ -131,6 +136,13 @@ impl RunMcpServers {
         )
     }
 
+    pub(crate) fn grant_markers(&self) -> Vec<super::HostMcpGrantMarker> {
+        self.0
+            .iter()
+            .filter_map(|server| server.grant_marker.clone())
+            .collect()
+    }
+
     pub(crate) fn resources(
         &self,
         owner: ActorOwner,
@@ -138,7 +150,7 @@ impl RunMcpServers {
         inherited_environment: &McpBindingEnvironment,
     ) -> Result<McpRunResources, HostInputError> {
         let mut definitions = Vec::with_capacity(self.0.len());
-        let mut headers = HashMap::new();
+        let mut connections = HashMap::new();
         for server in &self.0 {
             definitions.push(
                 ServerDefinition::new(
@@ -155,7 +167,10 @@ impl RunMcpServers {
                     )
                 })?,
             );
-            headers.insert(server.name.clone(), server.headers.clone());
+            connections.insert(
+                server.name.clone(),
+                RunMcpConnection::new(server.headers.clone(), server.credential.clone()),
+            );
         }
         let catalog = McpCatalog::from_definitions(definitions).map_err(|_| {
             HostInputError::new("run_mcp_server_invalid", "MCP server catalog is invalid")
@@ -167,9 +182,10 @@ impl RunMcpServers {
         .map_err(|_| {
             HostInputError::new("working_directory_invalid", "working directory is invalid")
         })?;
+        let grants = RunMcpGrantControl::from_connections(&connections);
         let runtime = McpRuntimeManager::new(
             McpBindingCache::default(),
-            Arc::new(RunMcpConnector::new(headers)),
+            Arc::new(RunMcpConnector::new(connections, grants.clone())),
             Duration::from_secs(15),
             Duration::from_secs(60),
         )
@@ -185,6 +201,7 @@ impl RunMcpServers {
             Arc::new(catalog),
             Arc::new(environment),
             self.names(),
+            grants,
         ))
     }
 }
@@ -224,6 +241,8 @@ fn direct_loopback_server(
         },
         secret_values,
         headers,
+        credential: None,
+        grant_marker: None,
     })
 }
 
@@ -303,6 +322,15 @@ fn trusted_destination_server(
             "remote MCP grant owner is invalid",
         )
     })?;
+    let credential = RunMcpCredentialLease::new(grant.expires_at_unix);
+    let grant_marker = super::HostMcpGrantMarker {
+        server: name.to_owned(),
+        destination_id: policy.destination_id.clone(),
+        trusted_host: host_id.to_owned(),
+        scopes: grant.scopes.clone(),
+        credential_revision: grant.credential_revision.clone(),
+        expires_at_unix: grant.expires_at_unix,
+    };
     Ok(RunMcpServer {
         name: name.to_owned(),
         configuration: definition.configuration().clone(),
@@ -315,6 +343,8 @@ fn trusted_destination_server(
         },
         secret_values,
         headers: grant.headers,
+        credential: Some(credential),
+        grant_marker: Some(grant_marker),
     })
 }
 
@@ -346,12 +376,17 @@ fn validate_grant_policy(
             .credential_revision
             .bytes()
             .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b':' | b'-'))
-        || grant.expires_at_unix <= now
         || !policy.required_scopes.is_subset(&grant.scopes)
     {
         return Err(HostInputError::new(
             "run_mcp_grant_forbidden",
             "remote MCP grant is not valid for this host, destination, scope, or time",
+        ));
+    }
+    if grant.expires_at_unix <= now {
+        return Err(HostInputError::new(
+            "run_mcp_grant_authentication_required",
+            "remote MCP grant is expired and must be renewed",
         ));
     }
     if grant.scopes.iter().any(|scope| scope.trim().is_empty()) {

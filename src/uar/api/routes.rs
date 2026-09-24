@@ -25,6 +25,10 @@ pub fn build_router() -> Router<Arc<RunManager>> {
         .route("/runs/{run_id}/tool-approval", post(api_tool_approval))
         .route("/runs/{run_id}/cancel", post(api_cancel_run))
         .route(
+            "/runs/{run_id}/mcp-grants/{server}/revoke",
+            post(api_revoke_run_mcp_grant),
+        )
+        .route(
             "/sessions/{session_id}/cancel",
             post(api_cancel_session_run),
         )
@@ -81,7 +85,11 @@ pub(crate) struct RunApiError {
 impl From<crate::uar::runtime::turn::host::HostInputError> for RunApiError {
     fn from(error: crate::uar::runtime::turn::host::HostInputError) -> Self {
         Self {
-            status: StatusCode::UNPROCESSABLE_ENTITY,
+            status: if error.code == "run_mcp_grant_authentication_required" {
+                StatusCode::UNAUTHORIZED
+            } else {
+                StatusCode::UNPROCESSABLE_ENTITY
+            },
             code: error.code,
             message: error.message.to_string(),
         }
@@ -236,6 +244,7 @@ pub(crate) async fn attach_host_resources(
             .admit_run_mcp_servers(servers, user, owner, cwd)
             .await?;
         request.host_resources_marker.mcp_servers = server_names.into_iter().collect();
+        request.host_resources_marker.mcp_grants = servers.grant_markers();
         request.host_secret_scrubber.extend(servers.scrubber());
         request.mcp_resources = Some(resources);
     }
@@ -264,6 +273,21 @@ pub(crate) fn require_matching_host_resources(
         return Err(crate::uar::runtime::turn::host::HostInputError::new(
             "run_mcp_servers_required",
             "resume must reattach the source run MCP servers",
+        )
+        .into());
+    }
+    let renewed = &request.host_resources_marker.mcp_grants;
+    if marker.mcp_grants.len() != renewed.len()
+        || marker.mcp_grants.iter().any(|source| {
+            renewed
+                .iter()
+                .find(|candidate| candidate.server == source.server)
+                .is_none_or(|candidate| !source.accepts_renewal(candidate))
+        })
+    {
+        return Err(crate::uar::runtime::turn::host::HostInputError::new(
+            "run_mcp_grant_authentication_required",
+            "resume requires a same-owner MCP grant for the original destination and scope",
         )
         .into());
     }
@@ -604,6 +628,34 @@ async fn api_cancel_run(
     }
     let cancelled = manager.cancel_run_for_context(&user, &run_id).await;
     Json(serde_json::json!({ "cancelled": cancelled })).into_response()
+}
+
+/// POST /api/uar/runs/{run_id}/mcp-grants/{server}/revoke
+///
+/// Revoke an admitted downstream credential and cancel its run. A replacement
+/// is accepted only through the ordinary authenticated resume boundary.
+async fn api_revoke_run_mcp_grant(
+    State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
+    Path((run_id, server)): Path<(String, String)>,
+) -> impl IntoResponse {
+    if manager.get_run_for_context(&user, &run_id).await.is_none() {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({ "revoked": false })),
+        )
+            .into_response();
+    }
+    let revoked = manager
+        .revoke_run_mcp_grant_for_context(&user, &run_id, &server)
+        .await;
+    Json(serde_json::json!({
+        "run_id": run_id,
+        "server": server,
+        "revoked": revoked,
+        "renewal": if revoked { "resume_required" } else { "not_applicable" },
+    }))
+    .into_response()
 }
 
 /// POST /api/uar/sessions/{session_id}/cancel

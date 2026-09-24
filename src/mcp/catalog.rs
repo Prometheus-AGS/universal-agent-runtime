@@ -338,6 +338,7 @@ fn hash_configuration(configuration: &McpServerEntry) -> ServerConfigHash {
             match grant_policy {
                 Some(policy) => {
                     hasher.update([1]);
+                    hash_field(&mut hasher, &policy.destination_id);
                     hasher.update((policy.trusted_hosts.len() as u64).to_be_bytes());
                     for host in &policy.trusted_hosts {
                         hash_field(&mut hasher, host);
