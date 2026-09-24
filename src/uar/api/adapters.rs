@@ -97,8 +97,8 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
                 "threadId": run_id, "runId": run_id
             }),
         ),
-        NormalizedEvent::ThinkingDelta { run_id, text_delta }
-        | NormalizedEvent::ReasoningDelta { run_id, text_delta } => (
+        NormalizedEvent::ThinkingDelta { .. } => return None,
+        NormalizedEvent::ReasoningDelta { run_id, text_delta } => (
             "REASONING_MESSAGE_CONTENT",
             serde_json::json!({
                 "type": "REASONING_MESSAGE_CONTENT", "profile": PROFILE,
@@ -164,14 +164,18 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
         NormalizedEvent::ToolEnd {
             run_id,
             tool_call_id,
+            tool,
             output,
+            ok,
             ..
         } => (
             "TOOL_CALL_RESULT",
             serde_json::json!({
                 "type": "TOOL_CALL_RESULT", "profile": PROFILE,
                 "messageId": format!("{run_id}:tool:{tool_call_id}"),
-                "toolCallId": tool_call_id, "content": output.to_string(),
+                "toolCallId": tool_call_id, "toolCallName": tool,
+                "content": output.to_string(),
+                "isError": !ok,
                 "role": "tool", "threadId": run_id, "runId": run_id
             }),
         ),
@@ -276,6 +280,7 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
                 event_type,
                 serde_json::json!({
                     "type": event_type, "profile": PROFILE,
+                    "stepId": format!("step-{step}"),
                     "stepName": format!("step-{step}"),
                     "threadId": run_id, "runId": run_id
                 }),

@@ -1,7 +1,10 @@
 use crate::uar::{
     api::sse::{build_agui_replay_snapshot, build_sse_response},
     domain::artifact::AgentArtifact,
-    runtime::{checkpoint::Checkpoint, manager::RunManager},
+    runtime::{
+        checkpoint::Checkpoint,
+        manager::{RunManager, StreamEvent},
+    },
     security::claims::UserContext,
 };
 use axum::{
@@ -14,7 +17,6 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio_stream::StreamExt;
-use tokio_stream::wrappers::BroadcastStream;
 
 pub fn build_router() -> Router<Arc<RunManager>> {
     Router::new()
@@ -364,11 +366,17 @@ async fn stream_run(
             .unwrap_or_default();
         let cursor =
             last_event_id.unwrap_or_else(|| full_history.last().map_or(0, |event| event.id));
-        let replay = full_history
+        let mut replay = full_history
             .iter()
             .filter(|event| event.id > cursor)
             .cloned()
             .collect::<Vec<_>>();
+        if replay
+            .first()
+            .is_some_and(|event| event.id > cursor.saturating_add(1))
+        {
+            replay = vec![unrecoverable_stream_gap(&run_id, cursor)];
+        }
         let replay_max_id = replay.last().map_or(cursor, |event| event.id);
         let snapshot = build_agui_replay_snapshot(&run_id, &full_history, cursor);
         (replay, replay_max_id, Some(snapshot))
@@ -381,10 +389,48 @@ async fn stream_run(
         (replay, replay_max_id, None)
     };
 
-    // Convert Broadcast Receiver to Stream
-    let live_stream = BroadcastStream::new(rx)
-        .filter_map(Result::ok)
-        .filter(move |event| event.id > replay_max_id);
+    let live_manager = Arc::clone(&manager);
+    let live_run_id = run_id.clone();
+    let live_stream = async_stream::stream! {
+        let mut rx = rx;
+        let mut last_id = replay_max_id;
+        loop {
+            match rx.recv().await {
+                Ok(event) if event.id <= last_id => {}
+                Ok(event) if event.id == last_id.saturating_add(1) => {
+                    last_id = event.id;
+                    yield event;
+                }
+                Ok(event) => {
+                    yield unrecoverable_stream_gap(&live_run_id, last_id);
+                    break;
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                    let Some(recovered) = live_manager.history_since(&live_run_id, Some(last_id)).await else {
+                        yield unrecoverable_stream_gap(&live_run_id, last_id);
+                        break;
+                    };
+                    let mut complete = true;
+                    for event in recovered {
+                        if event.id <= last_id {
+                            continue;
+                        }
+                        if event.id != last_id.saturating_add(1) {
+                            complete = false;
+                            break;
+                        }
+                        last_id = event.id;
+                        yield event;
+                    }
+                    if !complete {
+                        yield unrecoverable_stream_gap(&live_run_id, last_id);
+                        break;
+                    }
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+            }
+        }
+    };
 
     // Last-subscriber-drop guard: tied to the stream's lifetime so that when the
     // client disconnects (stream dropped), the run is cancelled iff no other
@@ -415,6 +461,17 @@ async fn stream_run(
     };
 
     build_sse_response(stream, agui_spec, replay_snapshot).into_response()
+}
+
+fn unrecoverable_stream_gap(run_id: &str, last_id: u64) -> StreamEvent {
+    StreamEvent {
+        id: last_id.saturating_add(1),
+        event: crate::uar::domain::events::NormalizedEvent::Error {
+            run_id: run_id.to_owned(),
+            code: "STREAM_GAP".to_owned(),
+            message: "Run stream lost events that are no longer available for replay".to_owned(),
+        },
+    }
 }
 
 #[derive(Deserialize)]
