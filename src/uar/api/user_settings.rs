@@ -26,7 +26,7 @@ use crate::uar::{
     runtime::user_settings_store::{
         PromptCachingPreferenceUpdate, UserSettingsStore, UserSettingsUpdate,
     },
-    security::claims::UserContext,
+    security::{claims::UserContext, sidecar_guard::HostAuthenticated},
 };
 
 // ---------------------------------------------------------------------------
@@ -99,18 +99,23 @@ struct UpdateSettingsRequest {
 
 /// Extract the authenticated user ID from request extensions.
 ///
-/// Returns `None` when the request is anonymous (no JWT claims set by the
-/// auth middleware).
+/// The normal server requires a bearer credential. The supervised sidecar
+/// consumes its launch-token bearer at the outer guard, then admits the host's
+/// asserted principal through [`HostAuthenticated`].
 fn require_jwt_user(
     headers: &HeaderMap,
     user_ctx: Option<axum::Extension<UserContext>>,
+    host_authenticated: Option<axum::Extension<HostAuthenticated>>,
 ) -> Option<UserContext> {
     if headers.contains_key("x-api-key") {
         return None;
     }
-    let authorization = headers.get(header::AUTHORIZATION)?.to_str().ok()?;
-    let token = authorization.strip_prefix("Bearer ")?;
-    if token.is_empty() {
+    let has_bearer = headers
+        .get(header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.strip_prefix("Bearer "))
+        .is_some_and(|token| !token.is_empty());
+    if !has_bearer && host_authenticated.is_none() {
         return None;
     }
     let ctx = user_ctx?.0;
@@ -160,8 +165,9 @@ async fn get_settings(
     State(store): State<Arc<UserSettingsStore>>,
     headers: HeaderMap,
     user_ctx: Option<axum::Extension<UserContext>>,
+    host_authenticated: Option<axum::Extension<HostAuthenticated>>,
 ) -> impl IntoResponse {
-    let Some(user_ctx) = require_jwt_user(&headers, user_ctx) else {
+    let Some(user_ctx) = require_jwt_user(&headers, user_ctx, host_authenticated) else {
         return (
             StatusCode::UNAUTHORIZED,
             Json(serde_json::json!({ "error": "Authentication required" })),
@@ -185,9 +191,10 @@ async fn update_settings(
     State(store): State<Arc<UserSettingsStore>>,
     headers: HeaderMap,
     user_ctx: Option<axum::Extension<UserContext>>,
+    host_authenticated: Option<axum::Extension<HostAuthenticated>>,
     Json(req): Json<UpdateSettingsRequest>,
 ) -> impl IntoResponse {
-    let Some(user_ctx) = require_jwt_user(&headers, user_ctx) else {
+    let Some(user_ctx) = require_jwt_user(&headers, user_ctx, host_authenticated) else {
         return (
             StatusCode::UNAUTHORIZED,
             Json(serde_json::json!({ "error": "Authentication required" })),
@@ -285,7 +292,7 @@ mod tests {
         let ctx = user_context("sam", None);
         let mut headers = HeaderMap::new();
         headers.insert("x-api-key", "pat-value".parse().expect("header"));
-        assert!(require_jwt_user(&headers, Some(axum::Extension(ctx))).is_none());
+        assert!(require_jwt_user(&headers, Some(axum::Extension(ctx)), None).is_none());
     }
 
     #[test]
@@ -297,6 +304,6 @@ mod tests {
             "Bearer ambiguous".parse().expect("authorization"),
         );
         headers.insert("x-api-key", "pat-value".parse().expect("API key"));
-        assert!(require_jwt_user(&headers, Some(axum::Extension(ctx))).is_none());
+        assert!(require_jwt_user(&headers, Some(axum::Extension(ctx)), None).is_none());
     }
 }

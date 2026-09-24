@@ -1404,6 +1404,12 @@ async fn run_server_with_listener(
         admin_auth_required: config.security.settings_mutation_auth_required,
         admin_key: config.security.settings_admin_key.clone(),
     };
+    let a2ui_api_state = uar::a2ui::routes::A2uiApiState {
+        registry: Arc::clone(&state.a2ui_registry),
+        run_manager: Arc::clone(&state.run_manager),
+        realtime_backbone: Arc::clone(&a2ui_realtime_backbone),
+        design_system_store: Arc::clone(&a2ui_design_system_store),
+    };
 
     // ── Shared ingestion worker pool ─────────────────────────────────────────────
     // Built once before router assembly. A single `Arc` is cloned into both
@@ -1517,7 +1523,12 @@ async fn run_server_with_listener(
         .route("/api/sessions/{*path}", any(legacy_sessions_route_disabled))
         .nest(
             "/api/uar",
-            uar::api::router().with_state(Arc::clone(&state.run_manager)),
+            uar::api::router()
+                .with_state::<AppState>(Arc::clone(&state.run_manager))
+                .merge(
+                    uar::a2ui::routes::build_response_router()
+                        .with_state::<AppState>(a2ui_api_state.clone()),
+                ),
         )
         // Skills API
         .nest(
@@ -1605,25 +1616,10 @@ async fn run_server_with_listener(
             "/api/uar/presentations",
             uar::api::presentations::build_router().with_state(Arc::clone(&persistence_layer)),
         )
-        .nest("/api/uar/a2ui", {
-            let a2ui_state = uar::a2ui::routes::A2uiApiState {
-                registry: Arc::clone(&state.a2ui_registry),
-                run_manager: Arc::clone(&state.run_manager),
-                realtime_backbone: Arc::clone(&a2ui_realtime_backbone),
-                design_system_store: Arc::clone(&a2ui_design_system_store),
-            };
-            uar::a2ui::routes::build_schema_router().with_state(a2ui_state)
-        })
-        // A2UI artifact-response injection (shares /api/uar/runs prefix)
-        .nest("/api/uar/runs", {
-            let a2ui_state = uar::a2ui::routes::A2uiApiState {
-                registry: Arc::clone(&state.a2ui_registry),
-                run_manager: Arc::clone(&state.run_manager),
-                realtime_backbone: Arc::clone(&a2ui_realtime_backbone),
-                design_system_store: Arc::clone(&a2ui_design_system_store),
-            };
-            uar::a2ui::routes::build_response_router().with_state(a2ui_state)
-        })
+        .nest(
+            "/api/uar/a2ui",
+            uar::a2ui::routes::build_schema_router().with_state(a2ui_api_state),
+        )
         // Tool-call approval HITL gate: POST /api/uar/runs/{run_id}/approval
         .route(
             "/api/uar/runs/{run_id}/approval",

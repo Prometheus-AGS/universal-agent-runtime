@@ -741,22 +741,28 @@ pub fn build_schema_router() -> Router<A2uiApiState> {
         )
 }
 
-/// Build the artifact-response router (mounted at `/api/uar/runs`).
+/// Build the run-adjacent A2UI router (merged into the `/api/uar` router).
 ///
 /// This is separate from the schema router because it shares the path prefix
 /// with the main runs API.
 pub fn build_response_router() -> Router<A2uiApiState> {
     Router::new()
         .route(
-            "/{run_id}/artifact-response",
+            "/runs/{run_id}/artifact-response",
             post(submit_artifact_response),
         )
-        .route("/{run_id}/a2ui/test-trigger", post(test_trigger_artifact))
         .route(
-            "/{run_id}/a2ui/surface-test-trigger",
+            "/runs/{run_id}/a2ui/test-trigger",
+            post(test_trigger_artifact),
+        )
+        .route(
+            "/runs/{run_id}/a2ui/surface-test-trigger",
             post(surface_test_trigger),
         )
-        .route("/{run_id}/a2ui/surface-replay", get(surface_replay))
-        .route("/{run_id}/a2ui/messages", post(submit_messages))
-        .route("/{run_id}/a2ui/actions", post(submit_action))
+        .route(
+            "/runs/{run_id}/a2ui/surface-replay",
+            get(surface_replay),
+        )
+        .route("/runs/{run_id}/a2ui/messages", post(submit_messages))
+        .route("/runs/{run_id}/a2ui/actions", post(submit_action))
 }
