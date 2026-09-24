@@ -1409,6 +1409,7 @@ async fn run_server_with_listener(
         run_manager: Arc::clone(&state.run_manager),
         realtime_backbone: Arc::clone(&a2ui_realtime_backbone),
         design_system_store: Arc::clone(&a2ui_design_system_store),
+        persistence: persistence.clone(),
     };
 
     // ── Shared ingestion worker pool ─────────────────────────────────────────────

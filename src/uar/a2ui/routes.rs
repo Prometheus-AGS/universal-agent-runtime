@@ -15,7 +15,7 @@ use std::sync::Arc;
 
 use axum::{
     Extension, Json, Router,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
@@ -31,8 +31,10 @@ use super::realtime::{
     A2uiReplayBackbone, A2uiWireKind, InMemoryReplayBackbone, surface_message_to_state_patch,
 };
 use super::registry::A2uiRegistry;
+use super::schema::ArtifactSchema;
 use crate::uar::{
     domain::events::{ArtifactPayload, NormalizedEvent},
+    persistence::PersistenceLayer,
     runtime::manager::RunManager,
     security::claims::UserContext,
 };
@@ -51,6 +53,8 @@ pub struct A2uiApiState {
     /// UAR-owned durable A2UI component library. Clients may promote a
     /// rendered artifact into this library, but never own the canonical data.
     pub design_system_store: SharedDesignSystemStore,
+    /// Agent definitions are consulted before deleting schemas they reference.
+    pub persistence: Option<Arc<dyn PersistenceLayer>>,
 }
 
 // ── Request / response types ──────────────────────────────────────────────────
@@ -122,6 +126,49 @@ pub struct PromoteComponentPayload {
     pub source: String,
     #[serde(default)]
     pub description: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CustomSchemaCreatePayload {
+    schema: ArtifactSchema,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CustomSchemaUpdatePayload {
+    expected_revision: String,
+    schema: ArtifactSchema,
+}
+
+#[derive(Debug, Serialize)]
+struct CustomSchemaRecord {
+    schema: ArtifactSchema,
+    revision: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct UpdateComponentPayload {
+    expected_revision: String,
+    title: String,
+    source: String,
+    #[serde(default)]
+    description: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RevisionQuery {
+    expected_revision: String,
+}
+
+#[derive(Debug, Serialize)]
+struct BuiltinComponent {
+    id: &'static str,
+    title: &'static str,
+    category: &'static str,
+    builtin: bool,
 }
 
 /// Request body for `POST /api/uar/runs/{run_id}/a2ui/test-trigger`.
@@ -239,7 +286,18 @@ async fn surface_run(
 ///
 /// Returns all schemas registered in the A2UI registry (built-ins + user-defined).
 async fn list_schemas(State(state): State<A2uiApiState>) -> impl IntoResponse {
-    let schemas = state.registry.list().await;
+    let mut schemas = state.registry.list().await;
+    if let Ok(components) = state.design_system_store.list_components().await {
+        schemas.extend(
+            components
+                .into_iter()
+                .filter(|component| component.category == "schema")
+                .filter_map(|component| {
+                    serde_json::from_value::<ArtifactSchema>(component.schema).ok()
+                }),
+        );
+        schemas.sort_by(|left, right| left.schema_id.cmp(&right.schema_id));
+    }
     Json(schemas)
 }
 
@@ -251,11 +309,344 @@ async fn get_schema(
     State(state): State<A2uiApiState>,
     Path(schema_id): Path<String>,
 ) -> impl IntoResponse {
-    match state.registry.get(&schema_id).await {
-        Some(schema) => (StatusCode::OK, Json(schema)).into_response(),
-        None => (
+    if let Some(schema) = state.registry.get(&schema_id).await {
+        return (StatusCode::OK, Json(schema)).into_response();
+    }
+    match state
+        .design_system_store
+        .get_component_by_slug(&schema_id)
+        .await
+    {
+        Ok(Some(component)) if component.category == "schema" => {
+            match serde_json::from_value::<ArtifactSchema>(component.schema) {
+                Ok(schema) => (StatusCode::OK, Json(schema)).into_response(),
+                Err(error) => {
+                    tracing::error!(schema_id, %error, "stored A2UI schema is invalid");
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(serde_json::json!({ "error": "Stored schema is invalid" })),
+                    )
+                        .into_response()
+                }
+            }
+        }
+        Ok(_) => (
             StatusCode::NOT_FOUND,
             Json(serde_json::json!({ "error": format!("schema '{}' not found", schema_id) })),
+        )
+            .into_response(),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": error.to_string() })),
+        )
+            .into_response(),
+    }
+}
+
+fn component_revision(component: &LibraryComponent) -> String {
+    component
+        .updated_at
+        .to_rfc3339_opts(chrono::SecondsFormat::Nanos, true)
+}
+
+fn parse_revision(value: &str) -> Result<chrono::DateTime<chrono::Utc>, axum::response::Response> {
+    chrono::DateTime::parse_from_rfc3339(value)
+        .map(|value| value.with_timezone(&chrono::Utc))
+        .map_err(|_| {
+            (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(serde_json::json!({ "error": "expected_revision is invalid" })),
+            )
+                .into_response()
+        })
+}
+
+async fn validate_custom_schema(
+    state: &A2uiApiState,
+    schema: &ArtifactSchema,
+) -> Result<(), axum::response::Response> {
+    let id = schema.schema_id.trim();
+    if id.is_empty()
+        || id.len() > 256
+        || schema.title.trim().is_empty()
+        || schema.title.len() > 256
+        || schema.description.len() > 4096
+        || !schema.json_schema.is_object()
+        || serde_json::to_vec(&schema.json_schema).map_or(true, |value| value.len() > 262_144)
+    {
+        return Err((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(serde_json::json!({ "error": "Custom schema fields are invalid" })),
+        )
+            .into_response());
+    }
+    if schema.builtin || id.starts_with("a2ui/") || state.registry.contains(id).await {
+        return Err((
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({ "error": "Built-in schemas are read-only" })),
+        )
+            .into_response());
+    }
+    Ok(())
+}
+
+fn schema_record(component: &LibraryComponent) -> Result<CustomSchemaRecord, serde_json::Error> {
+    Ok(CustomSchemaRecord {
+        schema: serde_json::from_value(component.schema.clone())?,
+        revision: component_revision(component),
+    })
+}
+
+async fn list_custom_schemas(State(state): State<A2uiApiState>) -> impl IntoResponse {
+    match state.design_system_store.list_components().await {
+        Ok(components) => {
+            let records = components
+                .iter()
+                .filter(|component| component.category == "schema")
+                .filter_map(|component| schema_record(component).ok())
+                .collect::<Vec<_>>();
+            (StatusCode::OK, Json(serde_json::json!(records))).into_response()
+        }
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": error.to_string() })),
+        )
+            .into_response(),
+    }
+}
+
+async fn get_custom_schema(
+    State(state): State<A2uiApiState>,
+    Path(schema_id): Path<String>,
+) -> impl IntoResponse {
+    match state
+        .design_system_store
+        .get_component_by_slug(&schema_id)
+        .await
+    {
+        Ok(Some(component)) if component.category == "schema" => match schema_record(&component) {
+            Ok(record) => (StatusCode::OK, Json(serde_json::json!(record))).into_response(),
+            Err(error) => {
+                tracing::error!(schema_id, %error, "stored A2UI schema is invalid");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "error": "Stored schema is invalid" })),
+                )
+                    .into_response()
+            }
+        },
+        Ok(_) => StatusCode::NOT_FOUND.into_response(),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": error.to_string() })),
+        )
+            .into_response(),
+    }
+}
+
+async fn create_custom_schema(
+    State(state): State<A2uiApiState>,
+    Json(payload): Json<CustomSchemaCreatePayload>,
+) -> impl IntoResponse {
+    if let Err(response) = validate_custom_schema(&state, &payload.schema).await {
+        return response;
+    }
+    match state
+        .design_system_store
+        .get_component_by_slug(&payload.schema.schema_id)
+        .await
+    {
+        Ok(Some(_)) => {
+            return (
+                StatusCode::CONFLICT,
+                Json(serde_json::json!({ "error": "A schema with this ID already exists" })),
+            )
+                .into_response();
+        }
+        Ok(None) => {}
+        Err(error) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": error.to_string() })),
+            )
+                .into_response();
+        }
+    }
+    let now = chrono::Utc::now();
+    let component = LibraryComponent {
+        id: uuid::Uuid::new_v4().to_string(),
+        slug: payload.schema.schema_id.clone(),
+        primitive_type: "ArtifactSchema".to_string(),
+        category: "schema".to_string(),
+        schema: match serde_json::to_value(&payload.schema) {
+            Ok(value) => value,
+            Err(error) => {
+                return (
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    Json(serde_json::json!({ "error": error.to_string() })),
+                )
+                    .into_response();
+            }
+        },
+        description: Some(payload.schema.description.clone()),
+        usage_examples: None,
+        renderers: Renderers::default(),
+        created_at: now,
+        updated_at: now,
+    };
+    match state
+        .design_system_store
+        .put_component(component.clone())
+        .await
+    {
+        Ok(()) => (
+            StatusCode::CREATED,
+            Json(serde_json::json!(
+                schema_record(&component).expect("new schema serializes")
+            )),
+        )
+            .into_response(),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": error.to_string() })),
+        )
+            .into_response(),
+    }
+}
+
+async fn update_custom_schema(
+    State(state): State<A2uiApiState>,
+    Path(schema_id): Path<String>,
+    Json(mut payload): Json<CustomSchemaUpdatePayload>,
+) -> impl IntoResponse {
+    payload.schema.schema_id = schema_id.clone();
+    if let Err(response) = validate_custom_schema(&state, &payload.schema).await {
+        return response;
+    }
+    let expected = match parse_revision(&payload.expected_revision) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+    let current = match state
+        .design_system_store
+        .get_component_by_slug(&schema_id)
+        .await
+    {
+        Ok(Some(component)) if component.category == "schema" => component,
+        Ok(_) => return StatusCode::NOT_FOUND.into_response(),
+        Err(error) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": error.to_string() })),
+            )
+                .into_response();
+        }
+    };
+    let updated = LibraryComponent {
+        schema: serde_json::to_value(&payload.schema).expect("ArtifactSchema serializes"),
+        description: Some(payload.schema.description.clone()),
+        updated_at: chrono::Utc::now(),
+        ..current
+    };
+    match state
+        .design_system_store
+        .replace_component_if_unchanged(expected, updated.clone())
+        .await
+    {
+        Ok(true) => (
+            StatusCode::OK,
+            Json(serde_json::json!(
+                schema_record(&updated).expect("schema serializes")
+            )),
+        )
+            .into_response(),
+        Ok(false) => (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({ "error": "Schema changed; reload before saving" })),
+        )
+            .into_response(),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": error.to_string() })),
+        )
+            .into_response(),
+    }
+}
+
+async fn delete_custom_schema(
+    State(state): State<A2uiApiState>,
+    Path(schema_id): Path<String>,
+    Query(query): Query<RevisionQuery>,
+) -> impl IntoResponse {
+    if state.registry.contains(&schema_id).await || schema_id.starts_with("a2ui/") {
+        return (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({ "error": "Built-in schemas are read-only" })),
+        )
+            .into_response();
+    }
+    if let Some(persistence) = &state.persistence {
+        match persistence.list_agents().await {
+            Ok(agents)
+                if agents.iter().any(|agent| {
+                    agent
+                        .ui
+                        .artifacts
+                        .preferred_types
+                        .iter()
+                        .any(|value| value == &schema_id)
+                }) =>
+            {
+                return (
+                    StatusCode::CONFLICT,
+                    Json(serde_json::json!({ "error": "Schema is referenced by an agent definition" })),
+                )
+                    .into_response();
+            }
+            Ok(_) => {}
+            Err(error) => {
+                tracing::error!(schema_id, %error, "schema reference check failed");
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "error": "Schema references could not be checked" })),
+                )
+                    .into_response();
+            }
+        }
+    }
+    let expected = match parse_revision(&query.expected_revision) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+    let current = match state
+        .design_system_store
+        .get_component_by_slug(&schema_id)
+        .await
+    {
+        Ok(Some(component)) if component.category == "schema" => component,
+        Ok(_) => return StatusCode::NOT_FOUND.into_response(),
+        Err(error) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": error.to_string() })),
+            )
+                .into_response();
+        }
+    };
+    match state
+        .design_system_store
+        .delete_component_if_unchanged(&current.id, expected)
+        .await
+    {
+        Ok(true) => StatusCode::NO_CONTENT.into_response(),
+        Ok(false) => (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({ "error": "Schema changed; reload before deleting" })),
+        )
+            .into_response(),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": error.to_string() })),
         )
             .into_response(),
     }
@@ -507,7 +898,268 @@ async fn submit_action(
 
 async fn list_library_components(State(state): State<A2uiApiState>) -> impl IntoResponse {
     match state.design_system_store.list_components().await {
-        Ok(components) => (StatusCode::OK, Json(serde_json::json!(components))).into_response(),
+        Ok(components) => (
+            StatusCode::OK,
+            Json(serde_json::json!(
+                components
+                    .into_iter()
+                    .filter(|component| component.category != "schema")
+                    .collect::<Vec<_>>()
+            )),
+        )
+            .into_response(),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": error.to_string() })),
+        )
+            .into_response(),
+    }
+}
+
+async fn list_builtin_components() -> impl IntoResponse {
+    Json([
+        BuiltinComponent {
+            id: "Text",
+            title: "Text",
+            category: "content",
+            builtin: true,
+        },
+        BuiltinComponent {
+            id: "Button",
+            title: "Button",
+            category: "action",
+            builtin: true,
+        },
+        BuiltinComponent {
+            id: "TextField",
+            title: "Text field",
+            category: "input",
+            builtin: true,
+        },
+        BuiltinComponent {
+            id: "CheckBox",
+            title: "Checkbox",
+            category: "input",
+            builtin: true,
+        },
+        BuiltinComponent {
+            id: "ChoicePicker",
+            title: "Choice picker",
+            category: "input",
+            builtin: true,
+        },
+        BuiltinComponent {
+            id: "Row",
+            title: "Row",
+            category: "layout",
+            builtin: true,
+        },
+        BuiltinComponent {
+            id: "Column",
+            title: "Column",
+            category: "layout",
+            builtin: true,
+        },
+        BuiltinComponent {
+            id: "Card",
+            title: "Card",
+            category: "layout",
+            builtin: true,
+        },
+        BuiltinComponent {
+            id: "Divider",
+            title: "Divider",
+            category: "layout",
+            builtin: true,
+        },
+    ])
+}
+
+fn parse_component_source(
+    source: &str,
+) -> Result<Vec<super::protocol::ValidatedA2uiMessage>, String> {
+    let values = source
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| {
+            serde_json::from_str::<serde_json::Value>(line).map_err(|error| error.to_string())
+        })
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .map(parse_message)
+        .collect::<Result<Vec<_>, _>>()?;
+    if values.is_empty() {
+        return Err("A2UI source is empty".to_string());
+    }
+    Ok(values)
+}
+
+fn component_slug(title: &str) -> String {
+    title
+        .to_ascii_lowercase()
+        .chars()
+        .map(|ch| if ch.is_ascii_alphanumeric() { ch } else { '-' })
+        .collect::<String>()
+        .split('-')
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("-")
+}
+
+async fn get_library_component(
+    State(state): State<A2uiApiState>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    match state.design_system_store.get_component(&id).await {
+        Ok(Some(component)) if component.category != "schema" => {
+            (StatusCode::OK, Json(serde_json::json!(component))).into_response()
+        }
+        Ok(_) => StatusCode::NOT_FOUND.into_response(),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": error.to_string() })),
+        )
+            .into_response(),
+    }
+}
+
+async fn update_library_component(
+    State(state): State<A2uiApiState>,
+    Path(id): Path<String>,
+    Json(payload): Json<UpdateComponentPayload>,
+) -> impl IntoResponse {
+    let expected = match parse_revision(&payload.expected_revision) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+    let messages = match parse_component_source(&payload.source) {
+        Ok(value) => value,
+        Err(error) => {
+            return (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(serde_json::json!({ "error": error })),
+            )
+                .into_response();
+        }
+    };
+    let current = match state.design_system_store.get_component(&id).await {
+        Ok(Some(component)) if component.category != "schema" => component,
+        Ok(_) => return StatusCode::NOT_FOUND.into_response(),
+        Err(error) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": error.to_string() })),
+            )
+                .into_response();
+        }
+    };
+    let slug = component_slug(&payload.title);
+    if slug.is_empty() {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(serde_json::json!({ "error": "Component title is required" })),
+        )
+            .into_response();
+    }
+    match state.design_system_store.get_component_by_slug(&slug).await {
+        Ok(Some(existing)) if existing.id != current.id => {
+            return (
+                StatusCode::CONFLICT,
+                Json(serde_json::json!({ "error": "A component with this title already exists" })),
+            )
+                .into_response();
+        }
+        Ok(_) => {}
+        Err(error) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": error.to_string() })),
+            )
+                .into_response();
+        }
+    }
+    let updated = LibraryComponent {
+        slug,
+        schema: serde_json::json!({
+            "profile": "uar.a2ui/1",
+            "messages": messages.iter().map(|message| &message.raw).collect::<Vec<_>>(),
+        }),
+        description: payload.description,
+        usage_examples: Some(serde_json::json!({ "source": payload.source })),
+        updated_at: chrono::Utc::now(),
+        ..current
+    };
+    match state
+        .design_system_store
+        .replace_component_if_unchanged(expected, updated.clone())
+        .await
+    {
+        Ok(true) => (StatusCode::OK, Json(serde_json::json!(updated))).into_response(),
+        Ok(false) => (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({ "error": "Component changed; reload before saving" })),
+        )
+            .into_response(),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": error.to_string() })),
+        )
+            .into_response(),
+    }
+}
+
+async fn delete_library_component(
+    State(state): State<A2uiApiState>,
+    Path(id): Path<String>,
+    Query(query): Query<RevisionQuery>,
+) -> impl IntoResponse {
+    let expected = match parse_revision(&query.expected_revision) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+    let current = match state.design_system_store.get_component(&id).await {
+        Ok(Some(component)) if component.category != "schema" => component,
+        Ok(_) => return StatusCode::NOT_FOUND.into_response(),
+        Err(error) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": error.to_string() })),
+            )
+                .into_response();
+        }
+    };
+    match state
+        .design_system_store
+        .component_reference_count(&id)
+        .await
+    {
+        Ok(0) => {}
+        Ok(_) => {
+            return (
+                StatusCode::CONFLICT,
+                Json(serde_json::json!({ "error": "Component is referenced by a design system" })),
+            )
+                .into_response();
+        }
+        Err(error) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": error.to_string() })),
+            )
+                .into_response();
+        }
+    }
+    match state
+        .design_system_store
+        .delete_component_if_unchanged(&current.id, expected)
+        .await
+    {
+        Ok(true) => StatusCode::NO_CONTENT.into_response(),
+        Ok(false) => (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({ "error": "Component changed; reload before deleting" })),
+        )
+            .into_response(),
         Err(error) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({ "error": error.to_string() })),
@@ -520,26 +1172,8 @@ async fn promote_library_component(
     State(state): State<A2uiApiState>,
     Json(payload): Json<PromoteComponentPayload>,
 ) -> impl IntoResponse {
-    let values = match payload
-        .source
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        .map(|line| serde_json::from_str::<serde_json::Value>(line).map_err(|e| e.to_string()))
-        .collect::<Result<Vec<_>, _>>()
-        .and_then(|values| {
-            values
-                .into_iter()
-                .map(parse_message)
-                .collect::<Result<Vec<_>, _>>()
-        }) {
-        Ok(values) if !values.is_empty() => values,
-        Ok(_) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(serde_json::json!({ "error": "A2UI source is empty" })),
-            )
-                .into_response();
-        }
+    let values = match parse_component_source(&payload.source) {
+        Ok(values) => values,
         Err(error) => {
             return (
                 StatusCode::BAD_REQUEST,
@@ -548,16 +1182,26 @@ async fn promote_library_component(
                 .into_response();
         }
     };
-    let slug = payload
-        .title
-        .to_ascii_lowercase()
-        .chars()
-        .map(|ch| if ch.is_ascii_alphanumeric() { ch } else { '-' })
-        .collect::<String>()
-        .split('-')
-        .filter(|part| !part.is_empty())
-        .collect::<Vec<_>>()
-        .join("-");
+    let slug = component_slug(&payload.title);
+    if !slug.is_empty() {
+        match state.design_system_store.get_component_by_slug(&slug).await {
+            Ok(Some(_)) => {
+                return (
+                    StatusCode::CONFLICT,
+                    Json(serde_json::json!({ "error": "A component with this title already exists" })),
+                )
+                    .into_response();
+            }
+            Ok(None) => {}
+            Err(error) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "error": error.to_string() })),
+                )
+                    .into_response();
+            }
+        }
+    }
     let now = chrono::Utc::now();
     let component = LibraryComponent {
         id: uuid::Uuid::new_v4().to_string(),
@@ -736,8 +1380,25 @@ pub fn build_schema_router() -> Router<A2uiApiState> {
         .route("/schemas", get(list_schemas))
         .route("/schemas/{schema_id}", get(get_schema))
         .route(
+            "/custom-schemas",
+            get(list_custom_schemas).post(create_custom_schema),
+        )
+        .route(
+            "/custom-schemas/{schema_id}",
+            get(get_custom_schema)
+                .put(update_custom_schema)
+                .delete(delete_custom_schema),
+        )
+        .route("/components/builtins", get(list_builtin_components))
+        .route(
             "/components",
             get(list_library_components).post(promote_library_component),
+        )
+        .route(
+            "/components/{id}",
+            get(get_library_component)
+                .put(update_library_component)
+                .delete(delete_library_component),
         )
 }
 

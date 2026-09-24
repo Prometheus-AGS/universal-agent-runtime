@@ -809,9 +809,51 @@ pub fn administration_capabilities() -> AdministrationCapabilities {
                         Read
                     ),
                     endpoint!(
+                        "a2ui.custom_schemas.list",
+                        "GET",
+                        "/api/uar/a2ui/custom-schemas",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "a2ui.custom_schemas.create",
+                        "POST",
+                        "/api/uar/a2ui/custom-schemas",
+                        Admin,
+                        Live
+                    ),
+                    endpoint!(
+                        "a2ui.custom_schemas.read",
+                        "GET",
+                        "/api/uar/a2ui/custom-schemas/{id}",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
+                        "a2ui.custom_schemas.update",
+                        "PUT",
+                        "/api/uar/a2ui/custom-schemas/{id}",
+                        Admin,
+                        NextTurn
+                    ),
+                    endpoint!(
+                        "a2ui.custom_schemas.delete",
+                        "DELETE",
+                        "/api/uar/a2ui/custom-schemas/{id}",
+                        Admin,
+                        NextTurn
+                    ),
+                    endpoint!(
                         "a2ui.components.list",
                         "GET",
                         "/api/uar/a2ui/components",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "a2ui.components.builtins",
+                        "GET",
+                        "/api/uar/a2ui/components/builtins",
                         Owner,
                         Read
                     ),
@@ -821,6 +863,27 @@ pub fn administration_capabilities() -> AdministrationCapabilities {
                         "/api/uar/a2ui/components",
                         Admin,
                         Live
+                    ),
+                    endpoint!(
+                        "a2ui.components.read",
+                        "GET",
+                        "/api/uar/a2ui/components/{id}",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "a2ui.components.update",
+                        "PUT",
+                        "/api/uar/a2ui/components/{id}",
+                        Admin,
+                        NextTurn
+                    ),
+                    endpoint!(
+                        "a2ui.components.delete",
+                        "DELETE",
+                        "/api/uar/a2ui/components/{id}",
+                        Admin,
+                        NextTurn
                     ),
                     endpoint!(
                         "a2ui.artifact_response",
