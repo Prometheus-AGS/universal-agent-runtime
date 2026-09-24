@@ -3742,40 +3742,66 @@ impl RunManager {
             .into_iter()
             .map(|entry| entry.skill)
             .collect();
+        let policy_llm_config = if inherited.is_none()
+            && let Some(ref registry) = self.provider_registry
+        {
+            let mut provider_policy = artifact.policy.provider.clone();
+            if let Some(route) = &effective_policy.model {
+                provider_policy.default.provider = route.provider_id.clone();
+                provider_policy.default.model = route.model_id.clone();
+            }
+            match registry
+                .resolve_llm_config_from_policy(&provider_policy)
+                .await
+            {
+                Some(resolved) => {
+                    tracing::info!(
+                        provider = %provider_policy.default.provider,
+                        model = %provider_policy.default.model,
+                        "Using per-agent provider settings"
+                    );
+                    Some(resolved)
+                }
+                None if run_credentials.is_some() => None,
+                None => {
+                    tracing::warn!(
+                        provider = %provider_policy.default.provider,
+                        model = %provider_policy.default.model,
+                        "Catalog provider/model assignment is unavailable"
+                    );
+                    if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                        state.run.status = RunStatus::Error;
+                    }
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: run_id.clone(),
+                            code: "provider_model_unavailable".into(),
+                            message: format!(
+                                "Catalog provider/model '{}/{}' is unavailable",
+                                provider_policy.default.provider, provider_policy.default.model
+                            )
+                            .into(),
+                        })
+                        .await;
+                    emitter
+                        .emit(NormalizedEvent::RunDone {
+                            run_id: run_id.clone(),
+                        })
+                        .await;
+                    self.run_cancellations.write().await.remove(&run_id);
+                    return run_id;
+                }
+            }
+        } else {
+            None
+        };
         // Resolve the model that will actually receive this run before applying
         // any model-keyed context budget. This includes provider-registry and
         // first-matched-skill overrides.
         let model_bindings_result = if let Some(bindings) = &inherited {
             bindings.models.for_policy(&bindings.policy)
         } else {
-            let preferred_llm_config = if let Some(ref registry) = self.provider_registry {
-                let mut provider_policy = artifact.policy.provider.clone();
-                if let Some(route) = &effective_policy.model {
-                    provider_policy.default.provider = route.provider_id.clone();
-                    provider_policy.default.model = route.model_id.clone();
-                }
-                match registry
-                    .resolve_llm_config_from_policy(&provider_policy)
-                    .await
-                {
-                    Some(resolved) => {
-                        tracing::info!(
-                            provider = %provider_policy.default.provider,
-                            model = %provider_policy.default.model,
-                            "Using per-agent provider settings"
-                        );
-                        resolved
-                    }
-                    None => {
-                        tracing::debug!(
-                            "No provider match for agent policy, using global settings"
-                        );
-                        self.llm_config.clone()
-                    }
-                }
-            } else {
-                self.llm_config.clone()
-            };
+            let preferred_llm_config = policy_llm_config.unwrap_or_else(|| self.llm_config.clone());
             let skill_preferred_model = matched_skills.iter().find_map(|skill| {
                 skill
                     .execution_config
