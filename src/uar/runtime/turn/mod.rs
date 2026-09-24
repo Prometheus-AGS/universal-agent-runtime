@@ -3,6 +3,7 @@
 pub(crate) mod bindings;
 pub mod builtin;
 pub mod contributors;
+pub mod host;
 pub mod plan;
 pub mod request;
 pub mod resolved;

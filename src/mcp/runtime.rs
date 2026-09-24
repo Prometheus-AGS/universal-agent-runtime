@@ -4,6 +4,7 @@
 //! its cache generation; the first governed call waits for a matching live
 //! connection and rejects a changed catalog rather than executing stale metadata.
 
+use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
 use std::time::Duration;
@@ -60,6 +61,111 @@ pub struct StdioMcpConnector {
 #[derive(Debug, Default)]
 pub struct ConfiguredMcpConnector {
     processes: StdioProcessSupervisor,
+}
+
+/// Parsed request-scoped HTTP headers. Values remain private and Debug never
+/// exposes them.
+#[derive(Clone)]
+pub(crate) struct RunHttpHeaders {
+    bearer: Option<secrecy::SecretString>,
+    custom: HashMap<reqwest_mcp::header::HeaderName, reqwest_mcp::header::HeaderValue>,
+}
+
+impl fmt::Debug for RunHttpHeaders {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("RunHttpHeaders([redacted])")
+    }
+}
+
+impl RunHttpHeaders {
+    pub(crate) fn parse(
+        values: &std::collections::BTreeMap<String, secrecy::SecretString>,
+    ) -> anyhow::Result<Self> {
+        use secrecy::ExposeSecret;
+        let mut bearer = None;
+        let mut custom = HashMap::new();
+        for (name, value) in values {
+            let name = reqwest_mcp::header::HeaderName::from_bytes(name.as_bytes())
+                .map_err(|_| anyhow::anyhow!("MCP header name is invalid"))?;
+            anyhow::ensure!(
+                name != reqwest_mcp::header::HOST && name.as_str() != "mcp-session-id",
+                "MCP transport-owned header is forbidden"
+            );
+            if name == reqwest_mcp::header::AUTHORIZATION {
+                let token = value
+                    .expose_secret()
+                    .strip_prefix("Bearer ")
+                    .ok_or_else(|| anyhow::anyhow!("MCP authorization must use Bearer scheme"))?;
+                anyhow::ensure!(!token.is_empty(), "MCP bearer token is empty");
+                anyhow::ensure!(bearer.is_none(), "MCP authorization header is duplicated");
+                bearer = Some(secrecy::SecretString::from(token.to_owned()));
+            } else {
+                let value =
+                    reqwest_mcp::header::HeaderValue::from_bytes(value.expose_secret().as_bytes())
+                        .map_err(|_| anyhow::anyhow!("MCP header value is invalid"))?;
+                anyhow::ensure!(
+                    custom.insert(name, value).is_none(),
+                    "MCP header is duplicated"
+                );
+            }
+        }
+        Ok(Self { bearer, custom })
+    }
+
+    pub(crate) fn apply(
+        &self,
+        mut config: rmcp::transport::streamable_http_client::StreamableHttpClientTransportConfig,
+    ) -> rmcp::transport::streamable_http_client::StreamableHttpClientTransportConfig {
+        use secrecy::ExposeSecret;
+        if let Some(bearer) = &self.bearer {
+            config = config.auth_header(bearer.expose_secret().to_owned());
+        }
+        if !self.custom.is_empty() {
+            config = config.custom_headers(self.custom.clone());
+        }
+        config
+    }
+}
+
+/// Run-owned connector. It can only connect the exact HTTP names captured in
+/// the request and has no process supervisor or global configuration access.
+pub(crate) struct RunMcpConnector {
+    headers: HashMap<String, RunHttpHeaders>,
+}
+
+impl fmt::Debug for RunMcpConnector {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RunMcpConnector")
+            .field("server_count", &self.headers.len())
+            .finish()
+    }
+}
+
+impl RunMcpConnector {
+    pub(crate) fn new(headers: HashMap<String, RunHttpHeaders>) -> Self {
+        Self { headers }
+    }
+}
+
+#[async_trait]
+impl McpConnector for RunMcpConnector {
+    async fn connect(
+        &self,
+        request: Arc<McpBindingRequest>,
+    ) -> Result<ConnectedMcpServer, McpBindingError> {
+        let name = request.definition().name();
+        let headers = self
+            .headers
+            .get(name)
+            .ok_or_else(|| McpBindingError::InvalidBinding {
+                server: name.to_owned(),
+            })?;
+        McpRegistry::connect_http_binding_with_headers(request, headers).await
+    }
+
+    async fn shutdown(&self) -> anyhow::Result<()> {
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -149,6 +255,7 @@ pub struct McpRunResources {
     runtime: McpRuntimeManager,
     catalog: Arc<McpCatalog>,
     environment: Arc<McpBindingEnvironment>,
+    run_scoped_names: Option<Arc<std::collections::BTreeSet<String>>>,
 }
 
 impl McpRunResources {
@@ -165,6 +272,25 @@ impl McpRunResources {
             runtime,
             catalog,
             environment,
+            run_scoped_names: None,
+        }
+    }
+
+    /// Capture a request-owned HTTP universe. The names are the complete MCP
+    /// authority for this root and its local children.
+    pub(crate) fn new_run_scoped(
+        owner: ActorOwner,
+        runtime: McpRuntimeManager,
+        catalog: Arc<McpCatalog>,
+        environment: Arc<McpBindingEnvironment>,
+        names: std::collections::BTreeSet<String>,
+    ) -> Self {
+        Self {
+            owner,
+            runtime,
+            catalog,
+            environment,
+            run_scoped_names: Some(Arc::new(names)),
         }
     }
 
@@ -186,6 +312,12 @@ impl McpRunResources {
     /// Exact launch inputs. Never serialize this into a turn or event.
     pub fn environment(&self) -> &Arc<McpBindingEnvironment> {
         &self.environment
+    }
+
+    /// Exact request-owned server names, or `None` for the host's shared
+    /// configured catalog.
+    pub(crate) fn run_scoped_names(&self) -> Option<&Arc<std::collections::BTreeSet<String>>> {
+        self.run_scoped_names.as_ref()
     }
 }
 

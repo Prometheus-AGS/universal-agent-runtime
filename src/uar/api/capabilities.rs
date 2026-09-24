@@ -31,7 +31,14 @@ pub const CAPABILITY_VOCABULARY: [&str; 9] = [
 
 /// Capabilities this binary implements. Each owning change adds its name in
 /// the same commit as the behaviour; none has landed yet.
-pub const IMPLEMENTED_CAPABILITIES: [&str; 1] = ["session_principal"];
+pub const IMPLEMENTED_CAPABILITIES: [&str; 6] = [
+    "host_history",
+    "reasoning_effort",
+    "run_scoped_credentials",
+    "run_scoped_mcp_servers",
+    "session_principal",
+    "working_directory",
+];
 
 /// AG-UI profile section of [`CapabilitiesResponse`].
 #[derive(Debug, Serialize)]

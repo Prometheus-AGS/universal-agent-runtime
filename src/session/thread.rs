@@ -61,6 +61,13 @@ pub struct SessionState {
     pub system_prompt: Option<String>,
 }
 
+/// Atomic result of attempting to seed a host-restored conversation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SeedOutcome {
+    Seeded { messages: usize },
+    IgnoredWarmSession,
+}
+
 impl Serialize for Session {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -253,6 +260,20 @@ impl Session {
         guard.push(message);
         drop(guard);
         self.touch();
+    }
+
+    /// Seed a cold session under one write lock. Concurrent first turns cannot
+    /// both observe an empty session and duplicate the host's history.
+    pub fn seed_if_empty(&self, messages: &[Message]) -> SeedOutcome {
+        let mut guard = self.inner.messages.write().unwrap();
+        if !guard.is_empty() {
+            return SeedOutcome::IgnoredWarmSession;
+        }
+        guard.extend(messages.iter().cloned());
+        let seeded = messages.len();
+        drop(guard);
+        self.touch();
+        SeedOutcome::Seeded { messages: seeded }
     }
 
     /// Get all messages in the conversation.

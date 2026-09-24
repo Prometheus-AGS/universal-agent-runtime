@@ -249,10 +249,14 @@ struct RunEventEmitter {
     completion:
         Option<Arc<std::sync::Mutex<crate::uar::runtime::thread::execution::RunCompletionCapture>>>,
     runs: std::sync::Weak<RwLock<ActiveRunMap>>,
+    secret_scrubber: crate::uar::runtime::turn::host::RunSecretScrubber,
 }
 
 impl RunEventEmitter {
-    async fn emit(&self, event: NormalizedEvent) {
+    async fn emit(&self, mut event: NormalizedEvent) {
+        if let NormalizedEvent::Error { message, .. } = &mut event {
+            *message = self.secret_scrubber.scrub(message);
+        }
         if matches!(
             &event,
             NormalizedEvent::RunDone { .. }
@@ -1907,22 +1911,69 @@ impl RunManager {
         interaction: serde_json::Value,
         user: &crate::uar::security::claims::UserContext,
     ) -> Result<String, String> {
+        let request = self
+            .prepare_interaction_request(run_id, interaction, user, None)
+            .await?;
+        let marker = self
+            .get_run_for_context(user, run_id)
+            .await
+            .and_then(|run| run.context.get("host_resources").cloned())
+            .and_then(|value| {
+                serde_json::from_value::<crate::uar::runtime::turn::host::HostResourcesMarker>(
+                    value,
+                )
+                .ok()
+            })
+            .unwrap_or_default();
+        if !marker.is_empty() || marker.artifact_inline {
+            return Err("continuation must reattach the source run host resources".to_string());
+        }
+        Ok(self.execute_request(request).await)
+    }
+
+    /// Assemble a continuation request without retaining or resolving any host
+    /// secret. The API adapter reattaches and compares request-scoped resources
+    /// before it calls `execute_request`.
+    pub async fn prepare_interaction_request(
+        &self,
+        run_id: &str,
+        interaction: serde_json::Value,
+        user: &crate::uar::security::claims::UserContext,
+        inline_artifact: Option<AgentArtifact>,
+    ) -> Result<crate::uar::runtime::turn::RunExecutionRequest, String> {
         let run = self
-            .get_run(run_id)
+            .get_run_for_context(user, run_id)
             .await
             .ok_or_else(|| format!("run '{run_id}' not found"))?;
-        if run.user_id.as_deref() != Some(user.user_id.as_str()) {
-            return Err("interaction principal does not own the source run".to_string());
-        }
-        let persistence = self
-            .persistence
-            .as_ref()
-            .ok_or_else(|| "agent persistence is unavailable".to_string())?;
-        let artifact = persistence
-            .load_agent(&run.agent_id)
-            .await
-            .map_err(|error| format!("failed to load agent '{}': {error}", run.agent_id))?
-            .ok_or_else(|| format!("agent '{}' not found", run.agent_id))?;
+        let marker = run
+            .context
+            .get("host_resources")
+            .cloned()
+            .and_then(|value| {
+                serde_json::from_value::<crate::uar::runtime::turn::host::HostResourcesMarker>(
+                    value,
+                )
+                .ok()
+            })
+            .unwrap_or_default();
+        let artifact = if marker.artifact_inline {
+            let artifact = inline_artifact
+                .ok_or_else(|| "inline artifact is required for continuation".to_string())?;
+            if artifact.id != run.agent_id {
+                return Err("continuation artifact does not match the source run".to_string());
+            }
+            artifact
+        } else {
+            let persistence = self
+                .persistence
+                .as_ref()
+                .ok_or_else(|| "agent persistence is unavailable".to_string())?;
+            persistence
+                .load_agent(&run.agent_id)
+                .await
+                .map_err(|error| format!("failed to load agent '{}': {error}", run.agent_id))?
+                .ok_or_else(|| format!("agent '{}' not found", run.agent_id))?
+        };
         let input = serde_json::json!({
             "type": "a2ui.user_action",
             "sourceRunId": run_id,
@@ -1939,12 +1990,22 @@ impl RunManager {
             .map_err(|_| "invalid interaction principal".to_string())?;
         request.session_id = run.conversation_id;
         request.resolved_policy = effective_policy;
+        if let Some(host_context) = run.context.get("host_context") {
+            request.working_directory = host_context
+                .get("working_directory")
+                .and_then(serde_json::Value::as_str)
+                .map(std::path::PathBuf::from);
+            request.reasoning_effort = host_context
+                .get("reasoning_effort")
+                .cloned()
+                .and_then(|value| serde_json::from_value(value).ok());
+        }
         request.presentation_negotiation = match run.context.get("presentation_negotiation") {
             Some(value) => serde_json::from_value(value.clone())
                 .map_err(|_| "Stored Presentation negotiation is invalid".to_string())?,
             None => Default::default(),
         };
-        Ok(self.execute_request(request).await)
+        Ok(request)
     }
 
     /// Start a run using an immutable policy already resolved by UAR's control
@@ -2020,6 +2081,9 @@ impl RunManager {
             memory_hits,
             verified_owner: None,
             mcp_resources: None,
+            run_credentials: None,
+            host_resources_marker: Default::default(),
+            host_secret_scrubber: Default::default(),
             resolved_policy: None,
             presentation_negotiation: Default::default(),
             host_policy_constraint: None,
@@ -2027,6 +2091,8 @@ impl RunManager {
             host_usage_grant: None,
             host_sandbox_constraint: None,
             seed_history: Vec::new(),
+            host_history: None,
+            reasoning_effort: None,
             checkpoint_resume: Some(crate::uar::runtime::turn::CheckpointResume {
                 state: restored_state,
                 history: restored_history,
@@ -2133,6 +2199,7 @@ impl RunManager {
                 history: Arc::clone(&state.history),
                 completion: None,
                 runs: Arc::downgrade(&self.active_runs),
+                secret_scrubber: request.host_secret_scrubber.clone(),
             }
         };
         emitter
@@ -2309,12 +2376,17 @@ impl RunManager {
             resolved_policy,
             presentation_negotiation,
             seed_history,
+            host_history,
+            reasoning_effort,
             checkpoint_resume,
             inherited_history,
             skill_attachments: _,
             working_directory,
             verified_owner,
             mut mcp_resources,
+            run_credentials,
+            host_resources_marker,
+            host_secret_scrubber,
             host_policy_constraint,
             host_budget_constraint,
             host_usage_grant,
@@ -2350,6 +2422,7 @@ impl RunManager {
             history: Arc::clone(&history),
             completion: completion.map(|capture| Arc::new(std::sync::Mutex::new(capture))),
             runs: Arc::downgrade(&self.active_runs),
+            secret_scrubber: host_secret_scrubber,
         };
         let completion_guard = crate::uar::runtime::thread::execution::RunCompletionGuard::new(
             emitter.completion.clone(),
@@ -2626,22 +2699,42 @@ impl RunManager {
             self.sessions.create_for_user(&owner_id)
         };
 
-        // 1b. Seed prior turns into an empty session. The in-process session
-        // store is not durable, so a cold-started conversation resolves to an
-        // empty session even though the host still holds the full thread. Replay
-        // the host-supplied history so the model receives prior context rather
-        // than only the current message. Only seed when empty so warm sessions
-        // (which already accumulated their turns) are never duplicated.
-        if supplied_history.is_none() && session.message_count() == 0 {
-            for message in &seed_history {
-                match message.role.as_str() {
-                    "assistant" => session.add_assistant_message(&message.content),
-                    "tool" => session.add_tool_result(
-                        message.tool_call_id.clone().unwrap_or_default(),
-                        &message.content,
-                    ),
-                    "system" => {} // system prompt is owned by the agent artifact
-                    _ => session.add_user_message(&message.content),
+        // 1b. Seed prior turns atomically. A checkpoint or inherited child
+        // history is applied later after its authorization check and always
+        // outranks request-supplied history.
+        let mut history_status = crate::uar::runtime::turn::host::HistorySeedStatus::None;
+        let mut seeded_messages = 0usize;
+        if supplied_history.is_none() {
+            let embedded_history = (!seed_history.is_empty()).then(|| {
+                seed_history
+                    .iter()
+                    .filter_map(|message| {
+                        let role = match message.role.as_str() {
+                            "assistant" => MessageRole::Assistant,
+                            "tool" => MessageRole::Tool,
+                            "system" => return None,
+                            _ => MessageRole::User,
+                        };
+                        Some(Message {
+                            role,
+                            content: crate::llm::MessageContent::text(&message.content),
+                            tool_call_id: message.tool_call_id.clone(),
+                            tool_calls: None,
+                        })
+                    })
+                    .collect::<Vec<_>>()
+            });
+            let candidate = host_history.as_ref().or(embedded_history.as_ref());
+            if let Some(candidate) = candidate {
+                match session.seed_if_empty(candidate) {
+                    crate::session::SeedOutcome::Seeded { messages } => {
+                        history_status = crate::uar::runtime::turn::host::HistorySeedStatus::Seeded;
+                        seeded_messages = messages;
+                    }
+                    crate::session::SeedOutcome::IgnoredWarmSession => {
+                        history_status =
+                            crate::uar::runtime::turn::host::HistorySeedStatus::IgnoredWarmSession;
+                    }
                 }
             }
         }
@@ -2670,6 +2763,38 @@ impl RunManager {
                 .await
             }
         };
+        if let Some(names) = mcp_resources
+            .as_ref()
+            .and_then(|resources| resources.run_scoped_names())
+        {
+            if effective_policy
+                .mcp_servers
+                .ids
+                .iter()
+                .any(|name| !names.contains(name))
+            {
+                emitter
+                    .emit(NormalizedEvent::Error {
+                        run_id: run_id.clone(),
+                        code: "mcp_server_not_run_scoped".into(),
+                        message: "Run policy selects an MCP server outside this request".into(),
+                    })
+                    .await;
+                emitter
+                    .emit(NormalizedEvent::RunDone {
+                        run_id: run_id.clone(),
+                    })
+                    .await;
+                self.run_cancellations.write().await.remove(&run_id);
+                return run_id;
+            }
+            effective_policy.mcp_servers.ids = names.iter().cloned().collect();
+            effective_policy.mcp_servers.mode = if names.is_empty() {
+                SelectionMode::None
+            } else {
+                SelectionMode::Selected
+            };
+        }
 
         let (presentation_snapshot, presentation_warnings) = match &inherited {
             Some(bindings) => (bindings.presentations.narrow(&effective_policy), Vec::new()),
@@ -2803,6 +2928,13 @@ impl RunManager {
                 "presentation_negotiation": presentation_snapshot.negotiation(),
                 "presentation_selection": presentation_snapshot.selection(),
                 "presentation_templates": presentation_snapshot.identities(),
+                "host_resources": host_resources_marker,
+                "host_context": {
+                    "working_directory": working_directory.as_ref().map(|path| path.display().to_string()),
+                    "reasoning_effort": reasoning_effort.map(crate::config::ReasoningEffort::as_str),
+                },
+                "history": history_status,
+                "seeded_messages": seeded_messages,
             }),
         };
 
@@ -3562,14 +3694,81 @@ impl RunManager {
                 }
                 config
             };
-            let run_llm_config = apply_credential_layer(
-                run_llm_config,
-                self.provider_service.as_ref(),
-                user_id_for_creds.as_deref(),
-                session_id_for_creds.as_deref(),
-                artifact.id.as_str(),
-            )
-            .await;
+            let mut run_llm_config = if run_credentials.is_some() {
+                run_llm_config
+            } else {
+                apply_credential_layer(
+                    run_llm_config,
+                    self.provider_service.as_ref(),
+                    user_id_for_creds.as_deref(),
+                    session_id_for_creds.as_deref(),
+                    artifact.id.as_str(),
+                )
+                .await
+            };
+            if let Some(credentials) = &run_credentials {
+                let policy_route = effective_policy.model.as_ref();
+                let mut provider_id = policy_route
+                    .map(|route| route.provider_id.as_str())
+                    .unwrap_or(artifact.policy.provider.default.provider.as_str());
+                let mut model_id = policy_route
+                    .map(|route| route.model_id.as_str())
+                    .unwrap_or(artifact.policy.provider.default.model.as_str());
+                if let Some((_skill_id, preferred)) = skill_preferred_model {
+                    if let Some((provider, model)) = preferred.split_once('/') {
+                        provider_id = provider;
+                        model_id = model;
+                    } else {
+                        model_id = preferred;
+                    }
+                }
+                run_llm_config =
+                    match credentials.config_for(provider_id, Some(model_id), run_llm_config) {
+                        Ok(config) => config,
+                        Err(error) => {
+                            tracing::warn!(code = error.code, "Run provider binding refused");
+                            if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                                state.run.status = RunStatus::Error;
+                            }
+                            emitter
+                                .emit(NormalizedEvent::Error {
+                                    run_id: run_id.clone(),
+                                    code: error.code.into(),
+                                    message: error.message.into(),
+                                })
+                                .await;
+                            emitter
+                                .emit(NormalizedEvent::RunDone {
+                                    run_id: run_id.clone(),
+                                })
+                                .await;
+                            self.run_cancellations.write().await.remove(&run_id);
+                            return run_id;
+                        }
+                    };
+            }
+            if let Some(effort) = reasoning_effort {
+                run_llm_config.reasoning_effort = Some(effort);
+                run_llm_config.thinking_budget = effort.thinking_budget();
+            }
+            let run_failover_config = if run_credentials.is_some() {
+                let mut failover = self.failover_config.clone();
+                failover.fallback_models = artifact
+                    .policy
+                    .provider
+                    .fallbacks
+                    .iter()
+                    .map(|fallback| crate::config::FallbackModel {
+                        model: format!("{}/{}", fallback.provider, fallback.model),
+                        api_key: None,
+                        base_url: None,
+                    })
+                    .collect();
+                failover.enabled = !failover.fallback_models.is_empty();
+                failover
+            } else {
+                self.failover_config.clone()
+            };
 
             // This artifact's session ceiling belongs to the captured root session,
             // not the aggregate spend of every session using the same agent.
@@ -3598,12 +3797,21 @@ impl RunManager {
                 Ok(model_budget) => {
                     crate::uar::runtime::turn::bindings::RunModelBindings::capture(
                         run_llm_config.clone(),
-                        self.primary_driver.clone(),
-                        self.failover_config.clone(),
-                        self.provider_registry
-                            .as_ref()
-                            .map(|registry| Arc::clone(registry.health())),
+                        if run_credentials.is_some() {
+                            None
+                        } else {
+                            self.primary_driver.clone()
+                        },
+                        run_failover_config,
+                        if run_credentials.is_some() {
+                            None
+                        } else {
+                            self.provider_registry
+                                .as_ref()
+                                .map(|registry| Arc::clone(registry.health()))
+                        },
                         model_budget,
+                        run_credentials.as_ref(),
                     )
                     .await
                 }
@@ -3613,6 +3821,10 @@ impl RunManager {
         let model_bindings = match model_bindings_result {
             Ok(bindings) => bindings,
             Err(error) => {
+                let error = run_credentials.as_ref().map_or_else(
+                    || error.to_string(),
+                    |credentials| credentials.scrub(&error.to_string()),
+                );
                 tracing::error!(%error, "Failed to capture run model bindings");
                 activation_context.lock().await.record_outcomes(false);
                 if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
@@ -3659,6 +3871,10 @@ impl RunManager {
                     working_directory: world_state.directory().to_path_buf(),
                     approvals: approval_channel.clone(),
                     cancellation: run_cancellation.child_token(),
+                    run_scoped_mcp: mcp_resources
+                        .as_ref()
+                        .filter(|resources| resources.run_scoped_names().is_some())
+                        .map(|resources| resources.runtime().clone()),
                 })
             }),
         );

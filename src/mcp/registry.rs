@@ -219,7 +219,7 @@ struct SnapshotBinding {
 #[derive(Clone)]
 enum SnapshotTransport {
     Stdio(StdioProcessSupervisor),
-    RemoteHttp,
+    RemoteHttp(Option<super::runtime::RunHttpHeaders>),
 }
 
 type SharedClientService = Arc<RwLock<ClientServiceState>>;
@@ -744,6 +744,7 @@ async fn connect_stdio_snapshot(
 
 async fn connect_http_snapshot(
     request: &McpBindingRequest,
+    headers: Option<&super::runtime::RunHttpHeaders>,
 ) -> Result<DynClientService, McpBindingError> {
     let definition = request.definition();
     let name = definition.name();
@@ -773,10 +774,11 @@ async fn connect_http_snapshot(
         .map_err(|_| McpBindingError::ConnectionFailed {
             server: name.to_owned(),
         })?;
-    let transport = StreamableHttpClientTransport::with_client(
-        client,
-        StreamableHttpClientTransportConfig::with_uri(endpoint.to_string()),
-    );
+    let mut transport_config = StreamableHttpClientTransportConfig::with_uri(endpoint.to_string());
+    if let Some(headers) = headers {
+        transport_config = headers.apply(transport_config);
+    }
+    let transport = StreamableHttpClientTransport::with_client(client, transport_config);
     tokio::time::timeout(MCP_CONNECT_TIMEOUT, ().serve(transport))
         .await
         .map_err(|_| McpBindingError::ConnectionFailed {
@@ -912,7 +914,9 @@ async fn reconnect_snapshot(
         SnapshotTransport::Stdio(processes) => {
             connect_stdio_snapshot(&snapshot.request, processes).await?
         }
-        SnapshotTransport::RemoteHttp => connect_http_snapshot(&snapshot.request).await?,
+        SnapshotTransport::RemoteHttp(headers) => {
+            connect_http_snapshot(&snapshot.request, headers.as_ref()).await?
+        }
     };
     let server = snapshot.request.definition().name();
     let catalog_check = async {
@@ -1058,8 +1062,23 @@ impl McpRegistry {
     pub(crate) async fn connect_http_binding(
         request: Arc<McpBindingRequest>,
     ) -> Result<ConnectedMcpServer, McpBindingError> {
-        let service = connect_http_snapshot(&request).await?;
-        Self::connect_snapshot_binding(request, service, SnapshotTransport::RemoteHttp).await
+        let service = connect_http_snapshot(&request, None).await?;
+        Self::connect_snapshot_binding(request, service, SnapshotTransport::RemoteHttp(None)).await
+    }
+
+    /// Connect one run-scoped HTTP server with request-owned headers. Header
+    /// values never enter the serializable definition or global cache.
+    pub(crate) async fn connect_http_binding_with_headers(
+        request: Arc<McpBindingRequest>,
+        headers: &super::runtime::RunHttpHeaders,
+    ) -> Result<ConnectedMcpServer, McpBindingError> {
+        let service = connect_http_snapshot(&request, Some(headers)).await?;
+        Self::connect_snapshot_binding(
+            request,
+            service,
+            SnapshotTransport::RemoteHttp(Some(headers.clone())),
+        )
+        .await
     }
 
     async fn connect_snapshot_binding(

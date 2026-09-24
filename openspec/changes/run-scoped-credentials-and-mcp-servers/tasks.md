@@ -28,32 +28,32 @@ D1 falsifier map: F3 (credential containment) → 1.1–1.8; F4 (tool isolation,
 
 ## 2. Request surface
 
-- [ ] 2.1 Add `RunCredentialInput` and `RunMcpServerInput` (Deserialize-only, `SecretString` values, redacting `Debug`) and wire them into `CreateRunRequest`, `ResumeRequest` and `A2uiActionPayload`; verify 1.9 and 1.15 pass.
-- [ ] 2.2 Add `pub(crate)` `run_credentials` and `run_mcp_servers` to `RunExecutionRequest` with no `Serialize` impl; verify `cargo check` rejects a `serde_json::to_value` of either (a compile-fail doc test).
+- [x] 2.1 Add `RunCredentialInput` and `RunMcpServerInput` (Deserialize-only, `SecretString` values, redacting `Debug`) and wire them into `CreateRunRequest`, `ResumeRequest` and `A2uiActionPayload`; verify 1.9 and 1.15 pass.
+- [x] 2.2 Add `pub(crate)` `run_credentials` and `run_mcp_servers` to `RunExecutionRequest` with no `Serialize` impl; verify `cargo check` rejects a `serde_json::to_value` of either (a compile-fail doc test).
 - [ ] 2.3 Add config key `mcp.run_scoped.allowed_hosts` with loopback default; verify 1.15 non-allowlisted case.
 
 ## 3. Credentials
 
-- [ ] 3.1 Constrain routing to credentialed providers and apply the run credential after `apply_credential_layer` by replacing the run's `LlmConfig` (design D2 step 2, D10); verify 1.1, 1.2.
-- [ ] 3.2 Build fallback drivers only for credentialed providers; fail with `run_credential_provider_unavailable` otherwise; verify 1.6.
-- [ ] 3.3 Skip `ProviderHealthMonitor::record_failure` for every failure under a run credential (design D2 step 4); verify 1.7.
-- [ ] 3.4 Child guard for providers outside the parent's credentialed set; verify 1.3.
-- [ ] 3.5 Error-text scrubber for run secrets, including run-credential base URLs (raw and base64); verify the provider-echo case of 1.8 and the refused-connection case of 1.20.
-- [ ] 3.6 Base URL validation at the route (scheme, loopback rule via `local_only::host_is_local`, userinfo, local-only mode) and the provider-kind check; build the run credential's `LlmConfig` directly (design D10), replacing — not patching — the resolved config; add the `#[serde(skip)]` run-provider kind to `LlmConfig`, dispatch on it in `build_driver`, and redact `base_url` in `Debug` when it is set. Verify 1.9, 1.18, 1.19, 1.20.
-- [ ] 3.7 Check whether liter-llm's HTTP client follows redirects; if it does, disable them for drivers built from a run credential. Record the finding in the evidence folder. Verify with a `wiremock` 307 to a second mock in 1.18's harness: the second mock receives nothing.
-- [ ] 3.8 Add `run_scoped_credentials` and `run_scoped_mcp_servers` to the capabilities list (`sidecar-launch-security` design Decision 12) in the commit that completes sections 3–5. Verify 1.21.
+- [x] 3.1 Constrain routing to credentialed providers and apply the run credential after `apply_credential_layer` by replacing the run's `LlmConfig` (design D2 step 2, D10); verify 1.1, 1.2.
+- [x] 3.2 Build fallback drivers only for credentialed providers; fail with `run_credential_provider_unavailable` otherwise; verify 1.6.
+- [x] 3.3 Skip `ProviderHealthMonitor::record_failure` for every failure under a run credential (design D2 step 4); verify 1.7.
+- [x] 3.4 Child guard for providers outside the parent's credentialed set; verify 1.3.
+- [x] 3.5 Error-text scrubber for run secrets, including run-credential base URLs (raw and base64); verify the provider-echo case of 1.8 and the refused-connection case of 1.20.
+- [x] 3.6 Base URL validation at the route (scheme, loopback rule via `local_only::host_is_local`, userinfo, local-only mode) and the provider-kind check; build the run credential's `LlmConfig` directly (design D10), replacing — not patching — the resolved config; add the `#[serde(skip)]` run-provider kind to `LlmConfig`, dispatch on it in `build_driver`, and redact `base_url` in `Debug` when it is set. Verify 1.9, 1.18, 1.19, 1.20.
+- [x] 3.7 Check whether liter-llm's HTTP client follows redirects; if it does, disable them for drivers built from a run credential. Record the finding in the evidence folder. Verify with a `wiremock` 307 to a second mock in 1.18's harness: the second mock receives nothing.
+- [x] 3.8 Add `run_scoped_credentials` and `run_scoped_mcp_servers` to the capabilities list (`sidecar-launch-security` design Decision 12) in the commit that completes sections 3–5. Verify 1.21.
 
 ## 4. Resume and continuation
 
-- [ ] 4.1 Record `host_resources` in the run context; reject resume/continuation missing credentials or servers; verify 1.4, 1.14 continuation case.
-- [ ] 4.2 Accept and check the inline `artifact` on A2UI actions; pass it to `continue_with_interaction`; verify 1.5.
+- [x] 4.1 Record `host_resources` in the run context; reject resume/continuation missing credentials or servers; verify 1.4, 1.14 continuation case.
+- [x] 4.2 Accept and check the inline `artifact` on A2UI actions; pass it to `continue_with_interaction`; verify 1.5.
 
 ## 5. Run-scoped MCP
 
-- [ ] 5.1 Add the run-local server definition and connector with `custom_headers`/`auth_header`, no proxy, no redirects; verify 1.10.
-- [ ] 5.2 Build the run-local registry in place of `capture_root_mcp_resources` for host-owned runs and force `Selected` policy; reject non-run-scoped selections; verify 1.10–1.12.
-- [ ] 5.3 Keep run-local bindings out of the binding cache and pass them to children narrowed; verify 1.13.
-- [ ] 5.4 Tear down on root terminal state and `RunDelegationLifetime` drop; verify 1.14.
+- [x] 5.1 Add the run-local server definition and connector with `custom_headers`/`auth_header`, no proxy, no redirects; verify 1.10.
+- [x] 5.2 Build the run-local registry in place of `capture_root_mcp_resources` for host-owned runs and force `Selected` policy; reject non-run-scoped selections; verify 1.10–1.12.
+- [x] 5.3 Keep run-local bindings out of the binding cache and pass them to children narrowed; verify 1.13.
+- [x] 5.4 Tear down on root terminal state and `RunDelegationLifetime` drop; verify 1.14.
 
 ## 6. Phase-boundary verification
 

@@ -30,6 +30,11 @@ pub struct RunExecutionRequest {
     /// Requires a matching verified owner. When policy is not already resolved,
     /// the manager resolves it against this capture's immutable catalog.
     pub mcp_resources: Option<crate::mcp::runtime::McpRunResources>,
+    /// Request-scoped provider definitions. No member implements Serialize.
+    pub(crate) run_credentials: Option<super::host::RunCredentials>,
+    /// Safe names-only marker retained after secret resources are dropped.
+    pub(crate) host_resources_marker: super::host::HostResourcesMarker,
+    pub(crate) host_secret_scrubber: super::host::RunSecretScrubber,
     pub memory_hits: Vec<MemoryItem>,
     pub resolved_policy: Option<EffectiveRunPolicy>,
     /// Client output restrictions; these never grant template/resource access.
@@ -47,6 +52,10 @@ pub struct RunExecutionRequest {
     pub(crate) host_sandbox_constraint:
         Option<crate::uar::runtime::thread::policy_intersection::SandboxPermissions>,
     pub seed_history: Vec<SeedMessage>,
+    /// Validated host history for a cold sidecar session.
+    pub(crate) host_history: Option<Vec<Message>>,
+    /// Host-selected reasoning override for this run and local children.
+    pub(crate) reasoning_effort: Option<crate::config::ReasoningEffort>,
     /// Persisted checkpoint restoration admitted by the trusted host. The
     /// manager always resolves current policy again before accepting it.
     pub(crate) checkpoint_resume: Option<CheckpointResume>,
@@ -67,6 +76,9 @@ impl RunExecutionRequest {
             user_id: None,
             verified_owner: None,
             mcp_resources: None,
+            run_credentials: None,
+            host_resources_marker: Default::default(),
+            host_secret_scrubber: Default::default(),
             memory_hits: Vec::new(),
             resolved_policy: None,
             presentation_negotiation: Default::default(),
@@ -75,6 +87,8 @@ impl RunExecutionRequest {
             host_usage_grant: None,
             host_sandbox_constraint: None,
             seed_history: Vec::new(),
+            host_history: None,
+            reasoning_effort: None,
             checkpoint_resume: None,
             inherited_history: None,
             skill_attachments: Vec::new(),

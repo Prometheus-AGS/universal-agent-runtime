@@ -41,6 +41,16 @@ struct CreateRunRequest {
     input: String,
     session_id: Option<String>,
     #[serde(default)]
+    run_credentials: Option<Vec<crate::uar::runtime::turn::host::RunCredentialInput>>,
+    #[serde(default)]
+    mcp_servers: Option<Vec<crate::uar::runtime::turn::host::RunMcpServerInput>>,
+    #[serde(default)]
+    working_directory: Option<std::path::PathBuf>,
+    #[serde(default)]
+    reasoning_effort: Option<String>,
+    #[serde(default)]
+    history: Option<crate::uar::runtime::turn::host::HostHistoryInput>,
+    #[serde(default)]
     skill_attachments: Vec<String>,
     #[serde(flatten)]
     presentation_negotiation: crate::uar::a2ui::presentation_selection::PresentationNegotiation,
@@ -52,6 +62,218 @@ struct CreateRunResponse {
     stream_url: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     activation_failures: Vec<crate::uar::runtime::skills::activation::ActivationFailure>,
+    history: crate::uar::runtime::turn::host::HistorySeedStatus,
+    seeded_messages: usize,
+}
+
+#[derive(Debug)]
+pub(crate) struct RunApiError {
+    status: StatusCode,
+    code: &'static str,
+    message: &'static str,
+}
+
+impl From<crate::uar::runtime::turn::host::HostInputError> for RunApiError {
+    fn from(error: crate::uar::runtime::turn::host::HostInputError) -> Self {
+        Self {
+            status: StatusCode::UNPROCESSABLE_ENTITY,
+            code: error.code,
+            message: error.message,
+        }
+    }
+}
+
+impl IntoResponse for RunApiError {
+    fn into_response(self) -> axum::response::Response {
+        (
+            self.status,
+            Json(serde_json::json!({ "code": self.code, "error": self.message })),
+        )
+            .into_response()
+    }
+}
+
+fn canonical_working_directory(
+    requested: Option<std::path::PathBuf>,
+) -> Result<Option<std::path::PathBuf>, RunApiError> {
+    let Some(requested) = requested else {
+        return Ok(None);
+    };
+    if !requested.is_absolute() {
+        return Err(crate::uar::runtime::turn::host::HostInputError::new(
+            "working_directory_invalid",
+            "working_directory must name an absolute non-root directory",
+        )
+        .into());
+    }
+    let canonical = std::fs::canonicalize(requested).map_err(|_| {
+        RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
+            "working_directory_invalid",
+            "working_directory must name an existing directory",
+        ))
+    })?;
+    if !canonical.is_dir() || canonical.parent().is_none() {
+        return Err(crate::uar::runtime::turn::host::HostInputError::new(
+            "working_directory_invalid",
+            "working_directory must name an absolute non-root directory",
+        )
+        .into());
+    }
+    Ok(Some(canonical))
+}
+
+pub(crate) fn attach_host_resources(
+    request: &mut crate::uar::runtime::turn::RunExecutionRequest,
+    run_credentials: Option<Vec<crate::uar::runtime::turn::host::RunCredentialInput>>,
+    mcp_servers: Option<Vec<crate::uar::runtime::turn::host::RunMcpServerInput>>,
+    working_directory: Option<std::path::PathBuf>,
+    reasoning_effort: Option<String>,
+    history: Option<crate::uar::runtime::turn::host::HostHistoryInput>,
+) -> Result<(), RunApiError> {
+    if working_directory.is_some() {
+        request.working_directory = canonical_working_directory(working_directory)?;
+    }
+    if let Some(reasoning_effort) = reasoning_effort {
+        request.reasoning_effort = Some(match reasoning_effort.as_str() {
+            "none" => crate::config::ReasoningEffort::None,
+            "low" => crate::config::ReasoningEffort::Low,
+            "medium" => crate::config::ReasoningEffort::Medium,
+            "high" => crate::config::ReasoningEffort::High,
+            "max" => crate::config::ReasoningEffort::Max,
+            _ => {
+                return Err(crate::uar::runtime::turn::host::HostInputError::new(
+                    "reasoning_effort_invalid",
+                    "reasoning_effort must be none, low, medium, high, or max",
+                )
+                .into());
+            }
+        });
+    }
+    if let Some(history) = history {
+        request.host_history = Some(history.validate(request.session_id.as_deref())?);
+    }
+    if let Some(credentials) = run_credentials {
+        let credentials =
+            crate::uar::runtime::turn::host::RunCredentials::from_inputs(credentials)?;
+        if !credentials.contains(&request.artifact.policy.provider.default.provider) {
+            return Err(crate::uar::runtime::turn::host::HostInputError::new(
+                "run_credential_provider_unavailable",
+                "agent default provider has no run credential",
+            )
+            .into());
+        }
+        if request
+            .artifact
+            .policy
+            .provider
+            .fallbacks
+            .iter()
+            .any(|fallback| !credentials.contains(&fallback.provider))
+        {
+            return Err(crate::uar::runtime::turn::host::HostInputError::new(
+                "run_credential_provider_unavailable",
+                "agent fallback provider has no run credential",
+            )
+            .into());
+        }
+        request.host_resources_marker.credential_providers =
+            credentials.provider_ids().into_iter().collect();
+        request.host_secret_scrubber.extend(credentials.scrubber());
+        request.run_credentials = Some(credentials);
+    }
+    if let Some(servers) = mcp_servers {
+        let servers = crate::uar::runtime::turn::host::RunMcpServers::from_inputs(servers)?;
+        let server_names = servers.names();
+        if let Some(value) = request.artifact.extensions.get("mcp_servers")
+            && !value.is_null()
+        {
+            let declared = serde_json::from_value::<crate::uar::compiler::ir::McpServersSection>(
+                value.clone(),
+            )
+            .map_err(|_| {
+                RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
+                    "mcp_server_not_run_scoped",
+                    "agent MCP selection is invalid",
+                ))
+            })?;
+            if declared
+                .servers
+                .iter()
+                .any(|server| !server_names.contains(&server.id))
+            {
+                return Err(crate::uar::runtime::turn::host::HostInputError::new(
+                    "mcp_server_not_run_scoped",
+                    "agent selects an MCP server outside this run",
+                )
+                .into());
+            }
+        }
+        let owner = request.verified_owner.clone().ok_or_else(|| RunApiError {
+            status: StatusCode::UNAUTHORIZED,
+            code: "run_mcp_server_invalid",
+            message: "run-scoped MCP requires a verified principal",
+        })?;
+        let cwd = request
+            .working_directory
+            .clone()
+            .or_else(|| std::env::current_dir().ok())
+            .ok_or_else(|| {
+                RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
+                    "working_directory_invalid",
+                    "working directory is unavailable",
+                ))
+            })?;
+        request.host_resources_marker.mcp_servers = server_names.into_iter().collect();
+        request.host_secret_scrubber.extend(servers.scrubber());
+        request.mcp_resources = Some(servers.resources(owner, cwd)?);
+    }
+    request.host_resources_marker.artifact_inline = true;
+    Ok(())
+}
+
+pub(crate) fn require_matching_host_resources(
+    marker: &crate::uar::runtime::turn::host::HostResourcesMarker,
+    request: &crate::uar::runtime::turn::RunExecutionRequest,
+) -> Result<(), RunApiError> {
+    if marker.artifact_inline != request.host_resources_marker.artifact_inline {
+        return Err(crate::uar::runtime::turn::host::HostInputError::new(
+            "run_artifact_required",
+            "continuation must reattach the source run artifact",
+        )
+        .into());
+    }
+    if marker.credential_providers != request.host_resources_marker.credential_providers {
+        return Err(crate::uar::runtime::turn::host::HostInputError::new(
+            "run_credential_required",
+            "resume must reattach the source run provider credentials",
+        )
+        .into());
+    }
+    if marker.mcp_servers != request.host_resources_marker.mcp_servers {
+        return Err(crate::uar::runtime::turn::host::HostInputError::new(
+            "run_mcp_servers_required",
+            "resume must reattach the source run MCP servers",
+        )
+        .into());
+    }
+    Ok(())
+}
+
+fn inherit_host_context(
+    source: &crate::uar::domain::runs::Run,
+    request: &mut crate::uar::runtime::turn::RunExecutionRequest,
+) {
+    let Some(context) = source.context.get("host_context") else {
+        return;
+    };
+    request.working_directory = context
+        .get("working_directory")
+        .and_then(serde_json::Value::as_str)
+        .map(std::path::PathBuf::from);
+    request.reasoning_effort = context
+        .get("reasoning_effort")
+        .cloned()
+        .and_then(|value| serde_json::from_value(value).ok());
 }
 
 #[derive(Deserialize)]
@@ -64,24 +286,52 @@ async fn create_run(
     State(manager): State<Arc<RunManager>>,
     Extension(user): Extension<UserContext>,
     Json(req): Json<CreateRunRequest>,
-) -> Result<Json<CreateRunResponse>, StatusCode> {
+) -> Result<Json<CreateRunResponse>, RunApiError> {
     let mut request = crate::uar::runtime::turn::RunExecutionRequest::new(req.artifact, req.input)
         .with_user_context(&user)
-        .map_err(|_| StatusCode::UNAUTHORIZED)?;
+        .map_err(|_| RunApiError {
+            status: StatusCode::UNAUTHORIZED,
+            code: "principal_invalid",
+            message: "run principal is invalid",
+        })?;
     request.session_id = req.session_id;
     request.skill_attachments = req.skill_attachments;
     request.presentation_negotiation = req.presentation_negotiation;
+    attach_host_resources(
+        &mut request,
+        req.run_credentials,
+        req.mcp_servers,
+        req.working_directory,
+        req.reasoning_effort,
+        req.history,
+    )?;
     let run_id = manager.execute_request(request).await;
-    let activation_failures = manager
+    let run_context = manager
         .get_run(&run_id)
         .await
-        .and_then(|run| run.context.get("activation_failures").cloned())
+        .map(|run| run.context)
+        .unwrap_or_default();
+    let activation_failures = run_context
+        .get("activation_failures")
+        .cloned()
         .and_then(|value| serde_json::from_value(value).ok())
+        .unwrap_or_default();
+    let history = run_context
+        .get("history")
+        .cloned()
+        .and_then(|value| serde_json::from_value(value).ok())
+        .unwrap_or(crate::uar::runtime::turn::host::HistorySeedStatus::None);
+    let seeded_messages = run_context
+        .get("seeded_messages")
+        .and_then(serde_json::Value::as_u64)
+        .and_then(|value| usize::try_from(value).ok())
         .unwrap_or_default();
     Ok(Json(CreateRunResponse {
         run_id: run_id.clone(),
         stream_url: format!("/api/uar/runs/{run_id}/stream"),
         activation_failures,
+        history,
+        seeded_messages,
     }))
 }
 
@@ -293,6 +543,16 @@ struct ResumeRequest {
     /// Optional new input message; defaults to restoring the last checkpoint state.
     input: Option<String>,
     session_id: Option<String>,
+    #[serde(default)]
+    run_credentials: Option<Vec<crate::uar::runtime::turn::host::RunCredentialInput>>,
+    #[serde(default)]
+    mcp_servers: Option<Vec<crate::uar::runtime::turn::host::RunMcpServerInput>>,
+    #[serde(default)]
+    working_directory: Option<std::path::PathBuf>,
+    #[serde(default)]
+    reasoning_effort: Option<String>,
+    #[serde(default)]
+    history: Option<crate::uar::runtime::turn::host::HostHistoryInput>,
     #[serde(flatten)]
     presentation_negotiation: crate::uar::a2ui::presentation_selection::PresentationNegotiation,
 }
@@ -306,8 +566,28 @@ async fn resume_run(
     Path(run_id): Path<String>,
     Json(req): Json<ResumeRequest>,
 ) -> impl IntoResponse {
-    if manager.get_run_for_context(&user, &run_id).await.is_none() {
+    let Some(source_run) = manager.get_run_for_context(&user, &run_id).await else {
         return StatusCode::NOT_FOUND.into_response();
+    };
+    if req.history.is_some() {
+        return RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
+            "history_invalid",
+            "resume uses the source session history",
+        ))
+        .into_response();
+    }
+    let source_marker = source_run
+        .context
+        .get("host_resources")
+        .cloned()
+        .and_then(|value| serde_json::from_value(value).ok())
+        .unwrap_or_default();
+    if req.artifact.id != source_run.agent_id {
+        return RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
+            "run_artifact_mismatch",
+            "resume artifact does not match the source run",
+        ))
+        .into_response();
     }
     let input = req.input.unwrap_or_else(|| {
         // No explicit input — use a standard resume message.
@@ -320,8 +600,23 @@ async fn resume_run(
         Ok(request) => request,
         Err(_) => return StatusCode::UNAUTHORIZED.into_response(),
     };
-    request.session_id = req.session_id;
+    request.session_id = req
+        .session_id
+        .or_else(|| source_run.conversation_id.clone());
     request.presentation_negotiation = req.presentation_negotiation;
+    inherit_host_context(&source_run, &mut request);
+    if let Err(error) = attach_host_resources(
+        &mut request,
+        req.run_credentials,
+        req.mcp_servers,
+        req.working_directory,
+        req.reasoning_effort,
+        None,
+    )
+    .and_then(|()| require_matching_host_resources(&source_marker, &request))
+    {
+        return error.into_response();
+    }
     let new_run_id = manager.execute_request(request).await;
 
     Json(serde_json::json!({
@@ -342,8 +637,28 @@ async fn resume_run_from_checkpoint(
     Path((run_id, checkpoint_id)): Path<(String, String)>,
     Json(req): Json<ResumeRequest>,
 ) -> impl IntoResponse {
-    if manager.get_run_for_context(&user, &run_id).await.is_none() {
+    let Some(source_run) = manager.get_run_for_context(&user, &run_id).await else {
         return StatusCode::NOT_FOUND.into_response();
+    };
+    if req.history.is_some() {
+        return RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
+            "history_invalid",
+            "checkpoint resume uses protected checkpoint history",
+        ))
+        .into_response();
+    }
+    let source_marker = source_run
+        .context
+        .get("host_resources")
+        .cloned()
+        .and_then(|value| serde_json::from_value(value).ok())
+        .unwrap_or_default();
+    if req.artifact.id != source_run.agent_id {
+        return RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
+            "run_artifact_mismatch",
+            "checkpoint resume artifact does not match the source run",
+        ))
+        .into_response();
     }
     let Some(db) = &manager.persistence else {
         return (
@@ -418,7 +733,9 @@ async fn resume_run_from_checkpoint(
         Err(_) => return StatusCode::UNAUTHORIZED.into_response(),
     };
     request.input = req.input;
-    request.session_id = req.session_id;
+    request.session_id = req
+        .session_id
+        .or_else(|| source_run.conversation_id.clone());
     request.checkpoint_resume = Some(crate::uar::runtime::turn::CheckpointResume {
         state: restored,
         history,
@@ -426,6 +743,19 @@ async fn resume_run_from_checkpoint(
             .expect("validated current checkpoint has authorization binding"),
     });
     request.presentation_negotiation = req.presentation_negotiation;
+    inherit_host_context(&source_run, &mut request);
+    if let Err(error) = attach_host_resources(
+        &mut request,
+        req.run_credentials,
+        req.mcp_servers,
+        req.working_directory,
+        req.reasoning_effort,
+        None,
+    )
+    .and_then(|()| require_matching_host_resources(&source_marker, &request))
+    {
+        return error.into_response();
+    }
     let new_run_id = manager.execute_request(request).await;
 
     Json(serde_json::json!({

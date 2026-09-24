@@ -462,6 +462,9 @@ pub struct DialectRequest {
     pub multi_turn: bool,
     /// Hard problem — request the highest thinking effort where supported.
     pub hard: bool,
+    /// Explicit host override. Absence preserves the configured behavior;
+    /// `ReasoningEffort::None` deliberately removes reasoning parameters.
+    pub effort: Option<crate::config::ReasoningEffort>,
 }
 
 /// The prompt dialect engine: detect dialect, emit per-model request params.
@@ -496,18 +499,33 @@ impl PromptDialectEngine {
     #[must_use]
     pub fn request_params(&self, model_id: &str, req: DialectRequest) -> Value {
         let dialect = PromptDialect::detect(model_id);
+        let explicit = req.effort;
+        let wants_reasoning = explicit.map_or(req.wants_reasoning, |effort| {
+            effort != crate::config::ReasoningEffort::None
+        });
+        let effort = explicit.map(crate::config::ReasoningEffort::as_str);
+        let budget = explicit
+            .and_then(crate::config::ReasoningEffort::thinking_budget)
+            .unwrap_or(if req.hard { 8_192 } else { 2_048 });
         match dialect {
-            PromptDialect::AnthropicXml if req.wants_reasoning => json!({
-                "thinking": { "type": "enabled", "budget_tokens": if req.hard { 8192 } else { 2048 } }
+            PromptDialect::AnthropicXml if wants_reasoning => json!({
+                "thinking": { "type": "enabled", "budget_tokens": budget }
             }),
-            PromptDialect::KimiMarkdown if req.wants_reasoning || req.multi_turn => json!({
-                "thinking": { "type": "enabled", "keep": "all" }
+            PromptDialect::OpenAiJson if wants_reasoning && effort.is_some() => json!({
+                "reasoning_effort": effort
             }),
-            PromptDialect::GlmThinking if req.wants_reasoning => json!({
+            PromptDialect::KimiMarkdown
+                if wants_reasoning || (explicit.is_none() && req.multi_turn) =>
+            {
+                json!({
+                    "thinking": { "type": "enabled", "keep": "all" }
+                })
+            }
+            PromptDialect::GlmThinking if wants_reasoning => json!({
                 "thinking": { "type": "enabled" },
-                "reasoning_effort": if req.hard { "max" } else { "high" }
+                "reasoning_effort": effort.unwrap_or(if req.hard { "max" } else { "high" })
             }),
-            PromptDialect::QwenHybrid if req.wants_reasoning => {
+            PromptDialect::QwenHybrid if wants_reasoning => {
                 if req.multi_turn {
                     json!({ "enable_thinking": true, "preserve_thinking": true })
                 } else {

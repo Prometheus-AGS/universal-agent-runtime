@@ -24,22 +24,22 @@ D1 falsifier map: F1 field contract rows "working directory" and "reasoning_effo
 
 ## 2. Working directory
 
-- [ ] 2.1 Validate and canonicalize `working_directory` in `create_run`; set it on the request; verify 1.1.
+- [x] 2.1 Validate and canonicalize `working_directory` in `create_run`; set it on the request; verify 1.1.
 - [ ] 2.2 Pass the run working directory to `terminal_exec` as its default cwd; verify 1.2.
 - [ ] 2.3 Register run-local file tools with roots from the working directory under the D2 root rules; verify 1.3–1.5 and 1.7.
 
 ## 3. Reasoning effort
 
-- [ ] 3.1 Add `ReasoningEffort`, parse it at the route, store it as `#[serde(skip)]` run metadata on `LlmConfig`; verify the 422 case of 1.6.
-- [ ] 3.2 Extend `DialectRequest` with `effort` and the per-dialect mapping; confirm the OpenAI-family parameter name through liter-llm before coding it; verify 1.6 and 1.7.
-- [ ] 3.3 Record `host_context` in `run.context`; verify 1.8.
+- [x] 3.1 Add `ReasoningEffort`, parse it at the route, store it as `#[serde(skip)]` run metadata on `LlmConfig`; verify the 422 case of 1.6.
+- [x] 3.2 Extend `DialectRequest` with `effort` and the per-dialect mapping; confirm the OpenAI-family parameter name through liter-llm before coding it; verify 1.6 and 1.7.
+- [x] 3.3 Record `host_context` in `run.context`; verify 1.8.
 
 ## 4. Host history
 
-- [ ] 4.1 Add `HostHistory` types and route-level validation and limits; verify 1.11, 1.13, 1.15.
-- [ ] 4.2 Add `Session::seed_if_empty` and use it at the seeding site for both host and embedded seed paths; record the outcome in `run.context`; verify 1.9, 1.12, 1.14, 1.16.
-- [ ] 4.3 Return `history` and `seeded_messages` from `create_run`; verify 1.9 and 1.10.
-- [ ] 4.4 Advertise the `host_history`, `working_directory` and `reasoning_effort` flags in `GET /api/uar/capabilities` (added by `sidecar-launch-security`) once their behaviour ships; verify the endpoint lists each flag only when its contract tests pass.
+- [x] 4.1 Add `HostHistory` types and route-level validation and limits; verify 1.11, 1.13, 1.15.
+- [x] 4.2 Add `Session::seed_if_empty` and use it at the seeding site for both host and embedded seed paths; record the outcome in `run.context`; verify 1.9, 1.12, 1.14, 1.16.
+- [x] 4.3 Return `history` and `seeded_messages` from `create_run`; verify 1.9 and 1.10.
+- [x] 4.4 Advertise the `host_history`, `working_directory` and `reasoning_effort` flags in `GET /api/uar/capabilities` (added by `sidecar-launch-security`) once their behaviour ships; verify the endpoint lists each flag only when its contract tests pass.
 
 ## 5. Phase-boundary verification
 

@@ -58,8 +58,9 @@ pub fn build_driver(llm_config: &LlmConfig) -> anyhow::Result<Arc<dyn LlmDriver>
 
     let (model_provider_id, model_id) = super::registry::split_model_string_pub(&llm_config.model);
     let provider_id = llm_config
-        .resolved_provider_id
+        .host_provider_kind
         .as_deref()
+        .or(llm_config.resolved_provider_id.as_deref())
         .unwrap_or(&model_provider_id);
     if provider_id == "anthropic" && super::anthropic_native_driver_enabled() {
         let api_key = llm_config
@@ -1563,6 +1564,7 @@ impl Orchestrator {
                             wants_reasoning: orchestrator.llm_config.thinking_budget.is_some(),
                             multi_turn: message_json.len() > 1,
                             hard: orchestrator.llm_config.thinking_budget.unwrap_or(0) > 4096,
+                            effort: orchestrator.llm_config.reasoning_effort,
                         },
                     );
                 let base_req = LlmRequest {

@@ -57,6 +57,7 @@ pub(crate) struct RunDelegationBindings {
     pub(crate) working_directory: std::path::PathBuf,
     pub(crate) approvals: crate::uar::runtime::thread::approvals::RootApprovalChannel,
     pub(crate) cancellation: tokio_util::sync::CancellationToken,
+    pub(crate) run_scoped_mcp: Option<crate::mcp::runtime::McpRuntimeManager>,
 }
 
 impl std::fmt::Debug for RunDelegationBindings {
@@ -75,6 +76,15 @@ impl Drop for RunDelegationLifetime {
     fn drop(&mut self) {
         if let Some(bindings) = &self.0 {
             bindings.cancellation.cancel();
+            if let Some(runtime) = bindings.run_scoped_mcp.clone()
+                && let Ok(handle) = tokio::runtime::Handle::try_current()
+            {
+                handle.spawn(async move {
+                    if let Err(error) = runtime.shutdown().await {
+                        tracing::warn!(%error, "Run-scoped MCP cleanup failed");
+                    }
+                });
+            }
         }
     }
 }
@@ -153,6 +163,7 @@ impl RunModelBindings {
         failover: FailoverConfig,
         health: Option<Arc<ProviderHealthMonitor>>,
         budget: crate::uar::runtime::cost_budget::ModelCallBudget,
+        run_credentials: Option<&super::host::RunCredentials>,
     ) -> anyhow::Result<Self> {
         budget.admit()?;
         let primary = match supplied_primary {
@@ -173,17 +184,28 @@ impl RunModelBindings {
                     continue;
                 }
                 let (provider, _) = crate::llm::registry::split_model_string_pub(&fallback.model);
-                if let Some(health) = &health
+                if run_credentials.is_none()
+                    && let Some(health) = &health
                     && !health.is_available(&provider).await
                 {
                     tracing::info!(model = %fallback.model, %provider,
                         "Skipping fallback provider in cooldown while capturing run bindings");
                     continue;
                 }
-                match Orchestrator::build_fallback_driver(&config, fallback) {
+                let driver = match run_credentials {
+                    Some(credentials) => credentials
+                        .config_for(&provider, Some(&fallback.model), config.clone())
+                        .map_err(anyhow::Error::from)
+                        .and_then(|fallback_config| {
+                            crate::llm::orchestrator::build_driver(&fallback_config)
+                        }),
+                    None => Orchestrator::build_fallback_driver(&config, fallback),
+                };
+                match driver {
                     Ok(driver) => {
                         fallbacks.push(BoundModel::capture(fallback.model.clone(), driver))
                     }
+                    Err(error) if run_credentials.is_some() => return Err(error),
                     Err(error) => tracing::warn!(model = %fallback.model, %error,
                         "Failed to capture fallback driver; continuing with remaining candidates"),
                 }

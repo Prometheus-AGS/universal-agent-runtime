@@ -66,6 +66,22 @@ pub struct ArtifactResponsePayload {
     /// - `select`: `{ "value": "selected_option_value" }`
     /// - `text_input`: `{ "text": "user input" }`
     pub response: serde_json::Value,
+    #[serde(flatten)]
+    pub host: ContinuationHostInput,
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct ContinuationHostInput {
+    #[serde(default)]
+    pub artifact: Option<crate::uar::domain::artifact::AgentArtifact>,
+    #[serde(default, alias = "runCredentials")]
+    pub run_credentials: Option<Vec<crate::uar::runtime::turn::host::RunCredentialInput>>,
+    #[serde(default, alias = "mcpServers")]
+    pub mcp_servers: Option<Vec<crate::uar::runtime::turn::host::RunMcpServerInput>>,
+    #[serde(default, alias = "workingDirectory")]
+    pub working_directory: Option<std::path::PathBuf>,
+    #[serde(default, alias = "reasoningEffort")]
+    pub reasoning_effort: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -88,6 +104,8 @@ pub struct A2uiActionPayload {
     pub context: serde_json::Value,
     #[serde(default)]
     pub a2ui_client_data_model: Option<serde_json::Value>,
+    #[serde(flatten)]
+    pub host: ContinuationHostInput,
 }
 
 #[derive(Debug, Serialize)]
@@ -142,6 +160,45 @@ struct TestTriggerAck {
     run_id: String,
     artifact_id: String,
     status: &'static str,
+}
+
+async fn continue_run(
+    state: &A2uiApiState,
+    run: &crate::uar::domain::runs::Run,
+    interaction: serde_json::Value,
+    user: &UserContext,
+    host: ContinuationHostInput,
+) -> Result<String, axum::response::Response> {
+    let source_marker = run
+        .context
+        .get("host_resources")
+        .cloned()
+        .and_then(|value| serde_json::from_value(value).ok())
+        .unwrap_or_default();
+    let mut request = state
+        .run_manager
+        .prepare_interaction_request(&run.run_id, interaction, user, host.artifact)
+        .await
+        .map_err(|error| {
+            (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(serde_json::json!({ "error": error })),
+            )
+                .into_response()
+        })?;
+    crate::uar::api::routes::attach_host_resources(
+        &mut request,
+        host.run_credentials,
+        host.mcp_servers,
+        host.working_directory,
+        host.reasoning_effort,
+        None,
+    )
+    .and_then(|()| {
+        crate::uar::api::routes::require_matching_host_resources(&source_marker, &request)
+    })
+    .map_err(|error| error.into_response())?;
+    Ok(state.run_manager.execute_request(request).await)
 }
 
 // ── Handlers ──────────────────────────────────────────────────────────────────
@@ -237,27 +294,15 @@ async fn submit_artifact_response(
     // Resume agent execution through a real continuation run in the same
     // conversation. The previous implementation stopped at the synthetic
     // ToolEnd above and therefore never actually returned control to the LLM.
-    let continuation_run_id = match state
-        .run_manager
-        .continue_with_interaction(
-            &run.run_id,
-            serde_json::json!({
-                "artifactId": payload.artifact_id,
-                "response": payload.response,
-            }),
-            &user,
-        )
-        .await
-    {
-        Ok(value) => value,
-        Err(error) => {
-            return (
-                StatusCode::CONFLICT,
-                Json(serde_json::json!({ "error": error })),
-            )
-                .into_response();
-        }
-    };
+    let interaction = serde_json::json!({
+        "artifactId": payload.artifact_id,
+        "response": payload.response,
+    });
+    let continuation_run_id =
+        match continue_run(&state, &run, interaction, &user, payload.host).await {
+            Ok(value) => value,
+            Err(response) => return response,
+        };
 
     (
         StatusCode::OK,
@@ -442,20 +487,11 @@ async fn submit_action(
             },
         )
         .await;
-    let continuation_run_id = match state
-        .run_manager
-        .continue_with_interaction(&run.run_id, interaction, &user)
-        .await
-    {
-        Ok(value) => value,
-        Err(error) => {
-            return (
-                StatusCode::CONFLICT,
-                Json(serde_json::json!({ "error": error })),
-            )
-                .into_response();
-        }
-    };
+    let continuation_run_id =
+        match continue_run(&state, &run, interaction, &user, payload.host).await {
+            Ok(value) => value,
+            Err(response) => return response,
+        };
     (
         StatusCode::ACCEPTED,
         Json(A2uiContinuationAck {

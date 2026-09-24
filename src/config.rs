@@ -1648,12 +1648,59 @@ pub fn build_client_config(llm: &LlmConfig) -> liter_llm::ClientConfig {
         builder = builder.base_url(url.clone());
     }
 
-    builder.build()
+    let mut config = builder.build();
+    if llm.host_supplied_connection {
+        config.load_env = false;
+        config.redact_base_url = true;
+        config.transport = config
+            .transport
+            .with_proxies_disabled(true)
+            .with_redirects_disabled(true);
+    }
+    config
 }
 
 // =============================================================================
 // LLM CONFIGURATION
 // =============================================================================
+
+/// Host-selected reasoning level for one run.
+///
+/// This is runtime metadata. It is never loaded from or written to UAR's
+/// process-wide configuration.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ReasoningEffort {
+    None,
+    Low,
+    Medium,
+    High,
+    Max,
+}
+
+impl ReasoningEffort {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Low => "low",
+            Self::Medium => "medium",
+            Self::High => "high",
+            Self::Max => "max",
+        }
+    }
+
+    #[must_use]
+    pub const fn thinking_budget(self) -> Option<u32> {
+        match self {
+            Self::None => None,
+            Self::Low => Some(1_024),
+            Self::Medium => Some(2_048),
+            Self::High => Some(8_192),
+            Self::Max => Some(16_384),
+        }
+    }
+}
 
 /// Unified LLM configuration for the liter-llm client.
 ///
@@ -1673,6 +1720,20 @@ pub struct LlmConfig {
     #[serde(skip)]
     #[schemars(skip)]
     pub resolved_provider_id: Option<String>,
+    /// Wire protocol selected by a host-supplied run credential. The provider
+    /// id remains the host's stable identity and may differ from this protocol.
+    #[serde(skip)]
+    #[schemars(skip)]
+    pub host_provider_kind: Option<String>,
+    /// Marks a connection assembled from request-scoped secret material. Its
+    /// endpoint is redacted from Debug and shared health state is not attached.
+    #[serde(skip)]
+    #[schemars(skip)]
+    pub host_supplied_connection: bool,
+    /// Request-scoped reasoning override inherited by local child runs.
+    #[serde(skip)]
+    #[schemars(skip)]
+    pub reasoning_effort: Option<ReasoningEffort>,
     /// API key for the default provider.
     #[serde(default)]
     pub api_key: Option<String>,
@@ -1751,7 +1812,14 @@ impl std::fmt::Debug for LlmConfig {
             .field("resolved_provider_id", &self.resolved_provider_id)
             .field("api_key", &redact_opt(&self.api_key))
             .field("api_key_env", &self.api_key_env)
-            .field("base_url", &self.base_url)
+            .field(
+                "base_url",
+                &if self.host_supplied_connection {
+                    self.base_url.as_ref().map(|_| REDACTED)
+                } else {
+                    self.base_url.as_deref()
+                },
+            )
             .field("protocol", &self.protocol)
             .field("parallel_tool_calls", &self.parallel_tool_calls)
             .field("timeout_secs", &self.timeout_secs)
@@ -1764,6 +1832,7 @@ impl std::fmt::Debug for LlmConfig {
             .field("cooldown_secs", &self.cooldown_secs)
             .field("health_check_secs", &self.health_check_secs)
             .field("thinking_budget", &self.thinking_budget)
+            .field("reasoning_effort", &self.reasoning_effort)
             .field("embedding", &self.embedding)
             .field("provider_keys", &provider_keys)
             .finish()
@@ -1793,6 +1862,9 @@ impl Default for LlmConfig {
         Self {
             model: Self::default_model(),
             resolved_provider_id: None,
+            host_provider_kind: None,
+            host_supplied_connection: false,
+            reasoning_effort: None,
             api_key: None,
             api_key_env: None,
             base_url: None,
