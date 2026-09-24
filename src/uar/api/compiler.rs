@@ -32,7 +32,7 @@ use serde::{Deserialize, Serialize};
 use crate::uar::compiler::completeness::CompletenessAnalyzer;
 use crate::uar::compiler::service::CompilerService;
 use crate::uar::compiler::session::CompilerSession;
-use crate::uar::domain::artifact::AgentArtifact;
+use crate::uar::domain::{agent_store, artifact::AgentArtifact};
 use crate::uar::persistence::PersistenceLayer;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -261,11 +261,16 @@ async fn compile_and_register(
     // Convert the compiled descriptor's IR payload into a runtime artifact.
     let artifact = AgentArtifact::from(&output.descriptor.payload);
 
-    // Persist the artifact (same call `create_agent` uses).
-    if let Err(e) = persistence.save_agent(&artifact).await {
+    // Persist through the same validation path as HTTP and embedded hosts.
+    if let Err(error) = agent_store::upsert_agent(persistence.as_ref(), &artifact).await {
+        let status = if matches!(error, agent_store::AgentStoreError::Invalid(_)) {
+            StatusCode::UNPROCESSABLE_ENTITY
+        } else {
+            StatusCode::SERVICE_UNAVAILABLE
+        };
         return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({ "error": e.to_string() })),
+            status,
+            Json(serde_json::json!({ "error": error.to_string() })),
         )
             .into_response();
     }

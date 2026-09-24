@@ -192,7 +192,7 @@ pub async fn seed_builtin_agents(
 ) -> anyhow::Result<()> {
     for agent in [default_agent(), orchestrator_agent()] {
         let id = agent.id.clone();
-        match persistence.save_agent(&agent).await {
+        match crate::uar::domain::agent_store::upsert_agent(persistence, &agent).await {
             Ok(()) => {
                 tracing::info!(agent_id = %id, "Built-in agent seeded/refreshed");
             }
@@ -209,7 +209,7 @@ pub async fn seed_builtin_agents(
         compiler_agent(),
     ] {
         if persistence.load_agent(&agent.id).await?.is_none() {
-            persistence.save_agent(&agent).await?;
+            crate::uar::domain::agent_store::upsert_agent(persistence, &agent).await?;
         }
     }
     Ok(())

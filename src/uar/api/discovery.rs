@@ -90,26 +90,27 @@ struct BuiltInToolEntry {
 }
 
 pub async fn list_agents(State(state): State<AppState>) -> impl IntoResponse {
-    let mut runtime_agents = match &state.persistence {
-        Some(persistence) => persistence.list_agents().await.unwrap_or_default(),
-        None => Vec::new(),
+    let runtime_agents = match state.run_manager.list_registered_agents().await {
+        Ok(agents) => agents,
+        Err(error) => return agent_store_error_response(error).into_response(),
     };
-    ensure_builtin_agent(&mut runtime_agents, crate::uar::defaults::default_agent());
-    ensure_builtin_agent(
-        &mut runtime_agents,
-        crate::uar::defaults::orchestrator_agent(),
-    );
-
-    let federated_agents = state
-        .federated_agent_registry
-        .list_agents()
-        .await
-        .unwrap_or_default();
+    let federated_agents = match state.federated_agent_registry.list_agents().await {
+        Ok(agents) => agents,
+        Err(error) => {
+            tracing::error!(%error, "Federated agent catalog is unavailable");
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Federated agent catalog is unavailable".to_string(),
+            )
+                .into_response();
+        }
+    };
 
     Json(AgentsCatalogResponse {
         runtime_agents,
         federated_agents,
     })
+    .into_response()
 }
 
 async fn current_agent_by_session(
@@ -151,9 +152,13 @@ async fn current_agent_by_session(
             .into_response();
     };
 
-    let agent = match resolve_agent_artifact(&state, &run.agent_id).await {
-        Ok(agent) => agent,
-        Err(error) => return error.into_response(),
+    let agent = match state
+        .run_manager
+        .resolve_registered_agent(&run.agent_id)
+        .await
+    {
+        Ok(agent) => Some(agent),
+        Err(error) => return agent_store_error_response(error).into_response(),
     };
     Json(SessionAgentResponse {
         session_id,
@@ -250,51 +255,19 @@ pub async fn list_tools(State(state): State<AppState>) -> impl IntoResponse {
     })
 }
 
-fn ensure_builtin_agent(agents: &mut Vec<AgentArtifact>, candidate: AgentArtifact) {
-    if !agents.iter().any(|a| a.id == candidate.id) {
-        agents.push(candidate);
-    }
-}
-
-async fn resolve_agent_artifact(
-    state: &AppState,
-    agent_id: &str,
-) -> Result<Option<AgentArtifact>, (StatusCode, String)> {
-    if let Some(persistence) = &state.persistence {
-        let persisted = persistence.load_agent(agent_id).await.map_err(|_| {
-            (
-                StatusCode::SERVICE_UNAVAILABLE,
-                "Agent policy storage is unavailable".to_string(),
-            )
-        })?;
-        if persisted.is_some() {
-            return Ok(persisted);
-        }
-    }
-    Ok(match agent_id {
-        "default-agent" => Some(crate::uar::defaults::default_agent()),
-        "orchestrator-agent" => Some(crate::uar::defaults::orchestrator_agent()),
-        _ => None,
-    })
-}
-
 /// Public wrapper used by the chat handler to resolve an agent by id.
 ///
-/// Retains the legacy unknown-ID fallback, honoring a persisted default agent.
-///
 /// # Errors
-/// Returns 503 if storage fails, rather than dropping persisted restrictions.
+/// Returns 404 for an unknown explicit id and 503 if storage fails.
 pub async fn resolve_agent_for_run(
     state: &AppState,
     agent_id: &str,
 ) -> Result<AgentArtifact, (StatusCode, String)> {
-    if let Some(agent) = resolve_agent_artifact(state, agent_id).await? {
-        return Ok(agent);
-    }
-    tracing::warn!(agent_id = %agent_id, "Agent not found — falling back to default-agent");
-    Ok(resolve_agent_artifact(state, "default-agent")
-        .await?
-        .unwrap_or_else(crate::uar::defaults::default_agent))
+    state
+        .run_manager
+        .resolve_registered_agent(agent_id)
+        .await
+        .map_err(agent_store_error_response)
 }
 
 // =========================================================================
@@ -340,7 +313,7 @@ pub async fn create_agent(
 
     let saved = agent_store::create_agent(persistence.as_ref(), agent)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(agent_store_error_response)?;
 
     Ok((StatusCode::CREATED, Json(saved)))
 }
@@ -358,7 +331,7 @@ pub async fn update_agent_full(
 
     let saved = agent_store::replace_agent(persistence.as_ref(), id, agent)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(agent_store_error_response)?;
 
     Ok(Json(saved))
 }
@@ -376,7 +349,7 @@ pub async fn patch_agent(
 
     let saved = agent_store::patch_agent(persistence.as_ref(), &id, &patch)
         .await
-        .map_err(patch_error_response)?;
+        .map_err(agent_store_error_response)?;
 
     Ok(Json(saved))
 }
@@ -393,14 +366,13 @@ pub async fn delete_agent(
 
     agent_store::delete_agent(persistence.as_ref(), &id)
         .await
-        .map_err(delete_error_response)?;
+        .map_err(agent_store_error_response)?;
 
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Map an [`agent_store::AgentStoreError`] from a patch to the HTTP status the
-/// previous inline handler produced (404 not found, 400 invalid, 500 backend).
-fn patch_error_response(error: agent_store::AgentStoreError) -> (StatusCode, String) {
+/// Map catalog failures without exposing backend details to callers.
+fn agent_store_error_response(error: agent_store::AgentStoreError) -> (StatusCode, String) {
     match error {
         agent_store::AgentStoreError::Conflict => (
             StatusCode::CONFLICT,
@@ -415,30 +387,12 @@ fn patch_error_response(error: agent_store::AgentStoreError) -> (StatusCode, Str
             format!("Agent '{id}' is built in and cannot be deleted"),
         ),
         agent_store::AgentStoreError::Backend(error) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, error.to_string())
+            tracing::error!(%error, "Agent catalog storage operation failed");
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Agent catalog storage is unavailable".to_string(),
+            )
         }
-    }
-}
-
-/// Map an [`agent_store::AgentStoreError`] from a delete to the HTTP status the
-/// previous inline handler produced (403 for built-in agents, 500 otherwise).
-fn delete_error_response(error: agent_store::AgentStoreError) -> (StatusCode, String) {
-    match error {
-        agent_store::AgentStoreError::Conflict => (
-            StatusCode::CONFLICT,
-            "Agent changed; reload before saving".to_string(),
-        ),
-        agent_store::AgentStoreError::Protected(id) => (
-            StatusCode::FORBIDDEN,
-            format!("Agent '{id}' is built in and cannot be deleted"),
-        ),
-        agent_store::AgentStoreError::Backend(error) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, error.to_string())
-        }
-        agent_store::AgentStoreError::NotFound(id) => {
-            (StatusCode::NOT_FOUND, format!("Agent '{id}' not found"))
-        }
-        agent_store::AgentStoreError::Invalid(message) => (StatusCode::BAD_REQUEST, message),
     }
 }
 

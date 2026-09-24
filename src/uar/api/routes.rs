@@ -39,7 +39,10 @@ pub fn build_router() -> Router<Arc<RunManager>> {
 
 #[derive(Deserialize)]
 struct CreateRunRequest {
-    artifact: AgentArtifact,
+    #[serde(default)]
+    artifact: Option<AgentArtifact>,
+    #[serde(default)]
+    agent_id: Option<String>,
     input: String,
     session_id: Option<String>,
     #[serde(default)]
@@ -72,7 +75,7 @@ struct CreateRunResponse {
 pub(crate) struct RunApiError {
     status: StatusCode,
     code: &'static str,
-    message: &'static str,
+    message: String,
 }
 
 impl From<crate::uar::runtime::turn::host::HostInputError> for RunApiError {
@@ -80,7 +83,7 @@ impl From<crate::uar::runtime::turn::host::HostInputError> for RunApiError {
         Self {
             status: StatusCode::UNPROCESSABLE_ENTITY,
             code: error.code,
-            message: error.message,
+            message: error.message.to_string(),
         }
     }
 }
@@ -213,7 +216,7 @@ pub(crate) fn attach_host_resources(
         let owner = request.verified_owner.clone().ok_or_else(|| RunApiError {
             status: StatusCode::UNAUTHORIZED,
             code: "run_mcp_server_invalid",
-            message: "run-scoped MCP requires a verified principal",
+            message: "run-scoped MCP requires a verified principal".to_string(),
         })?;
         let cwd = request
             .working_directory
@@ -229,7 +232,6 @@ pub(crate) fn attach_host_resources(
         request.host_secret_scrubber.extend(servers.scrubber());
         request.mcp_resources = Some(servers.resources(owner, cwd)?);
     }
-    request.host_resources_marker.artifact_inline = true;
     Ok(())
 }
 
@@ -289,13 +291,16 @@ async fn create_run(
     Extension(user): Extension<UserContext>,
     Json(req): Json<CreateRunRequest>,
 ) -> Result<Json<CreateRunResponse>, RunApiError> {
-    let mut request = crate::uar::runtime::turn::RunExecutionRequest::new(req.artifact, req.input)
+    let (artifact, artifact_inline) =
+        resolve_run_agent(&manager, req.agent_id, req.artifact).await?;
+    let mut request = crate::uar::runtime::turn::RunExecutionRequest::new(artifact, req.input)
         .with_user_context(&user)
         .map_err(|_| RunApiError {
             status: StatusCode::UNAUTHORIZED,
             code: "principal_invalid",
-            message: "run principal is invalid",
+            message: "run principal is invalid".to_string(),
         })?;
+    request.host_resources_marker.artifact_inline = artifact_inline;
     request.session_id = req.session_id;
     request.skill_attachments = req.skill_attachments;
     request.presentation_negotiation = req.presentation_negotiation;
@@ -335,6 +340,59 @@ async fn create_run(
         history,
         seeded_messages,
     }))
+}
+
+async fn resolve_run_agent(
+    manager: &RunManager,
+    agent_id: Option<String>,
+    artifact: Option<AgentArtifact>,
+) -> Result<(AgentArtifact, bool), RunApiError> {
+    match (agent_id, artifact) {
+        (Some(_), Some(_)) => Err(RunApiError {
+            status: StatusCode::UNPROCESSABLE_ENTITY,
+            code: "run_agent_selector_ambiguous",
+            message: "provide exactly one of agent_id or artifact".to_string(),
+        }),
+        (None, None) => Err(RunApiError {
+            status: StatusCode::UNPROCESSABLE_ENTITY,
+            code: "run_agent_selector_required",
+            message: "agent_id or artifact is required".to_string(),
+        }),
+        (None, Some(artifact)) => {
+            crate::uar::domain::agent_store::validate_agent(&artifact).map_err(|error| {
+                RunApiError {
+                    status: StatusCode::UNPROCESSABLE_ENTITY,
+                    code: "run_artifact_invalid",
+                    message: error.to_string(),
+                }
+            })?;
+            Ok((artifact, true))
+        }
+        (Some(agent_id), None) => manager
+            .resolve_registered_agent(&agent_id)
+            .await
+            .map(|artifact| (artifact, false))
+            .map_err(|error| match error {
+                crate::uar::domain::agent_store::AgentStoreError::NotFound(id) => RunApiError {
+                    status: StatusCode::NOT_FOUND,
+                    code: "run_agent_not_found",
+                    message: format!("agent '{id}' is not registered"),
+                },
+                crate::uar::domain::agent_store::AgentStoreError::Invalid(message) => RunApiError {
+                    status: StatusCode::UNPROCESSABLE_ENTITY,
+                    code: "run_agent_invalid",
+                    message,
+                },
+                other => {
+                    tracing::error!(%other, "Agent catalog resolution failed");
+                    RunApiError {
+                        status: StatusCode::SERVICE_UNAVAILABLE,
+                        code: "run_agent_catalog_unavailable",
+                        message: "agent catalog is unavailable".to_string(),
+                    }
+                }
+            }),
+    }
 }
 
 async fn stream_run(
@@ -660,6 +718,7 @@ async fn resume_run(
     request.session_id = req
         .session_id
         .or_else(|| source_run.conversation_id.clone());
+    request.host_resources_marker.artifact_inline = true;
     request.presentation_negotiation = req.presentation_negotiation;
     inherit_host_context(&source_run, &mut request);
     if let Err(error) = attach_host_resources(
@@ -793,6 +852,7 @@ async fn resume_run_from_checkpoint(
     request.session_id = req
         .session_id
         .or_else(|| source_run.conversation_id.clone());
+    request.host_resources_marker.artifact_inline = true;
     request.checkpoint_resume = Some(crate::uar::runtime::turn::CheckpointResume {
         state: restored,
         history,

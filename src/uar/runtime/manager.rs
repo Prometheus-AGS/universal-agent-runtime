@@ -1727,13 +1727,11 @@ impl RunManager {
     /// Returns the resolved agent, the stored requested policy (if any), and the
     /// effective policy — the pieces an embedded admin surface needs without a
     /// service.
-    pub async fn effective_config(&self, conversation_id: &str) -> EffectiveConfig {
+    pub async fn effective_config(&self, conversation_id: &str) -> anyhow::Result<EffectiveConfig> {
         let requested = if let Some(persistence) = &self.persistence {
             persistence
                 .load_conversation_policy(crate::session::ANONYMOUS_SESSION_OWNER, conversation_id)
-                .await
-                .ok()
-                .flatten()
+                .await?
         } else {
             None
         };
@@ -1741,7 +1739,7 @@ impl RunManager {
             .as_ref()
             .and_then(|record| record.policy.agent_id.clone())
             .unwrap_or_else(|| "default-agent".to_string());
-        let agent = self.resolve_agent_or_default(&agent_id).await;
+        let agent = self.resolve_registered_agent(&agent_id).await?;
         let mut effective = self
             .resolve_effective_policy(
                 &agent,
@@ -1753,47 +1751,31 @@ impl RunManager {
             )
             .await;
         self.backfill_effective_model(&mut effective).await;
-        EffectiveConfig {
+        Ok(EffectiveConfig {
             agent,
             requested_policy: requested,
             effective_policy: effective,
-        }
-    }
-
-    /// Resolve an agent artifact by id: persisted definition first, then the
-    /// two built-ins, then the default agent as a last resort. Mirrors the
-    /// service path's `resolve_agent_for_run`.
-    async fn resolve_agent_or_default(&self, agent_id: &str) -> AgentArtifact {
-        if let Some(persistence) = &self.persistence
-            && let Ok(Some(agent)) = persistence.load_agent(agent_id).await
-        {
-            return agent;
-        }
-        match agent_id {
-            "orchestrator-agent" => crate::uar::defaults::orchestrator_agent(),
-            _ => crate::uar::defaults::default_agent(),
-        }
+        })
     }
 
     /// Resolve an explicitly selected actor artifact without silently replacing
     /// an unknown ID or a failed storage read with the default agent.
-    pub(crate) async fn resolve_registered_agent(
+    pub async fn resolve_registered_agent(
         &self,
         agent_id: &str,
-    ) -> anyhow::Result<AgentArtifact> {
-        if let Some(persistence) = &self.persistence
-            && let Some(agent) = persistence.load_agent(agent_id).await?
-        {
-            return Ok(agent);
-        }
-        match agent_id {
-            "default-agent" => Ok(crate::uar::defaults::default_agent()),
-            "orchestrator-agent" => Ok(crate::uar::defaults::orchestrator_agent()),
-            "general-purpose" => Ok(crate::uar::defaults::general_purpose_agent()),
-            "rust-reviewer" => Ok(crate::uar::defaults::rust_reviewer_agent()),
-            "compiler-agent" => Ok(crate::uar::defaults::compiler_agent()),
-            _ => anyhow::bail!("Requested agent artifact is not registered"),
-        }
+    ) -> Result<AgentArtifact, crate::uar::domain::agent_store::AgentStoreError> {
+        crate::uar::domain::agent_store::resolve_registered_agent(
+            self.persistence.as_deref(),
+            agent_id,
+        )
+        .await
+    }
+
+    /// Return the complete local runtime catalog without hiding store failures.
+    pub async fn list_registered_agents(
+        &self,
+    ) -> Result<Vec<AgentArtifact>, crate::uar::domain::agent_store::AgentStoreError> {
+        crate::uar::domain::agent_store::list_registered_agents(self.persistence.as_deref()).await
     }
 
     /// Backward-compatible agent + conversation resolution (no Global scope).

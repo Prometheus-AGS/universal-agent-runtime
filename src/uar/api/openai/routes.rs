@@ -3,8 +3,8 @@ use super::types::{
     ChatCompletionRequest, ModelCard, ModelList,
 };
 use crate::AppState;
+use crate::uar::domain::events::NormalizedEvent;
 use crate::uar::security::claims::UserContext;
-use crate::uar::{defaults, domain::events::NormalizedEvent};
 use axum::{
     extract::{Extension, Json, State},
     http::StatusCode,
@@ -24,30 +24,50 @@ fn unix_now_secs() -> u64 {
         .as_secs()
 }
 
-pub async fn list_models(State(_state): State<AppState>) -> impl IntoResponse {
-    // In a real implementation, we would list all active agents from persistence
-    // For now, we return the default/orchestrator agents
+pub async fn list_models(State(state): State<AppState>) -> impl IntoResponse {
     let now = unix_now_secs();
-
-    let models = vec![
-        ModelCard {
-            id: "default".to_string(),
+    let agents = match state.run_manager.list_registered_agents().await {
+        Ok(agents) => agents,
+        Err(error) => return agent_resolution_response(error),
+    };
+    let models = agents
+        .into_iter()
+        .map(|agent| ModelCard {
+            id: agent.id,
             object: "model".to_string(),
             created: now,
             owned_by: "uar".to_string(),
-        },
-        ModelCard {
-            id: "orchestrator".to_string(),
-            object: "model".to_string(),
-            created: now,
-            owned_by: "uar".to_string(),
-        },
-    ];
+        })
+        .collect();
 
     Json(ModelList {
         object: "list".to_string(),
         data: models,
     })
+    .into_response()
+}
+
+fn agent_resolution_response(
+    error: crate::uar::domain::agent_store::AgentStoreError,
+) -> axum::response::Response {
+    match error {
+        crate::uar::domain::agent_store::AgentStoreError::NotFound(id) => (
+            StatusCode::NOT_FOUND,
+            format!("Agent '{id}' is not registered"),
+        )
+            .into_response(),
+        crate::uar::domain::agent_store::AgentStoreError::Invalid(message) => {
+            (StatusCode::UNPROCESSABLE_ENTITY, message).into_response()
+        }
+        other => {
+            tracing::error!(%other, "Agent catalog resolution failed");
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Agent catalog is unavailable",
+            )
+                .into_response()
+        }
+    }
 }
 
 fn json_event<T: Serialize>(value: T) -> Event {
@@ -76,21 +96,14 @@ pub async fn chat_completions(
         .map(|m| m.content.clone())
         .unwrap_or_default();
 
-    // Map model ID to agent
-    // Simple mapping for now
-    let agent = if req.model == "orchestrator" {
-        defaults::orchestrator_agent()
-    } else {
-        match run_manager.persistence.as_ref() {
-            Some(p) => {
-                // Try to load dynamic agent
-                match p.load_agent_by_name(&req.model).await {
-                    Ok(Some(a)) => a,
-                    _ => defaults::default_agent(),
-                }
-            }
-            None => defaults::default_agent(),
-        }
+    let agent_id = match req.model.as_str() {
+        "default" => "default-agent",
+        "orchestrator" => "orchestrator-agent",
+        id => id,
+    };
+    let agent = match run_manager.resolve_registered_agent(agent_id).await {
+        Ok(agent) => agent,
+        Err(error) => return agent_resolution_response(error),
     };
 
     // Start Run

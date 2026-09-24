@@ -101,7 +101,6 @@ pub struct CompileSpecParams {
 struct UarRuntimeMcpServer {
     run_manager: Arc<RunManager>,
     native_skills: Arc<NativeSkillRegistry>,
-    persistence: Option<Arc<dyn PersistenceLayer>>,
     #[expect(
         dead_code,
         reason = "rmcp's generated tool handler retains this router for runtime dispatch"
@@ -117,15 +116,10 @@ impl std::fmt::Debug for UarRuntimeMcpServer {
 }
 
 impl UarRuntimeMcpServer {
-    fn new(
-        run_manager: Arc<RunManager>,
-        native_skills: Arc<NativeSkillRegistry>,
-        persistence: Option<Arc<dyn PersistenceLayer>>,
-    ) -> Self {
+    fn new(run_manager: Arc<RunManager>, native_skills: Arc<NativeSkillRegistry>) -> Self {
         Self {
             run_manager,
             native_skills,
-            persistence,
             tool_router: Self::tool_router(),
         }
     }
@@ -139,11 +133,11 @@ impl UarRuntimeMcpServer {
     /// and available tools. Use the `id` field with `uar_create_run` to start a run.
     #[tool(description = "List all compiled agents in the UAR registry")]
     async fn uar_list_agents(&self) -> Result<CallToolResult, McpError> {
-        let agents = if let Some(p) = &self.persistence {
-            p.list_agents().await.map_err(err_mcp)?
-        } else {
-            vec![]
-        };
+        let agents = self
+            .run_manager
+            .list_registered_agents()
+            .await
+            .map_err(err_mcp)?;
 
         let summaries: Vec<serde_json::Value> = agents
             .iter()
@@ -174,25 +168,11 @@ impl UarRuntimeMcpServer {
         McpExtension(parts): McpExtension<axum::http::request::Parts>,
     ) -> Result<CallToolResult, McpError> {
         let owner = verified_owner(&parts)?;
-        let agent = if let Some(persistence) = &self.persistence {
-            persistence
-                .list_agents()
-                .await
-                .map_err(err_mcp)?
-                .into_iter()
-                .find(|a| a.id == p.agent_id)
-                .ok_or_else(|| {
-                    McpError::invalid_params(
-                        format!("agent '{}' not found in registry", p.agent_id),
-                        None,
-                    )
-                })?
-        } else {
-            return Err(McpError::invalid_params(
-                "persistence layer not configured; cannot look up agents",
-                None,
-            ));
-        };
+        let agent = self
+            .run_manager
+            .resolve_registered_agent(&p.agent_id)
+            .await
+            .map_err(err_mcp)?;
 
         let mut request = RunExecutionRequest::new(agent, p.input).with_verified_owner(owner);
         request.session_id = p.session_id;
@@ -200,8 +180,8 @@ impl UarRuntimeMcpServer {
 
         let response = serde_json::json!({
             "run_id": run_id,
-            "sse_url": format!("/api/uar/runs/{}/events", run_id),
-            "status_url": format!("/api/uar/runs/{}", run_id),
+            "sse_url": format!("/api/uar/runs/{}/stream", run_id),
+            "status_tool": "uar_get_run_status",
         });
 
         Ok(ok_json(&response))
@@ -336,7 +316,7 @@ impl ServerHandler for UarRuntimeMcpServer {
 pub fn uar_mcp_router(
     run_manager: Arc<RunManager>,
     native_skills: Arc<NativeSkillRegistry>,
-    persistence: Option<Arc<dyn PersistenceLayer>>,
+    _persistence: Option<Arc<dyn PersistenceLayer>>,
 ) -> Router {
     let session_manager = Arc::new(LocalSessionManager::default());
 
@@ -350,7 +330,6 @@ pub fn uar_mcp_router(
             Ok(UarRuntimeMcpServer::new(
                 Arc::clone(&run_manager),
                 Arc::clone(&native_skills),
-                persistence.clone(),
             ))
         },
         Arc::clone(&session_manager),
