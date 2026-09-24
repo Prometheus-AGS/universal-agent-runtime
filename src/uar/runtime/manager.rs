@@ -1188,6 +1188,9 @@ impl RunManager {
         &self,
         owner: &crate::uar::runtime::actor::messages::ActorOwner,
     ) -> anyhow::Result<Option<McpRunResources>> {
+        if !self.global_mcp.shared_transports_enabled() {
+            return Ok(None);
+        }
         let (Some(runtime), Some(environment)) = (&self.mcp_runtime, &self.mcp_environment) else {
             return Ok(None);
         };
@@ -1642,6 +1645,7 @@ impl RunManager {
         conversation_id: &str,
         thread_controls: bool,
         mcp_catalog: Option<&McpCatalog>,
+        additional_tools: Option<&BTreeSet<String>>,
         verified_owner: Option<&crate::uar::runtime::actor::messages::ActorOwner>,
     ) -> (PolicyUniverse, Option<RunPolicy>) {
         let skills = match &self.skill_service {
@@ -1668,6 +1672,9 @@ impl RunManager {
             .collect::<std::collections::BTreeSet<_>>();
         let (mcp_servers, catalog_tools) = self.mcp_policy_inventory(mcp_catalog).await;
         tools.extend(catalog_tools);
+        if let Some(additional_tools) = additional_tools {
+            tools.extend(additional_tools.iter().cloned());
+        }
         for tool in self.native_skills.openai_tools_json().await {
             if let Some(name) = tool
                 .get("function")
@@ -1755,6 +1762,7 @@ impl RunManager {
             thread_controls,
             turn,
             None,
+            None,
             verified_owner,
         )
         .await
@@ -1768,6 +1776,7 @@ impl RunManager {
         thread_controls: bool,
         turn: Option<RunPolicy>,
         mcp_catalog: Option<&McpCatalog>,
+        additional_tools: Option<&BTreeSet<String>>,
         verified_owner: Option<&crate::uar::runtime::actor::messages::ActorOwner>,
     ) -> EffectiveRunPolicy {
         let Some(settings_manager) = self.settings_manager.as_ref() else {
@@ -1779,6 +1788,7 @@ impl RunManager {
                     thread_controls,
                     turn,
                     mcp_catalog,
+                    additional_tools,
                     verified_owner,
                 )
                 .await;
@@ -1789,6 +1799,7 @@ impl RunManager {
                 conversation_id,
                 thread_controls,
                 mcp_catalog,
+                additional_tools,
                 verified_owner,
             )
             .await;
@@ -1873,6 +1884,7 @@ impl RunManager {
         thread_controls: bool,
         turn: Option<RunPolicy>,
         mcp_catalog: Option<&McpCatalog>,
+        additional_tools: Option<&BTreeSet<String>>,
         verified_owner: Option<&crate::uar::runtime::actor::messages::ActorOwner>,
     ) -> EffectiveRunPolicy {
         let (universe, conversation) = self
@@ -1881,6 +1893,7 @@ impl RunManager {
                 conversation_id,
                 thread_controls,
                 mcp_catalog,
+                additional_tools,
                 verified_owner,
             )
             .await;
@@ -2811,6 +2824,7 @@ impl RunManager {
                 .map(|bindings| bindings.policy.effective().clone()),
             resolved_policy,
         );
+        let policy_was_pre_resolved = pre_resolved_policy.is_some();
         let mut effective_policy = match pre_resolved_policy {
             Some(policy) => policy,
             None => {
@@ -2819,10 +2833,11 @@ impl RunManager {
                     &owner_id,
                     session.id(),
                     actor_root.is_some(),
-                    host_policy_constraint,
+                    host_policy_constraint.clone(),
                     mcp_resources
                         .as_ref()
                         .map(|resources| resources.catalog().as_ref()),
+                    None,
                     verified_owner.as_ref(),
                 )
                 .await
@@ -2832,6 +2847,77 @@ impl RunManager {
             .as_ref()
             .and_then(|resources| resources.run_scoped_names())
         {
+            if effective_policy
+                .mcp_servers
+                .ids
+                .iter()
+                .any(|name| !names.contains(name))
+            {
+                emitter
+                    .emit(NormalizedEvent::Error {
+                        run_id: run_id.clone(),
+                        code: "mcp_server_not_run_scoped".into(),
+                        message: "Run policy selects an MCP server outside this request".into(),
+                    })
+                    .await;
+                emitter
+                    .emit(NormalizedEvent::RunDone {
+                        run_id: run_id.clone(),
+                    })
+                    .await;
+                self.run_cancellations.write().await.remove(&run_id);
+                return run_id;
+            }
+            effective_policy.mcp_servers.ids = names.iter().cloned().collect();
+            effective_policy.mcp_servers.mode = if names.is_empty() {
+                SelectionMode::None
+            } else {
+                SelectionMode::Selected
+            };
+        }
+
+        // Remote descriptors do not exist until the authenticated run binding
+        // performs tools/list. Resolve policy once more with those exact names
+        // in the universe so every normal scope can allow, deny or narrow them.
+        if !policy_was_pre_resolved
+            && let Some(resources) = mcp_resources
+                .as_ref()
+                .filter(|resources| resources.run_scoped_names().is_some())
+        {
+            let discovered = match resources.discover_tool_ids(&effective_policy).await {
+                Ok(discovered) => discovered,
+                Err(error) => {
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: run_id.clone(),
+                            code: "mcp_preflight_failed".into(),
+                            message: error.to_string(),
+                        })
+                        .await;
+                    emitter
+                        .emit(NormalizedEvent::RunDone {
+                            run_id: run_id.clone(),
+                        })
+                        .await;
+                    self.run_cancellations.write().await.remove(&run_id);
+                    return run_id;
+                }
+            };
+            effective_policy = self
+                .resolve_effective_policy_with_catalog(
+                    &artifact,
+                    &owner_id,
+                    session.id(),
+                    actor_root.is_some(),
+                    host_policy_constraint,
+                    Some(resources.catalog().as_ref()),
+                    Some(&discovered),
+                    verified_owner.as_ref(),
+                )
+                .await;
+            let names = resources
+                .run_scoped_names()
+                .expect("filtered run-scoped resources retain names");
             if effective_policy
                 .mcp_servers
                 .ids

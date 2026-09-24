@@ -1049,6 +1049,9 @@ pub struct McpRegistry {
     validator_compiler: Arc<ValidatorCompiler>,
     // namespaced_tool_name -> NativeTool
     native_tools: Arc<HashMap<String, Arc<dyn NativeTool>>>,
+    /// Whether administrator definitions in this registry may back shared
+    /// root transports. Sidecar destination catalogs keep this false.
+    shared_transports_enabled: bool,
 }
 
 /// Registry composition must not turn an immutable delegation into a new grant.
@@ -1178,6 +1181,7 @@ impl McpRegistry {
             descriptors: Arc::new(RwLock::new(discovered.descriptors)),
             validator_compiler: compiler,
             native_tools: Arc::new(HashMap::new()),
+            shared_transports_enabled: true,
         };
         Ok(ConnectedMcpServer::new(registry, catalog))
     }
@@ -1196,7 +1200,30 @@ impl McpRegistry {
             descriptors: Arc::new(RwLock::new(BTreeMap::new())),
             validator_compiler,
             native_tools: Arc::new(HashMap::new()),
+            shared_transports_enabled: false,
         }
+    }
+
+    /// Load administrator-owned MCP declarations without opening shared
+    /// transports. Sidecars use this as a destination allowlist: each run must
+    /// still provide its own verified owner and credential lease before a
+    /// connection can be established.
+    pub fn catalog_from_file(path: &str) -> anyhow::Result<Self> {
+        let resolved = resolve_mcp_config_path(path);
+        let config = load_mcp_config(resolved)?;
+        Self::catalog_from_config(&config)
+    }
+
+    /// Retain validated definitions while leaving the executable registry
+    /// empty. This separates administrator registration from run authority.
+    pub fn catalog_from_config(config: &crate::mcp::config::McpConfig) -> anyhow::Result<Self> {
+        config.validate_sandbox_policy()?;
+        let registry = Self::empty();
+        *registry
+            .server_config
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = config.mcp_servers.clone();
+        Ok(registry)
     }
 
     pub async fn load_from_file(path: &str) -> anyhow::Result<Self> {
@@ -1300,6 +1327,7 @@ impl McpRegistry {
             descriptors: Arc::new(RwLock::new(descriptors)),
             validator_compiler,
             native_tools: Arc::new(HashMap::new()),
+            shared_transports_enabled: true,
         })
     }
 
@@ -1446,6 +1474,7 @@ impl McpRegistry {
             descriptors: Arc::new(RwLock::new(descriptors)),
             validator_compiler,
             native_tools: Arc::new(HashMap::new()),
+            shared_transports_enabled: true,
         })
     }
 
@@ -2038,6 +2067,8 @@ impl McpRegistry {
             descriptors: Arc::new(RwLock::new(descriptors)),
             validator_compiler: Arc::clone(&self.validator_compiler),
             native_tools: Arc::new(native_tools),
+            shared_transports_enabled: self.shared_transports_enabled
+                || other.shared_transports_enabled,
         })
     }
 
@@ -2125,6 +2156,7 @@ impl McpRegistry {
             descriptors: Arc::new(RwLock::new(descriptors)),
             validator_compiler: Arc::clone(&self.validator_compiler),
             native_tools: Arc::new(native_tools),
+            shared_transports_enabled: self.shared_transports_enabled,
         }
     }
 
@@ -2168,7 +2200,14 @@ impl McpRegistry {
             descriptors: Arc::new(RwLock::new(descriptors)),
             validator_compiler: self.validator_compiler,
             native_tools: Arc::new(native_tools),
+            shared_transports_enabled: self.shared_transports_enabled,
         })
+    }
+
+    /// Whether this registry's administrator definitions may establish shared
+    /// root transports without a request-owned grant.
+    pub(crate) const fn shared_transports_enabled(&self) -> bool {
+        self.shared_transports_enabled
     }
 
     pub fn openai_tools_json(&self) -> Vec<serde_json::Value> {

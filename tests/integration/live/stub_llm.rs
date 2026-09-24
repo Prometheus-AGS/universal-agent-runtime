@@ -14,6 +14,7 @@
 //! impl and `crate::types::chat`.
 
 use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 use std::net::TcpListener as StdTcpListener;
 use std::sync::{Arc, Mutex};
 
@@ -75,10 +76,15 @@ impl RequestFingerprint {
             .and_then(Value::as_array)
             .is_some_and(|t| !t.is_empty());
         let messages = body.get("messages").and_then(Value::as_array);
-        let has_tool_result = messages
-            .into_iter()
-            .flatten()
-            .any(|m| m.get("role").and_then(Value::as_str) == Some("tool"));
+        let has_tool_result = messages.is_some_and(|messages| {
+            let current_turn = messages
+                .iter()
+                .rposition(|message| message.get("role").and_then(Value::as_str) == Some("user"))
+                .map_or(messages.as_slice(), |index| &messages[index + 1..]);
+            current_turn
+                .iter()
+                .any(|message| message.get("role").and_then(Value::as_str) == Some("tool"))
+        });
         let last_user_message = body
             .get("messages")
             .and_then(Value::as_array)
@@ -295,15 +301,18 @@ fn non_streaming_response(model: String, fixture: FixtureResponse) -> Json<Value
         FixtureResponse::Content(text) | FixtureResponse::GroundedContent { text, .. } => {
             json!({ "role": "assistant", "content": text })
         }
-        FixtureResponse::ToolCall { name, arguments } => json!({
+        FixtureResponse::ToolCall { name, arguments } => {
+            let call_id = fixture_call_id(&name, &arguments);
+            json!({
             "role": "assistant",
             "content": null,
             "tool_calls": [{
-                "id": "call_stub_0",
+                "id": call_id,
                 "type": "function",
                 "function": { "name": name, "arguments": arguments },
             }],
-        }),
+        })
+        },
     };
     Json(json!({
         "id": "chatcmpl-stub",
@@ -323,18 +332,21 @@ fn streaming_response(model: String, fixture: FixtureResponse) -> impl IntoRespo
         FixtureResponse::Content(text) | FixtureResponse::GroundedContent { text, .. } => {
             (json!({ "role": "assistant", "content": text }), "stop")
         }
-        FixtureResponse::ToolCall { name, arguments } => (
-            json!({
+        FixtureResponse::ToolCall { name, arguments } => {
+            let call_id = fixture_call_id(&name, &arguments);
+            (
+                json!({
                 "role": "assistant",
                 "tool_calls": [{
                     "index": 0,
-                    "id": "call_stub_0",
+                    "id": call_id,
                     "type": "function",
                     "function": { "name": name, "arguments": arguments },
                 }],
             }),
-            "tool_calls",
-        ),
+                "tool_calls",
+            )
+        },
     };
 
     let chunk1 = json!({
@@ -352,6 +364,13 @@ fn streaming_response(model: String, fixture: FixtureResponse) -> impl IntoRespo
         [(axum::http::header::CONTENT_TYPE, "text/event-stream")],
         body,
     )
+}
+
+fn fixture_call_id(name: &str, arguments: &str) -> String {
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    name.hash(&mut hasher);
+    arguments.hash(&mut hasher);
+    format!("call_stub_{:016x}", hasher.finish())
 }
 
 #[cfg(test)]

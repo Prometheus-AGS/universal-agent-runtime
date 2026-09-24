@@ -133,6 +133,13 @@ name = "sidecar_session_principal"
 path = "tests/sidecar_session_principal.rs"
 required-features = ["server", "test-probes"]
 
+# Release Gate R drives the real sidecar, registered-agent catalog and a
+# streamable-HTTP MCP peer through one authenticated integration boundary.
+[[test]]
+name = "remote_mcp_run_grants"
+path = "tests/remote_mcp_run_grants.rs"
+required-features = ["server", "test-probes"]
+
 # Retention tests read the `/metrics` gauges, which need `telemetry`.
 [[test]]
 name = "run_retention"

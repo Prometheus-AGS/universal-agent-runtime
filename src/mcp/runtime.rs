@@ -14,6 +14,7 @@ use serde_json::Value;
 use thiserror::Error;
 
 use crate::uar::runtime::actor::messages::ActorOwner;
+use crate::uar::domain::policy::{EffectiveRunPolicy, SelectionMode};
 
 use super::binding_cache::{
     ConnectedMcpServer, McpBinding, McpBindingCache, McpBindingEnvironment, McpBindingError,
@@ -525,6 +526,37 @@ impl McpRunResources {
 
     pub(crate) fn run_grants(&self) -> Option<&RunMcpGrantControl> {
         self.run_grants.as_ref()
+    }
+
+    /// Discover the exact model-facing tool names on an authenticated
+    /// run-scoped catalog before final policy resolution. The returned names
+    /// are metadata only; execution still requires the later policy-filtered
+    /// preflight and the same generation-pinned binding.
+    pub(crate) async fn discover_tool_ids(
+        &self,
+        policy: &EffectiveRunPolicy,
+    ) -> Result<std::collections::BTreeSet<String>, McpPreflightError> {
+        let mut discovery_policy = policy.clone();
+        discovery_policy.tools.mode = SelectionMode::All;
+        discovery_policy.tools.ids.clear();
+        if let Some(names) = &self.run_scoped_names {
+            discovery_policy.mcp_servers.mode = if names.is_empty() {
+                SelectionMode::None
+            } else {
+                SelectionMode::Selected
+            };
+            discovery_policy.mcp_servers.ids = names.iter().cloned().collect();
+        }
+        let projection = McpServerProjection::resolve(
+            &self.catalog,
+            &discovery_policy,
+            &super::projection::McpProjectionScope::default(),
+        )?;
+        let preflight = self
+            .runtime
+            .preflight(&projection, &self.owner, &self.environment)
+            .await?;
+        Ok(preflight.projection().tools().keys().cloned().collect())
     }
 }
 

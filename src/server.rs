@@ -832,9 +832,33 @@ async fn run_server_with_listener(
         .as_deref()
         .unwrap_or_else(|| std::path::Path::new("mcp.json"));
     let mut mcp_registry = if sidecar_mode {
-        // A sidecar has no global MCP servers: tools arrive with each run.
-        info!("Sidecar mode — global MCP configuration is not loaded");
-        McpRegistry::empty()
+        // A sidecar never opens shared global transports. It does retain the
+        // administrator-owned definitions so a trusted host can select an
+        // exact registered destination and attach a run-owned credential.
+        match McpRegistry::catalog_from_file(mcp_config_path.to_string_lossy().as_ref()) {
+            Ok(registry) => {
+                info!(
+                    path = %mcp_config_path.display(),
+                    "Sidecar mode — loaded MCP destination catalog without connecting"
+                );
+                registry
+            }
+            Err(error) if error.downcast_ref::<std::io::Error>().is_some_and(|io| io.kind() == std::io::ErrorKind::NotFound) => {
+                info!(
+                    path = %mcp_config_path.display(),
+                    "Sidecar mode — no MCP destination catalog configured"
+                );
+                McpRegistry::empty()
+            }
+            Err(error) => {
+                tracing::warn!(
+                    %error,
+                    path = %mcp_config_path.display(),
+                    "Sidecar MCP destination catalog is invalid; remote grants are unavailable"
+                );
+                McpRegistry::empty()
+            }
+        }
     } else {
         match McpRegistry::load_from_file(mcp_config_path.to_string_lossy().as_ref()).await {
             Ok(registry) => registry,
