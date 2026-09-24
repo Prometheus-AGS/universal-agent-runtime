@@ -3,6 +3,7 @@ members = [".", "tools/uar-jwt-proxy", "tools/mcp-server-fetch"]
 exclude = [
   "crates/prometheus-skill-system",
   ".claude/worktrees",
+  "vendor/crates/esaxx-rs",
   "vendor/git/prometheus-parking-lot-rs",
   "vendor/git/surreal-memory-server",
   "vendor/git/surreal-memory-server/crates/surreal-memory",
@@ -14,6 +15,12 @@ exclude = [
   "src-tauri",
 ]
 resolver = "2"
+
+[patch.crates-io]
+# esaxx-rs 0.1.10 forces /MT while the Windows OCR and ONNX dependencies use
+# /MD. The local source copy applies upstream PR #19's one-line runtime fix so
+# the production sidecar links against one MSVC runtime.
+esaxx-rs = { path = "vendor/crates/esaxx-rs" }
 
 [workspace.dependencies]
 jsonwebtoken = { version = "=11.0.0", default-features = false, features = ["rust_crypto"] }

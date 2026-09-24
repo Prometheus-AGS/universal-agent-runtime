@@ -1649,3 +1649,14 @@ The delegated-root boundary already uses stable `cap_std::fs::MetadataExt` for
 handle-to-handle identity. Open the canonical pathname as a second capability
 handle and compare those two handles; do not convert one side to
 `std::fs::Metadata` on Windows.
+
+## 2026-09-23 — Windows document stack must use one MSVC runtime
+
+The Windows x64 sidecar reached its final link in Actions run 35949935340, then
+failed with LNK2038/LNK1319 because crates.io `esaxx-rs` 0.1.10 hard-codes
+`cc::Build::static_crt(true)` (`MT_StaticRelease`) while
+`kreuzberg-tesseract` and the packaged ONNX Runtime use the dynamic CRT
+(`MD_DynamicRelease`). Do not mask this with `/NODEFAULTLIB` or switch the
+whole Rust process to `/MT`: that leaves the dynamic native libraries on the
+opposite runtime. The release source closure vendors `esaxx-rs` 0.1.10 and
+applies upstream PR #19's `/MD` change through `[patch.crates-io]`.
