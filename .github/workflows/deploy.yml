@@ -258,6 +258,7 @@ jobs:
           git init crates/prometheus-skill-system
           git -C crates/prometheus-skill-system remote add origin https://github.com/Prometheus-AGS/prometheus-skill-system.git
           git -C crates/prometheus-skill-system config core.sparseCheckout true
+          git -C crates/prometheus-skill-system config core.sparseCheckoutCone false
           printf '/*\n!/tools/prometheus-cli/.prometheus/\n' > crates/prometheus-skill-system/.git/info/sparse-checkout
           git -C crates/prometheus-skill-system fetch --depth=1 origin "${skill_ref}"
           git -C crates/prometheus-skill-system checkout --detach FETCH_HEAD
