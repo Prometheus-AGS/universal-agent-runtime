@@ -246,6 +246,10 @@ jobs:
         with:
           submodules: recursive
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+          sparse-checkout: |
+            /*
+            !/.kbd-orchestrator/
+          sparse-checkout-cone-mode: false
       - name: Install pinned Rust target
         run: rustup target add ${{ matrix.target }}
       - name: Build production sidecar
