@@ -252,16 +252,10 @@ jobs:
       - name: Checkout Rust workspace submodules
         shell: bash
         run: |
-          git submodule update --init --depth=1 -- vendor/git/liter-llm vendor/git/rust-mcp-filesystem
-          skill_ref="$(git rev-parse HEAD:crates/prometheus-skill-system)"
-          rm -rf crates/prometheus-skill-system
-          git init crates/prometheus-skill-system
-          git -C crates/prometheus-skill-system remote add origin https://github.com/Prometheus-AGS/prometheus-skill-system.git
-          git -C crates/prometheus-skill-system config core.sparseCheckout true
-          git -C crates/prometheus-skill-system config core.sparseCheckoutCone false
-          printf '/*\n!/tools/prometheus-cli/.prometheus/\n' > crates/prometheus-skill-system/.git/info/sparse-checkout
-          git -C crates/prometheus-skill-system fetch --depth=1 origin "${skill_ref}"
-          git -C crates/prometheus-skill-system checkout --detach FETCH_HEAD
+          git submodule update --init --depth=1 -- \
+            crates/prometheus-skill-system \
+            vendor/git/liter-llm \
+            vendor/git/rust-mcp-filesystem
       - name: Install pinned Rust target
         run: rustup target add ${{ matrix.target }}
       - name: Build production sidecar
