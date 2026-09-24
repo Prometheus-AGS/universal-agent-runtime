@@ -639,10 +639,11 @@ async fn run_server_with_listener(
     ) {
         #[cfg(feature = "surreal-backend")]
         {
-            let provider = SurrealDbProvider::new(
+            let provider = SurrealDbProvider::new_with_auth(
                 &config.persistence.database_url,
                 config.persistence.surreal_user.as_deref(),
                 config.persistence.surreal_pass.as_deref(),
+                config.persistence.surreal_auth_level.as_deref(),
                 config.persistence.surreal_ns.as_deref(),
                 config.persistence.surreal_db.as_deref(),
             )

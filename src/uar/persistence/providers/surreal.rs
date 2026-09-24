@@ -17,7 +17,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use surrealdb::Surreal;
 use surrealdb::engine::any::{self, Any};
-use surrealdb::opt::auth::Root;
+use surrealdb::opt::auth::{Database, Namespace, Root};
 
 #[derive(Debug)]
 pub struct SurrealDbProvider {
@@ -39,6 +39,26 @@ impl SurrealDbProvider {
         surreal_ns: Option<&str>,
         surreal_db: Option<&str>,
     ) -> Result<Self> {
+        Self::new_with_auth(
+            connection_string,
+            surreal_user,
+            surreal_pass,
+            None,
+            surreal_ns,
+            surreal_db,
+        )
+        .await
+    }
+
+    /// Connect using an explicit server-user authentication scope.
+    pub async fn new_with_auth(
+        connection_string: &str,
+        surreal_user: Option<&str>,
+        surreal_pass: Option<&str>,
+        surreal_auth_level: Option<&str>,
+        surreal_ns: Option<&str>,
+        surreal_db: Option<&str>,
+    ) -> Result<Self> {
         let endpoint = normalize_endpoint(connection_string);
         tracing::info!("Connecting to SurrealDB: {}", endpoint);
 
@@ -48,11 +68,37 @@ impl SurrealDbProvider {
         if is_server_endpoint(&endpoint) {
             let username = surreal_user.unwrap_or("root").to_string();
             let password = surreal_pass.unwrap_or("root").to_string();
-            db.signin(Root {
-                username: username.clone(),
-                password,
-            })
-            .await?;
+            let namespace = surreal_ns.unwrap_or("uar").to_string();
+            let database = surreal_db.unwrap_or("uar").to_string();
+            match surreal_auth_level.unwrap_or("root") {
+                "root" => {
+                    db.signin(Root {
+                        username: username.clone(),
+                        password,
+                    })
+                    .await?;
+                }
+                "namespace" => {
+                    db.signin(Namespace {
+                        namespace,
+                        username: username.clone(),
+                        password,
+                    })
+                    .await?;
+                }
+                "database" => {
+                    db.signin(Database {
+                        namespace,
+                        database,
+                        username: username.clone(),
+                        password,
+                    })
+                    .await?;
+                }
+                value => anyhow::bail!(
+                    "unsupported SurrealDB authentication scope '{value}'; expected root, namespace, or database"
+                ),
+            }
             tracing::info!("SurrealDB server signin completed as '{}'", username);
         }
 
