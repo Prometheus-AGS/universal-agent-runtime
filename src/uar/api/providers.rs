@@ -4,8 +4,11 @@
 
 use axum::{
     Json, Router,
+    body::Body,
     extract::{Path, State},
-    http::StatusCode,
+    http::{Request, StatusCode},
+    middleware::{self, Next},
+    response::{IntoResponse, Response},
     routing::{get, post},
 };
 use serde::{Deserialize, Serialize};
@@ -25,12 +28,14 @@ pub struct ProviderApiState {
     pub registry: Arc<ProviderRegistry>,
     pub settings_manager: Option<Arc<SettingsManager>>,
     pub provider_service: Option<Arc<ProviderService>>,
+    pub admin_auth_required: bool,
+    pub admin_key: Option<secrecy::SecretString>,
 }
 
 /// Build the providers API router.
 ///
 /// Mounted at `/api/uar/providers`.
-pub fn build_router() -> Router<ProviderApiState> {
+pub fn build_router(state: ProviderApiState) -> Router<ProviderApiState> {
     Router::new()
         .route("/", get(list_providers).post(create_provider))
         .route("/enabled", get(list_enabled_providers))
@@ -44,6 +49,34 @@ pub fn build_router() -> Router<ProviderApiState> {
         .route("/{id}/models", get(list_models))
         .route("/{id}/test", post(test_provider))
         .route("/{id}/default", post(set_default))
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            provider_admin_boundary,
+        ))
+}
+
+async fn provider_admin_boundary(
+    State(state): State<ProviderApiState>,
+    request: Request<Body>,
+    next: Next,
+) -> Response {
+    if !state.admin_auth_required {
+        return next.run(request).await;
+    }
+    let supplied = request
+        .headers()
+        .get("x-uar-admin-key")
+        .and_then(|value| value.to_str().ok());
+    if crate::config::secret_value_matches(&state.admin_key, supplied) {
+        return next.run(request).await;
+    }
+    (
+        StatusCode::UNAUTHORIZED,
+        Json(ErrorResponse {
+            error: "Provider administration requires valid admin authority".to_string(),
+        }),
+    )
+        .into_response()
 }
 
 async fn persist_provider_config(
@@ -678,6 +711,8 @@ mod tests {
                 registry: Arc::clone(&registry),
                 settings_manager: Some(Arc::clone(&settings_manager)),
                 provider_service: None,
+                admin_auth_required: false,
+                admin_key: None,
             }),
             Path("provider-b".to_string()),
         )
@@ -711,6 +746,8 @@ mod tests {
                 registry: Arc::clone(&registry),
                 settings_manager: Some(Arc::clone(&settings_manager)),
                 provider_service: None,
+                admin_auth_required: false,
+                admin_key: None,
             }),
             Path("missing-provider".to_string()),
         )
@@ -744,6 +781,8 @@ mod tests {
                 registry: Arc::clone(&registry),
                 settings_manager: Some(Arc::clone(&settings_manager)),
                 provider_service: None,
+                admin_auth_required: false,
+                admin_key: None,
             }),
             Path("provider-b".to_string()),
         )

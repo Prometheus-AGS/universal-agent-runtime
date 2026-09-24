@@ -1401,6 +1401,8 @@ async fn run_server_with_listener(
         registry: Arc::clone(&state.provider_registry),
         settings_manager: state.settings_manager.clone(),
         provider_service: state.provider_service.clone(),
+        admin_auth_required: config.security.settings_mutation_auth_required,
+        admin_key: config.security.settings_admin_key.clone(),
     };
 
     // ── Shared ingestion worker pool ─────────────────────────────────────────────
@@ -1531,7 +1533,8 @@ async fn run_server_with_listener(
         // Providers API
         .nest(
             "/api/uar/providers",
-            uar::api::providers::build_router().with_state(provider_api_state.clone()),
+            uar::api::providers::build_router(provider_api_state.clone())
+                .with_state(provider_api_state.clone()),
         )
         // Discovery API (agents, sessions, skills, tools catalogs)
         .nest(
@@ -1646,7 +1649,8 @@ async fn run_server_with_listener(
         // Providers: GET/POST /api/providers, GET/PUT/DELETE /api/providers/{id}, etc.
         .nest(
             "/api/providers",
-            uar::api::providers::build_router().with_state(provider_api_state.clone()),
+            uar::api::providers::build_router(provider_api_state.clone())
+                .with_state(provider_api_state.clone()),
         )
         // Skills: GET /api/skills, GET/DELETE /api/skills/{id}, etc.
         .nest(
