@@ -1,0 +1,89 @@
+{
+  "target": "claude",
+  "verification": {
+    "level": "source-verified",
+    "source": "https://code.claude.com/docs/en/sub-agents",
+    "version": "documentation inspected 2026-09-24",
+    "live": "unverified"
+  },
+  "diagnostics": [
+    "Source-verified serialization only; installed native validation and live execution are unverified.",
+    "Only explicit model IDs are translated. Resolve tier, skill, capability and price policies with agent-team-models before native invocation.",
+    "These are native subagents; installing them does not create an experimental Claude agent team or enable that feature.",
+    "Role overrides are preserved without native schema certification. Skill IDs refer to separately installed skills; prompt mentions do not install or authorize them."
+  ],
+  "instructions": [
+    "Review staged artifacts before installation. Export grants no execution or registration authority.",
+    "Choose project .claude/agents or the staged local marketplace/plugin. Do not install both copies. Settings options are a proposed project .claude/settings.json."
+  ],
+  "files": [
+    {
+      "file": ".claude/agents/uar-lead.md",
+      "sha256": "02274373bb7b169675f1d0260d7071cbee1e784c55361907fa86c54a3dfe9d06"
+    },
+    {
+      "file": "plugins/uar-core/agents/uar-lead.md",
+      "sha256": "02274373bb7b169675f1d0260d7071cbee1e784c55361907fa86c54a3dfe9d06"
+    },
+    {
+      "file": ".claude/agents/uar-runtime.md",
+      "sha256": "5cd02b1d4da0f6d88171438424d8190682ace5ea0ad8bccdc7f550d54590a76b"
+    },
+    {
+      "file": "plugins/uar-core/agents/uar-runtime.md",
+      "sha256": "5cd02b1d4da0f6d88171438424d8190682ace5ea0ad8bccdc7f550d54590a76b"
+    },
+    {
+      "file": ".claude/agents/uar-providers.md",
+      "sha256": "908b179167793f1cfe211fe9731b665ce4bb364dcc5b4f1a21517444a31cf7c2"
+    },
+    {
+      "file": "plugins/uar-core/agents/uar-providers.md",
+      "sha256": "908b179167793f1cfe211fe9731b665ce4bb364dcc5b4f1a21517444a31cf7c2"
+    },
+    {
+      "file": ".claude/agents/uar-trust-tools.md",
+      "sha256": "fbffbfbb8d00c8707b4228cb72954b3c908cdfc4f58e169a82b3cb57cf747c44"
+    },
+    {
+      "file": "plugins/uar-core/agents/uar-trust-tools.md",
+      "sha256": "fbffbfbb8d00c8707b4228cb72954b3c908cdfc4f58e169a82b3cb57cf747c44"
+    },
+    {
+      "file": ".claude/agents/uar-state.md",
+      "sha256": "3a0a119e7b30d71e4fadc2223db8559398a101ac4f7e181da7925fdb007d8057"
+    },
+    {
+      "file": "plugins/uar-core/agents/uar-state.md",
+      "sha256": "3a0a119e7b30d71e4fadc2223db8559398a101ac4f7e181da7925fdb007d8057"
+    },
+    {
+      "file": ".claude/agents/uar-console.md",
+      "sha256": "7860b506011b636e40cdf23a1b52b32ba40ba260ef138f5ade1a95fc0e111512"
+    },
+    {
+      "file": "plugins/uar-core/agents/uar-console.md",
+      "sha256": "7860b506011b636e40cdf23a1b52b32ba40ba260ef138f5ade1a95fc0e111512"
+    },
+    {
+      "file": ".claude/agents/uar-verifier.md",
+      "sha256": "61fa47bf6dc013caa5c01b75ebb7fb8fd2397180a96373454fb557d7ae5769e7"
+    },
+    {
+      "file": "plugins/uar-core/agents/uar-verifier.md",
+      "sha256": "61fa47bf6dc013caa5c01b75ebb7fb8fd2397180a96373454fb557d7ae5769e7"
+    },
+    {
+      "file": "plugins/uar-core/.claude-plugin/plugin.json",
+      "sha256": "187b292170dd4635ac1592f80657da905f7bbfcc1370a87ad1208a6857726cb0"
+    },
+    {
+      "file": ".claude-plugin/marketplace.json",
+      "sha256": "4c6fef06e3c435f70c0e0aadc6a74fd9e2eeb00e4baef0b9bb72864c4cf40f69"
+    },
+    {
+      "file": "export-receipt.json",
+      "sha256": "77837b566f803d7255e0bd255ac19b690077663cc052f34bd9aea3f97419427b"
+    }
+  ]
+}

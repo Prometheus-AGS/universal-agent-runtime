@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-24T22:25:55.072Z",
+  "skills": [
+    {
+      "id": "rust-best-practices",
+      "source": "/Users/gqadonis/.codex/skills/rust-best-practices",
+      "kind": "installed-local-snapshot",
+      "excluded": [
+        "runtime source",
+        "tests",
+        "shell/Python scripts"
+      ],
+      "files": [
+        {
+          "path": ".prometheus-generation",
+          "sha256": "b22fa510eccbbc58c8101a8d691339c2f3e87743285eefd4fb8d2925da9084f7"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "83d48cf362d3a9bab5966df2835df2f67b263eb887abc6cb7768763a8d20e17c"
+        },
+        {
+          "path": "references/chapter_01.md",
+          "sha256": "05aed21a95cce7a97badc44f628eb7e23466f7be178a8c8ce8e3c7c1f82fd306"
+        },
+        {
+          "path": "references/chapter_02.md",
+          "sha256": "05c6495150ea1b3a038555231e1965b75dc4c2499e4c7a784a0a35640eaee579"
+        },
+        {
+          "path": "references/chapter_03.md",
+          "sha256": "160883f80db912c748cb73884942b6824be0599c98b8f16e9256f27fb9a44c6a"
+        },
+        {
+          "path": "references/chapter_04.md",
+          "sha256": "3257b7dfa06698bd59fe2d315b33b22181926d30cda3776bc16c792b51eeb239"
+        },
+        {
+          "path": "references/chapter_05.md",
+          "sha256": "7b44b4a6e245e692feb07df573162ce8b2c7ffc20716f8a5518d3d4ee2793c7c"
+        },
+        {
+          "path": "references/chapter_06.md",
+          "sha256": "c001d3dbffe3e403cfc52ad81e4fe0468416f61add2e140d0f442fee1812049c"
+        },
+        {
+          "path": "references/chapter_07.md",
+          "sha256": "a3c989e1aff99c6de53123ce97f3cf9496e0d68fe4099faabe436758ac1a5475"
+        },
+        {
+          "path": "references/chapter_08.md",
+          "sha256": "452edcd46db8bf105c9b208ffb9ee41f876ae1a26ea60c699660047861e077c6"
+        },
+        {
+          "path": "references/chapter_09.md",
+          "sha256": "6edd831122b04ee9f11c0a529a9ebddf2d34b5d1d8edef9bd6929d41693ad262"
+        }
+      ]
+    },
+    {
+      "id": "rust-async-patterns",
+      "source": "/Users/gqadonis/.codex/skills/rust-async-patterns",
+      "kind": "installed-local-snapshot",
+      "excluded": [
+        "runtime source",
+        "tests",
+        "shell/Python scripts"
+      ],
+      "files": [
+        {
+          "path": ".prometheus-generation",
+          "sha256": "b22fa510eccbbc58c8101a8d691339c2f3e87743285eefd4fb8d2925da9084f7"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "b81c636edbd28065dd94d5876b1250610e0ab5f41e5ecf1746f60f307fee5be1"
+        },
+        {
+          "path": "references/details.md",
+          "sha256": "cd8a987c59cf704b7a2145e0dea6891b10194e7304b894bd14a5692d9fdfa76d"
+        }
+      ]
+    },
+    {
+      "id": "agent-runtime-security",
+      "source": "/Users/gqadonis/.codex/skills/agent-runtime-security",
+      "kind": "installed-local-snapshot",
+      "excluded": [
+        "runtime source",
+        "tests",
+        "shell/Python scripts"
+      ],
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "40a069d46542fea580f50933517afc26b307ed1fbea28ca2d7e7345859fdf800"
+        },
+        {
+          "path": "agents/openai.yaml",
+          "sha256": "cf77c83d20dda773caddf88283b99902159a5f3a94a1ceef115f31dce1b5298f"
+        }
+      ]
+    },
+    {
+      "id": "agui-event-contract",
+      "source": "/Users/gqadonis/.codex/skills/agui-event-contract",
+      "kind": "installed-local-snapshot",
+      "excluded": [
+        "runtime source",
+        "tests",
+        "shell/Python scripts"
+      ],
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "192d224f220c8b6c62ead0a2390ab804ec2b4e89a608e7e3f8e2d33f5a7b5d7c"
+        },
+        {
+          "path": "agents/openai.yaml",
+          "sha256": "ff04d530aa2f4d41e49994f5529ac89cbcb454c1d1c0856cc69c40fe80614bf8"
+        }
+      ]
+    },
+    {
+      "id": "agent-team-creator",
+      "source": "/Users/gqadonis/.codex/skills/agent-team-creator",
+      "kind": "installed-local-snapshot",
+      "excluded": [
+        "runtime source",
+        "tests",
+        "shell/Python scripts"
+      ],
+      "files": [
+        {
+          "path": ".prometheus-generation",
+          "sha256": "b22fa510eccbbc58c8101a8d691339c2f3e87743285eefd4fb8d2925da9084f7"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "f9499c34faf89af0b11c8a791998ed4b8dfc643df5e4d976e60885c49a4a4e8b"
+        },
+        {
+          "path": "agents/openai.yaml",
+          "sha256": "6605ed41446890050e2b32534d10ffa2e3d99f5abc7bcb4f810991b9a42d46d1"
+        },
+        {
+          "path": "assets/intake.json",
+          "sha256": "3a6b9ad249b0adf16c730f99143280ace41355a9592efe3eb834b720543477f3"
+        },
+        {
+          "path": "references/manifest.md",
+          "sha256": "d419e580599a586d0511e245453c660e29c809698d8ad7ba9facb13f97b2f321"
+        },
+        {
+          "path": "references/models-memory.md",
+          "sha256": "948d23f9c3596899f77405590b9f521fa0428cc1aebc7984604a1b37e80cabec"
+        },
+        {
+          "path": "references/native-harnesses.md",
+          "sha256": "bf35120b77eb7f18f55c0fd0b86cee8e23681334adcd97639fe23e4781fd4181"
+        },
+        {
+          "path": "references/task-handoff.md",
+          "sha256": "9eacc067f5684d9318e5809083bd378fda4b7447a0a7f19f203fb4951952cfee"
+        },
+        {
+          "path": "schemas/team.schema.json",
+          "sha256": "76ccd7ef710ee72f60ae89480167fa0129da9f795a103849b2315595d2ff59e9"
+        },
+        {
+          "path": "scripts/adapters-codecs.mjs",
+          "sha256": "67c59ed9c1b8cf00223ce6e6374d72451ea5d26556d814cbbefa26ac704118dd"
+        },
+        {
+          "path": "scripts/adapters-local.mjs",
+          "sha256": "5fa8663c2ffe14aaa47c713679fbe73e37ce642c8de4e4caf1304380b16e6182"
+        },
+        {
+          "path": "scripts/adapters-services.mjs",
+          "sha256": "1940041ed303215a1df62dffbc137eaded255f68056692618e6978fc88341d63"
+        },
+        {
+          "path": "scripts/adapters.mjs",
+          "sha256": "b1e7e4a62e2bd518534aef779f04f8f1d62c5bda7f00cdc4530d08aaf9f035dd"
+        },
+        {
+          "path": "scripts/cli.mjs",
+          "sha256": "a04c9d2ccfb974bff561e7f170c862caf30410a8db3026310db1b8a71728635b"
+        },
+        {
+          "path": "scripts/export-files.mjs",
+          "sha256": "8f193b8cc9190c5ba4b83c4c37eb0757e34438d9920737f5f852e6ce0143a196"
+        },
+        {
+          "path": "scripts/guidance.mjs",
+          "sha256": "aae5e5057f54de0e58dadcba2f8ed79cef0d66a76638d2e6b32d3113e48b8992"
+        },
+        {
+          "path": "scripts/handoff.mjs",
+          "sha256": "1510e7cbcac0e685dd155fca0369fd08d20163b0d8aa104dc846da8e836c14ae"
+        },
+        {
+          "path": "scripts/memory.mjs",
+          "sha256": "5d86cb097580a1d018effe7e27075574610762d6ca338c5eeec7644e7be53e78"
+        },
+        {
+          "path": "scripts/models-http.mjs",
+          "sha256": "aea304aa515f8468446094ef3c5e140c78cffdbe63d4b54d414e3d1de709dc28"
+        },
+        {
+          "path": "scripts/models.mjs",
+          "sha256": "8fbb72e7815e4f3e23d535679fae8a2deb73f013dfd40466952acf95d70f7b22"
+        },
+        {
+          "path": "scripts/state-kbd.mjs",
+          "sha256": "d6083c558b54b994553208d4cbcfe221c71a48e7a5edbee03da730e3c6be5aad"
+        },
+        {
+          "path": "scripts/state-tasks.mjs",
+          "sha256": "3ef330a0f3689da1bd74f8a1998f51877c2e4f0d79d0b1fd23ff3b593504120d"
+        },
+        {
+          "path": "scripts/state-validation.mjs",
+          "sha256": "da6086611c376daf42472aa2548b5874d622917d4ecd8d16077b31c1a563cc9e"
+        },
+        {
+          "path": "scripts/state.mjs",
+          "sha256": "90ef7e07aae91ef787245d384fdac1c5e99fc676fa40db7d34bc1044257c9928"
+        },
+        {
+          "path": "scripts/types.mjs",
+          "sha256": "aa827d89df419fc4e721044b2170dc50e540e67ab15d568b7cd01e50b352ce2f"
+        },
+        {
+          "path": "scripts/validation.mjs",
+          "sha256": "cf776cd2508a6a89702b45154258f72824eabbe1eb336b1c0bbb449d5e48f6d3"
+        }
+      ]
+    },
+    {
+      "id": "agent-team-models",
+      "source": "/Users/gqadonis/.codex/skills/agent-team-models",
+      "kind": "installed-local-snapshot",
+      "excluded": [
+        "runtime source",
+        "tests",
+        "shell/Python scripts"
+      ],
+      "files": [
+        {
+          "path": ".prometheus-generation",
+          "sha256": "b22fa510eccbbc58c8101a8d691339c2f3e87743285eefd4fb8d2925da9084f7"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "1d5bdc4306a02986129563954cbac2b7697b13d3a87771168b4cb6006f912a5c"
+        },
+        {
+          "path": "agents/openai.yaml",
+          "sha256": "1a10ef43d4e3fb9b6950c8085baed0bcb690971daf47d1942903ed3b2dbedcae"
+        }
+      ]
+    },
+    {
+      "id": "agent-team-manage",
+      "source": "/Users/gqadonis/.codex/skills/agent-team-manage",
+      "kind": "installed-local-snapshot",
+      "excluded": [
+        "runtime source",
+        "tests",
+        "shell/Python scripts"
+      ],
+      "files": [
+        {
+          "path": ".prometheus-generation",
+          "sha256": "b22fa510eccbbc58c8101a8d691339c2f3e87743285eefd4fb8d2925da9084f7"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "851a75e5854ad0a2778d274c00585d7da796e96e11b2903d2fd35efd911bc224"
+        },
+        {
+          "path": "agents/openai.yaml",
+          "sha256": "cfaf68e2410f6ebb078c8c4e8ed3b0547728f913ad94b0f112ec5c680816f87e"
+        }
+      ]
+    },
+    {
+      "id": "agent-team-handoff",
+      "source": "/Users/gqadonis/.codex/skills/agent-team-handoff",
+      "kind": "installed-local-snapshot",
+      "excluded": [
+        "runtime source",
+        "tests",
+        "shell/Python scripts"
+      ],
+      "files": [
+        {
+          "path": ".prometheus-generation",
+          "sha256": "b22fa510eccbbc58c8101a8d691339c2f3e87743285eefd4fb8d2925da9084f7"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "ce8e6c64a50e35ee5f7ce44a07fc98bafd9592cbb896c3dbc076df04d7c5db3e"
+        },
+        {
+          "path": "agents/openai.yaml",
+          "sha256": "72e890158a9d95da16c829ce97ab76036d156c572888fee688e05fcde6e270ac"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "name": "uar-core",
+  "version": "1.0.0",
+  "description": "Deliver verified changes to Universal Agent Runtime while preserving trusted-host authority, provider wire contracts, durable state, entity UI boundaries and pinned cross-project interfaces."
+}

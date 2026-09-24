@@ -1,0 +1,74 @@
+{
+  "mode": "decision",
+  "verdict": "BLOCK",
+  "judge_model": "MiniMax-M3",
+  "producer_model": "GPT-6",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "decision document — Falsifier",
+      "line": 0,
+      "claim": "The falsifier cannot be reliably triggered because every one of its trigger conditions is qualitative.",
+      "evidence": "\"If an ordinary single-domain task requires more than one implementer\" — 'ordinary' is undefined. \"review costs repeatedly exceed useful independent findings\" — 'repeatedly' (over how many tasks?) and 'useful' (by what metric?) are undefined. \"A trivial task can use one implementer\" — 'trivial' is undefined. None of these thresholds has a measurement, a count, or a window, so the falsifier reads as rhetoric rather than a test the decision can actually fail.",
+      "suggested_fix": "Replace each qualitative clause with an observable threshold: e.g., 'ordinary' = change under N files in one crate; 'trivial' = single-file or under N LOC; 'review costs repeatedly exceed useful findings' = more than 3 of 5 recent tasks where >50% of verifier findings were not actionable."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "decision document — Independent alternatives",
+      "line": 0,
+      "claim": "Three consecutive 'surreal-memory ideation calls' returning only root nodes are labeled 'tool failure' and dismissed, leaving the synthesis methodology unaudited.",
+      "evidence": "\"Three surreal-memory ideation calls returned only root nodes and supplied no usable branches. This is documented tool failure, not three successful mindmaps. Independent investigator candidates provide the substantive alternatives.\" The failure is named but never diagnosed: no prompt, model, parameter, or error reason is recorded. Either the failure is reproducible (and the methodology should be retried with diagnostics) or it is one-off (and the decision should not lean on it). Citing a failed method as proof that candidates A/B/C carry the load is not the same as showing it.",
+      "suggested_fix": "Either re-run the ideation calls with at least one parameter changed and record the outcome, or remove the references entirely and let the synthesis rest on the three investigators without invoking the failed method as a foil."
+    },
+    {
+      "severity": "WARNING",
+      "file": "decision document — Assumptions",
+      "line": 0,
+      "claim": "Eight distinct load-bearing assumptions are collapsed into a single run-on sentence, so individual ones cannot be traced, verified, or falsified in isolation.",
+      "evidence": "The 'Assumptions' field is one sentence: \"The task is reusable project development tooling, not live UAR registration or an autonomous daemon. Ownership is coordination, not sandbox enforcement. Existing KBD position and versions.toml remain binding. Seven prompts need not be loaded at once. Cross-project work is a handoff request, not implicit write permission. Models and skill IDs are grounded in observed catalogs/native docs; prices and inference performance remain unverified. MiniMax executable is missing and its files can only be source-validated here.\" — that is at least eight independent claims (task scope, ownership model, KBD binding, prompt-loading, cross-project policy, model grounding, price/performance unverified, MiniMax source-only) and at least three of them are open variables (price, performance, MiniMax executable presence) that the rest of the decision depends on.",
+      "suggested_fix": "List each assumption as a numbered bullet, each with the evidence or observation that supports it, so a reviewer or future operator can re-check any one without parsing prose."
+    },
+    {
+      "severity": "WARNING",
+      "file": "decision document — synthesis rationale",
+      "line": 0,
+      "claim": "Folding skills/compiler into runtime (rather than creating an eighth role) is justified by a guess about utilization, not a measurement, and is therefore an unverified load-bearing decision.",
+      "evidence": "\"Combine skills/compiler with runtime to avoid an eighth low-utilization specialist.\" There is no estimate of how often skill/compiler work would be triggered, no comparison of expected workload against any other specialist, and no fallback if that workload turns out to be high. The decision treats utilization as settled when it is unmeasured.",
+      "suggested_fix": "State the observed or estimated share of tasks involving skill/compiler work, and pre-commit the condition under which skills/compiler would be split back out into its own role."
+    },
+    {
+      "severity": "WARNING",
+      "file": "decision document — Decision",
+      "line": 0,
+      "claim": "A default three-person working group with an independent verifier is mandated without any envelope for token, latency, or licensing cost, while the assumptions explicitly state prices and inference performance are unverified.",
+      "evidence": "\"default three-person working group (lead, relevant specialist, independent verifier)\" is the default, and the Assumptions section says \"prices and inference performance remain unverified.\" If the verifier model is not configured, is over budget, or is slow, the default working group may simply not be runnable for some tasks, and the decision does not say what happens then (downgrade to self-review? defer? block?). The falsifier mentions \"review costs repeatedly exceed useful independent findings\" but only as a post-hoc simplification trigger, not as a pre-flight check.",
+      "suggested_fix": "Add a pre-flight cost check (acceptable per-task token ceiling, max acceptable verifier latency, fallback model if primary verifier is unavailable) and define the degraded-mode working group."
+    },
+    {
+      "severity": "WARNING",
+      "file": "decision document — Assumptions / Falsifier",
+      "line": 0,
+      "claim": "Cross-project work is declared a handoff procedure in both the Assumptions (\"Cross-project work is a handoff request, not implicit write permission\") and the Falsifier (\"route a handoff rather than expanding its default ownership\"), yet no handoff artifact format, location, owner, or tracking mechanism is specified.",
+      "evidence": "Both clauses name handoff as the policy but neither describes what the handoff is — file path, schema, required fields, target repository contract, or how the receiving team acknowledges it. Without that, the policy is unenforceable and the falsifier cannot trigger because no one can detect whether a handoff was actually produced.",
+      "suggested_fix": "Specify the handoff artifact (path under .agent-team/, required fields, target repo identifier) and the receipt the receiving team must return, and bind them so the policy becomes testable."
+    },
+    {
+      "severity": "WARNING",
+      "file": "decision document — synthesis rationale",
+      "line": 0,
+      "claim": "Role boundaries between trust/tools, runtime, providers, and state/memory are claimed to 'follow actual source boundaries' without presenting the source-boundary analysis that justifies them.",
+      "evidence": "\"Separating provider wire contracts, host execution authority and durable state follows actual source boundaries.\" No source-tree breakdown, no module list, and no reasoning for why, say, trust/tools is a peer of providers rather than part of host execution authority. Candidate A is criticized for leaving frontend and 'explicit coordination' uncovered; the decision does not say which role in the synthesis owns coordination, only that lead presumably does.",
+      "suggested_fix": "Attach the module/file map used to derive the boundary, and name which role owns coordination and which owns the frontend surface Candidate A missed."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "decision document — Validation",
+      "line": 0,
+      "claim": "The validation section enumerates what to check but provides no acceptance criteria for any item.",
+      "evidence": "\"Manifest and exports, all skill paths/provenance, preserved existing MCP config, and native parser/discovery where available.\" None of these has a pass/fail statement. 'Preserved existing MCP config' in particular needs to be checked against a recorded baseline of what was there before, which is not mentioned. 'Native parser/discovery where available' is conditional and so can silently not run.",
+      "suggested_fix": "For each item, state the verifiable condition (manifest parses against schema X with required fields present; MCP config diff is empty against pre-change snapshot; every skill binding has a recorded provenance URL; native discovery returns the expected roster of agents)."
+    }
+  ]
+}

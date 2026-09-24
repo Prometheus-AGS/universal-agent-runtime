@@ -1,0 +1,7 @@
+{
+  "judge": "k3",
+  "timeoutMs": 120000,
+  "attempts": 1,
+  "exitCode": 3,
+  "status": "no findings returned"
+}

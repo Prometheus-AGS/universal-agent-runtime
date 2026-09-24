@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-24T22:33:36.374Z",
+  "harness": "opencode",
+  "installedVersion": "1.18.25-fork",
+  "projectRoot": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "status": "native-discovery-verified",
+  "inferenceAttempted": false,
+  "configurationChangesMade": false,
+  "roles": [
+    {
+      "name": "uar-console",
+      "mode": "subagent",
+      "path": ".opencode/agents/uar-console.md",
+      "sha256": "119f9b9e3ac50561f6cf78f9991a48ba16fe8255a7814ccd1d1d6810de5fdb4a"
+    },
+    {
+      "name": "uar-lead",
+      "mode": "primary",
+      "path": ".opencode/agents/uar-lead.md",
+      "sha256": "f52a3a602e631befb9c206907dee713e362d9e473e12a755ed44553e5ee74dbc"
+    },
+    {
+      "name": "uar-providers",
+      "mode": "subagent",
+      "path": ".opencode/agents/uar-providers.md",
+      "sha256": "e6af18bbae672fb0d5c96124a6277c06ae02a3f4c249eb18b5688a22edc5f3c4"
+    },
+    {
+      "name": "uar-runtime",
+      "mode": "subagent",
+      "path": ".opencode/agents/uar-runtime.md",
+      "sha256": "f7582566013d44c79b17fd82c03c034488276409a2694210cbd63af2270da8bb"
+    },
+    {
+      "name": "uar-state",
+      "mode": "subagent",
+      "path": ".opencode/agents/uar-state.md",
+      "sha256": "d82775c5faefa635c06ceb76b1b934152f819cb491d309dc10df1b9ca6099c34"
+    },
+    {
+      "name": "uar-trust-tools",
+      "mode": "subagent",
+      "path": ".opencode/agents/uar-trust-tools.md",
+      "sha256": "bfa06748efdfe757d7f2093fa802d1b45359e167f3607299a0ac8b6ba42d2f75"
+    },
+    {
+      "name": "uar-verifier",
+      "mode": "subagent",
+      "path": ".opencode/agents/uar-verifier.md",
+      "sha256": "a7ba809a6b78e058797aba96903c548e9d150b098a010a1d7b5eb03237ca8de8"
+    }
+  ],
+  "checks": [
+    {
+      "command": [
+        "opencode",
+        "agent",
+        "list"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "exitCode": 0,
+      "stdoutCapture": "direct-file-descriptor",
+      "stdoutBytes": 169642372,
+      "stderrBytes": 0,
+      "outputComplete": true,
+      "allSevenUarRolesPresent": true,
+      "rawOutputPath": "/tmp/uar-opencode-normal-native-list.txt",
+      "receiptContent": "Only role names, modes, and file digests; raw permissions are excluded."
+    },
+    {
+      "command": [
+        "opencode",
+        "debug",
+        "agent",
+        "uar-lead",
+        "--pure"
+      ],
+      "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "exitCode": 0,
+      "stdoutCapture": "direct-file-descriptor",
+      "result": {
+        "name": "uar-lead",
+        "mode": "primary",
+        "promptMatched": true
+      },
+      "rawOutputPath": "/tmp/uar-opencode-lead-config.json"
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--short",
+        "--",
+        ".opencode/package.json",
+        ".opencode/bun.lock",
+        ".opencode/package-lock.json",
+        ".opencode/.gitignore",
+        "opencode.json"
+      ],
+      "exitCode": 0,
+      "output": "",
+      "meaning": "No tracked changes in these existing configuration/dependency files after native discovery."
+    }
+  ],
+  "diagnosis": {
+    "observed": "Both normal and --pure agent-list output captured through pipes ended mid-permission JSON despite exit code 0. Direct-file-descriptor capture completed and listed every UAR role. Targeted --pure inspection independently loaded uar-lead.",
+    "conclusion": "The absence of UAR names in earlier pipe captures was incomplete output, not a project-agent discovery failure. --pure does not exclude the project roles in this installed build.",
+    "likelyMechanism": "Local fork source writes large permission arrays to stdout without awaiting drain, then unconditionally calls process.exit(). This supports pipe truncation as the cause; the loader is not changed.",
+    "sourceEvidence": [
+      {
+        "path": "/Users/gqadonis/Projects/references/opencode-1x/packages/opencode/src/cli/cmd/agent.ts",
+        "symbol": "AgentListCommand",
+        "observation": "Writes role name and full permission array with process.stdout.write."
+      },
+      {
+        "path": "/Users/gqadonis/Projects/references/opencode-1x/packages/opencode/src/index.ts",
+        "line": 141,
+        "observation": "Unconditional process.exit() in finally."
+      },
+      {
+        "path": "/Users/gqadonis/Projects/references/opencode-1x/packages/opencode/src/config/agent.ts",
+        "symbol": "load",
+        "observation": "Scans {agent,agents}/**/*.md and validates Markdown configuration."
+      },
+      {
+        "path": "/Users/gqadonis/Projects/references/opencode-1x/packages/opencode/src/config/config.ts",
+        "line": 460,
+        "observation": "Merges ConfigAgent.load(dir) into effective agents."
+      }
+    ]
+  },
+  "recommendation": "No UAR role/config change is needed. Use direct-file capture or targeted debug agent inspection, then project names/modes rather than printing the full permission inventory.",
+  "limitations": [
+    "Native discovery does not prove authenticated model availability or successful inference.",
+    "Local fork source supports the diagnosis but was not rebuilt or modified.",
+    "Codex doctor status is outside this OpenCode receipt; its config.load check alone is not a role validator."
+  ]
+}

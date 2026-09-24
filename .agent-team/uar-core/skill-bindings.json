@@ -1,0 +1,18 @@
+{
+  "agent-team-creator": ".agents/skills/agent-team-creator/SKILL.md",
+  "agent-team-manage": ".agents/skills/agent-team-manage/SKILL.md",
+  "agent-team-handoff": ".agents/skills/agent-team-handoff/SKILL.md",
+  "openspec-propose": ".claude/skills/openspec-propose/SKILL.md",
+  "rust-best-practices": ".agents/skills/rust-best-practices/SKILL.md",
+  "rust-async-patterns": ".agents/skills/rust-async-patterns/SKILL.md",
+  "agui-event-contract": ".agents/skills/agui-event-contract/SKILL.md",
+  "agent-runtime-security": ".agents/skills/agent-runtime-security/SKILL.md",
+  "surrealql": ".agents/skills/surrealql/SKILL.md",
+  "impeccable": ".agents/skills/impeccable/SKILL.md",
+  "frontend-design": ".agents/skills/frontend-design/SKILL.md",
+  "ui-ux-pro-max": ".agents/skills/ui-ux-pro-max/SKILL.md",
+  "vercel-react-best-practices": ".agents/skills/vercel-react-best-practices/SKILL.md",
+  "vercel-composition-patterns": ".agents/skills/vercel-composition-patterns/SKILL.md",
+  "entity-graph-optimize": ".claude/skills/prometheus-entity-skills/entity-graph-optimize/SKILL.md",
+  "uar-project-review": ".agents/skills/uar-project-review/SKILL.md"
+}

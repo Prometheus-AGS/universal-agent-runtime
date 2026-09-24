@@ -1,0 +1,3 @@
+[mcp_servers.compass]
+command = "/usr/local/bin/compass"
+args = ["serve","--graph","/Users/gqadonis/Projects/prometheus/universal-agent-runtime/compass-out/graph.json","--transport","stdio"]

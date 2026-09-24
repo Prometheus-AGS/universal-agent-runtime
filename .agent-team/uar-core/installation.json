@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 1,
+  "installedAt": "2026-09-24T22:28:32.361Z",
+  "files": [
+    {
+      "harness": "codex",
+      "path": ".codex/agents/uar-console.toml",
+      "source": ".agent-team/uar-core/exports/codex/.codex/agents/uar-console.toml",
+      "sha256": "ddb71f1861a72972af0a75a6cb4d62aaf449d5118f2e4603465e3867592900b0"
+    },
+    {
+      "harness": "codex",
+      "path": ".codex/agents/uar-lead.toml",
+      "source": ".agent-team/uar-core/exports/codex/.codex/agents/uar-lead.toml",
+      "sha256": "ca9ffcd79b3f40487e26f3a724ca1143023314a9afb956c4ea1ee99df7266530"
+    },
+    {
+      "harness": "codex",
+      "path": ".codex/agents/uar-providers.toml",
+      "source": ".agent-team/uar-core/exports/codex/.codex/agents/uar-providers.toml",
+      "sha256": "3af43dfe0102aa5b3be8a7072914fb7cf5d2c61efc3e3267b07d1d50d8ccd057"
+    },
+    {
+      "harness": "codex",
+      "path": ".codex/agents/uar-runtime.toml",
+      "source": ".agent-team/uar-core/exports/codex/.codex/agents/uar-runtime.toml",
+      "sha256": "5da6f6ecac87db9a5c43d5e3f81d9cf7c55966063895ab4cd92e8a021dafbe25"
+    },
+    {
+      "harness": "codex",
+      "path": ".codex/agents/uar-state.toml",
+      "source": ".agent-team/uar-core/exports/codex/.codex/agents/uar-state.toml",
+      "sha256": "122dbd1504bbf2288672db8dcd68e49e983390c75c57d53f71ee3e6cc99bc5ef"
+    },
+    {
+      "harness": "codex",
+      "path": ".codex/agents/uar-trust-tools.toml",
+      "source": ".agent-team/uar-core/exports/codex/.codex/agents/uar-trust-tools.toml",
+      "sha256": "a0ec2fe0fa9527b31e40bfb3262bf5466348b33fbd57a267eb19e553936a3da6"
+    },
+    {
+      "harness": "codex",
+      "path": ".codex/agents/uar-verifier.toml",
+      "source": ".agent-team/uar-core/exports/codex/.codex/agents/uar-verifier.toml",
+      "sha256": "debb9cb799d14851297dae25fc584e01e6c16ea82a7b23c4b008f3b3c35a7a2b"
+    },
+    {
+      "harness": "claude",
+      "path": ".claude/agents/uar-console.md",
+      "source": ".agent-team/uar-core/exports/claude/.claude/agents/uar-console.md",
+      "sha256": "7860b506011b636e40cdf23a1b52b32ba40ba260ef138f5ade1a95fc0e111512"
+    },
+    {
+      "harness": "claude",
+      "path": ".claude/agents/uar-lead.md",
+      "source": ".agent-team/uar-core/exports/claude/.claude/agents/uar-lead.md",
+      "sha256": "02274373bb7b169675f1d0260d7071cbee1e784c55361907fa86c54a3dfe9d06"
+    },
+    {
+      "harness": "claude",
+      "path": ".claude/agents/uar-providers.md",
+      "source": ".agent-team/uar-core/exports/claude/.claude/agents/uar-providers.md",
+      "sha256": "908b179167793f1cfe211fe9731b665ce4bb364dcc5b4f1a21517444a31cf7c2"
+    },
+    {
+      "harness": "claude",
+      "path": ".claude/agents/uar-runtime.md",
+      "source": ".agent-team/uar-core/exports/claude/.claude/agents/uar-runtime.md",
+      "sha256": "5cd02b1d4da0f6d88171438424d8190682ace5ea0ad8bccdc7f550d54590a76b"
+    },
+    {
+      "harness": "claude",
+      "path": ".claude/agents/uar-state.md",
+      "source": ".agent-team/uar-core/exports/claude/.claude/agents/uar-state.md",
+      "sha256": "3a0a119e7b30d71e4fadc2223db8559398a101ac4f7e181da7925fdb007d8057"
+    },
+    {
+      "harness": "claude",
+      "path": ".claude/agents/uar-trust-tools.md",
+      "source": ".agent-team/uar-core/exports/claude/.claude/agents/uar-trust-tools.md",
+      "sha256": "fbffbfbb8d00c8707b4228cb72954b3c908cdfc4f58e169a82b3cb57cf747c44"
+    },
+    {
+      "harness": "claude",
+      "path": ".claude/agents/uar-verifier.md",
+      "source": ".agent-team/uar-core/exports/claude/.claude/agents/uar-verifier.md",
+      "sha256": "61fa47bf6dc013caa5c01b75ebb7fb8fd2397180a96373454fb557d7ae5769e7"
+    },
+    {
+      "harness": "kimi",
+      "path": ".kimi-code/agents/uar-console.md",
+      "source": ".agent-team/uar-core/exports/kimi/.kimi-code/agents/uar-console.md",
+      "sha256": "e1434dadb9e0dd4ed4c7fc73149914d5f07eb2eebcd437f499d498c0b603d665"
+    },
+    {
+      "harness": "kimi",
+      "path": ".kimi-code/agents/uar-lead.md",
+      "source": ".agent-team/uar-core/exports/kimi/.kimi-code/agents/uar-lead.md",
+      "sha256": "69828963b1c55add59f39af2ec887c971d693eed4fd9b59d2e0ac8a1eda2adf3"
+    },
+    {
+      "harness": "kimi",
+      "path": ".kimi-code/agents/uar-providers.md",
+      "source": ".agent-team/uar-core/exports/kimi/.kimi-code/agents/uar-providers.md",
+      "sha256": "c3c9f13de84a24c544f9ee8debf83db77b92c021240efe3fc2b0a1de6a664025"
+    },
+    {
+      "harness": "kimi",
+      "path": ".kimi-code/agents/uar-runtime.md",
+      "source": ".agent-team/uar-core/exports/kimi/.kimi-code/agents/uar-runtime.md",
+      "sha256": "6930b22c6b41ea93e24f9ae5a019f9026b77ea65157ed5a9d3d4d6e5aa71b234"
+    },
+    {
+      "harness": "kimi",
+      "path": ".kimi-code/agents/uar-state.md",
+      "source": ".agent-team/uar-core/exports/kimi/.kimi-code/agents/uar-state.md",
+      "sha256": "8f641937c6cc5e3517910dbaba0f6f46819b30d4123fbc90bdd1a906cbd96096"
+    },
+    {
+      "harness": "kimi",
+      "path": ".kimi-code/agents/uar-trust-tools.md",
+      "source": ".agent-team/uar-core/exports/kimi/.kimi-code/agents/uar-trust-tools.md",
+      "sha256": "af6d6e64843d8dfa9adfd8f0c76ddc1ea2d8ae570d1e79bf03867928e066e2b8"
+    },
+    {
+      "harness": "kimi",
+      "path": ".kimi-code/agents/uar-verifier.md",
+      "source": ".agent-team/uar-core/exports/kimi/.kimi-code/agents/uar-verifier.md",
+      "sha256": "e2908f402bce6042b65a661a973c97592e8871d98bcd4b667a1f84f4297b068b"
+    },
+    {
+      "harness": "opencode",
+      "path": ".opencode/agents/uar-console.md",
+      "source": ".agent-team/uar-core/exports/opencode/.opencode/agents/uar-console.md",
+      "sha256": "119f9b9e3ac50561f6cf78f9991a48ba16fe8255a7814ccd1d1d6810de5fdb4a"
+    },
+    {
+      "harness": "opencode",
+      "path": ".opencode/agents/uar-lead.md",
+      "source": ".agent-team/uar-core/exports/opencode/.opencode/agents/uar-lead.md",
+      "sha256": "f52a3a602e631befb9c206907dee713e362d9e473e12a755ed44553e5ee74dbc"
+    },
+    {
+      "harness": "opencode",
+      "path": ".opencode/agents/uar-providers.md",
+      "source": ".agent-team/uar-core/exports/opencode/.opencode/agents/uar-providers.md",
+      "sha256": "e6af18bbae672fb0d5c96124a6277c06ae02a3f4c249eb18b5688a22edc5f3c4"
+    },
+    {
+      "harness": "opencode",
+      "path": ".opencode/agents/uar-runtime.md",
+      "source": ".agent-team/uar-core/exports/opencode/.opencode/agents/uar-runtime.md",
+      "sha256": "f7582566013d44c79b17fd82c03c034488276409a2694210cbd63af2270da8bb"
+    },
+    {
+      "harness": "opencode",
+      "path": ".opencode/agents/uar-state.md",
+      "source": ".agent-team/uar-core/exports/opencode/.opencode/agents/uar-state.md",
+      "sha256": "d82775c5faefa635c06ceb76b1b934152f819cb491d309dc10df1b9ca6099c34"
+    },
+    {
+      "harness": "opencode",
+      "path": ".opencode/agents/uar-trust-tools.md",
+      "source": ".agent-team/uar-core/exports/opencode/.opencode/agents/uar-trust-tools.md",
+      "sha256": "bfa06748efdfe757d7f2093fa802d1b45359e167f3607299a0ac8b6ba42d2f75"
+    },
+    {
+      "harness": "opencode",
+      "path": ".opencode/agents/uar-verifier.md",
+      "source": ".agent-team/uar-core/exports/opencode/.opencode/agents/uar-verifier.md",
+      "sha256": "a7ba809a6b78e058797aba96903c548e9d150b098a010a1d7b5eb03237ca8de8"
+    },
+    {
+      "harness": "minimax",
+      "path": ".minimax/agents/uar-console/agent.md",
+      "source": ".agent-team/uar-core/exports/minimax/agents/uar-console/agent.md",
+      "sha256": "620c2fb3bb8ef377c29598648565cbb721d3788c14d7302842f74175c5592203"
+    },
+    {
+      "harness": "minimax",
+      "path": ".minimax/agents/uar-lead/agent.md",
+      "source": ".agent-team/uar-core/exports/minimax/agents/uar-lead/agent.md",
+      "sha256": "c2bbd6d1c8c9f9ce4670fbfae7ddba87fc032740d511cd065226a70d7afe83a3"
+    },
+    {
+      "harness": "minimax",
+      "path": ".minimax/agents/uar-providers/agent.md",
+      "source": ".agent-team/uar-core/exports/minimax/agents/uar-providers/agent.md",
+      "sha256": "cb3fe6ad653ad7146568840c49371151735ff01ea8117de4a4712fbd35e29f2f"
+    },
+    {
+      "harness": "minimax",
+      "path": ".minimax/agents/uar-runtime/agent.md",
+      "source": ".agent-team/uar-core/exports/minimax/agents/uar-runtime/agent.md",
+      "sha256": "f2623de553698d4ab80f02b87fdc4c3ab8e182cb5f7c80bae0ab1a82b2ac575e"
+    },
+    {
+      "harness": "minimax",
+      "path": ".minimax/agents/uar-state/agent.md",
+      "source": ".agent-team/uar-core/exports/minimax/agents/uar-state/agent.md",
+      "sha256": "0f68cbfc2192eb00c67857c95ebefe03609063a9766511483c3b66ec4d45cd3b"
+    },
+    {
+      "harness": "minimax",
+      "path": ".minimax/agents/uar-trust-tools/agent.md",
+      "source": ".agent-team/uar-core/exports/minimax/agents/uar-trust-tools/agent.md",
+      "sha256": "0a71dc495ce685c1238df017f8efe495e9e73babd01ba37088599c9cd47cdec7"
+    },
+    {
+      "harness": "minimax",
+      "path": ".minimax/agents/uar-verifier/agent.md",
+      "source": ".agent-team/uar-core/exports/minimax/agents/uar-verifier/agent.md",
+      "sha256": "05e0572a5581fa14cb531ace96c2b551d561f7d9f30de7ae30610f1b5107ffc7"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "target": "opencode",
+  "verification": {
+    "level": "source-verified",
+    "source": "https://opencode.ai/docs/agents/",
+    "version": "deployed singular agent schema inspected 2026-09-24",
+    "live": "unverified"
+  },
+  "diagnostics": [
+    "Source-verified serialization only; installed native validation and live execution are unverified.",
+    "Only explicit model IDs are translated. Resolve tier, skill, capability and price policies with agent-team-models before native invocation.",
+    "OpenCode JS/TS or npm plugins are separate from agent definitions; no agent marketplace manifest is invented.",
+    "Role overrides are preserved without native schema certification. Skill IDs refer to separately installed skills; prompt mentions do not install or authorize them."
+  ],
+  "instructions": [
+    "Review staged artifacts before installation. Export grants no execution or registration authority.",
+    "Review .opencode/agents/*.md and optional opencode.json. Native configuration uses singular agent and permission keys."
+  ],
+  "files": [
+    {
+      "file": ".opencode/agents/uar-lead.md",
+      "sha256": "f52a3a602e631befb9c206907dee713e362d9e473e12a755ed44553e5ee74dbc"
+    },
+    {
+      "file": ".opencode/agents/uar-runtime.md",
+      "sha256": "f7582566013d44c79b17fd82c03c034488276409a2694210cbd63af2270da8bb"
+    },
+    {
+      "file": ".opencode/agents/uar-providers.md",
+      "sha256": "e6af18bbae672fb0d5c96124a6277c06ae02a3f4c249eb18b5688a22edc5f3c4"
+    },
+    {
+      "file": ".opencode/agents/uar-trust-tools.md",
+      "sha256": "bfa06748efdfe757d7f2093fa802d1b45359e167f3607299a0ac8b6ba42d2f75"
+    },
+    {
+      "file": ".opencode/agents/uar-state.md",
+      "sha256": "d82775c5faefa635c06ceb76b1b934152f819cb491d309dc10df1b9ca6099c34"
+    },
+    {
+      "file": ".opencode/agents/uar-console.md",
+      "sha256": "119f9b9e3ac50561f6cf78f9991a48ba16fe8255a7814ccd1d1d6810de5fdb4a"
+    },
+    {
+      "file": ".opencode/agents/uar-verifier.md",
+      "sha256": "a7ba809a6b78e058797aba96903c548e9d150b098a010a1d7b5eb03237ca8de8"
+    },
+    {
+      "file": "export-receipt.json",
+      "sha256": "cfcb982d3bc9d04e32c0c5d7a9ba4e31ca2557c67be1c61363f5d9a1e89d7b70"
+    }
+  ]
+}

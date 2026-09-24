@@ -1830,3 +1830,11 @@ Protected messages and tool schemas must survive typed adaptation field-for-fiel
 Persisted checkpoint resume state, canonical history and authorization identity cross the shared run boundary as one crate-private bundle. A resumed run always resolves current policy again; caller-supplied resolved policy cannot authorize old checkpoint content. Inherited child canonical history uses a distinct field and the already captured inherited policy, so child turns do not masquerade as persisted resumes.
 
 Checkpoint raw JSON is authoritative after its byte digests and embedded authorization binding validate. Database-normalized structured values are replaced from that envelope before restoration. Rejected resumes keep a redacted run dialogue, so warm-session content cannot leak through the failed run. Legacy rows without complete protection metadata remain explicitly non-resumable.
+
+## 2026-09-24 — UAR project team across five coding harnesses
+
+Install one seven-role project roster with a default lead/specialist/verifier working group and maximum four active participants. Roles follow runtime, provider, host trust/tool, durable-state and console boundaries; Rust-only Compass coverage does not cover frontend or failed parses. Shared roots need an explicit single writer. Native role files are reusable definitions, not an autonomous scheduler or live UAR registration. Preserve KBD runtime-harness-gap-closure position and dependency pins.
+
+Use pinned project Vercel React/Composition and SurrealQL skills with UAR entity/pin precedence. MiniMax uses a child-only project data directory; generated credential/session state is ignored. No new product security behavior or foreign-repository ownership was added.
+
+Evidence: .agent-team/uar-core/verification.json and reviews/. Manifest/state, 35 export/installed files, 16 skill paths and existing config digests pass static checks; OpenCode discovers all seven roles. Other native activation/inference remains unverified, and mcode is absent. Cross-model design review produced corrections; both final cross-model requests timed out. Fresh artifact-only same-family fallback passed with limitations, not cross-model certification.

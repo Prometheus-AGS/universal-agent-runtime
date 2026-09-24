@@ -1,0 +1,5 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "target": "claude",
+  "out": ".agent-team/uar-core/exports/claude"
+}

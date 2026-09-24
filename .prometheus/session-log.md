@@ -4064,3 +4064,7 @@ this append-only log are the fallback records. production-ready has no date.
 - Exact next work: /kbd-execute runtime-harness-gap-closure
 - Verification:
   - none recorded
+
+## 2026-09-24 — Project team installation
+
+Completed OpenSpec create-uar-project-team tooling scope: seven roles, five native exports, project skill provenance, model/tool policy and handoffs. Plan commit 091bbb44. No product source, pins, KBD phase position or existing local settings changed. Final verification and native support limitations: .agent-team/uar-core/verification.json. MiniMax CLI unavailable; live team inference not run.

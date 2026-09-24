@@ -1,0 +1,88 @@
+{
+  "target": "kimi",
+  "verification": {
+    "level": "source-verified",
+    "source": "https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/customization/agents.md",
+    "version": "main documentation inspected 2026-09-24",
+    "live": "unverified"
+  },
+  "diagnostics": [
+    "Source-verified serialization only; installed native validation and live execution are unverified.",
+    "Only explicit model IDs are translated. Resolve tier, skill, capability and price policies with agent-team-models before native invocation.",
+    "Role overrides are preserved without native schema certification. Skill IDs refer to separately installed skills; prompt mentions do not install or authorize them."
+  ],
+  "instructions": [
+    "Review staged artifacts before installation. Export grants no execution or registration authority.",
+    "Choose project .kimi-code/agents or the staged Kimi v2 marketplace/plugin. Literal ${base_prompt} in supplied prompts remains unchanged."
+  ],
+  "files": [
+    {
+      "file": ".kimi-code/agents/uar-lead.md",
+      "sha256": "69828963b1c55add59f39af2ec887c971d693eed4fd9b59d2e0ac8a1eda2adf3"
+    },
+    {
+      "file": "plugins/uar-core/agents/uar-lead.md",
+      "sha256": "69828963b1c55add59f39af2ec887c971d693eed4fd9b59d2e0ac8a1eda2adf3"
+    },
+    {
+      "file": ".kimi-code/agents/uar-runtime.md",
+      "sha256": "6930b22c6b41ea93e24f9ae5a019f9026b77ea65157ed5a9d3d4d6e5aa71b234"
+    },
+    {
+      "file": "plugins/uar-core/agents/uar-runtime.md",
+      "sha256": "6930b22c6b41ea93e24f9ae5a019f9026b77ea65157ed5a9d3d4d6e5aa71b234"
+    },
+    {
+      "file": ".kimi-code/agents/uar-providers.md",
+      "sha256": "c3c9f13de84a24c544f9ee8debf83db77b92c021240efe3fc2b0a1de6a664025"
+    },
+    {
+      "file": "plugins/uar-core/agents/uar-providers.md",
+      "sha256": "c3c9f13de84a24c544f9ee8debf83db77b92c021240efe3fc2b0a1de6a664025"
+    },
+    {
+      "file": ".kimi-code/agents/uar-trust-tools.md",
+      "sha256": "af6d6e64843d8dfa9adfd8f0c76ddc1ea2d8ae570d1e79bf03867928e066e2b8"
+    },
+    {
+      "file": "plugins/uar-core/agents/uar-trust-tools.md",
+      "sha256": "af6d6e64843d8dfa9adfd8f0c76ddc1ea2d8ae570d1e79bf03867928e066e2b8"
+    },
+    {
+      "file": ".kimi-code/agents/uar-state.md",
+      "sha256": "8f641937c6cc5e3517910dbaba0f6f46819b30d4123fbc90bdd1a906cbd96096"
+    },
+    {
+      "file": "plugins/uar-core/agents/uar-state.md",
+      "sha256": "8f641937c6cc5e3517910dbaba0f6f46819b30d4123fbc90bdd1a906cbd96096"
+    },
+    {
+      "file": ".kimi-code/agents/uar-console.md",
+      "sha256": "e1434dadb9e0dd4ed4c7fc73149914d5f07eb2eebcd437f499d498c0b603d665"
+    },
+    {
+      "file": "plugins/uar-core/agents/uar-console.md",
+      "sha256": "e1434dadb9e0dd4ed4c7fc73149914d5f07eb2eebcd437f499d498c0b603d665"
+    },
+    {
+      "file": ".kimi-code/agents/uar-verifier.md",
+      "sha256": "e2908f402bce6042b65a661a973c97592e8871d98bcd4b667a1f84f4297b068b"
+    },
+    {
+      "file": "plugins/uar-core/agents/uar-verifier.md",
+      "sha256": "e2908f402bce6042b65a661a973c97592e8871d98bcd4b667a1f84f4297b068b"
+    },
+    {
+      "file": "plugins/uar-core/kimi.plugin.json",
+      "sha256": "2518c33ec6a6165aecd3c7c2363906244a7920d7e87f27435fb5538d3def081e"
+    },
+    {
+      "file": "marketplace.json",
+      "sha256": "205245c389745dc099f3db9641926a2f8f25763e3ee0df40b6a2c14c0aed6738"
+    },
+    {
+      "file": "export-receipt.json",
+      "sha256": "948f0b3bb9a83524967e269b8aafbc35306ccdef457830282faf7f98a9bdff84"
+    }
+  ]
+}
