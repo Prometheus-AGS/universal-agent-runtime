@@ -28,7 +28,9 @@ impl SurrealDbProvider {
     /// Connect to SurrealDB.
     ///
     /// For server endpoints (`ws://`, `wss://`, `http://`, `https://`) the
-    /// caller may supply optional root credentials.  When credentials are
+    /// caller may supply optional credentials. HTTP endpoints are normalized
+    /// to the equivalent WebSocket endpoint so remote storage retains live-query
+    /// support. When credentials are
     /// absent the defaults `root` / `root` are used, which matches a
     /// freshly-started SurrealDB server.  For embedded endpoints (SurrealKV,
     /// in-memory) authentication is not performed.
@@ -216,6 +218,10 @@ fn normalize_endpoint(connection_string: &str) -> String {
     let lower = trimmed.to_ascii_lowercase();
     if lower.starts_with("rocksdb://") {
         trimmed.replacen("rocksdb://", "surrealkv://", 1)
+    } else if lower.starts_with("http://") {
+        trimmed.replacen("http://", "ws://", 1)
+    } else if lower.starts_with("https://") {
+        trimmed.replacen("https://", "wss://", 1)
     } else if trimmed.contains("://")
         || lower == "memory"
         || lower == "mem"
