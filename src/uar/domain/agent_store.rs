@@ -70,6 +70,15 @@ pub async fn create_agent(
         agent.id = Uuid::new_v4().to_string();
     }
     agent.kind = "agent".to_string();
+    if persistence
+        .load_agent(&agent.id)
+        .await
+        .map_err(AgentStoreError::Backend)?
+        .is_some()
+    {
+        return Err(AgentStoreError::Conflict);
+    }
+    agent = agent.with_catalog_metadata("uar_api");
     validate_agent(&agent)?;
     persistence
         .save_agent(&agent)
@@ -87,15 +96,50 @@ pub async fn create_agent(
 pub async fn replace_agent(
     persistence: &dyn PersistenceLayer,
     id: impl Into<String>,
+    agent: AgentArtifact,
+) -> Result<AgentArtifact, AgentStoreError> {
+    replace_agent_if_revision(persistence, id, agent, None).await
+}
+
+/// Replace an agent only when the caller's observed catalog revision remains
+/// current. The persistence CAS closes the race between the read and write.
+pub async fn replace_agent_if_revision(
+    persistence: &dyn PersistenceLayer,
+    id: impl Into<String>,
     mut agent: AgentArtifact,
+    expected_revision: Option<&str>,
 ) -> Result<AgentArtifact, AgentStoreError> {
     agent.id = id.into();
-    validate_agent(&agent)?;
-    persistence
-        .save_agent(&agent)
+    let existing = persistence
+        .load_agent(&agent.id)
         .await
-        .context("saving agent")
         .map_err(AgentStoreError::Backend)?;
+    if let (Some(expected), Some(current)) = (expected_revision, existing.as_ref())
+        && current
+            .clone()
+            .with_catalog_metadata("uar_api")
+            .content_revision()
+            != expected
+    {
+        return Err(AgentStoreError::Conflict);
+    }
+    agent = agent.with_catalog_metadata("uar_api");
+    validate_agent(&agent)?;
+    if let Some(existing) = existing {
+        if !persistence
+            .save_agent_if_unchanged(&existing, &agent)
+            .await
+            .map_err(AgentStoreError::Backend)?
+        {
+            return Err(AgentStoreError::Conflict);
+        }
+    } else {
+        persistence
+            .save_agent(&agent)
+            .await
+            .context("saving agent")
+            .map_err(AgentStoreError::Backend)?;
+    }
     Ok(agent)
 }
 
@@ -111,9 +155,10 @@ pub async fn upsert_agent(
     persistence: &dyn PersistenceLayer,
     agent: &AgentArtifact,
 ) -> Result<(), AgentStoreError> {
-    validate_agent(agent)?;
+    let agent = agent.clone().with_catalog_metadata("embedded");
+    validate_agent(&agent)?;
     persistence
-        .save_agent(agent)
+        .save_agent(&agent)
         .await
         .context("upserting agent")
         .map_err(AgentStoreError::Backend)
@@ -130,11 +175,30 @@ pub async fn patch_agent(
     id: &str,
     patch: &serde_json::Value,
 ) -> Result<AgentArtifact, AgentStoreError> {
+    patch_agent_if_revision(persistence, id, patch, None).await
+}
+
+/// Merge-patch an agent only when its observed catalog revision is current.
+pub async fn patch_agent_if_revision(
+    persistence: &dyn PersistenceLayer,
+    id: &str,
+    patch: &serde_json::Value,
+    expected_revision: Option<&str>,
+) -> Result<AgentArtifact, AgentStoreError> {
     let existing = persistence
         .load_agent(id)
         .await
         .map_err(AgentStoreError::Backend)?
         .ok_or_else(|| AgentStoreError::NotFound(id.to_string()))?;
+    if expected_revision.is_some_and(|expected| {
+        existing
+            .clone()
+            .with_catalog_metadata("uar_api")
+            .content_revision()
+            != expected
+    }) {
+        return Err(AgentStoreError::Conflict);
+    }
 
     let mut base = serde_json::to_value(&existing)
         .map_err(|e| AgentStoreError::Backend(anyhow::anyhow!(e)))?;
@@ -143,6 +207,7 @@ pub async fn patch_agent(
     let mut agent: AgentArtifact = serde_json::from_value(base)
         .map_err(|e| AgentStoreError::Invalid(format!("invalid agent after merge: {e}")))?;
     agent.id = id.to_string();
+    agent = agent.with_catalog_metadata("uar_api");
     validate_agent(&agent)?;
 
     if !persistence
@@ -180,7 +245,16 @@ pub async fn delete_agent(
 ///
 /// Returns an error if the persistence read fails.
 pub async fn list_agents(persistence: &dyn PersistenceLayer) -> Result<Vec<AgentArtifact>> {
-    persistence.list_agents().await.context("listing agents")
+    persistence
+        .list_agents()
+        .await
+        .context("listing agents")
+        .map(|agents| {
+            agents
+                .into_iter()
+                .map(|agent| agent.with_catalog_metadata("uar_api"))
+                .collect()
+        })
 }
 
 /// Load a single agent definition by id.
@@ -192,7 +266,11 @@ pub async fn get_agent(
     persistence: &dyn PersistenceLayer,
     id: &str,
 ) -> Result<Option<AgentArtifact>> {
-    persistence.load_agent(id).await.context("loading agent")
+    persistence
+        .load_agent(id)
+        .await
+        .context("loading agent")
+        .map(|agent| agent.map(|agent| agent.with_catalog_metadata("uar_api")))
 }
 
 /// Resolve an explicitly selected runtime agent without fallback substitution.
@@ -219,6 +297,7 @@ pub async fn resolve_registered_agent(
             .await
             .map_err(AgentStoreError::Backend)?
     {
+        let agent = agent.with_catalog_metadata("uar_api");
         validate_agent(&agent)?;
         return Ok(agent);
     }
@@ -230,6 +309,7 @@ pub async fn resolve_registered_agent(
         "compiler-agent" => crate::uar::defaults::compiler_agent(),
         _ => return Err(AgentStoreError::NotFound(agent_id.to_string())),
     };
+    let agent = agent.with_catalog_metadata("builtin");
     validate_agent(&agent)?;
     Ok(agent)
 }
@@ -250,6 +330,10 @@ pub async fn list_registered_agents(
             .map_err(AgentStoreError::Backend)?,
         None => Vec::new(),
     };
+    agents = agents
+        .into_iter()
+        .map(|agent| agent.with_catalog_metadata("uar_api"))
+        .collect();
     for agent in &agents {
         validate_agent(agent)?;
     }
@@ -261,7 +345,7 @@ pub async fn list_registered_agents(
         crate::uar::defaults::compiler_agent(),
     ] {
         if !agents.iter().any(|agent| agent.id == builtin.id) {
-            agents.push(builtin);
+            agents.push(builtin.with_catalog_metadata("builtin"));
         }
     }
     Ok(agents)

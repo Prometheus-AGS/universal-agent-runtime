@@ -654,7 +654,8 @@ async fn list_checkpoints(
 
 #[derive(Deserialize)]
 struct ResumeRequest {
-    artifact: AgentArtifact,
+    #[serde(default)]
+    artifact: Option<AgentArtifact>,
     /// Optional new input message; defaults to restoring the last checkpoint state.
     input: Option<String>,
     session_id: Option<String>,
@@ -670,6 +671,29 @@ struct ResumeRequest {
     history: Option<crate::uar::runtime::turn::host::HostHistoryInput>,
     #[serde(flatten)]
     presentation_negotiation: crate::uar::a2ui::presentation_selection::PresentationNegotiation,
+}
+
+fn resume_artifact(
+    source_run: &crate::uar::domain::runs::Run,
+    supplied: Option<AgentArtifact>,
+) -> Result<AgentArtifact, RunApiError> {
+    let snapshot =
+        crate::uar::domain::artifact::AgentArtifactSnapshot::from_run_context(&source_run.context)
+            .map_err(|message| RunApiError {
+                status: StatusCode::CONFLICT,
+                code: "run_artifact_snapshot_unavailable",
+                message: message.to_string(),
+            })?;
+    if supplied.is_some_and(|artifact| {
+        artifact.definition_revision() != snapshot.artifact.definition_revision()
+    }) {
+        return Err(RunApiError {
+            status: StatusCode::CONFLICT,
+            code: "run_artifact_mismatch",
+            message: "resume artifact does not match the source run snapshot".to_string(),
+        });
+    }
+    Ok(snapshot.artifact)
 }
 
 /// POST /api/uar/runs/{run_id}/resume
@@ -691,25 +715,22 @@ async fn resume_run(
         ))
         .into_response();
     }
-    let source_marker = source_run
+    let source_marker: crate::uar::runtime::turn::host::HostResourcesMarker = source_run
         .context
         .get("host_resources")
         .cloned()
         .and_then(|value| serde_json::from_value(value).ok())
         .unwrap_or_default();
-    if req.artifact.id != source_run.agent_id {
-        return RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
-            "run_artifact_mismatch",
-            "resume artifact does not match the source run",
-        ))
-        .into_response();
-    }
+    let artifact = match resume_artifact(&source_run, req.artifact) {
+        Ok(artifact) => artifact,
+        Err(error) => return error.into_response(),
+    };
     let input = req.input.unwrap_or_else(|| {
         // No explicit input — use a standard resume message.
         format!("Resuming run {run_id}")
     });
 
-    let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(req.artifact, input)
+    let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(artifact, input)
         .with_user_context(&user)
     {
         Ok(request) => request,
@@ -718,7 +739,7 @@ async fn resume_run(
     request.session_id = req
         .session_id
         .or_else(|| source_run.conversation_id.clone());
-    request.host_resources_marker.artifact_inline = true;
+    request.host_resources_marker.artifact_inline = source_marker.artifact_inline;
     request.presentation_negotiation = req.presentation_negotiation;
     inherit_host_context(&source_run, &mut request);
     if let Err(error) = attach_host_resources(
@@ -763,19 +784,16 @@ async fn resume_run_from_checkpoint(
         ))
         .into_response();
     }
-    let source_marker = source_run
+    let source_marker: crate::uar::runtime::turn::host::HostResourcesMarker = source_run
         .context
         .get("host_resources")
         .cloned()
         .and_then(|value| serde_json::from_value(value).ok())
         .unwrap_or_default();
-    if req.artifact.id != source_run.agent_id {
-        return RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
-            "run_artifact_mismatch",
-            "checkpoint resume artifact does not match the source run",
-        ))
-        .into_response();
-    }
+    let artifact = match resume_artifact(&source_run, req.artifact) {
+        Ok(artifact) => artifact,
+        Err(error) => return error.into_response(),
+    };
     let Some(db) = &manager.persistence else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -840,7 +858,7 @@ async fn resume_run_from_checkpoint(
         .and_then(|protection| protection.authorization_sha256.clone());
 
     let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(
-        req.artifact,
+        artifact,
         req.input.clone().unwrap_or_default(),
     )
     .with_user_context(&user)
@@ -852,7 +870,7 @@ async fn resume_run_from_checkpoint(
     request.session_id = req
         .session_id
         .or_else(|| source_run.conversation_id.clone());
-    request.host_resources_marker.artifact_inline = true;
+    request.host_resources_marker.artifact_inline = source_marker.artifact_inline;
     request.checkpoint_resume = Some(crate::uar::runtime::turn::CheckpointResume {
         state: restored,
         history,

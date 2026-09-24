@@ -1938,24 +1938,15 @@ impl RunManager {
                 .ok()
             })
             .unwrap_or_default();
-        let artifact = if marker.artifact_inline {
-            let artifact = inline_artifact
-                .ok_or_else(|| "inline artifact is required for continuation".to_string())?;
-            if artifact.id != run.agent_id {
-                return Err("continuation artifact does not match the source run".to_string());
-            }
-            artifact
-        } else {
-            let persistence = self
-                .persistence
-                .as_ref()
-                .ok_or_else(|| "agent persistence is unavailable".to_string())?;
-            persistence
-                .load_agent(&run.agent_id)
-                .await
-                .map_err(|error| format!("failed to load agent '{}': {error}", run.agent_id))?
-                .ok_or_else(|| format!("agent '{}' not found", run.agent_id))?
-        };
+        let snapshot =
+            crate::uar::domain::artifact::AgentArtifactSnapshot::from_run_context(&run.context)
+                .map_err(str::to_string)?;
+        if let Some(supplied) = inline_artifact
+            && supplied.definition_revision() != snapshot.artifact.definition_revision()
+        {
+            return Err("continuation artifact does not match the source run snapshot".to_string());
+        }
+        let artifact = snapshot.artifact;
         let input = serde_json::json!({
             "type": "a2ui.user_action",
             "sourceRunId": run_id,
@@ -1971,6 +1962,7 @@ impl RunManager {
             .with_user_context(user)
             .map_err(|_| "invalid interaction principal".to_string())?;
         request.session_id = run.conversation_id;
+        request.host_resources_marker.artifact_inline = marker.artifact_inline;
         request.resolved_policy = effective_policy;
         if let Some(host_context) = run.context.get("host_context") {
             request.working_directory = host_context
@@ -2139,7 +2131,15 @@ impl RunManager {
                         conversation_id: request.session_id.clone(),
                         user_id: request.user_id.clone(),
                         status: RunStatus::Error,
-                        context: serde_json::json!({}),
+                        context: serde_json::json!({
+                            "agent_snapshot": request.artifact.snapshot(
+                                if request.host_resources_marker.artifact_inline {
+                                    "inline"
+                                } else {
+                                    "embedded"
+                                }
+                            ),
+                        }),
                     },
                     verified_owner: request.verified_owner.clone(),
                     presentations: None,
@@ -2838,7 +2838,10 @@ impl RunManager {
                 user_id: user_id.clone(),
                 status: RunStatus::Error,
                 context: serde_json::json!({
-                    "error_code": "checkpoint_authorization_revoked"
+                    "error_code": "checkpoint_authorization_revoked",
+                    "agent_snapshot": artifact.snapshot(
+                        if host_resources_marker.artifact_inline { "inline" } else { "embedded" }
+                    ),
                 }),
             };
             {
@@ -2898,6 +2901,11 @@ impl RunManager {
         let session_id_for_creds = Some(session.id().to_string());
 
         let dialogue = RunDialogue(crate::session::Session::from_state(session.to_state()));
+        let agent_snapshot = artifact.snapshot(if host_resources_marker.artifact_inline {
+            "inline"
+        } else {
+            "embedded"
+        });
         let run = Run {
             run_id: run_id.clone(),
             agent_id: artifact.id.clone(),
@@ -2910,6 +2918,7 @@ impl RunManager {
                 "presentation_negotiation": presentation_snapshot.negotiation(),
                 "presentation_selection": presentation_snapshot.selection(),
                 "presentation_templates": presentation_snapshot.identities(),
+                "agent_snapshot": agent_snapshot,
                 "host_resources": host_resources_marker,
                 "host_context": {
                     "working_directory": working_directory.as_ref().map(|path| path.display().to_string()),

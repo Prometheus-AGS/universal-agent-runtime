@@ -15,7 +15,7 @@ use crate::uar::security::claims::UserContext;
 use axum::{
     Json, Router,
     extract::{Extension, Path, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode, header::IF_MATCH},
     response::IntoResponse,
     routing::get,
 };
@@ -47,6 +47,9 @@ struct SessionAgentResponse {
     agent_id: String,
     status: RunStatus,
     agent: Option<AgentArtifact>,
+    agent_revision: Option<String>,
+    agent_source: Option<crate::uar::domain::artifact::AgentArtifactSource>,
+    continuation_compatible: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -152,20 +155,21 @@ async fn current_agent_by_session(
             .into_response();
     };
 
-    let agent = match state
-        .run_manager
-        .resolve_registered_agent(&run.agent_id)
-        .await
-    {
-        Ok(agent) => Some(agent),
-        Err(error) => return agent_store_error_response(error).into_response(),
-    };
+    let snapshot =
+        crate::uar::domain::artifact::AgentArtifactSnapshot::from_run_context(&run.context).ok();
+    let agent_revision = snapshot.as_ref().map(|snapshot| snapshot.revision.clone());
+    let agent_source = snapshot.as_ref().map(|snapshot| snapshot.source.clone());
+    let continuation_compatible = snapshot.is_some();
+    let agent = snapshot.map(|snapshot| snapshot.artifact);
     Json(SessionAgentResponse {
         session_id,
         run_id: run.run_id,
         agent_id: run.agent_id,
         status: run.status,
         agent,
+        agent_revision,
+        agent_source,
+        continuation_compatible,
     })
     .into_response()
 }
@@ -322,6 +326,7 @@ pub async fn create_agent(
 pub async fn update_agent_full(
     State(state): State<AppState>,
     Path(id): Path<String>,
+    headers: HeaderMap,
     Json(agent): Json<AgentArtifact>,
 ) -> Result<Json<AgentArtifact>, (StatusCode, String)> {
     let persistence = state.persistence.as_ref().ok_or((
@@ -329,9 +334,15 @@ pub async fn update_agent_full(
         "No persistence layer".to_string(),
     ))?;
 
-    let saved = agent_store::replace_agent(persistence.as_ref(), id, agent)
-        .await
-        .map_err(agent_store_error_response)?;
+    let expected_revision = expected_catalog_revision(&headers)?;
+    let saved = agent_store::replace_agent_if_revision(
+        persistence.as_ref(),
+        id,
+        agent,
+        expected_revision.as_deref(),
+    )
+    .await
+    .map_err(agent_store_error_response)?;
 
     Ok(Json(saved))
 }
@@ -340,6 +351,7 @@ pub async fn update_agent_full(
 pub async fn patch_agent(
     State(state): State<AppState>,
     Path(id): Path<String>,
+    headers: HeaderMap,
     Json(patch): Json<serde_json::Value>,
 ) -> Result<Json<AgentArtifact>, (StatusCode, String)> {
     let persistence = state.persistence.as_ref().ok_or((
@@ -347,11 +359,37 @@ pub async fn patch_agent(
         "No persistence layer".to_string(),
     ))?;
 
-    let saved = agent_store::patch_agent(persistence.as_ref(), &id, &patch)
-        .await
-        .map_err(agent_store_error_response)?;
+    let expected_revision = expected_catalog_revision(&headers)?;
+    let saved = agent_store::patch_agent_if_revision(
+        persistence.as_ref(),
+        &id,
+        &patch,
+        expected_revision.as_deref(),
+    )
+    .await
+    .map_err(agent_store_error_response)?;
 
     Ok(Json(saved))
+}
+
+fn expected_catalog_revision(headers: &HeaderMap) -> Result<Option<String>, (StatusCode, String)> {
+    let Some(value) = headers.get(IF_MATCH) else {
+        return Ok(None);
+    };
+    let value = value.to_str().map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            "If-Match must contain a catalog revision".to_string(),
+        )
+    })?;
+    let revision = value.trim().trim_matches('"');
+    if !revision.starts_with("sha256:") {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "If-Match must contain a catalog SHA-256 revision".to_string(),
+        ));
+    }
+    Ok(Some(revision.to_string()))
 }
 
 /// DELETE /api/agents/{id}

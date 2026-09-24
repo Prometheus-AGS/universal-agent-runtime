@@ -190,7 +190,9 @@ pub(crate) fn orchestrator_graph() -> crate::uar::runtime::graph::AgentGraph {
 pub async fn seed_builtin_agents(
     persistence: &dyn crate::uar::persistence::PersistenceLayer,
 ) -> anyhow::Result<()> {
-    for agent in [default_agent(), orchestrator_agent()] {
+    for agent in
+        [default_agent(), orchestrator_agent()].map(|agent| agent.with_catalog_metadata("builtin"))
+    {
         let id = agent.id.clone();
         match crate::uar::domain::agent_store::upsert_agent(persistence, &agent).await {
             Ok(()) => {
@@ -207,7 +209,9 @@ pub async fn seed_builtin_agents(
         general_purpose_agent(),
         rust_reviewer_agent(),
         compiler_agent(),
-    ] {
+    ]
+    .map(|agent| agent.with_catalog_metadata("builtin"))
+    {
         if persistence.load_agent(&agent.id).await?.is_none() {
             crate::uar::domain::agent_store::upsert_agent(persistence, &agent).await?;
         }

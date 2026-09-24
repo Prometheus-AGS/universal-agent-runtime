@@ -1,5 +1,37 @@
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
+use std::fmt::Write as _;
+
+pub const CATALOG_METADATA_EXTENSION: &str = "uar.catalog";
+
+/// Stable origin information retained with a catalog definition and every run
+/// snapshot. `revision` identifies the source document, while the enclosing
+/// catalog metadata revision identifies the complete UAR artifact.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AgentArtifactSource {
+    pub kind: String,
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub revision: Option<String>,
+}
+
+/// Content-addressed catalog identity stored in the artifact extension map.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AgentCatalogMetadata {
+    pub schema_version: u32,
+    pub revision: String,
+    pub source: AgentArtifactSource,
+}
+
+/// Immutable definition captured when a run is admitted.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentArtifactSnapshot {
+    pub schema_version: u32,
+    pub revision: String,
+    pub source: AgentArtifactSource,
+    pub artifact: AgentArtifact,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentArtifact {
@@ -16,6 +48,124 @@ pub struct AgentArtifact {
     pub ui: AgentUiConfig,
     #[serde(default)]
     pub extensions: HashMap<String, serde_json::Value>,
+}
+
+impl AgentArtifact {
+    /// Stamp a deterministic catalog revision while retaining caller-supplied
+    /// source provenance. Existing definitions without provenance receive the
+    /// supplied source kind and their own id/version as source identity.
+    #[must_use]
+    pub fn with_catalog_metadata(mut self, default_source_kind: &str) -> Self {
+        let source = self.catalog_metadata().map_or_else(
+            || AgentArtifactSource {
+                kind: default_source_kind.to_string(),
+                id: self.id.clone(),
+                revision: Some(self.version.clone()),
+            },
+            |metadata| metadata.source,
+        );
+        self.extensions.insert(
+            CATALOG_METADATA_EXTENSION.to_string(),
+            serde_json::to_value(AgentCatalogMetadata {
+                schema_version: 1,
+                revision: String::new(),
+                source,
+            })
+            .expect("catalog metadata is serializable"),
+        );
+        let revision = self.content_revision();
+        self.extensions
+            .get_mut(CATALOG_METADATA_EXTENSION)
+            .and_then(serde_json::Value::as_object_mut)
+            .expect("catalog metadata is an object")
+            .insert("revision".to_string(), serde_json::Value::String(revision));
+        self
+    }
+
+    #[must_use]
+    pub fn catalog_metadata(&self) -> Option<AgentCatalogMetadata> {
+        self.extensions
+            .get(CATALOG_METADATA_EXTENSION)
+            .cloned()
+            .and_then(|value| serde_json::from_value(value).ok())
+    }
+
+    /// Content address of the complete definition excluding its self-referential
+    /// catalog revision field. Source provenance remains part of the digest.
+    #[must_use]
+    pub fn content_revision(&self) -> String {
+        let mut value = serde_json::to_value(self).expect("agent artifact is serializable");
+        if let Some(extension) = value
+            .get_mut("extensions")
+            .and_then(serde_json::Value::as_object_mut)
+            .and_then(|extensions| extensions.get_mut(CATALOG_METADATA_EXTENSION))
+            .and_then(serde_json::Value::as_object_mut)
+        {
+            extension.remove("revision");
+        }
+        let digest = Sha256::digest(
+            serde_json::to_vec(&value).expect("agent artifact JSON value is serializable"),
+        );
+        encode_digest(&digest)
+    }
+
+    /// Definition digest used only to compare a compatibility artifact with a
+    /// stored snapshot. Catalog provenance is intentionally excluded.
+    #[must_use]
+    pub fn definition_revision(&self) -> String {
+        let mut value = serde_json::to_value(self).expect("agent artifact is serializable");
+        if let Some(extensions) = value
+            .get_mut("extensions")
+            .and_then(serde_json::Value::as_object_mut)
+        {
+            extensions.remove(CATALOG_METADATA_EXTENSION);
+        }
+        let digest = Sha256::digest(
+            serde_json::to_vec(&value).expect("agent artifact JSON value is serializable"),
+        );
+        encode_digest(&digest)
+    }
+
+    #[must_use]
+    pub fn snapshot(&self, default_source_kind: &str) -> AgentArtifactSnapshot {
+        let artifact = self.clone().with_catalog_metadata(default_source_kind);
+        let metadata = artifact
+            .catalog_metadata()
+            .expect("stamped artifact has catalog metadata");
+        AgentArtifactSnapshot {
+            schema_version: 1,
+            revision: metadata.revision,
+            source: metadata.source,
+            artifact,
+        }
+    }
+}
+
+fn encode_digest(digest: &[u8]) -> String {
+    let mut revision = String::from("sha256:");
+    for byte in digest {
+        write!(&mut revision, "{byte:02x}").expect("writing to a String cannot fail");
+    }
+    revision
+}
+
+impl AgentArtifactSnapshot {
+    /// Decode and verify a snapshot before it can control a continuation.
+    pub fn from_run_context(context: &serde_json::Value) -> Result<Self, &'static str> {
+        let snapshot = context
+            .get("agent_snapshot")
+            .cloned()
+            .ok_or("source run has no agent artifact snapshot; start a new run")
+            .and_then(|value| {
+                serde_json::from_value::<Self>(value)
+                    .map_err(|_| "source run agent artifact snapshot is invalid; start a new run")
+            })?;
+        if snapshot.schema_version != 1 || snapshot.artifact.content_revision() != snapshot.revision
+        {
+            return Err("source run agent artifact snapshot cannot be verified; start a new run");
+        }
+        Ok(snapshot)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

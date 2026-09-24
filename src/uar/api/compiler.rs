@@ -259,7 +259,8 @@ async fn compile_and_register(
     };
 
     // Convert the compiled descriptor's IR payload into a runtime artifact.
-    let artifact = AgentArtifact::from(&output.descriptor.payload);
+    let artifact =
+        AgentArtifact::from(&output.descriptor.payload).with_catalog_metadata("uar_agent_md");
 
     // Persist through the same validation path as HTTP and embedded hosts.
     if let Err(error) = agent_store::upsert_agent(persistence.as_ref(), &artifact).await {
