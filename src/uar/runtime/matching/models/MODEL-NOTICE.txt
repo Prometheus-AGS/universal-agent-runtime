@@ -1,0 +1,8 @@
+BGE small English v1.5 model notice
+
+The bundled ONNX model and tokenizer assets are derived from
+BAAI/bge-small-en-v1.5:
+https://huggingface.co/BAAI/bge-small-en-v1.5
+
+The model repository identifies these assets as licensed under the MIT License.
+The release archive includes the MIT license terms in its top-level LICENSE file.
