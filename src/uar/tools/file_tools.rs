@@ -31,18 +31,6 @@ struct DelegatedFileRoot {
 pub(crate) struct DelegatedFileRoots(Arc<[DelegatedFileRoot]>);
 
 #[cfg(unix)]
-fn directory_matches_metadata(directory: &Dir, expected: &std::fs::Metadata) -> io::Result<bool> {
-    use cap_std::fs::MetadataExt as CapabilityMetadataExt;
-    use std::os::unix::fs::MetadataExt as StandardMetadataExt;
-
-    let actual = directory.dir_metadata()?;
-    Ok(
-        StandardMetadataExt::dev(expected) == CapabilityMetadataExt::dev(&actual)
-            && StandardMetadataExt::ino(expected) == CapabilityMetadataExt::ino(&actual),
-    )
-}
-
-#[cfg(unix)]
 fn directories_are_same(left: &Dir, right: &Dir) -> io::Result<bool> {
     use cap_std::fs::MetadataExt as CapabilityMetadataExt;
 
@@ -55,17 +43,6 @@ fn directories_are_same(left: &Dir, right: &Dir) -> io::Result<bool> {
 }
 
 #[cfg(windows)]
-fn directory_matches_metadata(directory: &Dir, expected: &std::fs::Metadata) -> io::Result<bool> {
-    use cap_std::fs::MetadataExt as CapabilityMetadataExt;
-    use std::os::windows::fs::MetadataExt as StandardMetadataExt;
-
-    let actual = directory.dir_metadata()?;
-    Ok(StandardMetadataExt::volume_serial_number(expected)
-        == CapabilityMetadataExt::volume_serial_number(&actual)
-        && StandardMetadataExt::file_index(expected) == CapabilityMetadataExt::file_index(&actual))
-}
-
-#[cfg(windows)]
 fn directories_are_same(left: &Dir, right: &Dir) -> io::Result<bool> {
     use cap_std::fs::MetadataExt as CapabilityMetadataExt;
 
@@ -74,11 +51,6 @@ fn directories_are_same(left: &Dir, right: &Dir) -> io::Result<bool> {
     Ok(CapabilityMetadataExt::volume_serial_number(&left)
         == CapabilityMetadataExt::volume_serial_number(&right)
         && CapabilityMetadataExt::file_index(&left) == CapabilityMetadataExt::file_index(&right))
-}
-
-#[cfg(not(any(unix, windows)))]
-fn directory_matches_metadata(_directory: &Dir, _expected: &std::fs::Metadata) -> io::Result<bool> {
-    Ok(false)
 }
 
 #[cfg(not(any(unix, windows)))]
@@ -107,8 +79,9 @@ impl DelegatedFileRoots {
                 if canonical_path.parent().is_none() {
                     return None;
                 }
-                let expected = std::fs::metadata(&canonical_path).ok()?;
-                if !directory_matches_metadata(&directory, &expected).ok()? {
+                let canonical_directory =
+                    Dir::open_ambient_dir(&canonical_path, ambient_authority()).ok()?;
+                if !directories_are_same(&directory, &canonical_directory).ok()? {
                     return None;
                 }
                 let filesystem_root_path = canonical_path.ancestors().last()?;

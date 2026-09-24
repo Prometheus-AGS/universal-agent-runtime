@@ -1639,3 +1639,13 @@ can report `No deltas found` even when the archived delta is present. Use strict
 `openspec validate --archived --json`, inspect the exact target's `valid` result,
 and report unrelated legacy archive failures separately. Do not treat the global
 exit code as evidence that the newly archived target failed.
+
+## 2026-09-23 — Windows standard metadata identity methods are still unstable
+
+The Windows x64 release build failed after 53 minutes because
+`std::os::windows::fs::MetadataExt::volume_serial_number` and `file_index`
+require the unstable `windows_by_handle` feature on the pinned stable toolchain.
+The delegated-root boundary already uses stable `cap_std::fs::MetadataExt` for
+handle-to-handle identity. Open the canonical pathname as a second capability
+handle and compare those two handles; do not convert one side to
+`std::fs::Metadata` on Windows.

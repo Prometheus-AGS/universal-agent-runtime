@@ -537,7 +537,7 @@ async fn run_server_with_listener(
 
     #[cfg(feature = "a2a-transport")]
     info!(name: "startup.step", step = 4, stage = "a2a_grpc_listener", "UAR startup progress");
-    let a2a_grpc_listener = if sidecar_mode {
+    let _a2a_grpc_listener = if sidecar_mode {
         None
     } else {
         governance_mutation.declare_ingress("a2a-grpc")?;
@@ -1892,7 +1892,7 @@ async fn run_server_with_listener(
     // sharing the root run-cancellation token so it drains at the same moment
     // in-flight runs are aborted (see the shutdown signal handler below).
     #[cfg(feature = "a2a-transport")]
-    let grpc_handle = if let Some(a2a_grpc_listener) = a2a_grpc_listener {
+    let grpc_handle = if let Some(a2a_grpc_listener) = _a2a_grpc_listener {
         let grpc_addr = a2a_grpc_listener.local_addr()?;
         let grpc_admission = governance_admission_tokens
             .iter()

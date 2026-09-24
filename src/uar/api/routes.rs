@@ -401,7 +401,7 @@ async fn stream_run(
                     last_id = event.id;
                     yield event;
                 }
-                Ok(event) => {
+                Ok(_event) => {
                     yield unrecoverable_stream_gap(&live_run_id, last_id);
                     break;
                 }
