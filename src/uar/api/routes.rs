@@ -84,6 +84,7 @@ struct RunInspection {
     status: crate::uar::domain::runs::RunStatus,
     agent_revision: Option<String>,
     effective_model: Option<serde_json::Value>,
+    effective_run_policy: Option<serde_json::Value>,
     presentation_selection: Option<serde_json::Value>,
     host_resources: Option<serde_json::Value>,
 }
@@ -100,10 +101,8 @@ impl From<crate::uar::domain::runs::Run> for RunInspection {
                 .pointer("/agent_snapshot/revision")
                 .and_then(serde_json::Value::as_str)
                 .map(str::to_owned),
-            effective_model: run
-                .context
-                .pointer("/effective_run_policy/provider")
-                .cloned(),
+            effective_model: run.context.pointer("/effective_run_policy/model").cloned(),
+            effective_run_policy: run.context.get("effective_run_policy").cloned(),
             presentation_selection: run.context.get("presentation_selection").cloned(),
             host_resources: run.context.get("host_resources").cloned(),
         }

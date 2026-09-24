@@ -4149,13 +4149,26 @@ impl RunManager {
                 })
                 .collect::<Vec<_>>()
         };
-        let catalog_model = qualified_model_name(&run_llm_config);
+        let qualified_model = qualified_model_name(&run_llm_config);
         let (catalog_provider, catalog_model_id) =
-            crate::llm::registry::split_model_string_pub(&catalog_model);
-        let catalog_window = crate::llm::catalog::ModelCatalog::global()
-            .model(&catalog_provider, &catalog_model_id)
-            .map(|model| model.limits.context_window as usize)
-            .filter(|window| *window > 0);
+            crate::llm::registry::split_model_string_pub(&qualified_model);
+        let configured_window = if let Some(registry) = &self.provider_registry {
+            registry.models(&catalog_provider).await.and_then(|models| {
+                models
+                    .into_iter()
+                    .find(|model| model.id == catalog_model_id)
+                    .and_then(|model| model.context_window)
+                    .map(|window| window as usize)
+            })
+        } else {
+            None
+        };
+        let model_context_window = configured_window.or_else(|| {
+            crate::llm::catalog::ModelCatalog::global()
+                .model(&catalog_provider, &catalog_model_id)
+                .map(|model| model.limits.context_window as usize)
+                .filter(|window| *window > 0)
+        });
         let catalog_entries = eligible_skills
             .iter()
             .map(|skill| {
@@ -4166,8 +4179,8 @@ impl RunManager {
             .collect::<Vec<_>>();
         match crate::uar::runtime::skills::catalog::render_catalog(
             &catalog_entries,
-            &catalog_model,
-            catalog_window,
+            &qualified_model,
+            model_context_window,
         ) {
             Ok(catalog) => {
                 tracing::debug!(
@@ -4225,17 +4238,14 @@ impl RunManager {
 
         // Message-count context strategy followed by model-token budgeting.
         let (effective_strategy, context_model) = {
-            let (provider_id, model_id) =
-                crate::llm::registry::split_model_string_pub(&run_llm_config.model);
-            let effective_context_tokens = crate::llm::catalog::ModelCatalog::global()
-                .model(&provider_id, &model_id)
-                .map(|m| (m.limits.context_window as f64 * 0.7) as u32);
+            let effective_context_tokens =
+                model_context_window.map(|window| (window as f64 * 0.7) as u32);
             (
                 crate::uar::context::resolve_effective_strategy(
                     &effective_policy.context_strategy,
                     effective_context_tokens,
                 ),
-                format!("{provider_id}/{model_id}"),
+                qualified_model.clone(),
             )
         };
         let summarization_driver: Option<Arc<dyn crate::llm::LlmDriver>> = match &effective_strategy
@@ -4253,12 +4263,7 @@ impl RunManager {
         // tool-call normalization, with the system message pinned throughout
         // (`uar::runtime::context::reduce`). The operator-declared strategy
         // drives both stages, so a run reduces once against one tokenizer.
-        let (context_provider, context_model_id) =
-            crate::llm::registry::split_model_string_pub(&run_llm_config.model);
-        let context_limit = crate::llm::catalog::ModelCatalog::global()
-            .model(&context_provider, &context_model_id)
-            .map(|model| model.limits.context_window as usize)
-            .unwrap_or(8_192);
+        let context_limit = model_context_window.unwrap_or(8_192);
         let mut world_contributor = world_state.contributor(plan.restore_checkpoint).await;
         let world_reserved_tokens = match world_contributor
             .reserved_tokens(&messages, &context_model)
@@ -4822,9 +4827,10 @@ impl RunManager {
                                 reason: "Tool call cancelled with its run".to_string(),
                             };
                         }
-                        // A root's local governance toggle must not erase
-                        // a child's independently narrowed Ask/Deny policy.
+                        // A host may bypass automatic governance for a verified
+                        // local root, but explicit Ask/Deny remains authoritative.
                         if !child_run
+                            && effective_tool_approval == ToolApprovalPolicy::Auto
                             && let Some(decision) =
                                 governance_bypass_decision(governance_gate.as_ref())
                         {
