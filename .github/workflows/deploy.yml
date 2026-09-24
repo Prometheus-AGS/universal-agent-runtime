@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - boss-sidecar-v*
   workflow_dispatch:
     inputs:
       image_tag:
@@ -30,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     # Skipped on manual dispatch with skip_build=true so an already-built image
     # can be deployed without the ~45min Rust/toolchain rebuild.
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.skip_build != true }}
+    if: ${{ !startsWith(github.ref, 'refs/tags/boss-sidecar-v') && (github.event_name != 'workflow_dispatch' || inputs.skip_build != true) }}
     # The image is a ~3GB 5-toolchain build + full Rust release compile; a cold
     # gha cache needs >30min. cache-to: gha,mode=max makes warm runs much faster.
     timeout-minutes: 75
@@ -103,7 +105,7 @@ jobs:
     needs: build
     # Run when build succeeded, OR when build was intentionally skipped
     # (skip_build dispatch) — but never if build actually failed/was cancelled.
-    if: ${{ always() && needs.build.result != 'failure' && needs.build.result != 'cancelled' }}
+    if: ${{ always() && !startsWith(github.ref, 'refs/tags/boss-sidecar-v') && needs.build.result != 'failure' && needs.build.result != 'cancelled' }}
     timeout-minutes: 15
 
     # Azure OIDC token (same as the build job) for the azure/login step.
@@ -225,3 +227,69 @@ jobs:
             http://${{ steps.endpoint.outputs.endpoint }}:${{ steps.endpoint.outputs.port }}/healthz \
             | grep -q "200"
           echo "healthz check passed"
+
+  boss-sidecar-build:
+    name: The Boss sidecar (${{ matrix.platform }})
+    if: ${{ startsWith(github.ref, 'refs/tags/boss-sidecar-v') }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: win32-x64
+            runner: windows-2025
+            target: x86_64-pc-windows-msvc
+          - platform: darwin-arm64
+            runner: macos-15
+            target: aarch64-apple-darwin
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+      - name: Install pinned Rust target
+        run: rustup target add ${{ matrix.target }}
+      - name: Build production sidecar
+        run: >-
+          cargo build --release --locked --no-default-features
+          --features minimal,local-models,document-intelligence,wasm-runtime
+          --bin uar-sidecar --target ${{ matrix.target }}
+      - name: Package complete sidecar payload
+        run: node scripts/package-boss-sidecar.mjs ${{ matrix.platform }} ${{ matrix.target }}
+      - uses: actions/upload-artifact@v5
+        with:
+          name: uar-sidecar-${{ matrix.platform }}
+          path: |
+            dist/boss-sidecar/uar-sidecar-${{ matrix.platform }}.tar.gz
+            dist/boss-sidecar/uar-sidecar-${{ matrix.platform }}.json
+          if-no-files-found: error
+          retention-days: 90
+
+  boss-sidecar-publish:
+    name: Publish immutable The Boss sidecar payload
+    if: ${{ startsWith(github.ref, 'refs/tags/boss-sidecar-v') }}
+    needs: boss-sidecar-build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: uar-sidecar-*
+          path: dist/boss-sidecar
+          merge-multiple: true
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          gh release create "${GITHUB_REF_NAME}"
+          dist/boss-sidecar/uar-sidecar-*.tar.gz
+          dist/boss-sidecar/uar-sidecar-*.json
+          --verify-tag --latest=false --prerelease
+          --title "The Boss UAR sidecar ${GITHUB_REF_NAME}"
+          --notes "Immutable Windows x64 and Apple Silicon sidecar payloads for The Boss P1 preview. Each archive includes the production feature set, local embedding assets, runtime libraries found beside the built binary, licenses, and a checksummed file manifest."
