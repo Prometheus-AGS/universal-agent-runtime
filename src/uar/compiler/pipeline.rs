@@ -68,6 +68,29 @@ pub struct PepBinding {
     pub required: bool,
 }
 
+/// Serialize JSON with recursively sorted object keys so signatures and
+/// hashes survive a deserialize/serialize round trip.
+pub fn canonical_json<T: Serialize>(value: &T) -> serde_json::Result<String> {
+    fn sort_objects(value: &mut serde_json::Value) {
+        match value {
+            serde_json::Value::Object(object) => {
+                let mut fields = std::mem::take(object).into_iter().collect::<Vec<_>>();
+                fields.sort_unstable_by(|left, right| left.0.cmp(&right.0));
+                for (key, mut value) in fields {
+                    sort_objects(&mut value);
+                    object.insert(key, value);
+                }
+            }
+            serde_json::Value::Array(values) => values.iter_mut().for_each(sort_objects),
+            _ => {}
+        }
+    }
+
+    let mut json = serde_json::to_value(value)?;
+    sort_objects(&mut json);
+    serde_json::to_string(&json)
+}
+
 /// Mutable context passed through all 8 stages.
 #[derive(Debug)]
 pub struct CompileContext {
@@ -249,7 +272,7 @@ pub async fn compile(
 
     // Sign the canonical JSON
     let canonical_json =
-        serde_json::to_string(&descriptor).map_err(|e| CompileError::Internal(e.into()))?;
+        canonical_json(&descriptor).map_err(|e| CompileError::Internal(e.into()))?;
     let sig_bytes = ctx.key_provider.sign(canonical_json.as_bytes()).await?;
     let signature = hex_encode(&sig_bytes);
 

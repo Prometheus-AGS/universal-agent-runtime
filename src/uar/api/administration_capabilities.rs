@@ -581,6 +581,13 @@ pub fn administration_capabilities() -> AdministrationCapabilities {
                         Live
                     ),
                     endpoint!(
+                        "compiler.verify",
+                        "POST",
+                        "/api/uar/compiler/verify",
+                        Admin,
+                        Read
+                    ),
+                    endpoint!(
                         "compiler.reports.read",
                         "GET",
                         "/api/uar/compiler/reports/{id}",
