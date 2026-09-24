@@ -6339,6 +6339,44 @@ impl RunManager {
             .then(|| state.run.clone())
     }
 
+    /// List runs visible to the exact middleware-verified subject and tenant.
+    ///
+    /// This is intentionally the same ownership predicate as
+    /// [`Self::get_run_for_context`]. Administration clients can enumerate
+    /// their runs without receiving another owner's identifiers or context.
+    pub(crate) async fn list_runs_for_context(
+        &self,
+        user: &crate::uar::security::claims::UserContext,
+    ) -> Vec<Run> {
+        let owner = if user.user_id == crate::session::ANONYMOUS_SESSION_OWNER {
+            if user.claims.sub != user.user_id || user.tenant_id.is_some() {
+                return Vec::new();
+            }
+            None
+        } else {
+            match crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user) {
+                Ok(owner) => Some(owner),
+                Err(_) => return Vec::new(),
+            }
+        };
+        let runs = self.active_runs.read().await;
+        let mut visible = runs
+            .values()
+            .filter(|state| {
+                state.verified_owner == owner
+                    && state
+                        .run
+                        .user_id
+                        .as_deref()
+                        .unwrap_or(crate::session::ANONYMOUS_SESSION_OWNER)
+                        == user.user_id
+            })
+            .map(|state| state.run.clone())
+            .collect::<Vec<_>>();
+        visible.sort_by(|left, right| left.run_id.cmp(&right.run_id));
+        visible
+    }
+
     /// Return a run only when it belongs to the authenticated subject.
     pub async fn get_run_for_user(&self, owner_id: &str, run_id: &str) -> Option<Run> {
         self.get_run(run_id).await.filter(|run| match &run.user_id {

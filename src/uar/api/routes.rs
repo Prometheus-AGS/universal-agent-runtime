@@ -20,7 +20,8 @@ use tokio_stream::StreamExt;
 
 pub fn build_router() -> Router<Arc<RunManager>> {
     Router::new()
-        .route("/runs", post(create_run))
+        .route("/runs", get(list_runs).post(create_run))
+        .route("/runs/{id}", get(read_run))
         .route("/runs/{id}/stream", get(stream_run))
         .route("/runs/{run_id}/tool-approval", post(api_tool_approval))
         .route("/runs/{run_id}/cancel", post(api_cancel_run))
@@ -73,6 +74,67 @@ struct CreateRunResponse {
     activation_failures: Vec<crate::uar::runtime::skills::activation::ActivationFailure>,
     history: crate::uar::runtime::turn::host::HistorySeedStatus,
     seeded_messages: usize,
+}
+
+#[derive(Serialize)]
+struct RunInspection {
+    run_id: String,
+    agent_id: String,
+    conversation_id: Option<String>,
+    status: crate::uar::domain::runs::RunStatus,
+    agent_revision: Option<String>,
+    effective_model: Option<serde_json::Value>,
+    presentation_selection: Option<serde_json::Value>,
+    host_resources: Option<serde_json::Value>,
+}
+
+impl From<crate::uar::domain::runs::Run> for RunInspection {
+    fn from(run: crate::uar::domain::runs::Run) -> Self {
+        Self {
+            run_id: run.run_id,
+            agent_id: run.agent_id,
+            conversation_id: run.conversation_id,
+            status: run.status,
+            agent_revision: run
+                .context
+                .pointer("/agent_snapshot/revision")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned),
+            effective_model: run
+                .context
+                .pointer("/effective_run_policy/provider")
+                .cloned(),
+            presentation_selection: run.context.get("presentation_selection").cloned(),
+            host_resources: run.context.get("host_resources").cloned(),
+        }
+    }
+}
+
+async fn list_runs(
+    State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
+) -> Json<Vec<RunInspection>> {
+    Json(
+        manager
+            .list_runs_for_context(&user)
+            .await
+            .into_iter()
+            .map(RunInspection::from)
+            .collect(),
+    )
+}
+
+async fn read_run(
+    State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
+    Path(run_id): Path<String>,
+) -> Result<Json<RunInspection>, StatusCode> {
+    manager
+        .get_run_for_context(&user, &run_id)
+        .await
+        .map(RunInspection::from)
+        .map(Json)
+        .ok_or(StatusCode::NOT_FOUND)
 }
 
 #[derive(Debug)]

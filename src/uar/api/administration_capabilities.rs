@@ -920,6 +920,8 @@ pub fn administration_capabilities() -> AdministrationCapabilities {
                 Experience,
                 Available,
                 vec![
+                    endpoint!("runs.list", "GET", "/api/uar/runs", Owner, Read),
+                    endpoint!("runs.read", "GET", "/api/uar/runs/{id}", Owner, Read),
                     endpoint!("runs.create", "POST", "/api/uar/runs", Owner, Live),
                     endpoint!(
                         "runs.stream",
