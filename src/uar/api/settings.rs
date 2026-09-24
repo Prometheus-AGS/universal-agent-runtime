@@ -4,7 +4,10 @@
 //! require `X-UAR-Admin-Key` header. Sensitive fields (schema `x-sensitive: true`)
 //! are masked with `"***"` in GET responses.
 
-use crate::uar::settings::manager::SettingsManager;
+use crate::uar::settings::manager::{
+    SettingApplyMode, SettingRevisionConflict, SettingsManager, setting_apply_mode,
+    setting_revision,
+};
 use crate::uar::settings::schema::{SettingsType, SettingsWithMeta};
 use axum::{
     Json, Router,
@@ -298,7 +301,9 @@ fn mgr_from_state(state: &SettingsApiState) -> Result<&Arc<SettingsManager>, Api
 
 async fn get_governance_status(
     State(state): State<Arc<SettingsApiState>>,
+    headers: HeaderMap,
 ) -> Result<Json<crate::uar::governance::runtime_control::GovernanceRuntimeSnapshot>, ApiError> {
+    require_admin_key(state.as_ref(), &headers)?;
     let snapshot = state
         .governance_status
         .as_ref()
@@ -314,6 +319,11 @@ enum ApiError {
     Unavailable,
     NotFound(String),
     Forbidden,
+    Conflict {
+        key: String,
+        expected: String,
+        current: String,
+    },
     Internal(String),
 }
 
@@ -331,6 +341,15 @@ impl IntoResponse for ApiError {
             ApiError::Forbidden => (
                 StatusCode::FORBIDDEN,
                 Json(json!({"error": "A valid X-UAR-Admin-Key header is required for this settings endpoint (set security.settings_mutation_auth_required: false in config for trusted local use)"})),
+            ).into_response(),
+            ApiError::Conflict { key, expected, current } => (
+                StatusCode::CONFLICT,
+                Json(json!({
+                    "error": "setting_revision_conflict",
+                    "key": key,
+                    "expected_revision": expected,
+                    "current_revision": current
+                })),
             ).into_response(),
             ApiError::Internal(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -466,12 +485,31 @@ async fn masked_response(swm: SettingsWithMeta, mgr: &SettingsManager) -> Settin
         .unwrap_or(json!({}));
 
     let masked_data = mask_setting_data(swm.setting.data.clone(), &schema, field_key);
+    let effective_data = mgr
+        .effective_value(&swm.setting.key)
+        .await
+        .unwrap_or_else(|| swm.setting.data.clone());
+    let masked_effective = mask_setting_data(effective_data, &schema, field_key);
+    let apply = setting_apply_mode(&swm.setting.key);
+    let revision = setting_revision(&swm.setting);
+    let application_status = if masked_data == masked_effective {
+        "effective"
+    } else if apply == SettingApplyMode::Restart {
+        "restart_required"
+    } else {
+        "pending"
+    };
     SettingsWithMetaResponse {
         id: swm.setting.id,
         settings_type_id: swm.setting.settings_type_id,
         name: swm.setting.name,
         key: swm.setting.key,
-        data: masked_data,
+        data: masked_data.clone(),
+        saved: masked_data,
+        effective: masked_effective,
+        revision,
+        apply,
+        application_status: application_status.to_string(),
         parent_id: swm.setting.parent_id,
         created_at: swm.setting.created_at,
         updated_at: swm.setting.updated_at,
@@ -487,6 +525,11 @@ pub struct SettingsWithMetaResponse {
     pub name: String,
     pub key: String,
     pub data: Value,
+    pub saved: Value,
+    pub effective: Value,
+    pub revision: String,
+    pub apply: SettingApplyMode,
+    pub application_status: String,
     pub parent_id: Option<uuid::Uuid>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -512,8 +555,9 @@ pub struct ListSettingsQuery {
 async fn list_types(
     State(state): State<Arc<SettingsApiState>>,
     _query: Query<ListSettingsQuery>,
-    _headers: HeaderMap,
+    headers: HeaderMap,
 ) -> Result<Json<Vec<SettingsType>>, ApiError> {
+    require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
     let types = mgr
         .list_types()
@@ -525,7 +569,9 @@ async fn list_types(
 async fn get_type(
     State(state): State<Arc<SettingsApiState>>,
     Path(key): Path<String>,
+    headers: HeaderMap,
 ) -> Result<Json<SettingsType>, ApiError> {
+    require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
     let t = mgr
         .get_type(&key)
@@ -570,8 +616,9 @@ async fn create_type(
 async fn list_settings(
     State(state): State<Arc<SettingsApiState>>,
     _query: Query<ListSettingsQuery>,
-    _headers: HeaderMap,
+    headers: HeaderMap,
 ) -> Result<Json<Vec<SettingsWithMetaResponse>>, ApiError> {
+    require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
     let all = mgr.list_all_with_meta().await;
     let mut out = Vec::with_capacity(all.len());
@@ -587,7 +634,9 @@ async fn list_settings(
 async fn get_setting(
     State(state): State<Arc<SettingsApiState>>,
     Path(key): Path<String>,
+    headers: HeaderMap,
 ) -> Result<Json<SettingsWithMetaResponse>, ApiError> {
+    require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
     if is_admin_only_setting(&key) {
         return Err(ApiError::NotFound(key));
@@ -602,6 +651,7 @@ async fn get_setting(
 #[derive(Debug, Deserialize)]
 pub struct UpdateSettingPayload {
     pub value: Value,
+    pub expected_revision: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -693,9 +743,9 @@ async fn update_setting(
     let mgr = mgr_from_state(&state)?;
     let namespace = key.split('.').next().unwrap_or("").to_string();
     let value = preserve_masked_sensitive_value(mgr, &key, payload.value).await?;
-    mgr.set_value(&key, value)
+    mgr.set_value_if_revision(&key, value, &payload.expected_revision)
         .await
-        .map_err(|e| ApiError::Internal(e.to_string()))?;
+        .map_err(map_revision_error)?;
     let updated = mgr
         .get_with_meta(&key)
         .await
@@ -715,9 +765,13 @@ async fn reset_setting(
 ) -> Result<Json<Value>, ApiError> {
     require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
-    mgr.reset_to_default(&key)
+    let expected = headers
+        .get("if-match")
+        .and_then(|value| value.to_str().ok())
+        .ok_or_else(|| ApiError::Internal("If-Match revision is required".to_string()))?;
+    mgr.reset_to_default_if_revision(&key, expected)
         .await
-        .map_err(|e| ApiError::Internal(e.to_string()))?;
+        .map_err(map_revision_error)?;
     Ok(Json(json!({"status": "reset", "key": key})))
 }
 
@@ -727,7 +781,9 @@ async fn reset_setting(
 
 async fn list_drift(
     State(state): State<Arc<SettingsApiState>>,
+    headers: HeaderMap,
 ) -> Result<Json<Vec<SettingsWithMetaResponse>>, ApiError> {
+    require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
     let drift = mgr.list_drift().await;
     let mut out = Vec::with_capacity(drift.len());
@@ -744,9 +800,10 @@ async fn list_drift(
 async fn list_namespace(
     State(state): State<Arc<SettingsApiState>>,
     _query: Query<ListSettingsQuery>,
-    _headers: HeaderMap,
+    headers: HeaderMap,
     type_key: &str,
 ) -> Result<Json<Vec<SettingsWithMetaResponse>>, ApiError> {
+    require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
     let items = mgr.list_namespace_with_meta(type_key).await;
     let mut out = Vec::with_capacity(items.len());
@@ -775,6 +832,7 @@ async fn list_admin_namespace(
 #[derive(Debug, Deserialize)]
 pub struct BulkUpdatePayload {
     pub data: std::collections::HashMap<String, Value>,
+    pub expected_revisions: std::collections::HashMap<String, String>,
 }
 
 async fn update_namespace(
@@ -788,11 +846,34 @@ async fn update_namespace(
     let mgr = mgr_from_state(&state)?;
 
     if type_key == "governance" {
-        let values = payload
-            .data
-            .into_iter()
-            .map(|(field, value)| (format!("governance.{field}"), value))
-            .collect();
+        let mut values = std::collections::HashMap::new();
+        let mut revision_errors = Vec::new();
+        for (field, value) in payload.data {
+            let key = format!("governance.{field}");
+            let expected = payload.expected_revisions.get(&field);
+            let current = mgr.get_with_meta(&key).await;
+            match (expected, current) {
+                (Some(expected), Some(current))
+                    if setting_revision(&current.setting) == *expected =>
+                {
+                    values.insert(key, value);
+                }
+                (Some(expected), Some(current)) => revision_errors.push(json!({
+                    "key": key,
+                    "code": "setting_revision_conflict",
+                    "expected_revision": expected,
+                    "current_revision": setting_revision(&current.setting)
+                })),
+                (None, _) => revision_errors.push(json!({
+                    "key": key,
+                    "code": "expected_revision_required"
+                })),
+                (_, None) => revision_errors.push(json!({
+                    "key": key,
+                    "code": "setting_not_found"
+                })),
+            }
+        }
         let results = mgr.set_governance_batch(values).await;
         let snapshot = state
             .governance_status
@@ -802,12 +883,14 @@ async fn update_namespace(
         snapshot
             .validate()
             .map_err(|error| ApiError::Internal(error.to_string()))?;
-        let complete = results.iter().all(|result| {
-            result.status == crate::uar::settings::manager::GovernanceMutationStatus::Updated
-        });
+        let complete = revision_errors.is_empty()
+            && results.iter().all(|result| {
+                result.status == crate::uar::settings::manager::GovernanceMutationStatus::Updated
+            });
         return Ok(Json(json!({
             "status": if complete { "updated" } else { "partial" },
             "results": results,
+            "errors": revision_errors,
             "applied_status": {
                 "boot_instance_id": snapshot.boot_instance_id,
                 "revision": snapshot.revision
@@ -821,14 +904,41 @@ async fn update_namespace(
 
     for (field, value) in payload.data {
         let key = format!("{type_key}.{field}");
-        let value = preserve_masked_sensitive_value(mgr, &key, value).await?;
-        match mgr.set_value(&key, value).await {
+        let Some(expected_revision) = payload.expected_revisions.get(&field) else {
+            errors.push(json!({"key": key, "code": "expected_revision_required"}));
+            continue;
+        };
+        let value = match preserve_masked_sensitive_value(mgr, &key, value).await {
+            Ok(value) => value,
+            Err(error) => {
+                errors.push(json!({
+                    "key": key,
+                    "code": "validation_failed",
+                    "error": api_error_message(error)
+                }));
+                continue;
+            }
+        };
+        match mgr
+            .set_value_if_revision(&key, value, expected_revision)
+            .await
+        {
             Ok(()) => {
                 if let Some(row) = mgr.get_with_meta(&key).await {
                     updated.push(masked_response(row, mgr).await);
                 }
             }
-            Err(e) => errors.push(json!({"key": key, "error": e.to_string()})),
+            Err(SettingRevisionConflict::Stale {
+                expected, current, ..
+            }) => errors.push(json!({
+                "key": key,
+                "code": "setting_revision_conflict",
+                "expected_revision": expected,
+                "current_revision": current
+            })),
+            Err(e) => {
+                errors.push(json!({"key": key, "code": "write_failed", "error": e.to_string()}))
+            }
         }
     }
 
@@ -841,6 +951,32 @@ async fn update_namespace(
     }
 
     Ok(Json(json!({"status": "updated", "updated": updated})))
+}
+
+fn map_revision_error(error: SettingRevisionConflict) -> ApiError {
+    match error {
+        SettingRevisionConflict::Missing(key) => ApiError::NotFound(key),
+        SettingRevisionConflict::Stale {
+            key,
+            expected,
+            current,
+        } => ApiError::Conflict {
+            key,
+            expected,
+            current,
+        },
+        SettingRevisionConflict::Write(error) => ApiError::Internal(error.to_string()),
+    }
+}
+
+fn api_error_message(error: ApiError) -> String {
+    match error {
+        ApiError::Unavailable => "Settings manager is unavailable".to_string(),
+        ApiError::NotFound(key) => format!("Setting '{key}' not found"),
+        ApiError::Forbidden => "Administration authority is required".to_string(),
+        ApiError::Conflict { key, .. } => format!("Setting '{key}' changed"),
+        ApiError::Internal(message) => message,
+    }
 }
 
 async fn preserve_masked_sensitive_value(

@@ -16,6 +16,7 @@ use futures::StreamExt;
 
 use crate::llm::registry::{ModelConfig, ProviderConfig, ProviderRegistry, enrich_provider_config};
 use crate::llm::{LlmDriver, LlmRequest};
+use crate::uar::security::credentials::{CredentialScope, ProviderService};
 use crate::uar::settings::manager::SettingsManager;
 
 /// Shared state for provider routes: in-memory registry plus optional settings DB sync.
@@ -23,6 +24,7 @@ use crate::uar::settings::manager::SettingsManager;
 pub struct ProviderApiState {
     pub registry: Arc<ProviderRegistry>,
     pub settings_manager: Option<Arc<SettingsManager>>,
+    pub provider_service: Option<Arc<ProviderService>>,
 }
 
 /// Build the providers API router.
@@ -45,10 +47,32 @@ pub fn build_router() -> Router<ProviderApiState> {
 }
 
 async fn persist_provider_config(
-    settings_manager: Option<&Arc<SettingsManager>>,
+    state: &ProviderApiState,
     cfg: &ProviderConfig,
 ) -> Result<(), String> {
-    if let Some(m) = settings_manager {
+    if let Some(api_key) = cfg.api_key.as_deref() {
+        let service = state
+            .provider_service
+            .as_ref()
+            .ok_or_else(|| "Protected provider credential storage is unavailable".to_string())?;
+        if api_key.trim().is_empty() {
+            service
+                .store()
+                .delete(CredentialScope::System, "system", &cfg.id)
+                .await
+                .map_err(|error| error.to_string())?;
+        } else {
+            crate::uar::settings::manager::store_system_provider_credential(
+                service.as_ref(),
+                &cfg.id,
+                api_key,
+                true,
+            )
+            .await
+            .map_err(|error| error.to_string())?;
+        }
+    }
+    if let Some(m) = state.settings_manager.as_ref() {
         m.upsert_provider_config(cfg)
             .await
             .map_err(|e| e.to_string())?;
@@ -64,8 +88,12 @@ async fn persist_provider_config(
 async fn list_providers(State(state): State<ProviderApiState>) -> Json<ProvidersResponse> {
     let providers = state.registry.list().await;
     let default_id = state.registry.default_id().await;
+    let mut views = Vec::with_capacity(providers.len());
+    for provider in providers {
+        views.push(provider_view(&state, provider).await);
+    }
     Json(ProvidersResponse {
-        providers: providers.into_iter().map(ProviderView::from).collect(),
+        providers: views,
         default_id,
     })
 }
@@ -80,12 +108,16 @@ async fn list_enabled_providers(State(state): State<ProviderApiState>) -> Json<P
         .filter(|provider| provider.enabled)
         .map(|mut provider| {
             provider.models.retain(|model| model.enabled);
-            ProviderView::from(provider)
+            provider
         })
-        .collect();
+        .collect::<Vec<_>>();
+    let mut views = Vec::with_capacity(providers.len());
+    for provider in providers {
+        views.push(provider_view(&state, provider).await);
+    }
     let default_id = state.registry.default_id().await;
     Json(ProvidersResponse {
-        providers,
+        providers: views,
         default_id,
     })
 }
@@ -118,13 +150,8 @@ async fn get_provider(
     State(state): State<ProviderApiState>,
     Path(id): Path<String>,
 ) -> Result<Json<ProviderView>, StatusCode> {
-    state
-        .registry
-        .get(&id)
-        .await
-        .map(ProviderView::from)
-        .map(Json)
-        .ok_or(StatusCode::NOT_FOUND)
+    let provider = state.registry.get(&id).await.ok_or(StatusCode::NOT_FOUND)?;
+    Ok(Json(provider_view(&state, provider).await))
 }
 
 /// Create/register a new provider.
@@ -162,7 +189,7 @@ async fn create_provider(
         }),
     ))?;
 
-    if let Err(e) = persist_provider_config(state.settings_manager.as_ref(), &response).await {
+    if let Err(e) = persist_provider_config(&state, &response).await {
         let _ = state.registry.remove(&id).await;
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -172,7 +199,10 @@ async fn create_provider(
         ));
     }
 
-    Ok((StatusCode::CREATED, Json(ProviderView::from(response))))
+    Ok((
+        StatusCode::CREATED,
+        Json(provider_view(&state, response).await),
+    ))
 }
 
 /// Update an existing provider.
@@ -198,7 +228,7 @@ async fn update_provider(
         )
     })?;
 
-    if let Err(e) = persist_provider_config(state.settings_manager.as_ref(), &response).await {
+    if let Err(e) = persist_provider_config(&state, &response).await {
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ErrorResponse {
@@ -207,7 +237,7 @@ async fn update_provider(
         ));
     }
 
-    Ok(Json(ProviderView::from(response)))
+    Ok(Json(provider_view(&state, response).await))
 }
 
 /// Delete a provider by ID.
@@ -247,6 +277,20 @@ async fn delete_provider(
         if was_default {
             let _ = sm.set_default_provider_id("").await;
         }
+    }
+    if let Some(service) = state.provider_service.as_ref() {
+        service
+            .store()
+            .delete(CredentialScope::System, "system", &id)
+            .await
+            .map_err(|error| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse {
+                        error: format!("Failed to delete protected provider credential: {error}"),
+                    }),
+                )
+            })?;
     }
 
     Ok(StatusCode::NO_CONTENT)
@@ -346,7 +390,7 @@ async fn test_provider(
                 error: "No enabled model is configured for this provider".to_string(),
             }),
         ))?;
-    let llm_config = state
+    let mut llm_config = state
         .registry
         .resolve_to_llm_config(&id, &model)
         .await
@@ -356,6 +400,38 @@ async fn test_provider(
                 error: "Provider or model is disabled, unavailable, or incomplete".to_string(),
             }),
         ))?;
+    if llm_config
+        .api_key
+        .as_deref()
+        .is_none_or(|key| key.trim().is_empty())
+        && let Some(service) = state.provider_service.as_ref()
+        && let Some(record) = service
+            .store()
+            .get(CredentialScope::System, "system", &id)
+            .await
+            .map_err(|error| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse {
+                        error: format!("Provider credential lookup failed: {error}"),
+                    }),
+                )
+            })?
+    {
+        llm_config.api_key = Some(
+            service
+                .encryption()
+                .decrypt(&record.api_key_encrypted)
+                .map_err(|error| {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ErrorResponse {
+                            error: format!("Provider credential could not be decrypted: {error}"),
+                        }),
+                    )
+                })?,
+        );
+    }
     if llm_config
         .api_key
         .as_deref()
@@ -471,21 +547,31 @@ struct ProviderView {
     credential_configured: bool,
 }
 
-impl From<ProviderConfig> for ProviderView {
-    fn from(provider: ProviderConfig) -> Self {
-        Self {
-            id: provider.id,
-            display_name: provider.display_name,
-            base_url: provider.base_url,
-            protocol: provider.protocol,
-            default_model: provider.default_model,
-            models: provider.models,
-            enabled: provider.enabled,
-            credential_configured: provider
+async fn provider_view(state: &ProviderApiState, provider: ProviderConfig) -> ProviderView {
+    let protected = if let Some(service) = state.provider_service.as_ref() {
+        service
+            .store()
+            .get(CredentialScope::System, "system", &provider.id)
+            .await
+            .ok()
+            .flatten()
+            .is_some()
+    } else {
+        false
+    };
+    ProviderView {
+        id: provider.id,
+        display_name: provider.display_name,
+        base_url: provider.base_url,
+        protocol: provider.protocol,
+        default_model: provider.default_model,
+        models: provider.models,
+        enabled: provider.enabled,
+        credential_configured: protected
+            || provider
                 .api_key
                 .as_deref()
                 .is_some_and(|key| !key.trim().is_empty()),
-        }
     }
 }
 
@@ -591,6 +677,7 @@ mod tests {
             State(ProviderApiState {
                 registry: Arc::clone(&registry),
                 settings_manager: Some(Arc::clone(&settings_manager)),
+                provider_service: None,
             }),
             Path("provider-b".to_string()),
         )
@@ -623,6 +710,7 @@ mod tests {
             State(ProviderApiState {
                 registry: Arc::clone(&registry),
                 settings_manager: Some(Arc::clone(&settings_manager)),
+                provider_service: None,
             }),
             Path("missing-provider".to_string()),
         )
@@ -655,6 +743,7 @@ mod tests {
             State(ProviderApiState {
                 registry: Arc::clone(&registry),
                 settings_manager: Some(Arc::clone(&settings_manager)),
+                provider_service: None,
             }),
             Path("provider-b".to_string()),
         )

@@ -1098,6 +1098,16 @@ async fn run_server_with_listener(
                     {
                         tracing::error!(error = ?e, "Failed to seed configured providers into the settings DB");
                     }
+                    if let Some(service) = provider_service.as_ref()
+                        && let Err(e) = mgr
+                            .protect_provider_credentials(
+                                provider_registry.as_ref(),
+                                service.as_ref(),
+                            )
+                            .await
+                    {
+                        tracing::error!(error = ?e, "Failed to protect provider credentials");
+                    }
                     if let Err(e) = crate::uar::settings::hydrate_provider_registry_from_settings(
                         provider_registry.as_ref(),
                         mgr.as_ref(),
@@ -1390,6 +1400,7 @@ async fn run_server_with_listener(
     let provider_api_state = uar::api::providers::ProviderApiState {
         registry: Arc::clone(&state.provider_registry),
         settings_manager: state.settings_manager.clone(),
+        provider_service: state.provider_service.clone(),
     };
 
     // ── Shared ingestion worker pool ─────────────────────────────────────────────

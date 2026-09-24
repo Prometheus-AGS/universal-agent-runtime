@@ -350,7 +350,14 @@ pub fn administration_capabilities() -> AdministrationCapabilities {
         ),
     ] {
         runtime_settings.push(endpoint!(read_id, "GET", path, Admin, Read));
-        runtime_settings.push(endpoint!(update_id, "PUT", path, Admin, NextTurn));
+        let apply = match path {
+            "/api/uar/settings/server"
+            | "/api/uar/settings/security"
+            | "/api/uar/settings/persistence" => Restart,
+            "/api/uar/settings/governance" => Live,
+            _ => NextTurn,
+        };
+        runtime_settings.push(endpoint!(update_id, "PUT", path, Admin, apply));
     }
 
     AdministrationCapabilities {

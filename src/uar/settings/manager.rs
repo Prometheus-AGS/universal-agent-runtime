@@ -60,6 +60,48 @@ pub struct GovernanceMutationResult {
     pub error: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SettingApplyMode {
+    Live,
+    NextTurn,
+    Restart,
+}
+
+/// The runtime application boundary for one persisted setting.
+#[must_use]
+pub fn setting_apply_mode(key: &str) -> SettingApplyMode {
+    let namespace = key.split('.').next().unwrap_or_default();
+    match namespace {
+        "governance" => SettingApplyMode::Live,
+        "server" | "security" | "persistence" => SettingApplyMode::Restart,
+        _ => SettingApplyMode::NextTurn,
+    }
+}
+
+/// Stable optimistic-concurrency token for one setting row.
+#[must_use]
+pub fn setting_revision(setting: &Settings) -> String {
+    setting
+        .updated_at
+        .unwrap_or(setting.created_at)
+        .to_rfc3339_opts(chrono::SecondsFormat::Nanos, true)
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum SettingRevisionConflict {
+    #[error("Setting '{0}' not found")]
+    Missing(String),
+    #[error("Setting '{key}' changed; expected revision {expected}, current revision {current}")]
+    Stale {
+        key: String,
+        expected: String,
+        current: String,
+    },
+    #[error(transparent)]
+    Write(#[from] anyhow::Error),
+}
+
 // =============================================================================
 // SettingsManager
 // =============================================================================
@@ -72,6 +114,9 @@ pub struct SettingsManager {
     persistence: Arc<dyn PersistenceLayer>,
     /// In-memory cache: key → (setting, transient metadata).
     cache: RwLock<HashMap<String, CacheEntry>>,
+    /// Values active in the running process. Restart-bound writes update the
+    /// saved cache immediately but leave this snapshot unchanged until boot.
+    effective: RwLock<HashMap<String, Value>>,
     governance_mutation: Option<GovernanceMutationHandle>,
     governance_status: Option<GovernanceStatusHandle>,
     realtime_bus: Option<Arc<dyn crate::uar::realtime::RealtimeBus>>,
@@ -92,6 +137,7 @@ impl SettingsManager {
         Self {
             persistence,
             cache: RwLock::new(HashMap::new()),
+            effective: RwLock::new(HashMap::new()),
             governance_mutation: None,
             governance_status: None,
             realtime_bus: None,
@@ -278,10 +324,12 @@ impl SettingsManager {
         }
 
         // 3. Replace cache atomically.
-        {
-            let mut cache = self.cache.write().await;
-            *cache = new_cache;
-        }
+        let new_effective = new_cache
+            .iter()
+            .map(|(key, entry)| (key.clone(), entry.setting.data.clone()))
+            .collect();
+        *self.cache.write().await = new_cache;
+        *self.effective.write().await = new_effective;
 
         tracing::info!(
             seeded = stats.seeded,
@@ -566,6 +614,13 @@ impl SettingsManager {
         );
         drop(cache);
 
+        if setting_apply_mode(key) != SettingApplyMode::Restart {
+            self.effective
+                .write()
+                .await
+                .insert(key.to_string(), value.clone());
+        }
+
         if let Some(enabled) = governance_enabled {
             self.governance_mutation
                 .as_ref()
@@ -601,6 +656,79 @@ impl SettingsManager {
                 }
             }
         }
+        Ok(())
+    }
+
+    /// Set a value only when the caller's revision still matches the saved row.
+    /// The settings API is the only writer inside one runtime process, so the
+    /// namespace lock makes the comparison and write one admission decision.
+    pub async fn set_value_if_revision(
+        &self,
+        key: &str,
+        value: Value,
+        expected_revision: &str,
+    ) -> std::result::Result<(), SettingRevisionConflict> {
+        let _guard = self.governance_mutation_lock.lock().await;
+        let current = self
+            .get_with_meta(key)
+            .await
+            .ok_or_else(|| SettingRevisionConflict::Missing(key.to_string()))?;
+        let current_revision = setting_revision(&current.setting);
+        if current_revision != expected_revision {
+            return Err(SettingRevisionConflict::Stale {
+                key: key.to_string(),
+                expected: expected_revision.to_string(),
+                current: current_revision,
+            });
+        }
+        self.set_value_locked(key, value)
+            .await
+            .map_err(SettingRevisionConflict::Write)
+    }
+
+    /// Return the value currently active in this process. A missing entry means
+    /// the setting was registered after boot, so its saved value is effective.
+    pub async fn effective_value(&self, key: &str) -> Option<Value> {
+        self.effective.read().await.get(key).cloned()
+    }
+
+    /// Reset only the revision the caller inspected.
+    pub async fn reset_to_default_if_revision(
+        &self,
+        key: &str,
+        expected_revision: &str,
+    ) -> std::result::Result<(), SettingRevisionConflict> {
+        let _guard = self.governance_mutation_lock.lock().await;
+        let current = self
+            .get_with_meta(key)
+            .await
+            .ok_or_else(|| SettingRevisionConflict::Missing(key.to_string()))?;
+        let current_revision = setting_revision(&current.setting);
+        if current_revision != expected_revision {
+            return Err(SettingRevisionConflict::Stale {
+                key: key.to_string(),
+                expected: expected_revision.to_string(),
+                current: current_revision,
+            });
+        }
+        if key == "governance.enabled" {
+            let default_enabled = !self
+                .governance_status
+                .as_ref()
+                .ok_or_else(|| anyhow::anyhow!("governance runtime authority is unavailable"))?
+                .snapshot()
+                .may_disable;
+            return self
+                .set_value_locked(key, json!(default_enabled))
+                .await
+                .map_err(SettingRevisionConflict::Write);
+        }
+        self.persistence
+            .delete_setting(key)
+            .await
+            .map_err(SettingRevisionConflict::Write)?;
+        self.cache.write().await.remove(key);
+        self.effective.write().await.remove(key);
         Ok(())
     }
 
@@ -797,7 +925,9 @@ impl SettingsManager {
             if self.persistence.get_setting(&key).await?.is_some() {
                 continue;
             }
-            let data = serde_json::to_value(config).context("serialize ProviderConfig")?;
+            let mut persisted = config.clone();
+            persisted.api_key = None;
+            let data = serde_json::to_value(&persisted).context("serialize ProviderConfig")?;
             let now = Utc::now();
             let setting = Settings {
                 id: Uuid::new_v4(),
@@ -860,7 +990,9 @@ impl SettingsManager {
             })?;
 
         let key = format!("provider.{}", config.id);
-        let data = serde_json::to_value(config).context("serialize ProviderConfig")?;
+        let mut persisted = config.clone();
+        persisted.api_key = None;
+        let data = serde_json::to_value(&persisted).context("serialize ProviderConfig")?;
 
         let existing = self.persistence.get_setting(&key).await?;
         let now = Utc::now();
@@ -926,6 +1058,66 @@ impl SettingsManager {
         Ok(out)
     }
 
+    /// Move legacy provider keys out of ordinary settings and seed protected
+    /// system credentials from the boot registry. Existing protected records
+    /// win, so restart/config seeding cannot overwrite an API-managed key.
+    pub async fn protect_provider_credentials(
+        &self,
+        registry: &crate::llm::registry::ProviderRegistry,
+        service: &crate::uar::security::credentials::ProviderService,
+    ) -> Result<usize> {
+        let mut migrated = 0usize;
+        let rows = self
+            .persistence
+            .list_settings(Some("provider"), None)
+            .await?;
+        for mut row in rows {
+            if !row.key.starts_with("provider.") {
+                continue;
+            }
+            let mut config: crate::llm::registry::ProviderConfig =
+                serde_json::from_value(row.data.clone()).with_context(|| {
+                    format!("deserialize ProviderConfig for setting key {}", row.key)
+                })?;
+            let Some(api_key) = config
+                .api_key
+                .take()
+                .filter(|value| !value.trim().is_empty())
+            else {
+                continue;
+            };
+            store_system_provider_credential(service, &config.id, &api_key, false).await?;
+            row.data =
+                serde_json::to_value(&config).context("serialize protected ProviderConfig")?;
+            row.updated_at = Some(Utc::now());
+            self.persistence.upsert_setting(&row).await?;
+            self.cache.write().await.insert(
+                row.key.clone(),
+                CacheEntry {
+                    setting: row,
+                    meta: SettingsMeta {
+                        source: SettingSource::Api,
+                        is_drift: false,
+                    },
+                },
+            );
+            migrated += 1;
+        }
+
+        for config in registry.list().await {
+            if let Some(api_key) = config
+                .api_key
+                .as_deref()
+                .filter(|value| !value.trim().is_empty())
+            {
+                store_system_provider_credential(service, &config.id, api_key, false).await?;
+            }
+        }
+
+        tracing::info!(migrated, "Protected provider credential migration complete");
+        Ok(migrated)
+    }
+
     /// Persist the default provider id (`llm.default_provider`).
     pub async fn set_default_provider_id(&self, provider_id: &str) -> Result<()> {
         self.set_value("llm.default_provider", json!(provider_id))
@@ -943,6 +1135,48 @@ impl SettingsManager {
             None => None,
         }
     }
+}
+
+/// Store a global provider credential without ever serializing plaintext into
+/// settings. When `replace` is false an existing protected API-owned record wins.
+pub async fn store_system_provider_credential(
+    service: &crate::uar::security::credentials::ProviderService,
+    provider_id: &str,
+    api_key: &str,
+    replace: bool,
+) -> Result<()> {
+    use crate::uar::security::credentials::{
+        CredentialEncryption, CredentialRecord, CredentialScope,
+    };
+
+    if !replace
+        && service
+            .store()
+            .get(CredentialScope::System, "system", provider_id)
+            .await?
+            .is_some()
+    {
+        return Ok(());
+    }
+    let encrypted = service.encryption().encrypt(api_key)?;
+    let now = Utc::now();
+    let created_at = service
+        .store()
+        .get(CredentialScope::System, "system", provider_id)
+        .await?
+        .map_or(now, |record| record.created_at);
+    service
+        .store()
+        .put(CredentialRecord {
+            scope: CredentialScope::System,
+            scope_id: "system".to_string(),
+            provider_id: provider_id.to_string(),
+            api_key_encrypted: encrypted,
+            api_key_hint: CredentialEncryption::key_hint(api_key, 4),
+            created_at,
+            updated_at: now,
+        })
+        .await
 }
 
 // =============================================================================
