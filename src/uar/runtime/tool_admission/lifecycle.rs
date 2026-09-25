@@ -5,7 +5,6 @@ use tokio::sync::{Mutex, OnceCell};
 use uuid::Uuid;
 
 use crate::uar::persistence::PersistenceLayer;
-use crate::uar::persistence::providers::memory::InMemoryProvider;
 use crate::uar::persistence::tool_admission::{
     ToolAdmissionEvidence, ToolAdmissionEvidenceState,
 };
@@ -48,7 +47,8 @@ enum LiveState {
 
 #[derive(Debug)]
 pub(super) struct AdmissionLifecycle {
-    persistence: Arc<dyn PersistenceLayer>,
+    persistence: Option<Arc<dyn PersistenceLayer>>,
+    ephemeral_evidence: Mutex<Vec<ToolAdmissionEvidence>>,
     reconciled: OnceCell<()>,
     invocations: Mutex<HashMap<String, Arc<Mutex<LiveState>>>>,
 }
@@ -56,8 +56,8 @@ pub(super) struct AdmissionLifecycle {
 impl AdmissionLifecycle {
     pub(super) fn new(persistence: Option<Arc<dyn PersistenceLayer>>) -> Self {
         Self {
-            persistence: persistence
-                .unwrap_or_else(|| Arc::new(InMemoryProvider::new()) as Arc<dyn PersistenceLayer>),
+            persistence,
+            ephemeral_evidence: Mutex::new(Vec::new()),
             reconciled: OnceCell::new(),
             invocations: Mutex::new(HashMap::new()),
         }
@@ -65,6 +65,39 @@ impl AdmissionLifecycle {
 
     pub(super) fn ephemeral() -> Self {
         Self::new(None)
+    }
+
+    async fn save_evidence(
+        &self,
+        evidence: &ToolAdmissionEvidence,
+    ) -> anyhow::Result<ToolAdmissionEvidence> {
+        if let Some(persistence) = &self.persistence {
+            return persistence.save_tool_admission_evidence(evidence).await;
+        }
+        evidence.validate()?;
+        let mut records = self.ephemeral_evidence.lock().await;
+        if let Some(stored) = records.iter().find(|stored| {
+            stored.invocation_id == evidence.invocation_id && stored.state == evidence.state
+        }) {
+            anyhow::ensure!(stored == evidence, "Conflicting tool admission evidence");
+            return Ok(stored.clone());
+        }
+        records.push(evidence.clone());
+        Ok(evidence.clone())
+    }
+
+    async fn list_evidence(&self, owner_id: &str) -> anyhow::Result<Vec<ToolAdmissionEvidence>> {
+        if let Some(persistence) = &self.persistence {
+            return persistence.list_tool_admission_evidence(owner_id).await;
+        }
+        Ok(self
+            .ephemeral_evidence
+            .lock()
+            .await
+            .iter()
+            .filter(|evidence| evidence.owner_id == owner_id)
+            .cloned()
+            .collect())
     }
 
     async fn cell(&self, invocation_id: &str, initial: LiveState) -> Arc<Mutex<LiveState>> {
@@ -79,10 +112,7 @@ impl AdmissionLifecycle {
     pub(super) async fn reconcile(&self, context: &ToolAdmissionContext) -> anyhow::Result<()> {
         self.reconciled
             .get_or_try_init(|| async {
-                let history = self
-                    .persistence
-                    .list_tool_admission_evidence(&context.owner_id)
-                    .await?;
+                let history = self.list_evidence(&context.owner_id).await?;
                 let mut latest = HashMap::<String, ToolAdmissionEvidence>::new();
                 for evidence in history {
                     latest.insert(evidence.invocation_id.clone(), evidence);
@@ -102,9 +132,7 @@ impl AdmissionLifecycle {
                         }
                         _ => continue,
                     };
-                    self.persistence
-                        .save_tool_admission_evidence(&evidence.next(state))
-                        .await?;
+                    self.save_evidence(&evidence.next(state)).await?;
                 }
                 Ok::<(), anyhow::Error>(())
             })
@@ -132,13 +160,12 @@ impl AdmissionLifecycle {
         } else {
             ToolAdmissionEvidenceState::AwaitingApproval
         };
-        self.persistence
-            .save_tool_admission_evidence(&ToolAdmissionEvidence::new(
-                invocation,
-                &preparation.admission_id,
-                evidence_state,
-            ))
-            .await?;
+        self.save_evidence(&ToolAdmissionEvidence::new(
+            invocation,
+            &preparation.admission_id,
+            evidence_state,
+        ))
+        .await?;
         if evidence_state.is_terminal() {
             drop(state);
             *cell.lock().await = LiveState::Terminal;
@@ -162,13 +189,12 @@ impl AdmissionLifecycle {
             *state == LiveState::AwaitingApproval,
             "Tool invocation cannot be denied from its current state"
         );
-        self.persistence
-            .save_tool_admission_evidence(&ToolAdmissionEvidence::new(
-                invocation,
-                admission_id,
-                ToolAdmissionEvidenceState::Denied,
-            ))
-            .await?;
+        self.save_evidence(&ToolAdmissionEvidence::new(
+            invocation,
+            admission_id,
+            ToolAdmissionEvidenceState::Denied,
+        ))
+        .await?;
         *state = LiveState::Terminal;
         Ok(())
     }
@@ -183,13 +209,12 @@ impl AdmissionLifecycle {
             *state == LiveState::AwaitingApproval,
             "Tool invocation cannot be claimed from its current state"
         );
-        self.persistence
-            .save_tool_admission_evidence(&ToolAdmissionEvidence::new(
-                invocation,
-                &admitted.host_receipt.admission_id,
-                ToolAdmissionEvidenceState::ClaimIntent,
-            ))
-            .await?;
+        self.save_evidence(&ToolAdmissionEvidence::new(
+            invocation,
+            &admitted.host_receipt.admission_id,
+            ToolAdmissionEvidenceState::ClaimIntent,
+        ))
+        .await?;
         *state = LiveState::Claimed;
         Ok(())
     }
@@ -206,17 +231,16 @@ impl AdmissionLifecycle {
             matches!(*state, LiveState::Claimed | LiveState::ClaimedUnknown),
             "Tool invocation was not claimed"
         );
-        self.persistence
-            .save_tool_admission_evidence(&ToolAdmissionEvidence::new(
-                invocation,
-                &admitted.host_receipt.admission_id,
-                if succeeded {
-                    ToolAdmissionEvidenceState::Succeeded
-                } else {
-                    ToolAdmissionEvidenceState::Failed
-                },
-            ))
-            .await?;
+        self.save_evidence(&ToolAdmissionEvidence::new(
+            invocation,
+            &admitted.host_receipt.admission_id,
+            if succeeded {
+                ToolAdmissionEvidenceState::Succeeded
+            } else {
+                ToolAdmissionEvidenceState::Failed
+            },
+        ))
+        .await?;
         *state = LiveState::Terminal;
         Ok(())
     }
@@ -251,13 +275,12 @@ impl AdmissionLifecycle {
                         ToolAdmissionEvidenceState::OutcomeUnknown
                     }
                 };
-                self.persistence
-                    .save_tool_admission_evidence(&ToolAdmissionEvidence::new(
-                        invocation,
-                        admission_id,
-                        evidence_state,
-                    ))
-                    .await?;
+                self.save_evidence(&ToolAdmissionEvidence::new(
+                    invocation,
+                    admission_id,
+                    evidence_state,
+                ))
+                .await?;
                 *state = if matches!(
                     outcome,
                     AdmissionCancellationOutcome::AlreadyClaimed
@@ -292,13 +315,12 @@ impl AdmissionLifecycle {
                 ToolAdmissionEvidenceState::OutcomeUnknown
             }
         };
-        self.persistence
-            .save_tool_admission_evidence(&ToolAdmissionEvidence::new(
-                invocation,
-                admission_id,
-                evidence_state,
-            ))
-            .await?;
+        self.save_evidence(&ToolAdmissionEvidence::new(
+            invocation,
+            admission_id,
+            evidence_state,
+        ))
+        .await?;
         *state = if outcome == AdmissionCancellationOutcome::Cancelled {
             LiveState::Cancelled
         } else {
