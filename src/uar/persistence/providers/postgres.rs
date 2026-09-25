@@ -12,6 +12,7 @@ use crate::uar::persistence::agent_threads::{
     PersistedAgentThread,
 };
 use crate::uar::persistence::presentations::{self, PresentationStoreError};
+use crate::uar::persistence::tool_admission::ToolAdmissionEvidence;
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use anyhow::Result;
 use async_trait::async_trait;
@@ -386,6 +387,58 @@ impl PersistenceLayer for PostgresProvider {
         Ok(agent_threads::ordered_canonical_receipts(
             receipts, owner_id, run_id,
         )?)
+    }
+
+    async fn save_tool_admission_evidence(
+        &self,
+        evidence: &ToolAdmissionEvidence,
+    ) -> Result<ToolAdmissionEvidence> {
+        evidence.validate()?;
+        let inserted = sqlx::query(
+            "INSERT INTO tool_admission_evidence
+             (owner_id, invocation_id, state, root_run_id, run_id, occurred_at, data)
+             VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING",
+        )
+        .bind(&evidence.owner_id)
+        .bind(&evidence.invocation_id)
+        .bind(format!("{:?}", evidence.state))
+        .bind(&evidence.root_run_id)
+        .bind(&evidence.run_id)
+        .bind(evidence.occurred_at)
+        .bind(serde_json::to_value(evidence)?)
+        .execute(&self.pool)
+        .await?;
+        if inserted.rows_affected() == 1 {
+            return Ok(evidence.clone());
+        }
+        let row = sqlx::query(
+            "SELECT data FROM tool_admission_evidence
+             WHERE owner_id = $1 AND invocation_id = $2 AND state = $3",
+        )
+        .bind(&evidence.owner_id)
+        .bind(&evidence.invocation_id)
+        .bind(format!("{:?}", evidence.state))
+        .fetch_one(&self.pool)
+        .await?;
+        let stored: ToolAdmissionEvidence = serde_json::from_value(row.try_get("data")?)?;
+        anyhow::ensure!(stored == *evidence, "Conflicting tool admission evidence");
+        Ok(stored)
+    }
+
+    async fn list_tool_admission_evidence(
+        &self,
+        owner_id: &str,
+    ) -> Result<Vec<ToolAdmissionEvidence>> {
+        let rows = sqlx::query(
+            "SELECT data FROM tool_admission_evidence
+             WHERE owner_id = $1 ORDER BY occurred_at, invocation_id, state",
+        )
+        .bind(owner_id)
+        .fetch_all(&self.pool)
+        .await?;
+        rows.into_iter()
+            .map(|row| Ok(serde_json::from_value(row.try_get("data")?)?))
+            .collect()
     }
 
     async fn save_session(&self, session: &Session) -> Result<()> {

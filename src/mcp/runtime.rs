@@ -806,6 +806,7 @@ impl PreparedMcpServer {
         &self,
         tool: &ProjectedMcpTool,
         arguments: Value,
+        meta: Option<rmcp::model::RequestMetaObject>,
     ) -> Result<Value, McpRuntimeError> {
         match &self.events {
             Some(events) => {
@@ -813,12 +814,12 @@ impl PreparedMcpServer {
                     .forward(
                         &self.manager,
                         &self.request,
-                        self.call_projected(tool, arguments),
+                        self.call_projected(tool, arguments, meta),
                         None,
                     )
                     .await
             }
-            None => self.call_projected(tool, arguments).await,
+            None => self.call_projected(tool, arguments, meta).await,
         }
     }
 
@@ -826,6 +827,7 @@ impl PreparedMcpServer {
         &self,
         tool: &ProjectedMcpTool,
         arguments: Value,
+        meta: Option<rmcp::model::RequestMetaObject>,
     ) -> Result<Value, McpRuntimeError> {
         let server = self.request.definition().name().to_owned();
         let name = &tool.descriptor().provider_name;
@@ -845,7 +847,7 @@ impl PreparedMcpServer {
             let binding = self.ready_binding().await?;
             binding
                 .registry()?
-                .call_namespaced_tool(name, arguments)
+                .call_namespaced_tool_with_meta(name, arguments, meta)
                 .await
                 .map_err(|_| McpRuntimeError::ToolFailed {
                     server: server.clone(),

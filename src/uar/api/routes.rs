@@ -5,7 +5,7 @@ use crate::uar::{
         checkpoint::Checkpoint,
         manager::{RunManager, StreamEvent},
     },
-    security::claims::UserContext,
+    security::{claims::UserContext, sidecar_guard::HostAuthenticated},
 };
 use axum::{
     Extension, Json, Router,
@@ -24,6 +24,14 @@ pub fn build_router() -> Router<Arc<RunManager>> {
         .route("/runs/{id}", get(read_run))
         .route("/runs/{id}/stream", get(stream_run))
         .route("/runs/{run_id}/tool-approval", post(api_tool_approval))
+        .route(
+            "/runs/{run_id}/tool-approval/pending",
+            get(api_pending_tool_approval),
+        )
+        .route(
+            "/runs/{run_id}/tool-admission-evidence",
+            get(api_tool_admission_evidence),
+        )
         .route("/runs/{run_id}/cancel", post(api_cancel_run))
         .route(
             "/runs/{run_id}/mcp-grants/{server}/revoke",
@@ -54,6 +62,8 @@ struct CreateRunRequest {
     run_credentials: Option<Vec<crate::uar::runtime::turn::host::RunCredentialInput>>,
     #[serde(default)]
     mcp_servers: Option<Vec<crate::uar::runtime::turn::host::RunMcpServerInput>>,
+    #[serde(default)]
+    tool_admission: Option<crate::uar::runtime::tool_admission::RunToolAdmissionInput>,
     #[serde(default)]
     working_directory: Option<std::path::PathBuf>,
     #[serde(default)]
@@ -381,6 +391,7 @@ struct StreamParams {
 async fn create_run(
     State(manager): State<Arc<RunManager>>,
     Extension(user): Extension<UserContext>,
+    host_authenticated: Option<Extension<HostAuthenticated>>,
     Json(req): Json<CreateRunRequest>,
 ) -> Result<Json<CreateRunResponse>, RunApiError> {
     let (artifact, artifact_inline) =
@@ -396,6 +407,25 @@ async fn create_run(
     request.session_id = req.session_id;
     request.skill_attachments = req.skill_attachments;
     request.presentation_negotiation = req.presentation_negotiation;
+    if let Some(input) = req.tool_admission {
+        if host_authenticated.is_none() {
+            return Err(RunApiError {
+                status: StatusCode::FORBIDDEN,
+                code: "tool_admission_host_authentication_required",
+                message: "paired host tool admission requires authenticated sidecar authority"
+                    .to_string(),
+            });
+        }
+        let adapter = crate::uar::runtime::tool_admission::HttpHostToolAdmissionPort::from_input(
+            input,
+        )
+        .map_err(|_| RunApiError {
+            status: StatusCode::UNPROCESSABLE_ENTITY,
+            code: "tool_admission_invalid",
+            message: "paired host tool admission is invalid or incompatible".to_string(),
+        })?;
+        request.host_tool_admission = Some(Arc::new(adapter));
+    }
     attach_host_resources(
         &manager,
         &user,
@@ -666,6 +696,65 @@ async fn api_tool_approval(
             StatusCode::NOT_FOUND,
             Json(serde_json::json!({ "resolved": false })),
         )
+    }
+}
+
+/// GET /api/uar/runs/{run_id}/tool-approval/pending
+///
+/// Replays the owner-scoped live waiter with its stable approval identity and
+/// original stream cursor. It never creates a new waiter.
+async fn api_pending_tool_approval(
+    State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
+    Path(run_id): Path<String>,
+) -> impl IntoResponse {
+    if manager.get_run_for_context(&user, &run_id).await.is_none() {
+        return Json(serde_json::json!({
+            "version": 1,
+            "runId": run_id,
+            "pending": null,
+        }));
+    }
+    let pending = manager
+        .pending_approval_for_user(&user.user_id, &run_id)
+        .await;
+    Json(serde_json::json!({
+        "version": 1,
+        "runId": run_id,
+        "pending": pending,
+    }))
+}
+
+/// GET /api/uar/runs/{run_id}/tool-admission-evidence
+///
+/// Returns sanitized append-only lifecycle evidence. The owner filter is
+/// applied in storage before the requested run tree is selected.
+async fn api_tool_admission_evidence(
+    State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
+    Path(run_id): Path<String>,
+) -> impl IntoResponse {
+    match manager
+        .tool_admission_evidence_for_user(&user.user_id, &run_id)
+        .await
+    {
+        Ok(records) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "version": 1,
+                "runId": run_id,
+                "records": records,
+            })),
+        ),
+        Err(_) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({
+                "version": 1,
+                "runId": run_id,
+                "code": "tool_admission_evidence_unavailable",
+                "error": "Tool admission evidence could not be read; check the configured persistence service",
+            })),
+        ),
     }
 }
 

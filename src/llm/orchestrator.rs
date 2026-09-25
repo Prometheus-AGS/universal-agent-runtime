@@ -171,17 +171,15 @@ pub enum ToolApprovalResult {
     GovernanceBypassed,
     /// Tool execution was rejected by the user or timed out.
     Rejected { reason: String },
+    /// The run/root was cancelled while this exact invocation was unclaimed.
+    Cancelled { reason: String },
 }
 
 /// A callback invoked before each tool call execution to allow approval/rejection.
 /// Returns an admitted outcome to proceed or `Rejected` to skip the tool call.
 pub type ToolApprovalGate = Arc<
     dyn Fn(
-            String, // tool_call_id
-            String, // tool_name
-            crate::uar::tools::descriptor::ApprovalClass,
-            String, // arguments_json
-            usize,  // call_index
+            crate::uar::runtime::tool_admission::ToolApprovalRequest,
         ) -> Pin<Box<dyn Future<Output = ToolApprovalResult> + Send>>
         + Send
         + Sync,
@@ -222,6 +220,8 @@ pub struct Orchestrator {
     /// Optional gate that is consulted before each tool call execution.
     /// If `None`, all tool calls are approved automatically.
     tool_approval_gate: Option<ToolApprovalGate>,
+    /// Exact prepared-invocation authority used by standalone and paired hosts.
+    tool_admission: Arc<crate::uar::runtime::tool_admission::ToolAdmissionRuntime>,
     /// Optional sandbox runner for isolated code execution.
     sandbox_runner: Option<Arc<dyn crate::sandbox::SandboxRunner>>,
     sandbox_scope: Option<crate::sandbox::execution::SandboxRun>,
@@ -412,14 +412,118 @@ impl std::fmt::Debug for Orchestrator {
 }
 
 impl Orchestrator {
+    async fn prepare_and_admit_tool(
+        &self,
+        model_tool_call_id: String,
+        descriptor: &crate::uar::tools::descriptor::ToolDescriptor,
+        validated_arguments: serde_json::Value,
+        call_index: usize,
+    ) -> Result<crate::uar::runtime::tool_admission::AdmittedToolInvocation, String> {
+        use crate::uar::runtime::tool_admission::{
+            HostAdmissionDisposition, LocalAdmissionDisposition, ToolApprovalRequest,
+        };
+
+        let prepared = self.tool_admission.prepare(
+            model_tool_call_id,
+            descriptor,
+            validated_arguments,
+            call_index,
+        );
+        let host = self
+            .tool_admission
+            .prepare_host(Arc::clone(&prepared))
+            .await
+            .map_err(|error| format!("Host preparation failed: {error}"))?;
+        if host.host_disposition == HostAdmissionDisposition::Deny {
+            return Err("Tool call is denied by the host policy".to_string());
+        }
+        let request = ToolApprovalRequest {
+            invocation: Arc::clone(&prepared),
+            admission_id: host.admission_id.clone(),
+            host_requires_approval: host.host_disposition == HostAdmissionDisposition::Ask,
+            action_display: host.action_display.clone(),
+        };
+        let local_disposition = match &self.tool_approval_gate {
+            Some(gate) => match gate(request).await {
+                ToolApprovalResult::Approved => LocalAdmissionDisposition::Approved,
+                ToolApprovalResult::Allowed => LocalAdmissionDisposition::Allowed,
+                ToolApprovalResult::GovernanceBypassed => {
+                    LocalAdmissionDisposition::GovernanceBypassed
+                }
+                ToolApprovalResult::Rejected { reason } => {
+                    self.tool_admission
+                        .resolve(
+                            prepared,
+                            host,
+                            LocalAdmissionDisposition::Denied,
+                            false,
+                        )
+                        .await
+                        .map_err(|error| format!("Host denial acknowledgment failed: {error}"))?;
+                    return Err(reason);
+                }
+                ToolApprovalResult::Cancelled { reason } => {
+                    self.tool_admission
+                        .cancel(
+                            prepared.as_ref(),
+                            &host.admission_id,
+                            crate::uar::runtime::tool_admission::AdmissionCancellationReason::Cancelled,
+                        )
+                        .await
+                        .map_err(|error| format!("Host cancellation failed: {error}"))?;
+                    return Err(reason);
+                }
+            },
+            None if host.host_disposition == HostAdmissionDisposition::Auto => {
+                LocalAdmissionDisposition::Allowed
+            }
+            None => {
+                self.tool_admission
+                    .cancel(
+                        prepared.as_ref(),
+                        &host.admission_id,
+                        crate::uar::runtime::tool_admission::AdmissionCancellationReason::Invalidated,
+                    )
+                    .await
+                    .map_err(|error| format!(
+                        "Unavailable approval channel could not invalidate host authority: {error}"
+                    ))?;
+                return Err("Tool call requires an unavailable approval channel".to_string());
+            }
+        };
+        let admitted = self.tool_admission
+            .resolve(prepared, host, local_disposition, true)
+            .await
+            .map_err(|error| format!("Host admission failed: {error}"))?
+            .ok_or_else(|| "Host did not authorize the tool invocation".to_string())?;
+        if let Err(error) = self.tool_admission.claim(&admitted).await {
+            let cancellation = self
+                .tool_admission
+                .cancel(
+                    admitted.prepared.as_ref(),
+                    &admitted.host_receipt.admission_id,
+                    crate::uar::runtime::tool_admission::AdmissionCancellationReason::Invalidated,
+                )
+                .await;
+            return Err(match cancellation {
+                Ok(_) => format!("Tool claim intent was not persisted: {error}"),
+                Err(cancel_error) => format!(
+                    "Tool claim intent was not persisted and host invalidation failed: {error}; {cancel_error}"
+                ),
+            });
+        }
+        Ok(admitted)
+    }
+
     async fn execute_direct_tool(
         &self,
         sequence: u64,
-        call_id: &str,
-        provider_name: &str,
-        arguments: &serde_json::Value,
+        admitted: &crate::uar::runtime::tool_admission::AdmittedToolInvocation,
         output_policy: crate::uar::runtime::context::truncate::TruncationPolicy,
     ) -> anyhow::Result<(String, String, bool)> {
+        let call_id = admitted.prepared.model_tool_call_id.as_str();
+        let provider_name = admitted.prepared.provider_tool_name.as_str();
+        let arguments = &admitted.prepared.validated_arguments;
         if let Some(native) = self.native_skills.get(provider_name).await {
             let execution = match crate::uar::runtime::native_skill::execute_native(
                 native.as_ref(),
@@ -469,7 +573,7 @@ impl Orchestrator {
                 crate::uar::persistence::agent_threads::CanonicalReceiptSource::Mcp
             };
             let value = match self
-                .call_mcp_tool(call_id, provider_name, arguments.clone())
+                .call_mcp_tool(admitted)
                 .await
             {
                 Ok(value) => value,
@@ -548,6 +652,9 @@ impl Orchestrator {
             health_monitor: None,
             native_skills,
             tool_approval_gate: None,
+            tool_admission: Arc::new(
+                crate::uar::runtime::tool_admission::ToolAdmissionRuntime::standalone_ephemeral(),
+            ),
             sandbox_runner: None,
             sandbox_scope: None,
             terminal_scope: None,
@@ -799,10 +906,11 @@ impl Orchestrator {
 
     async fn call_mcp_tool(
         &self,
-        call_id: &str,
-        name: &str,
-        arguments: serde_json::Value,
+        admitted: &crate::uar::runtime::tool_admission::AdmittedToolInvocation,
     ) -> anyhow::Result<serde_json::Value> {
+        let call_id = admitted.prepared.model_tool_call_id.as_str();
+        let name = admitted.prepared.provider_tool_name.as_str();
+        let arguments = admitted.prepared.validated_arguments.clone();
         if self.mcp.is_native_tool(name) {
             return self
                 .mcp
@@ -812,9 +920,21 @@ impl Orchestrator {
         if let Some(preflight) = &self.mcp_preflight
             && !self.mcp.is_native_tool(name)
         {
-            return preflight.call_tool(name, arguments).await;
+            return preflight
+                .call_tool(
+                    name,
+                    arguments,
+                    admitted.host_receipt.mcp_request_meta(),
+                )
+                .await;
         }
-        self.mcp.call_namespaced_tool(name, arguments).await
+        self.mcp
+            .call_namespaced_tool_with_meta(
+                name,
+                arguments,
+                admitted.host_receipt.mcp_request_meta(),
+            )
+            .await
     }
 
     /// Execute a graph's explicit MCP operation at the same trusted boundary
@@ -870,22 +990,20 @@ impl Orchestrator {
         );
         let arguments_json = serde_json::to_string(&arguments)?;
         let arguments = validate::validate(&descriptor.validator, &arguments_json)?;
-        let gate = host
-            .tool_approval_gate
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("Graph tool host has no approval gate"))?;
         let call_id = Uuid::new_v4().to_string();
-        if let ToolApprovalResult::Rejected { reason } = gate(
-            call_id.clone(),
-            name.to_owned(),
-            descriptor.approval_class,
-            arguments_json,
-            step as usize,
-        )
-        .await
-        {
-            anyhow::bail!("Graph tool rejected: {reason}");
-        }
+        anyhow::ensure!(
+            host.tool_approval_gate.is_some(),
+            "Graph tool host has no approval gate"
+        );
+        let admitted = host
+            .prepare_and_admit_tool(
+                call_id.clone(),
+                descriptor,
+                arguments.clone(),
+                step as usize,
+            )
+            .await
+            .map_err(|reason| anyhow::anyhow!("Graph tool rejected: {reason}"))?;
         events
             .emit(RuntimeEvent::ToolStart {
                 run_id: run_id.to_owned(),
@@ -900,7 +1018,7 @@ impl Orchestrator {
         let result = if cancellation.is_cancelled() {
             Err(anyhow::anyhow!("Graph tool cancelled before dispatch"))
         } else {
-            host.call_mcp_tool(&call_id, name, arguments).await
+            host.call_mcp_tool(&admitted).await
         };
         let (canonical_content, success) = match result {
             Ok(result) => match host
@@ -921,6 +1039,12 @@ impl Orchestrator {
             },
             Err(_) => ("Graph MCP tool execution failed".to_owned(), false),
         };
+        host.tool_admission
+            .finish(&admitted, success)
+            .await
+            .map_err(|error| anyhow::anyhow!(
+                "Graph tool terminal receipt was not persisted: {error}"
+            ))?;
         let display_content = crate::uar::runtime::context::truncate::formatted_truncate_for_model(
             &canonical_content,
             descriptor.output_limit.unwrap_or(host.tool_output_policy),
@@ -1118,6 +1242,16 @@ impl Orchestrator {
         self
     }
 
+    /// Attach the run's host-bound exact-invocation admission service.
+    #[must_use]
+    pub fn with_tool_admission(
+        mut self,
+        admission: Arc<crate::uar::runtime::tool_admission::ToolAdmissionRuntime>,
+    ) -> Self {
+        self.tool_admission = admission;
+        self
+    }
+
     /// Attach a sandbox runner and execution mode for tool isolation.
     ///
     /// Sandboxed mode requires isolation for every tool; Auto requires it for
@@ -1267,18 +1401,18 @@ impl Orchestrator {
             .ok_or_else(|| anyhow::anyhow!("Graph model turn has no host approval gate"))?;
         let cancellation = cancellation.clone();
         let mut host = self.clone();
-        host.tool_approval_gate = Some(Arc::new(move |id, name, class, arguments, index| {
+        host.tool_approval_gate = Some(Arc::new(move |invocation| {
             let gate = Arc::clone(&gate);
             let cancellation = cancellation.clone();
             Box::pin(async move {
                 if cancellation.is_cancelled() {
-                    return ToolApprovalResult::Rejected {
+                    return ToolApprovalResult::Cancelled {
                         reason: "Graph model turn is cancelled".into(),
                     };
                 }
-                let decision = gate(id, name, class, arguments, index).await;
+                let decision = gate(invocation).await;
                 if cancellation.is_cancelled() {
-                    ToolApprovalResult::Rejected {
+                    ToolApprovalResult::Cancelled {
                         reason: "Graph model turn is cancelled".into(),
                     }
                 } else {
@@ -2136,25 +2270,26 @@ impl Orchestrator {
                                 continue;
                             }
                         };
-                        if let Some(gate) = &orchestrator.tool_approval_gate {
-                            match gate(
+                        let admitted = match orchestrator
+                            .prepare_and_admit_tool(
                                 call.id.clone(),
-                                call.function.name.clone(),
-                                descriptor.approval_class,
-                                call.function.arguments.clone(),
+                                descriptor,
+                                arguments,
                                 index,
-                            ).await {
-                                ToolApprovalResult::Rejected { reason } => {
-                                    admitted_calls.push_back(Err(format!("Tool call rejected: {reason}")));
-                                    confirmed = true;
-                                    break;
-                                }
-                                ToolApprovalResult::Approved => confirmed = true,
-                                ToolApprovalResult::Allowed
-                                | ToolApprovalResult::GovernanceBypassed => {}
+                            )
+                            .await
+                        {
+                            Ok(admitted) => admitted,
+                            Err(reason) => {
+                                admitted_calls
+                                    .push_back(Err(format!("Tool call rejected: {reason}")));
+                                confirmed = true;
+                                break;
                             }
-                        }
-                        admitted_calls.push_back(Ok(arguments));
+                        };
+                        confirmed = admitted.local_disposition
+                            == crate::uar::runtime::tool_admission::LocalAdmissionDisposition::Approved;
+                        admitted_calls.push_back(Ok(admitted));
                         if confirmed {
                             // Resume this approved call before asking about the
                             // next. The sequential path consumes these receipts
@@ -2184,8 +2319,8 @@ impl Orchestrator {
                         let key_gates = Arc::clone(&key_gates);
                         let sequence = (u64::from(step) << 32) | index as u64;
                         async move {
-                            let arguments = match arguments {
-                                Ok(arguments) => arguments,
+                            let admitted = match arguments {
+                                Ok(admitted) => admitted,
                                 Err(error) => {
                                     let source = Self::canonical_source_for(
                                         &call.function.name,
@@ -2218,9 +2353,7 @@ impl Orchestrator {
                                     orchestrator
                                         .execute_direct_tool(
                                             sequence,
-                                            &call.id,
-                                            &call.function.name,
-                                            &arguments,
+                                            &admitted,
                                             output_policy,
                                         )
                                         .await
@@ -2228,9 +2361,7 @@ impl Orchestrator {
                                     orchestrator
                                         .execute_direct_tool(
                                             sequence,
-                                            &call.id,
-                                            &call.function.name,
-                                            &arguments,
+                                            &admitted,
                                             output_policy,
                                         )
                                         .await
@@ -2240,12 +2371,24 @@ impl Orchestrator {
                                 orchestrator
                                     .execute_direct_tool(
                                         sequence,
-                                        &call.id,
-                                        &call.function.name,
-                                        &arguments,
+                                        &admitted,
                                         output_policy,
                                     )
                                     .await
+                            };
+                            let succeeded = outcome
+                                .as_ref()
+                                .map(|(_, _, succeeded)| *succeeded)
+                                .unwrap_or(false);
+                            let outcome = match orchestrator
+                                .tool_admission
+                                .finish(&admitted, succeeded)
+                                .await
+                            {
+                                Ok(()) => outcome,
+                                Err(error) => Err(anyhow::anyhow!(
+                                    "Tool terminal receipt was not persisted: {error}"
+                                )),
                             };
                             (call, outcome)
                         }
@@ -2305,12 +2448,26 @@ impl Orchestrator {
                         return;
                     };
                     let preadmitted = admitted_calls.pop_front();
-                    let admitted_by_host = preadmitted.is_some();
-                    let arguments = match preadmitted.unwrap_or_else(|| {
-                        validate::validate(&descriptor.validator, &tool_call.function.arguments)
-                            .map_err(|error| error.model_result().to_string())
-                    }) {
-                        Ok(arguments) => arguments,
+                    let admission = match preadmitted {
+                        Some(admitted) => admitted,
+                        None => match validate::validate(
+                            &descriptor.validator,
+                            &tool_call.function.arguments,
+                        ) {
+                            Ok(arguments) => orchestrator
+                                .prepare_and_admit_tool(
+                                    tool_call.id.clone(),
+                                    descriptor,
+                                    arguments,
+                                    idx,
+                                )
+                                .await
+                                .map_err(|reason| format!("Tool call rejected: {reason}")),
+                            Err(error) => Err(error.model_result().to_string()),
+                        },
+                    };
+                    let admitted = match admission {
+                        Ok(admitted) => admitted,
                         Err(error) => {
                             let source = Self::canonical_source_for(tool_name, descriptor);
                             let content = match orchestrator
@@ -2354,6 +2511,7 @@ impl Orchestrator {
                             continue;
                         }
                     };
+                    let arguments = &admitted.prepared.validated_arguments;
                     let output_policy = descriptor
                         .output_limit
                         .unwrap_or(orchestrator.tool_output_policy);
@@ -2366,67 +2524,6 @@ impl Orchestrator {
                         tool_name = %tool_name,
                         "Executing tool call"
                     );
-
-                    // Check tool approval gate if configured
-                    if !admitted_by_host && let Some(ref gate) = orchestrator.tool_approval_gate {
-                        let result = gate(
-                            tool_call.id.clone(),
-                            tool_name.clone(),
-                            descriptor.approval_class,
-                            tool_call.function.arguments.clone(),
-                            idx,
-                        ).await;
-                        if let ToolApprovalResult::Rejected { reason } = result {
-                            tracing::warn!(
-                                request_id = %request_id,
-                                tool_id = %tool_call.id,
-                                tool_name = %tool_name,
-                                reason = %reason,
-                                "Tool call rejected by approval gate"
-                            );
-                            let rejection = format!("Tool call rejected: {reason}");
-                            let source = Self::canonical_source_for(tool_name, descriptor);
-                            let rejection_content = match orchestrator
-                                .preserve_terminal_tool_failure(
-                                    sequence,
-                                    &tool_call.id,
-                                    tool_name,
-                                    source,
-                                    rejection,
-                                )
-                                .await
-                            {
-                                Ok(content) => content,
-                                Err(error) => {
-                                    yield NormalizedEvent::Error {
-                                        message: error.to_string(),
-                                        code: Some(
-                                            "TERMINAL_RESULT_PERSISTENCE_FAILED".to_string(),
-                                        ),
-                                    };
-                                    return;
-                                }
-                            };
-                            yield NormalizedEvent::ToolResult {
-                                id: tool_call.id.clone(),
-                                name: tool_name.clone(),
-                                content: rejection_content.clone(),
-                                success: false,
-                            };
-                            message_json.push(serde_json::json!({
-                                "role": "tool",
-                                "tool_call_id": tool_call.id,
-                                "content": rejection_content
-                            }));
-                            canonical_message_json.push(
-                                message_json
-                                    .last()
-                                    .cloned()
-                                    .expect("rejected tool result was just appended"),
-                            );
-                            continue;
-                        }
-                    }
 
                     // Determine sandbox routing
                     let sandbox_required = orchestrator.requires_sandbox(&descriptor);
@@ -2447,7 +2544,7 @@ impl Orchestrator {
                             .map(|content| (content.clone(), content, false))
                     } else if let Some(runner) = sandbox_attempt {
                         let request = match orchestrator.native_skills.get(tool_name).await {
-                            Some(tool) => tool.sandbox_request(arguments.clone()),
+                            Some(tool) => tool.sandbox_request((*arguments).clone()),
                             None => Err(anyhow::anyhow!("MCP tool binding has no sandbox execution adapter")),
                         };
                         if let Ok(exec_req) = request {
@@ -2528,12 +2625,24 @@ impl Orchestrator {
                         orchestrator
                             .execute_direct_tool(
                                 sequence,
-                                &tool_call.id,
-                                tool_name,
-                                &arguments,
+                                &admitted,
                                 output_policy,
                             )
                             .await
+                    };
+                    let succeeded = outcome
+                        .as_ref()
+                        .map(|(_, _, succeeded)| *succeeded)
+                        .unwrap_or(false);
+                    let outcome = match orchestrator
+                        .tool_admission
+                        .finish(&admitted, succeeded)
+                        .await
+                    {
+                        Ok(()) => outcome,
+                        Err(error) => Err(anyhow::anyhow!(
+                            "Tool terminal receipt was not persisted: {error}"
+                        )),
                     };
                     let (canonical_content, content, success) = match outcome {
                         Ok(outcome) => outcome,
@@ -2816,14 +2925,24 @@ mod tests {
         .with_resolved_turn(turn)
         .with_canonical_receipt_store(Some(Arc::clone(&store)));
 
-        let (canonical, displayed, success) = orchestrator
-            .execute_direct_tool(
-                1,
-                "large-call",
-                "large_result",
-                &serde_json::json!({}),
-                TruncationPolicy::Bytes(256),
+        let descriptor = orchestrator
+            .assembled_descriptors()
+            .await
+            .unwrap()
+            .get("large_result")
+            .unwrap()
+            .clone();
+        let admitted = orchestrator
+            .prepare_and_admit_tool(
+                "large-call".to_string(),
+                &descriptor,
+                serde_json::json!({}),
+                0,
             )
+            .await
+            .unwrap();
+        let (canonical, displayed, success) = orchestrator
+            .execute_direct_tool(1, &admitted, TruncationPolicy::Bytes(256))
             .await
             .unwrap();
         assert!(success);
@@ -3009,7 +3128,7 @@ mod tests {
             .await
             .expect("search descriptor registers");
         let gate: ToolApprovalGate =
-            Arc::new(|_, _, _, _, _| Box::pin(async { ToolApprovalResult::GovernanceBypassed }));
+            Arc::new(|_| Box::pin(async { ToolApprovalResult::GovernanceBypassed }));
         let orchestrator = Orchestrator::from_driver(
             LlmConfig::default(),
             Arc::new(McpRegistry::empty()),

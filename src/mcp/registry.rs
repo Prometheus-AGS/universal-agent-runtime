@@ -2229,6 +2229,23 @@ impl McpRegistry {
         namespaced_tool: &str,
         arguments: serde_json::Value,
     ) -> anyhow::Result<serde_json::Value> {
+        self.call_namespaced_tool_with_meta(namespaced_tool, arguments, None)
+            .await
+    }
+
+    /// Execute a namespaced tool with protocol metadata retained only for the
+    /// exact selected MCP transport.
+    #[tracing::instrument(
+        name = "tool.call.managed",
+        skip(self, arguments, meta),
+        fields(tool = %namespaced_tool),
+    )]
+    pub async fn call_namespaced_tool_with_meta(
+        &self,
+        namespaced_tool: &str,
+        arguments: serde_json::Value,
+        meta: Option<rmcp::model::RequestMetaObject>,
+    ) -> anyhow::Result<serde_json::Value> {
         if self.bound_services.as_ref().is_some_and(|bindings| {
             bindings.closed.is_cancelled() || self.shutting_down.load(Ordering::Acquire)
         }) {
@@ -2298,6 +2315,7 @@ impl McpRegistry {
         // rmcp 1.8: CallToolRequestParams is #[non_exhaustive] -- use the
         // provided new()/with_arguments() builder instead of a struct literal.
         let mut call_params = CallToolRequestParams::new(raw_tool_name.clone());
+        call_params.meta = meta;
         if let Some(args) = args_obj {
             call_params = call_params.with_arguments(args);
         }

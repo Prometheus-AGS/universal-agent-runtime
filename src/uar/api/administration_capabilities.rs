@@ -6,7 +6,7 @@
 use serde::Serialize;
 
 /// Schema revision for [`AdministrationCapabilities`].
-pub const ADMINISTRATION_SCHEMA_VERSION: u32 = 1;
+pub const ADMINISTRATION_SCHEMA_VERSION: u32 = 2;
 
 /// Navigation group for an administration surface.
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -1194,6 +1194,41 @@ pub fn administration_capabilities() -> AdministrationCapabilities {
                     ),
                     endpoint!("memory.search", "GET", "/api/memory", Owner, Read),
                     endpoint!("memory.save", "POST", "/api/memory", Owner, Live),
+                ],
+            ),
+            surface(
+                "approvals",
+                Administration,
+                Available,
+                vec![
+                    endpoint!(
+                        "approvals.pending",
+                        "GET",
+                        "/api/uar/runs/{run_id}/tool-approval/pending",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "approvals.resolve",
+                        "POST",
+                        "/api/uar/runs/{run_id}/tool-approval",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "approvals.evidence",
+                        "GET",
+                        "/api/uar/runs/{run_id}/tool-admission-evidence",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "approvals.cancel_run",
+                        "POST",
+                        "/api/uar/runs/{run_id}/cancel",
+                        Owner,
+                        Live
+                    ),
                 ],
             ),
             surface(

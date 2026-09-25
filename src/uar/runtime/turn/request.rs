@@ -30,6 +30,10 @@ pub struct RunExecutionRequest {
     /// Requires a matching verified owner. When policy is not already resolved,
     /// the manager resolves it against this capture's immutable catalog.
     pub mcp_resources: Option<crate::mcp::runtime::McpRunResources>,
+    /// Request-scoped paired-host admission. This capability is constructed by
+    /// the authenticated host adapter and never deserialized into core state.
+    pub(crate) host_tool_admission:
+        Option<std::sync::Arc<dyn crate::uar::runtime::tool_admission::HostToolAdmissionPort>>,
     /// Request-scoped provider definitions. No member implements Serialize.
     pub(crate) run_credentials: Option<super::host::RunCredentials>,
     /// Safe names-only marker retained after secret resources are dropped.
@@ -76,6 +80,7 @@ impl RunExecutionRequest {
             user_id: None,
             verified_owner: None,
             mcp_resources: None,
+            host_tool_admission: None,
             run_credentials: None,
             host_resources_marker: Default::default(),
             host_secret_scrubber: Default::default(),

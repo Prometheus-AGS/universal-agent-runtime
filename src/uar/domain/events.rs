@@ -217,6 +217,9 @@ pub enum NormalizedEvent {
         /// Host-issued request identity; required when resolving child approvals.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         approval_id: Option<String>,
+        /// Opaque paired-host correlation. It carries no execution authority.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        admission_id: Option<String>,
         call_index: usize,
         tool_call_id: String,
         name: String,

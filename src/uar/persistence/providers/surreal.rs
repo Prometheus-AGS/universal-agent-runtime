@@ -11,6 +11,7 @@ use crate::uar::persistence::agent_threads::{
     PersistedAgentThread,
 };
 use crate::uar::persistence::presentations::{self, PresentationStoreError};
+use crate::uar::persistence::tool_admission::ToolAdmissionEvidence;
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
@@ -117,6 +118,12 @@ impl SurrealDbProvider {
 
         db.query(include_str!(
             "../../../../migrations/surrealdb/canonical_tool_receipts.surql"
+        ))
+        .await?
+        .check()?;
+
+        db.query(include_str!(
+            "../../../../migrations/surrealdb/tool_admission_evidence.surql"
         ))
         .await?
         .check()?;
@@ -820,6 +827,70 @@ impl PersistenceLayer for SurrealDbProvider {
         Ok(agent_threads::ordered_canonical_receipts(
             receipts, owner_id, run_id,
         )?)
+    }
+
+    async fn save_tool_admission_evidence(
+        &self,
+        evidence: &ToolAdmissionEvidence,
+    ) -> Result<ToolAdmissionEvidence> {
+        evidence.validate()?;
+        let identity = format!("{}:{:?}", evidence.invocation_id, evidence.state);
+        let record_key = crate::uar::persistence::tenant_storage_key(&evidence.owner_id, &identity);
+        let mut response = self
+            .db
+            .query(
+                "CREATE type::record('tool_admission_evidence', $record_key)
+                 CONTENT $payload RETURN AFTER",
+            )
+            .bind(("record_key", record_key.clone()))
+            .bind((
+                "payload",
+                serde_json::json!({
+                    "owner_id": evidence.owner_id,
+                    "invocation_id": evidence.invocation_id,
+                    "state": format!("{:?}", evidence.state),
+                    "occurred_at": evidence.occurred_at,
+                    "data": serde_json::to_string(evidence)?,
+                }),
+            ))
+            .await?;
+        match response.check() {
+            Ok(mut checked) => {
+                let _: Option<serde_json::Value> = checked.take(0)?;
+                Ok(evidence.clone())
+            }
+            Err(_) => {
+                let stored = self.list_tool_admission_evidence(&evidence.owner_id).await?;
+                let stored = stored.into_iter().find(|stored| {
+                    stored.invocation_id == evidence.invocation_id
+                        && stored.state == evidence.state
+                });
+                let Some(stored) = stored else {
+                    anyhow::bail!("Tool admission evidence write failed");
+                };
+                anyhow::ensure!(stored == *evidence, "Conflicting tool admission evidence");
+                Ok(stored)
+            }
+        }
+    }
+
+    async fn list_tool_admission_evidence(
+        &self,
+        owner_id: &str,
+    ) -> Result<Vec<ToolAdmissionEvidence>> {
+        let mut response = self
+            .db
+            .query(
+                "SELECT VALUE data FROM tool_admission_evidence
+                 WHERE owner_id = $owner ORDER BY occurred_at, invocation_id, state",
+            )
+            .bind(("owner", owner_id.to_string()))
+            .await?
+            .check()?;
+        let rows: Vec<String> = response.take(0)?;
+        rows.into_iter()
+            .map(|row| Ok(serde_json::from_str(&row)?))
+            .collect()
     }
 
     // Session Management

@@ -7,6 +7,7 @@ use std::time::Duration;
 
 use tokio::sync::{Mutex as AsyncMutex, oneshot};
 use tokio_util::sync::CancellationToken;
+use serde::Serialize;
 
 use crate::uar::domain::events::{NormalizedEvent, RuntimeEventSink};
 
@@ -21,13 +22,29 @@ pub(crate) enum ApprovalOutcome {
 }
 
 struct PendingApproval {
-    id: String,
+    snapshot: PendingApprovalSnapshot,
     legacy_root_request: bool,
     reply: oneshot::Sender<bool>,
 }
 
+/// Safe, owner-scoped projection of the one live approval waiter.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct PendingApprovalSnapshot {
+    pub version: u32,
+    pub root_run_id: String,
+    pub approval_id: String,
+    pub admission_id: Option<String>,
+    pub call_index: usize,
+    pub tool_call_id: String,
+    pub name: String,
+    pub arguments_json: String,
+    pub risk_reason: String,
+}
+
 struct RootLane {
     run_id: String,
+    owner_id: String,
     events: Arc<dyn RuntimeEventSink>,
     cancellation: CancellationToken,
     serial: AsyncMutex<()>,
@@ -46,6 +63,7 @@ impl ApprovalBroker {
     pub(crate) fn register(
         &self,
         run_id: String,
+        owner_id: String,
         events: Arc<dyn RuntimeEventSink>,
         cancellation: CancellationToken,
     ) -> anyhow::Result<RootApprovalChannel> {
@@ -59,6 +77,7 @@ impl ApprovalBroker {
         }
         let lane = Arc::new(RootLane {
             run_id: run_id.clone(),
+            owner_id,
             events,
             cancellation,
             serial: AsyncMutex::new(()),
@@ -92,13 +111,34 @@ impl ApprovalBroker {
         let Some(request) = pending.as_ref() else {
             return false;
         };
-        let matches = approval_id.map_or(request.legacy_root_request, |id| id == request.id);
+        let matches = approval_id.map_or(request.legacy_root_request, |id| {
+            id == request.snapshot.approval_id
+        });
         if !matches || request.reply.is_closed() {
             return false;
         }
         pending
             .take()
             .is_some_and(|request| request.reply.send(approved).is_ok())
+    }
+
+    pub(crate) fn pending(
+        &self,
+        owner_id: &str,
+        run_id: &str,
+    ) -> Option<PendingApprovalSnapshot> {
+        let lane = self
+            .roots
+            .lock()
+            .ok()
+            .and_then(|roots| roots.get(run_id).and_then(Weak::upgrade))?;
+        if lane.owner_id != owner_id || lane.cancellation.is_cancelled() {
+            return None;
+        }
+        lane.pending
+            .lock()
+            .ok()
+            .and_then(|pending| pending.as_ref().map(|pending| pending.snapshot.clone()))
     }
 }
 
@@ -130,6 +170,7 @@ impl RootApprovalChannel {
     /// acquires the queue, so cancellation cannot leave an approvable orphan.
     pub(crate) async fn request(
         &self,
+        admission_id: Option<String>,
         call_index: usize,
         tool_call_id: String,
         name: String,
@@ -144,6 +185,17 @@ impl RootApprovalChannel {
             }
             let id = uuid::Uuid::new_v4().to_string();
             let (reply, receiver) = oneshot::channel();
+            let snapshot = PendingApprovalSnapshot {
+                version: 1,
+                root_run_id: self.lane.run_id.clone(),
+                approval_id: id.clone(),
+                admission_id: admission_id.clone(),
+                call_index,
+                tool_call_id: tool_call_id.clone(),
+                name: name.clone(),
+                arguments_json: arguments_json.clone(),
+                risk_reason: risk_reason.clone(),
+            };
             {
                 let Ok(mut pending) = self.lane.pending.lock() else {
                     return ApprovalOutcome::ChannelClosed;
@@ -152,7 +204,7 @@ impl RootApprovalChannel {
                     return ApprovalOutcome::ChannelClosed;
                 }
                 *pending = Some(PendingApproval {
-                    id: id.clone(),
+                    snapshot,
                     legacy_root_request: self.legacy_root_request,
                     reply,
                 });
@@ -173,6 +225,7 @@ impl RootApprovalChannel {
                     arguments_json,
                     risk_reason,
                     approval_id: Some(id),
+                    admission_id,
                 })
                 .await;
             match receiver.await {
@@ -202,7 +255,7 @@ impl Drop for PendingGuard {
         if let Ok(mut pending) = self.lane.pending.lock()
             && pending
                 .as_ref()
-                .is_some_and(|request| request.id == self.id)
+                .is_some_and(|request| request.snapshot.approval_id == self.id)
         {
             pending.take();
         }

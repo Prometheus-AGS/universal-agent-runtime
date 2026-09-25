@@ -720,6 +720,7 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
         NormalizedEvent::ToolCallApprovalRequired {
             run_id,
             approval_id,
+            admission_id,
             call_index,
             tool_call_id,
             name,
@@ -732,6 +733,7 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 "phase": "approval_required",
                 "request_id": run_id,
                 "approval_id": approval_id,
+                "admission_id": admission_id,
                 "call_index": call_index,
                 "id": tool_call_id,
                 "name": name,
@@ -941,6 +943,7 @@ pub fn to_runtime_entity_event(
         NormalizedEvent::ToolCallApprovalRequired {
             run_id,
             approval_id,
+            admission_id,
             call_index,
             tool_call_id,
             name,
@@ -953,6 +956,7 @@ pub fn to_runtime_entity_event(
                 "id": approval_id.as_ref().map(|id| format!("approval:{id}"))
                     .unwrap_or_else(|| format!("approval:{tool_call_id}")),
                 "approval_id": approval_id,
+                "admission_id": admission_id,
                 "run_id": run_id,
                 "call_index": call_index,
                 "tool_call_id": tool_call_id,

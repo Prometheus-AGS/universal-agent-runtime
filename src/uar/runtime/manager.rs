@@ -55,6 +55,16 @@ pub struct StreamEvent {
     pub event: NormalizedEvent,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct PendingApprovalView {
+    pub version: u32,
+    pub event_id: String,
+    pub cursor: Option<u64>,
+    #[serde(flatten)]
+    pub approval: crate::uar::runtime::thread::approvals::PendingApprovalSnapshot,
+}
+
 #[derive(Debug)]
 struct EventHistory {
     next_id: u64,
@@ -375,6 +385,11 @@ pub struct RunManager {
     /// Opaque host binding revision shared by definitions captured this boot.
     /// Environment/config hashes remain separate parts of the exact cache key.
     mcp_auth_revision: Uuid,
+    /// Runtime boot identity bound into every prepared tool invocation.
+    tool_runtime_epoch: String,
+    /// Host admission implementation. Standalone UAR installs a local adapter;
+    /// a paired host replaces it before serving runs.
+    host_tool_admission: Arc<dyn crate::uar::runtime::tool_admission::HostToolAdmissionPort>,
     sessions: SessionStore,
     skills: Arc<RwLock<SkillRegistry>>,
     vector_matcher: Arc<crate::uar::runtime::matching::VectorMatcher>,
@@ -776,6 +791,14 @@ impl RunManager {
             ))
         });
 
+        let tool_runtime_epoch = Uuid::new_v4().to_string();
+        let host_tool_admission: Arc<
+            dyn crate::uar::runtime::tool_admission::HostToolAdmissionPort,
+        > = Arc::new(
+            crate::uar::runtime::tool_admission::StandaloneToolAdmissionPort::new(
+                &tool_runtime_epoch,
+            ),
+        );
         Self {
             graph_roots: Arc::new(
                 crate::uar::runtime::thread::graph_host::GraphRootSupervisor::default(),
@@ -787,6 +810,8 @@ impl RunManager {
             mcp_runtime: None,
             mcp_environment: None,
             mcp_auth_revision: Uuid::new_v4(),
+            tool_runtime_epoch,
+            host_tool_admission,
             sessions,
             skills,
             vector_matcher,
@@ -1123,6 +1148,17 @@ impl RunManager {
         clock: Arc<dyn crate::uar::runtime::world_state::sections::Clock>,
     ) -> Self {
         self.world_state_clock = clock;
+        self
+    }
+
+    /// Replace standalone admission with a host-owned paired adapter before
+    /// this manager accepts runs.
+    #[must_use]
+    pub fn with_host_tool_admission(
+        mut self,
+        admission: Arc<dyn crate::uar::runtime::tool_admission::HostToolAdmissionPort>,
+    ) -> Self {
+        self.host_tool_admission = admission;
         self
     }
 
@@ -1500,6 +1536,80 @@ impl RunManager {
         approved: bool,
     ) -> bool {
         self.approvals.resolve(run_id, approval_id, approved)
+    }
+
+    /// Return the existing live waiter for an owner. This snapshot is a view of
+    /// the current continuation and never creates a replacement approval.
+    pub(crate) async fn pending_approval_for_user(
+        &self,
+        owner_id: &str,
+        run_id: &str,
+    ) -> Option<PendingApprovalView> {
+        let approval = self.approvals.pending(owner_id, run_id)?;
+        let history = self
+            .active_runs
+            .read()
+            .await
+            .get(run_id)
+            .map(|state| Arc::clone(&state.history));
+        let cursor = match history {
+            Some(history) => history.lock().await.buffer.iter().find_map(|event| {
+                matches!(
+                    &event.event,
+                    NormalizedEvent::ToolCallApprovalRequired {
+                        approval_id: Some(approval_id),
+                        ..
+                    } if approval_id == &approval.approval_id
+                )
+                .then_some(event.id)
+            }),
+            None => None,
+        };
+        Some(PendingApprovalView {
+            version: 1,
+            event_id: approval.approval_id.clone(),
+            cursor,
+            approval,
+        })
+    }
+
+    /// Read sanitized durable lifecycle evidence for one owner/run tree.
+    pub(crate) async fn tool_admission_evidence_for_user(
+        &self,
+        owner_id: &str,
+        run_id: &str,
+    ) -> anyhow::Result<Vec<crate::uar::persistence::tool_admission::ToolAdmissionEvidence>> {
+        let Some(persistence) = &self.persistence else {
+            return Ok(Vec::new());
+        };
+        let mut records = persistence.list_tool_admission_evidence(owner_id).await?;
+        let mut latest = HashMap::<
+            String,
+            crate::uar::persistence::tool_admission::ToolAdmissionEvidence,
+        >::new();
+        for record in &records {
+            latest.insert(record.invocation_id.clone(), record.clone());
+        }
+        for stale in latest.into_values().filter(|record| {
+            record.runtime_epoch != self.tool_runtime_epoch && !record.state.is_terminal()
+        }) {
+            if let Some(terminal) = stale.after_runtime_restart() {
+                records.push(
+                    persistence
+                        .save_tool_admission_evidence(&terminal)
+                        .await?,
+                );
+            }
+        }
+        records.sort_by(|left, right| {
+            left.occurred_at
+                .cmp(&right.occurred_at)
+                .then_with(|| left.evidence_id.cmp(&right.evidence_id))
+        });
+        Ok(records
+            .into_iter()
+            .filter(|record| record.root_run_id == run_id || record.run_id == run_id)
+            .collect())
     }
 
     /// Cancel an in-flight run.
@@ -2151,6 +2261,7 @@ impl RunManager {
             memory_hits,
             verified_owner: None,
             mcp_resources: None,
+            host_tool_admission: None,
             run_credentials: None,
             host_resources_marker: Default::default(),
             host_secret_scrubber: Default::default(),
@@ -2462,6 +2573,7 @@ impl RunManager {
             working_directory,
             verified_owner,
             mut mcp_resources,
+            host_tool_admission,
             run_credentials,
             host_resources_marker,
             host_secret_scrubber,
@@ -3194,6 +3306,7 @@ impl RunManager {
             Some(bindings) => bindings.approvals.for_child(),
             None => match self.approvals.register(
                 run_id.clone(),
+                owner_id.clone(),
                 Arc::new(emitter.clone()),
                 run_cancellation.clone(),
             ) {
@@ -3252,6 +3365,50 @@ impl RunManager {
                     .emit(NormalizedEvent::Error {
                         run_id: run_id.clone(),
                         code: "world_state_load_failed".into(),
+                        message: error.to_string(),
+                    })
+                    .await;
+                emitter
+                    .emit(NormalizedEvent::RunDone {
+                        run_id: run_id.clone(),
+                    })
+                    .await;
+                self.run_cancellations.write().await.remove(&run_id);
+                return run_id;
+            }
+        };
+        let root_run_id = inherited
+            .as_ref()
+            .map_or_else(|| run_id.clone(), |bindings| bindings.thread.root_run_id.clone());
+        let host_tool_admission = host_tool_admission
+            .unwrap_or_else(|| Arc::clone(&self.host_tool_admission));
+        let tool_admission = match crate::uar::runtime::tool_admission::ToolAdmissionContext::new(
+            root_run_id,
+            run_id.clone(),
+            owner_id.clone(),
+            world_state.directory().display().to_string(),
+            self.tool_runtime_epoch.clone(),
+            &artifact,
+            &effective_policy,
+            host_tool_admission.binding(),
+        )
+        .and_then(|context| {
+            crate::uar::runtime::tool_admission::ToolAdmissionRuntime::new(
+                context,
+                Arc::clone(&host_tool_admission),
+                self.persistence.clone(),
+                run_cancellation.clone(),
+            )
+        }) {
+            Ok(admission) => Arc::new(admission),
+            Err(error) => {
+                if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                    state.run.status = RunStatus::Error;
+                }
+                emitter
+                    .emit(NormalizedEvent::Error {
+                        run_id: run_id.clone(),
+                        code: "tool_admission_context_failed".into(),
                         message: error.to_string(),
                     })
                     .await;
@@ -4761,6 +4918,7 @@ impl RunManager {
                 )
                 .with_tool_execution_mode(artifact.policy.tools.execution_mode.clone())
                 .with_resilience_policy(self.resilience_policy.clone())
+                .with_tool_admission(Arc::clone(&tool_admission))
                 .with_resolved_turn(Arc::clone(&resolved_turn))
                 .with_canonical_receipt_store(self.persistence.clone())
                 .with_world_state(Arc::clone(&world_state))
@@ -4813,7 +4971,7 @@ impl RunManager {
             let approval_governance_gate = self.governance_gate.clone();
             let effective_tool_approval = effective_policy.tool_approval;
             let gate: crate::llm::ToolApprovalGate = Arc::new(
-                move |tool_call_id, tool_name, approval_class, arguments_json, call_index| {
+                move |invocation| {
                     let run_id = approval_run_id.clone();
                     let emitter = approval_emitter.clone();
                     let channel = approval_channel.clone();
@@ -4822,14 +4980,24 @@ impl RunManager {
                     let governance = approval_governance.clone();
                     let governance_gate = approval_governance_gate.clone();
                     Box::pin(async move {
+                        let admission_id = invocation.admission_id.clone();
+                        let host_requires_approval = invocation.host_requires_approval;
+                        let action_display = invocation.action_display;
+                        let invocation = invocation.invocation;
+                        let tool_call_id = invocation.model_tool_call_id.clone();
+                        let tool_name = invocation.provider_tool_name.clone();
+                        let approval_class = invocation.approval_class;
+                        let arguments_json = action_display.to_string();
+                        let call_index = invocation.call_index;
                         if cancellation.is_cancelled() {
-                            return crate::llm::ToolApprovalResult::Rejected {
+                            return crate::llm::ToolApprovalResult::Cancelled {
                                 reason: "Tool call cancelled with its run".to_string(),
                             };
                         }
                         // A host may bypass automatic governance for a verified
                         // local root, but explicit Ask/Deny remains authoritative.
-                        if !child_run
+                        if !host_requires_approval
+                            && !child_run
                             && effective_tool_approval == ToolApprovalPolicy::Auto
                             && let Some(decision) =
                                 governance_bypass_decision(governance_gate.as_ref())
@@ -4856,7 +5024,8 @@ impl RunManager {
                                 .await;
                             return crate::llm::ToolApprovalResult::Rejected { reason };
                         }
-                        let approval_required = effective_tool_approval == ToolApprovalPolicy::Ask
+                        let approval_required = host_requires_approval
+                            || effective_tool_approval == ToolApprovalPolicy::Ask
                             || approval_class
                                 == crate::uar::tools::descriptor::ApprovalClass::Required;
                         let decision = match &governance {
@@ -4867,7 +5036,8 @@ impl RunManager {
                                 None => crate::uar::governance::engine::ToolGovernanceDecision::Allow,
                             };
                         match decision {
-                                crate::uar::governance::engine::ToolGovernanceDecision::Allow => {
+                                crate::uar::governance::engine::ToolGovernanceDecision::Allow
+                                    if !approval_required => {
                                     return crate::llm::ToolApprovalResult::Allowed;
                                 }
                                 crate::uar::governance::engine::ToolGovernanceDecision::Deny => {
@@ -4881,9 +5051,12 @@ impl RunManager {
                                     }).await;
                                     return crate::llm::ToolApprovalResult::Rejected { reason };
                                 }
-                                crate::uar::governance::engine::ToolGovernanceDecision::RequireApproval => {}
+                                crate::uar::governance::engine::ToolGovernanceDecision::Allow
+                                | crate::uar::governance::engine::ToolGovernanceDecision::RequireApproval => {}
                             }
-                        let risk_reason = if effective_tool_approval == ToolApprovalPolicy::Ask {
+                        let risk_reason = if host_requires_approval {
+                            format!("Tool '{tool_name}' requires approval under the paired host policy")
+                        } else if effective_tool_approval == ToolApprovalPolicy::Ask {
                             format!(
                                 "Tool '{tool_name}' requires approval under the effective run policy"
                             )
@@ -4892,6 +5065,7 @@ impl RunManager {
                         };
                         match channel
                             .request(
+                                Some(admission_id),
                                 call_index,
                                 tool_call_id,
                                 tool_name.clone(),
@@ -4924,7 +5098,7 @@ impl RunManager {
                                 }
                             }
                             ApprovalOutcome::Cancelled => {
-                                crate::llm::ToolApprovalResult::Rejected {
+                                crate::llm::ToolApprovalResult::Cancelled {
                                     reason: "Approval cancelled with its run".to_string(),
                                 }
                             }
@@ -4936,23 +5110,23 @@ impl RunManager {
             let budget_emitter = emitter.clone();
             let budget_run_id = run_id.clone();
             let budget_gate: crate::llm::ToolApprovalGate = Arc::new(
-                move |tool_call_id, tool_name, approval_class, arguments_json, call_index| {
+                move |invocation| {
                     let gate = Arc::clone(&gate);
                     let budget = tool_budget.clone();
                     let emitter = budget_emitter.clone();
                     let run_id = budget_run_id.clone();
                     Box::pin(async move {
-                        let decision = gate(
-                            tool_call_id.clone(),
-                            tool_name.clone(),
-                            approval_class,
-                            arguments_json,
-                            call_index,
-                        )
-                        .await;
+                        let tool_call_id = invocation.invocation.model_tool_call_id.clone();
+                        let tool_name = invocation.invocation.provider_tool_name.clone();
+                        let call_index = invocation.invocation.call_index;
+                        let decision = gate(invocation).await;
                         // Both Approved and GovernanceBypassed remain
                         // subject to the same host-owned root allowance.
-                        if !matches!(&decision, crate::llm::ToolApprovalResult::Rejected { .. })
+                        if !matches!(
+                            &decision,
+                            crate::llm::ToolApprovalResult::Rejected { .. }
+                                | crate::llm::ToolApprovalResult::Cancelled { .. }
+                        )
                             && let Err(error) = budget.admit_tool()
                         {
                             let reason = error.to_string();
@@ -4971,12 +5145,16 @@ impl RunManager {
                     })
                 },
             );
-            let graph_thread_delegate = graph_controls.map(|controls| {
+            let graph_thread_delegate = graph_controls
+                .zip(authorized_tools.get("spawn_agent").cloned())
+                .map(|(controls, descriptor)| {
                 Arc::new(
                     crate::uar::runtime::graph::delegation::GraphThreadDelegate::new(
                         run_id.clone(),
                         controls,
                         Arc::clone(&budget_gate),
+                        Arc::clone(&tool_admission),
+                        descriptor,
                     ),
                 )
             });

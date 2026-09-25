@@ -354,6 +354,7 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
         NormalizedEvent::ToolCallApprovalRequired {
             run_id,
             approval_id,
+            admission_id,
             tool_call_id,
             name,
             arguments_json,
@@ -364,6 +365,7 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
             Some(run_id),
             serde_json::json!({
                 "approvalId": approval_id,
+                "admissionId": admission_id,
                 "toolCallId": tool_call_id, "name": name,
                 "arguments": arguments_json, "riskReason": risk_reason
             }),
