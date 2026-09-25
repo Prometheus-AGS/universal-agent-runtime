@@ -179,6 +179,7 @@ proptest = "1.6"
 sysinfo = { version = "=0.37.2", default-features = false, features = ["system"] }
 
 [build-dependencies]
+protoc-bin-vendored = "=3.2.0"
 tonic-build = "0.14"
 tonic-prost-build = "0.14"
 
