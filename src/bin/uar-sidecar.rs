@@ -1,3 +1,5 @@
+#![recursion_limit = "256"]
+
 //! Electron sidecar entry-point for the Universal Agent Runtime.
 //!
 //! Differences from `main.rs`:
