@@ -836,7 +836,7 @@ impl PersistenceLayer for SurrealDbProvider {
         evidence.validate()?;
         let identity = format!("{}:{:?}", evidence.invocation_id, evidence.state);
         let record_key = crate::uar::persistence::tenant_storage_key(&evidence.owner_id, &identity);
-        let mut response = self
+        let response = self
             .db
             .query(
                 "CREATE type::record('tool_admission_evidence', $record_key)

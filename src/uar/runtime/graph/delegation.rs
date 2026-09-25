@@ -3,7 +3,6 @@
 
 use std::sync::Arc;
 
-use anyhow::Context;
 use crate::llm::{ToolApprovalGate, ToolApprovalResult};
 use crate::uar::runtime::thread::control::{AgentToolContext, AgentTurnOutcome};
 use crate::uar::runtime::thread::spawn::AgentSpawnRequest;
@@ -164,7 +163,7 @@ impl GraphThreadDelegate {
                 .wait_first_turn(&child.thread_id)
                 .await
                 .map_err(anyhow::Error::from),
-            Err(error) => Err(error),
+            Err(error) => Err(error.into()),
         };
         self.admission.finish(&admitted, outcome.is_ok()).await?;
         outcome
