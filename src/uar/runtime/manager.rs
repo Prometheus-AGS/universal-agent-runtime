@@ -2980,12 +2980,6 @@ impl RunManager {
                 self.run_cancellations.write().await.remove(&run_id);
                 return run_id;
             }
-            effective_policy.mcp_servers.ids = names.iter().cloned().collect();
-            effective_policy.mcp_servers.mode = if names.is_empty() {
-                SelectionMode::None
-            } else {
-                SelectionMode::Selected
-            };
         }
 
         // Remote descriptors do not exist until the authenticated run binding
@@ -3051,12 +3045,6 @@ impl RunManager {
                 self.run_cancellations.write().await.remove(&run_id);
                 return run_id;
             }
-            effective_policy.mcp_servers.ids = names.iter().cloned().collect();
-            effective_policy.mcp_servers.mode = if names.is_empty() {
-                SelectionMode::None
-            } else {
-                SelectionMode::Selected
-            };
         }
 
         let (presentation_snapshot, presentation_warnings) = match &inherited {
