@@ -103,6 +103,7 @@ impl AgentArtifact {
         {
             extension.remove("revision");
         }
+        canonicalize_json(&mut value);
         let digest = Sha256::digest(
             serde_json::to_vec(&value).expect("agent artifact JSON value is serializable"),
         );
@@ -120,6 +121,7 @@ impl AgentArtifact {
         {
             extensions.remove(CATALOG_METADATA_EXTENSION);
         }
+        canonicalize_json(&mut value);
         let digest = Sha256::digest(
             serde_json::to_vec(&value).expect("agent artifact JSON value is serializable"),
         );
@@ -138,6 +140,21 @@ impl AgentArtifact {
             source: metadata.source,
             artifact,
         }
+    }
+}
+
+fn canonicalize_json(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(object) => {
+            let mut entries = std::mem::take(object).into_iter().collect::<Vec<_>>();
+            entries.sort_unstable_by(|left, right| left.0.cmp(&right.0));
+            for (_, value) in &mut entries {
+                canonicalize_json(value);
+            }
+            object.extend(entries);
+        }
+        serde_json::Value::Array(values) => values.iter_mut().for_each(canonicalize_json),
+        _ => {}
     }
 }
 
