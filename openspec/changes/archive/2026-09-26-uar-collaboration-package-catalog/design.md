@@ -1,0 +1,9 @@
+# Design
+
+The install unit is one exact-byte package. Preflight verifies every `byteDigest` before JSON parsing, then validates document shape and semantics, immutable lock closure, definition DAGs, workflow dependencies, required capabilities/extensions, and authority-field exclusions. Installation repeats validation and commits all immutable definitions, package metadata, conversion reports, compatibility projections, command receipt, and one catalog revision atomically.
+
+Definitions use `(profile,kind,id,version,digest)` identity. Same semantic version with a different digest is a conflict. Retry of the same command/content returns its original receipt. Binding owner is derived from authenticated context; credential and connection values remain behind references.
+
+The package REST/MCP command envelope is `{ commandId, expectedCatalogRevision?, manifest, files }`. `manifest` and every `files[path]` value carry the exact UTF-8 source as a JSON string so byte digests remain meaningful. The binding command envelope is `{ commandId, expectedRevision?, binding }`; REST and MCP derive workspace scope from the authenticated `x-uar-workspace-id` request context rather than trusting a second body field. The seven client resources live under `/api/v1/collaboration`: capabilities; package preflight/install/version status; and deployment-binding preflight/install/status. Capability discovery advertises `collaboration_definition_packages_v1` and `collaboration_deployment_bindings_v1`. It deliberately does not advertise team execution.
+
+The existing UAR-AGENT-MD compiler remains a legacy input adapter. Canonical collaboration JSON is not reduced to a Markdown dialect. Compatibility projections can run as ordinary agents, while team activation is rejected until the later durable-team capability exists.

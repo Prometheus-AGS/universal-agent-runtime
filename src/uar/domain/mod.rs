@@ -1,4 +1,5 @@
 pub mod agent_store;
+pub mod collaboration;
 pub mod artifact;
 pub mod context;
 pub mod events;

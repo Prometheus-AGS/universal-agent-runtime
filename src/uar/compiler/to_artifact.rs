@@ -196,6 +196,23 @@ impl From<&AgentDescriptorIR> for AgentArtifact {
         stash(&mut extensions, "capabilities", &ir.capabilities);
         stash(&mut extensions, "mcp_servers", &ir.mcp_servers);
         stash(&mut extensions, "execution", &ir.execution);
+        // Collaboration packages use this projection for ordinary single-agent
+        // compatibility. Retain every v2 section even when the legacy runtime
+        // artifact has no first-class field for it; dropping these values made a
+        // later catalog round-trip lossy.
+        stash(
+            &mut extensions,
+            "model_requirements",
+            &ir.model_requirements,
+        );
+        stash(&mut extensions, "prompt_dialect", &ir.prompt_dialect);
+        stash(
+            &mut extensions,
+            "rag_configuration",
+            &ir.rag_configuration,
+        );
+        stash(&mut extensions, "context_strategy", &ir.context_strategy);
+        stash(&mut extensions, "api_harness", &ir.api_harness);
 
         AgentArtifact {
             version: ir.metadata.version.clone(),

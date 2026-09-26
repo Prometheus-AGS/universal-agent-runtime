@@ -599,6 +599,7 @@ async fn run_server_with_listener(
     let (
         persistence_layer,
         compiler_storage,
+        collaboration_storage,
         agent_registry,
         live_bus,
         credential_store,
@@ -610,6 +611,7 @@ async fn run_server_with_listener(
             Arc<dyn crate::uar::compiler::storage::SpecStorage>,
             Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>,
         )>,
+        Arc<dyn crate::uar::compiler::collaboration::CollaborationStorage>,
         Option<Arc<dyn crate::uar::api::a2a::AgentRegistry>>,
         Option<Arc<dyn crate::uar::realtime::RealtimeBus>>,
         Option<Arc<dyn uar::security::credentials::CredentialStore>>,
@@ -621,6 +623,9 @@ async fn run_server_with_listener(
             (
                 Arc::new(InMemoryProvider::new()) as Arc<dyn PersistenceLayer>,
                 None,
+                Arc::new(
+                    crate::uar::compiler::collaboration::InMemoryCollaborationStorage::new(),
+                ) as Arc<dyn crate::uar::compiler::collaboration::CollaborationStorage>,
                 None,
                 None,
                 None,
@@ -666,6 +671,9 @@ async fn run_server_with_listener(
             let compiler_store = Arc::new(
                 crate::uar::compiler::storage::surreal::SurrealCompilerStorage::new(db.clone()),
             );
+            let collaboration_store = Arc::new(
+                crate::uar::compiler::collaboration::SurrealCollaborationStorage::new(db.clone()),
+            ) as Arc<dyn crate::uar::compiler::collaboration::CollaborationStorage>;
             let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> =
                 Arc::clone(&compiler_store) as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
             let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
@@ -689,6 +697,7 @@ async fn run_server_with_listener(
             (
                 Arc::new(provider) as Arc<dyn PersistenceLayer>,
                 Some((spec, sess)),
+                collaboration_store,
                 Some(registry),
                 live_bus,
                 credential_store,
@@ -725,6 +734,9 @@ async fn run_server_with_listener(
             let compiler_store = Arc::new(
                 crate::uar::compiler::storage::postgres::PostgresCompilerStorage::new(pool.clone()),
             );
+            let collaboration_store = Arc::new(
+                crate::uar::compiler::collaboration::PostgresCollaborationStorage::new(pool.clone()),
+            ) as Arc<dyn crate::uar::compiler::collaboration::CollaborationStorage>;
             let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> =
                 Arc::clone(&compiler_store) as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
             let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
@@ -744,6 +756,7 @@ async fn run_server_with_listener(
             (
                 Arc::new(provider) as Arc<dyn PersistenceLayer>,
                 Some((spec, sess)),
+                collaboration_store,
                 Some(registry),
                 live_bus,
                 credential_store,
@@ -1320,6 +1333,10 @@ async fn run_server_with_listener(
         Arc::new(uar::compiler::CompilerService::in_memory())
     };
     info!("Compiler service initialized");
+    let collaboration_catalog = Arc::new(
+        uar::compiler::collaboration::CollaborationCatalogService::new(collaboration_storage),
+    );
+    info!("Collaboration package catalog initialized");
 
     // Both A2A transports share the existing mailbox/persisted-thread host.
     #[cfg(feature = "a2a-transport")]
@@ -1376,6 +1393,7 @@ async fn run_server_with_listener(
         api_key_service: Some(Arc::clone(&api_key_service)),
         provider_service: provider_service.clone(),
         compiler_service: Some(Arc::clone(&compiler_service)),
+        collaboration_catalog: Arc::clone(&collaboration_catalog),
         settings_manager: settings_manager.clone(),
         memory_service: memory_service.clone(),
         live_bus: live_bus.clone(),
@@ -1453,10 +1471,11 @@ async fn run_server_with_listener(
 
     // UAR Runtime MCP router — exposes agent listing, run creation, skill inventory,
     // and spec compilation as MCP tools at /mcp/uar.
-    let uar_mcp_router: axum::Router<()> = uar::mcp_server::uar_mcp_router(
+    let uar_mcp_router: axum::Router<()> = uar::mcp_server::uar_mcp_router_with_collaboration(
         Arc::clone(&state.run_manager),
         Arc::clone(&state.native_skill_registry),
         state.persistence.clone(),
+        Arc::clone(&state.collaboration_catalog),
     );
 
     // Shared durable-replay backbone for A2UI surface state patches (Change
@@ -1569,6 +1588,15 @@ async fn run_server_with_listener(
                 uar::api::compiler::CompilerApiState {
                     compiler_service: Arc::clone(&compiler_service),
                     persistence: persistence.clone(),
+                },
+            )),
+        )
+        // Collaboration package catalog and private deployment bindings.
+        .nest(
+            "/api/v1/collaboration",
+            uar::api::collaboration::build_router().with_state(Arc::new(
+                uar::api::collaboration::CollaborationApiState {
+                    service: Arc::clone(&collaboration_catalog),
                 },
             )),
         )

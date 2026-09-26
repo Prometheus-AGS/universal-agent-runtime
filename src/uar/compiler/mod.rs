@@ -13,6 +13,7 @@
 //!   - `uar.session.compile`
 
 pub mod cli;
+pub mod collaboration;
 pub mod compiler_skill;
 pub mod completeness;
 pub mod conformance;
