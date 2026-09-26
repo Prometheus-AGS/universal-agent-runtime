@@ -34,7 +34,7 @@ importers:
         version: 5.3.0
       '@hookform/resolvers':
         specifier: ^5.9.1
-        version: 5.9.1(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.85.0(react@19.2.8))(valibot@1.4.2(typescript@5.9.3))(yup@1.7.1)(zod@3.25.76)
+        version: 5.9.1(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.85.0(react@19.2.8))(valibot@1.4.2(typescript@5.9.3))(yup@1.7.1)(zod@4.4.3)
       '@prometheus-ags/a2ui-core':
         specifier: workspace:*
         version: link:packages/a2ui-core
@@ -150,8 +150,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
       zustand:
         specifier: ^5.0.11
         version: 5.0.13(@types/react@19.2.15)(immer@11.1.8)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
@@ -383,7 +383,7 @@ importers:
     dependencies:
       '@a2ui/react':
         specifier: 0.10.2
-        version: 0.10.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(zod@3.25.76)
+        version: 0.10.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(zod@4.4.3)
       react:
         specifier: ^19.2.7
         version: 19.2.8
@@ -474,8 +474,8 @@ importers:
         specifier: ^2.6.0
         version: 2.6.1
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.4.3
+        version: 4.4.3
     devDependencies:
       '@eslint/js':
         specifier: ^10.0.1
@@ -7293,7 +7293,7 @@ snapshots:
       dompurify: 3.4.14
       markdown-it: 14.3.0
 
-  '@a2ui/react@0.10.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(zod@3.25.76)':
+  '@a2ui/react@0.10.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(zod@4.4.3)':
     dependencies:
       '@a2ui/markdown-it': 0.0.4(@a2ui/web_core@0.10.6)
       '@a2ui/web_core': 0.10.6
@@ -7301,7 +7301,7 @@ snapshots:
       markdown-it: 14.3.0
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
-      zod: 3.25.76
+      zod: 4.4.3
 
   '@a2ui/web_core@0.10.6':
     dependencies:
@@ -8137,7 +8137,7 @@ snapshots:
 
   '@fontsource-variable/geist@5.3.0': {}
 
-  '@hookform/resolvers@5.9.1(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.85.0(react@19.2.8))(valibot@1.4.2(typescript@5.9.3))(yup@1.7.1)(zod@3.25.76)':
+  '@hookform/resolvers@5.9.1(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.85.0(react@19.2.8))(valibot@1.4.2(typescript@5.9.3))(yup@1.7.1)(zod@4.4.3)':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.85.0(react@19.2.8)
@@ -8146,7 +8146,7 @@ snapshots:
       ajv: 8.20.0
       valibot: 1.4.2(typescript@5.9.3)
       yup: 1.7.1
-      zod: 3.25.76
+      zod: 4.4.3
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -11292,8 +11292,8 @@ snapshots:
       '@babel/parser': 7.29.7
       eslint: 10.7.0(jiti@2.7.0)(supports-color@10.2.2)
       hermes-parser: 0.25.1
-      zod: 3.25.76
-      zod-validation-error: 4.0.2(zod@3.25.76)
+      zod: 4.4.3
+      zod-validation-error: 4.0.2(zod@4.4.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -11303,8 +11303,8 @@ snapshots:
       '@babel/parser': 7.29.7
       eslint: 10.7.0(jiti@2.7.0)(supports-color@7.2.0)
       hermes-parser: 0.25.1
-      zod: 3.25.76
-      zod-validation-error: 4.0.2(zod@3.25.76)
+      zod: 4.4.3
+      zod-validation-error: 4.0.2(zod@4.4.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -11314,8 +11314,8 @@ snapshots:
       '@babel/parser': 7.29.7
       eslint: 10.8.0(jiti@2.7.0)(supports-color@10.2.2)
       hermes-parser: 0.25.1
-      zod: 3.25.76
-      zod-validation-error: 4.0.2(zod@3.25.76)
+      zod: 4.4.3
+      zod-validation-error: 4.0.2(zod@4.4.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -14348,9 +14348,9 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  zod-validation-error@4.0.2(zod@3.25.76):
+  zod-validation-error@4.0.2(zod@4.4.3):
     dependencies:
-      zod: 3.25.76
+      zod: 4.4.3
 
   zod@3.25.76: {}
 
