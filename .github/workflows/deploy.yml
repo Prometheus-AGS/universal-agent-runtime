@@ -271,7 +271,7 @@ jobs:
           --bin uar-sidecar --target ${{ matrix.target }}
       - name: Package complete sidecar payload
         run: node scripts/package-boss-sidecar.mjs ${{ matrix.platform }} ${{ matrix.target }}
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: uar-sidecar-${{ matrix.platform }}
           path: |
