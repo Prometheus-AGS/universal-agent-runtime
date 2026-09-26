@@ -7,8 +7,9 @@
 //!   line of stdin before binding anything, and requires it on every request.
 //!   A missing or malformed line exits with status 2. The token is held only
 //!   in memory; it is never read from the environment, argv or a file.
-//! - Binds to `127.0.0.1:0` so the OS assigns a free ephemeral port.
-//! - Retains the OS-assigned listener through initialization and emits exactly
+//! - Binds to IPv4 loopback at the requested port, defaulting to 1906, and
+//!   advances one port at a time while a candidate is occupied.
+//! - Retains the selected listener through initialization and emits exactly
 //!   one `READY:{port}` line only after the HTTP application is ready to serve.
 //!   The Electron main process reads this line from the child's stdout pipe.
 //! - Spawns a background task that reads stdin; when stdin reaches EOF
@@ -76,7 +77,7 @@ fn read_launch_token() -> Result<SidecarLaunchToken, InvalidLaunchToken> {
 
 /// Decide whether the sidecar should default JWT enforcement to off.
 ///
-/// A supervised sidecar listens only on an OS-assigned loopback port. The
+/// A supervised sidecar listens only on its selected loopback port. The
 /// parent process authenticates its own operator API and then talks to this
 /// child directly, so requiring an unrelated UAR JWT makes the local process
 /// contract unusable — the parent gets 401s from a server it launched itself.
