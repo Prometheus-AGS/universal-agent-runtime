@@ -106,8 +106,30 @@ fn should_disable_sidecar_jwt(
 /// The launch token and the listener bound during synchronous bootstrap,
 /// handed to the runtime.
 struct SidecarBootstrap {
+    cli: Cli,
     token: SidecarLaunchToken,
     listener: std::net::TcpListener,
+}
+
+const DEFAULT_SIDECAR_PORT: u16 = 1906;
+
+fn bind_sidecar_listener(preferred_port: u16) -> std::io::Result<std::net::TcpListener> {
+    let start = if preferred_port == 0 {
+        DEFAULT_SIDECAR_PORT
+    } else {
+        preferred_port
+    };
+    for port in start..=u16::MAX {
+        match std::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, port)) {
+            Ok(listener) => return Ok(listener),
+            Err(error) if error.kind() == std::io::ErrorKind::AddrInUse => continue,
+            Err(error) => return Err(error),
+        }
+    }
+    Err(std::io::Error::new(
+        std::io::ErrorKind::AddrInUse,
+        format!("no loopback port is available at or above {start}"),
+    ))
 }
 
 /// Synchronous pre-runtime bootstrap: every environment write lives here.
@@ -122,6 +144,7 @@ struct SidecarBootstrap {
 /// address cannot be read.
 fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
     let _ = dotenv();
+    let mut cli = Cli::parse();
 
     let configured_uar_jwt = std::env::var_os("UAR_SECURITY__JWT_REQUIRED");
     let configured_legacy_jwt = std::env::var_os("JWT_REQUIRED");
@@ -171,22 +194,29 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
         }
     };
 
-    // Bind once and retain ownership until Axum begins serving. This removes
-    // the port-stealing race that existed when startup dropped and re-bound the
-    // OS-assigned listener. Bound with std here (rather than tokio) because the
-    // runtime does not exist yet; converted in `run_sidecar`.
-    let listener = std::net::TcpListener::bind("127.0.0.1:0")?;
+    // Bind once and retain ownership until Axum begins serving. Start at the
+    // operator's preferred port and advance through occupied ports without a
+    // probe-then-bind race. Bound with std because the runtime does not exist.
+    let listener = bind_sidecar_listener(cli.port.unwrap_or(DEFAULT_SIDECAR_PORT))?;
     listener.set_nonblocking(true)?;
     let port = listener
         .local_addr()
         .map_err(|error| anyhow::anyhow!("Failed to read UAR sidecar listener address: {error}"))?
         .port();
+    // The CLI value is the preferred starting point during sidecar bootstrap.
+    // From this point on, the runtime configuration must describe the listener
+    // we actually retained after conflict resolution.
+    cli.port = Some(port);
     // SAFETY: still in the synchronous pre-runtime bootstrap described above.
     unsafe {
         std::env::set_var("UAR_SERVER__PORT", port.to_string());
     }
 
-    Ok(SidecarBootstrap { token, listener })
+    Ok(SidecarBootstrap {
+        cli,
+        token,
+        listener,
+    })
 }
 
 /// Await readiness, failing fast if the server stops first.
@@ -246,7 +276,7 @@ async fn run_sidecar(bootstrap: SidecarBootstrap) {
     let listener = tokio::net::TcpListener::from_std(bootstrap.listener)
         .expect("Failed to register UAR sidecar listener with async runtime");
 
-    let config_manager = match ConfigManager::load(Cli::parse()).await {
+    let config_manager = match ConfigManager::load(bootstrap.cli).await {
         Ok(m) => m,
         Err(e) => {
             tracing::error!("Failed to load configuration: {:?}", e);
