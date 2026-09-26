@@ -32,6 +32,7 @@ use tracing::{Instrument, info, warn};
 
 use crate::AppState;
 use crate::config_manager::ConfigManager;
+#[cfg(feature = "response-quality")]
 use crate::llm::Orchestrator;
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::NormalizedEvent as DriverEvent;
@@ -934,7 +935,7 @@ async fn run_server_with_listener(
         native_skill_registry.len().await
     );
 
-    // Create orchestrator
+    #[cfg(feature = "response-quality")]
     let orchestrator = Arc::new(Orchestrator::new(
         llm_config.clone(),
         Arc::clone(&mcp),
@@ -1354,6 +1355,7 @@ async fn run_server_with_listener(
     let state = AppState {
         sidecar_mode,
         mcp: Arc::clone(&mcp),
+        #[cfg(feature = "response-quality")]
         orchestrator,
         sessions,
         run_manager,
