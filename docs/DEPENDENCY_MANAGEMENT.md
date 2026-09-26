@@ -457,7 +457,7 @@ not bypass the gate.
 
 The 2026-08-28 release audit reported `RUSTSEC-2026-0235` for `rkyv`
 0.7.46. The entry is an optional dependency declared by `rust_decimal`
-1.42.0, which is required by SurrealDB 3.2.4. It is present in Cargo's
+1.42.0, which is required by SurrealDB 3.3.0. It is present in Cargo's
 resolved lock metadata but is not activated by any supported target or
 feature: `cargo tree --locked --all-features --target all --edges all -i rkyv@0.7.46`
 returns no reverse dependency. The vulnerable archive-validation code is

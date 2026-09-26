@@ -168,11 +168,23 @@ Key `values.yaml` knobs:
 | `hpa.enabled` | `true`, `2`–`10` replicas | Horizontal Pod Autoscaler |
 | `networkPolicies.enabled` | `true` | Namespace-scoped `NetworkPolicy` resources |
 
-## SurrealDB 2.x to 3.2.4 migration gate
+## SurrealDB 3.3.0 migration gates
 
 Every checked-in Compose, Kustomize, Helm, and OpenTofu SurrealDB workload is
 pinned to
-`surrealdb/surrealdb:v3.2.4@sha256:51baed8709f57f67dcf04b30e3177db846803fa9342dae2be58c6fa5f8d59843`.
+`surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20`.
+
+For an existing 3.2 datastore, take and retain a restorable export before the
+first 3.3.0 start. SurrealDB applies the 3.2-to-3.3 datastore migration when
+3.3.0 first opens it; readiness may return `503` while that migration runs.
+Afterward, 3.2 cannot safely reopen that datastore. Rollback therefore means
+restoring the pre-upgrade export into a 3.2 datastore, not merely restoring the
+old executable or container image. Follow the official
+[3.2-to-3.3 migration guide](https://surrealdb.com/docs/build/migrating/from-old-surrealdb-versions/32-to-33)
+for the exact engine and deployment topology in use.
+
+### Migrating a 2.x datastore
+
 That pin is safe for a new datastore. It does **not** make an existing 2.x data
 directory readable by 3.x. The uncomfortable failure mode is an operator
 replacing the image first and discovering only then that the 3.x server cannot
@@ -186,7 +198,7 @@ before applying these manifests to a 2.x-backed environment:
    and record representative namespace/database counts and queries. Resolve the
    migration diagnostics, including every item that requires manual changes.
 2. Keep the 2.x server running against its original volume. From the SurrealDB
-   3.2.4 CLI, create a v3-compatible export:
+   3.3.0 CLI, create a v3-compatible export:
 
    ```bash
    surreal v2 export --v3 \
@@ -196,7 +208,7 @@ before applying these manifests to a 2.x-backed environment:
      v2-export-for-v3.surql
    ```
 
-3. Start an empty 3.2.4 target on a different endpoint and a new volume. Import
+3. Start an empty 3.3.0 target on a different endpoint and a new volume. Import
    the export; never point the 3.x process at the 2.x data directory:
 
    ```bash
@@ -208,10 +220,10 @@ before applying these manifests to a 2.x-backed environment:
      v2-export-for-v3.surql
    ```
 
-4. Repeat the recorded counts and representative queries against the 3.2.4
+4. Repeat the recorded counts and representative queries against the 3.3.0
    target, then prove an authenticated create/read/query cycle before changing
    the application endpoint. Keep the 2.x volume and manifest available for
-   rollback until the 3.2.4 verification window closes.
+   rollback until the 3.3.0 verification window closes.
 
 Rehearse the same sequence against disposable representative data before a
 production window. A rehearsal proves the command path and catches schema
