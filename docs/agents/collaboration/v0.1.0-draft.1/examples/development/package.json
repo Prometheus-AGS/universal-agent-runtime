@@ -1,0 +1,252 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "PackageManifest",
+  "id": "urn:uar:example:development-package",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "entrypoints": [
+    {
+      "id": "urn:uar:example:dev/team",
+      "version": "1.0.0",
+      "digest": "sha256:cb1311e58700001ffd12e3431a988906fee8d122de0d9bad732c540ed945d971"
+    }
+  ],
+  "files": [
+    {
+      "path": "design-coordinator.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:dev/design-coordinator",
+        "version": "1.0.0",
+        "digest": "sha256:fb45e380ac19640bad22639ef4bdef83dab89b5788680b1cc308081baff5b664"
+      },
+      "byteDigest": "sha256:07c8e3e8247f575b6d891445f7037e55da36c7ccfda884d6bc086ea7cae65062"
+    },
+    {
+      "path": "designer.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:dev/designer",
+        "version": "1.0.0",
+        "digest": "sha256:cbf912030fba3c58ee88ac9f33bb0dfb5d82780e1fd750d5738186e5512a6ff4"
+      },
+      "byteDigest": "sha256:0497f058648398d39ae2bb3b4d8b774ffab710f067dcc74bf5e38c9f3d89550c"
+    },
+    {
+      "path": "design-workflow.json",
+      "kind": "WorkflowDefinition",
+      "definition": {
+        "id": "urn:uar:example:dev/design-workflow",
+        "version": "1.0.0",
+        "digest": "sha256:6995760c24d0eb377f1bd58446910f6c2a0c1014d971484a5a6ba76de2b51858"
+      },
+      "byteDigest": "sha256:a6216096815271b6e1a57b4356e39e1289e80da7f55047da753fa4a422527ba8"
+    },
+    {
+      "path": "design-team.json",
+      "kind": "TeamDefinition",
+      "definition": {
+        "id": "urn:uar:example:dev/design-team",
+        "version": "1.0.0",
+        "digest": "sha256:3429bed3ddfa91fcb7674715bf5fd5cfc73c4d14d67af8d7a9a734cda3d69963"
+      },
+      "byteDigest": "sha256:5511de730d8498fa83107cb4abe73513de35d8c9b4a43099725216f5013145df"
+    },
+    {
+      "path": "implementer-a.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:dev/implementer-a",
+        "version": "1.0.0",
+        "digest": "sha256:536ebf5148d4ff07ae41de116438606145372f5b09ffbadd20f2633b2d1890b6"
+      },
+      "byteDigest": "sha256:7b856033c92389471c4d601b36c54f702cfc28d2730f7cc78058f7ad3dc7d572"
+    },
+    {
+      "path": "implementer-b.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:dev/implementer-b",
+        "version": "1.0.0",
+        "digest": "sha256:778831544e8635c941bdff84573dedb5a20e53783e8870f68a0149043921501d"
+      },
+      "byteDigest": "sha256:c03de1d44de162b887e31cd609f7360de3ff873f8d88bda281ad2379a2ea201b"
+    },
+    {
+      "path": "integrator.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:dev/integrator",
+        "version": "1.0.0",
+        "digest": "sha256:7f51b9f615574fe6eff8d5c0416ad3c570ae300d22119ad24e3785d55c646888"
+      },
+      "byteDigest": "sha256:db9331f42e32f020dee870aaa1fd60e4aadf8d21b087a7bddf80d86d730ebd8b"
+    },
+    {
+      "path": "coordinator.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:dev/coordinator",
+        "version": "1.0.0",
+        "digest": "sha256:35183aea840b9acc4e5756777134aae211f7bbf13140fa8cb7317fba4f135bfc"
+      },
+      "byteDigest": "sha256:7bb24b741ecdee1688215c1b0cf75dd37d6105070e0361585e14fc27341f9b90"
+    },
+    {
+      "path": "workflow.json",
+      "kind": "WorkflowDefinition",
+      "definition": {
+        "id": "urn:uar:example:dev/workflow",
+        "version": "1.0.0",
+        "digest": "sha256:d2b98a0c315a2f1528cdeea02fc1a116d39a2a87315ea6616fa8c64cce54604f"
+      },
+      "byteDigest": "sha256:a6c90160d517ce12dcbe4273e11711e7e3750b672c22114bb1c8e169f2b7e35e"
+    },
+    {
+      "path": "team.json",
+      "kind": "TeamDefinition",
+      "definition": {
+        "id": "urn:uar:example:dev/team",
+        "version": "1.0.0",
+        "digest": "sha256:cb1311e58700001ffd12e3431a988906fee8d122de0d9bad732c540ed945d971"
+      },
+      "byteDigest": "sha256:d6b9ed7b4d564b1d6bc593c902c6ac50c75a370d12afc6fbeeb58ae987129275"
+    }
+  ],
+  "lock": [
+    {
+      "requestedBy": "urn:uar:example:dev/design-team",
+      "reference": {
+        "id": "urn:uar:example:dev/design-coordinator",
+        "version": "1.0.0",
+        "digest": "sha256:fb45e380ac19640bad22639ef4bdef83dab89b5788680b1cc308081baff5b664"
+      },
+      "resolvedPath": "design-coordinator.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:dev/design-team",
+      "reference": {
+        "id": "urn:uar:example:dev/designer",
+        "version": "1.0.0",
+        "digest": "sha256:cbf912030fba3c58ee88ac9f33bb0dfb5d82780e1fd750d5738186e5512a6ff4"
+      },
+      "resolvedPath": "designer.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:dev/design-team",
+      "reference": {
+        "id": "urn:uar:example:dev/design-workflow",
+        "version": "1.0.0",
+        "digest": "sha256:6995760c24d0eb377f1bd58446910f6c2a0c1014d971484a5a6ba76de2b51858"
+      },
+      "resolvedPath": "design-workflow.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:dev/coordinator",
+      "reference": {
+        "id": "urn:uar:example:dev/implementer-a",
+        "version": "1.0.0",
+        "digest": "sha256:536ebf5148d4ff07ae41de116438606145372f5b09ffbadd20f2633b2d1890b6"
+      },
+      "resolvedPath": "implementer-a.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:dev/coordinator",
+      "reference": {
+        "id": "urn:uar:example:dev/implementer-b",
+        "version": "1.0.0",
+        "digest": "sha256:778831544e8635c941bdff84573dedb5a20e53783e8870f68a0149043921501d"
+      },
+      "resolvedPath": "implementer-b.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:dev/coordinator",
+      "reference": {
+        "id": "urn:uar:example:dev/integrator",
+        "version": "1.0.0",
+        "digest": "sha256:7f51b9f615574fe6eff8d5c0416ad3c570ae300d22119ad24e3785d55c646888"
+      },
+      "resolvedPath": "integrator.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:dev/coordinator",
+      "reference": {
+        "id": "urn:uar:example:dev/design-team",
+        "version": "1.0.0",
+        "digest": "sha256:3429bed3ddfa91fcb7674715bf5fd5cfc73c4d14d67af8d7a9a734cda3d69963"
+      },
+      "resolvedPath": "design-team.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:dev/team",
+      "reference": {
+        "id": "urn:uar:example:dev/coordinator",
+        "version": "1.0.0",
+        "digest": "sha256:35183aea840b9acc4e5756777134aae211f7bbf13140fa8cb7317fba4f135bfc"
+      },
+      "resolvedPath": "coordinator.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:dev/team",
+      "reference": {
+        "id": "urn:uar:example:dev/implementer-a",
+        "version": "1.0.0",
+        "digest": "sha256:536ebf5148d4ff07ae41de116438606145372f5b09ffbadd20f2633b2d1890b6"
+      },
+      "resolvedPath": "implementer-a.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:dev/team",
+      "reference": {
+        "id": "urn:uar:example:dev/implementer-b",
+        "version": "1.0.0",
+        "digest": "sha256:778831544e8635c941bdff84573dedb5a20e53783e8870f68a0149043921501d"
+      },
+      "resolvedPath": "implementer-b.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:dev/team",
+      "reference": {
+        "id": "urn:uar:example:dev/integrator",
+        "version": "1.0.0",
+        "digest": "sha256:7f51b9f615574fe6eff8d5c0416ad3c570ae300d22119ad24e3785d55c646888"
+      },
+      "resolvedPath": "integrator.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:dev/team",
+      "reference": {
+        "id": "urn:uar:example:dev/design-team",
+        "version": "1.0.0",
+        "digest": "sha256:3429bed3ddfa91fcb7674715bf5fd5cfc73c4d14d67af8d7a9a734cda3d69963"
+      },
+      "resolvedPath": "design-team.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:dev/team",
+      "reference": {
+        "id": "urn:uar:example:dev/workflow",
+        "version": "1.0.0",
+        "digest": "sha256:d2b98a0c315a2f1528cdeea02fc1a116d39a2a87315ea6616fa8c64cce54604f"
+      },
+      "resolvedPath": "workflow.json"
+    }
+  ],
+  "capabilityDeclarations": [
+    {
+      "capability": "uar.collaboration.local.v1",
+      "required": true
+    }
+  ],
+  "resolution": "exact-version-and-digest",
+  "contentDigest": "sha256:d1c5f09b148010acc8681abc7ed3d3adeba7667431505e52a04e66b3b239cbb8"
+}

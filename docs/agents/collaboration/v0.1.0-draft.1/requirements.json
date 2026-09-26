@@ -1,0 +1,109 @@
+{
+  "status": "approved-draft-not-runtime-conformance",
+  "requirements": [
+    {
+      "id": "R01",
+      "requirement": "Definitions, subagents, teams, nested teams",
+      "document": "definitions.md",
+      "schema": "schemas/team-definition.schema.json",
+      "example": "examples/development/team.json",
+      "gate": "I1"
+    },
+    {
+      "id": "R02",
+      "requirement": "Durable activation, ownership, inbox, recovery",
+      "document": "runtime.md",
+      "schema": "schemas/runtime-snapshot.schema.json",
+      "example": "traces/restart-pending-approval.jsonl",
+      "gate": "I2"
+    },
+    {
+      "id": "R03",
+      "requirement": "Current Cedar authority and restrictive delegation",
+      "document": "governance.md",
+      "schema": "schemas/deployment-binding.schema.json",
+      "example": "traces/stale-ownership-and-budget.jsonl",
+      "gate": "I2"
+    },
+    {
+      "id": "R04",
+      "requirement": "Task graph, routing, limits and budgets",
+      "document": "runtime.md",
+      "schema": "schemas/workflow-definition.schema.json",
+      "example": "examples/development/workflow.json",
+      "gate": "I2"
+    },
+    {
+      "id": "R05",
+      "requirement": "AG-UI streaming, attribution, base compatibility",
+      "document": "protocols/ag-ui.md",
+      "schema": "schemas/custom-event.schema.json",
+      "example": "traces/ag-ui-interleaving.jsonl",
+      "gate": "I3"
+    },
+    {
+      "id": "R06",
+      "requirement": "A2UI concurrent surfaces and action authority",
+      "document": "protocols/a2ui.md",
+      "schema": "schemas/surface-action.schema.json",
+      "example": "traces/a2ui-concurrent-actions.jsonl",
+      "gate": "I3"
+    },
+    {
+      "id": "R07",
+      "requirement": "A2A team facade, ordinary task clients",
+      "document": "protocols/a2a.md",
+      "schema": null,
+      "example": "traces/a2a-ordinary-client.jsonl",
+      "gate": "I3"
+    },
+    {
+      "id": "R08",
+      "requirement": "Definition fidelity and native adapters",
+      "document": "compatibility.md",
+      "schema": "schemas/agent-definition.schema.json",
+      "example": "examples/product-feedback/team.json",
+      "gate": "I1"
+    },
+    {
+      "id": "R09",
+      "requirement": "Development and delayed integration",
+      "document": "implementation.md",
+      "schema": "schemas/workflow-definition.schema.json",
+      "example": "examples/development/workflow.json",
+      "gate": "I4"
+    },
+    {
+      "id": "R10",
+      "requirement": "Feedback to approved issue; uncertain effects",
+      "document": "governance.md",
+      "schema": "schemas/workflow-definition.schema.json",
+      "example": "traces/duplicate-message-and-uncertain-effect.jsonl",
+      "gate": "I4"
+    },
+    {
+      "id": "R11",
+      "requirement": "Marketing and design; executive extension boundary",
+      "document": "definitions.md",
+      "schema": "schemas/team-definition.schema.json",
+      "example": "examples/marketing/team.json",
+      "gate": "I5"
+    },
+    {
+      "id": "R12",
+      "requirement": "Boss administration, settings and internationalization",
+      "document": "administration.md",
+      "schema": null,
+      "example": "examples/surface-action.json",
+      "gate": "I3"
+    },
+    {
+      "id": "R13",
+      "requirement": "Window x64 and Mac ARM64 acceptance",
+      "document": "implementation.md",
+      "schema": null,
+      "example": null,
+      "gate": "I4"
+    }
+  ]
+}

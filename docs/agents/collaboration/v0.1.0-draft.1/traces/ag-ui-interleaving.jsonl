@@ -1,0 +1,23 @@
+{"scenario":"ag-ui-interleaving","step":1,"channel":"internal","frame":{"profiles":["uar.team.agui/1","agui.subagents/1"],"teamInstanceId":"team-dev","taskId":"task-dev","runId":"run-main"},"notes":"Fixture setup; not an AG-UI event. Workers have passed admission."}
+{"scenario":"ag-ui-interleaving","step":2,"channel":"ag-ui","frame":{"type":"RUN_STARTED","threadId":"conversation-dev","runId":"run-main"}}
+{"scenario":"ag-ui-interleaving","step":3,"channel":"ag-ui","frame":{"type":"CUSTOM","name":"uar.team.v1.task.updated","value":{"schemaVersion":"1","eventId":"evt-team-dev-1","sequence":1,"teamInstanceId":"team-dev","timestamp":"2026-09-26T12:00:00Z","payload":{"taskRevision":1,"state":"running"},"taskId":"task-dev","attemptId":"attempt-dev"}}}
+{"scenario":"ag-ui-interleaving","step":4,"channel":"ag-ui","frame":{"type":"SUBAGENT_STARTED","subagentRunId":"run-worker-a","name":"implementation-a"}}
+{"scenario":"ag-ui-interleaving","step":5,"channel":"ag-ui","frame":{"type":"SUBAGENT_STARTED","subagentRunId":"run-worker-b","name":"implementation-b"}}
+{"scenario":"ag-ui-interleaving","step":6,"channel":"ag-ui","frame":{"type":"SUBAGENT_STARTED","subagentRunId":"run-design","name":"design-coordinator"}}
+{"scenario":"ag-ui-interleaving","step":7,"channel":"internal","frame":{"transition":"nested-team-bound","teamInstanceId":"team-design","parentTeamInstanceId":"team-dev","parentTaskId":"task-design","rootBudgetId":"budget-dev"},"notes":"Nested team has separate durable identity and shares the root aggregate budget."}
+{"scenario":"ag-ui-interleaving","step":8,"channel":"ag-ui","frame":{"type":"SUBAGENT_STARTED","subagentRunId":"run-design-mobile","parentSubagentRunId":"run-design","name":"mobile-design"}}
+{"scenario":"ag-ui-interleaving","step":9,"channel":"ag-ui","frame":{"type":"TEXT_MESSAGE_START","messageId":"message-worker-a","role":"assistant","subagentRunId":"run-worker-a"}}
+{"scenario":"ag-ui-interleaving","step":10,"channel":"ag-ui","frame":{"type":"TEXT_MESSAGE_START","messageId":"message-worker-b","role":"assistant","subagentRunId":"run-worker-b"}}
+{"scenario":"ag-ui-interleaving","step":11,"channel":"ag-ui","frame":{"type":"TEXT_MESSAGE_CONTENT","messageId":"message-worker-a","delta":"Implemented the API ","subagentRunId":"run-worker-a"}}
+{"scenario":"ag-ui-interleaving","step":12,"channel":"ag-ui","frame":{"type":"TEXT_MESSAGE_CONTENT","messageId":"message-worker-b","delta":"Implemented the client.","subagentRunId":"run-worker-b"}}
+{"scenario":"ag-ui-interleaving","step":13,"channel":"ag-ui","frame":{"type":"TEXT_MESSAGE_CONTENT","messageId":"message-worker-a","delta":"handler.","subagentRunId":"run-worker-a"}}
+{"scenario":"ag-ui-interleaving","step":14,"channel":"ag-ui","frame":{"type":"TEXT_MESSAGE_END","messageId":"message-worker-b","subagentRunId":"run-worker-b"}}
+{"scenario":"ag-ui-interleaving","step":15,"channel":"ag-ui","frame":{"type":"TEXT_MESSAGE_END","messageId":"message-worker-a","subagentRunId":"run-worker-a"}}
+{"scenario":"ag-ui-interleaving","step":16,"channel":"ag-ui","frame":{"type":"SUBAGENT_FINISHED","subagentRunId":"run-worker-a"}}
+{"scenario":"ag-ui-interleaving","step":17,"channel":"ag-ui","frame":{"type":"SUBAGENT_FINISHED","subagentRunId":"run-worker-b"}}
+{"scenario":"ag-ui-interleaving","step":18,"channel":"ag-ui","frame":{"type":"SUBAGENT_FINISHED","subagentRunId":"run-design-mobile"}}
+{"scenario":"ag-ui-interleaving","step":19,"channel":"ag-ui","frame":{"type":"SUBAGENT_FINISHED","subagentRunId":"run-design"}}
+{"scenario":"ag-ui-interleaving","step":20,"channel":"internal","frame":{"transition":"integration-admitted","dependencies":["task-api","task-client","task-design"],"allProductionDependenciesComplete":true},"notes":"Integration role is not admitted before the completed implementation boundary."}
+{"scenario":"ag-ui-interleaving","step":21,"channel":"internal","frame":{"transition":"integration-completed","taskId":"task-integration","outcome":"succeeded"},"notes":"Illustrative outcome of the final integration activity, not execution evidence from this documentation phase."}
+{"scenario":"ag-ui-interleaving","step":22,"channel":"ag-ui","frame":{"type":"CUSTOM","name":"uar.team.v1.task.updated","value":{"schemaVersion":"1","eventId":"evt-team-dev-2","sequence":2,"teamInstanceId":"team-dev","timestamp":"2026-09-26T12:00:00Z","payload":{"taskRevision":2,"state":"succeeded"},"taskId":"task-dev","attemptId":"attempt-dev"}}}
+{"scenario":"ag-ui-interleaving","step":23,"channel":"ag-ui","frame":{"type":"RUN_FINISHED","threadId":"conversation-dev","runId":"run-main"}}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1",
+  "commandId": "example-action-1",
+  "surfaceId": "example-surface",
+  "expectedSurfaceRevision": 2,
+  "actionId": "view-task",
+  "payload": {
+    "selectedTaskId": "example-task"
+  },
+  "teamInstanceId": "example-team-instance",
+  "taskId": "example-task"
+}

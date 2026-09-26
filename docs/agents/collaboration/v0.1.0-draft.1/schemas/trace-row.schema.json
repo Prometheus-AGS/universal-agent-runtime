@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.prometheus-ags.dev/uar/collaboration/0.1.0-draft.1/trace-row.schema.json",
+  "title": "Illustrative trace fixture wrapper; not a wire protocol",
+  "type": "object",
+  "required": [
+    "scenario",
+    "step",
+    "channel",
+    "frame"
+  ],
+  "properties": {
+    "scenario": {
+      "type": "string",
+      "minLength": 1
+    },
+    "step": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "channel": {
+      "enum": [
+        "ag-ui",
+        "a2ui",
+        "a2a",
+        "internal",
+        "uar-action"
+      ]
+    },
+    "frame": {
+      "type": "object"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,159 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "PackageManifest",
+  "id": "urn:uar:example:marketing-package",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "entrypoints": [
+    {
+      "id": "urn:uar:example:marketing/team",
+      "version": "1.0.0",
+      "digest": "sha256:0a665984f901563e21ceb51252aa6cbcb643be206c8e2a227782b714dd365ee5"
+    }
+  ],
+  "files": [
+    {
+      "path": "coordinator.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:marketing/coordinator",
+        "version": "1.0.0",
+        "digest": "sha256:88e794125efa6d998aae8a8926a5e713785a7d82831db1767aa8a6df86fdf2c2"
+      },
+      "byteDigest": "sha256:3b15cc84452688a5889f1f2c24e21b62ce4ad87b7cfa4cc30686f75611a99886"
+    },
+    {
+      "path": "research.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:marketing/research",
+        "version": "1.0.0",
+        "digest": "sha256:87846971c752c837d8a1c03da4253a696558a6341f7c6c955eaed6fc417f3f27"
+      },
+      "byteDigest": "sha256:bd56abb2c8949e9dabef22abc022b1429035d05a3b1e784254d1cd6038d10354"
+    },
+    {
+      "path": "positioning.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:marketing/positioning",
+        "version": "1.0.0",
+        "digest": "sha256:86615d886307c4ebc818609590901145ea37214992a69f606b2d70ecc54c80d2"
+      },
+      "byteDigest": "sha256:86036f58fd23881d1781b435d098c635599f79e3a12beb068180ea47c894cd1a"
+    },
+    {
+      "path": "copy.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:marketing/copy",
+        "version": "1.0.0",
+        "digest": "sha256:77f079538121299b0cb1cff69a18028c0498f090dd5cee1f95d2881b063d84c6"
+      },
+      "byteDigest": "sha256:0810aee34afcacfcd24fbdff3fef9be69b546a4d596b994b3b45d5009b0b79e3"
+    },
+    {
+      "path": "critic.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:marketing/critic",
+        "version": "1.0.0",
+        "digest": "sha256:8a69484624a3d82821af7c20b838d9b0c75350057987ec4e805e3c83b5123d8a"
+      },
+      "byteDigest": "sha256:dd1353216eea5dfdd54f47ca4400f956dce15cb70378c7ef0bfa4ca3860b833e"
+    },
+    {
+      "path": "workflow.json",
+      "kind": "WorkflowDefinition",
+      "definition": {
+        "id": "urn:uar:example:marketing/workflow",
+        "version": "1.0.0",
+        "digest": "sha256:5daf0e56e86f3992f6842e401efd3205190c8735414980ec6ac31e2752f54753"
+      },
+      "byteDigest": "sha256:c89c8158492df007fc89f20387ed5cb4363142ca1fc6d3b94f04fb53e1dfc231"
+    },
+    {
+      "path": "team.json",
+      "kind": "TeamDefinition",
+      "definition": {
+        "id": "urn:uar:example:marketing/team",
+        "version": "1.0.0",
+        "digest": "sha256:0a665984f901563e21ceb51252aa6cbcb643be206c8e2a227782b714dd365ee5"
+      },
+      "byteDigest": "sha256:04727417e36fabb6bc171b2706a62ce390f19b81cc7ebaa4f26431bb45cccedc"
+    }
+  ],
+  "lock": [
+    {
+      "requestedBy": "urn:uar:example:marketing/team",
+      "reference": {
+        "id": "urn:uar:example:marketing/coordinator",
+        "version": "1.0.0",
+        "digest": "sha256:88e794125efa6d998aae8a8926a5e713785a7d82831db1767aa8a6df86fdf2c2"
+      },
+      "resolvedPath": "coordinator.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:marketing/team",
+      "reference": {
+        "id": "urn:uar:example:marketing/research",
+        "version": "1.0.0",
+        "digest": "sha256:87846971c752c837d8a1c03da4253a696558a6341f7c6c955eaed6fc417f3f27"
+      },
+      "resolvedPath": "research.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:marketing/team",
+      "reference": {
+        "id": "urn:uar:example:marketing/positioning",
+        "version": "1.0.0",
+        "digest": "sha256:86615d886307c4ebc818609590901145ea37214992a69f606b2d70ecc54c80d2"
+      },
+      "resolvedPath": "positioning.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:marketing/team",
+      "reference": {
+        "id": "urn:uar:example:marketing/copy",
+        "version": "1.0.0",
+        "digest": "sha256:77f079538121299b0cb1cff69a18028c0498f090dd5cee1f95d2881b063d84c6"
+      },
+      "resolvedPath": "copy.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:marketing/team",
+      "reference": {
+        "id": "urn:uar:example:marketing/critic",
+        "version": "1.0.0",
+        "digest": "sha256:8a69484624a3d82821af7c20b838d9b0c75350057987ec4e805e3c83b5123d8a"
+      },
+      "resolvedPath": "critic.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:marketing/team",
+      "reference": {
+        "id": "urn:uar:example:marketing/workflow",
+        "version": "1.0.0",
+        "digest": "sha256:5daf0e56e86f3992f6842e401efd3205190c8735414980ec6ac31e2752f54753"
+      },
+      "resolvedPath": "workflow.json"
+    }
+  ],
+  "capabilityDeclarations": [
+    {
+      "capability": "uar.collaboration.local.v1",
+      "required": true
+    }
+  ],
+  "resolution": "exact-version-and-digest",
+  "contentDigest": "sha256:2001f01144d2930820898d12ab730d9b28aaa06ba53d231bf7421f94137d9572"
+}

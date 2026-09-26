@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "timestamp": "2026-09-26T16:03:04.362Z",
+  "validator": "Ajv 8.20.0 JSON Schema 2020-12 plus document semantic checks",
+  "counts": {
+    "schemas": 10,
+    "examples": 37,
+    "packages": 4,
+    "traces": 8,
+    "frames": 94,
+    "aguiFrames": 51,
+    "a2aFrames": 10,
+    "localLinks": 46,
+    "requirements": 13
+  },
+  "errors": [],
+  "scope": "Complete documentation set; local schemas/examples, canonical+byte digests, package closure, role/dependency graph, trace wrappers and AGUI/A2A upstream payload schemas, references and requirement coverage",
+  "limitations": [
+    "A2UI inner payloads compared against documented UAR source profile; runtime render/action behavior pending I3",
+    "State-machine/effect claims are authored expectations, not runtime proof",
+    "No production tests/builds or installed acceptance performed"
+  ],
+  "validatorSetupCorrections": [
+    "A2A generated definition names contain spaces; corrected definition lookup.",
+    "Registered external generated A2A references as in-memory aliases and used a resolvable local schema namespace."
+  ],
+  "artifactChangesAfterFailedGate": "None; only validation harness resolver configuration corrected before rerunning the failed completed-document gate."
+}

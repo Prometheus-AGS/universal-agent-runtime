@@ -1,0 +1,13 @@
+{"scenario":"ag-ui-base-client","step":1,"channel":"internal","frame":{"profiles":["agui-base"],"teamInstanceId":"team-feedback","taskId":"task-feedback"},"notes":"No custom or subagent event support negotiated."}
+{"scenario":"ag-ui-base-client","step":2,"channel":"ag-ui","frame":{"type":"RUN_STARTED","threadId":"conversation-feedback","runId":"run-feedback-1"}}
+{"scenario":"ag-ui-base-client","step":3,"channel":"ag-ui","frame":{"type":"TEXT_MESSAGE_START","messageId":"message-feedback-1","role":"assistant"}}
+{"scenario":"ag-ui-base-client","step":4,"channel":"ag-ui","frame":{"type":"TEXT_MESSAGE_CONTENT","messageId":"message-feedback-1","delta":"The issue proposal is ready. Review and approve it in the trusted task controls before publication."}}
+{"scenario":"ag-ui-base-client","step":5,"channel":"ag-ui","frame":{"type":"TEXT_MESSAGE_END","messageId":"message-feedback-1"}}
+{"scenario":"ag-ui-base-client","step":6,"channel":"internal","frame":{"taskId":"task-feedback","state":"awaiting_approval","turnCapacityReleased":true},"notes":"Finishing the interaction segment does not complete or delete this durable task."}
+{"scenario":"ag-ui-base-client","step":7,"channel":"ag-ui","frame":{"type":"RUN_FINISHED","threadId":"conversation-feedback","runId":"run-feedback-1"}}
+{"scenario":"ag-ui-base-client","step":8,"channel":"internal","frame":{"transition":"trusted-approval-recorded","taskId":"task-feedback","freshEffectAuthority":true},"notes":"Fixture assumption: separate trusted approval path; ordinary user text is insufficient."}
+{"scenario":"ag-ui-base-client","step":9,"channel":"ag-ui","frame":{"type":"RUN_STARTED","threadId":"conversation-feedback","runId":"run-feedback-2"}}
+{"scenario":"ag-ui-base-client","step":10,"channel":"ag-ui","frame":{"type":"TEXT_MESSAGE_START","messageId":"message-feedback-2","role":"assistant"}}
+{"scenario":"ag-ui-base-client","step":11,"channel":"ag-ui","frame":{"type":"TEXT_MESSAGE_CONTENT","messageId":"message-feedback-2","delta":"The approved issue was created and its result recorded."}}
+{"scenario":"ag-ui-base-client","step":12,"channel":"ag-ui","frame":{"type":"TEXT_MESSAGE_END","messageId":"message-feedback-2"}}
+{"scenario":"ag-ui-base-client","step":13,"channel":"ag-ui","frame":{"type":"RUN_FINISHED","threadId":"conversation-feedback","runId":"run-feedback-2"}}

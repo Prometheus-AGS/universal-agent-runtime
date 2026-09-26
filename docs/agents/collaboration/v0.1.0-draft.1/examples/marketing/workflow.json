@@ -1,0 +1,194 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "WorkflowDefinition",
+  "id": "urn:uar:example:marketing/workflow",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "title": "Marketing planning team workflow",
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "steps": [
+    {
+      "id": "research",
+      "role": "research",
+      "dependsOn": [],
+      "inputMapping": {
+        "brief": "workflow-input:brief"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "read",
+      "approval": "current-authority",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "artifact",
+      "instructions": "Create a cited research artifact."
+    },
+    {
+      "id": "position",
+      "role": "positioning",
+      "dependsOn": [
+        "research"
+      ],
+      "inputMapping": {
+        "brief": "artifact:research:artifact"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "none",
+      "approval": "none",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "all-dependencies-and-artifact",
+      "instructions": "Produce product positioning."
+    },
+    {
+      "id": "copy",
+      "role": "copy",
+      "dependsOn": [
+        "position"
+      ],
+      "inputMapping": {
+        "brief": "artifact:position:artifact"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "none",
+      "approval": "none",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "all-dependencies-and-artifact",
+      "instructions": "Draft copy."
+    },
+    {
+      "id": "critique",
+      "role": "critic",
+      "dependsOn": [
+        "copy"
+      ],
+      "inputMapping": {
+        "brief": "artifact:copy:artifact"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "none",
+      "approval": "none",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "all-dependencies-and-artifact",
+      "instructions": "Evaluate claims independently."
+    },
+    {
+      "id": "report",
+      "role": "coordinator",
+      "dependsOn": [
+        "critique"
+      ],
+      "inputMapping": {
+        "brief": "artifact:critique:artifact"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "none",
+      "approval": "none",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "all-dependencies-and-artifact",
+      "instructions": "Deliver unpublished draft and evidence."
+    }
+  ],
+  "failurePolicy": "stop-dependent",
+  "maxActivations": 100,
+  "contentDigest": "sha256:5daf0e56e86f3992f6842e401efd3205190c8735414980ec6ac31e2752f54753"
+}

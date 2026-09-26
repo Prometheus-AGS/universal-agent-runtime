@@ -1,0 +1,95 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "AgentDefinition",
+  "id": "urn:uar:example:dev/coordinator",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "title": "coordinator",
+  "role": "coordinator",
+  "whenToUse": "Only when assigned this role by the bound team workflow.",
+  "instructions": "Assign nonoverlapping production ownership. Start the integrator only after all implementation work is complete. Never treat a subtask boundary as authorization to test.",
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "skills": [],
+  "models": [
+    {
+      "role": "primary",
+      "capabilities": [
+        "text",
+        "tool-calling"
+      ],
+      "preferredAliases": [
+        "team-default"
+      ]
+    }
+  ],
+  "permittedChildren": [
+    {
+      "id": "urn:uar:example:dev/implementer-a",
+      "version": "1.0.0",
+      "digest": "sha256:536ebf5148d4ff07ae41de116438606145372f5b09ffbadd20f2633b2d1890b6"
+    },
+    {
+      "id": "urn:uar:example:dev/implementer-b",
+      "version": "1.0.0",
+      "digest": "sha256:778831544e8635c941bdff84573dedb5a20e53783e8870f68a0149043921501d"
+    },
+    {
+      "id": "urn:uar:example:dev/integrator",
+      "version": "1.0.0",
+      "digest": "sha256:7f51b9f615574fe6eff8d5c0416ad3c570ae300d22119ad24e3785d55c646888"
+    },
+    {
+      "id": "urn:uar:example:dev/design-team",
+      "version": "1.0.0",
+      "digest": "sha256:3429bed3ddfa91fcb7674715bf5fd5cfc73c4d14d67af8d7a9a734cda3d69963"
+    }
+  ],
+  "context": {
+    "mode": "selected",
+    "artifacts": [
+      "task-input",
+      "assigned-workspace-artifacts"
+    ],
+    "history": "authorized-summary",
+    "memoryScopes": []
+  },
+  "requestedLimits": {
+    "concurrentTurns": 4,
+    "maxMembers": 16,
+    "maxDepth": 1,
+    "maxPendingTasks": 1000
+  },
+  "contentDigest": "sha256:35183aea840b9acc4e5756777134aae211f7bbf13140fa8cb7317fba4f135bfc"
+}

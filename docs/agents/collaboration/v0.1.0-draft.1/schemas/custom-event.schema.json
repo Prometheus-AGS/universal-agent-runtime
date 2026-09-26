@@ -1,0 +1,571 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.prometheus-ags.dev/uar/collaboration/0.1.0-draft.1/custom-event.schema.json",
+  "title": "UAR collaboration custom-event — official draft, no runtime conformance claim",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "CUSTOM"
+        },
+        "name": {
+          "const": "uar.team.v1.task.updated"
+        },
+        "value": {
+          "type": "object",
+          "properties": {
+            "schemaVersion": {
+              "const": "1"
+            },
+            "eventId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "teamInstanceId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "timestamp": {
+              "$ref": "common.schema.json#/$defs/timestamp"
+            },
+            "taskId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "memberId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "attemptId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "causationId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "properties": {
+                "taskRevision": {
+                  "$ref": "common.schema.json#/$defs/revision"
+                },
+                "state": {
+                  "$ref": "common.schema.json#/$defs/taskState"
+                },
+                "cancelRequested": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "taskRevision",
+                "state"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "schemaVersion",
+            "eventId",
+            "sequence",
+            "teamInstanceId",
+            "timestamp",
+            "payload"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "name",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "CUSTOM"
+        },
+        "name": {
+          "const": "uar.team.v1.membership.updated"
+        },
+        "value": {
+          "type": "object",
+          "properties": {
+            "schemaVersion": {
+              "const": "1"
+            },
+            "eventId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "teamInstanceId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "timestamp": {
+              "$ref": "common.schema.json#/$defs/timestamp"
+            },
+            "taskId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "memberId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "attemptId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "causationId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "properties": {
+                "memberRevision": {
+                  "$ref": "common.schema.json#/$defs/revision"
+                },
+                "state": {
+                  "$ref": "common.schema.json#/$defs/instanceState"
+                }
+              },
+              "required": [
+                "memberRevision",
+                "state"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "schemaVersion",
+            "eventId",
+            "sequence",
+            "teamInstanceId",
+            "timestamp",
+            "payload"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "name",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "CUSTOM"
+        },
+        "name": {
+          "const": "uar.team.v1.routing.selected"
+        },
+        "value": {
+          "type": "object",
+          "properties": {
+            "schemaVersion": {
+              "const": "1"
+            },
+            "eventId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "teamInstanceId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "timestamp": {
+              "$ref": "common.schema.json#/$defs/timestamp"
+            },
+            "taskId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "memberId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "attemptId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "causationId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "properties": {
+                "bindingRevision": {
+                  "$ref": "common.schema.json#/$defs/revision"
+                },
+                "selectedMemberId": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "bindingRevision",
+                "selectedMemberId",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "schemaVersion",
+            "eventId",
+            "sequence",
+            "teamInstanceId",
+            "timestamp",
+            "payload"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "name",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "CUSTOM"
+        },
+        "name": {
+          "const": "uar.team.v1.message.receipt"
+        },
+        "value": {
+          "type": "object",
+          "properties": {
+            "schemaVersion": {
+              "const": "1"
+            },
+            "eventId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "teamInstanceId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "timestamp": {
+              "$ref": "common.schema.json#/$defs/timestamp"
+            },
+            "taskId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "memberId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "attemptId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "causationId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "properties": {
+                "messageId": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "receipt": {
+                  "$ref": "common.schema.json#/$defs/receipt"
+                }
+              },
+              "required": [
+                "messageId",
+                "receipt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "schemaVersion",
+            "eventId",
+            "sequence",
+            "teamInstanceId",
+            "timestamp",
+            "payload"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "name",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "CUSTOM"
+        },
+        "name": {
+          "const": "uar.team.v1.budget.updated"
+        },
+        "value": {
+          "type": "object",
+          "properties": {
+            "schemaVersion": {
+              "const": "1"
+            },
+            "eventId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "teamInstanceId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "timestamp": {
+              "$ref": "common.schema.json#/$defs/timestamp"
+            },
+            "taskId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "memberId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "attemptId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "causationId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "properties": {
+                "reserved": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "settled": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "limit": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "unit": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "reserved",
+                "settled",
+                "limit",
+                "unit"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "schemaVersion",
+            "eventId",
+            "sequence",
+            "teamInstanceId",
+            "timestamp",
+            "payload"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "name",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "CUSTOM"
+        },
+        "name": {
+          "const": "uar.team.v1.recovery.required"
+        },
+        "value": {
+          "type": "object",
+          "properties": {
+            "schemaVersion": {
+              "const": "1"
+            },
+            "eventId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "teamInstanceId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "timestamp": {
+              "$ref": "common.schema.json#/$defs/timestamp"
+            },
+            "taskId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "memberId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "attemptId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "causationId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "properties": {
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "outcome": {
+                  "enum": [
+                    "pending-approval",
+                    "unknown-effect",
+                    "stale-ownership",
+                    "retention-gap",
+                    "budget-exhausted"
+                  ]
+                }
+              },
+              "required": [
+                "reason",
+                "outcome"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "schemaVersion",
+            "eventId",
+            "sequence",
+            "teamInstanceId",
+            "timestamp",
+            "payload"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "name",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "CUSTOM"
+        },
+        "name": {
+          "const": "uar.team.v1.surface.message"
+        },
+        "value": {
+          "type": "object",
+          "properties": {
+            "schemaVersion": {
+              "const": "1"
+            },
+            "eventId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "teamInstanceId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "timestamp": {
+              "$ref": "common.schema.json#/$defs/timestamp"
+            },
+            "taskId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "memberId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "attemptId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "causationId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "properties": {
+                "surfaceId": {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                "surfaceRevision": {
+                  "$ref": "common.schema.json#/$defs/revision"
+                },
+                "profile": {
+                  "const": "uar.a2ui/1"
+                },
+                "message": {
+                  "type": "object"
+                },
+                "catalogId": {
+                  "const": "urn:uar:a2ui:catalog:1"
+                }
+              },
+              "required": [
+                "surfaceId",
+                "surfaceRevision",
+                "profile",
+                "message",
+                "catalogId"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "schemaVersion",
+            "eventId",
+            "sequence",
+            "teamInstanceId",
+            "timestamp",
+            "payload"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "name",
+        "value"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

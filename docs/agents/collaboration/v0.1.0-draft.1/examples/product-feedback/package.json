@@ -1,0 +1,159 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "PackageManifest",
+  "id": "urn:uar:example:product-feedback-package",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "entrypoints": [
+    {
+      "id": "urn:uar:example:product-feedback/team",
+      "version": "1.0.0",
+      "digest": "sha256:827e9d16d1c9649511558b30a15497df329009b869d0e6ceaa93583e02dcd71c"
+    }
+  ],
+  "files": [
+    {
+      "path": "coordinator.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:product-feedback/coordinator",
+        "version": "1.0.0",
+        "digest": "sha256:f9c6d782bbea0d0acdfdf1ab7c3f8d93a10056673190e3f200e8597deb6f755f"
+      },
+      "byteDigest": "sha256:4c76be9548742aefd1215cc0bf286ddc981d9e0d019a05fae7955886f3c78109"
+    },
+    {
+      "path": "intake.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:product-feedback/intake",
+        "version": "1.0.0",
+        "digest": "sha256:0d07d1221b785a60a066f8f3bdf3b0740016c89270b215727a846faeb43b87e8"
+      },
+      "byteDigest": "sha256:6815aabb6fd7172220db492dd1e79ccfad5347bd0677a41a0c61f9f016e2ee2d"
+    },
+    {
+      "path": "product.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:product-feedback/product",
+        "version": "1.0.0",
+        "digest": "sha256:b32f4b49903f573b0965d6577f39ea91ba6fd07eddc334dc3db9a097db831532"
+      },
+      "byteDigest": "sha256:563c342f4ebbb4f2447be0854e62cd48c8874599ae00b789e69546ce1e7aa1a9"
+    },
+    {
+      "path": "critic.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:product-feedback/critic",
+        "version": "1.0.0",
+        "digest": "sha256:8f9021fe11e6251faab0a23d1c025160ba4c77b00d3e0b33b35ac2f84f627a32"
+      },
+      "byteDigest": "sha256:b1bc3dda49c4ce79420daea83c7c6d3c41f72c61dc4430205b0c5886690f7ffa"
+    },
+    {
+      "path": "publisher.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:product-feedback/publisher",
+        "version": "1.0.0",
+        "digest": "sha256:77c862947649d10f510e1576c627e4d6691765b0cedcf51c2232d596fb1426fe"
+      },
+      "byteDigest": "sha256:ecb0e6d9013e9cb8f97fa203a02fd1fc42d7eb2cd79cc871987e733eb25be88a"
+    },
+    {
+      "path": "workflow.json",
+      "kind": "WorkflowDefinition",
+      "definition": {
+        "id": "urn:uar:example:product-feedback/workflow",
+        "version": "1.0.0",
+        "digest": "sha256:4c4f0f4b74d6841b7796defefeb002104cd4edef00e5a154db0c589678fb9b3a"
+      },
+      "byteDigest": "sha256:3a56ae966e1f36d44daf9dd54e1acaabd6d98e5cc5539d0ffd8f6758ad506e94"
+    },
+    {
+      "path": "team.json",
+      "kind": "TeamDefinition",
+      "definition": {
+        "id": "urn:uar:example:product-feedback/team",
+        "version": "1.0.0",
+        "digest": "sha256:827e9d16d1c9649511558b30a15497df329009b869d0e6ceaa93583e02dcd71c"
+      },
+      "byteDigest": "sha256:05103a612404cdc3770e5df931d82665014152af96bf8a4401f695401119d665"
+    }
+  ],
+  "lock": [
+    {
+      "requestedBy": "urn:uar:example:product-feedback/team",
+      "reference": {
+        "id": "urn:uar:example:product-feedback/coordinator",
+        "version": "1.0.0",
+        "digest": "sha256:f9c6d782bbea0d0acdfdf1ab7c3f8d93a10056673190e3f200e8597deb6f755f"
+      },
+      "resolvedPath": "coordinator.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:product-feedback/team",
+      "reference": {
+        "id": "urn:uar:example:product-feedback/intake",
+        "version": "1.0.0",
+        "digest": "sha256:0d07d1221b785a60a066f8f3bdf3b0740016c89270b215727a846faeb43b87e8"
+      },
+      "resolvedPath": "intake.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:product-feedback/team",
+      "reference": {
+        "id": "urn:uar:example:product-feedback/product",
+        "version": "1.0.0",
+        "digest": "sha256:b32f4b49903f573b0965d6577f39ea91ba6fd07eddc334dc3db9a097db831532"
+      },
+      "resolvedPath": "product.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:product-feedback/team",
+      "reference": {
+        "id": "urn:uar:example:product-feedback/critic",
+        "version": "1.0.0",
+        "digest": "sha256:8f9021fe11e6251faab0a23d1c025160ba4c77b00d3e0b33b35ac2f84f627a32"
+      },
+      "resolvedPath": "critic.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:product-feedback/team",
+      "reference": {
+        "id": "urn:uar:example:product-feedback/publisher",
+        "version": "1.0.0",
+        "digest": "sha256:77c862947649d10f510e1576c627e4d6691765b0cedcf51c2232d596fb1426fe"
+      },
+      "resolvedPath": "publisher.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:product-feedback/team",
+      "reference": {
+        "id": "urn:uar:example:product-feedback/workflow",
+        "version": "1.0.0",
+        "digest": "sha256:4c4f0f4b74d6841b7796defefeb002104cd4edef00e5a154db0c589678fb9b3a"
+      },
+      "resolvedPath": "workflow.json"
+    }
+  ],
+  "capabilityDeclarations": [
+    {
+      "capability": "uar.collaboration.local.v1",
+      "required": true
+    }
+  ],
+  "resolution": "exact-version-and-digest",
+  "contentDigest": "sha256:bd96ae82b374ec9ed77b450f87cd0bedaf111024b3486056332889afeaa664cc"
+}
