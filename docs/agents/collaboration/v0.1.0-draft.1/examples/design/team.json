@@ -1,0 +1,168 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "TeamDefinition",
+  "id": "urn:uar:example:design/team",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "title": "Design collaboration team",
+  "purpose": "Illustrate later design collaboration with distinct artifact ownership.",
+  "members": [
+    {
+      "role": "coordinator",
+      "kind": "agent",
+      "definition": {
+        "id": "urn:uar:example:design/coordinator",
+        "version": "1.0.0",
+        "digest": "sha256:5637554c9452203f240af145edb75594b390d5882f88d7a10687218a516cc2ef"
+      },
+      "min": 1,
+      "max": 1,
+      "responsibility": "Coordinate scoped brand, mobile and accessibility artifacts."
+    },
+    {
+      "role": "brand",
+      "kind": "agent",
+      "definition": {
+        "id": "urn:uar:example:design/brand",
+        "version": "1.0.0",
+        "digest": "sha256:f829dab8a9e602317b29854496324f152ee57d1d2ffcccba0d0649e2078d110c"
+      },
+      "min": 1,
+      "max": 1,
+      "responsibility": "Produce logo/brand direction with provenance and asset rights notes."
+    },
+    {
+      "role": "mobile",
+      "kind": "agent",
+      "definition": {
+        "id": "urn:uar:example:design/mobile",
+        "version": "1.0.0",
+        "digest": "sha256:210135e03e0a8aa24591d44b749f973e4fbf825fd809e570f02d28f625ceb7e7"
+      },
+      "min": 1,
+      "max": 1,
+      "responsibility": "Produce mobile interaction designs."
+    },
+    {
+      "role": "accessibility",
+      "kind": "agent",
+      "definition": {
+        "id": "urn:uar:example:design/accessibility",
+        "version": "1.0.0",
+        "digest": "sha256:4c8bacc86fdd25e6cd674e884246382c7608aa4a877f5328c34577478ad415b0"
+      },
+      "min": 1,
+      "max": 1,
+      "responsibility": "Evaluate the completed design artifacts for accessibility constraints."
+    }
+  ],
+  "coordinatorRole": "coordinator",
+  "communication": [
+    {
+      "fromRole": "coordinator",
+      "toRole": "brand",
+      "modes": [
+        "queue-only",
+        "trigger-turn"
+      ]
+    },
+    {
+      "fromRole": "brand",
+      "toRole": "coordinator",
+      "modes": [
+        "queue-only"
+      ]
+    },
+    {
+      "fromRole": "coordinator",
+      "toRole": "mobile",
+      "modes": [
+        "queue-only",
+        "trigger-turn"
+      ]
+    },
+    {
+      "fromRole": "mobile",
+      "toRole": "coordinator",
+      "modes": [
+        "queue-only"
+      ]
+    },
+    {
+      "fromRole": "coordinator",
+      "toRole": "accessibility",
+      "modes": [
+        "queue-only",
+        "trigger-turn"
+      ]
+    },
+    {
+      "fromRole": "accessibility",
+      "toRole": "coordinator",
+      "modes": [
+        "queue-only"
+      ]
+    }
+  ],
+  "taskAcceptance": {
+    "mode": "coordinator-within-binding",
+    "allowedWorkflows": [
+      {
+        "id": "urn:uar:example:design/workflow",
+        "version": "1.0.0",
+        "digest": "sha256:24e098dbfb538bc07ea1e8c7bd323005419b7a500cc81f0aaefe3401ca084d0d"
+      }
+    ]
+  },
+  "routing": {
+    "eligibilityFirst": true,
+    "strategy": "operator-role-capacity-cost-stable-id",
+    "explain": true
+  },
+  "limits": {
+    "concurrentTurns": 4,
+    "maxMembers": 16,
+    "maxDepth": 3,
+    "maxPendingTasks": 1000
+  },
+  "budget": {
+    "maxTokens": 250000,
+    "maxCostMicrounits": 25000000,
+    "currency": "USD",
+    "maxElapsedSeconds": 7200
+  },
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "contentDigest": "sha256:fedf21003e4c41f3250764f80b8691a2feb4923f7e7d88113b29ae0daa041181"
+}

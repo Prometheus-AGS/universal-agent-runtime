@@ -1,0 +1,225 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "WorkflowDefinition",
+  "id": "urn:uar:example:product-feedback/workflow",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "title": "Feedback-to-issue team workflow",
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "steps": [
+    {
+      "id": "intake",
+      "role": "intake",
+      "dependsOn": [],
+      "inputMapping": {
+        "brief": "workflow-input:brief"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "none",
+      "approval": "none",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "artifact",
+      "instructions": "Capture scoped feedback."
+    },
+    {
+      "id": "proposal",
+      "role": "product",
+      "dependsOn": [
+        "intake"
+      ],
+      "inputMapping": {
+        "brief": "artifact:intake:artifact"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "none",
+      "approval": "none",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "all-dependencies-and-artifact",
+      "instructions": "Produce exact issue destination and content."
+    },
+    {
+      "id": "critique",
+      "role": "critic",
+      "dependsOn": [
+        "proposal"
+      ],
+      "inputMapping": {
+        "brief": "artifact:proposal:artifact"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "none",
+      "approval": "none",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "all-dependencies-and-artifact",
+      "instructions": "Review the proposed issue; no issue creation."
+    },
+    {
+      "id": "approval-request",
+      "role": "coordinator",
+      "dependsOn": [
+        "proposal",
+        "critique"
+      ],
+      "inputMapping": {
+        "brief": "artifact:critique:artifact"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "none",
+      "approval": "none",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "all-dependencies-and-artifact",
+      "instructions": "Request operator approval for exact actor, destination, payload and effect identity."
+    },
+    {
+      "id": "create-issue",
+      "role": "publisher",
+      "dependsOn": [
+        "approval-request"
+      ],
+      "inputMapping": {
+        "brief": "artifact:approval-request:artifact"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "non-idempotent-write",
+      "approval": "operator-exact-effect",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "all-dependencies-and-artifact",
+      "instructions": "Create only the exact approved issue. Approval request completion does not itself grant authority."
+    },
+    {
+      "id": "report",
+      "role": "coordinator",
+      "dependsOn": [
+        "create-issue"
+      ],
+      "inputMapping": {
+        "brief": "artifact:create-issue:artifact"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "none",
+      "approval": "none",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "all-dependencies-and-artifact",
+      "instructions": "Return the confirmed issue URL or an explicit uncertain outcome."
+    }
+  ],
+  "failurePolicy": "stop-dependent",
+  "maxActivations": 100,
+  "contentDigest": "sha256:4c4f0f4b74d6841b7796defefeb002104cd4edef00e5a154db0c589678fb9b3a"
+}

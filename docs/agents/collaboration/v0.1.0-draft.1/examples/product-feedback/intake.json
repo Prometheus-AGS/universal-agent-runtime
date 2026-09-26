@@ -1,0 +1,74 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "AgentDefinition",
+  "id": "urn:uar:example:product-feedback/intake",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "title": "intake",
+  "role": "intake",
+  "whenToUse": "Only when assigned this role by the bound team workflow.",
+  "instructions": "Capture operator supplied feedback and relevant consented evidence. Do not collect unrelated personal data.",
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "skills": [],
+  "models": [
+    {
+      "role": "primary",
+      "capabilities": [
+        "text",
+        "tool-calling"
+      ],
+      "preferredAliases": [
+        "team-default"
+      ]
+    }
+  ],
+  "permittedChildren": [],
+  "context": {
+    "mode": "selected",
+    "artifacts": [
+      "task-input",
+      "assigned-workspace-artifacts"
+    ],
+    "history": "authorized-summary",
+    "memoryScopes": []
+  },
+  "requestedLimits": {
+    "concurrentTurns": 1,
+    "maxMembers": 16,
+    "maxDepth": 0,
+    "maxPendingTasks": 1000
+  },
+  "contentDigest": "sha256:0d07d1221b785a60a066f8f3bdf3b0740016c89270b215727a846faeb43b87e8"
+}

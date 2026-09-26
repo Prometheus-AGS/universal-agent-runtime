@@ -1,0 +1,57 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "DeploymentBinding",
+  "id": "urn:uar:example:binding/development-example",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "exportClass": "private-installed-state",
+  "package": {
+    "id": "urn:uar:example:development-package",
+    "version": "1.0.0",
+    "digest": "sha256:d1c5f09b148010acc8681abc7ed3d3adeba7667431505e52a04e66b3b239cbb8"
+  },
+  "ownerId": "example-owner",
+  "workspaceId": "example-workspace",
+  "runtimeInstanceId": "example-uar",
+  "revision": 1,
+  "modelBindings": [
+    {
+      "requestedAlias": "team-default",
+      "providerId": "example-provider",
+      "modelId": "example-model",
+      "credentialRef": "secret-store://example/provider"
+    }
+  ],
+  "skillBindings": [],
+  "storage": {
+    "backend": "selected-supported-backend",
+    "connectionRef": "connection-store://example/team-state",
+    "durableTransactions": true
+  },
+  "policyRevision": "example-policy-1",
+  "effectiveLimits": {
+    "concurrentTurns": 4,
+    "maxMembers": 16,
+    "maxDepth": 3,
+    "maxPendingTasks": 1000
+  },
+  "effectiveBudget": {
+    "maxTokens": 250000,
+    "maxCostMicrounits": 25000000,
+    "currency": "USD",
+    "maxElapsedSeconds": 7200
+  },
+  "contextGrants": [],
+  "representationGrantRefs": [],
+  "status": "inactive",
+  "contentDigest": "sha256:ae53d9eb2520bb7ade040f03dcaa5573d4039c30e149fa3dab656a7149e76299"
+}

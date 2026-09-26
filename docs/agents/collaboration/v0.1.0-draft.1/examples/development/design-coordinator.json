@@ -1,0 +1,74 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "AgentDefinition",
+  "id": "urn:uar:example:dev/design-coordinator",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "title": "coordinator",
+  "role": "coordinator",
+  "whenToUse": "Only when assigned this role by the bound team workflow.",
+  "instructions": "Coordinate a bounded design task. Produce an interface artifact; perform no production edits.",
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "skills": [],
+  "models": [
+    {
+      "role": "primary",
+      "capabilities": [
+        "text",
+        "tool-calling"
+      ],
+      "preferredAliases": [
+        "team-default"
+      ]
+    }
+  ],
+  "permittedChildren": [],
+  "context": {
+    "mode": "selected",
+    "artifacts": [
+      "task-input",
+      "assigned-workspace-artifacts"
+    ],
+    "history": "authorized-summary",
+    "memoryScopes": []
+  },
+  "requestedLimits": {
+    "concurrentTurns": 1,
+    "maxMembers": 16,
+    "maxDepth": 0,
+    "maxPendingTasks": 1000
+  },
+  "contentDigest": "sha256:fb45e380ac19640bad22639ef4bdef83dab89b5788680b1cc308081baff5b664"
+}

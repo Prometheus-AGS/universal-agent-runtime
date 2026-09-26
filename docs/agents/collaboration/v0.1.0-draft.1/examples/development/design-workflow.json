@@ -1,0 +1,104 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "WorkflowDefinition",
+  "id": "urn:uar:example:dev/design-workflow",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "title": "Bounded design contribution",
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "steps": [
+    {
+      "id": "design",
+      "role": "designer",
+      "dependsOn": [],
+      "inputMapping": {
+        "brief": "workflow-input:brief"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "none",
+      "approval": "none",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "artifact",
+      "instructions": "Produce the scoped design artifact."
+    },
+    {
+      "id": "collect",
+      "role": "coordinator",
+      "dependsOn": [
+        "design"
+      ],
+      "inputMapping": {
+        "brief": "artifact:design:artifact"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "none",
+      "approval": "none",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "all-dependencies-and-artifact",
+      "instructions": "Return the design artifact to the parent task."
+    }
+  ],
+  "failurePolicy": "stop-dependent",
+  "maxActivations": 100,
+  "contentDigest": "sha256:6995760c24d0eb377f1bd58446910f6c2a0c1014d971484a5a6ba76de2b51858"
+}

@@ -1,0 +1,89 @@
+{
+  "purpose": "Protocol syntax evidence, not dependency upgrades or runtime conformance",
+  "records": [
+    {
+      "id": "AGUI-SCHEMA",
+      "url": "https://raw.githubusercontent.com/ag-ui-protocol/ag-ui/b8ebd02c84a3a2757990da47aebf7c55b708b1ef/spec/1.0/schema.json",
+      "revision": "b8ebd02c84a3a2757990da47aebf7c55b708b1ef",
+      "localFile": "upstream/ag-ui.schema.json",
+      "normativity": "Upstream source contract at inspected commit; no SDK dependency selected",
+      "retrievedAt": "2026-09-26T15:58:55.774Z",
+      "sha256": "4b5c93226838a0e72d88e6c5df20633c686c49fcb75d9be2815c6cbf9e48e71a",
+      "size": 94359,
+      "evidenceClass": "source-inspection",
+      "runtimeValidated": false
+    },
+    {
+      "id": "A2A-PROTO",
+      "url": "https://raw.githubusercontent.com/a2aproject/A2A/v1.0.1/specification/a2a.proto",
+      "revision": "v1.0.1",
+      "normativity": "Canonical upstream protocol definition",
+      "retrievedAt": "2026-09-26T15:58:55.872Z",
+      "sha256": "e195bf96ab630c69797851970203e1b2b6b19528f2e9803b7d904b91a5104016",
+      "size": 35844,
+      "evidenceClass": "source-inspection",
+      "runtimeValidated": false
+    },
+    {
+      "id": "A2A-BINDING",
+      "url": "https://raw.githubusercontent.com/a2aproject/A2A/v1.0.1/docs/specification.md",
+      "revision": "v1.0.1",
+      "normativity": "Versioned upstream binding text",
+      "retrievedAt": "2026-09-26T15:58:55.961Z",
+      "sha256": "627ccfe6ffb1be2c56811c3dcc18780deb419f41cdc98248095c939b2d9dc9cb",
+      "size": 155498,
+      "evidenceClass": "source-inspection",
+      "runtimeValidated": false
+    },
+    {
+      "id": "A2A-SCHEMA",
+      "url": "https://a2a-protocol.org/v1.0.1/spec/a2a.json",
+      "revision": "published-v1.0.1-documentation",
+      "localFile": "upstream/a2a.schema.json",
+      "normativity": "Upstream non-normative generated JSON artifact; canonical proto governs disagreements",
+      "retrievedAt": "2026-09-26T15:58:56.077Z",
+      "sha256": "ba4b702b5edbdcbfe972c272484eb38e1fcd72af3c0b7eaa114b50e97455d8dd",
+      "size": 75186,
+      "evidenceClass": "source-inspection",
+      "runtimeValidated": false
+    },
+    {
+      "id": "UAR-A2UI-SOURCE",
+      "repository": "Prometheus-AGS/universal-agent-runtime",
+      "revision": "a54dd9591dfeaff8694252b69d2d40f0f28e2250",
+      "path": "src/uar/a2ui/protocol.rs",
+      "sha256": "7b1d2c8525d5cdc390196e5f0a5ad7bdf2592367b12069676ee79809028e62e2",
+      "size": 12159,
+      "evidenceClass": "source-inspection",
+      "runtimeValidated": false
+    },
+    {
+      "id": "UAR-A2UI-PROFILE",
+      "repository": "Prometheus-AGS/universal-agent-runtime",
+      "revision": "a54dd9591dfeaff8694252b69d2d40f0f28e2250",
+      "path": "docs/protocols/a2ui-profile.md",
+      "sha256": "c61dd5d4d8b73676efb73db6a5e3ea488bdef1b722c23c00795f130e45d12438",
+      "size": 2411,
+      "evidenceClass": "source-inspection",
+      "runtimeValidated": false
+    },
+    {
+      "id": "AGUI-LICENSE",
+      "url": "https://raw.githubusercontent.com/ag-ui-protocol/ag-ui/b8ebd02c84a3a2757990da47aebf7c55b708b1ef/LICENSE",
+      "localFile": "upstream/AGUI-LICENSE.txt",
+      "sha256": "06dcddbb6908a0c6dd4a9e8ec822eea41d5a460a53089fecccc8a68049e99241",
+      "size": 1056,
+      "retrievedAt": "2026-09-26T15:59:32.270Z",
+      "evidenceClass": "license"
+    },
+    {
+      "id": "A2A-LICENSE",
+      "url": "https://raw.githubusercontent.com/a2aproject/A2A/v1.0.1/LICENSE",
+      "localFile": "upstream/A2A-LICENSE.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "size": 11358,
+      "retrievedAt": "2026-09-26T15:59:32.486Z",
+      "evidenceClass": "license"
+    }
+  ]
+}

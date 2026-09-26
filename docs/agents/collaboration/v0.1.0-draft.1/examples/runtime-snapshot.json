@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1",
+  "teamInstanceId": "example-team-instance",
+  "bindingId": "urn:uar:example:binding/development-example",
+  "bindingRevision": 1,
+  "revision": 4,
+  "cursor": 4,
+  "state": "ready",
+  "members": [
+    {
+      "memberId": "example-coordinator",
+      "role": "coordinator",
+      "kind": "agent",
+      "instanceId": "example-agent-instance",
+      "state": "ready"
+    }
+  ],
+  "tasks": [
+    {
+      "taskId": "example-task",
+      "teamInstanceId": "example-team-instance",
+      "revision": 1,
+      "state": "ready",
+      "cancelRequested": false,
+      "dependsOn": [],
+      "ownershipEpoch": 0
+    }
+  ],
+  "attempts": [],
+  "inbox": [
+    {
+      "messageId": "example-message",
+      "teamInstanceId": "example-team-instance",
+      "senderId": "example-owner",
+      "recipientId": "example-coordinator",
+      "recipientSequence": 1,
+      "trigger": "queue-only",
+      "receipt": "accepted",
+      "taskId": "example-task"
+    }
+  ],
+  "budget": {
+    "unit": "tokens",
+    "reserved": 0,
+    "settled": 0,
+    "limit": 250000
+  },
+  "artifacts": []
+}

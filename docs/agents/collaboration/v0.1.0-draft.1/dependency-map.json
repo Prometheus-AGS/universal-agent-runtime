@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "status": "operator-approved-documentation-contract",
+  "authority": "Agent Fabric Convergence",
+  "mapping": [
+    {
+      "recommendation": "C01",
+      "owner": "all eleven",
+      "localSubset": "baseline and accepted P1 vocabulary",
+      "dependsOn": "none",
+      "later": "Broader recommendation reconciliation retained",
+      "parentCompletion": "unchanged"
+    },
+    {
+      "recommendation": "C03",
+      "owner": "universal-agent-runtime + full/mini",
+      "localSubset": "lossless definitions and adapters",
+      "dependsOn": "C01 + accepted C02 boundary",
+      "later": "BossFang translation later",
+      "parentCompletion": "unchanged"
+    },
+    {
+      "recommendation": "C06",
+      "owner": "universal-agent-runtime",
+      "localSubset": "durable local activations and inbox",
+      "dependsOn": "C03-local + accepted C04 binding",
+      "later": "Resident reminders and cross-host lifecycle later",
+      "parentCompletion": "unchanged"
+    },
+    {
+      "recommendation": "C09",
+      "owner": "universal-agent-runtime",
+      "localSubset": "team task board, routing, nested teams",
+      "dependsOn": "C06-local",
+      "later": "Remote members later",
+      "parentCompletion": "unchanged"
+    },
+    {
+      "recommendation": "C10",
+      "owner": "the-boss + universal-agent-runtime",
+      "localSubset": "explicitly approved feedback-to-issue",
+      "dependsOn": "C09-local + existing approved connector",
+      "later": "BossFang-originated full story still pending",
+      "parentCompletion": "unchanged"
+    },
+    {
+      "recommendation": "C14",
+      "owner": "the-boss",
+      "localSubset": "UAR Teams settings and task UI",
+      "dependsOn": "C09-local + protocol contracts",
+      "later": "BossFang console/observer UI later",
+      "parentCompletion": "unchanged"
+    },
+    {
+      "recommendation": "C15",
+      "owner": "prometheus-skill-pack + prometheus-skills-mini",
+      "localSubset": "UAR authoring/export and two workflow templates",
+      "dependsOn": "C03-local + C09-local + accepted D-MINI",
+      "later": "All other harness/plugin integrations retain original gates",
+      "parentCompletion": "unchanged"
+    }
+  ],
+  "remainingOwners": {
+    "C02": "UAR/Gate: consume accepted effect boundary; new Gate deployment is not required",
+    "C04": "UAR/Boss: consume accepted local binding; broader placement later",
+    "C05": "librefang/UAR: full-run delegation later",
+    "C07": "UAR: general observers later",
+    "C08": "librefang/Fabric: cross-system routing later",
+    "C11": "Forge/Fabric: business data later",
+    "C12": "KnowMe/Gate: peer sovereignty later",
+    "C13": "KnowMe: mobile/embedded later",
+    "C16": "full/mini/Boss: development + feedback subset now; general marketing/design runtime later",
+    "C17": "UAR/KnowMe/Gate: human representation later",
+    "C18": "all: broader federation certification later; local release has own installed gates"
+  },
+  "blockingCheckpoints": [
+    "D-UAR-P1 accepted installed Windows x64 and Mac ARM64 release",
+    "D-MINI accepted adapter/binary compatibility before packaging"
+  ],
+  "note": "Local subsets do not mark parent recommendations complete or remove their full dependency edges."
+}

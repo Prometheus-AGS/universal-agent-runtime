@@ -1,0 +1,140 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "PackageManifest",
+  "id": "urn:uar:example:design-package",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "entrypoints": [
+    {
+      "id": "urn:uar:example:design/team",
+      "version": "1.0.0",
+      "digest": "sha256:fedf21003e4c41f3250764f80b8691a2feb4923f7e7d88113b29ae0daa041181"
+    }
+  ],
+  "files": [
+    {
+      "path": "coordinator.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:design/coordinator",
+        "version": "1.0.0",
+        "digest": "sha256:5637554c9452203f240af145edb75594b390d5882f88d7a10687218a516cc2ef"
+      },
+      "byteDigest": "sha256:1cbbd6775aeb97d761ac1f4af8ad6e400a2ce605958a4ad902a04b29b5c856c0"
+    },
+    {
+      "path": "brand.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:design/brand",
+        "version": "1.0.0",
+        "digest": "sha256:f829dab8a9e602317b29854496324f152ee57d1d2ffcccba0d0649e2078d110c"
+      },
+      "byteDigest": "sha256:c5ec2a81bbc05c4372da8e1d7285933183f6a5f1431076a5f0f021ad2eac496f"
+    },
+    {
+      "path": "mobile.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:design/mobile",
+        "version": "1.0.0",
+        "digest": "sha256:210135e03e0a8aa24591d44b749f973e4fbf825fd809e570f02d28f625ceb7e7"
+      },
+      "byteDigest": "sha256:091307c3a801d7bda008f9576f2e69103d5084ba0530c4c33bf412007d460f4a"
+    },
+    {
+      "path": "accessibility.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:design/accessibility",
+        "version": "1.0.0",
+        "digest": "sha256:4c8bacc86fdd25e6cd674e884246382c7608aa4a877f5328c34577478ad415b0"
+      },
+      "byteDigest": "sha256:92ddaa214adbc509646e8364210e5f390c7e33f23851e0b140e2dcdbbd2d2817"
+    },
+    {
+      "path": "workflow.json",
+      "kind": "WorkflowDefinition",
+      "definition": {
+        "id": "urn:uar:example:design/workflow",
+        "version": "1.0.0",
+        "digest": "sha256:24e098dbfb538bc07ea1e8c7bd323005419b7a500cc81f0aaefe3401ca084d0d"
+      },
+      "byteDigest": "sha256:67b603966a1d19fa8703974cca628f574e3e947db68dba36f9118388d3b00b8f"
+    },
+    {
+      "path": "team.json",
+      "kind": "TeamDefinition",
+      "definition": {
+        "id": "urn:uar:example:design/team",
+        "version": "1.0.0",
+        "digest": "sha256:fedf21003e4c41f3250764f80b8691a2feb4923f7e7d88113b29ae0daa041181"
+      },
+      "byteDigest": "sha256:33ea00dde630cfbedf0a5e3800da3242af397c9b7b79653a98530aef15bd58b8"
+    }
+  ],
+  "lock": [
+    {
+      "requestedBy": "urn:uar:example:design/team",
+      "reference": {
+        "id": "urn:uar:example:design/coordinator",
+        "version": "1.0.0",
+        "digest": "sha256:5637554c9452203f240af145edb75594b390d5882f88d7a10687218a516cc2ef"
+      },
+      "resolvedPath": "coordinator.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:design/team",
+      "reference": {
+        "id": "urn:uar:example:design/brand",
+        "version": "1.0.0",
+        "digest": "sha256:f829dab8a9e602317b29854496324f152ee57d1d2ffcccba0d0649e2078d110c"
+      },
+      "resolvedPath": "brand.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:design/team",
+      "reference": {
+        "id": "urn:uar:example:design/mobile",
+        "version": "1.0.0",
+        "digest": "sha256:210135e03e0a8aa24591d44b749f973e4fbf825fd809e570f02d28f625ceb7e7"
+      },
+      "resolvedPath": "mobile.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:design/team",
+      "reference": {
+        "id": "urn:uar:example:design/accessibility",
+        "version": "1.0.0",
+        "digest": "sha256:4c8bacc86fdd25e6cd674e884246382c7608aa4a877f5328c34577478ad415b0"
+      },
+      "resolvedPath": "accessibility.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:design/team",
+      "reference": {
+        "id": "urn:uar:example:design/workflow",
+        "version": "1.0.0",
+        "digest": "sha256:24e098dbfb538bc07ea1e8c7bd323005419b7a500cc81f0aaefe3401ca084d0d"
+      },
+      "resolvedPath": "workflow.json"
+    }
+  ],
+  "capabilityDeclarations": [
+    {
+      "capability": "uar.collaboration.local.v1",
+      "required": true
+    }
+  ],
+  "resolution": "exact-version-and-digest",
+  "contentDigest": "sha256:ba10266d0339e61c0aa02b63e2e7f971ddb827145fea68333621c82bde695e62"
+}

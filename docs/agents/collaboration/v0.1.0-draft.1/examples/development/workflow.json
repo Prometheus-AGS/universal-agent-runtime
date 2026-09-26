@@ -1,0 +1,196 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "WorkflowDefinition",
+  "id": "urn:uar:example:dev/workflow",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "title": "Parallel implementation followed by one full integration gate",
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "steps": [
+    {
+      "id": "design",
+      "role": "design-subteam",
+      "dependsOn": [],
+      "inputMapping": {
+        "brief": "workflow-input:brief"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "none",
+      "approval": "none",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "artifact",
+      "instructions": "Produce agreed interface design."
+    },
+    {
+      "id": "implementation-a",
+      "role": "implementer-a",
+      "dependsOn": [
+        "design"
+      ],
+      "inputMapping": {
+        "brief": "artifact:design:artifact"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "idempotent-write",
+      "approval": "current-authority",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "all-dependencies-and-artifact",
+      "instructions": "Implement feature A in the assigned path set."
+    },
+    {
+      "id": "implementation-b",
+      "role": "implementer-b",
+      "dependsOn": [
+        "design"
+      ],
+      "inputMapping": {
+        "brief": "artifact:design:artifact"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "idempotent-write",
+      "approval": "current-authority",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "all-dependencies-and-artifact",
+      "instructions": "Implement feature B in its independent path set."
+    },
+    {
+      "id": "integration",
+      "role": "integrator",
+      "dependsOn": [
+        "implementation-a",
+        "implementation-b",
+        "design"
+      ],
+      "inputMapping": {
+        "brief": "artifact:design:artifact"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "read",
+      "approval": "current-authority",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "all-dependencies-and-artifact",
+      "instructions": "Exercise the completed production flow once."
+    },
+    {
+      "id": "report",
+      "role": "coordinator",
+      "dependsOn": [
+        "integration"
+      ],
+      "inputMapping": {
+        "brief": "artifact:integration:artifact"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "none",
+      "approval": "none",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "all-dependencies-and-artifact",
+      "instructions": "Report only observed integration results."
+    }
+  ],
+  "failurePolicy": "stop-dependent",
+  "maxActivations": 100,
+  "contentDigest": "sha256:d2b98a0c315a2f1528cdeea02fc1a116d39a2a87315ea6616fa8c64cce54604f"
+}

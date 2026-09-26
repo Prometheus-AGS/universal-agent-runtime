@@ -303,3 +303,7 @@ This RFC formalizes the UAR Agent Definition Standard as a deterministic, govern
 By codifying agent definition as a strict document standard, UAR becomes a compiler-based agent operating system, not an ad-hoc framework.
 
 The agent definition is no longer configuration — it is a contract.
+
+26. Collaboration companion — official draft
+
+[UAR Collaboration 0.1.0-draft.1](collaboration/v0.1.0-draft.1/README.md) extends this RFC with agents, subagents, top-level teams, nested teams, durable lifecycle and AG-UI/A2UI/A2A projections. The operator approved its design on 2026-09-26. It is an official Draft Specification, not a runtime conformance certification. Existing agent formats remain governed by their declared version; required collaboration semantics require explicit capability support.

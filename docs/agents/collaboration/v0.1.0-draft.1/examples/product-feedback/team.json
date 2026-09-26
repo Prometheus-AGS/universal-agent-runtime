@@ -1,0 +1,195 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "TeamDefinition",
+  "id": "urn:uar:example:product-feedback/team",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "title": "Feedback-to-issue team",
+  "purpose": "Produce an issue from feedback with explicit human approval before publication.",
+  "members": [
+    {
+      "role": "coordinator",
+      "kind": "agent",
+      "definition": {
+        "id": "urn:uar:example:product-feedback/coordinator",
+        "version": "1.0.0",
+        "digest": "sha256:f9c6d782bbea0d0acdfdf1ab7c3f8d93a10056673190e3f200e8597deb6f755f"
+      },
+      "min": 1,
+      "max": 1,
+      "responsibility": "Coordinate feedback, product triage and critique. Only the trusted host can accept an exact issue-creation approval."
+    },
+    {
+      "role": "intake",
+      "kind": "agent",
+      "definition": {
+        "id": "urn:uar:example:product-feedback/intake",
+        "version": "1.0.0",
+        "digest": "sha256:0d07d1221b785a60a066f8f3bdf3b0740016c89270b215727a846faeb43b87e8"
+      },
+      "min": 1,
+      "max": 1,
+      "responsibility": "Capture operator supplied feedback and relevant consented evidence. Do not collect unrelated personal data."
+    },
+    {
+      "role": "product",
+      "kind": "agent",
+      "definition": {
+        "id": "urn:uar:example:product-feedback/product",
+        "version": "1.0.0",
+        "digest": "sha256:b32f4b49903f573b0965d6577f39ea91ba6fd07eddc334dc3db9a097db831532"
+      },
+      "min": 1,
+      "max": 1,
+      "responsibility": "Turn feedback into a scoped issue proposal with exact destination and payload."
+    },
+    {
+      "role": "critic",
+      "kind": "agent",
+      "definition": {
+        "id": "urn:uar:example:product-feedback/critic",
+        "version": "1.0.0",
+        "digest": "sha256:8f9021fe11e6251faab0a23d1c025160ba4c77b00d3e0b33b35ac2f84f627a32"
+      },
+      "min": 1,
+      "max": 1,
+      "responsibility": "Evaluate the issue proposal independently and return reasoned disposition."
+    },
+    {
+      "role": "publisher",
+      "kind": "agent",
+      "definition": {
+        "id": "urn:uar:example:product-feedback/publisher",
+        "version": "1.0.0",
+        "digest": "sha256:77c862947649d10f510e1576c627e4d6691765b0cedcf51c2232d596fb1426fe"
+      },
+      "min": 1,
+      "max": 1,
+      "responsibility": "Use the approved GitHub connector only with fresh exact-effect authorization. Unknown effect outcome requires reconciliation using the original effect identity."
+    }
+  ],
+  "coordinatorRole": "coordinator",
+  "communication": [
+    {
+      "fromRole": "coordinator",
+      "toRole": "intake",
+      "modes": [
+        "queue-only",
+        "trigger-turn"
+      ]
+    },
+    {
+      "fromRole": "intake",
+      "toRole": "coordinator",
+      "modes": [
+        "queue-only"
+      ]
+    },
+    {
+      "fromRole": "coordinator",
+      "toRole": "product",
+      "modes": [
+        "queue-only",
+        "trigger-turn"
+      ]
+    },
+    {
+      "fromRole": "product",
+      "toRole": "coordinator",
+      "modes": [
+        "queue-only"
+      ]
+    },
+    {
+      "fromRole": "coordinator",
+      "toRole": "critic",
+      "modes": [
+        "queue-only",
+        "trigger-turn"
+      ]
+    },
+    {
+      "fromRole": "critic",
+      "toRole": "coordinator",
+      "modes": [
+        "queue-only"
+      ]
+    },
+    {
+      "fromRole": "coordinator",
+      "toRole": "publisher",
+      "modes": [
+        "queue-only",
+        "trigger-turn"
+      ]
+    },
+    {
+      "fromRole": "publisher",
+      "toRole": "coordinator",
+      "modes": [
+        "queue-only"
+      ]
+    }
+  ],
+  "taskAcceptance": {
+    "mode": "coordinator-within-binding",
+    "allowedWorkflows": [
+      {
+        "id": "urn:uar:example:product-feedback/workflow",
+        "version": "1.0.0",
+        "digest": "sha256:4c4f0f4b74d6841b7796defefeb002104cd4edef00e5a154db0c589678fb9b3a"
+      }
+    ]
+  },
+  "routing": {
+    "eligibilityFirst": true,
+    "strategy": "operator-role-capacity-cost-stable-id",
+    "explain": true
+  },
+  "limits": {
+    "concurrentTurns": 4,
+    "maxMembers": 16,
+    "maxDepth": 3,
+    "maxPendingTasks": 1000
+  },
+  "budget": {
+    "maxTokens": 250000,
+    "maxCostMicrounits": 25000000,
+    "currency": "USD",
+    "maxElapsedSeconds": 7200
+  },
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "contentDigest": "sha256:827e9d16d1c9649511558b30a15497df329009b869d0e6ceaa93583e02dcd71c"
+}

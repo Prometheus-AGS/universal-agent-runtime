@@ -1,0 +1,265 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.prometheus-ags.dev/uar/collaboration/0.1.0-draft.1/runtime-snapshot.schema.json",
+  "title": "UAR collaboration runtime-snapshot — official draft, no runtime conformance claim",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "1"
+    },
+    "teamInstanceId": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "bindingId": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "bindingRevision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "revision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "cursor": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "state": {
+      "$ref": "common.schema.json#/$defs/instanceState"
+    },
+    "members": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "enum": [
+              "agent",
+              "team"
+            ]
+          },
+          "instanceId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "state": {
+            "$ref": "common.schema.json#/$defs/instanceState"
+          }
+        },
+        "required": [
+          "memberId",
+          "role",
+          "kind",
+          "instanceId",
+          "state"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "teamInstanceId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "revision": {
+            "$ref": "common.schema.json#/$defs/revision"
+          },
+          "state": {
+            "$ref": "common.schema.json#/$defs/taskState"
+          },
+          "cancelRequested": {
+            "type": "boolean"
+          },
+          "dependsOn": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "minItems": 0
+          },
+          "ownershipEpoch": {
+            "$ref": "common.schema.json#/$defs/revision"
+          },
+          "assignedMemberId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "attemptId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "parentTaskId": {
+            "$ref": "common.schema.json#/$defs/id"
+          }
+        },
+        "required": [
+          "taskId",
+          "teamInstanceId",
+          "revision",
+          "state",
+          "cancelRequested",
+          "dependsOn",
+          "ownershipEpoch"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "attempts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "attemptId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "taskId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "memberId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "ownershipEpoch": {
+            "$ref": "common.schema.json#/$defs/revision"
+          },
+          "runId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "state": {
+            "enum": [
+              "admitted",
+              "running",
+              "settled",
+              "interrupted",
+              "uncertain"
+            ]
+          },
+          "effectIds": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "minItems": 0
+          }
+        },
+        "required": [
+          "attemptId",
+          "taskId",
+          "memberId",
+          "ownershipEpoch",
+          "runId",
+          "state",
+          "effectIds"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "inbox": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "teamInstanceId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "senderId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "recipientId": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "recipientSequence": {
+            "$ref": "common.schema.json#/$defs/revision"
+          },
+          "trigger": {
+            "enum": [
+              "queue-only",
+              "trigger-turn"
+            ]
+          },
+          "receipt": {
+            "$ref": "common.schema.json#/$defs/receipt"
+          },
+          "taskId": {
+            "$ref": "common.schema.json#/$defs/id"
+          }
+        },
+        "required": [
+          "messageId",
+          "teamInstanceId",
+          "senderId",
+          "recipientId",
+          "recipientSequence",
+          "trigger",
+          "receipt"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reserved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "settled": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "unit",
+        "reserved",
+        "settled",
+        "limit"
+      ],
+      "additionalProperties": false
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/artifact"
+      },
+      "minItems": 0
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "teamInstanceId",
+    "bindingId",
+    "bindingRevision",
+    "revision",
+    "cursor",
+    "state",
+    "members",
+    "tasks",
+    "attempts",
+    "inbox",
+    "budget",
+    "artifacts"
+  ],
+  "additionalProperties": false
+}

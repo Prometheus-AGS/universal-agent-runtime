@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.prometheus-ags.dev/uar/collaboration/0.1.0-draft.1/surface-action.schema.json",
+  "title": "UAR collaboration surface-action — official draft, no runtime conformance claim",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "1"
+    },
+    "commandId": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "surfaceId": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "expectedSurfaceRevision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "actionId": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "payload": {
+      "type": "object"
+    },
+    "teamInstanceId": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "taskId": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "memberId": {
+      "$ref": "common.schema.json#/$defs/id"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "commandId",
+    "surfaceId",
+    "expectedSurfaceRevision",
+    "actionId",
+    "payload"
+  ],
+  "additionalProperties": false
+}

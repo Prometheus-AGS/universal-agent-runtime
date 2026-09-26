@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "scope": "Architecture patterns and existing modules; no dependency upgrade decisions.",
+  "candidates": [
+    {
+      "id": "cand-001",
+      "name": "Existing UAR thread kernel/catalog",
+      "verdict": "adapt",
+      "gaps": [
+        "G01",
+        "G02",
+        "G03",
+        "G04",
+        "G05",
+        "G06"
+      ],
+      "rationale": "Preserve admitted turns; add durable collaboration records and faithful bindings.",
+      "evidence": "L-UAR"
+    },
+    {
+      "id": "cand-002",
+      "name": "Codex Rust control/residency/execution",
+      "verdict": "adapt",
+      "gaps": [
+        "G02",
+        "G03",
+        "G07"
+      ],
+      "rationale": "Use design patterns, not a source-copy dependency; no new Rust crate selected.",
+      "evidence": "L-CODEX"
+    },
+    {
+      "id": "cand-003",
+      "name": "Existing UAR Cedar/approval composition",
+      "verdict": "adopt",
+      "gaps": [
+        "G01",
+        "G02"
+      ],
+      "rationale": "Reevaluate current authority at effects and reactivation.",
+      "evidence": "L-UAR"
+    },
+    {
+      "id": "cand-004",
+      "name": "AG-UI, UAR A2UI profile, released A2A",
+      "verdict": "adapt",
+      "gaps": [
+        "G08",
+        "G09",
+        "G10"
+      ],
+      "rationale": "Versioned projections of authoritative state; no protocol fork.",
+      "evidence": "W-AGUI"
+    },
+    {
+      "id": "cand-005",
+      "name": "Existing full/mini agent-team adapters",
+      "verdict": "adapt",
+      "gaps": [
+        "G11",
+        "G12"
+      ],
+      "rationale": "Compatible authoring/export, not another scheduler.",
+      "evidence": "L-UAR"
+    },
+    {
+      "id": "cand-006",
+      "name": "New broker/workflow engine",
+      "verdict": "reject",
+      "gaps": [
+        "G02",
+        "G03"
+      ],
+      "rationale": "No observed need for new daemon or loop for local v1.",
+      "evidence": "assessment.md"
+    }
+  ],
+  "build_required": [
+    {
+      "id": "B01",
+      "gaps": [
+        "G02",
+        "G03"
+      ],
+      "owner": "universal-agent-runtime",
+      "capability": "Durable collaboration state and transactional dispatch"
+    },
+    {
+      "id": "B02",
+      "gaps": [
+        "G04",
+        "G05",
+        "G06"
+      ],
+      "owner": "universal-agent-runtime",
+      "capability": "Lossless binding and migration diagnostics"
+    },
+    {
+      "id": "B03",
+      "gaps": [
+        "G08",
+        "G09",
+        "G10",
+        "G12"
+      ],
+      "owner": "universal-agent-runtime + the-boss",
+      "capability": "Negotiated team protocol and UI projections"
+    }
+  ]
+}

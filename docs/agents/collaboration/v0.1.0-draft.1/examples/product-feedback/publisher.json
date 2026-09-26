@@ -1,0 +1,74 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.1",
+  "kind": "AgentDefinition",
+  "id": "urn:uar:example:product-feedback/publisher",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration official draft illustrative examples",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "uar.collaboration.local.v1"
+  ],
+  "extensions": {},
+  "title": "publisher",
+  "role": "publisher",
+  "whenToUse": "Only when assigned this role by the bound team workflow.",
+  "instructions": "Use the approved GitHub connector only with fresh exact-effect authorization. Unknown effect outcome requires reconciliation using the original effect identity.",
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "skills": [],
+  "models": [
+    {
+      "role": "primary",
+      "capabilities": [
+        "text",
+        "tool-calling"
+      ],
+      "preferredAliases": [
+        "team-default"
+      ]
+    }
+  ],
+  "permittedChildren": [],
+  "context": {
+    "mode": "selected",
+    "artifacts": [
+      "task-input",
+      "assigned-workspace-artifacts"
+    ],
+    "history": "authorized-summary",
+    "memoryScopes": []
+  },
+  "requestedLimits": {
+    "concurrentTurns": 1,
+    "maxMembers": 16,
+    "maxDepth": 0,
+    "maxPendingTasks": 1000
+  },
+  "contentDigest": "sha256:77c862947649d10f510e1576c627e4d6691765b0cedcf51c2232d596fb1426fe"
+}
