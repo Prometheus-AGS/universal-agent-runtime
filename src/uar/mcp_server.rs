@@ -23,7 +23,7 @@
 //! app = app.nest("/mcp/uar", router);
 //! ```
 
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 
 use anyhow::Result;
 use axum::Router;
@@ -40,7 +40,11 @@ use rmcp::{
 };
 
 use crate::uar::{
-    compiler::pipeline,
+    compiler::{
+        collaboration::{CollaborationCatalogService, CollaborationError},
+        pipeline,
+    },
+    domain::collaboration::{BindingCommandRequest, PackageSourceRequest},
     persistence::PersistenceLayer,
     runtime::{
         actor::messages::ActorOwner, manager::RunManager, native_skill::NativeSkillRegistry,
@@ -70,6 +74,39 @@ fn verified_owner(parts: &axum::http::request::Parts) -> Result<ActorOwner, McpE
         .map_err(|_| McpError::invalid_params("verified user context required", None))
 }
 
+fn collaboration_owner(parts: &axum::http::request::Parts) -> Result<String, McpError> {
+    let user = parts
+        .extensions
+        .get::<UserContext>()
+        .ok_or_else(|| McpError::invalid_params("verified user context required", None))?;
+    crate::uar::api::user_settings::principal_storage_key(user)
+        .ok_or_else(|| McpError::invalid_params("verified user context required", None))
+}
+
+fn collaboration_workspace(parts: &axum::http::request::Parts) -> Result<String, McpError> {
+    parts
+        .headers
+        .get("x-uar-workspace-id")
+        .and_then(|value| value.to_str().ok())
+        .filter(|value| !value.trim().is_empty())
+        .map(str::to_owned)
+        .ok_or_else(|| McpError::invalid_params("verified workspace context required", None))
+}
+
+fn collaboration_mcp_error(error: CollaborationError) -> McpError {
+    match error {
+        CollaborationError::Invalid(detail) => McpError::invalid_params(detail, None),
+        CollaborationError::NotFound(_) => {
+            McpError::invalid_params("collaboration resource not found", None)
+        }
+        CollaborationError::Conflict(detail) => McpError::invalid_params(detail, None),
+        CollaborationError::Storage(error) => {
+            tracing::error!(%error, "collaboration catalog persistence failed");
+            McpError::internal_error("collaboration catalog unavailable", None)
+        }
+    }
+}
+
 // ── Parameter structs ─────────────────────────────────────────────────────────
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -95,12 +132,45 @@ pub struct CompileSpecParams {
     pub spec: String,
 }
 
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct CollaborationPackageParams {
+    pub command_id: String,
+    #[serde(default)]
+    pub expected_catalog_revision: Option<u64>,
+    pub manifest: String,
+    pub files: BTreeMap<String, String>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct CollaborationBindingParams {
+    pub command_id: String,
+    #[serde(default)]
+    pub expected_revision: Option<u64>,
+    pub binding: serde_json::Value,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct CollaborationPackageStatusParams {
+    pub id: String,
+    pub version: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct CollaborationBindingStatusParams {
+    pub id: String,
+}
+
 // ── MCP server handler ────────────────────────────────────────────────────────
 
 #[derive(Clone)]
 struct UarRuntimeMcpServer {
     run_manager: Arc<RunManager>,
     native_skills: Arc<NativeSkillRegistry>,
+    collaboration_catalog: Arc<CollaborationCatalogService>,
     #[expect(
         dead_code,
         reason = "rmcp's generated tool handler retains this router for runtime dispatch"
@@ -116,10 +186,15 @@ impl std::fmt::Debug for UarRuntimeMcpServer {
 }
 
 impl UarRuntimeMcpServer {
-    fn new(run_manager: Arc<RunManager>, native_skills: Arc<NativeSkillRegistry>) -> Self {
+    fn new(
+        run_manager: Arc<RunManager>,
+        native_skills: Arc<NativeSkillRegistry>,
+        collaboration_catalog: Arc<CollaborationCatalogService>,
+    ) -> Self {
         Self {
             run_manager,
             native_skills,
+            collaboration_catalog,
             tool_router: Self::tool_router(),
         }
     }
@@ -278,6 +353,149 @@ impl UarRuntimeMcpServer {
 
         Ok(ok_json(&result))
     }
+
+    /// Report the I1 collaboration capabilities without claiming team execution.
+    #[tool(description = "Report UAR collaboration package and binding capabilities")]
+    async fn uar_collaboration_capabilities(
+        &self,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        collaboration_owner(&parts)?;
+        Ok(ok_json(&serde_json::json!({
+            "capabilities": [
+                "collaboration_definition_packages_v1",
+                "collaboration_deployment_bindings_v1"
+            ]
+        })))
+    }
+
+    /// Validate one exact-byte collaboration package without storing it.
+    #[tool(description = "Preflight an immutable UAR collaboration package without installing it")]
+    async fn uar_collaboration_preflight_package(
+        &self,
+        Parameters(p): Parameters<CollaborationPackageParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        collaboration_owner(&parts)?;
+        let response = self
+            .collaboration_catalog
+            .preflight_package(&PackageSourceRequest {
+                command_id: p.command_id,
+                expected_catalog_revision: p.expected_catalog_revision,
+                manifest: p.manifest,
+                files: p.files,
+            })
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&response))
+    }
+
+    /// Atomically install an immutable collaboration package and command receipt.
+    #[tool(description = "Install an immutable UAR collaboration package into the catalog")]
+    async fn uar_collaboration_install_package(
+        &self,
+        Parameters(p): Parameters<CollaborationPackageParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        let owner = collaboration_owner(&parts)?;
+        let response = self
+            .collaboration_catalog
+            .install_package(
+                &owner,
+                PackageSourceRequest {
+                    command_id: p.command_id,
+                    expected_catalog_revision: p.expected_catalog_revision,
+                    manifest: p.manifest,
+                    files: p.files,
+                },
+            )
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&response))
+    }
+
+    /// Retrieve an installed package by immutable identity and semantic version.
+    #[tool(description = "Get one installed UAR collaboration package version")]
+    async fn uar_collaboration_package_status(
+        &self,
+        Parameters(p): Parameters<CollaborationPackageStatusParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        collaboration_owner(&parts)?;
+        let package = self
+            .collaboration_catalog
+            .get_package_version(&p.id, &p.version)
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&package))
+    }
+
+    /// Validate a private deployment binding without storing it.
+    #[tool(description = "Preflight a private UAR collaboration deployment binding")]
+    async fn uar_collaboration_preflight_binding(
+        &self,
+        Parameters(p): Parameters<CollaborationBindingParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        let owner = collaboration_owner(&parts)?;
+        let workspace = collaboration_workspace(&parts)?;
+        let response = self
+            .collaboration_catalog
+            .preflight_binding(
+                &owner,
+                &workspace,
+                &BindingCommandRequest {
+                    command_id: p.command_id,
+                    expected_revision: p.expected_revision,
+                    binding: p.binding,
+                },
+            )
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&response))
+    }
+
+    /// Validate and install a private revisioned binding for one workspace.
+    #[tool(description = "Install a private UAR collaboration deployment binding")]
+    async fn uar_collaboration_install_binding(
+        &self,
+        Parameters(p): Parameters<CollaborationBindingParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        let owner = collaboration_owner(&parts)?;
+        let workspace = collaboration_workspace(&parts)?;
+        let response = self
+            .collaboration_catalog
+            .install_binding(
+                &owner,
+                &workspace,
+                BindingCommandRequest {
+                    command_id: p.command_id,
+                    expected_revision: p.expected_revision,
+                    binding: p.binding,
+                },
+            )
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&response))
+    }
+
+    /// Read one private binding in the caller's exact workspace scope.
+    #[tool(description = "Get one UAR collaboration deployment binding")]
+    async fn uar_collaboration_binding_status(
+        &self,
+        Parameters(p): Parameters<CollaborationBindingStatusParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        let owner = collaboration_owner(&parts)?;
+        let workspace = collaboration_workspace(&parts)?;
+        let binding = self
+            .collaboration_catalog
+            .get_binding(&owner, &workspace, &p.id)
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&binding))
+    }
 }
 
 #[tool_handler]
@@ -295,7 +513,9 @@ impl ServerHandler for UarRuntimeMcpServer {
             uar_create_run — start an agent run (returns run_id + SSE URL); \
             uar_get_run_status — poll run status by run_id; \
             uar_list_skills — enumerate available native skills; \
-            uar_compile_spec — compile a UAR-AGENT-MD Markdown document."
+            uar_compile_spec — compile a UAR-AGENT-MD Markdown document; \
+            uar_collaboration_capabilities / preflight_package / install_package / package_status — administer immutable multi-agent packages; \
+            uar_collaboration_preflight_binding / install_binding / binding_status — administer private workspace bindings."
                 .to_string(),
         );
         info
@@ -313,10 +533,11 @@ impl ServerHandler for UarRuntimeMcpServer {
 /// let uar_mcp = uar_mcp_router(Arc::clone(&run_manager), Arc::clone(&native_skills), persistence.clone());
 /// app = app.nest("/mcp/uar", uar_mcp);
 /// ```
-pub fn uar_mcp_router(
+pub fn uar_mcp_router_with_collaboration(
     run_manager: Arc<RunManager>,
     native_skills: Arc<NativeSkillRegistry>,
     _persistence: Option<Arc<dyn PersistenceLayer>>,
+    collaboration_catalog: Arc<CollaborationCatalogService>,
 ) -> Router {
     let session_manager = Arc::new(LocalSessionManager::default());
 
@@ -330,6 +551,7 @@ pub fn uar_mcp_router(
             Ok(UarRuntimeMcpServer::new(
                 Arc::clone(&run_manager),
                 Arc::clone(&native_skills),
+                Arc::clone(&collaboration_catalog),
             ))
         },
         Arc::clone(&session_manager),
@@ -337,4 +559,20 @@ pub fn uar_mcp_router(
     );
 
     Router::new().route_service("/", http_service)
+}
+
+/// Backward-compatible builder for embedders that do not yet provide a durable
+/// collaboration catalog. Existing MCP behavior remains unchanged and the new
+/// administration tools use a process-local catalog.
+pub fn uar_mcp_router(
+    run_manager: Arc<RunManager>,
+    native_skills: Arc<NativeSkillRegistry>,
+    persistence: Option<Arc<dyn PersistenceLayer>>,
+) -> Router {
+    uar_mcp_router_with_collaboration(
+        run_manager,
+        native_skills,
+        persistence,
+        Arc::new(CollaborationCatalogService::in_memory()),
+    )
 }

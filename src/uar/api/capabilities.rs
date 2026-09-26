@@ -17,9 +17,11 @@ pub const AGUI_PROFILE_REVISION: u32 = 1;
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.
-pub const CAPABILITY_VOCABULARY: [&str; 10] = [
+pub const CAPABILITY_VOCABULARY: [&str; 12] = [
     "agui_stream_fidelity",
     "approval_lifecycle_v1",
+    "collaboration_definition_packages_v1",
+    "collaboration_deployment_bindings_v1",
     "host_history",
     "ingest_scoped_credentials",
     "reasoning_effort",
@@ -32,8 +34,10 @@ pub const CAPABILITY_VOCABULARY: [&str; 10] = [
 
 /// Capabilities this binary implements. Each owning change adds its name in
 /// the same commit as the behaviour; none has landed yet.
-pub const IMPLEMENTED_CAPABILITIES: [&str; 7] = [
+pub const IMPLEMENTED_CAPABILITIES: [&str; 9] = [
     "approval_lifecycle_v1",
+    "collaboration_definition_packages_v1",
+    "collaboration_deployment_bindings_v1",
     "host_history",
     "reasoning_effort",
     "run_scoped_credentials",

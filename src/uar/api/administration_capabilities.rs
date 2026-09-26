@@ -632,6 +632,62 @@ pub fn administration_capabilities() -> AdministrationCapabilities {
                 ],
             ),
             surface(
+                "collaboration-catalog",
+                Agents,
+                Available,
+                vec![
+                    endpoint!(
+                        "collaboration.capabilities",
+                        "GET",
+                        "/api/v1/collaboration/capabilities",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "collaboration.packages.preflight",
+                        "POST",
+                        "/api/v1/collaboration/packages:preflight",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "collaboration.packages.install",
+                        "POST",
+                        "/api/v1/collaboration/packages:install",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "collaboration.packages.version.read",
+                        "GET",
+                        "/api/v1/collaboration/packages/{id}/versions/{version}",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "collaboration.deployment_bindings.preflight",
+                        "POST",
+                        "/api/v1/collaboration/deployment-bindings:preflight",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "collaboration.deployment_bindings.install",
+                        "POST",
+                        "/api/v1/collaboration/deployment-bindings",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "collaboration.deployment_bindings.read",
+                        "GET",
+                        "/api/v1/collaboration/deployment-bindings/{id}",
+                        Owner,
+                        Read
+                    ),
+                ],
+            ),
+            surface(
                 "skills",
                 Agents,
                 Available,

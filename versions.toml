@@ -29,10 +29,10 @@ surreal_memory_server_commit = "432eaa1ebbef66fc02b9bb1a1e63cc2fdb2149e8"
 prometheus_skill_system_base_commit = "f0df1e0121d176c9467e5c71022737b845af6a20"
 prometheus_skill_system_commit = "ad5c82c6c16145637c589a3ddfa06e0f20d603e7"
 # Keep the SDK, schema types, native server, and deployed container in lockstep.
-surrealdb = "3.2.4"
-surrealdb_types = "3.2.4"
-surrealdb_server = "3.2.4"
-surrealdb_image = "surrealdb/surrealdb:v3.2.4@sha256:51baed8709f57f67dcf04b30e3177db846803fa9342dae2be58c6fa5f8d59843"
+surrealdb = "3.3.0"
+surrealdb_types = "3.3.0"
+surrealdb_server = "3.3.0"
+surrealdb_image = "surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20"
 # JavaScript advisory closure is lockfile-scoped across the root, frontend,
 # and documentation package roots.
 dompurify = "3.4.14"

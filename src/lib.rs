@@ -59,7 +59,7 @@ use {
     std::{collections::HashMap, sync::Arc},
     uar::{
         api::a2a::AgentRegistry,
-        compiler::CompilerService,
+        compiler::{CompilerService, collaboration::CollaborationCatalogService},
         governance::engine::GovernanceEngine,
         memory::service::MemoryService,
         persistence::PersistenceLayer,
@@ -135,6 +135,8 @@ pub struct AppState {
     pub live_bus: Option<Arc<dyn uar::realtime::RealtimeBus>>,
     /// Compiler service for spec management and pipeline execution
     pub compiler_service: Option<Arc<CompilerService>>,
+    /// Immutable collaboration packages and private deployment bindings.
+    pub collaboration_catalog: Arc<CollaborationCatalogService>,
     /// Settings manager — runtime configuration administration + plugin extension point
     pub settings_manager: Option<Arc<SettingsManager>>,
     /// Prompt cache provider used by Anthropic-compatible API endpoints.

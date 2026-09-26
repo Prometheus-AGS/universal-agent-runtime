@@ -104,9 +104,9 @@ variable "unstructured_api_key" {
 # ── SurrealDB ────────────────────────────────────────────────────────────────
 
 variable "surreal_image" {
-  description = "Immutable SurrealDB 3.2.4 image reference"
+  description = "Immutable SurrealDB 3.3.0 image reference"
   type        = string
-  default     = "surrealdb/surrealdb:v3.2.4@sha256:51baed8709f57f67dcf04b30e3177db846803fa9342dae2be58c6fa5f8d59843"
+  default     = "surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20"
 }
 
 variable "surreal_user" {

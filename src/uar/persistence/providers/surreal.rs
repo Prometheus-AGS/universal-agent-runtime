@@ -140,6 +140,12 @@ impl SurrealDbProvider {
         .await?
         .check()?;
 
+        db.query(include_str!(
+            "../../../../migrations/surrealdb/collaboration_catalog.surql"
+        ))
+        .await?
+        .check()?;
+
         tracing::info!("SurrealDB connected successfully");
 
         Ok(Self { db })

@@ -14,6 +14,7 @@ pub mod auth;
 pub mod capabilities;
 #[cfg(feature = "server")]
 pub mod compiler;
+pub mod collaboration;
 #[cfg(feature = "server")]
 pub mod credentials;
 #[cfg(feature = "server")]

@@ -253,6 +253,21 @@ impl NativeSkill for UpdateSectionTool {
         if new_partial.deployment.is_some() {
             session.partial_ir.deployment = new_partial.deployment;
         }
+        if new_partial.model_requirements.is_some() {
+            session.partial_ir.model_requirements = new_partial.model_requirements;
+        }
+        if new_partial.prompt_dialect.is_some() {
+            session.partial_ir.prompt_dialect = new_partial.prompt_dialect;
+        }
+        if new_partial.rag_configuration.is_some() {
+            session.partial_ir.rag_configuration = new_partial.rag_configuration;
+        }
+        if new_partial.context_strategy.is_some() {
+            session.partial_ir.context_strategy = new_partial.context_strategy;
+        }
+        if new_partial.api_harness.is_some() {
+            session.partial_ir.api_harness = new_partial.api_harness;
+        }
 
         // Record the update
         session.add_turn(TurnRole::System, format!("Updated sections from snippet"));
