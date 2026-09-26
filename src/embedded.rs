@@ -743,7 +743,8 @@ mod tests {
         let baseline = runtime
             .run_manager()
             .effective_config(conversation_id)
-            .await;
+            .await
+            .expect("effective config resolves");
         assert!(baseline.requested_policy.is_none());
         let baseline_model = baseline.effective_policy.model.expect("model backfilled");
         assert_eq!(baseline_model.provider_id, "embedded-local");
@@ -776,7 +777,8 @@ mod tests {
         let overridden = runtime
             .run_manager()
             .effective_config(conversation_id)
-            .await;
+            .await
+            .expect("effective config resolves");
         assert!(overridden.requested_policy.is_some());
         let effective_model = overridden
             .effective_policy
@@ -793,7 +795,8 @@ mod tests {
         let reverted = runtime
             .run_manager()
             .effective_config(conversation_id)
-            .await;
+            .await
+            .expect("effective config resolves");
         assert!(reverted.requested_policy.is_none());
         assert_eq!(
             reverted.effective_policy.model.map(|m| m.model_id),

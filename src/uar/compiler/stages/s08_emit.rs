@@ -81,7 +81,7 @@ pub async fn run(ctx: &mut CompileContext) -> CompileResult<Vec<Diagnostic>> {
     // Compute the content hash of the descriptor (excluding the hash field itself)
     let mut hash_target = descriptor.clone();
     hash_target.content_hash = String::new();
-    let canonical_json = serde_json::to_string(&hash_target).unwrap_or_default();
+    let canonical_json = super::super::pipeline::canonical_json(&hash_target).unwrap_or_default();
     let content_hash = CompileContext::sha256_hex(canonical_json.as_bytes());
 
     let mut final_descriptor = descriptor;

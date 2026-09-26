@@ -688,6 +688,9 @@ pub struct PersistenceConfig {
     /// Ignored for embedded (file/rocksdb) endpoints.
     #[serde(default)]
     pub surreal_pass: Option<String>,
+    /// Authentication scope for SurrealDB server mode: root, namespace, or database.
+    #[serde(default)]
+    pub surreal_auth_level: Option<String>,
     /// Optional SurrealDB namespace for UAR persistence (default `uar`).
     /// Set this to share a namespace with another Surreal-backed service
     /// (e.g. surreal-memory-server uses `memory`).
@@ -707,6 +710,7 @@ impl std::fmt::Debug for PersistenceConfig {
             .field("external_cache_enabled", &self.external_cache_enabled)
             .field("surreal_user", &self.surreal_user)
             .field("surreal_pass", &redact_opt(&self.surreal_pass))
+            .field("surreal_auth_level", &self.surreal_auth_level)
             .field("surreal_ns", &self.surreal_ns)
             .field("surreal_db", &self.surreal_db)
             .finish()

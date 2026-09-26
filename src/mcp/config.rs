@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fs, path::Path};
+use std::{
+    collections::{BTreeSet, HashMap},
+    fs,
+    path::Path,
+};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "UncheckedMcpConfig")]
@@ -53,7 +57,60 @@ pub enum McpServerEntry {
         url: String,
         #[serde(default)]
         env: HashMap<String, String>,
+        /// Non-secret literals and protected environment references applied to
+        /// every request in this server's HTTP session.
+        #[serde(default)]
+        headers: HashMap<String, McpHttpHeaderValue>,
+        /// Optional administrator policy allowing verified embedding hosts to
+        /// attach a run-owned downstream credential to this exact destination.
+        #[serde(default)]
+        grant_policy: Option<RemoteHttpGrantPolicy>,
     },
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum McpHttpHeaderValue {
+    /// A non-secret header value. Credential-bearing headers must use SecretRef.
+    Literal(String),
+    /// Resolve an environment-backed secret without serializing its bytes.
+    SecretRef {
+        /// Currently supported form: `env:VARIABLE_NAME`.
+        secret_ref: String,
+        /// Opaque non-secret identity changed whenever the credential changes.
+        credential_revision: String,
+    },
+}
+
+impl std::fmt::Debug for McpHttpHeaderValue {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Literal(_) => formatter.write_str("Literal([REDACTED])"),
+            Self::SecretRef {
+                secret_ref,
+                credential_revision,
+            } => formatter
+                .debug_struct("SecretRef")
+                .field("secret_ref", secret_ref)
+                .field("credential_revision", credential_revision)
+                .finish(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RemoteHttpGrantPolicy {
+    /// Stable administrator-assigned destination identity retained across
+    /// credential renewal without exposing the endpoint or configuration hash.
+    pub destination_id: String,
+    /// Authenticated host instance IDs allowed to delegate run credentials.
+    pub trusted_hosts: BTreeSet<String>,
+    /// Every scope named here must be present in the run grant.
+    #[serde(default)]
+    pub required_scopes: BTreeSet<String>,
+    /// Permit plain HTTP only for loopback or literal private development IPs.
+    #[serde(default)]
+    pub allow_private_http: bool,
 }
 
 impl McpServerEntry {
@@ -70,8 +127,93 @@ impl McpServerEntry {
                 "MCP server {name:?} requests sandboxed: true, but the OS-backed stdio sandbox backend is unavailable"
             );
         }
+        if let Self::RemoteHttp {
+            url,
+            headers,
+            grant_policy,
+            ..
+        } = self
+        {
+            anyhow::ensure!(!url.trim().is_empty(), "MCP server {name:?} requires a URL");
+            let mut normalized = BTreeSet::new();
+            for (raw_name, value) in headers {
+                let header = reqwest_mcp::header::HeaderName::from_bytes(raw_name.as_bytes())
+                    .map_err(|_| {
+                        anyhow::anyhow!("MCP server {name:?} has an invalid header name")
+                    })?;
+                anyhow::ensure!(
+                    header != reqwest_mcp::header::HOST && header.as_str() != "mcp-session-id",
+                    "MCP server {name:?} configures a transport-owned header"
+                );
+                anyhow::ensure!(
+                    normalized.insert(header.as_str().to_owned()),
+                    "MCP server {name:?} configures a duplicate header"
+                );
+                match value {
+                    McpHttpHeaderValue::Literal(value) => {
+                        anyhow::ensure!(
+                            !is_sensitive_header(&header),
+                            "MCP server {name:?} must use a secret reference for credential headers"
+                        );
+                        reqwest_mcp::header::HeaderValue::from_bytes(value.as_bytes()).map_err(
+                            |_| anyhow::anyhow!("MCP server {name:?} has an invalid header value"),
+                        )?;
+                    }
+                    McpHttpHeaderValue::SecretRef {
+                        secret_ref,
+                        credential_revision,
+                    } => {
+                        let variable = secret_ref.strip_prefix("env:").unwrap_or_default();
+                        anyhow::ensure!(
+                            !variable.is_empty()
+                                && variable
+                                    .bytes()
+                                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_'),
+                            "MCP server {name:?} has an invalid header secret reference"
+                        );
+                        anyhow::ensure!(
+                            !credential_revision.trim().is_empty(),
+                            "MCP server {name:?} requires a header credential revision"
+                        );
+                    }
+                }
+            }
+            if let Some(policy) = grant_policy {
+                anyhow::ensure!(
+                    !policy.destination_id.trim().is_empty()
+                        && policy.destination_id.len() <= 128
+                        && policy.destination_id.bytes().all(|byte| {
+                            byte.is_ascii_alphanumeric()
+                                || matches!(byte, b'.' | b'_' | b':' | b'-')
+                        }),
+                    "MCP server {name:?} grant policy requires a valid destination ID"
+                );
+                anyhow::ensure!(
+                    !policy.trusted_hosts.is_empty()
+                        && policy
+                            .trusted_hosts
+                            .iter()
+                            .all(|host| !host.trim().is_empty()),
+                    "MCP server {name:?} grant policy requires trusted hosts"
+                );
+                anyhow::ensure!(
+                    policy
+                        .required_scopes
+                        .iter()
+                        .all(|scope| !scope.trim().is_empty()),
+                    "MCP server {name:?} grant policy has an empty scope"
+                );
+            }
+        }
         Ok(())
     }
+}
+
+fn is_sensitive_header(name: &reqwest_mcp::header::HeaderName) -> bool {
+    matches!(
+        name.as_str(),
+        "authorization" | "proxy-authorization" | "cookie" | "set-cookie" | "x-api-key" | "api-key"
+    )
 }
 
 pub fn load_mcp_config(path: impl AsRef<Path>) -> anyhow::Result<McpConfig> {

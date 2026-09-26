@@ -32,6 +32,7 @@ use tracing::{Instrument, info, warn};
 
 use crate::AppState;
 use crate::config_manager::ConfigManager;
+#[cfg(feature = "response-quality")]
 use crate::llm::Orchestrator;
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::NormalizedEvent as DriverEvent;
@@ -639,10 +640,11 @@ async fn run_server_with_listener(
     ) {
         #[cfg(feature = "surreal-backend")]
         {
-            let provider = SurrealDbProvider::new(
+            let provider = SurrealDbProvider::new_with_auth(
                 &config.persistence.database_url,
                 config.persistence.surreal_user.as_deref(),
                 config.persistence.surreal_pass.as_deref(),
+                config.persistence.surreal_auth_level.as_deref(),
                 config.persistence.surreal_ns.as_deref(),
                 config.persistence.surreal_db.as_deref(),
             )
@@ -831,9 +833,33 @@ async fn run_server_with_listener(
         .as_deref()
         .unwrap_or_else(|| std::path::Path::new("mcp.json"));
     let mut mcp_registry = if sidecar_mode {
-        // A sidecar has no global MCP servers: tools arrive with each run.
-        info!("Sidecar mode — global MCP configuration is not loaded");
-        McpRegistry::empty()
+        // A sidecar never opens shared global transports. It does retain the
+        // administrator-owned definitions so a trusted host can select an
+        // exact registered destination and attach a run-owned credential.
+        match McpRegistry::catalog_from_file(mcp_config_path.to_string_lossy().as_ref()) {
+            Ok(registry) => {
+                info!(
+                    path = %mcp_config_path.display(),
+                    "Sidecar mode — loaded MCP destination catalog without connecting"
+                );
+                registry
+            }
+            Err(error) if error.downcast_ref::<std::io::Error>().is_some_and(|io| io.kind() == std::io::ErrorKind::NotFound) => {
+                info!(
+                    path = %mcp_config_path.display(),
+                    "Sidecar mode — no MCP destination catalog configured"
+                );
+                McpRegistry::empty()
+            }
+            Err(error) => {
+                tracing::warn!(
+                    %error,
+                    path = %mcp_config_path.display(),
+                    "Sidecar MCP destination catalog is invalid; remote grants are unavailable"
+                );
+                McpRegistry::empty()
+            }
+        }
     } else {
         match McpRegistry::load_from_file(mcp_config_path.to_string_lossy().as_ref()).await {
             Ok(registry) => registry,
@@ -909,7 +935,7 @@ async fn run_server_with_listener(
         native_skill_registry.len().await
     );
 
-    // Create orchestrator
+    #[cfg(feature = "response-quality")]
     let orchestrator = Arc::new(Orchestrator::new(
         llm_config.clone(),
         Arc::clone(&mcp),
@@ -1072,6 +1098,16 @@ async fn run_server_with_listener(
                         .await
                     {
                         tracing::error!(error = ?e, "Failed to seed configured providers into the settings DB");
+                    }
+                    if let Some(service) = provider_service.as_ref()
+                        && let Err(e) = mgr
+                            .protect_provider_credentials(
+                                provider_registry.as_ref(),
+                                service.as_ref(),
+                            )
+                            .await
+                    {
+                        tracing::error!(error = ?e, "Failed to protect provider credentials");
                     }
                     if let Err(e) = crate::uar::settings::hydrate_provider_registry_from_settings(
                         provider_registry.as_ref(),
@@ -1319,6 +1355,7 @@ async fn run_server_with_listener(
     let state = AppState {
         sidecar_mode,
         mcp: Arc::clone(&mcp),
+        #[cfg(feature = "response-quality")]
         orchestrator,
         sessions,
         run_manager,
@@ -1365,6 +1402,16 @@ async fn run_server_with_listener(
     let provider_api_state = uar::api::providers::ProviderApiState {
         registry: Arc::clone(&state.provider_registry),
         settings_manager: state.settings_manager.clone(),
+        provider_service: state.provider_service.clone(),
+        admin_auth_required: config.security.settings_mutation_auth_required,
+        admin_key: config.security.settings_admin_key.clone(),
+    };
+    let a2ui_api_state = uar::a2ui::routes::A2uiApiState {
+        registry: Arc::clone(&state.a2ui_registry),
+        run_manager: Arc::clone(&state.run_manager),
+        realtime_backbone: Arc::clone(&a2ui_realtime_backbone),
+        design_system_store: Arc::clone(&a2ui_design_system_store),
+        persistence: persistence.clone(),
     };
 
     // ── Shared ingestion worker pool ─────────────────────────────────────────────
@@ -1479,7 +1526,12 @@ async fn run_server_with_listener(
         .route("/api/sessions/{*path}", any(legacy_sessions_route_disabled))
         .nest(
             "/api/uar",
-            uar::api::router().with_state(Arc::clone(&state.run_manager)),
+            uar::api::router()
+                .with_state::<AppState>(Arc::clone(&state.run_manager))
+                .merge(
+                    uar::a2ui::routes::build_response_router()
+                        .with_state::<AppState>(a2ui_api_state.clone()),
+                ),
         )
         // Skills API
         .nest(
@@ -1495,7 +1547,8 @@ async fn run_server_with_listener(
         // Providers API
         .nest(
             "/api/uar/providers",
-            uar::api::providers::build_router().with_state(provider_api_state.clone()),
+            uar::api::providers::build_router(provider_api_state.clone())
+                .with_state(provider_api_state.clone()),
         )
         // Discovery API (agents, sessions, skills, tools catalogs)
         .nest(
@@ -1566,25 +1619,10 @@ async fn run_server_with_listener(
             "/api/uar/presentations",
             uar::api::presentations::build_router().with_state(Arc::clone(&persistence_layer)),
         )
-        .nest("/api/uar/a2ui", {
-            let a2ui_state = uar::a2ui::routes::A2uiApiState {
-                registry: Arc::clone(&state.a2ui_registry),
-                run_manager: Arc::clone(&state.run_manager),
-                realtime_backbone: Arc::clone(&a2ui_realtime_backbone),
-                design_system_store: Arc::clone(&a2ui_design_system_store),
-            };
-            uar::a2ui::routes::build_schema_router().with_state(a2ui_state)
-        })
-        // A2UI artifact-response injection (shares /api/uar/runs prefix)
-        .nest("/api/uar/runs", {
-            let a2ui_state = uar::a2ui::routes::A2uiApiState {
-                registry: Arc::clone(&state.a2ui_registry),
-                run_manager: Arc::clone(&state.run_manager),
-                realtime_backbone: Arc::clone(&a2ui_realtime_backbone),
-                design_system_store: Arc::clone(&a2ui_design_system_store),
-            };
-            uar::a2ui::routes::build_response_router().with_state(a2ui_state)
-        })
+        .nest(
+            "/api/uar/a2ui",
+            uar::a2ui::routes::build_schema_router().with_state(a2ui_api_state),
+        )
         // Tool-call approval HITL gate: POST /api/uar/runs/{run_id}/approval
         .route(
             "/api/uar/runs/{run_id}/approval",
@@ -1610,7 +1648,8 @@ async fn run_server_with_listener(
         // Providers: GET/POST /api/providers, GET/PUT/DELETE /api/providers/{id}, etc.
         .nest(
             "/api/providers",
-            uar::api::providers::build_router().with_state(provider_api_state.clone()),
+            uar::api::providers::build_router(provider_api_state.clone())
+                .with_state(provider_api_state.clone()),
         )
         // Skills: GET /api/skills, GET/DELETE /api/skills/{id}, etc.
         .nest(

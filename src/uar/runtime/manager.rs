@@ -33,7 +33,7 @@ use crate::uar::runtime::skills::service::SkillService;
 use crate::uar::runtime::thread::approvals::{ApprovalBroker, ApprovalOutcome};
 use futures::StreamExt;
 use std::{
-    collections::{BTreeSet, HashMap, HashSet, VecDeque},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -53,6 +53,16 @@ mod presentation_history_tests;
 pub struct StreamEvent {
     pub id: u64,
     pub event: NormalizedEvent,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct PendingApprovalView {
+    pub version: u32,
+    pub event_id: String,
+    pub cursor: Option<u64>,
+    #[serde(flatten)]
+    pub approval: crate::uar::runtime::thread::approvals::PendingApprovalSnapshot,
 }
 
 #[derive(Debug)]
@@ -375,6 +385,11 @@ pub struct RunManager {
     /// Opaque host binding revision shared by definitions captured this boot.
     /// Environment/config hashes remain separate parts of the exact cache key.
     mcp_auth_revision: Uuid,
+    /// Runtime boot identity bound into every prepared tool invocation.
+    tool_runtime_epoch: String,
+    /// Host admission implementation. Standalone UAR installs a local adapter;
+    /// a paired host replaces it before serving runs.
+    host_tool_admission: Arc<dyn crate::uar::runtime::tool_admission::HostToolAdmissionPort>,
     sessions: SessionStore,
     skills: Arc<RwLock<SkillRegistry>>,
     vector_matcher: Arc<crate::uar::runtime::matching::VectorMatcher>,
@@ -776,6 +791,14 @@ impl RunManager {
             ))
         });
 
+        let tool_runtime_epoch = Uuid::new_v4().to_string();
+        let host_tool_admission: Arc<
+            dyn crate::uar::runtime::tool_admission::HostToolAdmissionPort,
+        > = Arc::new(
+            crate::uar::runtime::tool_admission::StandaloneToolAdmissionPort::new(
+                &tool_runtime_epoch,
+            ),
+        );
         Self {
             graph_roots: Arc::new(
                 crate::uar::runtime::thread::graph_host::GraphRootSupervisor::default(),
@@ -787,6 +810,8 @@ impl RunManager {
             mcp_runtime: None,
             mcp_environment: None,
             mcp_auth_revision: Uuid::new_v4(),
+            tool_runtime_epoch,
+            host_tool_admission,
             sessions,
             skills,
             vector_matcher,
@@ -1126,6 +1151,17 @@ impl RunManager {
         self
     }
 
+    /// Replace standalone admission with a host-owned paired adapter before
+    /// this manager accepts runs.
+    #[must_use]
+    pub fn with_host_tool_admission(
+        mut self,
+        admission: Arc<dyn crate::uar::runtime::tool_admission::HostToolAdmissionPort>,
+    ) -> Self {
+        self.host_tool_admission = admission;
+        self
+    }
+
     pub fn with_skill_service(mut self, service: Arc<SkillService>) -> Self {
         self.skill_service = Some(service);
         self
@@ -1188,6 +1224,9 @@ impl RunManager {
         &self,
         owner: &crate::uar::runtime::actor::messages::ActorOwner,
     ) -> anyhow::Result<Option<McpRunResources>> {
+        if !self.global_mcp.shared_transports_enabled() {
+            return Ok(None);
+        }
         let (Some(runtime), Some(environment)) = (&self.mcp_runtime, &self.mcp_environment) else {
             return Ok(None);
         };
@@ -1197,6 +1236,52 @@ impl RunManager {
             self.root_mcp_catalog().await?,
             Arc::clone(environment),
         )))
+    }
+
+    pub(crate) async fn admit_run_mcp_servers(
+        &self,
+        inputs: Vec<crate::uar::runtime::turn::host::RunMcpServerInput>,
+        user: &crate::uar::security::claims::UserContext,
+        owner: crate::uar::runtime::actor::messages::ActorOwner,
+        working_directory: std::path::PathBuf,
+    ) -> Result<
+        (
+            crate::uar::runtime::turn::host::RunMcpServers,
+            McpRunResources,
+        ),
+        crate::uar::runtime::turn::host::HostInputError,
+    > {
+        let catalog = if inputs.iter().any(|input| input.grant.is_some()) {
+            self.root_mcp_catalog().await.map_err(|_| {
+                crate::uar::runtime::turn::host::HostInputError::new(
+                    "run_mcp_destination_unavailable",
+                    "registered MCP destinations are unavailable",
+                )
+            })?
+        } else {
+            Arc::new(McpCatalog::default())
+        };
+        let environment = match &self.mcp_environment {
+            Some(environment) => Arc::clone(environment),
+            None => Arc::new(
+                McpBindingEnvironment::new(working_directory.clone(), BTreeMap::new()).map_err(
+                    |_| {
+                        crate::uar::runtime::turn::host::HostInputError::new(
+                            "working_directory_invalid",
+                            "working directory is invalid",
+                        )
+                    },
+                )?,
+            ),
+        };
+        let servers = crate::uar::runtime::turn::host::RunMcpServers::from_inputs(
+            inputs,
+            user,
+            &catalog,
+            &environment,
+        )?;
+        let resources = servers.resources(owner, working_directory, environment.as_ref())?;
+        Ok((servers, resources))
     }
 
     /// Server and tool identities known without granting a connection. Skills
@@ -1453,6 +1538,80 @@ impl RunManager {
         self.approvals.resolve(run_id, approval_id, approved)
     }
 
+    /// Return the existing live waiter for an owner. This snapshot is a view of
+    /// the current continuation and never creates a replacement approval.
+    pub(crate) async fn pending_approval_for_user(
+        &self,
+        owner_id: &str,
+        run_id: &str,
+    ) -> Option<PendingApprovalView> {
+        let approval = self.approvals.pending(owner_id, run_id)?;
+        let history = self
+            .active_runs
+            .read()
+            .await
+            .get(run_id)
+            .map(|state| Arc::clone(&state.history));
+        let cursor = match history {
+            Some(history) => history.lock().await.buffer.iter().find_map(|event| {
+                matches!(
+                    &event.event,
+                    NormalizedEvent::ToolCallApprovalRequired {
+                        approval_id: Some(approval_id),
+                        ..
+                    } if approval_id == &approval.approval_id
+                )
+                .then_some(event.id)
+            }),
+            None => None,
+        };
+        Some(PendingApprovalView {
+            version: 1,
+            event_id: approval.approval_id.clone(),
+            cursor,
+            approval,
+        })
+    }
+
+    /// Read sanitized durable lifecycle evidence for one owner/run tree.
+    pub(crate) async fn tool_admission_evidence_for_user(
+        &self,
+        owner_id: &str,
+        run_id: &str,
+    ) -> anyhow::Result<Vec<crate::uar::persistence::tool_admission::ToolAdmissionEvidence>> {
+        let Some(persistence) = &self.persistence else {
+            return Ok(Vec::new());
+        };
+        let mut records = persistence.list_tool_admission_evidence(owner_id).await?;
+        let mut latest = HashMap::<
+            String,
+            crate::uar::persistence::tool_admission::ToolAdmissionEvidence,
+        >::new();
+        for record in &records {
+            latest.insert(record.invocation_id.clone(), record.clone());
+        }
+        for stale in latest.into_values().filter(|record| {
+            record.runtime_epoch != self.tool_runtime_epoch && !record.state.is_terminal()
+        }) {
+            if let Some(terminal) = stale.after_runtime_restart() {
+                records.push(
+                    persistence
+                        .save_tool_admission_evidence(&terminal)
+                        .await?,
+                );
+            }
+        }
+        records.sort_by(|left, right| {
+            left.occurred_at
+                .cmp(&right.occurred_at)
+                .then_with(|| left.evidence_id.cmp(&right.evidence_id))
+        });
+        Ok(records
+            .into_iter()
+            .filter(|record| record.root_run_id == run_id || record.run_id == run_id)
+            .collect())
+    }
+
     /// Cancel an in-flight run.
     ///
     /// Cancels the run's cancellation token (which aborts the in-flight LLM
@@ -1493,6 +1652,43 @@ impl RunManager {
             return false;
         }
         self.cancel_run(run_id).await
+    }
+
+    /// Revoke one run-owned remote MCP credential for its exact verified
+    /// owner. Revocation cannot install a replacement; the host must resume at
+    /// a safe boundary with a compatible renewed grant.
+    pub(crate) async fn revoke_run_mcp_grant_for_context(
+        &self,
+        user: &crate::uar::security::claims::UserContext,
+        run_id: &str,
+        server: &str,
+    ) -> bool {
+        if self.get_run_for_context(user, run_id).await.is_none() {
+            return false;
+        }
+        let resources = self
+            .active_runs
+            .read()
+            .await
+            .get(run_id)
+            .and_then(|state| state.delegation.as_ref())
+            .and_then(std::sync::Weak::upgrade);
+        let Some(resources) = resources else {
+            return false;
+        };
+        let Some(grants) = &resources.run_mcp_grants else {
+            return false;
+        };
+        if !grants.revoke(server) {
+            return false;
+        }
+        if let Some(runtime) = &resources.run_scoped_mcp {
+            runtime.require_authentication(server);
+        }
+        resources.cancellation.cancel();
+        let _ = self.cancel_run(run_id).await;
+        tracing::info!(run_id = %run_id, server = %server, "Run MCP credential revoked");
+        true
     }
 
     /// Cancel the current in-flight run associated with a conversation session.
@@ -1559,6 +1755,7 @@ impl RunManager {
         conversation_id: &str,
         thread_controls: bool,
         mcp_catalog: Option<&McpCatalog>,
+        additional_tools: Option<&BTreeSet<String>>,
         verified_owner: Option<&crate::uar::runtime::actor::messages::ActorOwner>,
     ) -> (PolicyUniverse, Option<RunPolicy>) {
         let skills = match &self.skill_service {
@@ -1585,6 +1782,9 @@ impl RunManager {
             .collect::<std::collections::BTreeSet<_>>();
         let (mcp_servers, catalog_tools) = self.mcp_policy_inventory(mcp_catalog).await;
         tools.extend(catalog_tools);
+        if let Some(additional_tools) = additional_tools {
+            tools.extend(additional_tools.iter().cloned());
+        }
         for tool in self.native_skills.openai_tools_json().await {
             if let Some(name) = tool
                 .get("function")
@@ -1672,6 +1872,7 @@ impl RunManager {
             thread_controls,
             turn,
             None,
+            None,
             verified_owner,
         )
         .await
@@ -1685,6 +1886,7 @@ impl RunManager {
         thread_controls: bool,
         turn: Option<RunPolicy>,
         mcp_catalog: Option<&McpCatalog>,
+        additional_tools: Option<&BTreeSet<String>>,
         verified_owner: Option<&crate::uar::runtime::actor::messages::ActorOwner>,
     ) -> EffectiveRunPolicy {
         let Some(settings_manager) = self.settings_manager.as_ref() else {
@@ -1696,6 +1898,7 @@ impl RunManager {
                     thread_controls,
                     turn,
                     mcp_catalog,
+                    additional_tools,
                     verified_owner,
                 )
                 .await;
@@ -1706,6 +1909,7 @@ impl RunManager {
                 conversation_id,
                 thread_controls,
                 mcp_catalog,
+                additional_tools,
                 verified_owner,
             )
             .await;
@@ -1727,13 +1931,11 @@ impl RunManager {
     /// Returns the resolved agent, the stored requested policy (if any), and the
     /// effective policy — the pieces an embedded admin surface needs without a
     /// service.
-    pub async fn effective_config(&self, conversation_id: &str) -> EffectiveConfig {
+    pub async fn effective_config(&self, conversation_id: &str) -> anyhow::Result<EffectiveConfig> {
         let requested = if let Some(persistence) = &self.persistence {
             persistence
                 .load_conversation_policy(crate::session::ANONYMOUS_SESSION_OWNER, conversation_id)
-                .await
-                .ok()
-                .flatten()
+                .await?
         } else {
             None
         };
@@ -1741,7 +1943,7 @@ impl RunManager {
             .as_ref()
             .and_then(|record| record.policy.agent_id.clone())
             .unwrap_or_else(|| "default-agent".to_string());
-        let agent = self.resolve_agent_or_default(&agent_id).await;
+        let agent = self.resolve_registered_agent(&agent_id).await?;
         let mut effective = self
             .resolve_effective_policy(
                 &agent,
@@ -1753,47 +1955,31 @@ impl RunManager {
             )
             .await;
         self.backfill_effective_model(&mut effective).await;
-        EffectiveConfig {
+        Ok(EffectiveConfig {
             agent,
             requested_policy: requested,
             effective_policy: effective,
-        }
-    }
-
-    /// Resolve an agent artifact by id: persisted definition first, then the
-    /// two built-ins, then the default agent as a last resort. Mirrors the
-    /// service path's `resolve_agent_for_run`.
-    async fn resolve_agent_or_default(&self, agent_id: &str) -> AgentArtifact {
-        if let Some(persistence) = &self.persistence
-            && let Ok(Some(agent)) = persistence.load_agent(agent_id).await
-        {
-            return agent;
-        }
-        match agent_id {
-            "orchestrator-agent" => crate::uar::defaults::orchestrator_agent(),
-            _ => crate::uar::defaults::default_agent(),
-        }
+        })
     }
 
     /// Resolve an explicitly selected actor artifact without silently replacing
     /// an unknown ID or a failed storage read with the default agent.
-    pub(crate) async fn resolve_registered_agent(
+    pub async fn resolve_registered_agent(
         &self,
         agent_id: &str,
-    ) -> anyhow::Result<AgentArtifact> {
-        if let Some(persistence) = &self.persistence
-            && let Some(agent) = persistence.load_agent(agent_id).await?
-        {
-            return Ok(agent);
-        }
-        match agent_id {
-            "default-agent" => Ok(crate::uar::defaults::default_agent()),
-            "orchestrator-agent" => Ok(crate::uar::defaults::orchestrator_agent()),
-            "general-purpose" => Ok(crate::uar::defaults::general_purpose_agent()),
-            "rust-reviewer" => Ok(crate::uar::defaults::rust_reviewer_agent()),
-            "compiler-agent" => Ok(crate::uar::defaults::compiler_agent()),
-            _ => anyhow::bail!("Requested agent artifact is not registered"),
-        }
+    ) -> Result<AgentArtifact, crate::uar::domain::agent_store::AgentStoreError> {
+        crate::uar::domain::agent_store::resolve_registered_agent(
+            self.persistence.as_deref(),
+            agent_id,
+        )
+        .await
+    }
+
+    /// Return the complete local runtime catalog without hiding store failures.
+    pub async fn list_registered_agents(
+        &self,
+    ) -> Result<Vec<AgentArtifact>, crate::uar::domain::agent_store::AgentStoreError> {
+        crate::uar::domain::agent_store::list_registered_agents(self.persistence.as_deref()).await
     }
 
     /// Backward-compatible agent + conversation resolution (no Global scope).
@@ -1808,6 +1994,7 @@ impl RunManager {
         thread_controls: bool,
         turn: Option<RunPolicy>,
         mcp_catalog: Option<&McpCatalog>,
+        additional_tools: Option<&BTreeSet<String>>,
         verified_owner: Option<&crate::uar::runtime::actor::messages::ActorOwner>,
     ) -> EffectiveRunPolicy {
         let (universe, conversation) = self
@@ -1816,6 +2003,7 @@ impl RunManager {
                 conversation_id,
                 thread_controls,
                 mcp_catalog,
+                additional_tools,
                 verified_owner,
             )
             .await;
@@ -1956,24 +2144,15 @@ impl RunManager {
                 .ok()
             })
             .unwrap_or_default();
-        let artifact = if marker.artifact_inline {
-            let artifact = inline_artifact
-                .ok_or_else(|| "inline artifact is required for continuation".to_string())?;
-            if artifact.id != run.agent_id {
-                return Err("continuation artifact does not match the source run".to_string());
-            }
-            artifact
-        } else {
-            let persistence = self
-                .persistence
-                .as_ref()
-                .ok_or_else(|| "agent persistence is unavailable".to_string())?;
-            persistence
-                .load_agent(&run.agent_id)
-                .await
-                .map_err(|error| format!("failed to load agent '{}': {error}", run.agent_id))?
-                .ok_or_else(|| format!("agent '{}' not found", run.agent_id))?
-        };
+        let snapshot =
+            crate::uar::domain::artifact::AgentArtifactSnapshot::from_run_context(&run.context)
+                .map_err(str::to_string)?;
+        if let Some(supplied) = inline_artifact
+            && supplied.definition_revision() != snapshot.artifact.definition_revision()
+        {
+            return Err("continuation artifact does not match the source run snapshot".to_string());
+        }
+        let artifact = snapshot.artifact;
         let input = serde_json::json!({
             "type": "a2ui.user_action",
             "sourceRunId": run_id,
@@ -1989,6 +2168,7 @@ impl RunManager {
             .with_user_context(user)
             .map_err(|_| "invalid interaction principal".to_string())?;
         request.session_id = run.conversation_id;
+        request.host_resources_marker.artifact_inline = marker.artifact_inline;
         request.resolved_policy = effective_policy;
         if let Some(host_context) = run.context.get("host_context") {
             request.working_directory = host_context
@@ -2081,6 +2261,7 @@ impl RunManager {
             memory_hits,
             verified_owner: None,
             mcp_resources: None,
+            host_tool_admission: None,
             run_credentials: None,
             host_resources_marker: Default::default(),
             host_secret_scrubber: Default::default(),
@@ -2157,7 +2338,15 @@ impl RunManager {
                         conversation_id: request.session_id.clone(),
                         user_id: request.user_id.clone(),
                         status: RunStatus::Error,
-                        context: serde_json::json!({}),
+                        context: serde_json::json!({
+                            "agent_snapshot": request.artifact.snapshot(
+                                if request.host_resources_marker.artifact_inline {
+                                    "inline"
+                                } else {
+                                    "embedded"
+                                }
+                            ),
+                        }),
                     },
                     verified_owner: request.verified_owner.clone(),
                     presentations: None,
@@ -2384,6 +2573,7 @@ impl RunManager {
             working_directory,
             verified_owner,
             mut mcp_resources,
+            host_tool_admission,
             run_credentials,
             host_resources_marker,
             host_secret_scrubber,
@@ -2746,6 +2936,7 @@ impl RunManager {
                 .map(|bindings| bindings.policy.effective().clone()),
             resolved_policy,
         );
+        let policy_was_pre_resolved = pre_resolved_policy.is_some();
         let mut effective_policy = match pre_resolved_policy {
             Some(policy) => policy,
             None => {
@@ -2754,10 +2945,11 @@ impl RunManager {
                     &owner_id,
                     session.id(),
                     actor_root.is_some(),
-                    host_policy_constraint,
+                    host_policy_constraint.clone(),
                     mcp_resources
                         .as_ref()
                         .map(|resources| resources.catalog().as_ref()),
+                    None,
                     verified_owner.as_ref(),
                 )
                 .await
@@ -2788,12 +2980,71 @@ impl RunManager {
                 self.run_cancellations.write().await.remove(&run_id);
                 return run_id;
             }
-            effective_policy.mcp_servers.ids = names.iter().cloned().collect();
-            effective_policy.mcp_servers.mode = if names.is_empty() {
-                SelectionMode::None
-            } else {
-                SelectionMode::Selected
+        }
+
+        // Remote descriptors do not exist until the authenticated run binding
+        // performs tools/list. Resolve policy once more with those exact names
+        // in the universe so every normal scope can allow, deny or narrow them.
+        if !policy_was_pre_resolved
+            && let Some(resources) = mcp_resources
+                .as_ref()
+                .filter(|resources| resources.run_scoped_names().is_some())
+        {
+            let discovered = match resources.discover_tool_ids(&effective_policy).await {
+                Ok(discovered) => discovered,
+                Err(error) => {
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: run_id.clone(),
+                            code: "mcp_preflight_failed".into(),
+                            message: error.to_string(),
+                        })
+                        .await;
+                    emitter
+                        .emit(NormalizedEvent::RunDone {
+                            run_id: run_id.clone(),
+                        })
+                        .await;
+                    self.run_cancellations.write().await.remove(&run_id);
+                    return run_id;
+                }
             };
+            effective_policy = self
+                .resolve_effective_policy_with_catalog(
+                    &artifact,
+                    &owner_id,
+                    session.id(),
+                    actor_root.is_some(),
+                    host_policy_constraint,
+                    Some(resources.catalog().as_ref()),
+                    Some(&discovered),
+                    verified_owner.as_ref(),
+                )
+                .await;
+            let names = resources
+                .run_scoped_names()
+                .expect("filtered run-scoped resources retain names");
+            if effective_policy
+                .mcp_servers
+                .ids
+                .iter()
+                .any(|name| !names.contains(name))
+            {
+                emitter
+                    .emit(NormalizedEvent::Error {
+                        run_id: run_id.clone(),
+                        code: "mcp_server_not_run_scoped".into(),
+                        message: "Run policy selects an MCP server outside this request".into(),
+                    })
+                    .await;
+                emitter
+                    .emit(NormalizedEvent::RunDone {
+                        run_id: run_id.clone(),
+                    })
+                    .await;
+                self.run_cancellations.write().await.remove(&run_id);
+                return run_id;
+            }
         }
 
         let (presentation_snapshot, presentation_warnings) = match &inherited {
@@ -2856,7 +3107,10 @@ impl RunManager {
                 user_id: user_id.clone(),
                 status: RunStatus::Error,
                 context: serde_json::json!({
-                    "error_code": "checkpoint_authorization_revoked"
+                    "error_code": "checkpoint_authorization_revoked",
+                    "agent_snapshot": artifact.snapshot(
+                        if host_resources_marker.artifact_inline { "inline" } else { "embedded" }
+                    ),
                 }),
             };
             {
@@ -2916,6 +3170,11 @@ impl RunManager {
         let session_id_for_creds = Some(session.id().to_string());
 
         let dialogue = RunDialogue(crate::session::Session::from_state(session.to_state()));
+        let agent_snapshot = artifact.snapshot(if host_resources_marker.artifact_inline {
+            "inline"
+        } else {
+            "embedded"
+        });
         let run = Run {
             run_id: run_id.clone(),
             agent_id: artifact.id.clone(),
@@ -2928,6 +3187,7 @@ impl RunManager {
                 "presentation_negotiation": presentation_snapshot.negotiation(),
                 "presentation_selection": presentation_snapshot.selection(),
                 "presentation_templates": presentation_snapshot.identities(),
+                "agent_snapshot": agent_snapshot,
                 "host_resources": host_resources_marker,
                 "host_context": {
                     "working_directory": working_directory.as_ref().map(|path| path.display().to_string()),
@@ -3034,6 +3294,7 @@ impl RunManager {
             Some(bindings) => bindings.approvals.for_child(),
             None => match self.approvals.register(
                 run_id.clone(),
+                owner_id.clone(),
                 Arc::new(emitter.clone()),
                 run_cancellation.clone(),
             ) {
@@ -3092,6 +3353,50 @@ impl RunManager {
                     .emit(NormalizedEvent::Error {
                         run_id: run_id.clone(),
                         code: "world_state_load_failed".into(),
+                        message: error.to_string(),
+                    })
+                    .await;
+                emitter
+                    .emit(NormalizedEvent::RunDone {
+                        run_id: run_id.clone(),
+                    })
+                    .await;
+                self.run_cancellations.write().await.remove(&run_id);
+                return run_id;
+            }
+        };
+        let root_run_id = inherited
+            .as_ref()
+            .map_or_else(|| run_id.clone(), |bindings| bindings.thread.root_run_id.clone());
+        let host_tool_admission = host_tool_admission
+            .unwrap_or_else(|| Arc::clone(&self.host_tool_admission));
+        let tool_admission = match crate::uar::runtime::tool_admission::ToolAdmissionContext::new(
+            root_run_id,
+            run_id.clone(),
+            owner_id.clone(),
+            world_state.directory().display().to_string(),
+            self.tool_runtime_epoch.clone(),
+            &artifact,
+            &effective_policy,
+            host_tool_admission.binding(),
+        )
+        .and_then(|context| {
+            crate::uar::runtime::tool_admission::ToolAdmissionRuntime::new(
+                context,
+                Arc::clone(&host_tool_admission),
+                self.persistence.clone(),
+                run_cancellation.clone(),
+            )
+        }) {
+            Ok(admission) => Arc::new(admission),
+            Err(error) => {
+                if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                    state.run.status = RunStatus::Error;
+                }
+                emitter
+                    .emit(NormalizedEvent::Error {
+                        run_id: run_id.clone(),
+                        code: "tool_admission_context_failed".into(),
                         message: error.to_string(),
                     })
                     .await;
@@ -3582,40 +3887,66 @@ impl RunManager {
             .into_iter()
             .map(|entry| entry.skill)
             .collect();
+        let policy_llm_config = if inherited.is_none()
+            && let Some(ref registry) = self.provider_registry
+        {
+            let mut provider_policy = artifact.policy.provider.clone();
+            if let Some(route) = &effective_policy.model {
+                provider_policy.default.provider = route.provider_id.clone();
+                provider_policy.default.model = route.model_id.clone();
+            }
+            match registry
+                .resolve_llm_config_from_policy(&provider_policy)
+                .await
+            {
+                Some(resolved) => {
+                    tracing::info!(
+                        provider = %provider_policy.default.provider,
+                        model = %provider_policy.default.model,
+                        "Using per-agent provider settings"
+                    );
+                    Some(resolved)
+                }
+                None if run_credentials.is_some() => None,
+                None => {
+                    tracing::warn!(
+                        provider = %provider_policy.default.provider,
+                        model = %provider_policy.default.model,
+                        "Catalog provider/model assignment is unavailable"
+                    );
+                    if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                        state.run.status = RunStatus::Error;
+                    }
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: run_id.clone(),
+                            code: "provider_model_unavailable".into(),
+                            message: format!(
+                                "Catalog provider/model '{}/{}' is unavailable",
+                                provider_policy.default.provider, provider_policy.default.model
+                            )
+                            .into(),
+                        })
+                        .await;
+                    emitter
+                        .emit(NormalizedEvent::RunDone {
+                            run_id: run_id.clone(),
+                        })
+                        .await;
+                    self.run_cancellations.write().await.remove(&run_id);
+                    return run_id;
+                }
+            }
+        } else {
+            None
+        };
         // Resolve the model that will actually receive this run before applying
         // any model-keyed context budget. This includes provider-registry and
         // first-matched-skill overrides.
         let model_bindings_result = if let Some(bindings) = &inherited {
             bindings.models.for_policy(&bindings.policy)
         } else {
-            let preferred_llm_config = if let Some(ref registry) = self.provider_registry {
-                let mut provider_policy = artifact.policy.provider.clone();
-                if let Some(route) = &effective_policy.model {
-                    provider_policy.default.provider = route.provider_id.clone();
-                    provider_policy.default.model = route.model_id.clone();
-                }
-                match registry
-                    .resolve_llm_config_from_policy(&provider_policy)
-                    .await
-                {
-                    Some(resolved) => {
-                        tracing::info!(
-                            provider = %provider_policy.default.provider,
-                            model = %provider_policy.default.model,
-                            "Using per-agent provider settings"
-                        );
-                        resolved
-                    }
-                    None => {
-                        tracing::debug!(
-                            "No provider match for agent policy, using global settings"
-                        );
-                        self.llm_config.clone()
-                    }
-                }
-            } else {
-                self.llm_config.clone()
-            };
+            let preferred_llm_config = policy_llm_config.unwrap_or_else(|| self.llm_config.clone());
             let skill_preferred_model = matched_skills.iter().find_map(|skill| {
                 skill
                     .execution_config
@@ -3875,6 +4206,9 @@ impl RunManager {
                         .as_ref()
                         .filter(|resources| resources.run_scoped_names().is_some())
                         .map(|resources| resources.runtime().clone()),
+                    run_mcp_grants: mcp_resources
+                        .as_ref()
+                        .and_then(|resources| resources.run_grants().cloned()),
                 })
             }),
         );
@@ -3960,13 +4294,26 @@ impl RunManager {
                 })
                 .collect::<Vec<_>>()
         };
-        let catalog_model = qualified_model_name(&run_llm_config);
+        let qualified_model = qualified_model_name(&run_llm_config);
         let (catalog_provider, catalog_model_id) =
-            crate::llm::registry::split_model_string_pub(&catalog_model);
-        let catalog_window = crate::llm::catalog::ModelCatalog::global()
-            .model(&catalog_provider, &catalog_model_id)
-            .map(|model| model.limits.context_window as usize)
-            .filter(|window| *window > 0);
+            crate::llm::registry::split_model_string_pub(&qualified_model);
+        let configured_window = if let Some(registry) = &self.provider_registry {
+            registry.models(&catalog_provider).await.and_then(|models| {
+                models
+                    .into_iter()
+                    .find(|model| model.id == catalog_model_id)
+                    .and_then(|model| model.context_window)
+                    .map(|window| window as usize)
+            })
+        } else {
+            None
+        };
+        let model_context_window = configured_window.or_else(|| {
+            crate::llm::catalog::ModelCatalog::global()
+                .model(&catalog_provider, &catalog_model_id)
+                .map(|model| model.limits.context_window as usize)
+                .filter(|window| *window > 0)
+        });
         let catalog_entries = eligible_skills
             .iter()
             .map(|skill| {
@@ -3977,8 +4324,8 @@ impl RunManager {
             .collect::<Vec<_>>();
         match crate::uar::runtime::skills::catalog::render_catalog(
             &catalog_entries,
-            &catalog_model,
-            catalog_window,
+            &qualified_model,
+            model_context_window,
         ) {
             Ok(catalog) => {
                 tracing::debug!(
@@ -4036,17 +4383,14 @@ impl RunManager {
 
         // Message-count context strategy followed by model-token budgeting.
         let (effective_strategy, context_model) = {
-            let (provider_id, model_id) =
-                crate::llm::registry::split_model_string_pub(&run_llm_config.model);
-            let effective_context_tokens = crate::llm::catalog::ModelCatalog::global()
-                .model(&provider_id, &model_id)
-                .map(|m| (m.limits.context_window as f64 * 0.7) as u32);
+            let effective_context_tokens =
+                model_context_window.map(|window| (window as f64 * 0.7) as u32);
             (
                 crate::uar::context::resolve_effective_strategy(
                     &effective_policy.context_strategy,
                     effective_context_tokens,
                 ),
-                format!("{provider_id}/{model_id}"),
+                qualified_model.clone(),
             )
         };
         let summarization_driver: Option<Arc<dyn crate::llm::LlmDriver>> = match &effective_strategy
@@ -4064,12 +4408,7 @@ impl RunManager {
         // tool-call normalization, with the system message pinned throughout
         // (`uar::runtime::context::reduce`). The operator-declared strategy
         // drives both stages, so a run reduces once against one tokenizer.
-        let (context_provider, context_model_id) =
-            crate::llm::registry::split_model_string_pub(&run_llm_config.model);
-        let context_limit = crate::llm::catalog::ModelCatalog::global()
-            .model(&context_provider, &context_model_id)
-            .map(|model| model.limits.context_window as usize)
-            .unwrap_or(8_192);
+        let context_limit = model_context_window.unwrap_or(8_192);
         let mut world_contributor = world_state.contributor(plan.restore_checkpoint).await;
         let world_reserved_tokens = match world_contributor
             .reserved_tokens(&messages, &context_model)
@@ -4567,6 +4906,7 @@ impl RunManager {
                 )
                 .with_tool_execution_mode(artifact.policy.tools.execution_mode.clone())
                 .with_resilience_policy(self.resilience_policy.clone())
+                .with_tool_admission(Arc::clone(&tool_admission))
                 .with_resolved_turn(Arc::clone(&resolved_turn))
                 .with_canonical_receipt_store(self.persistence.clone())
                 .with_world_state(Arc::clone(&world_state))
@@ -4619,7 +4959,7 @@ impl RunManager {
             let approval_governance_gate = self.governance_gate.clone();
             let effective_tool_approval = effective_policy.tool_approval;
             let gate: crate::llm::ToolApprovalGate = Arc::new(
-                move |tool_call_id, tool_name, approval_class, arguments_json, call_index| {
+                move |invocation| {
                     let run_id = approval_run_id.clone();
                     let emitter = approval_emitter.clone();
                     let channel = approval_channel.clone();
@@ -4628,14 +4968,25 @@ impl RunManager {
                     let governance = approval_governance.clone();
                     let governance_gate = approval_governance_gate.clone();
                     Box::pin(async move {
+                        let admission_id = invocation.admission_id.clone();
+                        let host_requires_approval = invocation.host_requires_approval;
+                        let action_display = invocation.action_display;
+                        let invocation = invocation.invocation;
+                        let tool_call_id = invocation.model_tool_call_id.clone();
+                        let tool_name = invocation.provider_tool_name.clone();
+                        let approval_class = invocation.approval_class;
+                        let arguments_json = action_display.to_string();
+                        let call_index = invocation.call_index;
                         if cancellation.is_cancelled() {
-                            return crate::llm::ToolApprovalResult::Rejected {
+                            return crate::llm::ToolApprovalResult::Cancelled {
                                 reason: "Tool call cancelled with its run".to_string(),
                             };
                         }
-                        // A root's local governance toggle must not erase
-                        // a child's independently narrowed Ask/Deny policy.
-                        if !child_run
+                        // A host may bypass automatic governance for a verified
+                        // local root, but explicit Ask/Deny remains authoritative.
+                        if !host_requires_approval
+                            && !child_run
+                            && effective_tool_approval == ToolApprovalPolicy::Auto
                             && let Some(decision) =
                                 governance_bypass_decision(governance_gate.as_ref())
                         {
@@ -4661,7 +5012,8 @@ impl RunManager {
                                 .await;
                             return crate::llm::ToolApprovalResult::Rejected { reason };
                         }
-                        let approval_required = effective_tool_approval == ToolApprovalPolicy::Ask
+                        let approval_required = host_requires_approval
+                            || effective_tool_approval == ToolApprovalPolicy::Ask
                             || approval_class
                                 == crate::uar::tools::descriptor::ApprovalClass::Required;
                         let decision = match &governance {
@@ -4672,7 +5024,8 @@ impl RunManager {
                                 None => crate::uar::governance::engine::ToolGovernanceDecision::Allow,
                             };
                         match decision {
-                                crate::uar::governance::engine::ToolGovernanceDecision::Allow => {
+                                crate::uar::governance::engine::ToolGovernanceDecision::Allow
+                                    if !approval_required => {
                                     return crate::llm::ToolApprovalResult::Allowed;
                                 }
                                 crate::uar::governance::engine::ToolGovernanceDecision::Deny => {
@@ -4686,9 +5039,12 @@ impl RunManager {
                                     }).await;
                                     return crate::llm::ToolApprovalResult::Rejected { reason };
                                 }
-                                crate::uar::governance::engine::ToolGovernanceDecision::RequireApproval => {}
+                                crate::uar::governance::engine::ToolGovernanceDecision::Allow
+                                | crate::uar::governance::engine::ToolGovernanceDecision::RequireApproval => {}
                             }
-                        let risk_reason = if effective_tool_approval == ToolApprovalPolicy::Ask {
+                        let risk_reason = if host_requires_approval {
+                            format!("Tool '{tool_name}' requires approval under the paired host policy")
+                        } else if effective_tool_approval == ToolApprovalPolicy::Ask {
                             format!(
                                 "Tool '{tool_name}' requires approval under the effective run policy"
                             )
@@ -4697,6 +5053,7 @@ impl RunManager {
                         };
                         match channel
                             .request(
+                                Some(admission_id),
                                 call_index,
                                 tool_call_id,
                                 tool_name.clone(),
@@ -4729,7 +5086,7 @@ impl RunManager {
                                 }
                             }
                             ApprovalOutcome::Cancelled => {
-                                crate::llm::ToolApprovalResult::Rejected {
+                                crate::llm::ToolApprovalResult::Cancelled {
                                     reason: "Approval cancelled with its run".to_string(),
                                 }
                             }
@@ -4741,23 +5098,23 @@ impl RunManager {
             let budget_emitter = emitter.clone();
             let budget_run_id = run_id.clone();
             let budget_gate: crate::llm::ToolApprovalGate = Arc::new(
-                move |tool_call_id, tool_name, approval_class, arguments_json, call_index| {
+                move |invocation| {
                     let gate = Arc::clone(&gate);
                     let budget = tool_budget.clone();
                     let emitter = budget_emitter.clone();
                     let run_id = budget_run_id.clone();
                     Box::pin(async move {
-                        let decision = gate(
-                            tool_call_id.clone(),
-                            tool_name.clone(),
-                            approval_class,
-                            arguments_json,
-                            call_index,
-                        )
-                        .await;
+                        let tool_call_id = invocation.invocation.model_tool_call_id.clone();
+                        let tool_name = invocation.invocation.provider_tool_name.clone();
+                        let call_index = invocation.invocation.call_index;
+                        let decision = gate(invocation).await;
                         // Both Approved and GovernanceBypassed remain
                         // subject to the same host-owned root allowance.
-                        if !matches!(&decision, crate::llm::ToolApprovalResult::Rejected { .. })
+                        if !matches!(
+                            &decision,
+                            crate::llm::ToolApprovalResult::Rejected { .. }
+                                | crate::llm::ToolApprovalResult::Cancelled { .. }
+                        )
                             && let Err(error) = budget.admit_tool()
                         {
                             let reason = error.to_string();
@@ -4776,12 +5133,16 @@ impl RunManager {
                     })
                 },
             );
-            let graph_thread_delegate = graph_controls.map(|controls| {
+            let graph_thread_delegate = graph_controls
+                .zip(authorized_tools.get("spawn_agent").cloned())
+                .map(|(controls, descriptor)| {
                 Arc::new(
                     crate::uar::runtime::graph::delegation::GraphThreadDelegate::new(
                         run_id.clone(),
                         controls,
                         Arc::clone(&budget_gate),
+                        Arc::clone(&tool_admission),
+                        descriptor,
                     ),
                 )
             });
@@ -6148,6 +6509,44 @@ impl RunManager {
                 .unwrap_or(crate::session::ANONYMOUS_SESSION_OWNER)
                 == user.user_id)
             .then(|| state.run.clone())
+    }
+
+    /// List runs visible to the exact middleware-verified subject and tenant.
+    ///
+    /// This is intentionally the same ownership predicate as
+    /// [`Self::get_run_for_context`]. Administration clients can enumerate
+    /// their runs without receiving another owner's identifiers or context.
+    pub(crate) async fn list_runs_for_context(
+        &self,
+        user: &crate::uar::security::claims::UserContext,
+    ) -> Vec<Run> {
+        let owner = if user.user_id == crate::session::ANONYMOUS_SESSION_OWNER {
+            if user.claims.sub != user.user_id || user.tenant_id.is_some() {
+                return Vec::new();
+            }
+            None
+        } else {
+            match crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user) {
+                Ok(owner) => Some(owner),
+                Err(_) => return Vec::new(),
+            }
+        };
+        let runs = self.active_runs.read().await;
+        let mut visible = runs
+            .values()
+            .filter(|state| {
+                state.verified_owner == owner
+                    && state
+                        .run
+                        .user_id
+                        .as_deref()
+                        .unwrap_or(crate::session::ANONYMOUS_SESSION_OWNER)
+                        == user.user_id
+            })
+            .map(|state| state.run.clone())
+            .collect::<Vec<_>>();
+        visible.sort_by(|left, right| left.run_id.cmp(&right.run_id));
+        visible
     }
 
     /// Return a run only when it belongs to the authenticated subject.

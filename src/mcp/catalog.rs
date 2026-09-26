@@ -10,7 +10,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 use std::sync::Arc;
 
-use super::config::McpServerEntry;
+use super::config::{McpHttpHeaderValue, McpServerEntry};
 use sha2::{Digest, Sha256};
 
 /// Trust order for server declarations, from lowest to highest.
@@ -307,10 +307,50 @@ fn hash_configuration(configuration: &McpServerEntry) -> ServerConfigHash {
             hash_environment(&mut hasher, env);
             hasher.update([u8::from(*sandboxed)]);
         }
-        McpServerEntry::RemoteHttp { url, env } => {
+        McpServerEntry::RemoteHttp {
+            url,
+            env,
+            headers,
+            grant_policy,
+        } => {
             hasher.update([1]);
             hash_field(&mut hasher, url);
             hash_environment(&mut hasher, env);
+            let ordered_headers = headers.iter().collect::<BTreeMap<_, _>>();
+            hasher.update((ordered_headers.len() as u64).to_be_bytes());
+            for (name, value) in ordered_headers {
+                hash_field(&mut hasher, name);
+                match value {
+                    McpHttpHeaderValue::Literal(value) => {
+                        hasher.update([0]);
+                        hash_field(&mut hasher, value);
+                    }
+                    McpHttpHeaderValue::SecretRef {
+                        secret_ref,
+                        credential_revision,
+                    } => {
+                        hasher.update([1]);
+                        hash_field(&mut hasher, secret_ref);
+                        hash_field(&mut hasher, credential_revision);
+                    }
+                }
+            }
+            match grant_policy {
+                Some(policy) => {
+                    hasher.update([1]);
+                    hash_field(&mut hasher, &policy.destination_id);
+                    hasher.update((policy.trusted_hosts.len() as u64).to_be_bytes());
+                    for host in &policy.trusted_hosts {
+                        hash_field(&mut hasher, host);
+                    }
+                    hasher.update((policy.required_scopes.len() as u64).to_be_bytes());
+                    for scope in &policy.required_scopes {
+                        hash_field(&mut hasher, scope);
+                    }
+                    hasher.update([u8::from(policy.allow_private_http)]);
+                }
+                None => hasher.update([0]),
+            }
         }
     }
     ServerConfigHash(

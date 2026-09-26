@@ -17,8 +17,9 @@ pub const AGUI_PROFILE_REVISION: u32 = 1;
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.
-pub const CAPABILITY_VOCABULARY: [&str; 9] = [
+pub const CAPABILITY_VOCABULARY: [&str; 10] = [
     "agui_stream_fidelity",
+    "approval_lifecycle_v1",
     "host_history",
     "ingest_scoped_credentials",
     "reasoning_effort",
@@ -31,7 +32,8 @@ pub const CAPABILITY_VOCABULARY: [&str; 9] = [
 
 /// Capabilities this binary implements. Each owning change adds its name in
 /// the same commit as the behaviour; none has landed yet.
-pub const IMPLEMENTED_CAPABILITIES: [&str; 6] = [
+pub const IMPLEMENTED_CAPABILITIES: [&str; 7] = [
+    "approval_lifecycle_v1",
     "host_history",
     "reasoning_effort",
     "run_scoped_credentials",
@@ -54,6 +56,7 @@ pub struct CapabilitiesResponse {
     pub agui: AguiProfile,
     /// Sorted, duplicate-free names from [`CAPABILITY_VOCABULARY`].
     pub capabilities: Vec<&'static str>,
+    pub administration: super::administration_capabilities::AdministrationCapabilities,
 }
 
 /// `GET /api/uar/capabilities`
@@ -68,5 +71,6 @@ pub async fn capabilities_handler() -> Json<CapabilitiesResponse> {
             profile_revision: AGUI_PROFILE_REVISION,
         },
         capabilities,
+        administration: super::administration_capabilities::administration_capabilities(),
     })
 }

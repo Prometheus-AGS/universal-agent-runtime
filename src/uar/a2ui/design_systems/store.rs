@@ -51,6 +51,23 @@ pub trait DesignSystemStore: Send + Sync + std::fmt::Debug {
     /// List all components, ordered by slug.
     async fn list_components(&self) -> anyhow::Result<Vec<Component>>;
 
+    /// Replace a component only while its durable revision is unchanged.
+    async fn replace_component_if_unchanged(
+        &self,
+        expected_updated_at: chrono::DateTime<chrono::Utc>,
+        component: Component,
+    ) -> anyhow::Result<bool>;
+
+    /// Delete a component only while its durable revision is unchanged.
+    async fn delete_component_if_unchanged(
+        &self,
+        id: &str,
+        expected_updated_at: chrono::DateTime<chrono::Utc>,
+    ) -> anyhow::Result<bool>;
+
+    /// Count design-system overrides that still reference a component.
+    async fn component_reference_count(&self, component_id: &str) -> anyhow::Result<u64>;
+
     /// List components that do not yet have an embedding recorded
     /// (`embed_component` writes the embedding back via `set_component_embedding`).
     async fn list_components_missing_embedding(&self) -> anyhow::Result<Vec<Component>>;
@@ -152,6 +169,49 @@ impl DesignSystemStore for InMemoryDesignSystemStore {
         let mut v: Vec<_> = self.components.read().await.values().cloned().collect();
         v.sort_by(|a, b| a.slug.cmp(&b.slug));
         Ok(v)
+    }
+
+    async fn replace_component_if_unchanged(
+        &self,
+        expected_updated_at: chrono::DateTime<chrono::Utc>,
+        component: Component,
+    ) -> anyhow::Result<bool> {
+        let mut components = self.components.write().await;
+        let Some(current) = components.get(&component.id) else {
+            return Ok(false);
+        };
+        if current.updated_at != expected_updated_at {
+            return Ok(false);
+        }
+        components.insert(component.id.clone(), component);
+        Ok(true)
+    }
+
+    async fn delete_component_if_unchanged(
+        &self,
+        id: &str,
+        expected_updated_at: chrono::DateTime<chrono::Utc>,
+    ) -> anyhow::Result<bool> {
+        let mut components = self.components.write().await;
+        let Some(current) = components.get(id) else {
+            return Ok(false);
+        };
+        if current.updated_at != expected_updated_at {
+            return Ok(false);
+        }
+        components.remove(id);
+        self.embeddings.write().await.remove(id);
+        Ok(true)
+    }
+
+    async fn component_reference_count(&self, component_id: &str) -> anyhow::Result<u64> {
+        Ok(self
+            .overrides
+            .read()
+            .await
+            .values()
+            .filter(|record| record.component_id == component_id)
+            .count() as u64)
     }
 
     async fn list_components_missing_embedding(&self) -> anyhow::Result<Vec<Component>> {
@@ -365,6 +425,62 @@ impl DesignSystemStore for SurrealDesignSystemStore {
             }
         })?;
         from_values(rows)
+    }
+
+    async fn replace_component_if_unchanged(
+        &self,
+        expected_updated_at: chrono::DateTime<chrono::Utc>,
+        component: Component,
+    ) -> anyhow::Result<bool> {
+        let payload = to_db_value_without_id(&component)?;
+        let mut response = self
+            .db
+            .query(
+                "UPDATE type::record('components', $rid) CONTENT $data \
+                 WHERE updated_at = $expected RETURN AFTER",
+            )
+            .bind(("rid", component.id.clone()))
+            .bind(("data", payload))
+            .bind(("expected", expected_updated_at))
+            .await?;
+        let rows: Vec<surrealdb::types::Value> = response.take(0)?;
+        Ok(!rows.is_empty())
+    }
+
+    async fn delete_component_if_unchanged(
+        &self,
+        id: &str,
+        expected_updated_at: chrono::DateTime<chrono::Utc>,
+    ) -> anyhow::Result<bool> {
+        let mut response = self
+            .db
+            .query(
+                "DELETE type::record('components', $rid) WHERE updated_at = $expected RETURN BEFORE",
+            )
+            .bind(("rid", id.to_string()))
+            .bind(("expected", expected_updated_at))
+            .await?;
+        let rows: Vec<surrealdb::types::Value> = response.take(0)?;
+        if rows.is_empty() {
+            return Ok(false);
+        }
+        self.db
+            .query("DELETE type::record('component_embeddings', $rid)")
+            .bind(("rid", id.to_string()))
+            .await?;
+        Ok(true)
+    }
+
+    async fn component_reference_count(&self, component_id: &str) -> anyhow::Result<u64> {
+        let mut response = self
+            .db
+            .query(
+                "SELECT VALUE count() FROM component_overrides WHERE component_id = $cid GROUP ALL",
+            )
+            .bind(("cid", component_id.to_string()))
+            .await?;
+        let counts: Vec<u64> = response.take(0)?;
+        Ok(counts.first().copied().unwrap_or_default())
     }
 
     async fn list_components_missing_embedding(&self) -> anyhow::Result<Vec<Component>> {
@@ -593,6 +709,55 @@ impl DesignSystemStore for PostgresDesignSystemStore {
         .fetch_all(&self.pool)
         .await?;
         rows.into_iter().map(TryInto::try_into).collect()
+    }
+
+    async fn replace_component_if_unchanged(
+        &self,
+        expected_updated_at: chrono::DateTime<chrono::Utc>,
+        component: Component,
+    ) -> anyhow::Result<bool> {
+        let renderers = serde_json::to_value(&component.renderers)?;
+        let result = sqlx::query(
+            "UPDATE a2ui_components SET slug = $2, primitive_type = $3, category = $4, \
+             schema = $5, description = $6, usage_examples = $7, renderers = $8, updated_at = $9 \
+             WHERE id = $1 AND updated_at = $10",
+        )
+        .bind(&component.id)
+        .bind(&component.slug)
+        .bind(&component.primitive_type)
+        .bind(&component.category)
+        .bind(&component.schema)
+        .bind(&component.description)
+        .bind(&component.usage_examples)
+        .bind(&renderers)
+        .bind(component.updated_at)
+        .bind(expected_updated_at)
+        .execute(&self.pool)
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
+    async fn delete_component_if_unchanged(
+        &self,
+        id: &str,
+        expected_updated_at: chrono::DateTime<chrono::Utc>,
+    ) -> anyhow::Result<bool> {
+        let result = sqlx::query("DELETE FROM a2ui_components WHERE id = $1 AND updated_at = $2")
+            .bind(id)
+            .bind(expected_updated_at)
+            .execute(&self.pool)
+            .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
+    async fn component_reference_count(&self, component_id: &str) -> anyhow::Result<u64> {
+        let count: i64 = sqlx::query_scalar(
+            "SELECT count(*) FROM a2ui_component_overrides WHERE component_id = $1",
+        )
+        .bind(component_id)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(count.max(0) as u64)
     }
 
     async fn list_components_missing_embedding(&self) -> anyhow::Result<Vec<Component>> {

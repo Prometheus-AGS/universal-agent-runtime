@@ -70,7 +70,7 @@ const payload = {
   version: versionMatch[1],
   platform,
   source,
-  features: ['minimal', 'local-models', 'document-intelligence', 'wasm-runtime'],
+  features: ['minimal', 'a2a-transport', 'local-models', 'document-intelligence', 'wasm-runtime'],
   files
 }
 writeFileSync(path.join(packageRoot, 'payload-manifest.json'), `${JSON.stringify(payload, null, 2)}\n`)

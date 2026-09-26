@@ -116,6 +116,7 @@ impl McpPreflight {
         &self,
         name: &str,
         arguments: serde_json::Value,
+        meta: Option<rmcp::model::RequestMetaObject>,
     ) -> anyhow::Result<serde_json::Value> {
         let tool = self.projection.tools().get(name).ok_or_else(|| {
             anyhow::anyhow!("MCP tool {name:?} is not in the prepared projection")
@@ -124,7 +125,7 @@ impl McpPreflight {
             .servers
             .get(tool.server().name())
             .ok_or_else(|| anyhow::anyhow!("MCP tool {name:?} has no prepared server binding"))?;
-        Ok(server.call_tool(tool, arguments).await?)
+        Ok(server.call_tool(tool, arguments, meta).await?)
     }
 
     /// Capture concrete, narrowed transports for host-authorized delegation.

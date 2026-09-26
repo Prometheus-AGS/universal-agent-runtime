@@ -54,7 +54,6 @@ use {
     crate::{
         config::AppConfig, config_manager::ConfigManager, uar::security::rate_limit::AppRateLimiter,
     },
-    llm::orchestrator::Orchestrator,
     mcp::registry::McpRegistry,
     session::SessionStore,
     std::{collections::HashMap, sync::Arc},
@@ -76,6 +75,9 @@ use {
     },
 };
 
+#[cfg(all(feature = "server", feature = "response-quality"))]
+use llm::orchestrator::Orchestrator;
+
 /// Application state shared across all handlers.
 #[derive(Clone, Debug)]
 #[cfg(feature = "server")]
@@ -86,7 +88,8 @@ pub struct AppState {
     /// MCP server registry for tool discovery and execution.
     #[allow(dead_code)]
     pub mcp: Arc<McpRegistry>,
-    /// LLM orchestrator for chat interactions.
+    /// LLM orchestrator for the optional response-quality correction pass.
+    #[cfg(feature = "response-quality")]
     pub orchestrator: Arc<Orchestrator>,
     /// Session store for conversation management.
     pub sessions: SessionStore,

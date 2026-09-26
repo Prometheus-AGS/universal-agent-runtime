@@ -4,7 +4,7 @@
 //! its cache generation; the first governed call waits for a matching live
 //! connection and rejects a changed catalog rather than executing stale metadata.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 use std::sync::Arc;
 use std::time::Duration;
@@ -14,13 +14,14 @@ use serde_json::Value;
 use thiserror::Error;
 
 use crate::uar::runtime::actor::messages::ActorOwner;
+use crate::uar::domain::policy::{EffectiveRunPolicy, SelectionMode};
 
 use super::binding_cache::{
     ConnectedMcpServer, McpBinding, McpBindingCache, McpBindingEnvironment, McpBindingError,
     McpBindingRequest, McpBindingTicket,
 };
 use super::catalog::{McpCatalog, ServerAuthentication, ServerDefinition, ServerSource};
-use super::config::McpServerEntry;
+use super::config::{McpHttpHeaderValue, McpServerEntry, expand_from_environment};
 use super::lifecycle::McpLifecycleSubscription;
 use super::preflight::{McpPreflight, McpPreflightError, prepare_servers};
 use super::projection::{McpServerProjection, ProjectedMcpTool, ServerToolCatalog};
@@ -112,6 +113,52 @@ impl RunHttpHeaders {
         Ok(Self { bearer, custom })
     }
 
+    pub(crate) fn from_configuration(
+        configuration: &McpServerEntry,
+        environment: &McpBindingEnvironment,
+        overlay: Option<&std::collections::BTreeMap<String, secrecy::SecretString>>,
+    ) -> anyhow::Result<Self> {
+        let McpServerEntry::RemoteHttp { headers, .. } = configuration else {
+            anyhow::bail!("MCP HTTP headers require a remote HTTP server");
+        };
+        let mut resolved = std::collections::BTreeMap::new();
+        for (name, value) in headers {
+            let value = match value {
+                McpHttpHeaderValue::Literal(value) => secrecy::SecretString::from(
+                    expand_from_environment(value, environment.variables())?,
+                ),
+                McpHttpHeaderValue::SecretRef { secret_ref, .. } => {
+                    let variable = secret_ref
+                        .strip_prefix("env:")
+                        .ok_or_else(|| anyhow::anyhow!("MCP header secret reference is invalid"))?;
+                    let value = environment
+                        .variables()
+                        .get(std::ffi::OsStr::new(variable))
+                        .filter(|value| !value.is_empty())
+                        .ok_or_else(|| {
+                            anyhow::anyhow!("MCP header secret reference is unresolved")
+                        })?
+                        .to_str()
+                        .ok_or_else(|| anyhow::anyhow!("MCP header secret is not UTF-8"))?;
+                    secrecy::SecretString::from(value.to_owned())
+                }
+            };
+            resolved.insert(name.clone(), value);
+        }
+        if let Some(overlay) = overlay {
+            for (name, value) in overlay {
+                anyhow::ensure!(
+                    !resolved
+                        .keys()
+                        .any(|existing| existing.eq_ignore_ascii_case(name)),
+                    "MCP header is configured by both the destination and run grant"
+                );
+                resolved.insert(name.clone(), value.clone());
+            }
+        }
+        Self::parse(&resolved)
+    }
+
     pub(crate) fn apply(
         &self,
         mut config: rmcp::transport::streamable_http_client::StreamableHttpClientTransportConfig,
@@ -127,23 +174,152 @@ impl RunHttpHeaders {
     }
 }
 
+/// One immutable credential lifetime shared by a run's root and narrowed
+/// local children. It contains no credential bytes and cannot be renewed in
+/// place; a trusted host must establish a fresh binding at a run boundary.
+#[derive(Clone)]
+pub(crate) struct RunMcpCredentialLease {
+    expires_at_unix: u64,
+    revoked: tokio_util::sync::CancellationToken,
+}
+
+impl fmt::Debug for RunMcpCredentialLease {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("RunMcpCredentialLease")
+            .field("expires_at_unix", &self.expires_at_unix)
+            .field("revoked", &self.revoked.is_cancelled())
+            .finish()
+    }
+}
+
+impl RunMcpCredentialLease {
+    pub(crate) fn new(expires_at_unix: u64) -> Self {
+        Self {
+            expires_at_unix,
+            revoked: tokio_util::sync::CancellationToken::new(),
+        }
+    }
+
+    pub(crate) fn authorize(&self, server: &str) -> Result<(), McpBindingError> {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|duration| duration.as_secs())
+            .unwrap_or(u64::MAX);
+        if self.revoked.is_cancelled() || now >= self.expires_at_unix {
+            self.revoked.cancel();
+            return Err(McpBindingError::AuthenticationRequired {
+                server: server.to_owned(),
+            });
+        }
+        Ok(())
+    }
+
+    pub(crate) fn revoke(&self) {
+        self.revoked.cancel();
+    }
+}
+
+#[derive(Clone)]
+pub(crate) struct RunMcpConnection {
+    headers: BTreeMap<String, secrecy::SecretString>,
+    credential: Option<RunMcpCredentialLease>,
+}
+
+impl fmt::Debug for RunMcpConnection {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("RunMcpConnection")
+            .field("header_count", &self.headers.len())
+            .field("credential", &self.credential)
+            .finish()
+    }
+}
+
+impl RunMcpConnection {
+    pub(crate) fn new(
+        headers: BTreeMap<String, secrecy::SecretString>,
+        credential: Option<RunMcpCredentialLease>,
+    ) -> Self {
+        Self {
+            headers,
+            credential,
+        }
+    }
+}
+
+/// Revocation handle retained by the authenticated run host. It can only
+/// revoke already-admitted server leases and cannot add or renew authority.
+#[derive(Clone, Default)]
+pub(crate) struct RunMcpGrantControl {
+    credentials: Arc<HashMap<String, RunMcpCredentialLease>>,
+}
+
+impl fmt::Debug for RunMcpGrantControl {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("RunMcpGrantControl")
+            .field("server_count", &self.credentials.len())
+            .finish()
+    }
+}
+
+impl RunMcpGrantControl {
+    pub(crate) fn from_connections(connections: &HashMap<String, RunMcpConnection>) -> Self {
+        Self {
+            credentials: Arc::new(
+                connections
+                    .iter()
+                    .filter_map(|(name, connection)| {
+                        connection
+                            .credential
+                            .clone()
+                            .map(|credential| (name.clone(), credential))
+                    })
+                    .collect(),
+            ),
+        }
+    }
+
+    pub(crate) fn revoke(&self, server: &str) -> bool {
+        let Some(credential) = self.credentials.get(server) else {
+            return false;
+        };
+        credential.revoke();
+        true
+    }
+
+    fn revoke_all(&self) {
+        for credential in self.credentials.values() {
+            credential.revoke();
+        }
+    }
+}
+
 /// Run-owned connector. It can only connect the exact HTTP names captured in
 /// the request and has no process supervisor or global configuration access.
 pub(crate) struct RunMcpConnector {
-    headers: HashMap<String, RunHttpHeaders>,
+    connections: HashMap<String, RunMcpConnection>,
+    grants: RunMcpGrantControl,
 }
 
 impl fmt::Debug for RunMcpConnector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RunMcpConnector")
-            .field("server_count", &self.headers.len())
+            .field("server_count", &self.connections.len())
             .finish()
     }
 }
 
 impl RunMcpConnector {
-    pub(crate) fn new(headers: HashMap<String, RunHttpHeaders>) -> Self {
-        Self { headers }
+    pub(crate) fn new(
+        connections: HashMap<String, RunMcpConnection>,
+        grants: RunMcpGrantControl,
+    ) -> Self {
+        Self {
+            connections,
+            grants,
+        }
     }
 }
 
@@ -154,16 +330,30 @@ impl McpConnector for RunMcpConnector {
         request: Arc<McpBindingRequest>,
     ) -> Result<ConnectedMcpServer, McpBindingError> {
         let name = request.definition().name();
-        let headers = self
-            .headers
-            .get(name)
-            .ok_or_else(|| McpBindingError::InvalidBinding {
-                server: name.to_owned(),
-            })?;
-        McpRegistry::connect_http_binding_with_headers(request, headers).await
+        let connection =
+            self.connections
+                .get(name)
+                .ok_or_else(|| McpBindingError::InvalidBinding {
+                    server: name.to_owned(),
+                })?;
+        let headers = RunHttpHeaders::from_configuration(
+            request.definition().configuration(),
+            request.environment(),
+            Some(&connection.headers),
+        )
+        .map_err(|_| McpBindingError::InvalidBinding {
+            server: name.to_owned(),
+        })?;
+        McpRegistry::connect_http_binding_with_headers(
+            request,
+            &headers,
+            connection.credential.clone(),
+        )
+        .await
     }
 
     async fn shutdown(&self) -> anyhow::Result<()> {
+        self.grants.revoke_all();
         Ok(())
     }
 }
@@ -178,7 +368,17 @@ impl McpConnector for ConfiguredMcpConnector {
             McpServerEntry::Stdio { .. } => {
                 McpRegistry::connect_stdio_binding(request, self.processes.clone()).await
             }
-            McpServerEntry::RemoteHttp { .. } => McpRegistry::connect_http_binding(request).await,
+            McpServerEntry::RemoteHttp { .. } => {
+                let headers = RunHttpHeaders::from_configuration(
+                    request.definition().configuration(),
+                    request.environment(),
+                    None,
+                )
+                .map_err(|_| McpBindingError::InvalidBinding {
+                    server: request.definition().name().to_owned(),
+                })?;
+                McpRegistry::connect_http_binding_with_headers(request, &headers, None).await
+            }
         }
     }
 
@@ -256,6 +456,7 @@ pub struct McpRunResources {
     catalog: Arc<McpCatalog>,
     environment: Arc<McpBindingEnvironment>,
     run_scoped_names: Option<Arc<std::collections::BTreeSet<String>>>,
+    run_grants: Option<RunMcpGrantControl>,
 }
 
 impl McpRunResources {
@@ -273,6 +474,7 @@ impl McpRunResources {
             catalog,
             environment,
             run_scoped_names: None,
+            run_grants: None,
         }
     }
 
@@ -284,6 +486,7 @@ impl McpRunResources {
         catalog: Arc<McpCatalog>,
         environment: Arc<McpBindingEnvironment>,
         names: std::collections::BTreeSet<String>,
+        run_grants: RunMcpGrantControl,
     ) -> Self {
         Self {
             owner,
@@ -291,6 +494,7 @@ impl McpRunResources {
             catalog,
             environment,
             run_scoped_names: Some(Arc::new(names)),
+            run_grants: Some(run_grants),
         }
     }
 
@@ -318,6 +522,41 @@ impl McpRunResources {
     /// configured catalog.
     pub(crate) fn run_scoped_names(&self) -> Option<&Arc<std::collections::BTreeSet<String>>> {
         self.run_scoped_names.as_ref()
+    }
+
+    pub(crate) fn run_grants(&self) -> Option<&RunMcpGrantControl> {
+        self.run_grants.as_ref()
+    }
+
+    /// Discover the exact model-facing tool names on an authenticated
+    /// run-scoped catalog before final policy resolution. The returned names
+    /// are metadata only; execution still requires the later policy-filtered
+    /// preflight and the same generation-pinned binding.
+    pub(crate) async fn discover_tool_ids(
+        &self,
+        policy: &EffectiveRunPolicy,
+    ) -> Result<std::collections::BTreeSet<String>, McpPreflightError> {
+        let mut discovery_policy = policy.clone();
+        discovery_policy.tools.mode = SelectionMode::All;
+        discovery_policy.tools.ids.clear();
+        if let Some(names) = &self.run_scoped_names {
+            discovery_policy.mcp_servers.mode = if names.is_empty() {
+                SelectionMode::None
+            } else {
+                SelectionMode::Selected
+            };
+            discovery_policy.mcp_servers.ids = names.iter().cloned().collect();
+        }
+        let projection = McpServerProjection::resolve(
+            &self.catalog,
+            &discovery_policy,
+            &super::projection::McpProjectionScope::default(),
+        )?;
+        let preflight = self
+            .runtime
+            .preflight(&projection, &self.owner, &self.environment)
+            .await?;
+        Ok(preflight.projection().tools().keys().cloned().collect())
     }
 }
 
@@ -487,6 +726,12 @@ impl McpRuntimeManager {
         self.cache.invalidate_server(server);
         self.cache.reap_retired().await;
     }
+
+    /// Publish that a run credential must be refreshed without selecting or
+    /// constructing a replacement credential.
+    pub(crate) fn require_authentication(&self, server: &str) {
+        self.cache.require_authentication(server);
+    }
 }
 
 /// Complete preflight catalog and generation retained by one prepared step.
@@ -561,6 +806,7 @@ impl PreparedMcpServer {
         &self,
         tool: &ProjectedMcpTool,
         arguments: Value,
+        meta: Option<rmcp::model::RequestMetaObject>,
     ) -> Result<Value, McpRuntimeError> {
         match &self.events {
             Some(events) => {
@@ -568,12 +814,12 @@ impl PreparedMcpServer {
                     .forward(
                         &self.manager,
                         &self.request,
-                        self.call_projected(tool, arguments),
+                        self.call_projected(tool, arguments, meta),
                         None,
                     )
                     .await
             }
-            None => self.call_projected(tool, arguments).await,
+            None => self.call_projected(tool, arguments, meta).await,
         }
     }
 
@@ -581,6 +827,7 @@ impl PreparedMcpServer {
         &self,
         tool: &ProjectedMcpTool,
         arguments: Value,
+        meta: Option<rmcp::model::RequestMetaObject>,
     ) -> Result<Value, McpRuntimeError> {
         let server = self.request.definition().name().to_owned();
         let name = &tool.descriptor().provider_name;
@@ -600,7 +847,7 @@ impl PreparedMcpServer {
             let binding = self.ready_binding().await?;
             binding
                 .registry()?
-                .call_namespaced_tool(name, arguments)
+                .call_namespaced_tool_with_meta(name, arguments, meta)
                 .await
                 .map_err(|_| McpRuntimeError::ToolFailed {
                     server: server.clone(),

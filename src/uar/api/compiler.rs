@@ -27,12 +27,13 @@ use axum::{
     response::IntoResponse,
     routing::{get, post},
 };
+use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use serde::{Deserialize, Serialize};
 
 use crate::uar::compiler::completeness::CompletenessAnalyzer;
 use crate::uar::compiler::service::CompilerService;
 use crate::uar::compiler::session::CompilerSession;
-use crate::uar::domain::artifact::AgentArtifact;
+use crate::uar::domain::{agent_store, artifact::AgentArtifact};
 use crate::uar::persistence::PersistenceLayer;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -71,6 +72,24 @@ pub struct InlineCompileRequest {
 pub struct CompileAndRegisterRequest {
     /// The raw UAR-AGENT-MD Markdown content.
     pub content: String,
+    #[serde(default)]
+    pub replace: bool,
+    #[serde(default)]
+    pub expected_revision: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct VerifyDescriptorRequest {
+    pub descriptor: crate::uar::compiler::pipeline::CompiledDescriptor,
+    pub signature: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct VerifyDescriptorResponse {
+    pub valid: bool,
+    pub agent_id: String,
+    pub content_hash: String,
+    pub signer_public_key: String,
 }
 
 /// Response body for `POST /compile-and-register`.
@@ -78,6 +97,8 @@ pub struct CompileAndRegisterRequest {
 pub struct CompileAndRegisterResponse {
     /// The registered runtime artifact (also persisted via the persistence layer).
     pub artifact: AgentArtifact,
+    /// Signed descriptor retained for export and verification.
+    pub descriptor: crate::uar::compiler::pipeline::CompiledDescriptor,
     /// The full compile report.
     pub report: crate::uar::compiler::report::CompileReport,
     /// Ed25519 signature of the compiled descriptor (hex-encoded).
@@ -117,6 +138,7 @@ pub fn build_router() -> Router<Arc<CompilerApiState>> {
         .route("/compile", post(compile_inline))
         // Compile + register the resulting runtime artifact in one call
         .route("/compile-and-register", post(compile_and_register))
+        .route("/verify", post(verify_descriptor))
         // Report retrieval
         .route("/reports/{id}", get(get_report))
         // Conversational sessions
@@ -259,26 +281,121 @@ async fn compile_and_register(
     };
 
     // Convert the compiled descriptor's IR payload into a runtime artifact.
-    let artifact = AgentArtifact::from(&output.descriptor.payload);
+    let artifact =
+        AgentArtifact::from(&output.descriptor.payload).with_catalog_metadata("uar_agent_md");
 
-    // Persist the artifact (same call `create_agent` uses).
-    if let Err(e) = persistence.save_agent(&artifact).await {
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({ "error": e.to_string() })),
+    // Registration is create-only unless the caller explicitly supplies the
+    // current catalog revision for replacement.
+    let saved = if req.replace {
+        let Some(expected_revision) = req.expected_revision.as_deref() else {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({ "error": "expected_revision is required when replace is true" })),
+            )
+                .into_response();
+        };
+        agent_store::replace_agent_if_revision(
+            persistence.as_ref(),
+            artifact.id.clone(),
+            artifact,
+            Some(expected_revision),
         )
-            .into_response();
-    }
+        .await
+    } else {
+        agent_store::create_agent(persistence.as_ref(), artifact).await
+    };
+    let artifact = match saved {
+        Ok(artifact) => artifact,
+        Err(error) => {
+            let status = match error {
+                agent_store::AgentStoreError::Conflict => StatusCode::CONFLICT,
+                agent_store::AgentStoreError::NotFound(_) => StatusCode::NOT_FOUND,
+                agent_store::AgentStoreError::Invalid(_) => StatusCode::UNPROCESSABLE_ENTITY,
+                agent_store::AgentStoreError::Protected(_) => StatusCode::FORBIDDEN,
+                agent_store::AgentStoreError::Backend(_) => StatusCode::SERVICE_UNAVAILABLE,
+            };
+            return (
+                status,
+                Json(serde_json::json!({ "error": error.to_string() })),
+            )
+                .into_response();
+        }
+    };
 
     (
         StatusCode::CREATED,
         Json(CompileAndRegisterResponse {
             artifact,
+            descriptor: output.descriptor,
             report: output.report,
             signature: output.signature,
         }),
     )
         .into_response()
+}
+
+async fn verify_descriptor(Json(req): Json<VerifyDescriptorRequest>) -> impl IntoResponse {
+    let descriptor_json = match crate::uar::compiler::pipeline::canonical_json(&req.descriptor) {
+        Ok(value) => value,
+        Err(error) => {
+            return (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(serde_json::json!({ "error": error.to_string() })),
+            )
+                .into_response();
+        }
+    };
+    let public_key = match decode_hex::<32>(&req.descriptor.signer_public_key) {
+        Ok(value) => value,
+        Err(error) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({ "error": error })),
+            )
+                .into_response();
+        }
+    };
+    let signature = match decode_hex::<64>(&req.signature) {
+        Ok(value) => Signature::from_bytes(&value),
+        Err(error) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({ "error": error })),
+            )
+                .into_response();
+        }
+    };
+    let verifying_key = match VerifyingKey::from_bytes(&public_key) {
+        Ok(value) => value,
+        Err(error) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({ "error": error.to_string() })),
+            )
+                .into_response();
+        }
+    };
+    Json(VerifyDescriptorResponse {
+        valid: verifying_key
+            .verify(descriptor_json.as_bytes(), &signature)
+            .is_ok(),
+        agent_id: req.descriptor.agent_id,
+        content_hash: req.descriptor.content_hash,
+        signer_public_key: req.descriptor.signer_public_key,
+    })
+    .into_response()
+}
+
+fn decode_hex<const N: usize>(value: &str) -> Result<[u8; N], String> {
+    if value.len() != N * 2 {
+        return Err(format!("expected {} hexadecimal characters", N * 2));
+    }
+    let mut decoded = [0_u8; N];
+    for (index, byte) in decoded.iter_mut().enumerate() {
+        *byte = u8::from_str_radix(&value[index * 2..index * 2 + 2], 16)
+            .map_err(|_| "signature material must be hexadecimal".to_string())?;
+    }
+    Ok(decoded)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

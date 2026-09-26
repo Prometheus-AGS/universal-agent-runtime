@@ -11,6 +11,7 @@ use uuid::Uuid;
 use crate::uar::persistence::agent_threads::{
     self, AgentThreadStoreError, CanonicalToolReceipt, PersistedAgentThread,
 };
+use crate::uar::persistence::tool_admission::ToolAdmissionEvidence;
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 
 use crate::{
@@ -46,6 +47,7 @@ pub struct InMemoryProvider {
     agents: RwLock<HashMap<String, AgentArtifact>>,
     agent_threads: RwLock<AgentThreadStore>,
     canonical_tool_receipts: RwLock<HashMap<String, Vec<CanonicalToolReceipt>>>,
+    tool_admission_evidence: RwLock<HashMap<String, Vec<ToolAdmissionEvidence>>>,
     memories: RwLock<Vec<Memory>>,
     /// Registered settings types keyed by their slug (e.g. `run_policy`).
     settings_types: RwLock<HashMap<String, SettingsType>>,
@@ -330,6 +332,38 @@ impl PersistenceLayer for InMemoryProvider {
         Ok(agent_threads::ordered_canonical_receipts(
             receipts, owner_id, run_id,
         )?)
+    }
+
+    async fn save_tool_admission_evidence(
+        &self,
+        evidence: &ToolAdmissionEvidence,
+    ) -> Result<ToolAdmissionEvidence> {
+        evidence.validate()?;
+        let mut owners = write(&self.tool_admission_evidence)?;
+        let records = owners.entry(evidence.owner_id.clone()).or_default();
+        if let Some(stored) = records.iter().find(|stored| {
+            stored.invocation_id == evidence.invocation_id && stored.state == evidence.state
+        }) {
+            anyhow::ensure!(stored == evidence, "Conflicting tool admission evidence");
+            return Ok(stored.clone());
+        }
+        records.push(evidence.clone());
+        records.sort_by(|left, right| {
+            left.occurred_at
+                .cmp(&right.occurred_at)
+                .then_with(|| left.evidence_id.cmp(&right.evidence_id))
+        });
+        Ok(evidence.clone())
+    }
+
+    async fn list_tool_admission_evidence(
+        &self,
+        owner_id: &str,
+    ) -> Result<Vec<ToolAdmissionEvidence>> {
+        Ok(read(&self.tool_admission_evidence)?
+            .get(owner_id)
+            .cloned()
+            .unwrap_or_default())
     }
 
     async fn save_session(&self, session: &Session) -> Result<()> {

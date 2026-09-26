@@ -5,7 +5,7 @@ use crate::uar::{
         checkpoint::Checkpoint,
         manager::{RunManager, StreamEvent},
     },
-    security::claims::UserContext,
+    security::{claims::UserContext, sidecar_guard::HostAuthenticated},
 };
 use axum::{
     Extension, Json, Router,
@@ -20,10 +20,23 @@ use tokio_stream::StreamExt;
 
 pub fn build_router() -> Router<Arc<RunManager>> {
     Router::new()
-        .route("/runs", post(create_run))
+        .route("/runs", get(list_runs).post(create_run))
+        .route("/runs/{id}", get(read_run))
         .route("/runs/{id}/stream", get(stream_run))
         .route("/runs/{run_id}/tool-approval", post(api_tool_approval))
+        .route(
+            "/runs/{run_id}/tool-approval/pending",
+            get(api_pending_tool_approval),
+        )
+        .route(
+            "/runs/{run_id}/tool-admission-evidence",
+            get(api_tool_admission_evidence),
+        )
         .route("/runs/{run_id}/cancel", post(api_cancel_run))
+        .route(
+            "/runs/{run_id}/mcp-grants/{server}/revoke",
+            post(api_revoke_run_mcp_grant),
+        )
         .route(
             "/sessions/{session_id}/cancel",
             post(api_cancel_session_run),
@@ -39,13 +52,18 @@ pub fn build_router() -> Router<Arc<RunManager>> {
 
 #[derive(Deserialize)]
 struct CreateRunRequest {
-    artifact: AgentArtifact,
+    #[serde(default)]
+    artifact: Option<AgentArtifact>,
+    #[serde(default)]
+    agent_id: Option<String>,
     input: String,
     session_id: Option<String>,
     #[serde(default)]
     run_credentials: Option<Vec<crate::uar::runtime::turn::host::RunCredentialInput>>,
     #[serde(default)]
     mcp_servers: Option<Vec<crate::uar::runtime::turn::host::RunMcpServerInput>>,
+    #[serde(default)]
+    tool_admission: Option<crate::uar::runtime::tool_admission::RunToolAdmissionInput>,
     #[serde(default)]
     working_directory: Option<std::path::PathBuf>,
     #[serde(default)]
@@ -68,19 +86,83 @@ struct CreateRunResponse {
     seeded_messages: usize,
 }
 
+#[derive(Serialize)]
+struct RunInspection {
+    run_id: String,
+    agent_id: String,
+    conversation_id: Option<String>,
+    status: crate::uar::domain::runs::RunStatus,
+    agent_revision: Option<String>,
+    effective_model: Option<serde_json::Value>,
+    effective_run_policy: Option<serde_json::Value>,
+    presentation_selection: Option<serde_json::Value>,
+    host_resources: Option<serde_json::Value>,
+}
+
+impl From<crate::uar::domain::runs::Run> for RunInspection {
+    fn from(run: crate::uar::domain::runs::Run) -> Self {
+        Self {
+            run_id: run.run_id,
+            agent_id: run.agent_id,
+            conversation_id: run.conversation_id,
+            status: run.status,
+            agent_revision: run
+                .context
+                .pointer("/agent_snapshot/revision")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned),
+            effective_model: run.context.pointer("/effective_run_policy/model").cloned(),
+            effective_run_policy: run.context.get("effective_run_policy").cloned(),
+            presentation_selection: run.context.get("presentation_selection").cloned(),
+            host_resources: run.context.get("host_resources").cloned(),
+        }
+    }
+}
+
+async fn list_runs(
+    State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
+) -> Json<Vec<RunInspection>> {
+    Json(
+        manager
+            .list_runs_for_context(&user)
+            .await
+            .into_iter()
+            .map(RunInspection::from)
+            .collect(),
+    )
+}
+
+async fn read_run(
+    State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
+    Path(run_id): Path<String>,
+) -> Result<Json<RunInspection>, StatusCode> {
+    manager
+        .get_run_for_context(&user, &run_id)
+        .await
+        .map(RunInspection::from)
+        .map(Json)
+        .ok_or(StatusCode::NOT_FOUND)
+}
+
 #[derive(Debug)]
 pub(crate) struct RunApiError {
     status: StatusCode,
     code: &'static str,
-    message: &'static str,
+    message: String,
 }
 
 impl From<crate::uar::runtime::turn::host::HostInputError> for RunApiError {
     fn from(error: crate::uar::runtime::turn::host::HostInputError) -> Self {
         Self {
-            status: StatusCode::UNPROCESSABLE_ENTITY,
+            status: if error.code == "run_mcp_grant_authentication_required" {
+                StatusCode::UNAUTHORIZED
+            } else {
+                StatusCode::UNPROCESSABLE_ENTITY
+            },
             code: error.code,
-            message: error.message,
+            message: error.message.to_string(),
         }
     }
 }
@@ -124,7 +206,9 @@ fn canonical_working_directory(
     Ok(Some(canonical))
 }
 
-pub(crate) fn attach_host_resources(
+pub(crate) async fn attach_host_resources(
+    manager: &RunManager,
+    user: &UserContext,
     request: &mut crate::uar::runtime::turn::RunExecutionRequest,
     run_credentials: Option<Vec<crate::uar::runtime::turn::host::RunCredentialInput>>,
     mcp_servers: Option<Vec<crate::uar::runtime::turn::host::RunMcpServerInput>>,
@@ -184,8 +268,10 @@ pub(crate) fn attach_host_resources(
         request.run_credentials = Some(credentials);
     }
     if let Some(servers) = mcp_servers {
-        let servers = crate::uar::runtime::turn::host::RunMcpServers::from_inputs(servers)?;
-        let server_names = servers.names();
+        let server_names = servers
+            .iter()
+            .map(|server| server.name.trim().to_owned())
+            .collect::<std::collections::BTreeSet<_>>();
         if let Some(value) = request.artifact.extensions.get("mcp_servers")
             && !value.is_null()
         {
@@ -213,7 +299,7 @@ pub(crate) fn attach_host_resources(
         let owner = request.verified_owner.clone().ok_or_else(|| RunApiError {
             status: StatusCode::UNAUTHORIZED,
             code: "run_mcp_server_invalid",
-            message: "run-scoped MCP requires a verified principal",
+            message: "run-scoped MCP requires a verified principal".to_string(),
         })?;
         let cwd = request
             .working_directory
@@ -225,11 +311,14 @@ pub(crate) fn attach_host_resources(
                     "working directory is unavailable",
                 ))
             })?;
+        let (servers, resources) = manager
+            .admit_run_mcp_servers(servers, user, owner, cwd)
+            .await?;
         request.host_resources_marker.mcp_servers = server_names.into_iter().collect();
+        request.host_resources_marker.mcp_grants = servers.grant_markers();
         request.host_secret_scrubber.extend(servers.scrubber());
-        request.mcp_resources = Some(servers.resources(owner, cwd)?);
+        request.mcp_resources = Some(resources);
     }
-    request.host_resources_marker.artifact_inline = true;
     Ok(())
 }
 
@@ -255,6 +344,21 @@ pub(crate) fn require_matching_host_resources(
         return Err(crate::uar::runtime::turn::host::HostInputError::new(
             "run_mcp_servers_required",
             "resume must reattach the source run MCP servers",
+        )
+        .into());
+    }
+    let renewed = &request.host_resources_marker.mcp_grants;
+    if marker.mcp_grants.len() != renewed.len()
+        || marker.mcp_grants.iter().any(|source| {
+            renewed
+                .iter()
+                .find(|candidate| candidate.server == source.server)
+                .is_none_or(|candidate| !source.accepts_renewal(candidate))
+        })
+    {
+        return Err(crate::uar::runtime::turn::host::HostInputError::new(
+            "run_mcp_grant_authentication_required",
+            "resume requires a same-owner MCP grant for the original destination and scope",
         )
         .into());
     }
@@ -287,26 +391,52 @@ struct StreamParams {
 async fn create_run(
     State(manager): State<Arc<RunManager>>,
     Extension(user): Extension<UserContext>,
+    host_authenticated: Option<Extension<HostAuthenticated>>,
     Json(req): Json<CreateRunRequest>,
 ) -> Result<Json<CreateRunResponse>, RunApiError> {
-    let mut request = crate::uar::runtime::turn::RunExecutionRequest::new(req.artifact, req.input)
+    let (artifact, artifact_inline) =
+        resolve_run_agent(&manager, req.agent_id, req.artifact).await?;
+    let mut request = crate::uar::runtime::turn::RunExecutionRequest::new(artifact, req.input)
         .with_user_context(&user)
         .map_err(|_| RunApiError {
             status: StatusCode::UNAUTHORIZED,
             code: "principal_invalid",
-            message: "run principal is invalid",
+            message: "run principal is invalid".to_string(),
         })?;
+    request.host_resources_marker.artifact_inline = artifact_inline;
     request.session_id = req.session_id;
     request.skill_attachments = req.skill_attachments;
     request.presentation_negotiation = req.presentation_negotiation;
+    if let Some(input) = req.tool_admission {
+        if host_authenticated.is_none() {
+            return Err(RunApiError {
+                status: StatusCode::FORBIDDEN,
+                code: "tool_admission_host_authentication_required",
+                message: "paired host tool admission requires authenticated sidecar authority"
+                    .to_string(),
+            });
+        }
+        let adapter = crate::uar::runtime::tool_admission::HttpHostToolAdmissionPort::from_input(
+            input,
+        )
+        .map_err(|_| RunApiError {
+            status: StatusCode::UNPROCESSABLE_ENTITY,
+            code: "tool_admission_invalid",
+            message: "paired host tool admission is invalid or incompatible".to_string(),
+        })?;
+        request.host_tool_admission = Some(Arc::new(adapter));
+    }
     attach_host_resources(
+        &manager,
+        &user,
         &mut request,
         req.run_credentials,
         req.mcp_servers,
         req.working_directory,
         req.reasoning_effort,
         req.history,
-    )?;
+    )
+    .await?;
     let run_id = manager.execute_request(request).await;
     let run_context = manager
         .get_run(&run_id)
@@ -335,6 +465,59 @@ async fn create_run(
         history,
         seeded_messages,
     }))
+}
+
+async fn resolve_run_agent(
+    manager: &RunManager,
+    agent_id: Option<String>,
+    artifact: Option<AgentArtifact>,
+) -> Result<(AgentArtifact, bool), RunApiError> {
+    match (agent_id, artifact) {
+        (Some(_), Some(_)) => Err(RunApiError {
+            status: StatusCode::UNPROCESSABLE_ENTITY,
+            code: "run_agent_selector_ambiguous",
+            message: "provide exactly one of agent_id or artifact".to_string(),
+        }),
+        (None, None) => Err(RunApiError {
+            status: StatusCode::UNPROCESSABLE_ENTITY,
+            code: "run_agent_selector_required",
+            message: "agent_id or artifact is required".to_string(),
+        }),
+        (None, Some(artifact)) => {
+            crate::uar::domain::agent_store::validate_agent(&artifact).map_err(|error| {
+                RunApiError {
+                    status: StatusCode::UNPROCESSABLE_ENTITY,
+                    code: "run_artifact_invalid",
+                    message: error.to_string(),
+                }
+            })?;
+            Ok((artifact, true))
+        }
+        (Some(agent_id), None) => manager
+            .resolve_registered_agent(&agent_id)
+            .await
+            .map(|artifact| (artifact, false))
+            .map_err(|error| match error {
+                crate::uar::domain::agent_store::AgentStoreError::NotFound(id) => RunApiError {
+                    status: StatusCode::NOT_FOUND,
+                    code: "run_agent_not_found",
+                    message: format!("agent '{id}' is not registered"),
+                },
+                crate::uar::domain::agent_store::AgentStoreError::Invalid(message) => RunApiError {
+                    status: StatusCode::UNPROCESSABLE_ENTITY,
+                    code: "run_agent_invalid",
+                    message,
+                },
+                other => {
+                    tracing::error!(%other, "Agent catalog resolution failed");
+                    RunApiError {
+                        status: StatusCode::SERVICE_UNAVAILABLE,
+                        code: "run_agent_catalog_unavailable",
+                        message: "agent catalog is unavailable".to_string(),
+                    }
+                }
+            }),
+    }
 }
 
 async fn stream_run(
@@ -516,6 +699,65 @@ async fn api_tool_approval(
     }
 }
 
+/// GET /api/uar/runs/{run_id}/tool-approval/pending
+///
+/// Replays the owner-scoped live waiter with its stable approval identity and
+/// original stream cursor. It never creates a new waiter.
+async fn api_pending_tool_approval(
+    State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
+    Path(run_id): Path<String>,
+) -> impl IntoResponse {
+    if manager.get_run_for_context(&user, &run_id).await.is_none() {
+        return Json(serde_json::json!({
+            "version": 1,
+            "runId": run_id,
+            "pending": null,
+        }));
+    }
+    let pending = manager
+        .pending_approval_for_user(&user.user_id, &run_id)
+        .await;
+    Json(serde_json::json!({
+        "version": 1,
+        "runId": run_id,
+        "pending": pending,
+    }))
+}
+
+/// GET /api/uar/runs/{run_id}/tool-admission-evidence
+///
+/// Returns sanitized append-only lifecycle evidence. The owner filter is
+/// applied in storage before the requested run tree is selected.
+async fn api_tool_admission_evidence(
+    State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
+    Path(run_id): Path<String>,
+) -> impl IntoResponse {
+    match manager
+        .tool_admission_evidence_for_user(&user.user_id, &run_id)
+        .await
+    {
+        Ok(records) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "version": 1,
+                "runId": run_id,
+                "records": records,
+            })),
+        ),
+        Err(_) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({
+                "version": 1,
+                "runId": run_id,
+                "code": "tool_admission_evidence_unavailable",
+                "error": "Tool admission evidence could not be read; check the configured persistence service",
+            })),
+        ),
+    }
+}
+
 /// POST /api/uar/runs/{run_id}/cancel
 ///
 /// Request cancellation of an in-flight run. Idempotent: always responds 200
@@ -536,6 +778,34 @@ async fn api_cancel_run(
     }
     let cancelled = manager.cancel_run_for_context(&user, &run_id).await;
     Json(serde_json::json!({ "cancelled": cancelled })).into_response()
+}
+
+/// POST /api/uar/runs/{run_id}/mcp-grants/{server}/revoke
+///
+/// Revoke an admitted downstream credential and cancel its run. A replacement
+/// is accepted only through the ordinary authenticated resume boundary.
+async fn api_revoke_run_mcp_grant(
+    State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
+    Path((run_id, server)): Path<(String, String)>,
+) -> impl IntoResponse {
+    if manager.get_run_for_context(&user, &run_id).await.is_none() {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({ "revoked": false })),
+        )
+            .into_response();
+    }
+    let revoked = manager
+        .revoke_run_mcp_grant_for_context(&user, &run_id, &server)
+        .await;
+    Json(serde_json::json!({
+        "run_id": run_id,
+        "server": server,
+        "revoked": revoked,
+        "renewal": if revoked { "resume_required" } else { "not_applicable" },
+    }))
+    .into_response()
 }
 
 /// POST /api/uar/sessions/{session_id}/cancel
@@ -596,7 +866,8 @@ async fn list_checkpoints(
 
 #[derive(Deserialize)]
 struct ResumeRequest {
-    artifact: AgentArtifact,
+    #[serde(default)]
+    artifact: Option<AgentArtifact>,
     /// Optional new input message; defaults to restoring the last checkpoint state.
     input: Option<String>,
     session_id: Option<String>,
@@ -612,6 +883,29 @@ struct ResumeRequest {
     history: Option<crate::uar::runtime::turn::host::HostHistoryInput>,
     #[serde(flatten)]
     presentation_negotiation: crate::uar::a2ui::presentation_selection::PresentationNegotiation,
+}
+
+fn resume_artifact(
+    source_run: &crate::uar::domain::runs::Run,
+    supplied: Option<AgentArtifact>,
+) -> Result<AgentArtifact, RunApiError> {
+    let snapshot =
+        crate::uar::domain::artifact::AgentArtifactSnapshot::from_run_context(&source_run.context)
+            .map_err(|message| RunApiError {
+                status: StatusCode::CONFLICT,
+                code: "run_artifact_snapshot_unavailable",
+                message: message.to_string(),
+            })?;
+    if supplied.is_some_and(|artifact| {
+        artifact.definition_revision() != snapshot.artifact.definition_revision()
+    }) {
+        return Err(RunApiError {
+            status: StatusCode::CONFLICT,
+            code: "run_artifact_mismatch",
+            message: "resume artifact does not match the source run snapshot".to_string(),
+        });
+    }
+    Ok(snapshot.artifact)
 }
 
 /// POST /api/uar/runs/{run_id}/resume
@@ -633,25 +927,22 @@ async fn resume_run(
         ))
         .into_response();
     }
-    let source_marker = source_run
+    let source_marker: crate::uar::runtime::turn::host::HostResourcesMarker = source_run
         .context
         .get("host_resources")
         .cloned()
         .and_then(|value| serde_json::from_value(value).ok())
         .unwrap_or_default();
-    if req.artifact.id != source_run.agent_id {
-        return RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
-            "run_artifact_mismatch",
-            "resume artifact does not match the source run",
-        ))
-        .into_response();
-    }
+    let artifact = match resume_artifact(&source_run, req.artifact) {
+        Ok(artifact) => artifact,
+        Err(error) => return error.into_response(),
+    };
     let input = req.input.unwrap_or_else(|| {
         // No explicit input — use a standard resume message.
         format!("Resuming run {run_id}")
     });
 
-    let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(req.artifact, input)
+    let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(artifact, input)
         .with_user_context(&user)
     {
         Ok(request) => request,
@@ -660,9 +951,12 @@ async fn resume_run(
     request.session_id = req
         .session_id
         .or_else(|| source_run.conversation_id.clone());
+    request.host_resources_marker.artifact_inline = source_marker.artifact_inline;
     request.presentation_negotiation = req.presentation_negotiation;
     inherit_host_context(&source_run, &mut request);
     if let Err(error) = attach_host_resources(
+        &manager,
+        &user,
         &mut request,
         req.run_credentials,
         req.mcp_servers,
@@ -670,8 +964,11 @@ async fn resume_run(
         req.reasoning_effort,
         None,
     )
-    .and_then(|()| require_matching_host_resources(&source_marker, &request))
+    .await
     {
+        return error.into_response();
+    }
+    if let Err(error) = require_matching_host_resources(&source_marker, &request) {
         return error.into_response();
     }
     let new_run_id = manager.execute_request(request).await;
@@ -704,19 +1001,16 @@ async fn resume_run_from_checkpoint(
         ))
         .into_response();
     }
-    let source_marker = source_run
+    let source_marker: crate::uar::runtime::turn::host::HostResourcesMarker = source_run
         .context
         .get("host_resources")
         .cloned()
         .and_then(|value| serde_json::from_value(value).ok())
         .unwrap_or_default();
-    if req.artifact.id != source_run.agent_id {
-        return RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
-            "run_artifact_mismatch",
-            "checkpoint resume artifact does not match the source run",
-        ))
-        .into_response();
-    }
+    let artifact = match resume_artifact(&source_run, req.artifact) {
+        Ok(artifact) => artifact,
+        Err(error) => return error.into_response(),
+    };
     let Some(db) = &manager.persistence else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -781,7 +1075,7 @@ async fn resume_run_from_checkpoint(
         .and_then(|protection| protection.authorization_sha256.clone());
 
     let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(
-        req.artifact,
+        artifact,
         req.input.clone().unwrap_or_default(),
     )
     .with_user_context(&user)
@@ -793,6 +1087,7 @@ async fn resume_run_from_checkpoint(
     request.session_id = req
         .session_id
         .or_else(|| source_run.conversation_id.clone());
+    request.host_resources_marker.artifact_inline = source_marker.artifact_inline;
     request.checkpoint_resume = Some(crate::uar::runtime::turn::CheckpointResume {
         state: restored,
         history,
@@ -802,6 +1097,8 @@ async fn resume_run_from_checkpoint(
     request.presentation_negotiation = req.presentation_negotiation;
     inherit_host_context(&source_run, &mut request);
     if let Err(error) = attach_host_resources(
+        &manager,
+        &user,
         &mut request,
         req.run_credentials,
         req.mcp_servers,
@@ -809,8 +1106,11 @@ async fn resume_run_from_checkpoint(
         req.reasoning_effort,
         None,
     )
-    .and_then(|()| require_matching_host_resources(&source_marker, &request))
+    .await
     {
+        return error.into_response();
+    }
+    if let Err(error) = require_matching_host_resources(&source_marker, &request) {
         return error.into_response();
     }
     let new_run_id = manager.execute_request(request).await;

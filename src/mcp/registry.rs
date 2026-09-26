@@ -27,7 +27,8 @@ use url::Url;
 use uuid::Uuid;
 
 use super::binding_cache::{
-    ConnectedMcpServer, McpBindingError, McpBindingRequest, lifecycle_failure,
+    ConnectedMcpServer, McpBindingEnvironment, McpBindingError, McpBindingRequest,
+    lifecycle_failure,
 };
 use super::catalog::ServerAuthentication;
 use super::lifecycle::McpLifecycle;
@@ -219,7 +220,10 @@ struct SnapshotBinding {
 #[derive(Clone)]
 enum SnapshotTransport {
     Stdio(StdioProcessSupervisor),
-    RemoteHttp(Option<super::runtime::RunHttpHeaders>),
+    RemoteHttp {
+        headers: Option<super::runtime::RunHttpHeaders>,
+        credential: Option<super::runtime::RunMcpCredentialLease>,
+    },
 }
 
 type SharedClientService = Arc<RwLock<ClientServiceState>>;
@@ -388,6 +392,30 @@ fn validate_bound_service(
         anyhow::bail!("Frozen MCP connection was replaced, revoked, or closed");
     }
     Ok(())
+}
+
+fn authorize_service_slot(slot: &SharedClientService, server: &str) -> Result<(), McpBindingError> {
+    let state = slot.read().map_err(|_| McpBindingError::InvalidBinding {
+        server: server.to_owned(),
+    })?;
+    let credential = state.snapshot.as_ref().and_then(|snapshot| {
+        if let SnapshotTransport::RemoteHttp { credential, .. } = &snapshot.transport {
+            credential.clone()
+        } else {
+            None
+        }
+    });
+    let result = credential.map_or(Ok(()), |credential| credential.authorize(server));
+    if result.is_err()
+        && let Some((lifecycle, generation)) = &state.lifecycle
+    {
+        lifecycle.transition(
+            *generation,
+            McpServerState::AuthRequired,
+            Some(McpStateReason::AuthenticationRequired),
+        );
+    }
+    result
 }
 
 fn new_service_slot(
@@ -667,16 +695,36 @@ async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<Dy
                 .await
                 .with_context(|| format!("failed to connect stdio MCP server '{name}'"))
         }
-        McpServerEntry::RemoteHttp { url, env } => {
-            let env = expand_env_map(env);
-            let endpoint = resolve_remote_http_url(name, url, &env)?;
-            ().serve(StreamableHttpClientTransport::from_uri(
-                endpoint.to_string(),
-            ))
-            .await
-            .with_context(|| format!("failed to connect remote MCP server '{name}'"))
-        }
+        McpServerEntry::RemoteHttp { .. } => connect_configured_http(name, entry).await,
     }
+}
+
+async fn connect_configured_http(
+    name: &str,
+    entry: &McpServerEntry,
+) -> anyhow::Result<DynClientService> {
+    let McpServerEntry::RemoteHttp { url, env, .. } = entry else {
+        anyhow::bail!("MCP server '{name}' is not remote HTTP");
+    };
+    let expanded_env = expand_env_map(env);
+    let endpoint = resolve_remote_http_url(name, url, &expanded_env)?;
+    let directory = std::env::current_dir().context("MCP binding cwd is unavailable")?;
+    let environment =
+        McpBindingEnvironment::resolve(directory, std::env::vars_os().collect(), entry)?;
+    let headers = super::runtime::RunHttpHeaders::from_configuration(entry, &environment, None)?;
+    let client = reqwest_mcp::Client::builder()
+        .no_proxy()
+        .redirect(reqwest_mcp::redirect::Policy::none())
+        .build()?;
+    let transport_config = headers.apply(StreamableHttpClientTransportConfig::with_uri(
+        endpoint.to_string(),
+    ));
+    ().serve(StreamableHttpClientTransport::with_client(
+        client,
+        transport_config,
+    ))
+    .await
+    .with_context(|| format!("failed to connect remote MCP server '{name}'"))
 }
 
 async fn connect_stdio_snapshot(
@@ -914,7 +962,13 @@ async fn reconnect_snapshot(
         SnapshotTransport::Stdio(processes) => {
             connect_stdio_snapshot(&snapshot.request, processes).await?
         }
-        SnapshotTransport::RemoteHttp(headers) => {
+        SnapshotTransport::RemoteHttp {
+            headers,
+            credential,
+        } => {
+            if let Some(credential) = credential {
+                credential.authorize(snapshot.request.definition().name())?;
+            }
             connect_http_snapshot(&snapshot.request, headers.as_ref()).await?
         }
     };
@@ -995,6 +1049,9 @@ pub struct McpRegistry {
     validator_compiler: Arc<ValidatorCompiler>,
     // namespaced_tool_name -> NativeTool
     native_tools: Arc<HashMap<String, Arc<dyn NativeTool>>>,
+    /// Whether administrator definitions in this registry may back shared
+    /// root transports. Sidecar destination catalogs keep this false.
+    shared_transports_enabled: bool,
 }
 
 /// Registry composition must not turn an immutable delegation into a new grant.
@@ -1057,26 +1114,24 @@ impl McpRegistry {
         Self::connect_snapshot_binding(request, service, SnapshotTransport::Stdio(processes)).await
     }
 
-    /// Connect one remote HTTP server from immutable host inputs and discover
-    /// all pages. The concrete client ignores ambient proxy variables.
-    pub(crate) async fn connect_http_binding(
-        request: Arc<McpBindingRequest>,
-    ) -> Result<ConnectedMcpServer, McpBindingError> {
-        let service = connect_http_snapshot(&request, None).await?;
-        Self::connect_snapshot_binding(request, service, SnapshotTransport::RemoteHttp(None)).await
-    }
-
     /// Connect one run-scoped HTTP server with request-owned headers. Header
     /// values never enter the serializable definition or global cache.
     pub(crate) async fn connect_http_binding_with_headers(
         request: Arc<McpBindingRequest>,
         headers: &super::runtime::RunHttpHeaders,
+        credential: Option<super::runtime::RunMcpCredentialLease>,
     ) -> Result<ConnectedMcpServer, McpBindingError> {
+        if let Some(credential) = &credential {
+            credential.authorize(request.definition().name())?;
+        }
         let service = connect_http_snapshot(&request, Some(headers)).await?;
         Self::connect_snapshot_binding(
             request,
             service,
-            SnapshotTransport::RemoteHttp(Some(headers.clone())),
+            SnapshotTransport::RemoteHttp {
+                headers: Some(headers.clone()),
+                credential,
+            },
         )
         .await
     }
@@ -1126,6 +1181,7 @@ impl McpRegistry {
             descriptors: Arc::new(RwLock::new(discovered.descriptors)),
             validator_compiler: compiler,
             native_tools: Arc::new(HashMap::new()),
+            shared_transports_enabled: true,
         };
         Ok(ConnectedMcpServer::new(registry, catalog))
     }
@@ -1144,7 +1200,30 @@ impl McpRegistry {
             descriptors: Arc::new(RwLock::new(BTreeMap::new())),
             validator_compiler,
             native_tools: Arc::new(HashMap::new()),
+            shared_transports_enabled: false,
         }
+    }
+
+    /// Load administrator-owned MCP declarations without opening shared
+    /// transports. Sidecars use this as a destination allowlist: each run must
+    /// still provide its own verified owner and credential lease before a
+    /// connection can be established.
+    pub fn catalog_from_file(path: &str) -> anyhow::Result<Self> {
+        let resolved = resolve_mcp_config_path(path);
+        let config = load_mcp_config(resolved)?;
+        Self::catalog_from_config(&config)
+    }
+
+    /// Retain validated definitions while leaving the executable registry
+    /// empty. This separates administrator registration from run authority.
+    pub fn catalog_from_config(config: &crate::mcp::config::McpConfig) -> anyhow::Result<Self> {
+        config.validate_sandbox_policy()?;
+        let registry = Self::empty();
+        *registry
+            .server_config
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = config.mcp_servers.clone();
+        Ok(registry)
     }
 
     pub async fn load_from_file(path: &str) -> anyhow::Result<Self> {
@@ -1248,6 +1327,7 @@ impl McpRegistry {
             descriptors: Arc::new(RwLock::new(descriptors)),
             validator_compiler,
             native_tools: Arc::new(HashMap::new()),
+            shared_transports_enabled: true,
         })
     }
 
@@ -1316,15 +1396,7 @@ impl McpRegistry {
                     .with_context(|| format!("failed to connect stdio MCP server '{name}'"))
             }
 
-            McpServerEntry::RemoteHttp { url, env } => {
-                let env = expand_env_map(env);
-                let endpoint = resolve_remote_http_url(name, url, &env)?;
-                ().serve(StreamableHttpClientTransport::from_uri(
-                    endpoint.to_string(),
-                ))
-                .await
-                .with_context(|| format!("failed to connect remote MCP server '{name}'"))
-            }
+            McpServerEntry::RemoteHttp { .. } => connect_configured_http(name, entry).await,
         }
     }
 
@@ -1402,6 +1474,7 @@ impl McpRegistry {
             descriptors: Arc::new(RwLock::new(descriptors)),
             validator_compiler,
             native_tools: Arc::new(HashMap::new()),
+            shared_transports_enabled: true,
         })
     }
 
@@ -1486,6 +1559,7 @@ impl McpRegistry {
             .clone();
         let mut connections = HashMap::new();
         for (name, slot) in &slots {
+            authorize_service_slot(slot, name)?;
             let service = current_service(slot);
             validate_bound_service(slot, &service)?;
             connections.insert(name.clone(), service);
@@ -1576,6 +1650,7 @@ impl McpRegistry {
             let slot = slots
                 .get(server)
                 .ok_or_else(|| anyhow!("Required MCP service slot is unavailable"))?;
+            authorize_service_slot(slot, server)?;
             validate_bound_service(slot, service)?;
         }
         Ok(())
@@ -1992,6 +2067,8 @@ impl McpRegistry {
             descriptors: Arc::new(RwLock::new(descriptors)),
             validator_compiler: Arc::clone(&self.validator_compiler),
             native_tools: Arc::new(native_tools),
+            shared_transports_enabled: self.shared_transports_enabled
+                || other.shared_transports_enabled,
         })
     }
 
@@ -2079,6 +2156,7 @@ impl McpRegistry {
             descriptors: Arc::new(RwLock::new(descriptors)),
             validator_compiler: Arc::clone(&self.validator_compiler),
             native_tools: Arc::new(native_tools),
+            shared_transports_enabled: self.shared_transports_enabled,
         }
     }
 
@@ -2122,7 +2200,14 @@ impl McpRegistry {
             descriptors: Arc::new(RwLock::new(descriptors)),
             validator_compiler: self.validator_compiler,
             native_tools: Arc::new(native_tools),
+            shared_transports_enabled: self.shared_transports_enabled,
         })
+    }
+
+    /// Whether this registry's administrator definitions may establish shared
+    /// root transports without a request-owned grant.
+    pub(crate) const fn shared_transports_enabled(&self) -> bool {
+        self.shared_transports_enabled
     }
 
     pub fn openai_tools_json(&self) -> Vec<serde_json::Value> {
@@ -2143,6 +2228,23 @@ impl McpRegistry {
         &self,
         namespaced_tool: &str,
         arguments: serde_json::Value,
+    ) -> anyhow::Result<serde_json::Value> {
+        self.call_namespaced_tool_with_meta(namespaced_tool, arguments, None)
+            .await
+    }
+
+    /// Execute a namespaced tool with protocol metadata retained only for the
+    /// exact selected MCP transport.
+    #[tracing::instrument(
+        name = "tool.call.managed",
+        skip(self, arguments, meta),
+        fields(tool = %namespaced_tool),
+    )]
+    pub async fn call_namespaced_tool_with_meta(
+        &self,
+        namespaced_tool: &str,
+        arguments: serde_json::Value,
+        meta: Option<rmcp::model::RequestMetaObject>,
     ) -> anyhow::Result<serde_json::Value> {
         if self.bound_services.as_ref().is_some_and(|bindings| {
             bindings.closed.is_cancelled() || self.shutting_down.load(Ordering::Acquire)
@@ -2191,6 +2293,7 @@ impl McpRegistry {
             .get(&server_name)
             .cloned()
             .ok_or_else(|| anyhow!("missing server handle: {server_name}"))?;
+        authorize_service_slot(&service_slot, &server_name)?;
         let service = match &self.bound_services {
             Some(bindings) => {
                 let bound = bindings
@@ -2212,6 +2315,7 @@ impl McpRegistry {
         // rmcp 1.8: CallToolRequestParams is #[non_exhaustive] -- use the
         // provided new()/with_arguments() builder instead of a struct literal.
         let mut call_params = CallToolRequestParams::new(raw_tool_name.clone());
+        call_params.meta = meta;
         if let Some(args) = args_obj {
             call_params = call_params.with_arguments(args);
         }

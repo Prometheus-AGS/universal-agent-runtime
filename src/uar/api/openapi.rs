@@ -97,15 +97,20 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
             "/api/uar/runs": {
                 "post": {
                     "summary": "Start an agent run",
-                    "description": "Creates a governed run and returns its identifier and event stream URL",
+                    "description": "Creates a governed run from exactly one registered agent id or inline compatibility artifact and returns its identifier and event stream URL",
                     "tags": ["runs"],
                     "requestBody": {
                         "required": true,
                         "content": {"application/json": {"schema": {
                             "type": "object",
-                            "required": ["artifact", "input"],
+                            "required": ["input"],
+                            "oneOf": [
+                                {"required": ["agent_id"], "not": {"required": ["artifact"]}},
+                                {"required": ["artifact"], "not": {"required": ["agent_id"]}}
+                            ],
                             "properties": {
-                                "artifact": {"type": "object", "description": "Agent artifact defining the run policy and prompt"},
+                                "agent_id": {"type": "string", "description": "Explicit registered agent id resolved from the UAR catalog"},
+                                "artifact": {"type": "object", "description": "Explicit inline compatibility artifact defining the run policy and prompt"},
                                 "input": {"type": "string"},
                                 "session_id": {"type": ["string", "null"]},
                                 "skill_attachments": {

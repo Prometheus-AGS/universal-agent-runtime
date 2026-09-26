@@ -11,13 +11,14 @@ use crate::uar::persistence::agent_threads::{
     PersistedAgentThread,
 };
 use crate::uar::persistence::presentations::{self, PresentationStoreError};
+use crate::uar::persistence::tool_admission::ToolAdmissionEvidence;
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use surrealdb::Surreal;
 use surrealdb::engine::any::{self, Any};
-use surrealdb::opt::auth::Root;
+use surrealdb::opt::auth::{Database, Namespace, Root};
 
 #[derive(Debug)]
 pub struct SurrealDbProvider {
@@ -28,7 +29,9 @@ impl SurrealDbProvider {
     /// Connect to SurrealDB.
     ///
     /// For server endpoints (`ws://`, `wss://`, `http://`, `https://`) the
-    /// caller may supply optional root credentials.  When credentials are
+    /// caller may supply optional credentials. HTTP endpoints are normalized
+    /// to the equivalent WebSocket endpoint so remote storage retains live-query
+    /// support. When credentials are
     /// absent the defaults `root` / `root` are used, which matches a
     /// freshly-started SurrealDB server.  For embedded endpoints (SurrealKV,
     /// in-memory) authentication is not performed.
@@ -36,6 +39,26 @@ impl SurrealDbProvider {
         connection_string: &str,
         surreal_user: Option<&str>,
         surreal_pass: Option<&str>,
+        surreal_ns: Option<&str>,
+        surreal_db: Option<&str>,
+    ) -> Result<Self> {
+        Self::new_with_auth(
+            connection_string,
+            surreal_user,
+            surreal_pass,
+            None,
+            surreal_ns,
+            surreal_db,
+        )
+        .await
+    }
+
+    /// Connect using an explicit server-user authentication scope.
+    pub async fn new_with_auth(
+        connection_string: &str,
+        surreal_user: Option<&str>,
+        surreal_pass: Option<&str>,
+        surreal_auth_level: Option<&str>,
         surreal_ns: Option<&str>,
         surreal_db: Option<&str>,
     ) -> Result<Self> {
@@ -48,11 +71,37 @@ impl SurrealDbProvider {
         if is_server_endpoint(&endpoint) {
             let username = surreal_user.unwrap_or("root").to_string();
             let password = surreal_pass.unwrap_or("root").to_string();
-            db.signin(Root {
-                username: username.clone(),
-                password,
-            })
-            .await?;
+            let namespace = surreal_ns.unwrap_or("uar").to_string();
+            let database = surreal_db.unwrap_or("uar").to_string();
+            match surreal_auth_level.unwrap_or("root") {
+                "root" => {
+                    db.signin(Root {
+                        username: username.clone(),
+                        password,
+                    })
+                    .await?;
+                }
+                "namespace" => {
+                    db.signin(Namespace {
+                        namespace,
+                        username: username.clone(),
+                        password,
+                    })
+                    .await?;
+                }
+                "database" => {
+                    db.signin(Database {
+                        namespace,
+                        database,
+                        username: username.clone(),
+                        password,
+                    })
+                    .await?;
+                }
+                value => anyhow::bail!(
+                    "unsupported SurrealDB authentication scope '{value}'; expected root, namespace, or database"
+                ),
+            }
             tracing::info!("SurrealDB server signin completed as '{}'", username);
         }
 
@@ -69,6 +118,12 @@ impl SurrealDbProvider {
 
         db.query(include_str!(
             "../../../../migrations/surrealdb/canonical_tool_receipts.surql"
+        ))
+        .await?
+        .check()?;
+
+        db.query(include_str!(
+            "../../../../migrations/surrealdb/tool_admission_evidence.surql"
         ))
         .await?
         .check()?;
@@ -170,6 +225,10 @@ fn normalize_endpoint(connection_string: &str) -> String {
     let lower = trimmed.to_ascii_lowercase();
     if lower.starts_with("rocksdb://") {
         trimmed.replacen("rocksdb://", "surrealkv://", 1)
+    } else if lower.starts_with("http://") {
+        trimmed.replacen("http://", "ws://", 1)
+    } else if lower.starts_with("https://") {
+        trimmed.replacen("https://", "wss://", 1)
     } else if trimmed.contains("://")
         || lower == "memory"
         || lower == "mem"
@@ -768,6 +827,70 @@ impl PersistenceLayer for SurrealDbProvider {
         Ok(agent_threads::ordered_canonical_receipts(
             receipts, owner_id, run_id,
         )?)
+    }
+
+    async fn save_tool_admission_evidence(
+        &self,
+        evidence: &ToolAdmissionEvidence,
+    ) -> Result<ToolAdmissionEvidence> {
+        evidence.validate()?;
+        let identity = format!("{}:{:?}", evidence.invocation_id, evidence.state);
+        let record_key = crate::uar::persistence::tenant_storage_key(&evidence.owner_id, &identity);
+        let response = self
+            .db
+            .query(
+                "CREATE type::record('tool_admission_evidence', $record_key)
+                 CONTENT $payload RETURN AFTER",
+            )
+            .bind(("record_key", record_key.clone()))
+            .bind((
+                "payload",
+                serde_json::json!({
+                    "owner_id": evidence.owner_id,
+                    "invocation_id": evidence.invocation_id,
+                    "state": format!("{:?}", evidence.state),
+                    "occurred_at": evidence.occurred_at,
+                    "data": serde_json::to_string(evidence)?,
+                }),
+            ))
+            .await?;
+        match response.check() {
+            Ok(mut checked) => {
+                let _: Option<serde_json::Value> = checked.take(0)?;
+                Ok(evidence.clone())
+            }
+            Err(_) => {
+                let stored = self.list_tool_admission_evidence(&evidence.owner_id).await?;
+                let stored = stored.into_iter().find(|stored| {
+                    stored.invocation_id == evidence.invocation_id
+                        && stored.state == evidence.state
+                });
+                let Some(stored) = stored else {
+                    anyhow::bail!("Tool admission evidence write failed");
+                };
+                anyhow::ensure!(stored == *evidence, "Conflicting tool admission evidence");
+                Ok(stored)
+            }
+        }
+    }
+
+    async fn list_tool_admission_evidence(
+        &self,
+        owner_id: &str,
+    ) -> Result<Vec<ToolAdmissionEvidence>> {
+        let mut response = self
+            .db
+            .query(
+                "SELECT VALUE data FROM tool_admission_evidence
+                 WHERE owner_id = $owner ORDER BY occurred_at, invocation_id, state",
+            )
+            .bind(("owner", owner_id.to_string()))
+            .await?
+            .check()?;
+        let rows: Vec<String> = response.take(0)?;
+        rows.into_iter()
+            .map(|row| Ok(serde_json::from_str(&row)?))
+            .collect()
     }
 
     // Session Management

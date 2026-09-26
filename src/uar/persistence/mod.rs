@@ -15,9 +15,11 @@ use uuid::Uuid;
 pub mod agent_threads;
 pub mod presentations;
 pub mod providers;
+pub mod tool_admission;
 
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use agent_threads::{CanonicalToolReceipt, PersistedAgentThread};
+use tool_admission::ToolAdmissionEvidence;
 
 pub(crate) fn tenant_storage_key(owner_id: &str, resource_id: &str) -> String {
     format!("{}:{owner_id}:{resource_id}", owner_id.len())
@@ -279,6 +281,24 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
         owner_id: &str,
         run_id: &str,
     ) -> Result<Vec<CanonicalToolReceipt>>;
+
+    /// Append one sanitized lifecycle fact for an exact tool invocation.
+    /// Implementations must be idempotent for an identical state and reject a
+    /// conflicting duplicate. This history never reconstructs authority.
+    async fn save_tool_admission_evidence(
+        &self,
+        _evidence: &ToolAdmissionEvidence,
+    ) -> Result<ToolAdmissionEvidence> {
+        anyhow::bail!("Tool admission evidence persistence is unavailable")
+    }
+
+    /// List one owner's admission evidence in persisted time order.
+    async fn list_tool_admission_evidence(
+        &self,
+        _owner_id: &str,
+    ) -> Result<Vec<ToolAdmissionEvidence>> {
+        Ok(Vec::new())
+    }
 
     async fn save_agent(&self, agent: &crate::uar::domain::artifact::AgentArtifact) -> Result<()>;
     /// Persist a merged agent only while the stored artifact matches the read

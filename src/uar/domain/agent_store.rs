@@ -19,6 +19,41 @@ pub fn is_protected_agent_id(id: &str) -> bool {
     matches!(id, "default-agent" | "orchestrator-agent")
 }
 
+/// Validate the catalog invariants shared by every agent write path.
+///
+/// # Errors
+///
+/// Returns [`AgentStoreError::Invalid`] when the artifact cannot be admitted to
+/// the runtime catalog.
+pub fn validate_agent(agent: &AgentArtifact) -> Result<(), AgentStoreError> {
+    if agent.id.trim().is_empty() {
+        return Err(AgentStoreError::Invalid(
+            "agent id must not be empty".to_string(),
+        ));
+    }
+    if agent.kind != "agent" {
+        return Err(AgentStoreError::Invalid(
+            "agent kind must be 'agent'".to_string(),
+        ));
+    }
+    if agent.version.trim().is_empty() {
+        return Err(AgentStoreError::Invalid(
+            "agent version must not be empty".to_string(),
+        ));
+    }
+    if agent.metadata.title.trim().is_empty() {
+        return Err(AgentStoreError::Invalid(
+            "agent title must not be empty".to_string(),
+        ));
+    }
+    if agent.runtime.entry.trim().is_empty() {
+        return Err(AgentStoreError::Invalid(
+            "agent runtime entry must not be empty".to_string(),
+        ));
+    }
+    Ok(())
+}
+
 /// Create a new agent, assigning an id when absent and marking its kind.
 ///
 /// Returns the stored artifact (with any generated id) so callers can echo it
@@ -30,15 +65,26 @@ pub fn is_protected_agent_id(id: &str) -> bool {
 pub async fn create_agent(
     persistence: &dyn PersistenceLayer,
     mut agent: AgentArtifact,
-) -> Result<AgentArtifact> {
+) -> Result<AgentArtifact, AgentStoreError> {
     if agent.id.is_empty() {
         agent.id = Uuid::new_v4().to_string();
     }
     agent.kind = "agent".to_string();
+    if persistence
+        .load_agent(&agent.id)
+        .await
+        .map_err(AgentStoreError::Backend)?
+        .is_some()
+    {
+        return Err(AgentStoreError::Conflict);
+    }
+    agent = agent.with_catalog_metadata("uar_api");
+    validate_agent(&agent)?;
     persistence
         .save_agent(&agent)
         .await
-        .context("saving new agent")?;
+        .context("saving new agent")
+        .map_err(AgentStoreError::Backend)?;
     Ok(agent)
 }
 
@@ -50,13 +96,50 @@ pub async fn create_agent(
 pub async fn replace_agent(
     persistence: &dyn PersistenceLayer,
     id: impl Into<String>,
+    agent: AgentArtifact,
+) -> Result<AgentArtifact, AgentStoreError> {
+    replace_agent_if_revision(persistence, id, agent, None).await
+}
+
+/// Replace an agent only when the caller's observed catalog revision remains
+/// current. The persistence CAS closes the race between the read and write.
+pub async fn replace_agent_if_revision(
+    persistence: &dyn PersistenceLayer,
+    id: impl Into<String>,
     mut agent: AgentArtifact,
-) -> Result<AgentArtifact> {
+    expected_revision: Option<&str>,
+) -> Result<AgentArtifact, AgentStoreError> {
     agent.id = id.into();
-    persistence
-        .save_agent(&agent)
+    let existing = persistence
+        .load_agent(&agent.id)
         .await
-        .context("saving agent")?;
+        .map_err(AgentStoreError::Backend)?;
+    if let (Some(expected), Some(current)) = (expected_revision, existing.as_ref())
+        && current
+            .clone()
+            .with_catalog_metadata("uar_api")
+            .content_revision()
+            != expected
+    {
+        return Err(AgentStoreError::Conflict);
+    }
+    agent = agent.with_catalog_metadata("uar_api");
+    validate_agent(&agent)?;
+    if let Some(existing) = existing {
+        if !persistence
+            .save_agent_if_unchanged(&existing, &agent)
+            .await
+            .map_err(AgentStoreError::Backend)?
+        {
+            return Err(AgentStoreError::Conflict);
+        }
+    } else {
+        persistence
+            .save_agent(&agent)
+            .await
+            .context("saving agent")
+            .map_err(AgentStoreError::Backend)?;
+    }
     Ok(agent)
 }
 
@@ -68,11 +151,17 @@ pub async fn replace_agent(
 /// # Errors
 ///
 /// Returns an error if the persistence write fails.
-pub async fn upsert_agent(persistence: &dyn PersistenceLayer, agent: &AgentArtifact) -> Result<()> {
+pub async fn upsert_agent(
+    persistence: &dyn PersistenceLayer,
+    agent: &AgentArtifact,
+) -> Result<(), AgentStoreError> {
+    let agent = agent.clone().with_catalog_metadata("embedded");
+    validate_agent(&agent)?;
     persistence
-        .save_agent(agent)
+        .save_agent(&agent)
         .await
         .context("upserting agent")
+        .map_err(AgentStoreError::Backend)
 }
 
 /// Apply an RFC 7396 JSON Merge Patch to an existing agent and persist it.
@@ -86,11 +175,30 @@ pub async fn patch_agent(
     id: &str,
     patch: &serde_json::Value,
 ) -> Result<AgentArtifact, AgentStoreError> {
+    patch_agent_if_revision(persistence, id, patch, None).await
+}
+
+/// Merge-patch an agent only when its observed catalog revision is current.
+pub async fn patch_agent_if_revision(
+    persistence: &dyn PersistenceLayer,
+    id: &str,
+    patch: &serde_json::Value,
+    expected_revision: Option<&str>,
+) -> Result<AgentArtifact, AgentStoreError> {
     let existing = persistence
         .load_agent(id)
         .await
         .map_err(AgentStoreError::Backend)?
         .ok_or_else(|| AgentStoreError::NotFound(id.to_string()))?;
+    if expected_revision.is_some_and(|expected| {
+        existing
+            .clone()
+            .with_catalog_metadata("uar_api")
+            .content_revision()
+            != expected
+    }) {
+        return Err(AgentStoreError::Conflict);
+    }
 
     let mut base = serde_json::to_value(&existing)
         .map_err(|e| AgentStoreError::Backend(anyhow::anyhow!(e)))?;
@@ -99,6 +207,8 @@ pub async fn patch_agent(
     let mut agent: AgentArtifact = serde_json::from_value(base)
         .map_err(|e| AgentStoreError::Invalid(format!("invalid agent after merge: {e}")))?;
     agent.id = id.to_string();
+    agent = agent.with_catalog_metadata("uar_api");
+    validate_agent(&agent)?;
 
     if !persistence
         .save_agent_if_unchanged(&existing, &agent)
@@ -135,7 +245,16 @@ pub async fn delete_agent(
 ///
 /// Returns an error if the persistence read fails.
 pub async fn list_agents(persistence: &dyn PersistenceLayer) -> Result<Vec<AgentArtifact>> {
-    persistence.list_agents().await.context("listing agents")
+    persistence
+        .list_agents()
+        .await
+        .context("listing agents")
+        .map(|agents| {
+            agents
+                .into_iter()
+                .map(|agent| agent.with_catalog_metadata("uar_api"))
+                .collect()
+        })
 }
 
 /// Load a single agent definition by id.
@@ -147,7 +266,89 @@ pub async fn get_agent(
     persistence: &dyn PersistenceLayer,
     id: &str,
 ) -> Result<Option<AgentArtifact>> {
-    persistence.load_agent(id).await.context("loading agent")
+    persistence
+        .load_agent(id)
+        .await
+        .context("loading agent")
+        .map(|agent| agent.map(|agent| agent.with_catalog_metadata("uar_api")))
+}
+
+/// Resolve an explicitly selected runtime agent without fallback substitution.
+///
+/// Persisted definitions take precedence over built-ins so the specialist IDs
+/// retain their documented operator-overridable behavior.
+///
+/// # Errors
+///
+/// Returns [`AgentStoreError::NotFound`] for an unknown explicit id and
+/// [`AgentStoreError::Backend`] when catalog storage cannot be read.
+pub async fn resolve_registered_agent(
+    persistence: Option<&dyn PersistenceLayer>,
+    agent_id: &str,
+) -> Result<AgentArtifact, AgentStoreError> {
+    if agent_id.trim().is_empty() {
+        return Err(AgentStoreError::Invalid(
+            "agent id must not be empty".to_string(),
+        ));
+    }
+    if let Some(persistence) = persistence
+        && let Some(agent) = persistence
+            .load_agent(agent_id)
+            .await
+            .map_err(AgentStoreError::Backend)?
+    {
+        let agent = agent.with_catalog_metadata("uar_api");
+        validate_agent(&agent)?;
+        return Ok(agent);
+    }
+    let agent = match agent_id {
+        "default-agent" => crate::uar::defaults::default_agent(),
+        "orchestrator-agent" => crate::uar::defaults::orchestrator_agent(),
+        "general-purpose" => crate::uar::defaults::general_purpose_agent(),
+        "rust-reviewer" => crate::uar::defaults::rust_reviewer_agent(),
+        "compiler-agent" => crate::uar::defaults::compiler_agent(),
+        _ => return Err(AgentStoreError::NotFound(agent_id.to_string())),
+    };
+    let agent = agent.with_catalog_metadata("builtin");
+    validate_agent(&agent)?;
+    Ok(agent)
+}
+
+/// List the complete local runtime catalog, surfacing storage failures and
+/// reconciling built-ins that have not yet been seeded.
+///
+/// # Errors
+///
+/// Returns a typed backend or validation error instead of an empty catalog.
+pub async fn list_registered_agents(
+    persistence: Option<&dyn PersistenceLayer>,
+) -> Result<Vec<AgentArtifact>, AgentStoreError> {
+    let mut agents = match persistence {
+        Some(persistence) => persistence
+            .list_agents()
+            .await
+            .map_err(AgentStoreError::Backend)?,
+        None => Vec::new(),
+    };
+    agents = agents
+        .into_iter()
+        .map(|agent| agent.with_catalog_metadata("uar_api"))
+        .collect();
+    for agent in &agents {
+        validate_agent(agent)?;
+    }
+    for builtin in [
+        crate::uar::defaults::default_agent(),
+        crate::uar::defaults::orchestrator_agent(),
+        crate::uar::defaults::general_purpose_agent(),
+        crate::uar::defaults::rust_reviewer_agent(),
+        crate::uar::defaults::compiler_agent(),
+    ] {
+        if !agents.iter().any(|agent| agent.id == builtin.id) {
+            agents.push(builtin.with_catalog_metadata("builtin"));
+        }
+    }
+    Ok(agents)
 }
 
 /// Typed failures from the mutating agent-store operations so callers can map

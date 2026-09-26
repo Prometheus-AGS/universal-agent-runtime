@@ -28,6 +28,10 @@ fn main() {
     // tonic 0.14 moved prost codegen to the separate `tonic-prost-build` crate.
     if env::var_os("CARGO_FEATURE_A2A_TRANSPORT").is_some() && Path::new("proto/a2a.proto").exists()
     {
+        let protoc = protoc_bin_vendored::protoc_bin_path().expect("Failed to locate vendored protoc");
+        // SAFETY: this build script has not started any threads, so no other
+        // thread can read or mutate the process environment concurrently.
+        unsafe { env::set_var("PROTOC", protoc) };
         tonic_prost_build::compile_protos("proto/a2a.proto").expect("Failed to compile A2A proto");
     }
 
