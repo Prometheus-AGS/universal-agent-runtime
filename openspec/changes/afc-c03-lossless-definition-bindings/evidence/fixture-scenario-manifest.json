@@ -31,21 +31,21 @@
   "fixtures": [
     {
       "path": "tests/fixtures/collaboration/legacy-v1.1.md",
-      "byteDigest": "sha256:85c43d71399b5a62ffaf20da12ab9aa463cc647e9ddc395631ddd7a038c4642b",
+      "byteDigest": "sha256:d876bd31564330142bfb402c6d6a53dea33a4918afbc96c859589a5389421c05",
       "scenarios": [
         "legacy-v1.1-ingress"
       ]
     },
     {
       "path": "tests/fixtures/collaboration/legacy-v2-explicit-defaults.md",
-      "byteDigest": "sha256:9bd405f107f04083a9808ce658da78dcca59e590a174078b149e7b98cd71001b",
+      "byteDigest": "sha256:dd7aaeb2a56b38c98d9196e0cd87e9120ea989cdffd2413144f4b53bf78bc111",
       "scenarios": [
         "legacy-v2-explicit-default-presence"
       ]
     },
     {
       "path": "tests/fixtures/collaboration/legacy-v2-omitted-defaults.md",
-      "byteDigest": "sha256:85c43d71399b5a62ffaf20da12ab9aa463cc647e9ddc395631ddd7a038c4642b",
+      "byteDigest": "sha256:d876bd31564330142bfb402c6d6a53dea33a4918afbc96c859589a5389421c05",
       "scenarios": [
         "legacy-v2-omitted-default-presence"
       ]

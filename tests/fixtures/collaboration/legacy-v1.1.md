@@ -7,7 +7,9 @@ version: 1.0.0
 
 ## Identity
 
+name: reviewer
 role: reviewer
+persona: C03 legacy compatibility fixture.
 
 ## UI (A2UI)
 
