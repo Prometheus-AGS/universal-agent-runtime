@@ -202,6 +202,9 @@ pub struct EmbeddedRuntimeBuilder {
     native_skills: Option<Arc<NativeSkillRegistry>>,
     a2ui_registry: Option<Arc<A2uiRegistry>>,
     memory_service: Option<Arc<MemoryService>>,
+    governance_engine: Option<Arc<GovernanceEngine>>,
+    host_tool_admission:
+        Option<Arc<dyn crate::uar::runtime::tool_admission::HostToolAdmissionPort>>,
     seed_defaults: bool,
     vector_threshold: Option<f32>,
 }
@@ -219,6 +222,11 @@ impl std::fmt::Debug for EmbeddedRuntimeBuilder {
             .field("a2ui_registry", &self.a2ui_registry)
             .field("seed_defaults", &self.seed_defaults)
             .field("vector_threshold", &self.vector_threshold)
+            .field("governance_engine", &self.governance_engine)
+            .field(
+                "host_tool_admission",
+                &self.host_tool_admission.as_ref().map(|_| "registered"),
+            )
             .finish()
     }
 }
@@ -290,6 +298,25 @@ impl EmbeddedRuntimeBuilder {
     #[must_use]
     pub fn memory_service(mut self, service: Arc<MemoryService>) -> Self {
         self.memory_service = Some(service);
+        self
+    }
+
+    /// Install the embedder-owned policy authority. Tool-capable embedded
+    /// runtimes never synthesize a permit-all engine.
+    #[must_use]
+    pub fn governance_engine(mut self, engine: Arc<GovernanceEngine>) -> Self {
+        self.governance_engine = Some(engine);
+        self
+    }
+
+    /// Install the embedder-owned admission port used by every tool-capable
+    /// run. The port may be standalone only for an unmanaged root invocation.
+    #[must_use]
+    pub fn host_tool_admission(
+        mut self,
+        admission: Arc<dyn crate::uar::runtime::tool_admission::HostToolAdmissionPort>,
+    ) -> Self {
+        self.host_tool_admission = Some(admission);
         self
     }
 
@@ -393,12 +420,23 @@ impl EmbeddedRuntimeBuilder {
         let settings_manager = Arc::new(SettingsManager::new(Arc::clone(&persistence)));
         settings_manager.ensure_run_policy_seed().await?;
 
-        let governance = Arc::new(GovernanceEngine::with_default_permit()?);
+        let governance = self.governance_engine.ok_or_else(|| {
+            UarError::config(
+                "E_EMBEDDED_GOVERNANCE_REQUIRED",
+                "embedded UAR requires an explicit governance engine",
+            )
+        })?;
+        let host_tool_admission = self.host_tool_admission.ok_or_else(|| {
+            UarError::config(
+                "E_EMBEDDED_TOOL_ADMISSION_REQUIRED",
+                "embedded UAR requires an explicit tool admission port",
+            )
+        })?;
         let sessions = SessionStore::new();
         let orchestrator = Arc::new(Orchestrator::from_driver(
             llm_config.clone(),
-            Arc::clone(&mcp),
-            Arc::clone(&native_skills),
+            Arc::new(McpRegistry::empty()),
+            Arc::new(NativeSkillRegistry::new()),
             Arc::clone(&driver),
         ));
 
@@ -419,6 +457,7 @@ impl EmbeddedRuntimeBuilder {
             .with_native_skills(Arc::clone(&native_skills))
             .with_a2ui_backbone(Arc::clone(&a2ui_backbone))
             .with_governance_engine(governance)
+            .with_host_tool_admission(host_tool_admission)
             .with_settings_manager(Arc::clone(&settings_manager)),
         );
 

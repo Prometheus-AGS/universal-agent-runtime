@@ -201,6 +201,7 @@ impl AdmissionLifecycle {
 
     pub(super) async fn claim(&self, admitted: &AdmittedToolInvocation) -> anyhow::Result<()> {
         let invocation = admitted.prepared.as_ref();
+        invocation.validate_authority_envelope()?;
         let cell = self
             .cell(&invocation.invocation_id, LiveState::AwaitingApproval)
             .await;
@@ -394,6 +395,49 @@ impl ToolAdmissionEvidence {
 impl ToolAdmissionRuntime {
     /// Persist claim intent before any native, MCP, or delegated side effect.
     pub async fn claim(&self, admitted: &AdmittedToolInvocation) -> anyhow::Result<()> {
+        let invocation = admitted.prepared.as_ref();
+        invocation.validate_authority_envelope()?;
+        anyhow::ensure!(
+            !self.cancellation.is_cancelled(),
+            "Tool invocation was cancelled before claim"
+        );
+        let refreshed = self.host.revalidate_claim(admitted).await?;
+        anyhow::ensure!(
+            refreshed == admitted.host_receipt,
+            "Host claim revalidation changed the admission receipt"
+        );
+        let governance_is_active = self
+            .governance_gate
+            .as_ref()
+            .map_or(self.governance_engine.is_some(), |gate| gate.effective_enabled());
+        if governance_is_active {
+            let engine = self
+                .governance_engine
+                .as_ref()
+                .ok_or_else(|| anyhow::anyhow!("Governed tool claim has no Cedar policy engine"))?;
+            anyhow::ensure!(
+                engine.policy_revision().await == invocation.governance_policy_revision,
+                "Governance policy changed before tool claim"
+            );
+            let allowed = engine
+                .is_tool_allowed(&invocation.principal_id, &invocation.provider_tool_name)
+                .await;
+            anyhow::ensure!(
+                engine.policy_revision().await == invocation.governance_policy_revision,
+                "Governance policy changed during tool claim"
+            );
+            anyhow::ensure!(allowed, "Current governance policy denies the tool claim");
+        } else {
+            anyhow::ensure!(
+                invocation.root_run_id == invocation.executing_run_id
+                    && !admitted.host_receipt.managed_mcp_metadata,
+                "Governance bypass is restricted to an unmanaged standalone root"
+            );
+        }
+        anyhow::ensure!(
+            !self.cancellation.is_cancelled(),
+            "Tool invocation was cancelled during claim revalidation"
+        );
         self.lifecycle.claim(admitted).await
     }
 

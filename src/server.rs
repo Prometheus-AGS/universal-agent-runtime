@@ -1199,24 +1199,15 @@ async fn run_server_with_listener(
     // Initialize Governance Policy Engine (before RunManager so it can gate the
     // orchestrator tool loop in addition to the HTTP governance layer).
     info!(name: "startup.step", step = 5, stage = "governance_engine", "UAR startup progress");
-    // Say plainly when no policy engine exists, rather than letting it look
-    // like a recoverable policy-load failure.
-    //
-    // Without `cedar-governance`, `GovernanceEngine` is the facade in
-    // `engine_disabled.rs`: `is_allowed` and `is_tool_allowed` return `true`
-    // unconditionally, so the middleware mounted below authorizes every
-    // request carrying `X-Agent-Id`. `load_from_dir` also always fails in that
-    // build, so the "failed to load policies" warning below fires on every
-    // boot and reads like a missing directory -- understating it.
-    //
-    // The permissive baseline is deliberate (governance is opt-in via
-    // `server-full`), and this line is here so an operator can tell a build
-    // that authorizes nothing from one that authorizes everything.
+    // A build without Cedar may start only after the runtime authority proves
+    // the constrained loopback governance-off posture. Governed startup below
+    // rejects the unavailable engine rather than substituting permit-all.
     #[cfg(not(feature = "cedar-governance"))]
     warn!(
         name: "governance.engine.absent",
         feature = "cedar-governance",
-        "No policy engine is compiled in — every X-Agent-Id request is authorized. Rebuild with `cedar-governance` to enforce policy."
+        effective_state = ?governance_boot_status.effective_state,
+        "No Cedar engine is compiled in; only the constrained local governance-off posture can start"
     );
     let governance_engine = match GovernanceEngine::load_from_dir("policies").await {
         Ok(engine) => {
@@ -1227,14 +1218,17 @@ async fn run_server_with_listener(
             Arc::new(engine)
         }
         Err(e) => {
+            if governance_boot_status.effective_enabled {
+                return Err(anyhow::anyhow!(
+                    "Governed startup requires a readable nonempty valid Cedar policy set: {e}"
+                ));
+            }
             warn!(
                 error = %e,
-                "Failed to load policies from directory — using permissive default"
+                effective_state = ?governance_boot_status.effective_state,
+                "Cedar policy is unavailable in the constrained local governance-off posture"
             );
-            Arc::new(
-                GovernanceEngine::with_default_permit()
-                    .expect("default permit policy should parse"),
-            )
+            Arc::new(GovernanceEngine::new())
         }
     };
 
@@ -1814,14 +1808,12 @@ async fn run_server_with_listener(
             })
     };
     let app = app
-        .layer(axum::middleware::from_fn_with_state(
-            state.clone(),
-            uar::security::middleware::auth_middleware,
-        ))
-        // Cedar governance: authorize requests carrying `X-Agent-Id` against the
-        // loaded policy set. Anonymous requests pass through untouched
-        // (middleware.rs) — this gate identifies agents, it is not the
-        // authentication boundary; `auth_middleware` above is.
+        // Cedar governance: authorize ordinary requests carrying `X-Agent-Id`
+        // against the loaded policy set. Direct tool execution is deliberately
+        // excluded here: its handler binds the authenticated subject and the
+        // RunManager exact-invocation boundary performs the Cedar decision.
+        // Authentication is layered outside this middleware so only verified
+        // UserContext state supplies the principal; the header is only a marker.
         //
         // "Permit-all by default" is literal without `cedar-governance`: the
         // facade's `is_allowed` returns `true` for every agent, action and
@@ -1833,6 +1825,10 @@ async fn run_server_with_listener(
                 governance_gate.clone(),
             ),
             uar::governance::middleware::governance_layer,
+        ))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            uar::security::middleware::auth_middleware,
         ))
         // Apply Timeout Layer if not disabled
         // We use a large timeout if disabled instead of conditional layering to keep types consistent

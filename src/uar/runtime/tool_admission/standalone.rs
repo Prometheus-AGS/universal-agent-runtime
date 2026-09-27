@@ -52,6 +52,7 @@ impl HostToolAdmissionPort for StandaloneToolAdmissionPort {
             invocation_id: invocation.invocation_id.clone(),
             runtime_epoch: invocation.runtime_epoch.clone(),
             host_epoch: self.binding.host_epoch.clone(),
+            authority_revision: invocation.authority_revision.clone(),
             host_disposition: HostAdmissionDisposition::Auto,
             action_display: serde_json::json!({
                 "operation": invocation.provider_tool_name,
@@ -82,6 +83,7 @@ impl HostToolAdmissionPort for StandaloneToolAdmissionPort {
             invocation_id: preparation.invocation_id,
             runtime_epoch: preparation.runtime_epoch,
             host_epoch: preparation.host_epoch,
+            authority_revision: preparation.authority_revision,
             managed_mcp_metadata: preparation.managed_mcp_metadata,
         };
         Ok(Some(AdmittedToolInvocation {
@@ -102,6 +104,22 @@ impl HostToolAdmissionPort for StandaloneToolAdmissionPort {
             "Standalone admission belongs to another host binding"
         );
         Ok(AdmissionCancellationOutcome::Cancelled)
+    }
+
+    async fn revalidate_claim(
+        &self,
+        admitted: &AdmittedToolInvocation,
+    ) -> anyhow::Result<HostAdmissionReceipt> {
+        let invocation = admitted.prepared.as_ref();
+        anyhow::ensure!(
+            invocation.version == self.binding.version
+                && invocation.host_epoch == self.binding.host_epoch
+                && invocation.root_run_id == invocation.executing_run_id
+                && admitted.host_receipt.invocation_id == invocation.invocation_id
+                && !admitted.host_receipt.managed_mcp_metadata,
+            "Standalone claim is not a constrained local root invocation"
+        );
+        Ok(admitted.host_receipt.clone())
     }
 
     async fn finish(

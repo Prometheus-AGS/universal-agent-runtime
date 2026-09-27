@@ -22,12 +22,11 @@ use super::runtime_control::GovernanceGateHandle;
 #[derive(Clone, Debug)]
 pub struct GovernanceMiddlewareState {
     engine: Arc<GovernanceEngine>,
-    gate: GovernanceGateHandle,
 }
 
 impl GovernanceMiddlewareState {
-    pub fn new(engine: Arc<GovernanceEngine>, gate: GovernanceGateHandle) -> Self {
-        Self { engine, gate }
+    pub fn new(engine: Arc<GovernanceEngine>, _gate: GovernanceGateHandle) -> Self {
+        Self { engine }
     }
 }
 
@@ -63,32 +62,41 @@ pub async fn governance_layer(
     request: Request<Body>,
     next: Next,
 ) -> Response {
-    // The HTTP Cedar boundary consumes the same coherent gate as RunManager.
-    // In verified local Off mode, direct configured-tool execution must not be
-    // denied before it reaches the ordinary registration/argument/transport
-    // boundaries.
-    if !state.gate.effective_enabled() && is_direct_tool_execution(&request) {
+    // Direct tool execution is authorized after authentication by RunManager's
+    // exact-invocation admission boundary. Never authorize that path from the
+    // caller-controlled X-Agent-Id header before auth has bound its principal.
+    if is_direct_tool_execution(&request) {
         return next.run(request).await;
     }
 
-    // Extract agent ID from request header (optional)
-    let agent_id = request
-        .headers()
-        .get("X-Agent-Id")
-        .and_then(|v| v.to_str().ok())
-        .map(String::from);
-
-    // If no agent ID, pass through (not an agent-initiated request)
-    let Some(agent_id) = agent_id else {
+    // The header marks an agent-initiated request but never supplies identity.
+    if !request.headers().contains_key("X-Agent-Id") {
         return next.run(request).await;
+    }
+    let owner = request
+        .extensions()
+        .get::<crate::uar::security::claims::UserContext>()
+        .and_then(|user| {
+            crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user).ok()
+        });
+    let Some(owner) = owner else {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(GovernanceDenied {
+                error: "Governed agent request requires authenticated identity".to_string(),
+                code: "GOVERNANCE_IDENTITY_UNVERIFIED".to_string(),
+            }),
+        )
+            .into_response();
     };
+    let agent_id = owner.user_id();
 
     // Extract the action from request path/method
     let action = extract_action(&request);
     let resource = extract_resource(&request);
 
     // Evaluate governance policy
-    if !state.engine.is_allowed(&agent_id, &action, &resource).await {
+    if !state.engine.is_allowed(agent_id, &action, &resource).await {
         warn!(
             agent_id = %agent_id,
             action = %action,
@@ -171,12 +179,9 @@ mod tests {
         assert!(gate.effective_enabled());
     }
 
-    /// Exercises the real Cedar decision path, so it needs the engine that
-    /// makes one. Without `cedar-governance`, `GovernanceEngine` resolves to
-    /// the `engine_disabled.rs` stub whose `is_allowed` unconditionally
-    /// returns `true` -- every request is permitted, and an assertion about
-    /// denial cannot hold. Gated rather than relaxed: weakening the assertion
-    /// to match the stub would delete the security property under test.
+    /// Direct execution never uses the unverified agent header as its Cedar
+    /// principal. The authenticated handler and RunManager exact-invocation
+    /// boundary perform the policy decision instead.
     #[cfg(feature = "cedar-governance")]
     #[tokio::test]
     async fn governance_off_bypasses_direct_tool_http_cedar() {
@@ -218,15 +223,12 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
     }
 
-    /// Exercises the real Cedar decision path, so it needs the engine that
-    /// makes one. Without `cedar-governance`, `GovernanceEngine` resolves to
-    /// the `engine_disabled.rs` stub whose `is_allowed` unconditionally
-    /// returns `true` -- every request is permitted, and an assertion about
-    /// denial cannot hold. Gated rather than relaxed: weakening the assertion
-    /// to match the stub would delete the security property under test.
+    /// Governance being enabled does not make the unverified agent header an
+    /// authority. Direct execution still defers to authenticated RunManager
+    /// admission, which evaluates Cedar against the bound subject.
     #[cfg(feature = "cedar-governance")]
     #[tokio::test]
-    async fn governance_on_preserves_direct_tool_http_cedar() {
+    async fn direct_tool_http_defers_cedar_to_authenticated_run_admission() {
         let (mutation, gate, _) =
             crate::uar::governance::runtime_control::governance_runtime_handles("localhost");
         mutation.record_installed_authentication(false);
@@ -262,7 +264,7 @@ mod tests {
             .await
             .expect("response");
 
-        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+        assert_eq!(response.status(), StatusCode::OK);
     }
 
     /// Exercises the real Cedar decision path, so it needs the engine that
@@ -293,6 +295,20 @@ mod tests {
             .layer(axum::middleware::from_fn_with_state(
                 state,
                 governance_layer,
+            ))
+            .layer(axum::Extension(
+                crate::uar::security::claims::UserContext {
+                    user_id: "authenticated-user".to_string(),
+                    tenant_id: None,
+                    claims: crate::uar::security::claims::UserClaims {
+                        sub: "authenticated-user".to_string(),
+                        name: None,
+                        roles: None,
+                        tenant_id: None,
+                        uar_instance_id: None,
+                        exp: usize::MAX,
+                    },
+                },
             ));
         let response = app
             .oneshot(

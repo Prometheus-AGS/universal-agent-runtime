@@ -24,6 +24,10 @@ use universal_agent_runtime::embedded::EmbeddedRuntime;
 #[cfg(feature = "in-memory-backend")]
 use universal_agent_runtime::uar::domain::skills::{Skill, SkillOrigin};
 
+#[cfg(feature = "in-memory-backend")]
+#[path = "common/embedded_authority.rs"]
+mod embedded_authority;
+
 /// Build a runtime the way an embedded host does: no server, no network.
 ///
 /// # An R4 finding, recorded rather than worked around
@@ -69,11 +73,14 @@ async fn embedded_runtime() -> EmbeddedRuntime {
         enabled: true,
     };
 
+    let (governance, admission) = embedded_authority::explicit_local_authority();
     EmbeddedRuntime::builder()
         // No scripted responses: this test never runs a completion, it only
         // needs the builder's driver requirement satisfied.
         .local_provider(Arc::new(MockLlmDriver::new(Vec::new())), provider)
         .persistence(persistence)
+        .governance_engine(governance)
+        .host_tool_admission(admission)
         .seed_defaults(false)
         .build()
         .await
@@ -243,9 +250,12 @@ async fn an_embedder_can_use_the_skill_api_with_a_real_llm_driver() {
     let persistence: Arc<dyn PersistenceLayer> = Arc::new(InMemoryProvider::new());
     let driver = ollama::driver().expect("Ollama reported available, so a driver must build");
 
+    let (governance, admission) = embedded_authority::explicit_local_authority();
     let runtime = EmbeddedRuntime::builder()
         .local_provider(driver, ollama::provider())
         .persistence(persistence)
+        .governance_engine(governance)
+        .host_tool_admission(admission)
         .seed_defaults(false)
         .build()
         .await

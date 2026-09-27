@@ -1,3 +1,5 @@
+#![recursion_limit = "256"]
+
 use std::{
     pin::Pin,
     sync::{Arc, Mutex},
@@ -34,6 +36,9 @@ use universal_agent_runtime::{
         },
     },
 };
+
+#[path = "common/embedded_authority.rs"]
+mod embedded_authority;
 
 #[derive(Debug)]
 struct GatedDriver {
@@ -364,9 +369,12 @@ async fn conversation_enable_widens_global_disable_and_in_flight_binding_is_stab
             .expect("embedded SurrealKV starts"),
     );
     let driver = Arc::new(GatedDriver::default());
+    let (governance, admission) = embedded_authority::explicit_local_authority();
     let runtime = EmbeddedRuntime::builder()
         .local_provider(driver.clone(), local_provider())
         .persistence(persistence)
+        .governance_engine(governance)
+        .host_tool_admission(admission)
         .seed_defaults(false)
         .build()
         .await
@@ -483,9 +491,12 @@ async fn persisted_session_skill_selection_gates_overlay_and_activation() {
             .expect("embedded SurrealKV starts"),
     );
     let driver = Arc::new(GatedDriver::default());
+    let (governance, admission) = embedded_authority::explicit_local_authority();
     let runtime = EmbeddedRuntime::builder()
         .local_provider(driver.clone(), local_provider())
         .persistence(Arc::clone(&persistence))
+        .governance_engine(governance)
+        .host_tool_admission(admission)
         .seed_defaults(false)
         .build()
         .await

@@ -457,30 +457,35 @@ struct ExecuteToolResponse {
 pub async fn execute_tool(
     State(state): State<AppState>,
     Path(name): Path<String>,
+    Extension(user): Extension<UserContext>,
     Json(body): Json<ExecuteToolRequest>,
 ) -> impl IntoResponse {
-    // Verify the tool exists before attempting execution.
-    let tool_exists = state
-        .mcp
-        .tools()
-        .iter()
-        .any(|(ns_name, _)| ns_name == &name);
-
-    if !tool_exists {
+    let owner = crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(&user);
+    let Ok(owner) = owner else {
         return (
-            StatusCode::NOT_FOUND,
+            StatusCode::UNAUTHORIZED,
             Json(ExecuteToolResponse {
                 result: None,
-                error: Some(format!("unknown tool: {name}")),
+                error: Some("direct tool execution requires an authenticated owner".to_string()),
                 duration_ms: 0,
                 success: false,
             }),
         )
             .into_response();
-    }
+    };
+    let principal_id = owner.user_id().to_owned();
 
     let start = std::time::Instant::now();
-    match state.mcp.call_namespaced_tool(&name, body.arguments).await {
+    match state
+        .run_manager
+        .execute_direct_tool(
+            principal_id.clone(),
+            principal_id,
+            &name,
+            body.arguments,
+        )
+        .await
+    {
         Ok(result) => {
             let duration_ms = start.elapsed().as_millis();
             (
@@ -496,8 +501,13 @@ pub async fn execute_tool(
         }
         Err(err) => {
             let duration_ms = start.elapsed().as_millis();
+            let status = if err.to_string().starts_with("unknown tool:") {
+                StatusCode::NOT_FOUND
+            } else {
+                StatusCode::FORBIDDEN
+            };
             (
-                StatusCode::INTERNAL_SERVER_ERROR,
+                status,
                 Json(ExecuteToolResponse {
                     result: None,
                     error: Some(err.to_string()),
