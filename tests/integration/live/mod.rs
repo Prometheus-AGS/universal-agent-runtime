@@ -3,6 +3,7 @@ pub mod backend;
 pub mod baseline_cases;
 pub mod capability_cases;
 pub mod chat_replay_cases;
+pub mod collaboration_conformance_cases;
 pub mod harness;
 pub mod librefang_seam_cases;
 pub mod load_test;

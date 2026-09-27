@@ -1,0 +1,166 @@
+{
+  "schema": "urn:prometheus:uar:evidence:fixture-scenario-manifest:1",
+  "change": "afc-c03-lossless-definition-bindings",
+  "task": "7.1",
+  "productionSourceRevision": "fba2b34a6449c501b0ad9de29936eb63f5726843",
+  "executionStatus": "NOT_RUN",
+  "harness": {
+    "source": "tests/integration/live/collaboration_conformance_cases.rs",
+    "case": "live::collaboration_conformance_cases::c03_completed_path_emits_one_acceptance_receipt",
+    "processBoundary": "real UAR server child process",
+    "persistenceBoundary": "one caller-owned SurrealKV path reused across graceful restart",
+    "runSelector": "deployment_binding_id",
+    "backendRuns": [
+      {
+        "mode": "recorded",
+        "command": "UAR_LIVE_INTEGRATION_BACKEND=recorded cargo test --test integration live::collaboration_conformance_cases::c03_completed_path_emits_one_acceptance_receipt -- --exact --test-threads=1 --nocapture",
+        "claimOnPass": "deterministic server, catalog, persistence, admission, and provider-protocol behavior",
+        "inferenceCertified": false,
+        "responseAssertion": "exact C03_BOUND_RUN_OK assistant delta"
+      },
+      {
+        "mode": "live",
+        "command": "UAR_LIVE_INTEGRATION_BACKEND=live cargo test --test integration live::collaboration_conformance_cases::c03_completed_path_emits_one_acceptance_receipt -- --exact --test-threads=1 --nocapture",
+        "claimOnPass": "ordinary bound-run execution reached the configured live provider through the same deployment_binding_id boundary",
+        "inferenceCertified": true,
+        "responseAssertion": "content-tolerant nonempty assistant delta with resolved provider and model recorded"
+      }
+    ],
+    "helper": "tests/fixtures/collaboration/harness_support.rs"
+  },
+  "fixtures": [
+    {
+      "path": "tests/fixtures/collaboration/legacy-v1.1.md",
+      "byteDigest": "sha256:85c43d71399b5a62ffaf20da12ab9aa463cc647e9ddc395631ddd7a038c4642b",
+      "scenarios": [
+        "legacy-v1.1-ingress"
+      ]
+    },
+    {
+      "path": "tests/fixtures/collaboration/legacy-v2-explicit-defaults.md",
+      "byteDigest": "sha256:9bd405f107f04083a9808ce658da78dcca59e590a174078b149e7b98cd71001b",
+      "scenarios": [
+        "legacy-v2-explicit-default-presence"
+      ]
+    },
+    {
+      "path": "tests/fixtures/collaboration/legacy-v2-omitted-defaults.md",
+      "byteDigest": "sha256:85c43d71399b5a62ffaf20da12ab9aa463cc647e9ddc395631ddd7a038c4642b",
+      "scenarios": [
+        "legacy-v2-omitted-default-presence"
+      ]
+    },
+    {
+      "path": "tests/fixtures/collaboration/agent-definition.json",
+      "byteDigest": "sha256:db65fd67334884fa3266a947db79ddffab7078b1215be05aa2d8f2c0b500f9f8",
+      "contentDigest": "sha256:c1653c99034e511cbe11ebdf8df5fc53110771dbe2821960b7cebf8ecd8581a0",
+      "scenarios": [
+        "canonical-agent",
+        "full-skill-ref",
+        "unknown-optional-retained",
+        "all-five-v2-fields"
+      ]
+    },
+    {
+      "path": "tests/fixtures/collaboration/team-definition.json",
+      "byteDigest": "sha256:f56bb5c71a4ee213db71176f31e044cc0f46727132af948c308015724ba15699",
+      "contentDigest": "sha256:581c51ddb9b0a92ded96df09b418ed9b5833f3424bbfb518dab5d06a5fe21230",
+      "scenarios": [
+        "canonical-team"
+      ]
+    },
+    {
+      "path": "tests/fixtures/collaboration/workflow-definition.json",
+      "byteDigest": "sha256:e38a29d85a8521080959c498754ccd4dcfd127b21e356f33467e5293da83d76f",
+      "contentDigest": "sha256:bd8243d1d42e6a80fd7a6f0162003e8510d433cd0eb690b2b33340bd14fa5ff2",
+      "scenarios": [
+        "canonical-workflow"
+      ]
+    },
+    {
+      "path": "tests/fixtures/collaboration/package-manifest.json",
+      "byteDigest": "sha256:4c65034f4dab17b5713e147e00b0b24c1f4ea73586c5c5c3d7c636965c281e5d",
+      "contentDigest": "sha256:8043a7bbbbaf1f1815388d1844b616ffb67b303f4d708f7bcfa18d86316ee8fe",
+      "scenarios": [
+        "atomic-package",
+        "immutable-conflict",
+        "canonical-export-reimport",
+        "compatibility-downgrade-refusal"
+      ]
+    },
+    {
+      "path": "tests/fixtures/collaboration/deployment-binding.json",
+      "byteDigest": "sha256:4adc7ad27679b08a89948b64aaedf03f201597f3858e0e6c7cf324d01c6e7352",
+      "contentDigest": "sha256:eebe9a1f16ce25cca65369b7cded3ef78fe44f01452c72318e4df0f1297ae4b5",
+      "scenarios": [
+        "exact-installed-skill",
+        "binding-effective-receipt",
+        "ordinary-rest-run",
+        "cold-readback",
+        "immutable-pinning",
+        "stale-policy-refusal",
+        "sanitized-template"
+      ]
+    },
+    {
+      "path": "tests/fixtures/collaboration/representation-grant-v1.json",
+      "byteDigest": "sha256:0d0280335c63ae65cf1a735bf9de08be2f5396656a40c916c93e49e88568b1ba",
+      "scenarios": [
+        "grant-current-history",
+        "stale-grant-refusal"
+      ]
+    },
+    {
+      "path": "tests/fixtures/collaboration/private-authority-agent.json",
+      "byteDigest": "sha256:db4c2196a6a2340516cff44efec1c4386d6f4dbfefe34af37bc36258e27f918f",
+      "contentDigest": "sha256:e1155fd85abc4ec2dde8732c210e5a4e304d3b49825a2d052c05431f684ec51b",
+      "scenarios": [
+        "private-authority-extension-exclusion",
+        "private-authority-source-descriptor-exclusion",
+        "private-authority-legacy-section-exclusion",
+        "private-authority-skill-config-exclusion",
+        "private-authority-contract-exclusion",
+        "private-authority-free-text-exclusion"
+      ]
+    },
+    {
+      "path": "tests/fixtures/collaboration/required-unsupported-agent.json",
+      "byteDigest": "sha256:8ce94e9e1337092aaa44ce647226a903b8ef3105ea65465746a738cf2156cc7d",
+      "contentDigest": "sha256:d92e5a8d95d72120367e91dd5ec22bd6ca41c9f4c0e6350d844f7c0bce496100",
+      "scenarios": [
+        "unknown-required-refusal",
+        "required-skill-refusal",
+        "required-v2-refusal"
+      ]
+    },
+    {
+      "path": "tests/fixtures/collaboration/builtin-skills/sample-skill/SKILL.md",
+      "byteDigest": "sha256:37b6989908c8541943c18751448b00cf8bc825a9f902dfa3430f9e5dfc8ccc84",
+      "scenarios": [
+        "exact-installed-skill",
+        "required-native-tool-resolution"
+      ]
+    }
+  ],
+  "receipt": {
+    "prefix": "C03_ACCEPTANCE_RECEIPT=",
+    "sections": [
+      "schemaValidity",
+      "catalogPersistence",
+      "effectiveRuntimeSemantics",
+      "privateAuthorityExclusion",
+      "ordinaryExecutionEvidence"
+    ],
+    "recordsExact": [
+      "source revision",
+      "profile",
+      "catalog revision",
+      "definition digests",
+      "binding revision and digest",
+      "policy revision",
+      "grant revisions",
+      "resolved skill identity and digest",
+      "resolved provider and model"
+    ]
+  }
+}

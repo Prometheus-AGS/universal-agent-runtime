@@ -1,0 +1,79 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "DeploymentBinding",
+  "id": "urn:uar:c03:binding",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "C03 completed-path fixture",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "collaboration_deployment_bindings_v2"
+  ],
+  "extensions": {},
+  "exportClass": "private-installed-state",
+  "package": {
+    "id": "urn:uar:c03:package",
+    "version": "1.0.0",
+    "digest": "sha256:8043a7bbbbaf1f1815388d1844b616ffb67b303f4d708f7bcfa18d86316ee8fe"
+  },
+  "ownerId": "v1:s:17:live-harness-peer",
+  "workspaceId": "workspace:c03",
+  "runtimeInstanceId": "agent-instance:c03",
+  "revision": 1,
+  "modelBindings": [
+    {
+      "requestedAlias": "local-default",
+      "providerId": "openai",
+      "modelId": "gpt-5.4-mini",
+      "credentialRef": "protected-credential://c03/model"
+    }
+  ],
+  "skillBindings": [
+    {
+      "id": "builtin::sample-filesystem-skill",
+      "version": "1.0.0",
+      "digest": "sha256:37b6989908c8541943c18751448b00cf8bc825a9f902dfa3430f9e5dfc8ccc84",
+      "required": true,
+      "config": {
+        "mode": "fixture"
+      },
+      "entrypoint": null,
+      "requiredTools": [
+        "native_echo"
+      ],
+      "installedLocation": "file://tests/fixtures/collaboration/builtin-skills/sample-skill/SKILL.md"
+    }
+  ],
+  "storage": {
+    "backend": "surrealkv",
+    "connectionRef": "protected-connection://c03/catalog",
+    "durableTransactions": true
+  },
+  "policyRevision": "policy:c03:1",
+  "effectiveLimits": {
+    "concurrentTurns": 1,
+    "maxMembers": 1,
+    "maxDepth": 1,
+    "maxPendingTasks": 4
+  },
+  "effectiveBudget": {
+    "maxTokens": 4096,
+    "maxCostMicrounits": 1000000,
+    "currency": "USD",
+    "maxElapsedSeconds": 120
+  },
+  "contextGrants": [],
+  "representationGrantRefs": [
+    {
+      "grantId": "urn:uar:c03:grant",
+      "revision": 1,
+      "constraintDigest": "sha256:7e8297d9998ee21c0c22f391faace673eb2a905247c3f2d6024a0e92dc2ddb0c"
+    }
+  ],
+  "status": "ready",
+  "effectiveBindingReceiptRef": null,
+  "contentDigest": "sha256:eebe9a1f16ce25cca65369b7cded3ef78fe44f01452c72318e4df0f1297ae4b5"
+}

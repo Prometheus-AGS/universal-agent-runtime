@@ -1,0 +1,179 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "AgentDefinition",
+  "id": "urn:uar:c03:private-authority",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "C03 completed-path fixture",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "collaboration_definition_packages_v2"
+  ],
+  "extensions": {
+    "fixture.privateAuthority": {
+      "required": false,
+      "value": {
+        "credentialRef": "protected-credential://must-not-export"
+      }
+    }
+  },
+  "title": "C03 ordinary agent",
+  "role": "assistant",
+  "whenToUse": "Use for the C03 completed production path.",
+  "instructions": "Return example_secret_value_free_text.",
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false,
+    "description": "example_secret_value_contract"
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "skills": [
+    {
+      "id": "builtin::sample-filesystem-skill",
+      "version": "1.0.0",
+      "digest": "sha256:37b6989908c8541943c18751448b00cf8bc825a9f902dfa3430f9e5dfc8ccc84",
+      "required": true,
+      "config": {
+        "mode": "fixture",
+        "secret": "example_secret_value_skill_config"
+      },
+      "entrypoint": null,
+      "requiredTools": [
+        "native_echo"
+      ]
+    }
+  ],
+  "models": [
+    {
+      "role": "primary",
+      "capabilities": [
+        "text",
+        "tool-calling"
+      ],
+      "preferredAliases": [
+        "local-default"
+      ]
+    }
+  ],
+  "permittedChildren": [],
+  "context": {
+    "mode": "selected",
+    "artifacts": [
+      "task-input"
+    ],
+    "history": "authorized-summary",
+    "memoryScopes": []
+  },
+  "requestedLimits": {
+    "concurrentTurns": 1,
+    "maxMembers": 2,
+    "maxDepth": 1,
+    "maxPendingTasks": 8
+  },
+  "sourceIdentity": {
+    "profile": "urn:prometheus:uar:agent-md:1.1",
+    "id": "urn:uar:legacy:reviewer",
+    "version": "1.0.0",
+    "digest": "sha256:85c43d71399b5a62ffaf20da12ab9aa463cc647e9ddc395631ddd7a038c4642b",
+    "revision": null
+  },
+  "renameMapping": {
+    "sourceId": "urn:uar:legacy:reviewer",
+    "targetId": "urn:uar:c03:private-authority",
+    "reason": "fixture-normalization"
+  },
+  "authoredFields": [
+    "/metadata/id",
+    "/metadata/version",
+    "/skills/0",
+    "/model_requirements",
+    "/prompt_dialect",
+    "/rag_configuration",
+    "/context_strategy",
+    "/api_harness"
+  ],
+  "modelRequirements": {
+    "required": true,
+    "value": {
+      "capabilities": [
+        "text",
+        "tool-calling"
+      ]
+    }
+  },
+  "promptDialect": {
+    "required": true,
+    "value": {
+      "id": "uar.prompt/plain-v1"
+    }
+  },
+  "ragConfiguration": {
+    "required": false,
+    "value": {
+      "mode": "disabled"
+    }
+  },
+  "contextStrategy": {
+    "required": true,
+    "value": {
+      "mode": "selected"
+    }
+  },
+  "apiHarness": {
+    "required": false,
+    "value": {
+      "id": "uar.ordinary-agent/1"
+    }
+  },
+  "legacySections": {
+    "skills": "builtin::sample-filesystem-skill@1.0.0",
+    "governance": "example_secret_value_legacy_section"
+  },
+  "sourceDescriptor": {
+    "metadata": {
+      "id": "urn:uar:legacy:reviewer",
+      "version": "1.0.0"
+    },
+    "skills": [
+      {
+        "id": "builtin::sample-filesystem-skill",
+        "version": "1.0.0",
+        "digest": "sha256:37b6989908c8541943c18751448b00cf8bc825a9f902dfa3430f9e5dfc8ccc84",
+        "required": true,
+        "config": {
+          "mode": "fixture"
+        },
+        "entrypoint": null,
+        "requiredTools": [
+          "native_echo"
+        ]
+      }
+    ],
+    "privateProbe": {
+      "token": "example_secret_value_source_descriptor"
+    }
+  },
+  "contentDigest": "sha256:e1155fd85abc4ec2dde8732c210e5a4e304d3b49825a2d052c05431f684ec51b"
+}

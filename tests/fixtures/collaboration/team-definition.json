@@ -1,0 +1,84 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "TeamDefinition",
+  "id": "urn:uar:c03:team",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "C03 completed-path fixture",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [],
+  "extensions": {},
+  "title": "C03 team definition",
+  "purpose": "Demonstrate immutable draft.2 references.",
+  "members": [
+    {
+      "role": "reviewer",
+      "kind": "agent",
+      "definition": {
+        "id": "urn:uar:c03:agent",
+        "version": "1.0.0",
+        "digest": "sha256:c1653c99034e511cbe11ebdf8df5fc53110771dbe2821960b7cebf8ecd8581a0"
+      },
+      "min": 1,
+      "max": 1,
+      "responsibility": "Review the completed artifact."
+    }
+  ],
+  "coordinatorRole": "reviewer",
+  "communication": [],
+  "taskAcceptance": {
+    "mode": "operator",
+    "allowedWorkflows": [
+      {
+        "id": "urn:uar:c03:workflow",
+        "version": "1.0.0",
+        "digest": "sha256:bd8243d1d42e6a80fd7a6f0162003e8510d433cd0eb690b2b33340bd14fa5ff2"
+      }
+    ]
+  },
+  "routing": {
+    "eligibilityFirst": true,
+    "strategy": "operator-role-capacity-cost-stable-id",
+    "explain": true
+  },
+  "limits": {
+    "concurrentTurns": 1,
+    "maxMembers": 2,
+    "maxDepth": 1,
+    "maxPendingTasks": 8
+  },
+  "budget": {
+    "maxTokens": 10000,
+    "maxCostMicrounits": 1000000,
+    "currency": "USD",
+    "maxElapsedSeconds": 300
+  },
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "contentDigest": "sha256:581c51ddb9b0a92ded96df09b418ed9b5833f3424bbfb518dab5d06a5fe21230"
+}
