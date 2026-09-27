@@ -17,7 +17,7 @@
     {
       "id": "urn:uar:c03:agent",
       "version": "1.0.0",
-      "digest": "sha256:c1653c99034e511cbe11ebdf8df5fc53110771dbe2821960b7cebf8ecd8581a0"
+      "digest": "sha256:16d97147b0d56a7883a2b9428be4210fc6754df0826af9e431954361a03ae14a"
     }
   ],
   "files": [
@@ -27,9 +27,9 @@
       "definition": {
         "id": "urn:uar:c03:agent",
         "version": "1.0.0",
-        "digest": "sha256:c1653c99034e511cbe11ebdf8df5fc53110771dbe2821960b7cebf8ecd8581a0"
+        "digest": "sha256:16d97147b0d56a7883a2b9428be4210fc6754df0826af9e431954361a03ae14a"
       },
-      "byteDigest": "sha256:db65fd67334884fa3266a947db79ddffab7078b1215be05aa2d8f2c0b500f9f8"
+      "byteDigest": "sha256:0818cd255c56a31ca428c0ff0204ce9fcb9a5a61aa2e1be46acc82140c7a48a3"
     },
     {
       "path": "team-definition.json",
@@ -37,9 +37,9 @@
       "definition": {
         "id": "urn:uar:c03:team",
         "version": "1.0.0",
-        "digest": "sha256:581c51ddb9b0a92ded96df09b418ed9b5833f3424bbfb518dab5d06a5fe21230"
+        "digest": "sha256:63fd2e1784572a763b88e9db1b910c9d9e0412dcef3211d0c9ae5ac367e55fff"
       },
-      "byteDigest": "sha256:f56bb5c71a4ee213db71176f31e044cc0f46727132af948c308015724ba15699"
+      "byteDigest": "sha256:a5e0c95a52e41427a70e83c5da55577b4db92b49eab54876ab9e63a36c3984a1"
     },
     {
       "path": "workflow-definition.json",
@@ -58,7 +58,7 @@
       "reference": {
         "id": "urn:uar:c03:agent",
         "version": "1.0.0",
-        "digest": "sha256:c1653c99034e511cbe11ebdf8df5fc53110771dbe2821960b7cebf8ecd8581a0"
+        "digest": "sha256:16d97147b0d56a7883a2b9428be4210fc6754df0826af9e431954361a03ae14a"
       },
       "resolvedPath": "agent-definition.json"
     },
@@ -79,5 +79,5 @@
     }
   ],
   "resolution": "exact-version-and-digest",
-  "contentDigest": "sha256:8043a7bbbbaf1f1815388d1844b616ffb67b303f4d708f7bcfa18d86316ee8fe"
+  "contentDigest": "sha256:e70757386a120d3819092633a6127ca93e29bac56e72194a837ba5d392a55c11"
 }

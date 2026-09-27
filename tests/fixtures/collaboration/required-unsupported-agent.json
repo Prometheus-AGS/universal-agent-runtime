@@ -100,7 +100,7 @@
   "renameMapping": {
     "sourceId": "urn:uar:legacy:reviewer",
     "targetId": "urn:uar:c03:blocked",
-    "reason": "fixture-normalization"
+    "reason": "explicit-rename"
   },
   "authoredFields": [
     "/metadata/id",
@@ -169,5 +169,5 @@
       }
     ]
   },
-  "contentDigest": "sha256:d92e5a8d95d72120367e91dd5ec22bd6ca41c9f4c0e6350d844f7c0bce496100"
+  "contentDigest": "sha256:9054e88b35611b4d101402b1125b054d6f20947dcd15338cdf86cc9ded5226cd"
 }

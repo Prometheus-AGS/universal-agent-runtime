@@ -20,7 +20,7 @@
       "definition": {
         "id": "urn:uar:c03:agent",
         "version": "1.0.0",
-        "digest": "sha256:c1653c99034e511cbe11ebdf8df5fc53110771dbe2821960b7cebf8ecd8581a0"
+        "digest": "sha256:16d97147b0d56a7883a2b9428be4210fc6754df0826af9e431954361a03ae14a"
       },
       "min": 1,
       "max": 1,
@@ -80,5 +80,5 @@
     ],
     "additionalProperties": false
   },
-  "contentDigest": "sha256:581c51ddb9b0a92ded96df09b418ed9b5833f3424bbfb518dab5d06a5fe21230"
+  "contentDigest": "sha256:63fd2e1784572a763b88e9db1b910c9d9e0412dcef3211d0c9ae5ac367e55fff"
 }

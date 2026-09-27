@@ -100,7 +100,7 @@
   "renameMapping": {
     "sourceId": "urn:uar:legacy:reviewer",
     "targetId": "urn:uar:c03:agent",
-    "reason": "fixture-normalization"
+    "reason": "explicit-rename"
   },
   "authoredFields": [
     "/metadata/id",
@@ -169,5 +169,5 @@
       }
     ]
   },
-  "contentDigest": "sha256:c1653c99034e511cbe11ebdf8df5fc53110771dbe2821960b7cebf8ecd8581a0"
+  "contentDigest": "sha256:16d97147b0d56a7883a2b9428be4210fc6754df0826af9e431954361a03ae14a"
 }

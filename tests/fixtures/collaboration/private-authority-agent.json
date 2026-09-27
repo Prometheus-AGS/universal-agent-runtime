@@ -102,7 +102,7 @@
   "renameMapping": {
     "sourceId": "urn:uar:legacy:reviewer",
     "targetId": "urn:uar:c03:private-authority",
-    "reason": "fixture-normalization"
+    "reason": "explicit-rename"
   },
   "authoredFields": [
     "/metadata/id",
@@ -175,5 +175,5 @@
       "token": "example_secret_value_source_descriptor"
     }
   },
-  "contentDigest": "sha256:e1155fd85abc4ec2dde8732c210e5a4e304d3b49825a2d052c05431f684ec51b"
+  "contentDigest": "sha256:fb2d78c2dd75c5ef2f1ea64c5b25efefb8df596b75083a02228c0625b43aa288"
 }
