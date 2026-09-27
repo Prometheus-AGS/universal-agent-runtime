@@ -2,7 +2,7 @@
   "schema": "urn:prometheus:uar:evidence:fixture-scenario-manifest:1",
   "change": "afc-c03-lossless-definition-bindings",
   "task": "7.1",
-  "productionSourceRevision": "48266f6ca704a04aa99aa4e92444a0ae0b62ad1d",
+  "productionSourceRevision": "6f59672f31e9ad971d198a2d7fb5fe6875b8dfb6",
   "executionStatus": "NOT_RUN",
   "harness": {
     "source": "tests/integration/live/collaboration_conformance_cases.rs",
