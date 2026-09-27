@@ -1,6 +1,6 @@
 # collaboration-package-catalog Specification Delta
 
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Deployment bindings target the live runtime
 
@@ -26,4 +26,3 @@ activation and protected tool claims.
 
 - **WHEN** the effective receipt no longer matches the live instance at run or tool admission
 - **THEN** UAR refuses activation rather than using the stale receipt.
-

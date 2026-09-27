@@ -101,6 +101,8 @@ struct CreateRunRequest {
 struct CreateRunResponse {
     run_id: String,
     stream_url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    effective_service_binding: Option<crate::uar::service_instance::EffectiveServiceBinding>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     activation_failures: Vec<crate::uar::runtime::skills::activation::ActivationFailure>,
     history: crate::uar::runtime::turn::host::HistorySeedStatus,
@@ -504,6 +506,7 @@ async fn create_run(
         request.host_resources_marker.artifact_inline = artifact_inline;
         request
     };
+    let response_service_binding = admitted_service_binding.clone();
     if let Some(admitted) = admitted_service_binding {
         if let Some(bound) = request.service_binding.as_ref() {
             if (admitted.binding_id.is_some() && admitted.binding_id != bound.binding_id)
@@ -588,6 +591,7 @@ async fn create_run(
     Ok(Json(CreateRunResponse {
         run_id: run_id.clone(),
         stream_url: format!("/api/uar/runs/{run_id}/stream"),
+        effective_service_binding: response_service_binding,
         activation_failures,
         history,
         seeded_messages,
@@ -1215,13 +1219,12 @@ async fn resume_execution_request(
             code: "run_binding_invalid",
             message: "source run collaboration binding revision is unavailable".to_owned(),
         })?;
-    let current_owner = super::user_settings::principal_storage_key(user).ok_or_else(|| {
-        RunApiError {
+    let current_owner =
+        super::user_settings::principal_storage_key(user).ok_or_else(|| RunApiError {
             status: StatusCode::UNAUTHORIZED,
             code: "principal_invalid",
             message: "deployment binding requires a verified principal".to_owned(),
-        }
-    })?;
+        })?;
     if current_owner != owner_id {
         return Err(RunApiError {
             status: StatusCode::FORBIDDEN,
@@ -1313,23 +1316,17 @@ async fn resume_run(
         format!("Resuming run {run_id}")
     });
 
-    let (mut request, bound) = match resume_execution_request(
-        &state,
-        &user,
-        &source_run,
-        artifact,
-        input,
-    )
-    .await
-    {
-        Ok(result) => result,
-        Err(error) => return error.into_response(),
-    };
+    let (mut request, bound) =
+        match resume_execution_request(&state, &user, &source_run, artifact, input).await {
+            Ok(result) => result,
+            Err(error) => return error.into_response(),
+        };
     request.session_id = req
         .session_id
         .or_else(|| source_run.conversation_id.clone());
     request.host_resources_marker.artifact_inline = source_marker.artifact_inline;
     request.presentation_negotiation = req.presentation_negotiation;
+    let response_service_binding = service_binding.clone();
     request.service_binding = service_binding;
     inherit_host_context(&source_run, &mut request);
     if let Err(error) = attach_host_resources(
@@ -1358,6 +1355,7 @@ async fn resume_run(
         "resumed_from_run_id": run_id,
         "run_id": new_run_id,
         "stream_url": format!("/api/uar/runs/{new_run_id}/stream"),
+        "effective_service_binding": response_service_binding,
     }))
     .into_response()
 }
@@ -1488,6 +1486,7 @@ async fn resume_run_from_checkpoint(
             .expect("validated current checkpoint has authorization binding"),
     });
     request.presentation_negotiation = req.presentation_negotiation;
+    let response_service_binding = service_binding.clone();
     request.service_binding = service_binding;
     inherit_host_context(&source_run, &mut request);
     if let Err(error) = attach_host_resources(
@@ -1521,6 +1520,7 @@ async fn resume_run_from_checkpoint(
         "restored_state_keys": restored_state_keys,
         "run_id": new_run_id,
         "stream_url": format!("/api/uar/runs/{new_run_id}/stream"),
+        "effective_service_binding": response_service_binding,
     }))
     .into_response()
 }

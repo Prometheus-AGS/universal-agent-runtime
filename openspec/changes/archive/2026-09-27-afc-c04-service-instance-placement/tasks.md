@@ -12,5 +12,5 @@
 
 ## 3. Boundary integration
 
-- [ ] 3.1 Hand the additive capability and admission contract to The Boss and BossFang consumers.
-- [ ] 3.2 Run the shared C04 acceptance gate only after all repository slices are complete.
+- [x] 3.1 Hand the additive capability and admission contract to The Boss and BossFang consumers.
+- [x] 3.2 Run the shared C04 acceptance gate only after all repository slices are complete.

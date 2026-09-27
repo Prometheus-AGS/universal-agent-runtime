@@ -208,9 +208,7 @@ impl ServiceInstanceAuthority {
             diagnostics.push(diagnostic(
                 "intent",
                 "placement.intent-mismatch",
-                format!(
-                    "This operation requires placement intent {allowed_intent:?}."
-                ),
+                format!("This operation requires placement intent {allowed_intent:?}."),
             ));
         }
         if expectation.expected_instance_id != self.descriptor.instance.id {
@@ -257,14 +255,20 @@ impl ServiceInstanceAuthority {
                 ));
             }
         }
-        if expectation.credential_ref.as_ref().is_some_and(|reference| {
-            reference.chars().any(char::is_whitespace) || !reference.contains("://")
-        }) {
-            diagnostics.push(diagnostic(
-                "credentialRef",
-                "instance.credential-reference-invalid",
-                "The runtime credential reference must be an opaque host-store reference.",
-            ));
+        if let Some(reference) = expectation.credential_ref.as_ref() {
+            if reference.chars().any(char::is_whitespace) || !reference.contains("://") {
+                diagnostics.push(diagnostic(
+                    "credentialRef",
+                    "instance.credential-reference-invalid",
+                    "The runtime credential reference must be an opaque host-store reference.",
+                ));
+            } else if self.descriptor.references.credential.as_ref() != Some(reference) {
+                diagnostics.push(diagnostic(
+                    "credentialRef",
+                    "instance.credential-reference-mismatch",
+                    "The runtime credential reference does not match this service instance.",
+                ));
+            }
         }
         let compatible = diagnostics.is_empty();
         CompatibilityResponse {
