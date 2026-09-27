@@ -13,18 +13,19 @@ pub enum ToolGovernanceDecision {
     Deny,
 }
 
-/// Explicit permit baseline used when `cedar-governance` is absent.
+/// Capability-disabled facade used only after the runtime authority proves a
+/// constrained local governance-off posture.
 #[derive(Debug, Default)]
 pub struct GovernanceEngine;
 
 impl GovernanceEngine {
-    /// Construct the capability-disabled permit baseline.
+    /// Construct the capability-disabled local facade.
     #[must_use]
     pub fn new() -> Self {
         Self
     }
 
-    /// Construct the capability-disabled permit baseline.
+    /// Construct the capability-disabled local facade.
     pub fn with_default_permit() -> anyhow::Result<Self> {
         Ok(Self)
     }
@@ -37,6 +38,11 @@ impl GovernanceEngine {
     /// No policy set exists in a capability-disabled build.
     pub async fn policy_count(&self) -> usize {
         0
+    }
+
+    /// No policy source exists when Cedar is absent.
+    pub async fn policy_revision(&self) -> String {
+        "cedar:unavailable".to_string()
     }
 
     /// Tool execution is permitted; runtime risk can still require approval.

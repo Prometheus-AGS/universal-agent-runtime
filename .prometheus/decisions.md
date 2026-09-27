@@ -1875,3 +1875,14 @@ bases owned by the session principal, not the host's own KB tools, so UAR chunki
 apply. Because sidecar mode persists no provider keys, KB ingestion accepts a request-scoped model credential
 with the run credential's shape and rules; without one, an agentic KB falls back to recursive chunking and
 reports the fallback instead of succeeding silently.
+## 2026-09-27 — Exact authority is revalidated at the UAR claim boundary
+
+**Observed boundary.** Model tool calls already used `PreparedToolInvocation`, but direct REST called the MCP registry without admission, prepared calls did not bind canonical resource/payload/grant/lease/budget revisions, and a paired-host approval was not rechecked after a wait. Governed server startup also replaced an unreadable policy directory with permit-all authority.
+
+**Decision.** Keep `the-boss.uar.sidecar/1` and UAR's effect lifecycle ownership. Bind every prepared invocation to a canonical authority digest, the complete UAR lease facts, and the exact UAR tool-call budget reservation; add paired-host claim-time revalidation; check the current Cedar revision and decision immediately before persisting claim intent; and converge authenticated direct REST execution and actor delegation through descriptor validation and the same lifecycle. UAR's policy revision is expected/observed input, while Flint Gate resolves authoritative current policy. The Boss remains the approval/admission authority and maps the private claim operation to Flint Gate protocol `afc.governed-effect/1`; UAR remains the only dispatcher and terminal-state owner.
+
+**Embedded and local posture.** Embedded tool-capable runtimes require an explicitly supplied governance engine and admission port. The convenience orchestrator exposed by embedded mode receives no executable tool registry. A governance bypass is accepted only for an unmanaged standalone root; paired-host and delegated calls cannot use it.
+
+**Finite authority window.** Every effect lease and one-tool-call budget reservation has a finite Unix expiry. UAR uses the configured run budget timeout when present and otherwise uses the existing 300-second tool-approval TTL. Direct authenticated calls and the explicit constrained-local adapter receive the same 300-second default.
+
+**Uncomfortable constraint.** The paired host must implement the additive `/uar/admission/v1/claim` operation and return the unchanged authority revision before any managed tool can dispatch. Until The Boss maps that operation to its current policy/grant/approval facts (and, when configured, `afc.governed-effect/1` revalidation), managed effects fail closed. No Cargo command, test, build, or review ran during this production implementation; the AFC C02 integration gate remains pending.

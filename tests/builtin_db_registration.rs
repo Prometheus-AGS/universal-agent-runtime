@@ -42,6 +42,9 @@ use universal_agent_runtime::{
     },
 };
 
+#[path = "common/embedded_authority.rs"]
+mod embedded_authority;
+
 /// Builtins as the loader produces them: `origin = Builtin`.
 fn builtin(id: &str) -> Skill {
     let mut s = Skill::default();
@@ -80,9 +83,12 @@ async fn build_embedded_runtime(
     persistence: Arc<dyn PersistenceLayer>,
     seed_defaults: bool,
 ) -> EmbeddedRuntime {
+    let (governance, admission) = embedded_authority::explicit_local_authority();
     EmbeddedRuntime::builder()
         .local_provider(Arc::new(MockLlmDriver::echo()), embedded_local_provider())
         .persistence(persistence)
+        .governance_engine(governance)
+        .host_tool_admission(admission)
         .seed_defaults(seed_defaults)
         .build()
         .await

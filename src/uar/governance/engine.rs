@@ -48,6 +48,7 @@ pub struct GovernanceEngine {
     entities: RwLock<Entities>,
     /// Directory from which policies were loaded (for reload).
     policy_dir: Option<PathBuf>,
+    policy_revision: RwLock<String>,
 }
 
 impl std::fmt::Debug for GovernanceEngine {
@@ -59,7 +60,7 @@ impl std::fmt::Debug for GovernanceEngine {
 }
 
 impl GovernanceEngine {
-    /// Create a new governance engine with an empty (permissive) policy set.
+    /// Create a new governance engine with an empty deny-by-default policy set.
     ///
     /// With no policies loaded, all requests are implicitly denied by Cedar.
     /// Use [`Self::with_default_permit`] for a permissive default.
@@ -70,13 +71,14 @@ impl GovernanceEngine {
             policies: RwLock::new(PolicySet::new()),
             entities: RwLock::new(Entities::empty()),
             policy_dir: None,
+            policy_revision: RwLock::new(policy_revision("")),
         }
     }
 
     /// Create a governance engine with a default "permit all" policy.
     ///
-    /// This is the recommended starting point — agents can execute any tool
-    /// until restrictive policies are explicitly added.
+    /// This explicit opt-in exists for callers that deliberately supply a
+    /// permit-all policy. Governed server startup never selects it implicitly.
     pub fn with_default_permit() -> anyhow::Result<Self> {
         let policy_src = r"
             permit (
@@ -95,6 +97,7 @@ impl GovernanceEngine {
             policies: RwLock::new(policies),
             entities: RwLock::new(Entities::empty()),
             policy_dir: None,
+            policy_revision: RwLock::new(policy_revision(policy_src)),
         })
     }
 
@@ -105,7 +108,7 @@ impl GovernanceEngine {
     pub async fn load_from_dir(dir: impl AsRef<Path>) -> anyhow::Result<Self> {
         let dir = dir.as_ref().to_path_buf();
 
-        let policies = Self::read_policies_from_dir(&dir).await?;
+        let (policies, revision) = Self::read_policies_from_dir(&dir).await?;
         let policy_count = policies.policies().count();
 
         info!(
@@ -119,6 +122,7 @@ impl GovernanceEngine {
             policies: RwLock::new(policies),
             entities: RwLock::new(Entities::empty()),
             policy_dir: Some(dir),
+            policy_revision: RwLock::new(revision),
         })
     }
 
@@ -132,11 +136,13 @@ impl GovernanceEngine {
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("No policy directory configured for reload"))?;
 
-        let new_policies = Self::read_policies_from_dir(dir).await?;
+        let (new_policies, revision) = Self::read_policies_from_dir(dir).await?;
         let count = new_policies.policies().count();
 
         let mut policies = self.policies.write().await;
+        let mut policy_revision = self.policy_revision.write().await;
         *policies = new_policies;
+        *policy_revision = revision;
 
         info!(
             dir = %dir.display(),
@@ -163,6 +169,11 @@ impl GovernanceEngine {
                 false
             }
         }
+    }
+
+    /// Stable digest of the exact Cedar source currently authorizing calls.
+    pub async fn policy_revision(&self) -> String {
+        self.policy_revision.read().await.clone()
     }
 
     /// Evaluate a tool call into the complete runtime governance outcome.
@@ -291,49 +302,57 @@ impl GovernanceEngine {
     // -----------------------------------------------------------------------
 
     /// Read and parse all `.cedar` files from a directory.
-    async fn read_policies_from_dir(dir: &Path) -> anyhow::Result<PolicySet> {
+    async fn read_policies_from_dir(dir: &Path) -> anyhow::Result<(PolicySet, String)> {
         if !dir.exists() {
-            info!(
-                dir = %dir.display(),
-                "Policy directory does not exist — using empty policy set"
-            );
-            return Ok(PolicySet::new());
+            anyhow::bail!("Governance policy directory does not exist: {}", dir.display());
         }
 
         let mut combined_source = String::new();
 
         let mut entries = tokio::fs::read_dir(dir).await?;
+        let mut policy_paths = Vec::new();
         while let Some(entry) = entries.next_entry().await? {
             let path = entry.path();
             if path.extension().is_some_and(|ext| ext == "cedar") {
-                match tokio::fs::read_to_string(&path).await {
-                    Ok(content) => {
-                        debug!(file = %path.display(), "Loading Cedar policy");
-                        combined_source.push_str(&content);
-                        combined_source.push('\n');
-                    }
-                    Err(e) => {
-                        warn!(
-                            file = %path.display(),
-                            error = %e,
-                            "Failed to read policy file — skipping"
-                        );
-                    }
-                }
+                policy_paths.push(path);
             }
         }
-
-        if combined_source.is_empty() {
-            info!("No Cedar policy files found — using empty policy set");
-            return Ok(PolicySet::new());
+        policy_paths.sort();
+        for path in policy_paths {
+            let content = tokio::fs::read_to_string(&path).await.map_err(|error| {
+                anyhow::anyhow!(
+                    "Failed to read governance policy {}: {error}",
+                    path.display()
+                )
+            })?;
+            debug!(file = %path.display(), "Loading Cedar policy");
+            combined_source.push_str(&content);
+            combined_source.push('\n');
         }
+
+        anyhow::ensure!(
+            !combined_source.trim().is_empty(),
+            "Governance policy directory contains no nonempty Cedar policy"
+        );
 
         let policies: PolicySet = combined_source
             .parse()
             .map_err(|e| anyhow::anyhow!("Failed to parse Cedar policies: {e}"))?;
 
-        Ok(policies)
+        Ok((policies, policy_revision(&combined_source)))
     }
+}
+
+fn policy_revision(source: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let digest = Sha256::digest(source.as_bytes());
+    format!(
+        "sha256:{}",
+        digest
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    )
 }
 
 impl Default for GovernanceEngine {
@@ -383,6 +402,7 @@ mod tests {
             policies: RwLock::new(policies),
             entities: RwLock::new(Entities::empty()),
             policy_dir: None,
+            policy_revision: RwLock::new(policy_revision(policy_src)),
         };
 
         assert!(engine.is_tool_allowed("agent-1", "web_search").await);
@@ -409,6 +429,7 @@ mod tests {
             policies: RwLock::new(policies),
             entities: RwLock::new(Entities::empty()),
             policy_dir: None,
+            policy_revision: RwLock::new(policy_revision(policy_src)),
         };
 
         assert!(engine.is_tool_allowed("agent-1", "web_search").await);

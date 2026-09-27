@@ -6,7 +6,7 @@
 use serde::Serialize;
 
 /// Schema revision for [`AdministrationCapabilities`].
-pub const ADMINISTRATION_SCHEMA_VERSION: u32 = 2;
+pub const ADMINISTRATION_SCHEMA_VERSION: u32 = 3;
 
 /// Navigation group for an administration surface.
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -376,6 +376,13 @@ pub fn administration_capabilities() -> AdministrationCapabilities {
                         Public,
                         Read
                     ),
+                    endpoint!(
+                        "service-instance.compatibility.evaluate",
+                        "POST",
+                        "/api/uar/compatibility",
+                        Host,
+                        Read
+                    ),
                     endpoint!("health.read", "GET", "/health", Public, Read),
                     endpoint!("health.compatibility.read", "GET", "/healthz", Public, Read),
                     endpoint!("readiness.read", "GET", "/readyz", Public, Read),
@@ -665,6 +672,20 @@ pub fn administration_capabilities() -> AdministrationCapabilities {
                         Read
                     ),
                     endpoint!(
+                        "collaboration.packages.list",
+                        "GET",
+                        "/api/v1/collaboration/packages",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "collaboration.packages.export",
+                        "POST",
+                        "/api/v1/collaboration/packages:export",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
                         "collaboration.deployment_bindings.preflight",
                         "POST",
                         "/api/v1/collaboration/deployment-bindings:preflight",
@@ -682,6 +703,62 @@ pub fn administration_capabilities() -> AdministrationCapabilities {
                         "collaboration.deployment_bindings.read",
                         "GET",
                         "/api/v1/collaboration/deployment-bindings/{id}",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "collaboration.deployment_bindings.list",
+                        "GET",
+                        "/api/v1/collaboration/deployment-bindings",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "collaboration.deployment_bindings.receipt",
+                        "GET",
+                        "/api/v1/collaboration/deployment-bindings/{id}/effective-receipt",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "collaboration.deployment_bindings.template_export",
+                        "POST",
+                        "/api/v1/collaboration/deployment-bindings/{id}/template:export",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "collaboration.representation_grants.list",
+                        "GET",
+                        "/api/v1/collaboration/representation-grants",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "collaboration.representation_grants.install",
+                        "POST",
+                        "/api/v1/collaboration/representation-grants",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "collaboration.representation_grants.current",
+                        "GET",
+                        "/api/v1/collaboration/representation-grants/{id}",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "collaboration.representation_grants.revision",
+                        "GET",
+                        "/api/v1/collaboration/representation-grants/{id}/revisions/{revision}",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "collaboration.representation_grants.history",
+                        "GET",
+                        "/api/v1/collaboration/representation-grants/{id}/history",
                         Owner,
                         Read
                     ),

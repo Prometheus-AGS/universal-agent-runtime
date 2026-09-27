@@ -1,0 +1,135 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "status": "documentation-fixtures-not-runtime-conformance",
+  "valid": [
+    {
+      "file": "examples/agent-definition.json",
+      "schema": "agent-definition.schema.json",
+      "expected": "valid",
+      "reasonCode": "full-skillref-and-optional-extension"
+    },
+    {
+      "file": "examples/team-definition.json",
+      "schema": "team-definition.schema.json",
+      "expected": "valid",
+      "reasonCode": "immutable-member-reference"
+    },
+    {
+      "file": "examples/workflow-definition.json",
+      "schema": "workflow-definition.schema.json",
+      "expected": "valid",
+      "reasonCode": "bounded-workflow-dag"
+    },
+    {
+      "file": "examples/package-manifest.json",
+      "schema": "package-manifest.schema.json",
+      "expected": "valid",
+      "reasonCode": "portable-exact-lock"
+    },
+    {
+      "file": "examples/deployment-binding.json",
+      "schema": "deployment-binding.schema.json",
+      "expected": "valid",
+      "reasonCode": "private-installed-state"
+    },
+    {
+      "file": "examples/representation-grant.json",
+      "schema": "representation-grant.schema.json",
+      "expected": "valid",
+      "reasonCode": "private-c02-aligned-boundary"
+    },
+    {
+      "file": "examples/conversion-report.json",
+      "schema": "conversion-report.schema.json",
+      "expected": "valid",
+      "reasonCode": "json-pointer-diagnostics"
+    },
+    {
+      "file": "examples/effective-binding-receipt.json",
+      "schema": "effective-binding-receipt.schema.json",
+      "expected": "valid",
+      "reasonCode": "private-effective-evidence"
+    },
+    {
+      "file": "examples/deployment-binding-template.json",
+      "schema": "deployment-binding-template.schema.json",
+      "expected": "valid",
+      "reasonCode": "sanitized-non-executable-template"
+    }
+  ],
+  "schemaInvalid": [
+    {
+      "file": "fixtures/schema-invalid/agent-missing-skill-digest.json",
+      "schema": "agent-definition.schema.json",
+      "expected": "schema-invalid",
+      "reasonCode": "skill.digest-required"
+    },
+    {
+      "file": "fixtures/schema-invalid/discriminator-kind-shape-mismatch.json",
+      "schema": "collaboration-document.schema.json",
+      "expected": "schema-invalid",
+      "reasonCode": "discriminator.kind-shape-mismatch"
+    },
+    {
+      "file": "fixtures/schema-invalid/package-private-kind.json",
+      "schema": "package-manifest.schema.json",
+      "expected": "schema-invalid",
+      "reasonCode": "package.private-kind-forbidden"
+    },
+    {
+      "file": "fixtures/schema-invalid/template-with-private-owner.json",
+      "schema": "deployment-binding-template.schema.json",
+      "expected": "schema-invalid",
+      "reasonCode": "template.private-field-forbidden"
+    }
+  ],
+  "semanticInvalid": [
+    {
+      "file": "fixtures/semantic-invalid/agent-required-unsupported-extension.json",
+      "expected": "required-unsupported",
+      "reasonCode": "extension.adapter-missing"
+    },
+    {
+      "file": "fixtures/semantic-invalid/agent-private-credential-extension.json",
+      "expected": "reject",
+      "reasonCode": "portable.private-authority"
+    },
+    {
+      "file": "fixtures/semantic-invalid/agent-recognized-secret-free-text.json",
+      "expected": "reject",
+      "reasonCode": "portable.recognized-secret"
+    },
+    {
+      "file": "fixtures/semantic-invalid/package-content-digest-mismatch.json",
+      "expected": "reject",
+      "reasonCode": "digest.content-mismatch"
+    },
+    {
+      "file": "fixtures/semantic-invalid/package-lock-digest-conflict.json",
+      "expected": "reject",
+      "reasonCode": "lock.digest-conflict"
+    },
+    {
+      "file": "fixtures/semantic-invalid/package-reused-version-different-digest.json",
+      "expected": "reject",
+      "reasonCode": "identity.reused-version-different-digest"
+    }
+  ],
+  "legacy": [
+    {
+      "file": "fixtures/legacy/agent-v1.1.md",
+      "expected": "accepted-legacy-adapter",
+      "reasonCode": "legacy.fixed-15-headings"
+    },
+    {
+      "file": "fixtures/legacy/agent-v2-explicit-defaults.md",
+      "expected": "accepted-preserve-authored",
+      "reasonCode": "legacy.explicit-v2-defaults"
+    },
+    {
+      "file": "fixtures/legacy/agent-v2-omitted-defaults.md",
+      "expected": "accepted-preserve-omitted",
+      "reasonCode": "legacy.omitted-v2-defaults"
+    }
+  ]
+}

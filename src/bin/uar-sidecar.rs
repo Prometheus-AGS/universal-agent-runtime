@@ -174,6 +174,8 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
         }
         std::env::set_var("UAR_SERVER__HOST", "127.0.0.1");
         std::env::set_var("UAR_SERVER__LOG_FORMAT", "json");
+        std::env::set_var("UAR_SERVICE_INSTANCE__OWNERSHIP", "managed");
+        std::env::set_var("UAR_SERVICE_INSTANCE__WORKSPACE_LOCATION", "local");
         if disable_sidecar_jwt {
             std::env::set_var("UAR_SECURITY__JWT_REQUIRED", "false");
         }

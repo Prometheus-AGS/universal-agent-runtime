@@ -45,6 +45,7 @@ pub struct HttpHostToolAdmissionPort {
     binding: HostAdmissionBinding,
     prepare_url: Url,
     resolve_url: Url,
+    claim_url: Url,
     cancel_url: Url,
     finish_url: Url,
     headers: HeaderMap,
@@ -103,6 +104,8 @@ impl HttpHostToolAdmissionPort {
         resolve_url.set_path("/uar/admission/v1/resolve");
         let mut cancel_url = base;
         cancel_url.set_path("/uar/admission/v1/cancel");
+        let mut claim_url = cancel_url.clone();
+        claim_url.set_path("/uar/admission/v1/claim");
         let mut finish_url = cancel_url.clone();
         finish_url.set_path("/uar/admission/v1/finish");
         let client = reqwest::Client::builder()
@@ -115,6 +118,7 @@ impl HttpHostToolAdmissionPort {
             },
             prepare_url,
             resolve_url,
+            claim_url,
             cancel_url,
             finish_url,
             headers,
@@ -144,6 +148,14 @@ struct CancelRequest<'a> {
     admission_id: &'a str,
     invocation_id: &'a str,
     reason: AdmissionCancellationReason,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimRequest<'a> {
+    admission_id: &'a str,
+    invocation: &'a PreparedToolInvocation,
+    receipt: &'a HostAdmissionReceipt,
 }
 
 #[derive(Serialize)]
@@ -248,6 +260,34 @@ impl HostToolAdmissionPort for HttpHostToolAdmissionPort {
             response.status().as_u16()
         );
         Ok(response.json::<AdmissionCancellationOutcome>().await?)
+    }
+
+    async fn revalidate_claim(
+        &self,
+        admitted: &AdmittedToolInvocation,
+    ) -> anyhow::Result<HostAdmissionReceipt> {
+        let response = self
+            .client
+            .post(self.claim_url.clone())
+            .headers(self.headers.clone())
+            .json(&ClaimRequest {
+                admission_id: &admitted.host_receipt.admission_id,
+                invocation: admitted.prepared.as_ref(),
+                receipt: &admitted.host_receipt,
+            })
+            .send()
+            .await?;
+        anyhow::ensure!(
+            response.status().is_success(),
+            "Paired host rejected tool admission claim (HTTP {})",
+            response.status().as_u16()
+        );
+        let receipt = response.json::<HostAdmissionReceipt>().await?;
+        anyhow::ensure!(
+            receipt.managed_mcp_metadata,
+            "Paired host returned an unmanaged claim receipt"
+        );
+        Ok(receipt)
     }
 
     async fn finish(

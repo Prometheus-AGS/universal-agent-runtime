@@ -229,6 +229,9 @@ pub struct AppConfig {
     /// Authenticated UAR peers eligible for governed outbound A2A delegation.
     #[serde(default)]
     pub a2a: A2aConfig,
+    /// Identity and advertised endpoint roles of this logical UAR instance.
+    #[serde(default)]
+    pub service_instance: ServiceInstanceConfig,
     pub resilience: ResilienceConfig,
     /// Bounded in-process run state retained for stream replay and diagnostics.
     #[serde(default)]
@@ -427,6 +430,118 @@ impl A2aConfig {
                 return Err(config::ConfigError::Message(
                     "trusted A2A peer endpoints must be unique".to_owned(),
                 ));
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Host-configured identity and safe references for this logical UAR service.
+#[derive(Debug, Clone, Default, Deserialize, schemars::JsonSchema)]
+pub struct ServiceInstanceConfig {
+    /// Canonical identity. When omitted, `a2a.instance_id` is its alias.
+    #[serde(default)]
+    pub instance_id: String,
+    #[serde(default)]
+    pub ownership: ServiceOwnership,
+    #[serde(default)]
+    pub workspace_location: WorkspaceLocation,
+    #[serde(default)]
+    pub lifecycle_owner_ref: Option<String>,
+    #[serde(default)]
+    pub credential_ref: Option<String>,
+    #[serde(default)]
+    pub workspace_ref: Option<String>,
+    #[serde(default)]
+    pub runtime_endpoint: Option<String>,
+    #[serde(default)]
+    pub administration_endpoint: Option<String>,
+    #[serde(default)]
+    pub models_endpoint: Option<String>,
+    #[serde(default)]
+    pub console_endpoint: Option<String>,
+}
+
+#[derive(
+    Debug, Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq, schemars::JsonSchema,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum ServiceOwnership {
+    Managed,
+    #[default]
+    External,
+}
+
+#[derive(
+    Debug, Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq, schemars::JsonSchema,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum WorkspaceLocation {
+    Local,
+    #[default]
+    Remote,
+}
+
+impl ServiceInstanceConfig {
+    fn validate(&self, a2a: &A2aConfig) -> Result<(), config::ConfigError> {
+        let effective_id = if self.instance_id.is_empty() {
+            a2a.instance_id.as_str()
+        } else {
+            self.instance_id.as_str()
+        };
+        if effective_id.trim() != effective_id {
+            return Err(config::ConfigError::Message(
+                "service instance identity cannot contain surrounding whitespace".to_owned(),
+            ));
+        }
+        if !self.instance_id.trim().is_empty()
+            && !a2a.instance_id.trim().is_empty()
+            && self.instance_id != a2a.instance_id
+        {
+            return Err(config::ConfigError::Message(
+                "service_instance.instance_id and a2a.instance_id must identify the same UAR instance"
+                    .to_owned(),
+            ));
+        }
+        for (field, reference) in [
+            ("lifecycle_owner_ref", self.lifecycle_owner_ref.as_deref()),
+            ("credential_ref", self.credential_ref.as_deref()),
+            ("workspace_ref", self.workspace_ref.as_deref()),
+        ] {
+            if reference.is_some_and(|value| {
+                value.trim() != value
+                    || value.chars().any(char::is_whitespace)
+                    || !value.contains("://")
+            }) {
+                return Err(config::ConfigError::Message(format!(
+                    "service_instance.{field} must be an opaque reference"
+                )));
+            }
+        }
+        for (field, endpoint) in [
+            ("runtime_endpoint", self.runtime_endpoint.as_deref()),
+            (
+                "administration_endpoint",
+                self.administration_endpoint.as_deref(),
+            ),
+            ("models_endpoint", self.models_endpoint.as_deref()),
+            ("console_endpoint", self.console_endpoint.as_deref()),
+        ] {
+            let Some(endpoint) = endpoint else { continue };
+            let parsed = reqwest::Url::parse(endpoint).map_err(|_| {
+                config::ConfigError::Message(format!(
+                    "service_instance.{field} must be an absolute HTTP(S) URL"
+                ))
+            })?;
+            if !matches!(parsed.scheme(), "http" | "https")
+                || parsed.username() != ""
+                || parsed.password().is_some()
+                || parsed.query().is_some()
+                || parsed.fragment().is_some()
+            {
+                return Err(config::ConfigError::Message(format!(
+                    "service_instance.{field} must be a credential-free HTTP(S) URL"
+                )));
             }
         }
         Ok(())
@@ -1568,6 +1683,7 @@ impl AppConfig {
 
         deserialized.security.validate()?;
         deserialized.a2a.validate()?;
+        deserialized.service_instance.validate(&deserialized.a2a)?;
         deserialized
             .project_instructions
             .validate()

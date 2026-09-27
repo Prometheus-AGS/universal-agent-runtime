@@ -34,10 +34,12 @@ use universal_agent_runtime::{
             policy::{ConversationPolicyRecord, RunPolicy},
         },
         persistence::PersistenceLayer,
+        governance::engine::GovernanceEngine,
         rag::embeddings::EmbeddingBackend,
         runtime::{
             manager::{EffectiveConfig, RunManager, SeedMessage, StreamEvent},
             native_skill::NativeSkillRegistry,
+            tool_admission::HostToolAdmissionPort,
         },
         settings::schema::{SettingsType, SettingsWithMeta},
     },
@@ -748,6 +750,10 @@ pub struct RuntimeBuilder {
     native_skills: Option<Arc<NativeSkillRegistry>>,
     #[cfg(feature = "embedded")]
     a2ui_registry: Option<Arc<A2uiRegistry>>,
+    #[cfg(feature = "embedded")]
+    governance_engine: Option<Arc<GovernanceEngine>>,
+    #[cfg(feature = "embedded")]
+    host_tool_admission: Option<Arc<dyn HostToolAdmissionPort>>,
     memory_service: Option<Arc<universal_agent_runtime::uar::memory::service::MemoryService>>,
     #[cfg(feature = "embedded")]
     seed_defaults: Option<bool>,
@@ -756,6 +762,23 @@ pub struct RuntimeBuilder {
 }
 
 impl RuntimeBuilder {
+    /// Install the embedder's policy authority. This is mandatory because the
+    /// SDK does not synthesize permit-all authority for tool-capable runtimes.
+    #[cfg(feature = "embedded")]
+    #[must_use]
+    pub fn governance_engine(mut self, engine: Arc<GovernanceEngine>) -> Self {
+        self.governance_engine = Some(engine);
+        self
+    }
+
+    /// Install the embedder's exact-invocation admission port.
+    #[cfg(feature = "embedded")]
+    #[must_use]
+    pub fn host_tool_admission(mut self, admission: Arc<dyn HostToolAdmissionPort>) -> Self {
+        self.host_tool_admission = Some(admission);
+        self
+    }
+
     #[cfg(feature = "embedded")]
     #[must_use]
     pub fn llm_config(mut self, config: LlmConfig) -> Self {
@@ -867,6 +890,12 @@ impl RuntimeBuilder {
         }
         if let Some(a2ui_registry) = self.a2ui_registry {
             builder = builder.a2ui_registry(a2ui_registry);
+        }
+        if let Some(governance_engine) = self.governance_engine {
+            builder = builder.governance_engine(governance_engine);
+        }
+        if let Some(host_tool_admission) = self.host_tool_admission {
+            builder = builder.host_tool_admission(host_tool_admission);
         }
         if let Some(seed_defaults) = self.seed_defaults {
             builder = builder.seed_defaults(seed_defaults);

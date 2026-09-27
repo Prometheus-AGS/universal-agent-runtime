@@ -1,0 +1,76 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "DeploymentBindingTemplate",
+  "id": "urn:uar:binding-template:example/review",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration draft.2 contract checkpoint fixtures",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "collaboration_deployment_bindings_v2"
+  ],
+  "extensions": {},
+  "exportClass": "non-executable-template",
+  "package": {
+    "id": "urn:uar:example:draft2/review-package",
+    "version": "1.0.0",
+    "digest": "sha256:be31380ba55dce52929001f9ad545d1cf2437834c032d214a7caf9277fe424cf"
+  },
+  "requestedModelBindings": [
+    {
+      "requestedAlias": "team-default",
+      "modelRequirements": {
+        "capabilities": [
+          "text",
+          "tool-calling"
+        ]
+      }
+    }
+  ],
+  "skillRequirements": [
+    {
+      "id": "urn:uar:skill:review",
+      "version": "2.1.0",
+      "digest": "sha256:3b3816290748ea6b1f71c43c34e4043e2aed44ff4b7a462e7b212bf88cf0b65f",
+      "required": true,
+      "config": {
+        "mode": "strict",
+        "output": "json"
+      },
+      "entrypoint": "review",
+      "requiredTools": [
+        "read-artifact"
+      ]
+    }
+  ],
+  "storageRequirements": {
+    "backendClass": "durable-transactional",
+    "durableTransactions": true
+  },
+  "effectiveLimits": {
+    "concurrentTurns": 1,
+    "maxMembers": 2,
+    "maxDepth": 1,
+    "maxPendingTasks": 8
+  },
+  "effectiveBudget": {
+    "maxTokens": 10000,
+    "maxCostMicrounits": 1000000,
+    "currency": "USD",
+    "maxElapsedSeconds": 300
+  },
+  "rebindFields": [
+    "/ownerId",
+    "/workspaceId",
+    "/runtimeInstanceId",
+    "/modelBindings/0/credentialRef",
+    "/storage/connectionRef",
+    "/policyRevision",
+    "/representationGrantRefs"
+  ],
+  "status": "needs-private-binding",
+  "contentDigest": "sha256:5ba5e5510ee06e7456ff90b4bd34014ba5ca94757c7b6c239226beddb31480af"
+}

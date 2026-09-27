@@ -1,10 +1,39 @@
 use crate::llm::Message;
 use crate::uar::domain::{
     artifact::AgentArtifact,
+    collaboration::EffectiveBindingReceipt,
     events::MemoryItem,
     policy::{EffectiveRunPolicy, RunPolicy},
 };
 use crate::uar::runtime::{graph::GraphState, manager::SeedMessage};
+
+#[derive(Debug, Clone)]
+pub struct CollaborationRunBinding {
+    pub owner_id: String,
+    pub workspace_id: String,
+    pub receipt: EffectiveBindingReceipt,
+    service: std::sync::Arc<crate::uar::compiler::collaboration::CollaborationCatalogService>,
+}
+
+impl CollaborationRunBinding {
+    pub async fn revalidate(&self, artifact: &AgentArtifact) -> anyhow::Result<()> {
+        super::bindings::validate_effective_binding_artifact(&self.receipt, artifact)?;
+        self.service
+            .revalidate_effective_binding(&self.owner_id, &self.workspace_id, &self.receipt)
+            .await
+            .map_err(anyhow::Error::from)
+    }
+}
+
+#[async_trait::async_trait]
+impl crate::uar::runtime::tool_admission::ClaimRevalidator for CollaborationRunBinding {
+    async fn revalidate(&self) -> anyhow::Result<()> {
+        self.service
+            .revalidate_effective_binding(&self.owner_id, &self.workspace_id, &self.receipt)
+            .await
+            .map_err(anyhow::Error::from)
+    }
+}
 
 /// Complete host-verified material required to resume one persisted checkpoint.
 /// Keeping these values together makes partial or state-only restoration
@@ -66,6 +95,12 @@ pub struct RunExecutionRequest {
     /// Canonical child history captured with inherited host policy. This is not
     /// persisted checkpoint material and does not use checkpoint authorization.
     pub(crate) inherited_history: Option<Vec<Message>>,
+    /// Private effective binding captured by the authenticated collaboration
+    /// adapter. It is revalidated before execution and again before tool claim.
+    pub(crate) collaboration_binding: Option<CollaborationRunBinding>,
+    /// Host-selected service identity verified before executable admission.
+    pub(crate) service_binding:
+        Option<crate::uar::service_instance::EffectiveServiceBinding>,
     pub skill_attachments: Vec<String>,
     /// Host-selected cwd. This never grants workspace trust or file permissions.
     pub working_directory: Option<std::path::PathBuf>,
@@ -96,9 +131,83 @@ impl RunExecutionRequest {
             reasoning_effort: None,
             checkpoint_resume: None,
             inherited_history: None,
+            collaboration_binding: None,
+            service_binding: None,
             skill_attachments: Vec::new(),
             working_directory: None,
         }
+    }
+
+    #[must_use]
+    pub fn from_bound_agent(
+        bound: crate::uar::compiler::collaboration::BoundAgentRun,
+        input: String,
+        owner_id: String,
+        workspace_id: String,
+        service: std::sync::Arc<crate::uar::compiler::collaboration::CollaborationCatalogService>,
+    ) -> Self {
+        let service_binding = bound.effective_binding_receipt.service_binding.clone();
+        let mut artifact = bound.artifact;
+        let primary_index = bound
+            .effective_binding_receipt
+            .resolved_models
+            .iter()
+            .position(|model| {
+                model.get("role").and_then(serde_json::Value::as_str) == Some("primary")
+            })
+            .unwrap_or(0);
+        if let Some(model) = bound
+            .effective_binding_receipt
+            .resolved_models
+            .get(primary_index)
+        {
+            if let Some(provider_id) = model.get("providerId").and_then(serde_json::Value::as_str) {
+                artifact.policy.provider.default.provider = provider_id.to_owned();
+            }
+            if let Some(model_id) = model.get("modelId").and_then(serde_json::Value::as_str) {
+                artifact.policy.provider.default.model = model_id.to_owned();
+            }
+        }
+        artifact.policy.provider.fallbacks = bound
+            .effective_binding_receipt
+            .resolved_models
+            .iter()
+            .enumerate()
+            .filter(|(index, _)| *index != primary_index)
+            .filter_map(|(_, model)| {
+                Some(crate::uar::domain::artifact::ProviderSelection {
+                    provider: model.get("providerId")?.as_str()?.to_owned(),
+                    model: model.get("modelId")?.as_str()?.to_owned(),
+                })
+            })
+            .collect();
+        let skill_attachments = bound
+            .effective_binding_receipt
+            .resolved_skills
+            .iter()
+            .map(|resolved| resolved.skill.id.clone())
+            .collect();
+        let collaboration_binding = CollaborationRunBinding {
+            owner_id,
+            workspace_id,
+            receipt: bound.effective_binding_receipt,
+            service,
+        };
+        let mut request = Self::new(artifact, input);
+        request.host_policy_constraint = collaboration_binding
+            .receipt
+            .effective
+            .get("contextStrategy")
+            .cloned()
+            .and_then(|value| serde_json::from_value(value).ok())
+            .map(|context_strategy| RunPolicy {
+                context_strategy: Some(context_strategy),
+                ..RunPolicy::default()
+            });
+        request.skill_attachments = skill_attachments;
+        request.collaboration_binding = Some(collaboration_binding);
+        request.service_binding = service_binding;
+        request
     }
 
     /// Retain the identity verified by the ingress host, without decoding a

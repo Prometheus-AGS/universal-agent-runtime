@@ -10,11 +10,27 @@
 //! 3. For each section, extracts the YAML code block and deserializes it into
 //!    the corresponding IR section struct.
 
-use pulldown_cmark::{Event, HeadingLevel, Parser, Tag, TagEnd};
-use tracing::warn;
+use sha2::{Digest, Sha256};
 
 use super::error::CompileError;
-use super::ir::{AgentDescriptorIR, PartialAgentDescriptorIR, SectionName};
+use super::ir::{
+    AgentDescriptorIR, LegacyRenameMapping, LegacySourceRecord, LegacySourceSection,
+    PartialAgentDescriptorIR, SectionName,
+};
+
+const LEGACY_AGENT_PROFILE: &str = "urn:prometheus:uar:agent-md:1.1";
+
+struct ExtractedDocument {
+    agent_name: String,
+    top_level_heading: String,
+    sections: Vec<ExtractedSection>,
+}
+
+struct ExtractedSection {
+    heading: String,
+    canonical: Option<SectionName>,
+    content: String,
+}
 
 /// Parse a complete UAR-AGENT-MD document into a full [`AgentDescriptorIR`].
 ///
@@ -33,123 +49,251 @@ pub fn parse(markdown: &str) -> Result<AgentDescriptorIR, CompileError> {
 /// Parse a UAR-AGENT-MD document into a [`PartialAgentDescriptorIR`], tolerating
 /// missing sections. Used by conversational mode and for lenient parsing.
 pub fn parse_partial(markdown: &str) -> Result<PartialAgentDescriptorIR, CompileError> {
-    let (agent_name, raw_sections) = extract_sections(markdown)?;
+    let extracted = extract_sections(markdown)?;
     let mut ir = PartialAgentDescriptorIR {
-        agent_name: Some(agent_name),
+        agent_name: Some(extracted.agent_name.clone()),
         ..Default::default()
     };
 
-    for (section_name, yaml_content) in &raw_sections {
-        deserialize_section(&mut ir, *section_name, yaml_content)?;
+    for section in &extracted.sections {
+        if let Some(section_name) = section.canonical {
+            deserialize_section(&mut ir, section_name, section_yaml(&section.content))?;
+        } else if serde_norway::from_str::<serde_json::Value>(section_yaml(&section.content))
+            .ok()
+            .and_then(|value| value.get("required").and_then(serde_json::Value::as_bool))
+            .unwrap_or(false)
+        {
+            return Err(CompileError::Structure(format!(
+                "unknown mandatory section '{}' cannot map to /legacySections/{}",
+                section.heading,
+                section.heading.replace('~', "~0").replace('/', "~1")
+            )));
+        }
     }
+
+    ir.source = build_source_record(markdown, &extracted, &ir);
 
     Ok(ir)
 }
 
 /// Extract the agent name (from H1) and all H2 sections with their YAML content.
-fn extract_sections(markdown: &str) -> Result<(String, Vec<(SectionName, String)>), CompileError> {
-    let parser = Parser::new(markdown);
+fn extract_sections(markdown: &str) -> Result<ExtractedDocument, CompileError> {
+    let mut agent_name = None;
+    let mut top_level_heading = None;
+    let mut sections = Vec::new();
+    let mut current: Option<ExtractedSection> = None;
 
-    let mut agent_name: Option<String> = None;
-    let mut sections: Vec<(SectionName, String)> = Vec::new();
+    for line in markdown.split_inclusive('\n') {
+        let heading_line = line.trim_end_matches(['\r', '\n']);
+        if let Some(heading) = heading_line.strip_prefix("## ") {
+            if let Some(previous) = current.take() {
+                sections.push(previous);
+            }
+            current = Some(ExtractedSection {
+                heading: heading_line.to_owned(),
+                canonical: SectionName::from_heading(heading),
+                content: String::new(),
+            });
+            continue;
+        }
 
-    // State machine for walking the Markdown AST
-    let mut in_heading = false;
-    let mut heading_level: Option<HeadingLevel> = None;
-    let mut heading_text = String::new();
-    let mut current_section: Option<SectionName> = None;
-    let mut in_code_block = false;
-    let mut code_content = String::new();
+        if let Some(heading) = heading_line.strip_prefix("# ") {
+            let Some(name) = heading.strip_prefix("Agent: ") else {
+                return Err(CompileError::Structure(format!(
+                    "unsupported top-level heading '# {heading}'; expected '# Agent: <name>'"
+                )));
+            };
+            if name.trim().is_empty() || agent_name.is_some() {
+                return Err(CompileError::Structure(
+                    "document must contain exactly one non-empty '# Agent: <name>' heading".into(),
+                ));
+            }
+            agent_name = Some(name.trim().to_owned());
+            top_level_heading = Some(heading_line.to_owned());
+            continue;
+        }
 
-    for event in parser {
-        match event {
-            Event::Start(Tag::Heading { level, .. }) => {
-                // If we were accumulating a code block for a previous section,
-                // finalize it before starting the new heading.
-                if let Some(section) = current_section.take() {
-                    if !code_content.trim().is_empty() {
-                        sections.push((section, code_content.clone()));
-                    }
-                    code_content.clear();
-                }
+        if let Some(section) = current.as_mut() {
+            section.content.push_str(line);
+        }
+    }
 
-                in_heading = true;
-                heading_level = Some(level);
-                heading_text.clear();
-            }
-            Event::Text(text) if in_heading => {
-                heading_text.push_str(&text);
-            }
-            Event::Code(code) if in_heading => {
-                heading_text.push_str(&code);
-            }
-            Event::End(TagEnd::Heading(_)) => {
-                in_heading = false;
+    if let Some(previous) = current {
+        sections.push(previous);
+    }
 
-                match heading_level {
-                    Some(HeadingLevel::H1) => {
-                        // Extract agent name from "# Agent: <name>"
-                        let name = heading_text
-                            .strip_prefix("Agent:")
-                            .or_else(|| heading_text.strip_prefix("Agent "))
-                            .unwrap_or(&heading_text)
-                            .trim()
-                            .to_string();
-                        if !name.is_empty() {
-                            agent_name = Some(name);
-                        }
-                    }
-                    Some(HeadingLevel::H2) => {
-                        // Try to match this heading to a known section
-                        if let Some(section) = SectionName::from_heading(&heading_text) {
-                            current_section = Some(section);
-                            code_content.clear();
-                        } else {
-                            warn!(heading = %heading_text, "unknown section heading, skipping");
-                        }
-                    }
-                    _ => {}
-                }
+    Ok(ExtractedDocument {
+        agent_name: agent_name
+            .ok_or_else(|| CompileError::Structure("missing '# Agent: <name>' heading".into()))?,
+        top_level_heading: top_level_heading.expect("agent name and heading are set together"),
+        sections,
+    })
+}
 
-                heading_text.clear();
-                heading_level = None;
-            }
-            Event::Start(Tag::CodeBlock(_)) if current_section.is_some() => {
-                in_code_block = true;
-                code_content.clear();
-            }
-            Event::Text(text) if in_code_block => {
-                code_content.push_str(&text);
-            }
-            Event::End(TagEnd::CodeBlock) if in_code_block => {
-                in_code_block = false;
-                // Keep code_content accumulated; it will be consumed when
-                // the next heading starts or at the end of the document.
-            }
-            // For sections that use plain text/paragraphs instead of code blocks (e.g., governance cedar_inline)
-            Event::Text(text) if current_section.is_some() && !in_code_block && !in_heading => {
-                // Accumulate plain text as content if no code block has been seen yet for this section
-                if code_content.is_empty() || code_content.ends_with('\n') {
-                    code_content.push_str(&text);
+fn section_yaml(content: &str) -> &str {
+    let trimmed = content.trim();
+    if !trimmed.starts_with("```") {
+        return trimmed;
+    }
+    let Some(first_newline) = trimmed.find('\n') else {
+        return trimmed;
+    };
+    let body = &trimmed[first_newline + 1..];
+    body.strip_suffix("```").map_or(body, str::trim_end)
+}
+
+fn build_source_record(
+    markdown: &str,
+    extracted: &ExtractedDocument,
+    ir: &PartialAgentDescriptorIR,
+) -> LegacySourceRecord {
+    let heading_slug = slugify(&extracted.agent_name);
+    let metadata_id = extracted
+        .sections
+        .iter()
+        .find(|section| section.canonical == Some(SectionName::Metadata))
+        .and_then(|section| {
+            serde_norway::from_str::<serde_json::Value>(section_yaml(&section.content)).ok()
+        })
+        .and_then(|value| {
+            value
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned)
+        });
+    let source_id = metadata_id
+        .clone()
+        .unwrap_or_else(|| format!("urn:uar:legacy:{heading_slug}"));
+    let version = ir
+        .metadata
+        .as_ref()
+        .map(|metadata| metadata.version.clone())
+        .unwrap_or_else(|| "0.0.0".to_owned());
+    let mut authored_fields = Vec::new();
+    let sections = extracted
+        .sections
+        .iter()
+        .enumerate()
+        .map(|(ordinal, section)| {
+            let value = serde_norway::from_str::<serde_json::Value>(section_yaml(&section.content))
+                .unwrap_or_else(|_| {
+                    serde_json::Value::String(section_yaml(&section.content).to_owned())
+                });
+            if let Some(canonical) = section.canonical {
+                let authored_value = if canonical == SectionName::Skills {
+                    value.get("skills").unwrap_or(&value)
                 } else {
-                    code_content.push_str(&text);
-                }
+                    &value
+                };
+                collect_authored_fields(
+                    authored_value,
+                    &format!("/{}", section_pointer(canonical)),
+                    &mut authored_fields,
+                );
             }
-            _ => {}
+            LegacySourceSection {
+                heading: section.heading.clone(),
+                canonical: section.canonical,
+                ordinal,
+                content: section.content.clone(),
+                value,
+            }
+        })
+        .collect();
+
+    authored_fields.sort();
+    authored_fields.dedup();
+    LegacySourceRecord {
+        profile: LEGACY_AGENT_PROFILE.to_owned(),
+        id: source_id.clone(),
+        version,
+        digest: sha256(markdown.as_bytes()),
+        revision: None,
+        migrated_at: Some(chrono::Utc::now()),
+        top_level_heading: extracted.top_level_heading.clone(),
+        original: markdown.to_owned(),
+        sections,
+        authored_fields,
+        rename_mapping: LegacyRenameMapping {
+            source_id: source_id.clone(),
+            target_id: source_id,
+            reason: if metadata_id.is_some() {
+                "unchanged".to_owned()
+            } else {
+                "heading-slug".to_owned()
+            },
+        },
+    }
+}
+
+fn collect_authored_fields(value: &serde_json::Value, pointer: &str, fields: &mut Vec<String>) {
+    fields.push(pointer.to_owned());
+    match value {
+        serde_json::Value::Object(object) => {
+            for (key, child) in object {
+                collect_authored_fields(
+                    child,
+                    &format!("{pointer}/{}", key.replace('~', "~0").replace('/', "~1")),
+                    fields,
+                );
+            }
+        }
+        serde_json::Value::Array(values) => {
+            for (index, child) in values.iter().enumerate() {
+                collect_authored_fields(child, &format!("{pointer}/{index}"), fields);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn section_pointer(section: SectionName) -> &'static str {
+    match section {
+        SectionName::Metadata => "metadata",
+        SectionName::Identity => "identity",
+        SectionName::Ui => "ui",
+        SectionName::Capabilities => "capabilities",
+        SectionName::Skills => "skills",
+        SectionName::Tools => "tools",
+        SectionName::McpServers => "mcp_servers",
+        SectionName::Knowledge => "knowledge",
+        SectionName::Memory => "memory",
+        SectionName::A2A => "a2a",
+        SectionName::Governance => "governance",
+        SectionName::Budgets => "budgets",
+        SectionName::Execution => "execution",
+        SectionName::Observability => "observability",
+        SectionName::Deployment => "deployment",
+        SectionName::ModelRequirements => "model_requirements",
+        SectionName::PromptDialect => "prompt_dialect",
+        SectionName::RagConfiguration => "rag_configuration",
+        SectionName::ContextStrategy => "context_strategy",
+        SectionName::ApiHarness => "api_harness",
+    }
+}
+
+fn slugify(value: &str) -> String {
+    let mut slug = String::new();
+    let mut separator = false;
+    for character in value.chars() {
+        if character.is_ascii_alphanumeric() {
+            slug.push(character.to_ascii_lowercase());
+            separator = false;
+        } else if !separator && !slug.is_empty() {
+            slug.push('-');
+            separator = true;
         }
     }
+    slug.trim_matches('-').to_owned()
+}
 
-    // Finalize the last section
-    if let Some(section) = current_section.take() {
-        if !code_content.trim().is_empty() {
-            sections.push((section, code_content));
-        }
+fn sha256(bytes: &[u8]) -> String {
+    let mut encoded = String::from("sha256:");
+    for byte in Sha256::digest(bytes) {
+        use std::fmt::Write as _;
+        write!(&mut encoded, "{byte:02x}").expect("writing to String cannot fail");
     }
-
-    let agent_name = agent_name
-        .ok_or_else(|| CompileError::Structure("missing '# Agent: <name>' heading".into()))?;
-
-    Ok((agent_name, sections))
+    encoded
 }
 
 /// Deserialize a YAML string into the appropriate section of the partial IR.
@@ -182,7 +326,12 @@ fn deserialize_section(
             ir.capabilities = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Skills => {
-            ir.skills = Some(serde_norway::from_str(yaml).map_err(map_err)?);
+            ir.skills = Some(match serde_norway::from_str(yaml) {
+                Ok(section) => section,
+                Err(_) => super::ir::SkillsSection {
+                    skills: serde_norway::from_str(yaml).map_err(map_err)?,
+                },
+            });
         }
         SectionName::Tools => {
             ir.tools = Some(serde_norway::from_str(yaml).map_err(map_err)?);
@@ -194,7 +343,15 @@ fn deserialize_section(
             ir.knowledge = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Memory => {
-            ir.memory = Some(serde_norway::from_str(yaml).map_err(map_err)?);
+            let mut value: serde_json::Value = serde_norway::from_str(yaml).map_err(map_err)?;
+            if let Some(conversation) = value
+                .as_object_mut()
+                .and_then(|object| object.get_mut("conversation"))
+                && let Some(enabled) = conversation.as_bool()
+            {
+                *conversation = serde_json::json!({ "enabled": enabled });
+            }
+            ir.memory = Some(deserialize_json_section(value, section)?);
         }
         SectionName::A2A => {
             ir.a2a = Some(serde_norway::from_str(yaml).map_err(map_err)?);
@@ -212,26 +369,90 @@ fn deserialize_section(
             ir.observability = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Deployment => {
-            ir.deployment = Some(serde_norway::from_str(yaml).map_err(map_err)?);
+            let mut value: serde_json::Value = serde_norway::from_str(yaml).map_err(map_err)?;
+            if let Some(profiles) = value
+                .as_object_mut()
+                .and_then(|object| object.get_mut("profiles"))
+                .and_then(serde_json::Value::as_array_mut)
+            {
+                for profile in profiles {
+                    if let Some(id) = profile.as_str() {
+                        *profile = serde_json::json!({ "id": id });
+                    }
+                }
+            }
+            ir.deployment = Some(deserialize_json_section(value, section)?);
         }
         SectionName::ModelRequirements => {
-            ir.model_requirements = Some(serde_norway::from_str(yaml).map_err(map_err)?);
+            ir.model_requirements = Some(deserialize_json_section(
+                requirement_value(yaml, section)?,
+                section,
+            )?);
         }
         SectionName::PromptDialect => {
-            ir.prompt_dialect = Some(serde_norway::from_str(yaml).map_err(map_err)?);
+            let value = requirement_value(yaml, section)?;
+            let value = match value {
+                serde_json::Value::String(value) if value == "default" => serde_json::json!({}),
+                serde_json::Value::String(value) => serde_json::json!({ "dialect": value }),
+                value => value,
+            };
+            ir.prompt_dialect = Some(deserialize_json_section(value, section)?);
         }
         SectionName::RagConfiguration => {
-            ir.rag_configuration = Some(serde_norway::from_str(yaml).map_err(map_err)?);
+            let mut value = requirement_value(yaml, section)?;
+            if let Some(object) = value.as_object_mut()
+                && let Some(mode) = object.remove("mode")
+                && mode == "disabled"
+            {
+                object.insert("enabled".to_owned(), serde_json::Value::Bool(false));
+            }
+            ir.rag_configuration = Some(deserialize_json_section(value, section)?);
         }
         SectionName::ContextStrategy => {
-            ir.context_strategy = Some(serde_norway::from_str(yaml).map_err(map_err)?);
+            let mut value = requirement_value(yaml, section)?;
+            if let Some(object) = value.as_object_mut()
+                && let Some(mode) = object.remove("mode")
+                && mode == "selected"
+            {
+                object.insert(
+                    "type".to_owned(),
+                    serde_json::Value::String("auto".to_owned()),
+                );
+            }
+            ir.context_strategy = Some(deserialize_json_section(value, section)?);
         }
         SectionName::ApiHarness => {
-            ir.api_harness = Some(serde_norway::from_str(yaml).map_err(map_err)?);
+            let value = requirement_value(yaml, section)?;
+            ir.api_harness = Some(deserialize_json_section(value, section)?);
         }
     }
 
     Ok(())
+}
+
+fn deserialize_json_section<T: serde::de::DeserializeOwned>(
+    value: serde_json::Value,
+    section: SectionName,
+) -> Result<T, CompileError> {
+    serde_json::from_value(value).map_err(|error| CompileError::SectionDeserialize {
+        section: section.display_name().into(),
+        message: error.to_string(),
+    })
+}
+
+fn requirement_value(yaml: &str, section: SectionName) -> Result<serde_json::Value, CompileError> {
+    let mut value: serde_json::Value =
+        serde_norway::from_str(yaml).map_err(|error| CompileError::SectionDeserialize {
+            section: section.display_name().into(),
+            message: error.to_string(),
+        })?;
+    if let Some(object) = value.as_object_mut() {
+        object.remove("required");
+        if let Some(inner) = object.remove("value") {
+            return Ok(inner);
+        }
+    }
+    Ok(value)
 }
 
 /// Find which required sections are missing from a partial IR.

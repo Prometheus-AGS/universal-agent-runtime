@@ -45,6 +45,8 @@ struct Harness {
     app: Router,
     unauthenticated_actor_app: Router,
     owner: ActorOwner,
+    manager: Arc<RunManager>,
+    collaboration: Arc<ActorCollaboration>,
     persistence: Arc<dyn PersistenceLayer>,
     _database: tempfile::TempDir,
 }
@@ -121,7 +123,7 @@ async fn harness(driver: Arc<dyn LlmDriver>) -> Harness {
     );
     let context = user();
     let owner = ActorOwner::from_verified_context(&context).expect("verified A2A owner");
-    let collaboration = Arc::new(ActorCollaboration::new(manager));
+    let collaboration = Arc::new(ActorCollaboration::new(Arc::clone(&manager)));
     let state = Arc::new(A2AState {
         threads: Arc::new(A2AThreadService::new(Arc::clone(&collaboration))),
         security: security(),
@@ -133,12 +135,14 @@ async fn harness(driver: Arc<dyn LlmDriver>) -> Harness {
         .layer(Extension(context));
     let unauthenticated_actor_app = Router::new().nest(
         "/api/uar/actors",
-        actors::build_router().with_state(collaboration),
+        actors::build_router().with_state(Arc::clone(&collaboration)),
     );
     Harness {
         app,
         unauthenticated_actor_app,
         owner,
+        manager,
+        collaboration,
         persistence,
         _database: database,
     }
@@ -336,6 +340,87 @@ fn tasks_cancel_stops_the_named_agent_thread_and_preserves_wire_shape() {
         assert_success_envelope(&get, "get-canceled");
         assert_eq!(get["result"]["status"]["state"], "canceled");
         assert_eq!(get["result"]["metadata"][UAR_CLEANUP_CLOSED_METADATA], true);
+    });
+}
+
+#[test]
+fn actor_collaboration_rejection_prevents_child_dispatch() {
+    integration_runtime().block_on(async {
+        let driver = Arc::new(PendingLlmDriver::default());
+        let harness = harness(driver.clone()).await;
+        let source = harness
+            .collaboration
+            .spawn_session(
+                &harness.owner,
+                "source".to_owned(),
+                "orchestrator-agent".to_owned(),
+                None,
+            )
+            .await
+            .expect("source actor starts");
+        let target = harness
+            .collaboration
+            .spawn_session(
+                &harness.owner,
+                "target".to_owned(),
+                "rust-reviewer".to_owned(),
+                None,
+            )
+            .await
+            .expect("target actor starts");
+        let source_turn = source
+            .submit_prompt("keep the source root active".to_owned())
+            .expect("source root turn starts");
+        for _ in 0..200 {
+            if driver.calls.load(Ordering::SeqCst) == 1 {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+        assert_eq!(driver.calls.load(Ordering::SeqCst), 1);
+
+        let collaboration = Arc::clone(&harness.collaboration);
+        let owner = harness.owner.clone();
+        let collaboration_task = tokio::spawn(async move {
+            collaboration
+                .collaborate(&owner, "source", "target", "review this boundary".to_owned())
+                .await
+        });
+        let mut rejected = false;
+        for _ in 0..200 {
+            if harness
+                .manager
+                .resolve_approval(&source_turn.run_id, false)
+                .await
+            {
+                rejected = true;
+                break;
+            }
+            if collaboration_task.is_finished() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+        if !rejected && collaboration_task.is_finished() {
+            let completed = collaboration_task
+                .await
+                .expect("collaboration task joins before approval");
+            panic!("actor delegation completed before publishing approval: {completed:?}");
+        }
+        assert!(rejected, "actor delegation must publish a human approval request");
+        let error = collaboration_task
+            .await
+            .expect("collaboration task joins")
+            .expect_err("rejected actor delegation must not execute");
+        assert!(error.to_string().contains("denied"));
+        assert_eq!(
+            driver.calls.load(Ordering::SeqCst),
+            1,
+            "only the already-running source may dispatch; the denied child never starts"
+        );
+
+        source.stop().await.expect("source actor stops");
+        target.stop().await.expect("target actor stops");
     });
 }
 

@@ -855,6 +855,59 @@ async fn l2_c16_governance_middleware() {
     );
 }
 
+/// C02 governed direct execution — **L3 exercised**.
+///
+/// The real server route refuses a caller that forges only an agent header.
+/// An authenticated owner's verified subject is the execution principal: the
+/// route reaches RunManager without an agent header, and a conflicting header
+/// cannot select another Cedar principal.
+#[tokio::test]
+#[serial]
+async fn l3_c02_direct_tool_route_binds_principal_to_authenticated_owner() {
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let path = "/api/tools/c02_missing_tool/execute";
+    let client = reqwest::Client::new();
+
+    let forged = client
+        .post(format!("{}{}", server.base_url, path))
+        .header("X-Agent-Id", "forged-without-owner")
+        .json(&serde_json::json!({"arguments": {}}))
+        .send()
+        .await
+        .expect("direct tool request with forged identity");
+    assert_eq!(forged.status().as_u16(), 401);
+
+    let token = mint_harness_peer_token();
+    let authenticated = client
+        .post(format!("{}{}", server.base_url, path))
+        .bearer_auth(&token)
+        .json(&serde_json::json!({"arguments": {}}))
+        .send()
+        .await
+        .expect("direct tool request with authenticated principal");
+    let status = authenticated.status().as_u16();
+    let body = authenticated.text().await.unwrap_or_default();
+    assert_real_handler("C02", path, status, &body);
+    assert_eq!(status, 404, "verified subject must reach RunManager: {body}");
+
+    let conflicting_header = client
+        .post(format!("{}{}", server.base_url, path))
+        .bearer_auth(token)
+        .header("X-Agent-Id", "forged-privileged-agent")
+        .json(&serde_json::json!({"arguments": {}}))
+        .send()
+        .await
+        .expect("direct tool request with conflicting agent header");
+    let status = conflicting_header.status().as_u16();
+    let body = conflicting_header.text().await.unwrap_or_default();
+    assert_real_handler("C02", path, status, &body);
+    assert_eq!(
+        status, 404,
+        "caller-controlled agent header must not change direct-route identity: {body}"
+    );
+}
+
 /// C-18 file processing / document intelligence — **L3 exercised**.
 ///
 /// A text multipart upload runs through the real upload handler and must return

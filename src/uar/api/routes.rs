@@ -18,7 +18,24 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio_stream::StreamExt;
 
-pub fn build_router() -> Router<Arc<RunManager>> {
+#[derive(Debug, Clone)]
+pub struct RunApiState {
+    pub manager: Arc<RunManager>,
+    pub collaboration_catalog:
+        Arc<crate::uar::compiler::collaboration::CollaborationCatalogService>,
+    pub service_instance: Arc<crate::uar::service_instance::ServiceInstanceAuthority>,
+}
+
+#[derive(Clone)]
+struct RunManagerState(Arc<RunManager>);
+
+impl axum::extract::FromRef<Arc<RunApiState>> for RunManagerState {
+    fn from_ref(state: &Arc<RunApiState>) -> Self {
+        Self(Arc::clone(&state.manager))
+    }
+}
+
+pub fn build_router() -> Router<Arc<RunApiState>> {
     Router::new()
         .route("/runs", get(list_runs).post(create_run))
         .route("/runs/{id}", get(read_run))
@@ -56,6 +73,10 @@ struct CreateRunRequest {
     artifact: Option<AgentArtifact>,
     #[serde(default)]
     agent_id: Option<String>,
+    #[serde(default)]
+    deployment_binding_id: Option<String>,
+    #[serde(default)]
+    service_placement: Option<crate::uar::service_instance::ServicePlacementExpectation>,
     input: String,
     session_id: Option<String>,
     #[serde(default)]
@@ -80,6 +101,8 @@ struct CreateRunRequest {
 struct CreateRunResponse {
     run_id: String,
     stream_url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    effective_service_binding: Option<crate::uar::service_instance::EffectiveServiceBinding>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     activation_failures: Vec<crate::uar::runtime::skills::activation::ActivationFailure>,
     history: crate::uar::runtime::turn::host::HistorySeedStatus,
@@ -97,6 +120,7 @@ struct RunInspection {
     effective_run_policy: Option<serde_json::Value>,
     presentation_selection: Option<serde_json::Value>,
     host_resources: Option<serde_json::Value>,
+    effective_service_binding: Option<serde_json::Value>,
 }
 
 impl From<crate::uar::domain::runs::Run> for RunInspection {
@@ -115,12 +139,17 @@ impl From<crate::uar::domain::runs::Run> for RunInspection {
             effective_run_policy: run.context.get("effective_run_policy").cloned(),
             presentation_selection: run.context.get("presentation_selection").cloned(),
             host_resources: run.context.get("host_resources").cloned(),
+            effective_service_binding: run
+                .context
+                .get("effective_service_binding")
+                .filter(|value| !value.is_null())
+                .cloned(),
         }
     }
 }
 
 async fn list_runs(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
 ) -> Json<Vec<RunInspection>> {
     Json(
@@ -134,7 +163,7 @@ async fn list_runs(
 }
 
 async fn read_run(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> Result<Json<RunInspection>, StatusCode> {
@@ -389,25 +418,118 @@ struct StreamParams {
 }
 
 async fn create_run(
-    State(manager): State<Arc<RunManager>>,
+    State(state): State<Arc<RunApiState>>,
     Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
     host_authenticated: Option<Extension<HostAuthenticated>>,
     Json(req): Json<CreateRunRequest>,
 ) -> Result<Json<CreateRunResponse>, RunApiError> {
-    let (artifact, artifact_inline) =
-        resolve_run_agent(&manager, req.agent_id, req.artifact).await?;
-    let mut request = crate::uar::runtime::turn::RunExecutionRequest::new(artifact, req.input)
+    let CreateRunRequest {
+        artifact,
+        agent_id,
+        deployment_binding_id,
+        service_placement,
+        input,
+        session_id,
+        run_credentials,
+        mcp_servers,
+        tool_admission,
+        working_directory,
+        reasoning_effort,
+        history,
+        skill_attachments,
+        presentation_negotiation,
+    } = req;
+    let admitted_service_binding = if let Some(expectation) = service_placement.as_ref() {
+        if expectation.binding_id.is_some()
+            && expectation.binding_id.as_deref() != deployment_binding_id.as_deref()
+        {
+            return Err(RunApiError {
+                status: StatusCode::CONFLICT,
+                code: "service_binding_mismatch",
+                message: "service placement bindingId does not match deployment_binding_id"
+                    .to_owned(),
+            });
+        }
+        let response = state.service_instance.evaluate(
+            expectation,
+            crate::uar::service_instance::PlacementIntent::New,
+        );
+        if !response.compatible {
+            return Err(service_placement_error(response));
+        }
+        response.effective_binding
+    } else {
+        None
+    };
+    let bound_selector = deployment_binding_id.is_some();
+    let mut request = if let Some(binding_id) = deployment_binding_id {
+        if agent_id.is_some() || artifact.is_some() {
+            return Err(selector_ambiguous());
+        }
+        let owner_id =
+            super::user_settings::principal_storage_key(&user).ok_or_else(|| RunApiError {
+                status: StatusCode::UNAUTHORIZED,
+                code: "principal_invalid",
+                message: "deployment binding requires a verified principal".to_string(),
+            })?;
+        let workspace_id = headers
+            .get("x-uar-workspace-id")
+            .and_then(|value| value.to_str().ok())
+            .filter(|value| !value.trim().is_empty())
+            .map(str::to_owned)
+            .ok_or_else(|| RunApiError {
+                status: StatusCode::BAD_REQUEST,
+                code: "workspace_required",
+                message: "deployment binding requires x-uar-workspace-id".to_string(),
+            })?;
+        let bound = state
+            .collaboration_catalog
+            .resolve_bound_agent_run(&owner_id, &workspace_id, &binding_id)
+            .await
+            .map_err(collaboration_run_error)?;
+        crate::uar::runtime::turn::RunExecutionRequest::from_bound_agent(
+            bound,
+            input,
+            owner_id,
+            workspace_id,
+            Arc::clone(&state.collaboration_catalog),
+        )
         .with_user_context(&user)
-        .map_err(|_| RunApiError {
-            status: StatusCode::UNAUTHORIZED,
-            code: "principal_invalid",
-            message: "run principal is invalid".to_string(),
-        })?;
-    request.host_resources_marker.artifact_inline = artifact_inline;
-    request.session_id = req.session_id;
-    request.skill_attachments = req.skill_attachments;
-    request.presentation_negotiation = req.presentation_negotiation;
-    if let Some(input) = req.tool_admission {
+        .map_err(|_| principal_invalid())?
+    } else {
+        let (artifact, artifact_inline) =
+            resolve_run_agent(&state.manager, agent_id, artifact).await?;
+        let mut request = crate::uar::runtime::turn::RunExecutionRequest::new(artifact, input)
+            .with_user_context(&user)
+            .map_err(|_| principal_invalid())?;
+        request.host_resources_marker.artifact_inline = artifact_inline;
+        request
+    };
+    let response_service_binding = admitted_service_binding.clone();
+    if let Some(admitted) = admitted_service_binding {
+        if let Some(bound) = request.service_binding.as_ref() {
+            if (admitted.binding_id.is_some() && admitted.binding_id != bound.binding_id)
+                || (admitted.binding_revision.is_some()
+                    && admitted.binding_revision != bound.binding_revision)
+                || (admitted.credential_ref.is_some()
+                    && admitted.credential_ref != bound.credential_ref)
+            {
+                return Err(RunApiError {
+                    status: StatusCode::CONFLICT,
+                    code: "service_binding_mismatch",
+                    message: "service placement does not match the effective deployment binding"
+                        .to_owned(),
+                });
+            }
+        } else {
+            request.service_binding = Some(admitted);
+        }
+    }
+    request.session_id = session_id;
+    request.skill_attachments = skill_attachments;
+    request.presentation_negotiation = presentation_negotiation;
+    if let Some(input) = tool_admission {
         if host_authenticated.is_none() {
             return Err(RunApiError {
                 status: StatusCode::FORBIDDEN,
@@ -416,29 +538,37 @@ async fn create_run(
                     .to_string(),
             });
         }
-        let adapter = crate::uar::runtime::tool_admission::HttpHostToolAdmissionPort::from_input(
-            input,
-        )
-        .map_err(|_| RunApiError {
-            status: StatusCode::UNPROCESSABLE_ENTITY,
-            code: "tool_admission_invalid",
-            message: "paired host tool admission is invalid or incompatible".to_string(),
-        })?;
+        let adapter =
+            crate::uar::runtime::tool_admission::HttpHostToolAdmissionPort::from_input(input)
+                .map_err(|_| RunApiError {
+                    status: StatusCode::UNPROCESSABLE_ENTITY,
+                    code: "tool_admission_invalid",
+                    message: "paired host tool admission is invalid or incompatible".to_string(),
+                })?;
         request.host_tool_admission = Some(Arc::new(adapter));
     }
     attach_host_resources(
-        &manager,
+        &state.manager,
         &user,
         &mut request,
-        req.run_credentials,
-        req.mcp_servers,
-        req.working_directory,
-        req.reasoning_effort,
-        req.history,
+        run_credentials,
+        mcp_servers,
+        working_directory,
+        reasoning_effort,
+        history,
     )
     .await?;
-    let run_id = manager.execute_request(request).await;
-    let run_context = manager
+    let run_id = if bound_selector {
+        state
+            .manager
+            .execute_bound_request(request)
+            .await
+            .map_err(collaboration_run_error)?
+    } else {
+        state.manager.execute_request(request).await
+    };
+    let run_context = state
+        .manager
         .get_run(&run_id)
         .await
         .map(|run| run.context)
@@ -461,10 +591,81 @@ async fn create_run(
     Ok(Json(CreateRunResponse {
         run_id: run_id.clone(),
         stream_url: format!("/api/uar/runs/{run_id}/stream"),
+        effective_service_binding: response_service_binding,
         activation_failures,
         history,
         seeded_messages,
     }))
+}
+
+fn service_placement_error(
+    response: crate::uar::service_instance::CompatibilityResponse,
+) -> RunApiError {
+    RunApiError {
+        status: StatusCode::CONFLICT,
+        code: if response
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "placement.migration-unsupported")
+        {
+            "service_migration_unsupported"
+        } else {
+            "service_instance_incompatible"
+        },
+        message: response
+            .diagnostics
+            .into_iter()
+            .map(|diagnostic| diagnostic.message)
+            .collect::<Vec<_>>()
+            .join("; "),
+    }
+}
+
+fn selector_ambiguous() -> RunApiError {
+    RunApiError {
+        status: StatusCode::UNPROCESSABLE_ENTITY,
+        code: "run_agent_selector_ambiguous",
+        message: "provide exactly one of agent_id, artifact, or deployment_binding_id".to_string(),
+    }
+}
+
+fn principal_invalid() -> RunApiError {
+    RunApiError {
+        status: StatusCode::UNAUTHORIZED,
+        code: "principal_invalid",
+        message: "run principal is invalid".to_string(),
+    }
+}
+
+fn collaboration_run_error(
+    error: crate::uar::compiler::collaboration::CollaborationError,
+) -> RunApiError {
+    use crate::uar::compiler::collaboration::CollaborationError;
+    match error {
+        CollaborationError::Invalid(message) => RunApiError {
+            status: StatusCode::UNPROCESSABLE_ENTITY,
+            code: "run_binding_invalid",
+            message,
+        },
+        CollaborationError::NotFound(message) => RunApiError {
+            status: StatusCode::NOT_FOUND,
+            code: "run_binding_not_found",
+            message,
+        },
+        CollaborationError::Conflict(message) => RunApiError {
+            status: StatusCode::CONFLICT,
+            code: "run_binding_conflict",
+            message,
+        },
+        CollaborationError::Storage(message) => {
+            tracing::error!(%message, "collaboration catalog unavailable during run admission");
+            RunApiError {
+                status: StatusCode::SERVICE_UNAVAILABLE,
+                code: "run_binding_unavailable",
+                message: "collaboration catalog is unavailable".to_string(),
+            }
+        }
+    }
 }
 
 async fn resolve_run_agent(
@@ -473,15 +674,11 @@ async fn resolve_run_agent(
     artifact: Option<AgentArtifact>,
 ) -> Result<(AgentArtifact, bool), RunApiError> {
     match (agent_id, artifact) {
-        (Some(_), Some(_)) => Err(RunApiError {
-            status: StatusCode::UNPROCESSABLE_ENTITY,
-            code: "run_agent_selector_ambiguous",
-            message: "provide exactly one of agent_id or artifact".to_string(),
-        }),
+        (Some(_), Some(_)) => Err(selector_ambiguous()),
         (None, None) => Err(RunApiError {
             status: StatusCode::UNPROCESSABLE_ENTITY,
             code: "run_agent_selector_required",
-            message: "agent_id or artifact is required".to_string(),
+            message: "agent_id, artifact, or deployment_binding_id is required".to_string(),
         }),
         (None, Some(artifact)) => {
             crate::uar::domain::agent_store::validate_agent(&artifact).map_err(|error| {
@@ -521,7 +718,7 @@ async fn resolve_run_agent(
 }
 
 async fn stream_run(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
     Query(params): Query<StreamParams>,
@@ -669,7 +866,7 @@ struct ToolApprovalRequest {
 /// Submit an approval or rejection decision for a pending tool call.
 /// Returns 200 OK if the decision was delivered, 404 if no pending approval exists.
 async fn api_tool_approval(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
     Json(body): Json<ToolApprovalRequest>,
@@ -704,7 +901,7 @@ async fn api_tool_approval(
 /// Replays the owner-scoped live waiter with its stable approval identity and
 /// original stream cursor. It never creates a new waiter.
 async fn api_pending_tool_approval(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
@@ -730,7 +927,7 @@ async fn api_pending_tool_approval(
 /// Returns sanitized append-only lifecycle evidence. The owner filter is
 /// applied in storage before the requested run tree is selected.
 async fn api_tool_admission_evidence(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
@@ -765,7 +962,7 @@ async fn api_tool_admission_evidence(
 /// cancelled, `false` for an unknown or already-terminal run (no error, no
 /// duplicate terminal event).
 async fn api_cancel_run(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
@@ -785,7 +982,7 @@ async fn api_cancel_run(
 /// Revoke an admitted downstream credential and cancel its run. A replacement
 /// is accepted only through the ordinary authenticated resume boundary.
 async fn api_revoke_run_mcp_grant(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path((run_id, server)): Path<(String, String)>,
 ) -> impl IntoResponse {
@@ -812,7 +1009,7 @@ async fn api_revoke_run_mcp_grant(
 ///
 /// Cancel the active run projected through a stable conversation session id.
 async fn api_cancel_session_run(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(session_id): Path<String>,
 ) -> impl IntoResponse {
@@ -835,7 +1032,7 @@ struct CheckpointListResponse {
 /// List all persisted checkpoints for a run, ordered by creation time.
 /// Returns 503 if no persistence layer is configured.
 async fn list_checkpoints(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
@@ -881,6 +1078,8 @@ struct ResumeRequest {
     reasoning_effort: Option<String>,
     #[serde(default)]
     history: Option<crate::uar::runtime::turn::host::HostHistoryInput>,
+    #[serde(default)]
+    service_placement: Option<crate::uar::service_instance::ServicePlacementExpectation>,
     #[serde(flatten)]
     presentation_negotiation: crate::uar::a2ui::presentation_selection::PresentationNegotiation,
 }
@@ -908,17 +1107,192 @@ fn resume_artifact(
     Ok(snapshot.artifact)
 }
 
+fn resume_service_binding(
+    authority: &crate::uar::service_instance::ServiceInstanceAuthority,
+    source_run: &crate::uar::domain::runs::Run,
+    expectation: Option<&crate::uar::service_instance::ServicePlacementExpectation>,
+) -> Result<Option<crate::uar::service_instance::EffectiveServiceBinding>, RunApiError> {
+    let source = source_run
+        .context
+        .get("effective_service_binding")
+        .filter(|value| !value.is_null())
+        .cloned()
+        .map(serde_json::from_value)
+        .transpose()
+        .map_err(|_| RunApiError {
+            status: StatusCode::CONFLICT,
+            code: "service_binding_invalid",
+            message: "source run service binding cannot be read".to_owned(),
+        })?;
+    let Some(mut source) = source else {
+        if expectation.is_some() {
+            return Err(RunApiError {
+                status: StatusCode::CONFLICT,
+                code: "service_binding_unavailable",
+                message: "source run has no effective service binding to reattach".to_owned(),
+            });
+        }
+        return Ok(None);
+    };
+    authority
+        .revalidate(&source)
+        .map_err(service_placement_error)?;
+    if let Some(expectation) = expectation {
+        let response = authority.evaluate(
+            expectation,
+            crate::uar::service_instance::PlacementIntent::Reattach,
+        );
+        if !response.compatible {
+            return Err(service_placement_error(response));
+        }
+        let admitted = response.effective_binding.ok_or_else(|| RunApiError {
+            status: StatusCode::CONFLICT,
+            code: "service_instance_incompatible",
+            message: "service placement produced no effective binding".to_owned(),
+        })?;
+        if admitted.instance_id != source.instance_id
+            || admitted.profile != source.profile
+            || admitted.endpoints != source.endpoints
+            || (admitted.binding_id.is_some() && admitted.binding_id != source.binding_id)
+            || (admitted.binding_revision.is_some()
+                && admitted.binding_revision != source.binding_revision)
+            || (admitted.credential_ref.is_some()
+                && admitted.credential_ref != source.credential_ref)
+        {
+            return Err(RunApiError {
+                status: StatusCode::CONFLICT,
+                code: "service_reattachment_mismatch",
+                message: "requested reattachment does not match the source run binding".to_owned(),
+            });
+        }
+    }
+    source.intent = crate::uar::service_instance::PlacementIntent::Reattach;
+    Ok(Some(source))
+}
+
+async fn resume_execution_request(
+    state: &RunApiState,
+    user: &UserContext,
+    source_run: &crate::uar::domain::runs::Run,
+    artifact: AgentArtifact,
+    input: String,
+) -> Result<(crate::uar::runtime::turn::RunExecutionRequest, bool), RunApiError> {
+    let Some(binding) = source_run
+        .context
+        .get("effective_collaboration_binding")
+        .filter(|value| !value.is_null())
+    else {
+        let request = crate::uar::runtime::turn::RunExecutionRequest::new(artifact, input)
+            .with_user_context(user)
+            .map_err(|_| principal_invalid())?;
+        return Ok((request, false));
+    };
+    let owner_id = binding
+        .get("ownerId")
+        .and_then(serde_json::Value::as_str)
+        .ok_or_else(|| RunApiError {
+            status: StatusCode::CONFLICT,
+            code: "run_binding_invalid",
+            message: "source run collaboration owner is unavailable".to_owned(),
+        })?;
+    let workspace_id = binding
+        .get("workspaceId")
+        .and_then(serde_json::Value::as_str)
+        .ok_or_else(|| RunApiError {
+            status: StatusCode::CONFLICT,
+            code: "run_binding_invalid",
+            message: "source run collaboration workspace is unavailable".to_owned(),
+        })?;
+    let binding_id = binding
+        .get("bindingId")
+        .and_then(serde_json::Value::as_str)
+        .ok_or_else(|| RunApiError {
+            status: StatusCode::CONFLICT,
+            code: "run_binding_invalid",
+            message: "source run collaboration binding is unavailable".to_owned(),
+        })?;
+    let binding_revision = binding
+        .get("bindingRevision")
+        .and_then(serde_json::Value::as_u64)
+        .ok_or_else(|| RunApiError {
+            status: StatusCode::CONFLICT,
+            code: "run_binding_invalid",
+            message: "source run collaboration binding revision is unavailable".to_owned(),
+        })?;
+    let current_owner =
+        super::user_settings::principal_storage_key(user).ok_or_else(|| RunApiError {
+            status: StatusCode::UNAUTHORIZED,
+            code: "principal_invalid",
+            message: "deployment binding requires a verified principal".to_owned(),
+        })?;
+    if current_owner != owner_id {
+        return Err(RunApiError {
+            status: StatusCode::FORBIDDEN,
+            code: "run_binding_owner_mismatch",
+            message: "source run deployment binding belongs to another principal".to_owned(),
+        });
+    }
+    let bound = state
+        .collaboration_catalog
+        .resolve_bound_agent_run(owner_id, workspace_id, binding_id)
+        .await
+        .map_err(collaboration_run_error)?;
+    if bound.binding.revision != binding_revision
+        || bound.artifact.definition_revision() != artifact.definition_revision()
+    {
+        return Err(RunApiError {
+            status: StatusCode::CONFLICT,
+            code: "run_binding_changed",
+            message: "deployment binding no longer resolves the source run definition".to_owned(),
+        });
+    }
+    let request = crate::uar::runtime::turn::RunExecutionRequest::from_bound_agent(
+        bound,
+        input,
+        owner_id.to_owned(),
+        workspace_id.to_owned(),
+        Arc::clone(&state.collaboration_catalog),
+    )
+    .with_user_context(user)
+    .map_err(|_| principal_invalid())?;
+    Ok((request, true))
+}
+
+async fn execute_resumed_request(
+    manager: &RunManager,
+    request: crate::uar::runtime::turn::RunExecutionRequest,
+    bound: bool,
+) -> Result<String, RunApiError> {
+    if bound {
+        manager
+            .execute_bound_request(request)
+            .await
+            .map_err(collaboration_run_error)
+    } else {
+        Ok(manager.execute_request(request).await)
+    }
+}
+
 /// POST /api/uar/runs/{run_id}/resume
 ///
 /// Resume a run from its latest checkpoint (if any), or start fresh.
 async fn resume_run(
-    State(manager): State<Arc<RunManager>>,
+    State(state): State<Arc<RunApiState>>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
     Json(req): Json<ResumeRequest>,
 ) -> impl IntoResponse {
+    let manager = Arc::clone(&state.manager);
     let Some(source_run) = manager.get_run_for_context(&user, &run_id).await else {
         return StatusCode::NOT_FOUND.into_response();
+    };
+    let service_binding = match resume_service_binding(
+        &state.service_instance,
+        &source_run,
+        req.service_placement.as_ref(),
+    ) {
+        Ok(binding) => binding,
+        Err(error) => return error.into_response(),
     };
     if req.history.is_some() {
         return RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
@@ -942,17 +1316,18 @@ async fn resume_run(
         format!("Resuming run {run_id}")
     });
 
-    let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(artifact, input)
-        .with_user_context(&user)
-    {
-        Ok(request) => request,
-        Err(_) => return StatusCode::UNAUTHORIZED.into_response(),
-    };
+    let (mut request, bound) =
+        match resume_execution_request(&state, &user, &source_run, artifact, input).await {
+            Ok(result) => result,
+            Err(error) => return error.into_response(),
+        };
     request.session_id = req
         .session_id
         .or_else(|| source_run.conversation_id.clone());
     request.host_resources_marker.artifact_inline = source_marker.artifact_inline;
     request.presentation_negotiation = req.presentation_negotiation;
+    let response_service_binding = service_binding.clone();
+    request.service_binding = service_binding;
     inherit_host_context(&source_run, &mut request);
     if let Err(error) = attach_host_resources(
         &manager,
@@ -971,12 +1346,16 @@ async fn resume_run(
     if let Err(error) = require_matching_host_resources(&source_marker, &request) {
         return error.into_response();
     }
-    let new_run_id = manager.execute_request(request).await;
+    let new_run_id = match execute_resumed_request(&manager, request, bound).await {
+        Ok(run_id) => run_id,
+        Err(error) => return error.into_response(),
+    };
 
     Json(serde_json::json!({
         "resumed_from_run_id": run_id,
         "run_id": new_run_id,
         "stream_url": format!("/api/uar/runs/{new_run_id}/stream"),
+        "effective_service_binding": response_service_binding,
     }))
     .into_response()
 }
@@ -986,13 +1365,22 @@ async fn resume_run(
 /// Resume a run from a specific named checkpoint.
 /// The checkpoint's saved state is injected as context into the new run.
 async fn resume_run_from_checkpoint(
-    State(manager): State<Arc<RunManager>>,
+    State(state): State<Arc<RunApiState>>,
     Extension(user): Extension<UserContext>,
     Path((run_id, checkpoint_id)): Path<(String, String)>,
     Json(req): Json<ResumeRequest>,
 ) -> impl IntoResponse {
+    let manager = Arc::clone(&state.manager);
     let Some(source_run) = manager.get_run_for_context(&user, &run_id).await else {
         return StatusCode::NOT_FOUND.into_response();
+    };
+    let service_binding = match resume_service_binding(
+        &state.service_instance,
+        &source_run,
+        req.service_placement.as_ref(),
+    ) {
+        Ok(binding) => binding,
+        Err(error) => return error.into_response(),
     };
     if req.history.is_some() {
         return RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
@@ -1074,14 +1462,17 @@ async fn resume_run_from_checkpoint(
         .as_ref()
         .and_then(|protection| protection.authorization_sha256.clone());
 
-    let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(
+    let (mut request, bound) = match resume_execution_request(
+        &state,
+        &user,
+        &source_run,
         artifact,
         req.input.clone().unwrap_or_default(),
     )
-    .with_user_context(&user)
+    .await
     {
-        Ok(request) => request,
-        Err(_) => return StatusCode::UNAUTHORIZED.into_response(),
+        Ok(result) => result,
+        Err(error) => return error.into_response(),
     };
     request.input = req.input;
     request.session_id = req
@@ -1095,6 +1486,8 @@ async fn resume_run_from_checkpoint(
             .expect("validated current checkpoint has authorization binding"),
     });
     request.presentation_negotiation = req.presentation_negotiation;
+    let response_service_binding = service_binding.clone();
+    request.service_binding = service_binding;
     inherit_host_context(&source_run, &mut request);
     if let Err(error) = attach_host_resources(
         &manager,
@@ -1113,7 +1506,10 @@ async fn resume_run_from_checkpoint(
     if let Err(error) = require_matching_host_resources(&source_marker, &request) {
         return error.into_response();
     }
-    let new_run_id = manager.execute_request(request).await;
+    let new_run_id = match execute_resumed_request(&manager, request, bound).await {
+        Ok(run_id) => run_id,
+        Err(error) => return error.into_response(),
+    };
 
     Json(serde_json::json!({
         "resumed_from_run_id": run_id,
@@ -1124,6 +1520,7 @@ async fn resume_run_from_checkpoint(
         "restored_state_keys": restored_state_keys,
         "run_id": new_run_id,
         "stream_url": format!("/api/uar/runs/{new_run_id}/stream"),
+        "effective_service_binding": response_service_binding,
     }))
     .into_response()
 }
@@ -1132,7 +1529,9 @@ async fn resume_run_from_checkpoint(
 ///
 /// Returns the resolved default model configuration (provider + model) or an error
 /// if no model is available. Used by the frontend to guard chat before starting a run.
-async fn resolve_model(State(manager): State<Arc<RunManager>>) -> impl IntoResponse {
+async fn resolve_model(
+    State(RunManagerState(manager)): State<RunManagerState>,
+) -> impl IntoResponse {
     let model = manager.resolve_default_model().await;
     match model {
         Some((provider_id, model_id)) => Json(serde_json::json!({

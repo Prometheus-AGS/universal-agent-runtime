@@ -227,6 +227,15 @@ mod checkpoint_dialogue_tests {
     }
 }
 
+#[derive(Clone)]
+struct ActorToolApprovalGate(crate::llm::ToolApprovalGate);
+
+impl std::fmt::Debug for ActorToolApprovalGate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("ActorToolApprovalGate(..)")
+    }
+}
+
 #[derive(Debug)]
 struct RunStreamState {
     run: Run,
@@ -245,6 +254,10 @@ struct RunStreamState {
         >,
     >,
     delegation: Option<std::sync::Weak<crate::uar::runtime::turn::bindings::RunDelegationBindings>>,
+    tool_admission:
+        Option<Arc<crate::uar::runtime::tool_admission::ToolAdmissionRuntime>>,
+    actor_spawn_descriptor: Option<Arc<crate::uar::tools::descriptor::ToolDescriptor>>,
+    actor_tool_approval: Option<ActorToolApprovalGate>,
     started_at: Instant,
     terminal_at: Option<Instant>,
     last_detached_at: Option<Instant>,
@@ -721,6 +734,113 @@ impl std::fmt::Debug for RunManager {
 }
 
 impl RunManager {
+    /// Execute an authenticated direct host call through the same descriptor,
+    /// admission, claim, dispatch, and terminal lifecycle as model tool calls.
+    pub async fn execute_direct_tool(
+        &self,
+        owner_id: String,
+        principal_id: String,
+        tool_name: &str,
+        arguments: serde_json::Value,
+    ) -> anyhow::Result<serde_json::Value> {
+        use crate::uar::runtime::tool_admission::{
+            LocalAdmissionDisposition, ToolAdmissionContext, ToolAdmissionRuntime,
+        };
+        use crate::uar::tools::descriptor::{ApprovalClass, Exposure};
+
+        anyhow::ensure!(!owner_id.trim().is_empty(), "Direct tool owner is missing");
+        anyhow::ensure!(
+            !principal_id.trim().is_empty(),
+            "Direct tool principal is missing"
+        );
+        let descriptor = self
+            .global_mcp
+            .descriptor(tool_name)
+            .ok_or_else(|| anyhow::anyhow!("unknown tool: {tool_name}"))?;
+        anyhow::ensure!(
+            descriptor.exposure != Exposure::ModelOnly,
+            "Tool is restricted to model-controlled execution"
+        );
+        let argument_errors = descriptor
+            .validator
+            .iter_errors(&arguments)
+            .map(|error| error.to_string())
+            .collect::<Vec<_>>();
+        anyhow::ensure!(
+            argument_errors.is_empty(),
+            "invalid tool arguments: {}",
+            argument_errors.join("; ")
+        );
+        anyhow::ensure!(
+            descriptor.approval_class != ApprovalClass::Required,
+            "Direct tool execution requires an interactive approval channel"
+        );
+
+        let governance_policy_revision = self
+            .governance_engine
+            .as_ref()
+            .map(|engine| engine.policy_revision());
+        let governance_policy_revision = match governance_policy_revision {
+            Some(revision) => revision.await,
+            None => "cedar:unavailable".to_string(),
+        };
+        let host = Arc::clone(&self.host_tool_admission);
+        let context = ToolAdmissionContext::direct(
+            owner_id,
+            principal_id,
+            std::env::current_dir()?.display().to_string(),
+            self.tool_runtime_epoch.clone(),
+            format!("direct:{tool_name}"),
+            governance_policy_revision,
+            host.binding(),
+        );
+        let runtime = ToolAdmissionRuntime::new(
+            context,
+            host,
+            self.persistence.clone(),
+            self.root_cancellation.child_token(),
+            self.governance_engine.clone(),
+            self.governance_gate.clone(),
+        )?;
+        let prepared = runtime.prepare(
+            uuid::Uuid::new_v4().to_string(),
+            descriptor.as_ref(),
+            arguments.clone(),
+            0,
+        );
+        let host_preparation = runtime.prepare_host(Arc::clone(&prepared)).await?;
+        anyhow::ensure!(
+            host_preparation.host_disposition
+                != crate::uar::runtime::tool_admission::HostAdmissionDisposition::Deny,
+            "Direct tool execution is denied by the host"
+        );
+        anyhow::ensure!(
+            host_preparation.host_disposition
+                != crate::uar::runtime::tool_admission::HostAdmissionDisposition::Ask,
+            "Direct tool execution requires an interactive host approval channel"
+        );
+        let admitted = runtime
+            .resolve(
+                prepared,
+                host_preparation,
+                LocalAdmissionDisposition::Allowed,
+                true,
+            )
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Direct tool execution was not admitted"))?;
+        runtime.claim(&admitted).await?;
+        let result = self
+            .global_mcp
+            .call_namespaced_tool_with_meta(
+                tool_name,
+                arguments,
+                admitted.host_receipt.mcp_request_meta(),
+            )
+            .await;
+        runtime.finish(&admitted, result.is_ok()).await?;
+        result
+    }
+
     pub(crate) fn run_usage(
         &self,
         run_id: &str,
@@ -2280,6 +2400,8 @@ impl RunManager {
                 authorization_digest: checkpoint_authorization_digest,
             }),
             inherited_history: None,
+            collaboration_binding: None,
+            service_binding: None,
             skill_attachments: Vec::new(),
             working_directory: None,
         })
@@ -2312,6 +2434,24 @@ impl RunManager {
         }
         self.execute_request_inner(request, run_id, None, None, None, None)
             .await
+    }
+
+    /// Execute an ordinary agent only after its persisted private binding has
+    /// been revalidated against the current catalog, policy, skills, and grants.
+    pub async fn execute_bound_request(
+        &self,
+        request: crate::uar::runtime::turn::RunExecutionRequest,
+    ) -> Result<String, crate::uar::compiler::collaboration::CollaborationError> {
+        let binding = request.collaboration_binding.as_ref().ok_or_else(|| {
+            crate::uar::compiler::collaboration::CollaborationError::Invalid(
+                "bound execution request has no effective binding receipt".to_owned(),
+            )
+        })?;
+        binding
+            .revalidate(&request.artifact)
+            .await
+            .map_err(crate::uar::compiler::collaboration::CollaborationError::from)?;
+        Ok(self.execute_request(request).await)
     }
 
     /// Preserve an observable failure even when root persistence fails before
@@ -2363,6 +2503,9 @@ impl RunManager {
                     history,
                     completion: None,
                     delegation: None,
+                    tool_admission: None,
+                    actor_spawn_descriptor: None,
+                    actor_tool_approval: None,
                     started_at: Instant::now(),
                     terminal_at: Some(Instant::now()),
                     last_detached_at: None,
@@ -2450,15 +2593,95 @@ impl RunManager {
             .service
             .get()
             .ok_or_else(|| anyhow::anyhow!("Actor thread service is unavailable"))?;
-        if let Some(governance) = &self.governance_engine {
-            anyhow::ensure!(
-                governance
-                    .is_tool_allowed(&root.record.thread.artifact_id, "spawn_agent")
-                    .await,
-                "Actor delegation is denied by governance policy"
-            );
-        }
+        let (tool_admission, descriptor, approval_gate) = {
+            let runs = self.active_runs.read().await;
+            let state = runs
+                .get(&root.record.thread.root_run_id)
+                .ok_or_else(|| anyhow::anyhow!("Actor root run is unavailable"))?;
+            (
+                state
+                    .tool_admission
+                    .clone()
+                    .ok_or_else(|| anyhow::anyhow!("Actor root admission is unavailable"))?,
+                state
+                    .actor_spawn_descriptor
+                    .clone()
+                    .ok_or_else(|| anyhow::anyhow!("Actor root does not authorize spawn_agent"))?,
+                state
+                    .actor_tool_approval
+                    .clone()
+                    .ok_or_else(|| anyhow::anyhow!("Actor root approval gate is unavailable"))?,
+            )
+        };
+        let arguments = serde_json::to_value(&request)?;
+        let argument_errors = descriptor
+            .validator
+            .iter_errors(&arguments)
+            .map(|error| error.to_string())
+            .collect::<Vec<_>>();
+        anyhow::ensure!(
+            argument_errors.is_empty(),
+            "Invalid actor collaboration request: {}",
+            argument_errors.join("; ")
+        );
+        let invocation = tool_admission.prepare(
+            uuid::Uuid::new_v4().to_string(),
+            descriptor.as_ref(),
+            arguments,
+            0,
+        );
+        let preparation = tool_admission.prepare_host(Arc::clone(&invocation)).await?;
+        anyhow::ensure!(
+            preparation.host_disposition
+                != crate::uar::runtime::tool_admission::HostAdmissionDisposition::Deny,
+            "Actor delegation is denied by the admission host"
+        );
+        let approval = crate::uar::runtime::tool_admission::ToolApprovalRequest {
+            invocation: Arc::clone(&invocation),
+            admission_id: preparation.admission_id.clone(),
+            host_requires_approval: preparation.host_disposition
+                == crate::uar::runtime::tool_admission::HostAdmissionDisposition::Ask,
+            action_display: preparation.action_display.clone(),
+        };
+        let local_disposition = match (approval_gate.0)(approval).await {
+            crate::llm::ToolApprovalResult::Approved => {
+                crate::uar::runtime::tool_admission::LocalAdmissionDisposition::Approved
+            }
+            crate::llm::ToolApprovalResult::Allowed => {
+                crate::uar::runtime::tool_admission::LocalAdmissionDisposition::Allowed
+            }
+            crate::llm::ToolApprovalResult::GovernanceBypassed => {
+                crate::uar::runtime::tool_admission::LocalAdmissionDisposition::GovernanceBypassed
+            }
+            crate::llm::ToolApprovalResult::Rejected { reason } => {
+                tool_admission
+                    .resolve(
+                        invocation,
+                        preparation,
+                        crate::uar::runtime::tool_admission::LocalAdmissionDisposition::Denied,
+                        false,
+                    )
+                    .await?;
+                anyhow::bail!("Actor delegation denied: {reason}")
+            }
+            crate::llm::ToolApprovalResult::Cancelled { reason } => {
+                tool_admission
+                    .cancel(
+                        invocation.as_ref(),
+                        &preparation.admission_id,
+                        crate::uar::runtime::tool_admission::AdmissionCancellationReason::Cancelled,
+                    )
+                    .await?;
+                anyhow::bail!("Actor delegation cancelled: {reason}")
+            }
+        };
+        let admitted = tool_admission
+            .resolve(invocation, preparation, local_disposition, true)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Actor delegation is denied by the admission host"))?;
+        tool_admission.claim(&admitted).await?;
         let result = service.collaborate_from_user(owner, request).await;
+        tool_admission.finish(&admitted, result.is_ok()).await?;
         tracing::info!(root_run_id = %root.record.thread.root_run_id, success = result.is_ok(),
             "Authenticated actor delegation settled");
         result
@@ -2569,6 +2792,8 @@ impl RunManager {
             reasoning_effort,
             checkpoint_resume,
             inherited_history,
+            collaboration_binding,
+            service_binding,
             skill_attachments: _,
             working_directory,
             verified_owner,
@@ -3126,6 +3351,9 @@ impl RunManager {
                         history: Arc::clone(&history),
                         completion: emitter.completion.as_ref().map(Arc::downgrade),
                         delegation: None,
+                        tool_admission: None,
+                        actor_spawn_descriptor: None,
+                        actor_tool_approval: None,
                         started_at: Instant::now(),
                         terminal_at: Some(Instant::now()),
                         last_detached_at: None,
@@ -3170,6 +3398,15 @@ impl RunManager {
         let session_id_for_creds = Some(session.id().to_string());
 
         let dialogue = RunDialogue(crate::session::Session::from_state(session.to_state()));
+        let effective_service_binding = service_binding.clone();
+        let effective_collaboration_binding = collaboration_binding.as_ref().map(|binding| {
+            serde_json::json!({
+                "ownerId": &binding.owner_id,
+                "workspaceId": &binding.workspace_id,
+                "bindingId": &binding.receipt.binding_ref.id,
+                "bindingRevision": binding.receipt.binding_ref.revision,
+            })
+        });
         let agent_snapshot = artifact.snapshot(if host_resources_marker.artifact_inline {
             "inline"
         } else {
@@ -3189,6 +3426,8 @@ impl RunManager {
                 "presentation_templates": presentation_snapshot.identities(),
                 "agent_snapshot": agent_snapshot,
                 "host_resources": host_resources_marker,
+                "effective_service_binding": effective_service_binding.clone(),
+                "effective_collaboration_binding": effective_collaboration_binding,
                 "host_context": {
                     "working_directory": working_directory.as_ref().map(|path| path.display().to_string()),
                     "reasoning_effort": reasoning_effort.map(crate::config::ReasoningEffort::as_str),
@@ -3211,6 +3450,9 @@ impl RunManager {
                     history: Arc::clone(&history),
                     completion: emitter.completion.as_ref().map(Arc::downgrade),
                     delegation: None,
+                    tool_admission: None,
+                    actor_spawn_descriptor: None,
+                    actor_tool_approval: None,
                     started_at: Instant::now(),
                     terminal_at: None,
                     last_detached_at: None,
@@ -3370,14 +3612,20 @@ impl RunManager {
             .map_or_else(|| run_id.clone(), |bindings| bindings.thread.root_run_id.clone());
         let host_tool_admission = host_tool_admission
             .unwrap_or_else(|| Arc::clone(&self.host_tool_admission));
+        let governance_policy_revision = match &self.governance_engine {
+            Some(engine) => engine.policy_revision().await,
+            None => "cedar:unavailable".to_string(),
+        };
         let tool_admission = match crate::uar::runtime::tool_admission::ToolAdmissionContext::new(
             root_run_id,
             run_id.clone(),
             owner_id.clone(),
+            artifact.id.clone(),
             world_state.directory().display().to_string(),
             self.tool_runtime_epoch.clone(),
             &artifact,
             &effective_policy,
+            governance_policy_revision,
             host_tool_admission.binding(),
         )
         .and_then(|context| {
@@ -3386,9 +3634,17 @@ impl RunManager {
                 Arc::clone(&host_tool_admission),
                 self.persistence.clone(),
                 run_cancellation.clone(),
+                self.governance_engine.clone(),
+                self.governance_gate.clone(),
             )
         }) {
-            Ok(admission) => Arc::new(admission),
+            Ok(admission) => {
+                let admission = match &collaboration_binding {
+                    Some(binding) => admission.with_claim_revalidator(Arc::new(binding.clone())),
+                    None => admission,
+                };
+                Arc::new(admission)
+            }
             Err(error) => {
                 if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
                     state.run.status = RunStatus::Error;
@@ -3409,6 +3665,9 @@ impl RunManager {
                 return run_id;
             }
         };
+        if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+            state.tool_admission = Some(Arc::clone(&tool_admission));
+        }
 
         // 3. Prepare Messages
         let mut messages = Vec::new();
@@ -3781,6 +4040,15 @@ impl RunManager {
                 return run_id;
             }
         };
+        if let Some(binding) = &collaboration_binding {
+            activation_context.lock().await.set_binding_configs(
+                binding
+                    .receipt
+                    .resolved_skills
+                    .iter()
+                    .map(|resolved| (resolved.skill.id.clone(), resolved.skill.config.clone())),
+            );
+        }
         let register_turn_tools = async {
             native_skills
                 .register(
@@ -3947,13 +4215,18 @@ impl RunManager {
             bindings.models.for_policy(&bindings.policy)
         } else {
             let preferred_llm_config = policy_llm_config.unwrap_or_else(|| self.llm_config.clone());
-            let skill_preferred_model = matched_skills.iter().find_map(|skill| {
-                skill
-                    .execution_config
-                    .preferred_model
-                    .as_ref()
-                    .map(|model| (skill.skill_id.as_str(), model.as_str()))
-            });
+            let skill_preferred_model = collaboration_binding
+                .is_none()
+                .then(|| {
+                    matched_skills.iter().find_map(|skill| {
+                        skill
+                            .execution_config
+                            .preferred_model
+                            .as_ref()
+                            .map(|model| (skill.skill_id.as_str(), model.as_str()))
+                    })
+                })
+                .flatten();
             let run_llm_config = if let Some(ref registry) = self.provider_registry {
                 let policy_preferred_model = qualified_model_name(&preferred_llm_config);
                 let (policy_provider, _) =
@@ -4082,24 +4355,25 @@ impl RunManager {
                 run_llm_config.reasoning_effort = Some(effort);
                 run_llm_config.thinking_budget = effort.thinking_budget();
             }
-            let run_failover_config = if run_credentials.is_some() {
-                let mut failover = self.failover_config.clone();
-                failover.fallback_models = artifact
-                    .policy
-                    .provider
-                    .fallbacks
-                    .iter()
-                    .map(|fallback| crate::config::FallbackModel {
-                        model: format!("{}/{}", fallback.provider, fallback.model),
-                        api_key: None,
-                        base_url: None,
-                    })
-                    .collect();
-                failover.enabled = !failover.fallback_models.is_empty();
-                failover
-            } else {
-                self.failover_config.clone()
-            };
+            let run_failover_config =
+                if run_credentials.is_some() || collaboration_binding.is_some() {
+                    let mut failover = self.failover_config.clone();
+                    failover.fallback_models = artifact
+                        .policy
+                        .provider
+                        .fallbacks
+                        .iter()
+                        .map(|fallback| crate::config::FallbackModel {
+                            model: format!("{}/{}", fallback.provider, fallback.model),
+                            api_key: None,
+                            base_url: None,
+                        })
+                        .collect();
+                    failover.enabled = !failover.fallback_models.is_empty();
+                    failover
+                } else {
+                    self.failover_config.clone()
+                };
 
             // This artifact's session ceiling belongs to the captured root session,
             // not the aggregate spend of every session using the same agent.
@@ -4209,6 +4483,7 @@ impl RunManager {
                     run_mcp_grants: mcp_resources
                         .as_ref()
                         .and_then(|resources| resources.run_grants().cloned()),
+                    service_binding: effective_service_binding.clone(),
                 })
             }),
         );
@@ -4513,6 +4788,9 @@ impl RunManager {
                     return run_id;
                 }
             };
+        if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+            state.actor_spawn_descriptor = authorized_tools.get("spawn_agent").cloned();
+        }
         // Both assembly paths compare the same host snapshot, including clock bucket.
         world_contributor.history_rewritten |= legacy_reduction
             .as_ref()
@@ -5133,6 +5411,9 @@ impl RunManager {
                     })
                 },
             );
+            if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                state.actor_tool_approval = Some(ActorToolApprovalGate(Arc::clone(&budget_gate)));
+            }
             let graph_thread_delegate = graph_controls
                 .zip(authorized_tools.get("spawn_agent").cloned())
                 .map(|(controls, descriptor)| {

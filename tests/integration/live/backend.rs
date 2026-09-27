@@ -17,9 +17,12 @@ pub const BACKEND_ENV_VAR: &str = "UAR_LIVE_INTEGRATION_BACKEND";
 /// (`ai.prometheus.openai-proxy`, see `scripts/live-integration.sh`).
 pub const LIVE_PROXY_BASE_URL: &str = "http://127.0.0.1:8181/v1";
 
-/// Model used for both backends — the stub doesn't care about the model
-/// name, and this matches the proxy's routed model for live runs.
-pub const LIVE_MODEL: &str = "openai/gpt-5.4-mini";
+/// Model used by the recorded fixture server.
+pub const RECORDED_MODEL: &str = "openai/gpt-5.4-mini";
+
+/// Model used by the real local proxy. The ChatGPT-backed Codex account
+/// accepts this model; the advertised 5.4 aliases return an upstream 400.
+pub const LIVE_MODEL: &str = "openai/gpt-5.5";
 
 /// A resolved backend: the `base_url` to point `UAR_LLM__BASE_URL` at, plus
 /// (for `recorded`) the running stub server that must stay alive for the
@@ -53,7 +56,7 @@ pub async fn resolve(fixtures: FixtureSet) -> ResolvedBackend {
             let base_url = stub.base_url.clone();
             ResolvedBackend {
                 base_url,
-                model: LIVE_MODEL.to_string(),
+                model: RECORDED_MODEL.to_string(),
                 _stub: Some(stub),
             }
         }
@@ -123,7 +126,7 @@ mod tests {
 
         let fixtures = FixtureSet::new().with(
             RequestFingerprint {
-                model: LIVE_MODEL.to_string(),
+                model: RECORDED_MODEL.to_string(),
                 last_user_message: "ping".to_string(),
                 has_tools: false,
                 has_tool_result: false,

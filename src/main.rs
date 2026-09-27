@@ -1,3 +1,5 @@
+#![recursion_limit = "256"]
+
 //! Axum + Leptos + HTMX + Web Components Server
 //!
 //! Entry point for the agentic streaming LLM application.

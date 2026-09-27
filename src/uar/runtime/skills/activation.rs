@@ -42,6 +42,7 @@ impl InvokeType {
 #[derive(Debug, Clone)]
 pub struct ActivatedSkill {
     pub skill: Skill,
+    pub binding_config: serde_json::Value,
     pub invoke_type: InvokeType,
     pub sequence: u64,
 }
@@ -51,6 +52,11 @@ impl ActivatedSkill {
         use crate::uar::runtime::prompt::{
             Authority, PromptFragment, PromptRole, PromptSection, Retention,
         };
+        let config = if self.binding_config == serde_json::json!({}) {
+            String::new()
+        } else {
+            format!("\nbinding config: {}", self.binding_config)
+        };
         PromptFragment::new(
             format!("skill.{}", self.skill.skill_id),
             PromptSection::ActiveSkills,
@@ -59,8 +65,8 @@ impl ActivatedSkill {
             PromptRole::System,
             Retention::Reclaimable,
             format!(
-                "[SKILL: {}]\n{}",
-                self.skill.title, self.skill.prompt_overlay
+                "[SKILL: {}]\n{}{}",
+                self.skill.title, self.skill.prompt_overlay, config
             ),
         )
     }
@@ -177,6 +183,7 @@ pub struct ActivationContext {
     projected_host: Option<ProjectedActivationHost>,
     mcp_preflight: Option<Arc<McpPreflight>>,
     active: BTreeMap<String, ActivatedSkill>,
+    binding_configs: BTreeMap<String, serde_json::Value>,
     sequence: u64,
     shadow_candidates: Option<(String, HashSet<String>)>,
 }
@@ -215,6 +222,7 @@ impl ActivationContext {
             projected_host: None,
             mcp_preflight: None,
             active: BTreeMap::new(),
+            binding_configs: BTreeMap::new(),
             sequence: 0,
             shadow_candidates: None,
         }
@@ -346,6 +354,13 @@ impl ActivationContext {
         self.shadow_candidates = Some((backend, ranked_ids.into_iter().take(10).collect()));
     }
 
+    pub fn set_binding_configs(
+        &mut self,
+        configs: impl IntoIterator<Item = (String, serde_json::Value)>,
+    ) {
+        self.binding_configs = configs.into_iter().collect();
+    }
+
     /// Graph executions report their terminal outcome for every active skill.
     pub fn record_outcomes(&self, success: bool) {
         for skill_id in self.active.keys() {
@@ -382,6 +397,22 @@ pub async fn activate(
         return Err(ActivationFailure::Disabled {
             skill_id: skill_id.to_string(),
         });
+    }
+    for required_tool in &skill.required_tools {
+        let available = ctx
+            .native_descriptors
+            .iter()
+            .any(|tool| tool.provider_name == *required_tool)
+            || ctx
+                .mcp_descriptors()
+                .iter()
+                .any(|tool| tool.provider_name == *required_tool);
+        if !available {
+            return Err(ActivationFailure::DependencyInvalid {
+                skill_id: skill_id.to_owned(),
+                reason: format!("required tool '{required_tool}' is unavailable"),
+            });
+        }
     }
     if !ctx.active.contains_key(skill_id) && ctx.active.len() >= ctx.max_active as usize {
         return Err(ActivationFailure::LimitReached {
@@ -480,6 +511,11 @@ pub async fn activate(
 
     ctx.sequence = ctx.sequence.saturating_add(1);
     let activated = ActivatedSkill {
+        binding_config: ctx
+            .binding_configs
+            .get(skill_id)
+            .cloned()
+            .unwrap_or_else(|| serde_json::json!({})),
         skill,
         invoke_type,
         sequence: ctx.sequence,
