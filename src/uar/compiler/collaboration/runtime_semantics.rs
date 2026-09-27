@@ -191,6 +191,12 @@ async fn resolve_prompt_dialect(
         Value::String(value) if value == "default" => None,
         Value::Object(object) if object.is_empty() => None,
         Value::Object(object)
+            if object.len() == 1
+                && object.get("id").and_then(Value::as_str) == Some("uar.prompt/plain-v1") =>
+        {
+            Some("generic")
+        }
+        Value::Object(object)
             if object
                 .keys()
                 .all(|field| matches!(field.as_str(), "dialect" | "wants_reasoning" | "hard"))
