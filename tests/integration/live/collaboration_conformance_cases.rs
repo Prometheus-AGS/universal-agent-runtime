@@ -327,17 +327,78 @@ async fn c03_completed_path_emits_one_acceptance_receipt() {
         StatusCode::OK
     );
     let template_text = template.to_string();
-    assert_eq!(template["template"]["status"], "needs-private-binding");
-    for private in [
+    let template_document = &template["template"];
+    assert_eq!(template_document["status"], "needs-private-binding");
+    assert_eq!(
+        template_document["rebindFields"],
+        json!([
+            "/ownerId",
+            "/workspaceId",
+            "/runtimeInstanceId",
+            "/modelBindings/0/credentialRef",
+            "/storage/connectionRef",
+            "/policyRevision",
+            "/representationGrantRefs"
+        ])
+    );
+    for private_field in [
         "ownerId",
         "workspaceId",
-        "credentialRef",
-        "connectionRef",
+        "runtimeInstanceId",
+        "modelBindings",
+        "skillBindings",
+        "storage",
+        "policyRevision",
+        "contextGrants",
         "representationGrantRefs",
+        "effectiveBindingReceiptRef",
     ] {
         assert!(
-            !template_text.contains(private),
-            "template retained {private}"
+            template_document.get(private_field).is_none(),
+            "template retained private field {private_field}"
+        );
+    }
+    let source_binding = parse_fixture(BINDING);
+    for (pointer, private_value) in [
+        ("/ownerId", &source_binding["ownerId"]),
+        ("/workspaceId", &source_binding["workspaceId"]),
+        ("/runtimeInstanceId", &source_binding["runtimeInstanceId"]),
+        (
+            "/modelBindings/0/providerId",
+            &source_binding["modelBindings"][0]["providerId"],
+        ),
+        (
+            "/modelBindings/0/modelId",
+            &source_binding["modelBindings"][0]["modelId"],
+        ),
+        (
+            "/modelBindings/0/credentialRef",
+            &source_binding["modelBindings"][0]["credentialRef"],
+        ),
+        (
+            "/skillBindings/0/installedLocation",
+            &source_binding["skillBindings"][0]["installedLocation"],
+        ),
+        (
+            "/storage/connectionRef",
+            &source_binding["storage"]["connectionRef"],
+        ),
+        ("/policyRevision", &source_binding["policyRevision"]),
+        (
+            "/representationGrantRefs/0/grantId",
+            &source_binding["representationGrantRefs"][0]["grantId"],
+        ),
+        (
+            "/representationGrantRefs/0/constraintDigest",
+            &source_binding["representationGrantRefs"][0]["constraintDigest"],
+        ),
+    ] {
+        let private_value = private_value
+            .as_str()
+            .unwrap_or_else(|| panic!("private source value at {pointer} is not a string"));
+        assert!(
+            !template_text.contains(private_value),
+            "template retained private source value from {pointer}"
         );
     }
     let downgrade = post!(
