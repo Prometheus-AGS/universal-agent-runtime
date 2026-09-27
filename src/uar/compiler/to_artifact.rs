@@ -24,6 +24,7 @@
 //! discarded.
 
 use crate::uar::compiler::ir::AgentDescriptorIR;
+use crate::uar::compiler::ir::collaboration_migration::migrate_legacy_agent;
 use crate::uar::defaults::default_agent;
 use crate::uar::domain::artifact::{
     AgentArtifact, AgentMemoryConfig, AgentMetadata, AgentPolicy, AgentPrompt, AgentToolConfig,
@@ -206,13 +207,41 @@ impl From<&AgentDescriptorIR> for AgentArtifact {
             &ir.model_requirements,
         );
         stash(&mut extensions, "prompt_dialect", &ir.prompt_dialect);
-        stash(
-            &mut extensions,
-            "rag_configuration",
-            &ir.rag_configuration,
-        );
+        stash(&mut extensions, "rag_configuration", &ir.rag_configuration);
         stash(&mut extensions, "context_strategy", &ir.context_strategy);
         stash(&mut extensions, "api_harness", &ir.api_harness);
+        // Keep the legacy compatibility projection separate from canonical
+        // definition and binding evidence. These values are inputs to private
+        // binding; their presence here is not an effective-support claim.
+        stash(
+            &mut extensions,
+            "uar.collaboration/skill-refs",
+            &ir.skills.skills,
+        );
+        let migration = migrate_legacy_agent(ir);
+        extensions.insert(
+            "uar.collaboration/definition".to_owned(),
+            migration.canonical_definition,
+        );
+        extensions.insert(
+            "uar.collaboration/definition-ref".to_owned(),
+            migration.definition_ref,
+        );
+        stash(
+            &mut extensions,
+            "uar.collaboration/migration-receipt",
+            &migration.receipt,
+        );
+        stash(
+            &mut extensions,
+            "uar.collaboration/conversion-report",
+            &migration.conversion_report,
+        );
+        stash(
+            &mut extensions,
+            "uar.collaboration/source-record",
+            &ir.source,
+        );
 
         AgentArtifact {
             version: ir.metadata.version.clone(),

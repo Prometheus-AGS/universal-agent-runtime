@@ -9,7 +9,10 @@ use crate::uar::domain::{
 
 use super::schema::{required_array, required_string};
 
-const SUPPORTED_INSTALL_CAPABILITIES: &[&str] = &["collaboration_definition_packages_v1"];
+const SUPPORTED_INSTALL_CAPABILITIES: &[&str] = &[
+    "collaboration_definition_packages_v1",
+    "collaboration_definition_packages_v2",
+];
 
 pub(super) fn conversion_diagnostics(
     document: &Value,
@@ -52,20 +55,58 @@ pub(super) fn conversion_diagnostics(
         });
     }
     if *kind == CollaborationKind::AgentDefinition {
-        for field in ["title", "role", "whenToUse", "instructions", "input", "output"] {
+        for field in document
+            .as_object()
+            .into_iter()
+            .flatten()
+            .map(|(field, _)| field)
+            .filter(|field| {
+                field.as_str() != "extensions" && field.as_str() != "requiredCapabilities"
+            })
+        {
             diagnostics.push(ConversionDiagnostic {
-                field: field.to_owned(),
-                disposition: ConversionDisposition::Exact,
-                message: format!("'{field}' is preserved in the compatibility projection"),
-            });
-        }
-        for field in ["skills", "models", "context", "requestedLimits", "permittedChildren"] {
-            diagnostics.push(ConversionDiagnostic {
-                field: field.to_owned(),
+                field: format!("/{field}"),
                 disposition: ConversionDisposition::Translated,
                 message: format!(
-                    "'{field}' is retained losslessly; only supported legacy runtime semantics are projected"
+                    "'{field}' is retained for compatibility projection and private binding"
                 ),
+            });
+        }
+        for field in [
+            "modelRequirements",
+            "promptDialect",
+            "ragConfiguration",
+            "contextStrategy",
+            "apiHarness",
+        ] {
+            let required = document
+                .get(field)
+                .and_then(|value| value.get("required"))
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            diagnostics.push(ConversionDiagnostic {
+                field: format!("/{field}"),
+                disposition: if required {
+                    ConversionDisposition::RequiredUnsupported
+                } else {
+                    ConversionDisposition::OptionalUnsupported
+                },
+                message: format!(
+                    "'{field}' is retained for private binding without a runtime support claim"
+                ),
+            });
+        }
+        for (index, _skill) in document
+            .get("skills")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .enumerate()
+        {
+            diagnostics.push(ConversionDiagnostic {
+                field: format!("/skills/{index}"),
+                disposition: ConversionDisposition::Translated,
+                message: "the complete SkillRef is retained for private binding without a runtime support claim".to_owned(),
             });
         }
     }
@@ -87,10 +128,33 @@ pub(super) fn project_agent(document: &Value) -> Result<AgentArtifact> {
         .filter_map(|skill| skill.get("id").and_then(Value::as_str))
         .map(str::to_owned)
         .collect();
+    agent
+        .extensions
+        .insert("uar.collaboration/definition".to_owned(), document.clone());
     agent.extensions.insert(
-        "uar.collaboration/definition".to_owned(),
-        document.clone(),
+        "uar.collaboration/definition-ref".to_owned(),
+        serde_json::json!({
+            "id": required_string(document, "id")?,
+            "version": required_string(document, "version")?,
+            "digest": required_string(document, "contentDigest")?,
+        }),
     );
+    agent.extensions.insert(
+        "uar.collaboration/skill-refs".to_owned(),
+        Value::Array(required_array(document, "skills")?.to_vec()),
+    );
+    for field in [
+        "modelRequirements",
+        "promptDialect",
+        "ragConfiguration",
+        "contextStrategy",
+        "apiHarness",
+    ] {
+        agent.extensions.insert(
+            format!("uar.collaboration/{field}"),
+            document.get(field).cloned().unwrap_or(Value::Null),
+        );
+    }
     Ok(agent.with_catalog_metadata("collaboration-package"))
 }
 

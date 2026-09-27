@@ -18,6 +18,7 @@ pub mod postgres;
 #[cfg(feature = "surreal-backend")]
 pub mod surreal;
 
+use super::ir::LegacySourceRecord;
 use super::pipeline::CompileOutput;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -83,6 +84,12 @@ impl ReportRecord {
             output,
             created_at: Utc::now(),
         }
+    }
+
+    /// Lossless legacy source evidence serialized with the compiled payload.
+    #[must_use]
+    pub fn source_record(&self) -> &LegacySourceRecord {
+        &self.output.descriptor.payload.source
     }
 }
 

@@ -10,6 +10,9 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+#[path = "collaboration/migration.rs"]
+pub(crate) mod collaboration_migration;
+
 // ─────────────────────────────────────────────
 // Top-level IR types
 // ─────────────────────────────────────────────
@@ -20,6 +23,10 @@ use serde::{Deserialize, Serialize};
 pub struct AgentDescriptorIR {
     /// The agent heading name (from `# Agent: <name>`)
     pub agent_name: String,
+
+    /// Lossless authoring record for the legacy Markdown adapter.
+    #[serde(default)]
+    pub source: LegacySourceRecord,
 
     /// §04 — Metadata
     pub metadata: MetadataSection,
@@ -95,6 +102,8 @@ pub struct AgentDescriptorIR {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PartialAgentDescriptorIR {
     pub agent_name: Option<String>,
+    #[serde(default)]
+    pub source: LegacySourceRecord,
     pub metadata: Option<MetadataSection>,
     pub identity: Option<IdentitySection>,
     pub ui: Option<UiSection>,
@@ -127,6 +136,7 @@ impl PartialAgentDescriptorIR {
     pub fn try_into_complete(self) -> Option<AgentDescriptorIR> {
         Some(AgentDescriptorIR {
             agent_name: self.agent_name?,
+            source: self.source,
             metadata: self.metadata?,
             identity: self.identity?,
             ui: self.ui?,
@@ -157,6 +167,7 @@ impl From<AgentDescriptorIR> for PartialAgentDescriptorIR {
     fn from(ir: AgentDescriptorIR) -> Self {
         Self {
             agent_name: Some(ir.agent_name),
+            source: ir.source,
             metadata: Some(ir.metadata),
             identity: Some(ir.identity),
             ui: Some(ir.ui),
@@ -179,6 +190,57 @@ impl From<AgentDescriptorIR> for PartialAgentDescriptorIR {
             api_harness: Some(ir.api_harness),
         }
     }
+}
+
+/// Immutable source-side evidence retained for legacy Markdown imports.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LegacySourceRecord {
+    pub profile: String,
+    pub id: String,
+    pub version: String,
+    pub digest: String,
+    pub revision: Option<u64>,
+    pub migrated_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub top_level_heading: String,
+    pub original: String,
+    pub sections: Vec<LegacySourceSection>,
+    pub authored_fields: Vec<String>,
+    pub rename_mapping: LegacyRenameMapping,
+}
+
+impl LegacySourceRecord {
+    #[must_use]
+    pub fn authored(&self, section: SectionName) -> bool {
+        self.sections
+            .iter()
+            .any(|item| item.canonical == Some(section))
+    }
+
+    #[must_use]
+    pub fn section(&self, section: SectionName) -> Option<&LegacySourceSection> {
+        self.sections
+            .iter()
+            .find(|item| item.canonical == Some(section))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LegacySourceSection {
+    pub heading: String,
+    pub canonical: Option<SectionName>,
+    pub ordinal: usize,
+    pub content: String,
+    pub value: serde_json::Value,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LegacyRenameMapping {
+    pub source_id: String,
+    pub target_id: String,
+    pub reason: String,
 }
 
 // ─────────────────────────────────────────────
@@ -330,8 +392,11 @@ pub struct MetadataSection {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IdentitySection {
+    #[serde(default)]
     pub name: String,
+    #[serde(default)]
     pub role: String,
+    #[serde(default)]
     pub persona: String,
     #[serde(default)]
     pub system_prompt: Option<String>,
@@ -417,9 +482,15 @@ pub struct SkillRef {
     #[serde(default)]
     pub version: Option<String>,
     #[serde(default)]
+    pub digest: Option<String>,
+    #[serde(default)]
     pub required: bool,
     #[serde(default)]
     pub config: HashMap<String, serde_json::Value>,
+    #[serde(default)]
+    pub entrypoint: Option<String>,
+    #[serde(default)]
+    pub required_tools: Vec<String>,
 }
 
 // ─────────────────────────────────────────────
