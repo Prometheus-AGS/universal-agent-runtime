@@ -41,10 +41,13 @@ use rmcp::{
 
 use crate::uar::{
     compiler::{
-        collaboration::{CollaborationCatalogService, CollaborationError},
+        collaboration::{
+            CollaborationCatalogService, CollaborationError, GrantCommandRequest,
+            PackageExportRequest, PackageExportTarget,
+        },
         pipeline,
     },
-    domain::collaboration::{BindingCommandRequest, PackageSourceRequest},
+    domain::collaboration::{BindingCommandRequest, ImmutableDefinitionRef, PackageSourceRequest},
     persistence::PersistenceLayer,
     runtime::{
         actor::messages::ActorOwner, manager::RunManager, native_skill::NativeSkillRegistry,
@@ -112,7 +115,11 @@ fn collaboration_mcp_error(error: CollaborationError) -> McpError {
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct CreateRunParams {
     /// ID of the compiled agent to use (from `uar_list_agents`).
-    pub agent_id: String,
+    #[serde(default)]
+    pub agent_id: Option<String>,
+    /// Private deployment binding to resolve for this run.
+    #[serde(default)]
+    pub deployment_binding_id: Option<String>,
     /// The user message / input to the agent.
     pub input: String,
     /// Optional session ID for conversation continuity.
@@ -162,6 +169,78 @@ pub struct CollaborationPackageStatusParams {
 #[serde(deny_unknown_fields)]
 pub struct CollaborationBindingStatusParams {
     pub id: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct CollaborationPackageExportParams {
+    pub package: CollaborationImmutableDefinitionRefParams,
+    pub target: CollaborationPackageExportTargetParams,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct CollaborationImmutableDefinitionRefParams {
+    pub id: String,
+    pub version: String,
+    pub digest: String,
+}
+
+impl From<CollaborationImmutableDefinitionRefParams> for ImmutableDefinitionRef {
+    fn from(value: CollaborationImmutableDefinitionRefParams) -> Self {
+        Self {
+            id: value.id,
+            version: value.version,
+            digest: value.digest,
+        }
+    }
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum CollaborationPackageExportTargetParams {
+    CanonicalDraft2,
+    Compatibility {
+        #[serde(default)]
+        profile: Option<String>,
+        #[serde(default)]
+        harness: Option<String>,
+        #[serde(default)]
+        supported_semantics: Vec<String>,
+    },
+}
+
+impl From<CollaborationPackageExportTargetParams> for PackageExportTarget {
+    fn from(value: CollaborationPackageExportTargetParams) -> Self {
+        match value {
+            CollaborationPackageExportTargetParams::CanonicalDraft2 => Self::CanonicalDraft2,
+            CollaborationPackageExportTargetParams::Compatibility {
+                profile,
+                harness,
+                supported_semantics,
+            } => Self::Compatibility {
+                profile,
+                harness,
+                supported_semantics,
+            },
+        }
+    }
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct CollaborationGrantParams {
+    pub command_id: String,
+    #[serde(default)]
+    pub expected_revision: Option<u64>,
+    pub grant: serde_json::Value,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct CollaborationGrantRevisionParams {
+    pub id: String,
+    pub revision: u64,
 }
 
 // ── MCP server handler ────────────────────────────────────────────────────────
@@ -242,16 +321,56 @@ impl UarRuntimeMcpServer {
         Parameters(p): Parameters<CreateRunParams>,
         McpExtension(parts): McpExtension<axum::http::request::Parts>,
     ) -> Result<CallToolResult, McpError> {
+        let CreateRunParams {
+            agent_id,
+            deployment_binding_id,
+            input,
+            session_id,
+        } = p;
         let owner = verified_owner(&parts)?;
-        let agent = self
-            .run_manager
-            .resolve_registered_agent(&p.agent_id)
-            .await
-            .map_err(err_mcp)?;
-
-        let mut request = RunExecutionRequest::new(agent, p.input).with_verified_owner(owner);
-        request.session_id = p.session_id;
-        let run_id = self.run_manager.execute_request(request).await;
+        let bound_selector = deployment_binding_id.is_some();
+        let mut request = match (agent_id, deployment_binding_id) {
+            (Some(agent_id), None) => {
+                let agent = self
+                    .run_manager
+                    .resolve_registered_agent(&agent_id)
+                    .await
+                    .map_err(err_mcp)?;
+                RunExecutionRequest::new(agent, input).with_verified_owner(owner)
+            }
+            (None, Some(binding_id)) => {
+                let owner_id = collaboration_owner(&parts)?;
+                let workspace_id = collaboration_workspace(&parts)?;
+                let bound = self
+                    .collaboration_catalog
+                    .resolve_bound_agent_run(&owner_id, &workspace_id, &binding_id)
+                    .await
+                    .map_err(collaboration_mcp_error)?;
+                RunExecutionRequest::from_bound_agent(
+                    bound,
+                    input,
+                    owner_id,
+                    workspace_id,
+                    Arc::clone(&self.collaboration_catalog),
+                )
+                .with_verified_owner(owner)
+            }
+            _ => {
+                return Err(McpError::invalid_params(
+                    "provide exactly one of agent_id or deployment_binding_id",
+                    None,
+                ));
+            }
+        };
+        request.session_id = session_id;
+        let run_id = if bound_selector {
+            self.run_manager
+                .execute_bound_request(request)
+                .await
+                .map_err(collaboration_mcp_error)?
+        } else {
+            self.run_manager.execute_request(request).await
+        };
 
         let response = serde_json::json!({
             "run_id": run_id,
@@ -361,12 +480,9 @@ impl UarRuntimeMcpServer {
         McpExtension(parts): McpExtension<axum::http::request::Parts>,
     ) -> Result<CallToolResult, McpError> {
         collaboration_owner(&parts)?;
-        Ok(ok_json(&serde_json::json!({
-            "capabilities": [
-                "collaboration_definition_packages_v1",
-                "collaboration_deployment_bindings_v1"
-            ]
-        })))
+        Ok(ok_json(
+            &crate::uar::api::capabilities::collaboration_capabilities(),
+        ))
     }
 
     /// Validate one exact-byte collaboration package without storing it.
@@ -428,6 +544,40 @@ impl UarRuntimeMcpServer {
             .await
             .map_err(collaboration_mcp_error)?;
         Ok(ok_json(&package))
+    }
+
+    /// List every immutable collaboration package visible in the shared catalog.
+    #[tool(description = "List installed immutable UAR collaboration packages")]
+    async fn uar_collaboration_list_packages(
+        &self,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        collaboration_owner(&parts)?;
+        let packages = self
+            .collaboration_catalog
+            .list_packages()
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&packages))
+    }
+
+    /// Export an exact canonical package or obtain typed compatibility refusals.
+    #[tool(description = "Export an installed UAR collaboration package")]
+    async fn uar_collaboration_export_package(
+        &self,
+        Parameters(p): Parameters<CollaborationPackageExportParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        collaboration_owner(&parts)?;
+        let outcome = self
+            .collaboration_catalog
+            .export_package(&PackageExportRequest {
+                package: p.package.into(),
+                target: p.target.into(),
+            })
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&outcome))
     }
 
     /// Validate a private deployment binding without storing it.
@@ -496,6 +646,148 @@ impl UarRuntimeMcpServer {
             .map_err(collaboration_mcp_error)?;
         Ok(ok_json(&binding))
     }
+
+    /// List the authenticated owner's bindings in the explicit workspace.
+    #[tool(description = "List private UAR collaboration deployment bindings")]
+    async fn uar_collaboration_list_bindings(
+        &self,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        let owner = collaboration_owner(&parts)?;
+        let workspace = collaboration_workspace(&parts)?;
+        let bindings = self
+            .collaboration_catalog
+            .list_bindings(&owner, &workspace)
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&bindings))
+    }
+
+    /// Read the persisted effective receipt for one private deployment binding.
+    #[tool(description = "Get one UAR collaboration effective binding receipt")]
+    async fn uar_collaboration_effective_binding_receipt(
+        &self,
+        Parameters(p): Parameters<CollaborationBindingStatusParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        let owner = collaboration_owner(&parts)?;
+        let workspace = collaboration_workspace(&parts)?;
+        let receipt = self
+            .collaboration_catalog
+            .get_effective_binding_receipt(&owner, &workspace, &p.id)
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&receipt))
+    }
+
+    /// Export a non-executable template with every private value removed.
+    #[tool(description = "Export a sanitized UAR deployment binding template")]
+    async fn uar_collaboration_export_binding_template(
+        &self,
+        Parameters(p): Parameters<CollaborationBindingStatusParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        let owner = collaboration_owner(&parts)?;
+        let workspace = collaboration_workspace(&parts)?;
+        let export = self
+            .collaboration_catalog
+            .export_binding_template(&owner, &workspace, &p.id)
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&export))
+    }
+
+    /// Install a private RepresentationGrant revision for the authenticated workspace.
+    #[tool(description = "Install a private UAR representation grant revision")]
+    async fn uar_collaboration_install_representation_grant(
+        &self,
+        Parameters(p): Parameters<CollaborationGrantParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        let owner = collaboration_owner(&parts)?;
+        let workspace = collaboration_workspace(&parts)?;
+        let response = self
+            .collaboration_catalog
+            .install_representation_grant(
+                &owner,
+                &workspace,
+                GrantCommandRequest {
+                    command_id: p.command_id,
+                    expected_revision: p.expected_revision,
+                    grant: p.grant,
+                },
+            )
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&response))
+    }
+
+    /// List current private RepresentationGrant records in the workspace.
+    #[tool(description = "List current private UAR representation grants")]
+    async fn uar_collaboration_list_representation_grants(
+        &self,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        let owner = collaboration_owner(&parts)?;
+        let workspace = collaboration_workspace(&parts)?;
+        let grants = self
+            .collaboration_catalog
+            .list_representation_grants(&owner, &workspace)
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&grants))
+    }
+
+    /// Read the current private RepresentationGrant record.
+    #[tool(description = "Get one current private UAR representation grant")]
+    async fn uar_collaboration_representation_grant_status(
+        &self,
+        Parameters(p): Parameters<CollaborationBindingStatusParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        let owner = collaboration_owner(&parts)?;
+        let workspace = collaboration_workspace(&parts)?;
+        let grant = self
+            .collaboration_catalog
+            .get_representation_grant(&owner, &workspace, &p.id)
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&grant))
+    }
+
+    /// Read one immutable private RepresentationGrant revision.
+    #[tool(description = "Get one private UAR representation grant revision")]
+    async fn uar_collaboration_representation_grant_revision(
+        &self,
+        Parameters(p): Parameters<CollaborationGrantRevisionParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        let owner = collaboration_owner(&parts)?;
+        let workspace = collaboration_workspace(&parts)?;
+        let grant = self
+            .collaboration_catalog
+            .get_representation_grant_revision(&owner, &workspace, &p.id, p.revision)
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&grant))
+    }
+
+    /// List every stored revision of one private RepresentationGrant.
+    #[tool(description = "List private UAR representation grant revision history")]
+    async fn uar_collaboration_representation_grant_history(
+        &self,
+        Parameters(p): Parameters<CollaborationBindingStatusParams>,
+        McpExtension(parts): McpExtension<axum::http::request::Parts>,
+    ) -> Result<CallToolResult, McpError> {
+        let owner = collaboration_owner(&parts)?;
+        let workspace = collaboration_workspace(&parts)?;
+        let history = self
+            .collaboration_catalog
+            .list_representation_grant_history(&owner, &workspace, &p.id)
+            .await
+            .map_err(collaboration_mcp_error)?;
+        Ok(ok_json(&history))
+    }
 }
 
 #[tool_handler]
@@ -514,8 +806,9 @@ impl ServerHandler for UarRuntimeMcpServer {
             uar_get_run_status — poll run status by run_id; \
             uar_list_skills — enumerate available native skills; \
             uar_compile_spec — compile a UAR-AGENT-MD Markdown document; \
-            uar_collaboration_capabilities / preflight_package / install_package / package_status — administer immutable multi-agent packages; \
-            uar_collaboration_preflight_binding / install_binding / binding_status — administer private workspace bindings."
+            uar_collaboration_capabilities / preflight_package / install_package / package_status / list_packages / export_package — administer immutable collaboration packages; \
+            uar_collaboration_preflight_binding / install_binding / binding_status / list_bindings / effective_binding_receipt / export_binding_template — administer private workspace bindings; \
+            uar_collaboration_install_representation_grant / list_representation_grants / representation_grant_status / representation_grant_revision / representation_grant_history — administer private grant records."
                 .to_string(),
         );
         info

@@ -1547,7 +1547,10 @@ async fn run_server_with_listener(
         .nest(
             "/api/uar",
             uar::api::router()
-                .with_state::<AppState>(Arc::clone(&state.run_manager))
+                .with_state::<AppState>(Arc::new(uar::api::routes::RunApiState {
+                    manager: Arc::clone(&state.run_manager),
+                    collaboration_catalog: Arc::clone(&state.collaboration_catalog),
+                }))
                 .merge(
                     uar::a2ui::routes::build_response_router()
                         .with_state::<AppState>(a2ui_api_state.clone()),
