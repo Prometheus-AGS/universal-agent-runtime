@@ -1,0 +1,83 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "PackageManifest",
+  "id": "urn:uar:example:draft2/review-package",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration draft.2 contract checkpoint fixtures",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "collaboration_definition_packages_v2"
+  ],
+  "extensions": {},
+  "entrypoints": [
+    {
+      "id": "urn:uar:example:draft2/review-team",
+      "version": "1.0.0",
+      "digest": "sha256:d07f81ae7285cbed372a38f0bbd967543fdc0f351b35c190f6be770b993035db"
+    }
+  ],
+  "files": [
+    {
+      "path": "agent-definition.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:example:draft2/reviewer",
+        "version": "1.0.0",
+        "digest": "sha256:b27996aada68ccc1bc79f2b6a296018145b78a6a520b9329a904752da2fbdd6e"
+      },
+      "byteDigest": "sha256:2032106e2d36babadc168559cc01e0024d3d196aca3cc8dfb500246239e1d447"
+    },
+    {
+      "path": "team-definition.json",
+      "kind": "TeamDefinition",
+      "definition": {
+        "id": "urn:uar:example:draft2/review-team",
+        "version": "1.0.0",
+        "digest": "sha256:d07f81ae7285cbed372a38f0bbd967543fdc0f351b35c190f6be770b993035db"
+      },
+      "byteDigest": "sha256:4f57395e285a5668779abad46e19af07e85f9200182ab587138e6d07327e9a4c"
+    },
+    {
+      "path": "workflow-definition.json",
+      "kind": "WorkflowDefinition",
+      "definition": {
+        "id": "urn:uar:example:draft2/review-workflow",
+        "version": "1.0.0",
+        "digest": "sha256:17893ce629b7c193a12309d70deab903876fe529f97b6691303c79e3a72b1087"
+      },
+      "byteDigest": "sha256:2f00b0d186ac774cbf55a98a4612322c78038501fa15e4cddf8a291177147bc5"
+    }
+  ],
+  "lock": [
+    {
+      "requestedBy": "urn:uar:example:draft2/review-team",
+      "reference": {
+        "id": "urn:uar:example:draft2/reviewer",
+        "version": "1.0.0",
+        "digest": "sha256:b27996aada68ccc1bc79f2b6a296018145b78a6a520b9329a904752da2fbdd6e"
+      },
+      "resolvedPath": "agent-definition.json"
+    },
+    {
+      "requestedBy": "urn:uar:example:draft2/review-team",
+      "reference": {
+        "id": "urn:uar:example:draft2/review-workflow",
+        "version": "1.0.0",
+        "digest": "sha256:17893ce629b7c193a12309d70deab903876fe529f97b6691303c79e3a72b1087"
+      },
+      "resolvedPath": "workflow-definition.json"
+    }
+  ],
+  "capabilityDeclarations": [
+    {
+      "capability": "collaboration_definition_packages_v2",
+      "required": true
+    }
+  ],
+  "resolution": "exact-version-and-digest",
+  "contentDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}

@@ -16,6 +16,35 @@ use crate::uar::runtime::thread::policy_intersection::{
     CredentialGrant, CredentialTarget, ThreadPolicy,
 };
 
+pub(crate) fn validate_effective_binding_artifact(
+    receipt: &crate::uar::domain::collaboration::EffectiveBindingReceipt,
+    artifact: &crate::uar::domain::artifact::AgentArtifact,
+) -> anyhow::Result<()> {
+    anyhow::ensure!(
+        receipt.admitted,
+        "effective binding receipt does not admit execution"
+    );
+    let reference = artifact
+        .extensions
+        .get("uar.collaboration/definition-ref")
+        .and_then(serde_json::Value::as_object)
+        .ok_or_else(|| anyhow::anyhow!("bound artifact has no canonical definition reference"))?;
+    let requested = receipt
+        .requested
+        .get("definition")
+        .and_then(serde_json::Value::as_object)
+        .ok_or_else(|| anyhow::anyhow!("effective binding receipt has no requested definition"))?;
+    for (artifact_field, receipt_field) in
+        [("id", "id"), ("version", "version"), ("digest", "digest")]
+    {
+        anyhow::ensure!(
+            reference.get(artifact_field) == requested.get(receipt_field),
+            "effective binding receipt does not match the projected definition"
+        );
+    }
+    Ok(())
+}
+
 /// Host-only child inputs. The manager must not resolve replacements from its
 /// global registries when any inherited binding is unavailable.
 pub(crate) struct InheritedRunBindings {

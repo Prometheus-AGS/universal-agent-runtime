@@ -8,17 +8,12 @@
 //! them. This is genuinely new test infrastructure (per `assessment.md`,
 //! there was no "conformance" concept anywhere in the repo before this).
 //!
-//! `rag_configuration` and `api_harness` are declarative-only sections with
-//! no corresponding runtime decision to conform against yet (RAG posture is
-//! read by the retrieval pipeline directly; API harness just advertises
-//! transport support) — out of scope for this harness, consistent with
-//! plan.md's own framing ("declared model/dialect/context are satisfiable at
-//! load and honored at run").
+//! `rag_configuration` and `api_harness` have no complete effective-binding
+//! path here. The report therefore preserves optional values and rejects a
+//! required value until private binding identifies an enforcing component.
 //!
-//! A section left at its parsed default (which is indistinguishable from
-//! "the author declared nothing here", since `#[serde(default)]` produces
-//! the same value either way) is reported as [`CheckResult::NotDeclared`]
-//! rather than checked — there's nothing to conform *to*.
+//! Authored presence comes from the lossless source record, so an omitted
+//! section remains distinct from an explicitly authored default.
 
 use crate::llm::prompt_dialect::PromptDialect;
 use crate::llm::router::{ModelRouter, RouteRequirements};
@@ -29,7 +24,8 @@ use crate::uar::context::strategy::{
 };
 
 use super::ir::{
-    AgentDescriptorIR, ContextStrategySection, ModelRequirementsSection, PromptDialectSection,
+    AgentDescriptorIR, ContextStrategySection, LegacySourceSection, ModelRequirementsSection,
+    PromptDialectSection, SectionName,
 };
 
 /// Outcome of one section's conformance check.
@@ -42,12 +38,13 @@ pub enum CheckResult {
     Satisfied(String),
     /// The declared requirement could not be satisfied, or was not honored.
     Unsatisfied(String),
+    /// The authored value is retained for private binding without a runtime
+    /// support claim from this compatibility projection.
+    Preserved(String),
 }
 
 impl CheckResult {
-    /// `true` for [`Self::NotDeclared`] and [`Self::Satisfied`]; `false` only
-    /// for [`Self::Unsatisfied`] — a section nobody declared can't fail
-    /// conformance.
+    /// `true` unless a required runtime behavior is unsatisfied.
     #[must_use]
     pub fn is_ok(&self) -> bool {
         !matches!(self, Self::Unsatisfied(_))
@@ -63,6 +60,10 @@ pub struct ConformanceReport {
     pub prompt_dialect: CheckResult,
     /// §22 `context_strategy` — checked against [`apply_strategy`].
     pub context_strategy: CheckResult,
+    /// §21 `rag_configuration` — retained until private binding resolves it.
+    pub rag_configuration: CheckResult,
+    /// §23 `api_harness` — retained until private binding resolves it.
+    pub api_harness: CheckResult,
     /// The model resolved while checking `model_requirements` (or from an
     /// explicit deployment-profile pin), used as the input to the
     /// `prompt_dialect` check. `None` if nothing could be resolved.
@@ -70,13 +71,14 @@ pub struct ConformanceReport {
 }
 
 impl ConformanceReport {
-    /// `true` iff every section is [`CheckResult::NotDeclared`] or
-    /// [`CheckResult::Satisfied`].
+    /// `true` iff no section has an unsatisfied required behavior.
     #[must_use]
     pub fn all_satisfied(&self) -> bool {
         self.model_requirements.is_ok()
             && self.prompt_dialect.is_ok()
             && self.context_strategy.is_ok()
+            && self.rag_configuration.is_ok()
+            && self.api_harness.is_ok()
     }
 }
 
@@ -87,8 +89,16 @@ impl ConformanceReport {
 /// conformance is only meaningful against the actual configured deployment,
 /// not an idealized one.
 pub async fn check_conformance(ir: &AgentDescriptorIR, router: &ModelRouter) -> ConformanceReport {
-    let (model_requirements, router_resolved_model) =
-        check_model_requirements(&ir.model_requirements, router).await;
+    let (model_requirements, router_resolved_model) = check_model_requirements(
+        &ir.model_requirements,
+        section_authored(
+            ir,
+            SectionName::ModelRequirements,
+            ir.model_requirements != Default::default(),
+        ),
+        router,
+    )
+    .await;
 
     // An explicit deployment-profile model pin takes priority over the
     // router's pick as "the resolved model" for the dialect check below — an
@@ -101,22 +111,46 @@ pub async fn check_conformance(ir: &AgentDescriptorIR, router: &ModelRouter) -> 
         .find_map(|p| p.provider.as_ref().map(|pc| pc.model.clone()))
         .or(router_resolved_model);
 
-    let prompt_dialect = check_prompt_dialect(&ir.prompt_dialect, resolved_model.as_deref());
-    let context_strategy = check_context_strategy(&ir.context_strategy);
+    let prompt_dialect = check_prompt_dialect(
+        &ir.prompt_dialect,
+        section_authored(
+            ir,
+            SectionName::PromptDialect,
+            ir.prompt_dialect.dialect.is_some(),
+        ),
+        resolved_model.as_deref(),
+    );
+    let context_strategy = check_context_strategy(
+        &ir.context_strategy,
+        section_authored(
+            ir,
+            SectionName::ContextStrategy,
+            !matches!(ir.context_strategy, ContextStrategySection::Auto),
+        ),
+    );
+    let rag_configuration = check_binding_only_requirement(
+        ir.source.section(SectionName::RagConfiguration),
+        "rag_configuration",
+    );
+    let api_harness =
+        check_binding_only_requirement(ir.source.section(SectionName::ApiHarness), "api_harness");
 
     ConformanceReport {
         model_requirements,
         prompt_dialect,
         context_strategy,
+        rag_configuration,
+        api_harness,
         resolved_model,
     }
 }
 
 async fn check_model_requirements(
     section: &ModelRequirementsSection,
+    authored: bool,
     router: &ModelRouter,
 ) -> (CheckResult, Option<String>) {
-    if *section == ModelRequirementsSection::default() {
+    if !authored {
         return (CheckResult::NotDeclared, None);
     }
     let requirements = RouteRequirements {
@@ -145,10 +179,18 @@ async fn check_model_requirements(
 
 fn check_prompt_dialect(
     section: &PromptDialectSection,
+    authored: bool,
     resolved_model: Option<&str>,
 ) -> CheckResult {
     let Some(declared) = section.dialect.as_deref() else {
-        return CheckResult::NotDeclared;
+        return if authored {
+            CheckResult::Preserved(
+                "prompt_dialect authored without an explicit override; private binding retains the request"
+                    .to_owned(),
+            )
+        } else {
+            CheckResult::NotDeclared
+        };
     };
     let Some(model) = resolved_model else {
         return CheckResult::Unsatisfied(
@@ -238,12 +280,17 @@ fn expected_trim_len(strategy: &ContextStrategy, total: usize) -> usize {
     }
 }
 
-fn check_context_strategy(section: &ContextStrategySection) -> CheckResult {
-    // `Auto` is this section's parsed default, and is indistinguishable from
-    // "not declared" (see module doc) — the runtime's own model-aware
-    // selection (CH-05) applies, with nothing fixed declared to conform to.
+fn check_context_strategy(section: &ContextStrategySection, authored: bool) -> CheckResult {
+    // `Auto` is this section's parsed default. The source record distinguishes
+    // an explicit auto request from an omitted section.
     let Some(runtime_strategy) = to_runtime_strategy(section) else {
-        return CheckResult::NotDeclared;
+        return if authored {
+            CheckResult::Satisfied(
+                "explicit auto context_strategy is delegated to the runtime selector".to_owned(),
+            )
+        } else {
+            CheckResult::NotDeclared
+        };
     };
 
     let messages: Vec<serde_json::Value> = (0..10)
@@ -267,6 +314,37 @@ fn check_context_strategy(section: &ContextStrategySection) -> CheckResult {
         CheckResult::Unsatisfied(format!(
             "declared context_strategy NOT honored: apply_strategy() produced {} message(s), expected {expected}",
             trimmed.len()
+        ))
+    }
+}
+
+fn section_authored(ir: &AgentDescriptorIR, section: SectionName, legacy_fallback: bool) -> bool {
+    if ir.source.original.is_empty() {
+        legacy_fallback
+    } else {
+        ir.source.authored(section)
+    }
+}
+
+fn check_binding_only_requirement(
+    section: Option<&LegacySourceSection>,
+    name: &str,
+) -> CheckResult {
+    let Some(section) = section else {
+        return CheckResult::NotDeclared;
+    };
+    if section
+        .value
+        .get("required")
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false)
+    {
+        CheckResult::Unsatisfied(format!(
+            "required {name} is preserved but needs an effective private binding before admission"
+        ))
+    } else {
+        CheckResult::Preserved(format!(
+            "optional {name} is preserved for private binding without a runtime support claim"
         ))
     }
 }

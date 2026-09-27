@@ -1,0 +1,173 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "AgentDefinition",
+  "id": "urn:uar:c03:blocked",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "C03 completed-path fixture",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "collaboration_definition_packages_v2"
+  ],
+  "extensions": {
+    "fixture.requiredUnknown": {
+      "required": true,
+      "value": {
+        "mode": "must-enforce"
+      }
+    }
+  },
+  "title": "C03 ordinary agent",
+  "role": "assistant",
+  "whenToUse": "Use for the C03 completed production path.",
+  "instructions": "Return the recorded C03 fixture response.",
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "skills": [
+    {
+      "id": "sample-filesystem-skill",
+      "version": "1.0.0",
+      "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "required": true,
+      "config": {
+        "mode": "fixture"
+      },
+      "entrypoint": null,
+      "requiredTools": [
+        "mirror"
+      ]
+    }
+  ],
+  "models": [
+    {
+      "role": "primary",
+      "capabilities": [
+        "text",
+        "tool-calling"
+      ],
+      "preferredAliases": [
+        "local-default"
+      ]
+    }
+  ],
+  "permittedChildren": [],
+  "context": {
+    "mode": "selected",
+    "artifacts": [
+      "task-input"
+    ],
+    "history": "authorized-summary",
+    "memoryScopes": []
+  },
+  "requestedLimits": {
+    "concurrentTurns": 1,
+    "maxMembers": 2,
+    "maxDepth": 1,
+    "maxPendingTasks": 8
+  },
+  "sourceIdentity": {
+    "profile": "urn:prometheus:uar:agent-md:1.1",
+    "id": "urn:uar:legacy:reviewer",
+    "version": "1.0.0",
+    "digest": "sha256:85c43d71399b5a62ffaf20da12ab9aa463cc647e9ddc395631ddd7a038c4642b",
+    "revision": null
+  },
+  "renameMapping": {
+    "sourceId": "urn:uar:legacy:reviewer",
+    "targetId": "urn:uar:c03:blocked",
+    "reason": "explicit-rename"
+  },
+  "authoredFields": [
+    "/metadata/id",
+    "/metadata/version",
+    "/skills/0",
+    "/model_requirements",
+    "/prompt_dialect",
+    "/rag_configuration",
+    "/context_strategy",
+    "/api_harness"
+  ],
+  "modelRequirements": {
+    "required": true,
+    "value": {
+      "capabilities": [
+        "text",
+        "tool-calling"
+      ]
+    }
+  },
+  "promptDialect": {
+    "required": true,
+    "value": {
+      "id": "uar.prompt/plain-v1"
+    }
+  },
+  "ragConfiguration": {
+    "required": true,
+    "value": {
+      "mode": "retrieval-required"
+    }
+  },
+  "contextStrategy": {
+    "required": true,
+    "value": {
+      "mode": "selected"
+    }
+  },
+  "apiHarness": {
+    "required": false,
+    "value": {
+      "id": "uar.ordinary-agent/1"
+    }
+  },
+  "legacySections": {
+    "skills": "sample-filesystem-skill@1.0.0"
+  },
+  "sourceDescriptor": {
+    "metadata": {
+      "id": "urn:uar:legacy:reviewer",
+      "version": "1.0.0"
+    },
+    "skills": [
+      {
+        "id": "sample-filesystem-skill",
+        "version": "1.0.0",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "required": true,
+        "config": {
+          "mode": "fixture"
+        },
+        "entrypoint": null,
+        "requiredTools": [
+          "mirror"
+        ]
+      }
+    ]
+  },
+  "contentDigest": "sha256:9054e88b35611b4d101402b1125b054d6f20947dcd15338cdf86cc9ded5226cd"
+}

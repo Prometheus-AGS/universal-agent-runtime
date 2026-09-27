@@ -3,10 +3,11 @@ use std::sync::Arc;
 use chrono::Utc;
 use thiserror::Error;
 
+use crate::uar::domain::artifact::AgentArtifact;
 use crate::uar::domain::collaboration::{
     CollaborationCatalogState, CollaborationCommandReceipt, CollaborationDefinitionRecord,
-    CollaborationPackageRecord, ImmutableDefinitionRef, PackageInstallResponse,
-    PackagePreflightResponse, PackageSourceRequest,
+    CollaborationPackageRecord, DeploymentBindingRecord, EffectiveBindingReceipt,
+    ImmutableDefinitionRef, PackageInstallResponse, PackagePreflightResponse, PackageSourceRequest,
 };
 
 use super::storage::{CollaborationStorage, InMemoryCollaborationStorage};
@@ -28,8 +29,21 @@ pub enum CollaborationError {
     Storage(String),
 }
 
+#[derive(Debug, Clone)]
+pub struct BoundAgentRun {
+    pub artifact: AgentArtifact,
+    pub binding: DeploymentBindingRecord,
+    pub effective_binding_receipt: EffectiveBindingReceipt,
+}
+
 impl From<anyhow::Error> for CollaborationError {
     fn from(error: anyhow::Error) -> Self {
+        Self::Invalid(error.to_string())
+    }
+}
+
+impl From<serde_json::Error> for CollaborationError {
+    fn from(error: serde_json::Error) -> Self {
         Self::Invalid(error.to_string())
     }
 }
@@ -37,17 +51,169 @@ impl From<anyhow::Error> for CollaborationError {
 #[derive(Debug, Clone)]
 pub struct CollaborationCatalogService {
     pub(super) storage: Arc<dyn CollaborationStorage>,
+    pub(super) skill_service: Option<Arc<crate::uar::runtime::skills::SkillService>>,
+    pub(super) provider_registry: Option<Arc<crate::llm::ProviderRegistry>>,
 }
 
 impl CollaborationCatalogService {
     #[must_use]
     pub fn new(storage: Arc<dyn CollaborationStorage>) -> Self {
-        Self { storage }
+        Self {
+            storage,
+            skill_service: None,
+            provider_registry: None,
+        }
     }
 
     #[must_use]
     pub fn in_memory() -> Self {
         Self::new(Arc::new(InMemoryCollaborationStorage::new()))
+    }
+
+    #[must_use]
+    pub fn with_skill_service(
+        mut self,
+        skill_service: Arc<crate::uar::runtime::skills::SkillService>,
+    ) -> Self {
+        self.skill_service = Some(skill_service);
+        self
+    }
+
+    #[must_use]
+    pub fn with_provider_registry(
+        mut self,
+        provider_registry: Arc<crate::llm::ProviderRegistry>,
+    ) -> Self {
+        self.provider_registry = Some(provider_registry);
+        self
+    }
+
+    pub async fn resolve_bound_agent_run(
+        &self,
+        owner_id: &str,
+        workspace_id: &str,
+        binding_id: &str,
+    ) -> Result<BoundAgentRun, CollaborationError> {
+        validate_owner(owner_id)?;
+        validate_id(workspace_id)?;
+        validate_id(binding_id)?;
+        let state = self.load_state().await?;
+        let binding = state
+            .bindings
+            .get(&super::bindings::binding_key(
+                owner_id,
+                workspace_id,
+                binding_id,
+            ))
+            .cloned()
+            .ok_or_else(|| CollaborationError::NotFound(binding_id.to_owned()))?;
+        let receipt = binding.effective_binding_receipt.clone().ok_or_else(|| {
+            CollaborationError::Conflict("binding has no effective binding receipt".to_owned())
+        })?;
+        self.revalidate_effective_binding(owner_id, workspace_id, &receipt)
+            .await?;
+        let definition = super::bindings::bound_agent_definition(&state, &binding.package)?;
+        let artifact = definition.compatibility_agent.clone().ok_or_else(|| {
+            CollaborationError::Invalid(
+                "bound definition has no ordinary-agent projection".to_owned(),
+            )
+        })?;
+        Ok(BoundAgentRun {
+            artifact,
+            binding,
+            effective_binding_receipt: receipt,
+        })
+    }
+
+    pub async fn revalidate_effective_binding(
+        &self,
+        owner_id: &str,
+        workspace_id: &str,
+        receipt: &EffectiveBindingReceipt,
+    ) -> Result<(), CollaborationError> {
+        validate_owner(owner_id)?;
+        validate_id(workspace_id)?;
+        if !receipt.admitted {
+            return Err(CollaborationError::Conflict(
+                "effective binding receipt does not admit activation".to_owned(),
+            ));
+        }
+        let state = self.load_state().await?;
+        let binding = state
+            .bindings
+            .get(&super::bindings::binding_key(
+                owner_id,
+                workspace_id,
+                &receipt.binding_ref.id,
+            ))
+            .ok_or_else(|| CollaborationError::NotFound(receipt.binding_ref.id.clone()))?;
+        if binding.revision != receipt.binding_ref.revision
+            || binding
+                .document
+                .get("contentDigest")
+                .and_then(serde_json::Value::as_str)
+                != Some(receipt.binding_ref.digest.as_str())
+            || binding
+                .document
+                .get("policyRevision")
+                .and_then(serde_json::Value::as_str)
+                != Some(receipt.policy_revision.as_str())
+        {
+            return Err(CollaborationError::Conflict(
+                "binding or policy revision changed after effective resolution".to_owned(),
+            ));
+        }
+        let stored_receipt = binding
+            .effective_binding_receipt
+            .as_ref()
+            .filter(|stored| stored.content_digest == receipt.content_digest)
+            .and_then(|stored| state.effective_binding_receipts.get(&stored.content_digest))
+            .ok_or_else(|| {
+                CollaborationError::Conflict(
+                    "effective binding receipt is not the current persisted receipt".to_owned(),
+                )
+            })?;
+        if super::validation::canonical_digest(&serde_json::to_value(stored_receipt)?)?
+            != stored_receipt.content_digest
+        {
+            return Err(CollaborationError::Storage(
+                "persisted effective binding receipt digest is invalid".to_owned(),
+            ));
+        }
+        let current_grants = super::grants::validate_binding_grants(
+            owner_id,
+            workspace_id,
+            &binding.document,
+            &state,
+        )?;
+        if current_grants != receipt.representation_grants {
+            return Err(CollaborationError::Conflict(
+                "representation grant set changed after effective resolution".to_owned(),
+            ));
+        }
+        super::bindings::revalidate_resolved_skills(self.skill_service.as_deref(), receipt).await?;
+        Ok(())
+    }
+
+    pub async fn get_effective_binding_receipt(
+        &self,
+        owner_id: &str,
+        workspace_id: &str,
+        binding_id: &str,
+    ) -> Result<EffectiveBindingReceipt, CollaborationError> {
+        validate_owner(owner_id)?;
+        validate_id(workspace_id)?;
+        validate_id(binding_id)?;
+        self.load_state()
+            .await?
+            .bindings
+            .get(&super::bindings::binding_key(
+                owner_id,
+                workspace_id,
+                binding_id,
+            ))
+            .and_then(|binding| binding.effective_binding_receipt.clone())
+            .ok_or_else(|| CollaborationError::NotFound(binding_id.to_owned()))
     }
 
     pub async fn preflight_package(
@@ -194,9 +360,7 @@ impl CollaborationCatalogService {
             .ok_or_else(|| CollaborationError::NotFound(digest.to_owned()))
     }
 
-    pub(super) async fn load_state(
-        &self,
-    ) -> Result<CollaborationCatalogState, CollaborationError> {
+    pub(super) async fn load_state(&self) -> Result<CollaborationCatalogState, CollaborationError> {
         self.storage
             .load_state()
             .await
@@ -247,10 +411,7 @@ fn reject_immutable_conflicts(
     Ok(())
 }
 
-fn enforce_catalog_revision(
-    expected: Option<u64>,
-    actual: u64,
-) -> Result<(), CollaborationError> {
+fn enforce_catalog_revision(expected: Option<u64>, actual: u64) -> Result<(), CollaborationError> {
     if let Some(expected) = expected {
         if expected != actual {
             return Err(CollaborationError::Conflict(format!(

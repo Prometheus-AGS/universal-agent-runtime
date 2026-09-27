@@ -401,6 +401,9 @@ impl ToolAdmissionRuntime {
             !self.cancellation.is_cancelled(),
             "Tool invocation was cancelled before claim"
         );
+        if let Some(revalidator) = &self.claim_revalidator {
+            revalidator.revalidate().await?;
+        }
         let refreshed = self.host.revalidate_claim(admitted).await?;
         anyhow::ensure!(
             refreshed == admitted.host_receipt,

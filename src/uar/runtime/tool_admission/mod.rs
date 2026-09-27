@@ -614,6 +614,11 @@ pub trait HostToolAdmissionPort: Send + Sync + std::fmt::Debug {
     ) -> anyhow::Result<()>;
 }
 
+#[async_trait]
+pub trait ClaimRevalidator: Send + Sync + std::fmt::Debug {
+    async fn revalidate(&self) -> anyhow::Result<()>;
+}
+
 pub struct ToolAdmissionRuntime {
     context: Arc<ToolAdmissionContext>,
     host: Arc<dyn HostToolAdmissionPort>,
@@ -621,6 +626,7 @@ pub struct ToolAdmissionRuntime {
     cancellation: tokio_util::sync::CancellationToken,
     governance_engine: Option<Arc<crate::uar::governance::engine::GovernanceEngine>>,
     governance_gate: Option<crate::uar::governance::runtime_control::GovernanceGateHandle>,
+    claim_revalidator: Option<Arc<dyn ClaimRevalidator>>,
 }
 
 impl std::fmt::Debug for ToolAdmissionRuntime {
@@ -668,6 +674,7 @@ impl ToolAdmissionRuntime {
             cancellation: tokio_util::sync::CancellationToken::new(),
             governance_engine: None,
             governance_gate: None,
+            claim_revalidator: None,
         }
     }
 
@@ -690,7 +697,17 @@ impl ToolAdmissionRuntime {
             cancellation,
             governance_engine,
             governance_gate,
+            claim_revalidator: None,
         })
+    }
+
+    #[must_use]
+    pub fn with_claim_revalidator(
+        mut self,
+        claim_revalidator: Arc<dyn ClaimRevalidator>,
+    ) -> Self {
+        self.claim_revalidator = Some(claim_revalidator);
+        self
     }
 
     /// Freeze a validated invocation under this run's captured identities.

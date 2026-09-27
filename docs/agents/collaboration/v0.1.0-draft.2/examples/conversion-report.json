@@ -1,0 +1,44 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "ConversionReport",
+  "id": "urn:uar:conversion:example/reviewer",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration draft.2 contract checkpoint fixtures",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [],
+  "extensions": {},
+  "exportClass": "portable-evidence",
+  "source": {
+    "profile": "urn:prometheus:uar:agent-md:1.1",
+    "id": "urn:uar:legacy:reviewer",
+    "version": "1.0.0",
+    "digest": "sha256:ae80029bfd3fff39253a18d76f5e628fcf6e8fcea8e22013a59bc2ef388f5ae2",
+    "revision": null
+  },
+  "target": {
+    "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+    "harness": null
+  },
+  "diagnostics": [
+    {
+      "pointer": "/skills/0",
+      "disposition": "translated",
+      "reasonCode": "skill.bound-exactly",
+      "message": "The complete SkillRef is retained for private binding.",
+      "effectiveBindingRef": null
+    },
+    {
+      "pointer": "/extensions/example.optional",
+      "disposition": "optional-unsupported",
+      "reasonCode": "extension.adapter-missing",
+      "message": "The optional extension is preserved without a support claim.",
+      "effectiveBindingRef": null
+    }
+  ],
+  "activationBlocked": false,
+  "contentDigest": "sha256:89f272e3416d176546f9a10c184952b2616f6595fad8fc48567030a7b3e8033e"
+}

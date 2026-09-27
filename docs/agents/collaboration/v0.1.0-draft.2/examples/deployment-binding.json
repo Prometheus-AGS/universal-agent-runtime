@@ -1,0 +1,80 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "DeploymentBinding",
+  "id": "urn:uar:binding:example/review",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration draft.2 contract checkpoint fixtures",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "collaboration_deployment_bindings_v2"
+  ],
+  "extensions": {},
+  "exportClass": "private-installed-state",
+  "package": {
+    "id": "urn:uar:example:draft2/review-package",
+    "version": "1.0.0",
+    "digest": "sha256:be31380ba55dce52929001f9ad545d1cf2437834c032d214a7caf9277fe424cf"
+  },
+  "ownerId": "owner:example",
+  "workspaceId": "workspace:example",
+  "runtimeInstanceId": "runtime:example",
+  "revision": 1,
+  "modelBindings": [
+    {
+      "requestedAlias": "team-default",
+      "providerId": "provider:example",
+      "modelId": "model:example",
+      "credentialRef": "protected-credential://provider/example"
+    }
+  ],
+  "skillBindings": [
+    {
+      "id": "urn:uar:skill:review",
+      "version": "2.1.0",
+      "digest": "sha256:3b3816290748ea6b1f71c43c34e4043e2aed44ff4b7a462e7b212bf88cf0b65f",
+      "required": true,
+      "config": {
+        "mode": "strict",
+        "output": "json"
+      },
+      "entrypoint": "review",
+      "requiredTools": [
+        "read-artifact"
+      ],
+      "installedLocation": "skill-store://review/2.1.0"
+    }
+  ],
+  "storage": {
+    "backend": "example-durable-store",
+    "connectionRef": "protected-connection://collaboration/example",
+    "durableTransactions": true
+  },
+  "policyRevision": "policy:example:1",
+  "effectiveLimits": {
+    "concurrentTurns": 1,
+    "maxMembers": 2,
+    "maxDepth": 1,
+    "maxPendingTasks": 8
+  },
+  "effectiveBudget": {
+    "maxTokens": 10000,
+    "maxCostMicrounits": 1000000,
+    "currency": "USD",
+    "maxElapsedSeconds": 300
+  },
+  "contextGrants": [],
+  "representationGrantRefs": [
+    {
+      "grantId": "urn:uar:grant:example/reviewer-office",
+      "revision": 1,
+      "constraintDigest": "sha256:7e8297d9998ee21c0c22f391faace673eb2a905247c3f2d6024a0e92dc2ddb0c"
+    }
+  ],
+  "effectiveBindingReceiptRef": null,
+  "status": "inactive",
+  "contentDigest": "sha256:f873f89b395999a1b2eba9711034f5c372c3104252600ac20def192f7e7e47ed"
+}

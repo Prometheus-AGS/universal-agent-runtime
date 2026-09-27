@@ -1,0 +1,189 @@
+{
+  "schema": "uar.collaboration.source-receipt/1",
+  "status": "contract-checkpoint-not-runtime-conformance",
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "checkpointBaseCommit": "d060a887ce4ae8f020c8ffedcf304ef650b1ce00",
+  "inputs": {
+    "c01Contracts": [
+      "afc.convergence-contract.v1@1.0.0",
+      "afc.identity-state-action.v1@1.0.0"
+    ],
+    "draft1Publication": "cbf5d560f578069e908faa0ba08b133121241cc5",
+    "i1Implementation": "676f995c73dc7dacdce71c929ffac88ac3618bb0",
+    "i1AcceptedMerge": "79414bb7e134dad45330008999ee1dca999d44af",
+    "c02Contract": "afc.governed-effect/1@1.1.0",
+    "c02Implementation": "59df10a102c5d46da9db5983a73fbcf20ca09590"
+  },
+  "immutablePredecessor": {
+    "path": "docs/agents/collaboration/v0.1.0-draft.1",
+    "fileCount": 79,
+    "byteManifestSha256": "8a849c639a7cc789986fd3b32998ee28ddb561cee9ea67a31f953ebb022247be",
+    "gitTreeListingSha256": "8f79635d04bb3a5bfd61ddf0a4e16f89bfc6e66fe266090717967160996e7087",
+    "outcome": "unchanged-by-byte-manifest"
+  },
+  "ownedScope": "docs/agents/collaboration/v0.1.0-draft.2/**",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "cf8e4cd7e94ebfede8b32c02db92c8165566ab025407d159336d65b8bcd06428"
+    },
+    {
+      "path": "compatibility.md",
+      "sha256": "4b6521dc3e61d5a77fd79d97c77bf929b094d7f94a0381ed76ec76e5c9d6b0c9"
+    },
+    {
+      "path": "examples/README.md",
+      "sha256": "b78379dba2eeac7abeaa8377455bef02b17584086818dde311516aad65530935"
+    },
+    {
+      "path": "examples/agent-definition.json",
+      "sha256": "2032106e2d36babadc168559cc01e0024d3d196aca3cc8dfb500246239e1d447"
+    },
+    {
+      "path": "examples/conversion-report.json",
+      "sha256": "1047f651daab5e9f8e8dad8252eb3002b8f8259e55d18c9d2d89560cdafc3508"
+    },
+    {
+      "path": "examples/deployment-binding-template.json",
+      "sha256": "d6e5ad029ec77da779b44b1cf56e6814217df1354f85bd14547dc23c1d3350f8"
+    },
+    {
+      "path": "examples/deployment-binding.json",
+      "sha256": "cea8e9c8edddd0be69cd869acf096084b8424551322cbf7769c883d69a58eb8e"
+    },
+    {
+      "path": "examples/effective-binding-receipt.json",
+      "sha256": "1df04aeb56fc2bab452c1ab32b68e41a059366337f69830987574e787016354b"
+    },
+    {
+      "path": "examples/package-manifest.json",
+      "sha256": "15130678642d0f733295ac522629115677060615573687b2e8a1c44a536f0bec"
+    },
+    {
+      "path": "examples/representation-grant.json",
+      "sha256": "b859a7020d69dbf1d77ceed3f87953bcd6a8d3412519375478274b720162c42d"
+    },
+    {
+      "path": "examples/team-definition.json",
+      "sha256": "4f57395e285a5668779abad46e19af07e85f9200182ab587138e6d07327e9a4c"
+    },
+    {
+      "path": "examples/workflow-definition.json",
+      "sha256": "2f00b0d186ac774cbf55a98a4612322c78038501fa15e4cddf8a291177147bc5"
+    },
+    {
+      "path": "fixture-manifest.json",
+      "sha256": "1993632fb7a618d0aadf5e05d2361ac8f96340200760671cd4035fec88cada36"
+    },
+    {
+      "path": "fixtures/README.md",
+      "sha256": "31c5952a0835eaf6fed81e2fb60c5850419f3cf442a0f46513559386a1bc4a4f"
+    },
+    {
+      "path": "fixtures/legacy/agent-v1.1.md",
+      "sha256": "85c43d71399b5a62ffaf20da12ab9aa463cc647e9ddc395631ddd7a038c4642b"
+    },
+    {
+      "path": "fixtures/legacy/agent-v2-explicit-defaults.md",
+      "sha256": "9bd405f107f04083a9808ce658da78dcca59e590a174078b149e7b98cd71001b"
+    },
+    {
+      "path": "fixtures/legacy/agent-v2-omitted-defaults.md",
+      "sha256": "85c43d71399b5a62ffaf20da12ab9aa463cc647e9ddc395631ddd7a038c4642b"
+    },
+    {
+      "path": "fixtures/schema-invalid/agent-missing-skill-digest.json",
+      "sha256": "19d9b4b2d6739aab70284e8104b4e37114e8e1564b27dbc1d7ee4e6c53f32257"
+    },
+    {
+      "path": "fixtures/schema-invalid/discriminator-kind-shape-mismatch.json",
+      "sha256": "28420013cd0971995174ca4c8552ac18f523708a61d906ebd464cf6c34456edb"
+    },
+    {
+      "path": "fixtures/schema-invalid/package-private-kind.json",
+      "sha256": "3d431797d822d54cde6281cdb2434b7bcae14b3ad3487dfba206451a5e88600f"
+    },
+    {
+      "path": "fixtures/schema-invalid/template-with-private-owner.json",
+      "sha256": "f585e036aff488d6102c0e912758a84c7e60874ecd8f083119fdf22f0abea0e2"
+    },
+    {
+      "path": "fixtures/semantic-invalid/agent-private-credential-extension.json",
+      "sha256": "1b4c94e2bf0360d0e817a76cf82faf501319eb02956cae6973b8148a225e86b1"
+    },
+    {
+      "path": "fixtures/semantic-invalid/agent-recognized-secret-free-text.json",
+      "sha256": "58f9b342499bc21d4ac3744dee1fcf31593424cf0b63d781bf60fdddf3523269"
+    },
+    {
+      "path": "fixtures/semantic-invalid/agent-required-unsupported-extension.json",
+      "sha256": "ec4a51cbe64e3834770667574574356f4233d17979a2c18ef0599ce91bc14d55"
+    },
+    {
+      "path": "fixtures/semantic-invalid/package-content-digest-mismatch.json",
+      "sha256": "bb39cf38586c0f4b25fe4e48a6cdd4acc6e341f07794431b2c0f69667a245831"
+    },
+    {
+      "path": "fixtures/semantic-invalid/package-lock-digest-conflict.json",
+      "sha256": "b777af358eb9764dc880c6add44beff9e1da5bb150a112454407e32d4e41aca8"
+    },
+    {
+      "path": "fixtures/semantic-invalid/package-reused-version-different-digest.json",
+      "sha256": "a81ffe65ca86bcbe50dc39911b1037412c0302d3881524a023fb0c61002ab91c"
+    },
+    {
+      "path": "schemas/README.md",
+      "sha256": "c5b7e2360747b409833ecd36a562a2b3009c5e777621b9673fbdecb555e2d898"
+    },
+    {
+      "path": "schemas/agent-definition.schema.json",
+      "sha256": "a5e0573b5323accec7e25766287af897cee34f689d77a2b6eb9d9367d41f179c"
+    },
+    {
+      "path": "schemas/collaboration-document.schema.json",
+      "sha256": "e7f8215d6e177f3ab00374df0ab34d0f19e24552af34c69aaf5b049260ccc2d1"
+    },
+    {
+      "path": "schemas/common.schema.json",
+      "sha256": "e81396cea7ecca483a111d2123774a438c5c3bf6b232a2a55936ef7711e76576"
+    },
+    {
+      "path": "schemas/conversion-report.schema.json",
+      "sha256": "4a013291e1768a5f0b98f6c99d3ec746f6a863cfd55d50d73863161943fb82cb"
+    },
+    {
+      "path": "schemas/deployment-binding-template.schema.json",
+      "sha256": "73432b4f73217b166d13013cfdda63f0b139dd191196f009fc7e629886a2c22b"
+    },
+    {
+      "path": "schemas/deployment-binding.schema.json",
+      "sha256": "2d7667dc556a75010e1b0f1015d0af6a1517bc84e3531cf64b0682ebecda65d7"
+    },
+    {
+      "path": "schemas/effective-binding-receipt.schema.json",
+      "sha256": "d1bebeec6499c0b84b5fb3b9286162db947cc96ab7ed377d6de042a2a9065d15"
+    },
+    {
+      "path": "schemas/package-manifest.schema.json",
+      "sha256": "bb96cd181790f391f9a543799f93369f8c53125ba9b3f70355f5f4c06fc1bd71"
+    },
+    {
+      "path": "schemas/representation-grant.schema.json",
+      "sha256": "b856385bb5d1ab40fdb1e7e28d62ee0c9a0843e2fe46dd9162224d70c7ed8b01"
+    },
+    {
+      "path": "schemas/team-definition.schema.json",
+      "sha256": "70750371fe23a828f7ce8cac43732193f328cc09b4d6067b8632c87afc599e9c"
+    },
+    {
+      "path": "schemas/workflow-definition.schema.json",
+      "sha256": "6129578c9c54d5fd7134ea11ef149ba1d629841b205856f6b151be6ff03a9abb"
+    },
+    {
+      "path": "sources.md",
+      "sha256": "c9e8709357d8c748ae097d7a4899136ede8552b0f4dc459d8c1c6f26852622b7"
+    }
+  ],
+  "authorization": "static reasoning and byte/diff inspection only; no test suites or builds",
+  "runtimeConformance": false
+}

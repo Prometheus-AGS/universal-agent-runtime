@@ -1,0 +1,57 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "RepresentationGrant",
+  "exportClass": "private-authority-state",
+  "grantId": "urn:uar:c03:grant",
+  "issuerPrincipalId": "principal:c03-issuer",
+  "subjectPrincipalId": "principal:c03-subject",
+  "granteeAgentInstanceId": "agent-instance:c03",
+  "organizationId": "organization:c03",
+  "office": "C03 fixture office",
+  "purpose": "Bounded conformance evidence only",
+  "audienceScopes": [
+    "organization:c03"
+  ],
+  "actionScopes": [
+    "artifact.read"
+  ],
+  "resourceScopes": [
+    "artifact:c03"
+  ],
+  "dataScopes": [
+    "artifact.content"
+  ],
+  "approvalRequirements": [
+    "current-policy"
+  ],
+  "disclosureRequirements": [
+    "disclose-agent-assistance"
+  ],
+  "consentEvidenceRef": "protected-evidence://c03/consent",
+  "organizationalAuthorityEvidenceRef": "protected-evidence://c03/authority",
+  "revision": 1,
+  "status": "active",
+  "notBefore": "2020-01-01T00:00:00Z",
+  "expiresAt": "2099-01-01T00:00:00Z",
+  "constraintDigest": "sha256:7e8297d9998ee21c0c22f391faace673eb2a905247c3f2d6024a0e92dc2ddb0c",
+  "revocation": null,
+  "retention": {
+    "policy": "delete-on-expiry",
+    "deleteAfter": "2099-02-01T00:00:00Z"
+  },
+  "offboarding": {
+    "mode": "revoke-immediately",
+    "requiredActions": [
+      "disable-binding"
+    ]
+  },
+  "restrictions": {
+    "forbiddenClaims": [
+      "human-authorship",
+      "human-approval"
+    ],
+    "notes": [
+      "No delegated approval authority."
+    ]
+  }
+}

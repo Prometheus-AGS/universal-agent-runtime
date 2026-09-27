@@ -1,15 +1,18 @@
+use std::collections::BTreeSet;
+
 use chrono::Utc;
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::uar::domain::collaboration::{
     BindingCommandRequest, BindingInstallResponse, BindingPreflightResponse,
-    CollaborationCatalogState, CollaborationCommandReceipt, ConversionDiagnostic,
-    ConversionDisposition, DeploymentBindingRecord, ImmutableDefinitionRef,
+    COLLABORATION_PROFILE_DRAFT_2, CollaborationCatalogState, CollaborationCommandReceipt,
+    CollaborationDefinitionRecord, CollaborationKind, ConversionDiagnostic, ConversionDisposition,
+    DeploymentBindingRecord, EffectiveBindingReceipt, FieldDiagnostic, ImmutableDefinitionRef,
+    PrivateRevisionRef, RepresentationGrantRef, ResolvedSkill, SkillRef,
 };
 
 use super::service::{
-    CollaborationCatalogService, CollaborationError, MAX_CAS_ATTEMPTS, receipt_key,
-    validate_owner,
+    CollaborationCatalogService, CollaborationError, MAX_CAS_ATTEMPTS, receipt_key, validate_owner,
 };
 use super::validation::{
     canonical_digest, request_digest, validate_common_sections, validate_digest, validate_id,
@@ -24,11 +27,16 @@ impl CollaborationCatalogService {
         request: &BindingCommandRequest,
     ) -> Result<BindingPreflightResponse, CollaborationError> {
         let state = self.load_state().await?;
-        let preflight = validate_binding(owner_id, workspace_id, request, &state)?;
+        let (preflight, _) = self
+            .validate_binding(owner_id, workspace_id, request, &state)
+            .await?;
         let storage_key = binding_key(owner_id, workspace_id, &preflight.binding_id);
         enforce_binding_revision(
             request.expected_revision,
-            state.bindings.get(&storage_key).map(|binding| binding.revision),
+            state
+                .bindings
+                .get(&storage_key)
+                .map(|binding| binding.revision),
         )?;
         Ok(preflight)
     }
@@ -45,7 +53,9 @@ impl CollaborationCatalogService {
 
         for _ in 0..MAX_CAS_ATTEMPTS {
             let current = self.load_state().await?;
-            let preflight = validate_binding(owner_id, workspace_id, &request, &current)?;
+            let (preflight, effective_binding_receipt) = self
+                .validate_binding(owner_id, workspace_id, &request, &current)
+                .await?;
             if let Some(receipt) = current.command_receipts.get(&receipt_key) {
                 if receipt.operation != "install-binding"
                     || receipt.request_digest != command_digest
@@ -115,6 +125,7 @@ impl CollaborationCatalogService {
                 package,
                 activation_supported: preflight.activation_supported,
                 preflight_diagnostics: preflight.diagnostics.clone(),
+                effective_binding_receipt: Some(effective_binding_receipt.clone()),
                 updated_at: Utc::now(),
             };
 
@@ -124,6 +135,10 @@ impl CollaborationCatalogService {
             next.binding_history.insert(
                 binding_revision_key(owner_id, workspace_id, &binding.id, revision),
                 binding.clone(),
+            );
+            next.effective_binding_receipts.insert(
+                effective_binding_receipt.content_digest.clone(),
+                effective_binding_receipt,
             );
             let receipt = CollaborationCommandReceipt {
                 command_id: request.command_id.clone(),
@@ -182,14 +197,34 @@ impl CollaborationCatalogService {
             .cloned()
             .ok_or_else(|| CollaborationError::NotFound(binding_id.to_owned()))
     }
+
+    async fn validate_binding(
+        &self,
+        owner_id: &str,
+        workspace_id: &str,
+        request: &BindingCommandRequest,
+        state: &CollaborationCatalogState,
+    ) -> Result<(BindingPreflightResponse, EffectiveBindingReceipt), CollaborationError> {
+        validate_binding(
+            self.skill_service.as_deref(),
+            self.provider_registry.as_deref(),
+            owner_id,
+            workspace_id,
+            request,
+            state,
+        )
+        .await
+    }
 }
 
-fn validate_binding(
+async fn validate_binding(
+    skill_service: Option<&crate::uar::runtime::skills::SkillService>,
+    provider_registry: Option<&crate::llm::ProviderRegistry>,
     owner_id: &str,
     workspace_id: &str,
     request: &BindingCommandRequest,
     state: &CollaborationCatalogState,
-) -> Result<BindingPreflightResponse, CollaborationError> {
+) -> Result<(BindingPreflightResponse, EffectiveBindingReceipt), CollaborationError> {
     validate_owner(owner_id)?;
     validate_id(workspace_id)?;
     if request.command_id.trim().is_empty() {
@@ -222,6 +257,7 @@ fn validate_binding(
         "contextGrants",
         "representationGrantRefs",
         "status",
+        "effectiveBindingReceiptRef",
     ] {
         if document.get(field).is_none() {
             return Err(CollaborationError::Invalid(format!(
@@ -257,28 +293,354 @@ fn validate_binding(
     }
     validate_private_references(document)?;
     reject_binding_secrets(document, "$")?;
-    let package = parse_reference(document.get("package").ok_or_else(|| {
-        CollaborationError::Invalid("binding package is missing".to_owned())
-    })?)?;
+    let package =
+        parse_reference(document.get("package").ok_or_else(|| {
+            CollaborationError::Invalid("binding package is missing".to_owned())
+        })?)?;
     if !state.packages.contains_key(&package.storage_key()) {
         return Err(CollaborationError::NotFound(format!(
             "package {} {} {}",
             package.id, package.version, package.digest
         )));
     }
-    let diagnostics = vec![ConversionDiagnostic {
-        field: "status".to_owned(),
-        disposition: ConversionDisposition::RequiredUnsupported,
-        message: "binding is installed, but TeamInstance activation is unavailable until I2"
-            .to_owned(),
-    }];
-    Ok(BindingPreflightResponse {
+    let definition = bound_agent_definition(state, &package)?;
+    let (resolved_skills, mut field_diagnostics) =
+        resolve_skills(skill_service, document, definition).await?;
+    let resolved_models = resolve_models(document, definition, &mut field_diagnostics)?;
+    let effective = super::runtime_semantics::resolve_runtime_semantics(
+        definition,
+        &resolved_models,
+        provider_registry,
+        &mut field_diagnostics,
+    )
+    .await;
+    let representation_grants =
+        super::grants::validate_binding_grants(owner_id, workspace_id, document, state)?;
+    let activation_supported = !field_diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.disposition == ConversionDisposition::RequiredUnsupported);
+    let diagnostics = field_diagnostics
+        .iter()
+        .map(|diagnostic| ConversionDiagnostic {
+            field: diagnostic.pointer.clone(),
+            disposition: diagnostic.disposition.clone(),
+            message: diagnostic.message.clone(),
+        })
+        .collect::<Vec<_>>();
+    let preflight = BindingPreflightResponse {
         binding_id: required_string(document, "id")?.to_owned(),
-        package,
+        package: package.clone(),
         diagnostics,
-        activation_supported: false,
+        activation_supported,
         request_digest: request_digest(request).map_err(CollaborationError::from)?,
-    })
+    };
+    let receipt = effective_receipt(
+        document,
+        package,
+        definition,
+        resolved_skills,
+        resolved_models,
+        representation_grants,
+        effective,
+        field_diagnostics,
+        activation_supported,
+    )?;
+    Ok((preflight, receipt))
+}
+
+pub(super) fn bound_agent_definition<'a>(
+    state: &'a CollaborationCatalogState,
+    package: &ImmutableDefinitionRef,
+) -> Result<&'a CollaborationDefinitionRecord, CollaborationError> {
+    let package_record = state
+        .packages
+        .get(&package.storage_key())
+        .ok_or_else(|| CollaborationError::NotFound(package.id.clone()))?;
+    let entrypoints = package_record
+        .manifest
+        .get("entrypoints")
+        .and_then(Value::as_array)
+        .ok_or_else(|| CollaborationError::Invalid("package entrypoints are missing".to_owned()))?;
+    let mut agents = Vec::new();
+    for entrypoint in entrypoints {
+        let reference = parse_reference(entrypoint)?;
+        if let Some(definition) = state.definitions.get(&reference.storage_key())
+            && definition.kind == CollaborationKind::AgentDefinition
+        {
+            agents.push(definition);
+        }
+    }
+    if agents.len() != 1 {
+        return Err(CollaborationError::Invalid(
+            "ordinary binding requires exactly one AgentDefinition entrypoint".to_owned(),
+        ));
+    }
+    Ok(agents[0])
+}
+
+async fn resolve_skills(
+    skill_service: Option<&crate::uar::runtime::skills::SkillService>,
+    binding: &Value,
+    definition: &CollaborationDefinitionRecord,
+) -> Result<(Vec<ResolvedSkill>, Vec<FieldDiagnostic>), CollaborationError> {
+    let declared = definition
+        .document
+        .get("skills")
+        .and_then(Value::as_array)
+        .ok_or_else(|| CollaborationError::Invalid("definition skills are missing".to_owned()))?;
+    let binding_skills = binding
+        .get("skillBindings")
+        .and_then(Value::as_array)
+        .ok_or_else(|| {
+            CollaborationError::Invalid("binding skillBindings are missing".to_owned())
+        })?;
+    let installed = match skill_service {
+        Some(service) => service.get_skills().await,
+        None => Vec::new(),
+    };
+    let mut resolved = Vec::new();
+    let mut diagnostics = Vec::new();
+    for (index, value) in declared.iter().enumerate() {
+        let requested: SkillRef = serde_json::from_value(value.clone()).map_err(|_| {
+            CollaborationError::Invalid("definition SkillRef is invalid".to_owned())
+        })?;
+        let pointer = format!("/skills/{index}");
+        let Some(bound_value) = binding_skills.iter().find(|candidate| {
+            candidate.get("id").and_then(Value::as_str) == Some(requested.id.as_str())
+        }) else {
+            diagnostics.push(binding_diagnostic(
+                pointer,
+                &requested,
+                "skill.binding-missing",
+            ));
+            continue;
+        };
+        let location = required_string(bound_value, "installedLocation")?.to_owned();
+        let mut bound_skill_value = bound_value.clone();
+        bound_skill_value
+            .as_object_mut()
+            .ok_or_else(|| {
+                CollaborationError::Invalid("skill binding must be an object".to_owned())
+            })?
+            .remove("installedLocation");
+        let bound: SkillRef = serde_json::from_value(bound_skill_value)
+            .map_err(|_| CollaborationError::Invalid("bound SkillRef is invalid".to_owned()))?;
+        if bound != requested {
+            return Err(CollaborationError::Invalid(format!(
+                "skill binding at {pointer} does not exactly match the immutable definition"
+            )));
+        }
+        let installed_skill = installed
+            .iter()
+            .find(|skill| skill.skill_id == requested.id);
+        let exact = installed_skill.is_some_and(|skill| {
+            skill.version == requested.version
+                && skill.artifact_digest.as_deref() == Some(requested.digest.as_str())
+                && skill.installed_location.as_deref() == Some(location.as_str())
+                && skill.entrypoint == requested.entrypoint
+                && skill.required_tools.iter().collect::<BTreeSet<_>>()
+                    == requested.required_tools.iter().collect::<BTreeSet<_>>()
+                && skill.enabled
+                && !skill.tombstoned
+        });
+        if !exact {
+            diagnostics.push(binding_diagnostic(
+                pointer,
+                &requested,
+                "skill.installed-artifact-mismatch",
+            ));
+            continue;
+        }
+        diagnostics.push(FieldDiagnostic {
+            pointer,
+            disposition: ConversionDisposition::Exact,
+            reason_code: "skill.bound-exactly".to_owned(),
+            message: "The complete SkillRef resolves to the exact enabled installed artifact."
+                .to_owned(),
+            effective_binding_ref: None,
+        });
+        resolved.push(ResolvedSkill {
+            skill: requested,
+            installed_location: location,
+        });
+    }
+    Ok((resolved, diagnostics))
+}
+
+pub(super) async fn revalidate_resolved_skills(
+    skill_service: Option<&crate::uar::runtime::skills::SkillService>,
+    receipt: &EffectiveBindingReceipt,
+) -> Result<(), CollaborationError> {
+    let installed = match skill_service {
+        Some(service) => service.get_skills().await,
+        None if receipt.resolved_skills.is_empty() => return Ok(()),
+        None => {
+            return Err(CollaborationError::Conflict(
+                "installed skill catalog is unavailable".to_owned(),
+            ));
+        }
+    };
+    for resolved in &receipt.resolved_skills {
+        let requested = &resolved.skill;
+        let exact = installed.iter().any(|skill| {
+            skill.skill_id == requested.id
+                && skill.version == requested.version
+                && skill.artifact_digest.as_deref() == Some(requested.digest.as_str())
+                && skill.installed_location.as_deref() == Some(resolved.installed_location.as_str())
+                && skill.entrypoint == requested.entrypoint
+                && skill.required_tools.iter().collect::<BTreeSet<_>>()
+                    == requested.required_tools.iter().collect::<BTreeSet<_>>()
+                && skill.enabled
+                && !skill.tombstoned
+        });
+        if !exact {
+            return Err(CollaborationError::Conflict(format!(
+                "resolved skill '{}' changed after binding",
+                requested.id
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn binding_diagnostic(pointer: String, skill: &SkillRef, reason: &str) -> FieldDiagnostic {
+    FieldDiagnostic {
+        pointer,
+        disposition: if skill.required {
+            ConversionDisposition::RequiredUnsupported
+        } else {
+            ConversionDisposition::OptionalUnsupported
+        },
+        reason_code: reason.to_owned(),
+        message: if skill.required {
+            "The required skill does not resolve to the exact installed artifact."
+        } else {
+            "The optional skill is preserved but does not resolve to an installed artifact."
+        }
+        .to_owned(),
+        effective_binding_ref: None,
+    }
+}
+
+fn resolve_models(
+    binding: &Value,
+    definition: &CollaborationDefinitionRecord,
+    diagnostics: &mut Vec<FieldDiagnostic>,
+) -> Result<Vec<Value>, CollaborationError> {
+    let model_bindings = binding
+        .get("modelBindings")
+        .and_then(Value::as_array)
+        .ok_or_else(|| {
+            CollaborationError::Invalid("binding modelBindings are missing".to_owned())
+        })?;
+    let requirements = definition
+        .document
+        .get("models")
+        .and_then(Value::as_array)
+        .ok_or_else(|| CollaborationError::Invalid("definition models are missing".to_owned()))?;
+    let mut resolved = Vec::new();
+    for (index, requirement) in requirements.iter().enumerate() {
+        let aliases = requirement
+            .get("preferredAliases")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .collect::<Vec<_>>();
+        let selected = model_bindings.iter().find(|candidate| {
+            candidate
+                .get("requestedAlias")
+                .and_then(Value::as_str)
+                .is_some_and(|alias| aliases.contains(&alias))
+        });
+        let Some(selected) = selected else {
+            diagnostics.push(FieldDiagnostic {
+                pointer: format!("/models/{index}"),
+                disposition: ConversionDisposition::RequiredUnsupported,
+                reason_code: "model.binding-missing".to_owned(),
+                message: "No model binding resolves a preferred immutable definition alias."
+                    .to_owned(),
+                effective_binding_ref: None,
+            });
+            continue;
+        };
+        resolved.push(json!({
+            "role": requirement.get("role"),
+            "requestedAlias": selected.get("requestedAlias"),
+            "providerId": selected.get("providerId"),
+            "modelId": selected.get("modelId"),
+        }));
+        diagnostics.push(FieldDiagnostic {
+            pointer: format!("/models/{index}"),
+            disposition: ConversionDisposition::Exact,
+            reason_code: "model.bound-exactly".to_owned(),
+            message: "The model role resolves through a declared preferred alias.".to_owned(),
+            effective_binding_ref: None,
+        });
+    }
+    Ok(resolved)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn effective_receipt(
+    binding: &Value,
+    package: ImmutableDefinitionRef,
+    definition: &CollaborationDefinitionRecord,
+    resolved_skills: Vec<ResolvedSkill>,
+    resolved_models: Vec<Value>,
+    representation_grants: Vec<RepresentationGrantRef>,
+    effective: Value,
+    mut diagnostics: Vec<FieldDiagnostic>,
+    admitted: bool,
+) -> Result<EffectiveBindingReceipt, CollaborationError> {
+    let binding_ref = PrivateRevisionRef {
+        id: required_string(binding, "id")?.to_owned(),
+        revision: binding
+            .get("revision")
+            .and_then(Value::as_u64)
+            .ok_or_else(|| CollaborationError::Invalid("binding revision is missing".to_owned()))?,
+        digest: required_string(binding, "contentDigest")?.to_owned(),
+    };
+    for diagnostic in &mut diagnostics {
+        diagnostic.effective_binding_ref = Some(binding_ref.clone());
+    }
+    let requested = json!({
+        "definition": definition.identity,
+        "skills": definition.document.get("skills").cloned().unwrap_or_else(|| json!([])),
+        "modelRequirements": definition.document.get("modelRequirements").cloned(),
+        "promptDialect": definition.document.get("promptDialect").cloned(),
+        "ragConfiguration": definition.document.get("ragConfiguration").cloned(),
+        "contextStrategy": definition.document.get("contextStrategy").cloned(),
+        "apiHarness": definition.document.get("apiHarness").cloned(),
+    });
+    let mut receipt = EffectiveBindingReceipt {
+        profile: COLLABORATION_PROFILE_DRAFT_2.to_owned(),
+        kind: CollaborationKind::EffectiveBindingReceipt,
+        export_class: "private-binding-evidence".to_owned(),
+        id: format!("{}/effective", binding_ref.id),
+        revision: binding_ref.revision,
+        content_digest: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+            .to_owned(),
+        binding_ref,
+        package,
+        requested,
+        effective,
+        resolved_skills,
+        resolved_models,
+        policy_revision: required_string(binding, "policyRevision")?.to_owned(),
+        representation_grants,
+        runtime_capabilities: vec![
+            "collaboration_definition_packages_v2".to_owned(),
+            "collaboration_deployment_bindings_v2".to_owned(),
+            "collaboration_conversion_reports_v1".to_owned(),
+            "collaboration_representation_grant_refs_v1".to_owned(),
+        ],
+        diagnostics,
+        admitted,
+        created_at: Utc::now(),
+    };
+    receipt.content_digest = canonical_digest(&serde_json::to_value(&receipt)?)?;
+    Ok(receipt)
 }
 
 fn enforce_binding_revision(
@@ -360,20 +722,15 @@ fn parse_reference(value: &Value) -> Result<ImmutableDefinitionRef, Collaboratio
     Ok(reference)
 }
 
-fn required_string<'a>(
-    value: &'a Value,
-    field: &str,
-) -> Result<&'a str, CollaborationError> {
+fn required_string<'a>(value: &'a Value, field: &str) -> Result<&'a str, CollaborationError> {
     value
         .get(field)
         .and_then(Value::as_str)
         .filter(|text| !text.is_empty())
-        .ok_or_else(|| {
-            CollaborationError::Invalid(format!("'{field}' must be a non-empty string"))
-        })
+        .ok_or_else(|| CollaborationError::Invalid(format!("'{field}' must be a non-empty string")))
 }
 
-fn binding_key(owner_id: &str, workspace_id: &str, binding_id: &str) -> String {
+pub(super) fn binding_key(owner_id: &str, workspace_id: &str, binding_id: &str) -> String {
     format!("{owner_id}\u{1f}{workspace_id}\u{1f}{binding_id}")
 }
 

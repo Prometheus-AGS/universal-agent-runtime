@@ -1328,7 +1328,9 @@ async fn run_server_with_listener(
     };
     info!("Compiler service initialized");
     let collaboration_catalog = Arc::new(
-        uar::compiler::collaboration::CollaborationCatalogService::new(collaboration_storage),
+        uar::compiler::collaboration::CollaborationCatalogService::new(collaboration_storage)
+            .with_skill_service(Arc::clone(&skill_service))
+            .with_provider_registry(Arc::clone(&provider_registry)),
     );
     info!("Collaboration package catalog initialized");
 
@@ -1540,7 +1542,10 @@ async fn run_server_with_listener(
         .nest(
             "/api/uar",
             uar::api::router()
-                .with_state::<AppState>(Arc::clone(&state.run_manager))
+                .with_state::<AppState>(Arc::new(uar::api::routes::RunApiState {
+                    manager: Arc::clone(&state.run_manager),
+                    collaboration_catalog: Arc::clone(&state.collaboration_catalog),
+                }))
                 .merge(
                     uar::a2ui::routes::build_response_router()
                         .with_state::<AppState>(a2ui_api_state.clone()),

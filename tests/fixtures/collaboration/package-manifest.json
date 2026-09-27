@@ -1,0 +1,83 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "PackageManifest",
+  "id": "urn:uar:c03:package",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "C03 completed-path fixture",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "collaboration_definition_packages_v2"
+  ],
+  "extensions": {},
+  "entrypoints": [
+    {
+      "id": "urn:uar:c03:agent",
+      "version": "1.0.0",
+      "digest": "sha256:4e2824e906599cf4c05ba85865790f3c38129a065206ef01129d6be3cedff145"
+    }
+  ],
+  "files": [
+    {
+      "path": "agent-definition.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:c03:agent",
+        "version": "1.0.0",
+        "digest": "sha256:4e2824e906599cf4c05ba85865790f3c38129a065206ef01129d6be3cedff145"
+      },
+      "byteDigest": "sha256:cf33a0afff9d55663898c9b222f34afa077013ac31b6a1414741ec277f81992a"
+    },
+    {
+      "path": "team-definition.json",
+      "kind": "TeamDefinition",
+      "definition": {
+        "id": "urn:uar:c03:team",
+        "version": "1.0.0",
+        "digest": "sha256:1be7bd489ad5a1cd926f8729283c6fd37db023af1add58d70f75e61c6ca51263"
+      },
+      "byteDigest": "sha256:c2ec1f3144fa4d2c37bc64dc32e985989c443f63471dd31f9ab5b118f96f0af0"
+    },
+    {
+      "path": "workflow-definition.json",
+      "kind": "WorkflowDefinition",
+      "definition": {
+        "id": "urn:uar:c03:workflow",
+        "version": "1.0.0",
+        "digest": "sha256:bd8243d1d42e6a80fd7a6f0162003e8510d433cd0eb690b2b33340bd14fa5ff2"
+      },
+      "byteDigest": "sha256:e38a29d85a8521080959c498754ccd4dcfd127b21e356f33467e5293da83d76f"
+    }
+  ],
+  "lock": [
+    {
+      "requestedBy": "urn:uar:c03:team",
+      "reference": {
+        "id": "urn:uar:c03:agent",
+        "version": "1.0.0",
+        "digest": "sha256:4e2824e906599cf4c05ba85865790f3c38129a065206ef01129d6be3cedff145"
+      },
+      "resolvedPath": "agent-definition.json"
+    },
+    {
+      "requestedBy": "urn:uar:c03:team",
+      "reference": {
+        "id": "urn:uar:c03:workflow",
+        "version": "1.0.0",
+        "digest": "sha256:bd8243d1d42e6a80fd7a6f0162003e8510d433cd0eb690b2b33340bd14fa5ff2"
+      },
+      "resolvedPath": "workflow-definition.json"
+    }
+  ],
+  "capabilityDeclarations": [
+    {
+      "capability": "collaboration_definition_packages_v2",
+      "required": true
+    }
+  ],
+  "resolution": "exact-version-and-digest",
+  "contentDigest": "sha256:88db2cb40bf1de1d3a24d822f8cfb2b14239a8d73197bf5c5a71d4957c1fdeef"
+}

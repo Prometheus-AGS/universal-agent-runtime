@@ -56,12 +56,7 @@ pub mod user_settings;
 use axum::Router;
 
 #[cfg(feature = "server")]
-use crate::uar::runtime::manager::RunManager;
-#[cfg(feature = "server")]
-use std::sync::Arc;
-
-#[cfg(feature = "server")]
-pub fn router() -> Router<Arc<RunManager>> {
+pub fn router() -> Router<std::sync::Arc<routes::RunApiState>> {
     // In M3 we will build the router in routes.rs and just return it here
     routes::build_router()
 }

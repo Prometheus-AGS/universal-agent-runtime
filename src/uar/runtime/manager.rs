@@ -2400,6 +2400,7 @@ impl RunManager {
                 authorization_digest: checkpoint_authorization_digest,
             }),
             inherited_history: None,
+            collaboration_binding: None,
             skill_attachments: Vec::new(),
             working_directory: None,
         })
@@ -2432,6 +2433,24 @@ impl RunManager {
         }
         self.execute_request_inner(request, run_id, None, None, None, None)
             .await
+    }
+
+    /// Execute an ordinary agent only after its persisted private binding has
+    /// been revalidated against the current catalog, policy, skills, and grants.
+    pub async fn execute_bound_request(
+        &self,
+        request: crate::uar::runtime::turn::RunExecutionRequest,
+    ) -> Result<String, crate::uar::compiler::collaboration::CollaborationError> {
+        let binding = request.collaboration_binding.as_ref().ok_or_else(|| {
+            crate::uar::compiler::collaboration::CollaborationError::Invalid(
+                "bound execution request has no effective binding receipt".to_owned(),
+            )
+        })?;
+        binding
+            .revalidate(&request.artifact)
+            .await
+            .map_err(crate::uar::compiler::collaboration::CollaborationError::from)?;
+        Ok(self.execute_request(request).await)
     }
 
     /// Preserve an observable failure even when root persistence fails before
@@ -2772,6 +2791,7 @@ impl RunManager {
             reasoning_effort,
             checkpoint_resume,
             inherited_history,
+            collaboration_binding,
             skill_attachments: _,
             working_directory,
             verified_owner,
@@ -3605,7 +3625,13 @@ impl RunManager {
                 self.governance_gate.clone(),
             )
         }) {
-            Ok(admission) => Arc::new(admission),
+            Ok(admission) => {
+                let admission = match &collaboration_binding {
+                    Some(binding) => admission.with_claim_revalidator(Arc::new(binding.clone())),
+                    None => admission,
+                };
+                Arc::new(admission)
+            }
             Err(error) => {
                 if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
                     state.run.status = RunStatus::Error;
@@ -4001,6 +4027,15 @@ impl RunManager {
                 return run_id;
             }
         };
+        if let Some(binding) = &collaboration_binding {
+            activation_context.lock().await.set_binding_configs(
+                binding
+                    .receipt
+                    .resolved_skills
+                    .iter()
+                    .map(|resolved| (resolved.skill.id.clone(), resolved.skill.config.clone())),
+            );
+        }
         let register_turn_tools = async {
             native_skills
                 .register(
@@ -4167,13 +4202,18 @@ impl RunManager {
             bindings.models.for_policy(&bindings.policy)
         } else {
             let preferred_llm_config = policy_llm_config.unwrap_or_else(|| self.llm_config.clone());
-            let skill_preferred_model = matched_skills.iter().find_map(|skill| {
-                skill
-                    .execution_config
-                    .preferred_model
-                    .as_ref()
-                    .map(|model| (skill.skill_id.as_str(), model.as_str()))
-            });
+            let skill_preferred_model = collaboration_binding
+                .is_none()
+                .then(|| {
+                    matched_skills.iter().find_map(|skill| {
+                        skill
+                            .execution_config
+                            .preferred_model
+                            .as_ref()
+                            .map(|model| (skill.skill_id.as_str(), model.as_str()))
+                    })
+                })
+                .flatten();
             let run_llm_config = if let Some(ref registry) = self.provider_registry {
                 let policy_preferred_model = qualified_model_name(&preferred_llm_config);
                 let (policy_provider, _) =
@@ -4302,24 +4342,25 @@ impl RunManager {
                 run_llm_config.reasoning_effort = Some(effort);
                 run_llm_config.thinking_budget = effort.thinking_budget();
             }
-            let run_failover_config = if run_credentials.is_some() {
-                let mut failover = self.failover_config.clone();
-                failover.fallback_models = artifact
-                    .policy
-                    .provider
-                    .fallbacks
-                    .iter()
-                    .map(|fallback| crate::config::FallbackModel {
-                        model: format!("{}/{}", fallback.provider, fallback.model),
-                        api_key: None,
-                        base_url: None,
-                    })
-                    .collect();
-                failover.enabled = !failover.fallback_models.is_empty();
-                failover
-            } else {
-                self.failover_config.clone()
-            };
+            let run_failover_config =
+                if run_credentials.is_some() || collaboration_binding.is_some() {
+                    let mut failover = self.failover_config.clone();
+                    failover.fallback_models = artifact
+                        .policy
+                        .provider
+                        .fallbacks
+                        .iter()
+                        .map(|fallback| crate::config::FallbackModel {
+                            model: format!("{}/{}", fallback.provider, fallback.model),
+                            api_key: None,
+                            base_url: None,
+                        })
+                        .collect();
+                    failover.enabled = !failover.fallback_models.is_empty();
+                    failover
+                } else {
+                    self.failover_config.clone()
+                };
 
             // This artifact's session ceiling belongs to the captured root session,
             // not the aggregate spend of every session using the same agent.

@@ -1,0 +1,72 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "WorkflowDefinition",
+  "id": "urn:uar:c03:workflow",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "C03 completed-path fixture",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [],
+  "extensions": {},
+  "title": "C03 one-step workflow",
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "steps": [
+    {
+      "id": "review",
+      "role": "reviewer",
+      "dependsOn": [],
+      "inputMapping": {
+        "brief": "workflow-input:brief"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "read",
+      "approval": "current-authority",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "artifact",
+      "instructions": "Review once."
+    }
+  ],
+  "failurePolicy": "stop-dependent",
+  "maxActivations": 1,
+  "contentDigest": "sha256:bd8243d1d42e6a80fd7a6f0162003e8510d433cd0eb690b2b33340bd14fa5ff2"
+}
