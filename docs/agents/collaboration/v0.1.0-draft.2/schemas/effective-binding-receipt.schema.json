@@ -79,6 +79,43 @@
       },
       "uniqueItems": true
     },
+    "serviceBinding": {
+      "type": "object",
+      "properties": {
+        "instanceId": { "type": "string", "minLength": 1 },
+        "profile": { "const": "uar.service-instance/1" },
+        "workspaceLocation": { "enum": ["local", "remote"] },
+        "endpoints": {
+          "type": "object",
+          "properties": {
+            "runtime": { "type": "string", "format": "uri" },
+            "administration": { "type": "string", "format": "uri" },
+            "models": { "type": "string", "format": "uri" },
+            "console": { "type": ["string", "null"], "format": "uri" }
+          },
+          "required": ["runtime", "administration", "models", "console"],
+          "additionalProperties": false
+        },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "intent": { "enum": ["new", "reattach", "migrate"] },
+        "bindingId": { "type": "string", "minLength": 1 },
+        "bindingRevision": { "$ref": "common.schema.json#/$defs/revision" },
+        "credentialRef": { "type": "string", "minLength": 1 }
+      },
+      "required": [
+        "instanceId",
+        "profile",
+        "workspaceLocation",
+        "endpoints",
+        "capabilities",
+        "intent"
+      ],
+      "additionalProperties": false
+    },
     "diagnostics": {
       "type": "array",
       "items": {

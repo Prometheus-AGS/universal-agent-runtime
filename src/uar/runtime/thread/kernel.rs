@@ -594,6 +594,7 @@ impl CapturedThreadKernel {
             .with_verified_owner(self.resources.owner.clone());
         request.session_id = Some(thread.thread_id.clone());
         request.inherited_history = Some(turn.messages);
+        request.service_binding = self.resources.service_binding.clone();
         let run_id = thread
             .run_id
             .clone()

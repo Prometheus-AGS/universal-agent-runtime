@@ -208,6 +208,7 @@ impl CollaborationCatalogService {
         validate_binding(
             self.skill_service.as_deref(),
             self.provider_registry.as_deref(),
+            self.service_instance.as_deref(),
             owner_id,
             workspace_id,
             request,
@@ -220,6 +221,7 @@ impl CollaborationCatalogService {
 async fn validate_binding(
     skill_service: Option<&crate::uar::runtime::skills::SkillService>,
     provider_registry: Option<&crate::llm::ProviderRegistry>,
+    service_instance: Option<&crate::uar::service_instance::ServiceInstanceAuthority>,
     owner_id: &str,
     workspace_id: &str,
     request: &BindingCommandRequest,
@@ -314,6 +316,8 @@ async fn validate_binding(
         &mut field_diagnostics,
     )
     .await;
+    let service_binding =
+        resolve_service_binding(service_instance, document, &mut field_diagnostics)?;
     let representation_grants =
         super::grants::validate_binding_grants(owner_id, workspace_id, document, state)?;
     let activation_supported = !field_diagnostics
@@ -341,11 +345,83 @@ async fn validate_binding(
         resolved_skills,
         resolved_models,
         representation_grants,
+        service_binding,
         effective,
         field_diagnostics,
         activation_supported,
     )?;
     Ok((preflight, receipt))
+}
+
+fn resolve_service_binding(
+    authority: Option<&crate::uar::service_instance::ServiceInstanceAuthority>,
+    binding: &Value,
+    diagnostics: &mut Vec<FieldDiagnostic>,
+) -> Result<Option<crate::uar::service_instance::EffectiveServiceBinding>, CollaborationError> {
+    let instance_id = required_string(binding, "runtimeInstanceId")?;
+    let required_capabilities = binding
+        .get("requiredCapabilities")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    let expected_workspace_location = binding
+        .get("workspaceLocation")
+        .cloned()
+        .map(serde_json::from_value)
+        .transpose()
+        .map_err(|_| CollaborationError::Invalid("workspaceLocation is invalid".to_owned()))?;
+    let expected_endpoints = binding
+        .get("endpointRoles")
+        .cloned()
+        .map(serde_json::from_value)
+        .transpose()
+        .map_err(|_| CollaborationError::Invalid("endpointRoles are invalid".to_owned()))?;
+    let expectation = crate::uar::service_instance::ServicePlacementExpectation {
+        intent: crate::uar::service_instance::PlacementIntent::New,
+        expected_instance_id: instance_id.to_owned(),
+        expected_profile: binding
+            .get("serviceProfile")
+            .and_then(Value::as_str)
+            .unwrap_or(crate::uar::service_instance::SERVICE_PROFILE)
+            .to_owned(),
+        expected_workspace_location,
+        required_capabilities,
+        expected_endpoints,
+        binding_id: Some(required_string(binding, "id")?.to_owned()),
+        binding_revision: binding.get("revision").and_then(Value::as_u64),
+        credential_ref: binding
+            .get("runtimeCredentialRef")
+            .and_then(Value::as_str)
+            .map(str::to_owned),
+    };
+    let Some(authority) = authority else {
+        return Ok(None);
+    };
+    let response = authority.evaluate(
+        &expectation,
+        crate::uar::service_instance::PlacementIntent::New,
+    );
+    for diagnostic in response.diagnostics {
+        diagnostics.push(FieldDiagnostic {
+            pointer: match diagnostic.field {
+                "expectedInstanceId" => "/runtimeInstanceId",
+                "expectedProfile" => "/serviceProfile",
+                "expectedWorkspaceLocation" => "/workspaceLocation",
+                "expectedEndpoints" => "/endpointRoles",
+                "requiredCapabilities" => "/requiredCapabilities",
+                _ => "/runtimeInstanceId",
+            }
+            .to_owned(),
+            disposition: ConversionDisposition::RequiredUnsupported,
+            reason_code: diagnostic.code.to_owned(),
+            message: diagnostic.message,
+            effective_binding_ref: None,
+        });
+    }
+    Ok(response.effective_binding)
 }
 
 pub(super) fn bound_agent_definition<'a>(
@@ -589,6 +665,7 @@ fn effective_receipt(
     resolved_skills: Vec<ResolvedSkill>,
     resolved_models: Vec<Value>,
     representation_grants: Vec<RepresentationGrantRef>,
+    service_binding: Option<crate::uar::service_instance::EffectiveServiceBinding>,
     effective: Value,
     mut diagnostics: Vec<FieldDiagnostic>,
     admitted: bool,
@@ -613,6 +690,17 @@ fn effective_receipt(
         "contextStrategy": definition.document.get("contextStrategy").cloned(),
         "apiHarness": definition.document.get("apiHarness").cloned(),
     });
+    let runtime_capabilities = service_binding
+        .as_ref()
+        .map(|binding| binding.capabilities.clone())
+        .unwrap_or_else(|| {
+            vec![
+                "collaboration_definition_packages_v2".to_owned(),
+                "collaboration_deployment_bindings_v2".to_owned(),
+                "collaboration_conversion_reports_v1".to_owned(),
+                "collaboration_representation_grant_refs_v1".to_owned(),
+            ]
+        });
     let mut receipt = EffectiveBindingReceipt {
         profile: COLLABORATION_PROFILE_DRAFT_2.to_owned(),
         kind: CollaborationKind::EffectiveBindingReceipt,
@@ -629,12 +717,8 @@ fn effective_receipt(
         resolved_models,
         policy_revision: required_string(binding, "policyRevision")?.to_owned(),
         representation_grants,
-        runtime_capabilities: vec![
-            "collaboration_definition_packages_v2".to_owned(),
-            "collaboration_deployment_bindings_v2".to_owned(),
-            "collaboration_conversion_reports_v1".to_owned(),
-            "collaboration_representation_grant_refs_v1".to_owned(),
-        ],
+        runtime_capabilities,
+        service_binding,
         diagnostics,
         admitted,
         created_at: Utc::now(),
@@ -657,6 +741,15 @@ fn enforce_binding_revision(
 }
 
 fn validate_private_references(document: &Value) -> Result<(), CollaborationError> {
+    for field in ["runtimeCredentialRef", "workspaceRef"] {
+        if let Some(reference) = document.get(field).and_then(Value::as_str)
+            && (reference.chars().any(char::is_whitespace) || !reference.contains("://"))
+        {
+            return Err(CollaborationError::Invalid(format!(
+                "{field} must be an opaque protected-store reference"
+            )));
+        }
+    }
     for binding in document
         .get("modelBindings")
         .and_then(Value::as_array)

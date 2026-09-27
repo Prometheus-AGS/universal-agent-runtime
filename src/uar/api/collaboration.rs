@@ -21,6 +21,7 @@ use crate::uar::security::claims::UserContext;
 #[derive(Debug, Clone)]
 pub struct CollaborationApiState {
     pub service: Arc<CollaborationCatalogService>,
+    pub service_instance: Arc<crate::uar::service_instance::ServiceInstanceAuthority>,
 }
 
 #[derive(Serialize)]
@@ -72,12 +73,15 @@ pub fn build_router() -> Router<Arc<CollaborationApiState>> {
         )
 }
 
-async fn collaboration_capabilities(Extension(user): Extension<UserContext>) -> Response {
+async fn collaboration_capabilities(
+    State(state): State<Arc<CollaborationApiState>>,
+    Extension(user): Extension<UserContext>,
+) -> Response {
     let binding_owner_id = match owner_key(&user) {
         Ok(owner) => owner,
         Err(response) => return response,
     };
-    let Json(runtime) = super::capabilities::capabilities_handler().await;
+    let runtime = super::capabilities::capabilities_response(&state.service_instance);
     Json(CollaborationCapabilitiesResponse {
         runtime,
         binding_owner_id,

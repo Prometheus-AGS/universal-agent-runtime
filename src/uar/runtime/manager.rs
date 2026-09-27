@@ -2401,6 +2401,7 @@ impl RunManager {
             }),
             inherited_history: None,
             collaboration_binding: None,
+            service_binding: None,
             skill_attachments: Vec::new(),
             working_directory: None,
         })
@@ -2792,6 +2793,7 @@ impl RunManager {
             checkpoint_resume,
             inherited_history,
             collaboration_binding,
+            service_binding,
             skill_attachments: _,
             working_directory,
             verified_owner,
@@ -3396,6 +3398,15 @@ impl RunManager {
         let session_id_for_creds = Some(session.id().to_string());
 
         let dialogue = RunDialogue(crate::session::Session::from_state(session.to_state()));
+        let effective_service_binding = service_binding.clone();
+        let effective_collaboration_binding = collaboration_binding.as_ref().map(|binding| {
+            serde_json::json!({
+                "ownerId": &binding.owner_id,
+                "workspaceId": &binding.workspace_id,
+                "bindingId": &binding.receipt.binding_ref.id,
+                "bindingRevision": binding.receipt.binding_ref.revision,
+            })
+        });
         let agent_snapshot = artifact.snapshot(if host_resources_marker.artifact_inline {
             "inline"
         } else {
@@ -3415,6 +3426,8 @@ impl RunManager {
                 "presentation_templates": presentation_snapshot.identities(),
                 "agent_snapshot": agent_snapshot,
                 "host_resources": host_resources_marker,
+                "effective_service_binding": effective_service_binding.clone(),
+                "effective_collaboration_binding": effective_collaboration_binding,
                 "host_context": {
                     "working_directory": working_directory.as_ref().map(|path| path.display().to_string()),
                     "reasoning_effort": reasoning_effort.map(crate::config::ReasoningEffort::as_str),
@@ -4470,6 +4483,7 @@ impl RunManager {
                     run_mcp_grants: mcp_resources
                         .as_ref()
                         .and_then(|resources| resources.run_grants().cloned()),
+                    service_binding: effective_service_binding.clone(),
                 })
             }),
         );

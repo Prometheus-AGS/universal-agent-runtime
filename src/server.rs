@@ -521,6 +521,16 @@ async fn run_server_with_listener(
     let sidecar_guard =
         launch_token.map(|token| Arc::new(SidecarGuard::new(token, primary_addr.port())));
     let sidecar_mode = sidecar_guard.is_some();
+    let bound_origin = format!("http://{primary_addr}");
+    let service_instance = Arc::new(uar::service_instance::ServiceInstanceAuthority::new(
+        &config.service_instance,
+        &config.a2a.instance_id,
+        &bound_origin,
+        sidecar_mode,
+        &uar::api::capabilities::IMPLEMENTED_CAPABILITIES,
+    ));
+    let mut effective_a2a_config = config.a2a.clone();
+    effective_a2a_config.instance_id = service_instance.descriptor().instance.id.clone();
 
     info!(name: "startup.step", step = 3, stage = "companion_listener", "UAR startup progress");
     let companion = if sidecar_mode {
@@ -1251,7 +1261,7 @@ async fn run_server_with_listener(
         .with_world_state_config(config.project_instructions.clone(), config.world_state)
         .with_provider_registry(Arc::clone(&provider_registry))
         .with_native_skills(Arc::clone(&native_skill_registry))
-        .with_a2a_config(&config.a2a)
+        .with_a2a_config(&effective_a2a_config)
         .with_a2ui_backbone(Arc::clone(&a2ui_realtime_backbone))
         .with_retention_config(config.runs, config.sessions)
         .with_message_context_strategy(config.context_strategy.clone())
@@ -1330,7 +1340,8 @@ async fn run_server_with_listener(
     let collaboration_catalog = Arc::new(
         uar::compiler::collaboration::CollaborationCatalogService::new(collaboration_storage)
             .with_skill_service(Arc::clone(&skill_service))
-            .with_provider_registry(Arc::clone(&provider_registry)),
+            .with_provider_registry(Arc::clone(&provider_registry))
+            .with_service_instance(Arc::clone(&service_instance)),
     );
     info!("Collaboration package catalog initialized");
 
@@ -1339,7 +1350,7 @@ async fn run_server_with_listener(
     let a2a_state = Arc::new(uar::api::a2a::A2AState {
         threads: Arc::new(
             uar::api::a2a::thread_service::A2AThreadService::new(Arc::clone(&actor_system))
-                .with_instance_id(config.a2a.instance_id.clone()),
+                .with_instance_id(service_instance.descriptor().instance.id.clone()),
         ),
         security: config.security.clone(),
         base_url: format!("http://{}:{}", config.server.host, config.server.port),
@@ -1515,7 +1526,19 @@ async fn run_server_with_listener(
         .route("/readyz", get(readiness_handler))
         .route(
             "/api/uar/capabilities",
-            get(uar::api::capabilities::capabilities_handler),
+            get(uar::api::capabilities::capabilities_handler).with_state(Arc::new(
+                uar::api::capabilities::CapabilitiesApiState {
+                    service_instance: Arc::clone(&service_instance),
+                },
+            )),
+        )
+        .route(
+            "/api/uar/compatibility",
+            post(uar::api::capabilities::compatibility_handler).with_state(Arc::new(
+                uar::api::capabilities::CapabilitiesApiState {
+                    service_instance: Arc::clone(&service_instance),
+                },
+            )),
         )
         .route("/.well-known/uar-config", get(uar_config_schema_handler))
         .route(
@@ -1545,6 +1568,7 @@ async fn run_server_with_listener(
                 .with_state::<AppState>(Arc::new(uar::api::routes::RunApiState {
                     manager: Arc::clone(&state.run_manager),
                     collaboration_catalog: Arc::clone(&state.collaboration_catalog),
+                    service_instance: Arc::clone(&service_instance),
                 }))
                 .merge(
                     uar::a2ui::routes::build_response_router()
@@ -1596,6 +1620,7 @@ async fn run_server_with_listener(
             uar::api::collaboration::build_router().with_state(Arc::new(
                 uar::api::collaboration::CollaborationApiState {
                     service: Arc::clone(&collaboration_catalog),
+                    service_instance: Arc::clone(&service_instance),
                 },
             )),
         )

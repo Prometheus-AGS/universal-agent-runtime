@@ -6,7 +6,7 @@
 use serde::Serialize;
 
 /// Schema revision for [`AdministrationCapabilities`].
-pub const ADMINISTRATION_SCHEMA_VERSION: u32 = 2;
+pub const ADMINISTRATION_SCHEMA_VERSION: u32 = 3;
 
 /// Navigation group for an administration surface.
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -374,6 +374,13 @@ pub fn administration_capabilities() -> AdministrationCapabilities {
                         "GET",
                         "/api/uar/capabilities",
                         Public,
+                        Read
+                    ),
+                    endpoint!(
+                        "service-instance.compatibility.evaluate",
+                        "POST",
+                        "/api/uar/compatibility",
+                        Host,
                         Read
                     ),
                     endpoint!("health.read", "GET", "/health", Public, Read),

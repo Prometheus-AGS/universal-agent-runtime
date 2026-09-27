@@ -48,6 +48,31 @@
     "runtimeInstanceId": {
       "$ref": "common.schema.json#/$defs/id"
     },
+    "serviceProfile": {
+      "const": "uar.service-instance/1"
+    },
+    "workspaceLocation": {
+      "enum": ["local", "remote"]
+    },
+    "endpointRoles": {
+      "type": "object",
+      "properties": {
+        "runtime": { "type": "string", "format": "uri" },
+        "administration": { "type": "string", "format": "uri" },
+        "models": { "type": "string", "format": "uri" },
+        "console": { "type": ["string", "null"], "format": "uri" }
+      },
+      "required": ["runtime", "administration", "models", "console"],
+      "additionalProperties": false
+    },
+    "runtimeCredentialRef": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workspaceRef": {
+      "type": "string",
+      "minLength": 1
+    },
     "revision": {
       "$ref": "common.schema.json#/$defs/revision"
     },

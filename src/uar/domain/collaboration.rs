@@ -304,6 +304,8 @@ pub struct EffectiveBindingReceipt {
     pub policy_revision: String,
     pub representation_grants: Vec<RepresentationGrantRef>,
     pub runtime_capabilities: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub service_binding: Option<crate::uar::service_instance::EffectiveServiceBinding>,
     pub diagnostics: Vec<FieldDiagnostic>,
     pub admitted: bool,
     pub created_at: DateTime<Utc>,

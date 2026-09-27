@@ -88,6 +88,8 @@ pub(crate) struct RunDelegationBindings {
     pub(crate) cancellation: tokio_util::sync::CancellationToken,
     pub(crate) run_scoped_mcp: Option<crate::mcp::runtime::McpRuntimeManager>,
     pub(crate) run_mcp_grants: Option<crate::mcp::runtime::RunMcpGrantControl>,
+    pub(crate) service_binding:
+        Option<crate::uar::service_instance::EffectiveServiceBinding>,
 }
 
 impl std::fmt::Debug for RunDelegationBindings {

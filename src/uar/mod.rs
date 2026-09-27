@@ -23,6 +23,7 @@ pub mod rag;
 pub mod realtime;
 pub mod runtime;
 pub mod security;
+pub mod service_instance;
 pub mod settings;
 #[cfg(feature = "telemetry")]
 pub mod telemetry;

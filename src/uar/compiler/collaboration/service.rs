@@ -53,6 +53,8 @@ pub struct CollaborationCatalogService {
     pub(super) storage: Arc<dyn CollaborationStorage>,
     pub(super) skill_service: Option<Arc<crate::uar::runtime::skills::SkillService>>,
     pub(super) provider_registry: Option<Arc<crate::llm::ProviderRegistry>>,
+    pub(super) service_instance:
+        Option<Arc<crate::uar::service_instance::ServiceInstanceAuthority>>,
 }
 
 impl CollaborationCatalogService {
@@ -62,6 +64,7 @@ impl CollaborationCatalogService {
             storage,
             skill_service: None,
             provider_registry: None,
+            service_instance: None,
         }
     }
 
@@ -85,6 +88,15 @@ impl CollaborationCatalogService {
         provider_registry: Arc<crate::llm::ProviderRegistry>,
     ) -> Self {
         self.provider_registry = Some(provider_registry);
+        self
+    }
+
+    #[must_use]
+    pub fn with_service_instance(
+        mut self,
+        service_instance: Arc<crate::uar::service_instance::ServiceInstanceAuthority>,
+    ) -> Self {
+        self.service_instance = Some(service_instance);
         self
     }
 
@@ -137,6 +149,23 @@ impl CollaborationCatalogService {
             return Err(CollaborationError::Conflict(
                 "effective binding receipt does not admit activation".to_owned(),
             ));
+        }
+        if let Some(authority) = &self.service_instance {
+            let service_binding = receipt.service_binding.as_ref().ok_or_else(|| {
+                CollaborationError::Conflict(
+                    "effective binding receipt has no live service binding".to_owned(),
+                )
+            })?;
+            authority.revalidate(service_binding).map_err(|response| {
+                CollaborationError::Conflict(
+                    response
+                        .diagnostics
+                        .into_iter()
+                        .map(|diagnostic| diagnostic.message)
+                        .collect::<Vec<_>>()
+                        .join("; "),
+                )
+            })?;
         }
         let state = self.load_state().await?;
         let binding = state
