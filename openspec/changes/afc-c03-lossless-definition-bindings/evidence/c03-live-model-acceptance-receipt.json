@@ -1,0 +1,120 @@
+{
+  "schema": "urn:prometheus:uar:evidence:c03-live-model-acceptance:1",
+  "change": "afc-c03-lossless-definition-bindings",
+  "gate": "C03 completed-path live-model acceptance",
+  "result": "passed",
+  "command": "UAR_LIVE_INTEGRATION_BACKEND=live cargo test --locked --no-default-features --features minimal --test integration live::collaboration_conformance_cases::c03_completed_path_emits_one_acceptance_receipt -- --exact --nocapture --test-threads=1",
+  "productionSourceRevision": "7a02a249396fd77f297cdb3f9672c4ca35341a63",
+  "testRevision": "24f8460910758a1712cb355eb9701a9a506ea438",
+  "executionEnvironment": {
+    "operatingSystem": "darwin",
+    "architecture": "arm64",
+    "backendMode": "live",
+    "provider": "openai",
+    "model": "gpt-5.5"
+  },
+  "claimBoundary": {
+    "establishes": [
+      "The completed C03 path reached the configured live provider through the deployment_binding_id selector.",
+      "The bound run completed with a nonempty assistant response using openai/gpt-5.5.",
+      "The emitted acceptance receipt covered schema ingress, catalog persistence across restart, effective runtime binding, private authority exclusion, and ordinary bound execution."
+    ],
+    "doesNotEstablish": [
+      "Windows execution of this gate.",
+      "Successful inference with openai/gpt-5.4-mini or openai/gpt-5.4."
+    ]
+  },
+  "excludedAttempts": [
+    {
+      "provider": "openai",
+      "model": "gpt-5.4-mini",
+      "outcome": "failed",
+      "observedError": "upstream HTTP 400",
+      "passingEvidence": false
+    },
+    {
+      "provider": "openai",
+      "model": "gpt-5.4",
+      "outcome": "failed",
+      "observedError": "upstream HTTP 400",
+      "passingEvidence": false
+    }
+  ],
+  "outputPrefix": "C03_ACCEPTANCE_RECEIPT=",
+  "acceptanceReceipt": {
+    "catalogPersistence": {
+      "catalogRevision": 1,
+      "coldRestart": true,
+      "definitionDigests": [
+        "sha256:16d97147b0d56a7883a2b9428be4210fc6754df0826af9e431954361a03ae14a",
+        "sha256:63fd2e1784572a763b88e9db1b910c9d9e0412dcef3211d0c9ae5ac367e55fff",
+        "sha256:bd8243d1d42e6a80fd7a6f0162003e8510d433cd0eb690b2b33340bd14fa5ff2"
+      ],
+      "package": {
+        "digest": "sha256:e70757386a120d3819092633a6127ca93e29bac56e72194a837ba5d392a55c11",
+        "id": "urn:uar:c03:package",
+        "version": "1.0.0"
+      }
+    },
+    "effectiveRuntimeSemantics": {
+      "bindingDigest": "sha256:c58642e9efa231949e924377c51fc6791a3a081b10870d23f31bd5cc717cf689",
+      "bindingRevision": 1,
+      "downgradeRefused": true,
+      "immutableConflict": true,
+      "policyRevision": "policy:c03:1",
+      "resolvedSkills": [
+        {
+          "installedLocation": "file://tests/fixtures/collaboration/builtin-skills/sample-skill/SKILL.md",
+          "skill": {
+            "config": {
+              "mode": "fixture"
+            },
+            "digest": "sha256:37b6989908c8541943c18751448b00cf8bc825a9f902dfa3430f9e5dfc8ccc84",
+            "entrypoint": null,
+            "id": "builtin::sample-filesystem-skill",
+            "required": true,
+            "requiredTools": [
+              "native_echo"
+            ],
+            "version": "1.0.0"
+          }
+        }
+      ]
+    },
+    "ordinaryExecutionEvidence": {
+      "agentId": "urn:uar:c03:agent",
+      "backendMode": "live",
+      "inferenceCertified": true,
+      "model": "gpt-5.5",
+      "nonemptyResponse": true,
+      "provider": "openai",
+      "recordedProtocolBoundary": null,
+      "selector": "deployment_binding_id",
+      "status": "done"
+    },
+    "privateAuthorityExclusion": {
+      "constraintDigest": "sha256:7e8297d9998ee21c0c22f391faace673eb2a905247c3f2d6024a0e92dc2ddb0c",
+      "currentGrantRevision": 2,
+      "grantId": "urn:uar:c03:grant",
+      "observedGrantRevisions": [
+        1,
+        2
+      ],
+      "portablePrivateAuthorityRejected": true,
+      "sanitizedTemplate": true,
+      "staleGrantRefused": true,
+      "stalePolicyRefused": true
+    },
+    "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+    "schemaValidity": {
+      "documentKinds": [
+        "AgentDefinition",
+        "TeamDefinition",
+        "WorkflowDefinition"
+      ],
+      "legacyIngress": 3,
+      "requiredUnsupportedObserved": true
+    },
+    "sourceRevision": "7a02a249396fd77f297cdb3f9672c4ca35341a63"
+  }
+}
