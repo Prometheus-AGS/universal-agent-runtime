@@ -25,15 +25,15 @@
 
 ## 5. Effective binding and private RepresentationGrant boundary
 
-- [ ] 5.1 Resolve exact skill version/digest/config/entrypoint/tool requirements and all five v2 fields during DeploymentBinding preflight; verify each required field either appears in an EffectiveBindingReceipt with its enforcing runtime component or yields `required-unsupported` before admission.
-- [ ] 5.2 Persist EffectiveBindingReceipt with the private binding revision and make ordinary-agent admission consume that receipt; verify requested/effective definitions, skills, models, runtime capabilities, and current policy revision are all bound to the admitted run.
-- [ ] 5.3 Add private RepresentationGrant storage, revision history, lookup, and DeploymentBinding reference validation using C02 grant ID, issuer, subject, revision, status, validity, and constraint digest; verify there is no grant issuance, consent workflow, human impersonation, delegated approval, or representation action path.
-- [ ] 5.4 Revalidate current policy and RepresentationGrant state after waits and before governed effects; verify a stale revision, revoked/expired status, or changed constraint digest cannot reuse an earlier binding or approval decision.
+- [x] 5.1 Resolve exact skill version/digest/config/entrypoint/tool requirements and all five v2 fields during DeploymentBinding preflight; verify each required field either appears in an EffectiveBindingReceipt with its enforcing runtime component or yields `required-unsupported` before admission.
+- [x] 5.2 Persist EffectiveBindingReceipt with the private binding revision and make ordinary-agent admission consume that receipt; verify requested/effective definitions, skills, models, runtime capabilities, and current policy revision are all bound to the admitted run.
+- [x] 5.3 Add private RepresentationGrant storage, revision history, lookup, and DeploymentBinding reference validation using C02 grant ID, issuer, subject, revision, status, validity, and constraint digest; verify there is no grant issuance, consent workflow, human impersonation, delegated approval, or representation action path.
+- [x] 5.4 Revalidate current policy and RepresentationGrant state after waits and before governed effects; verify a stale revision, revoked/expired status, or changed constraint digest cannot reuse an earlier binding or approval decision.
 
 ## 6. Import, export, and administration
 
-- [ ] 6.1 Add canonical package export/reimport with exact definition digests, byte digests, optional extension values, migration reports, and immutable lock closure; verify a mutable alias change cannot alter an installed binding and a required unsupported target export is refused.
-- [ ] 6.2 Add explicit DeploymentBindingTemplate export that removes private owner, workspace, runtime, credential, connection, decision, secret, and grant values and reports every required rebind; verify templates cannot be installed or activated as DeploymentBinding records.
+- [x] 6.1 Add canonical package export/reimport with exact definition digests, byte digests, optional extension values, migration reports, and immutable lock closure; verify a mutable alias change cannot alter an installed binding and a required unsupported target export is refused.
+- [x] 6.2 Add explicit DeploymentBindingTemplate export that removes private owner, workspace, runtime, credential, connection, decision, secret, and grant values and reports every required rebind; verify templates cannot be installed or activated as DeploymentBinding records.
 - [ ] 6.3 Extend existing collaboration REST and MCP administration with typed conversion reports, binding receipts, package export, and sanitized-template export; verify authentication and owner/workspace scoping remain on every private operation and no new service or port is added.
 - [ ] 6.4 Add `collaboration_definition_packages_v2`, `collaboration_deployment_bindings_v2`, `collaboration_conversion_reports_v1`, and `collaboration_representation_grant_refs_v1` only with their implemented behavior, retaining v1 advertisements while supported; verify capability output lists exact profiles, schema IDs, export classes, and activation limits without team-execution or C17 claims.
 
