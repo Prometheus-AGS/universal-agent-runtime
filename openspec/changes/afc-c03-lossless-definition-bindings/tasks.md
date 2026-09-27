@@ -18,10 +18,10 @@
 
 ## 4. Legacy Agent Markdown and lossless canonical conversion
 
-- [ ] 4.1 Update `src/uar/compiler/{ir.rs,parser.rs,storage.rs}` to preserve source metadata identity, exact source headings, authored presence, complete v1.1/v2 IR, original authoring sections, and explicit rename mappings; verify the adapter accepts only the fixed Agent heading vocabulary and does not create Team, Workflow, Binding, or Grant Markdown kinds.
-- [ ] 4.2 Normalize legacy skill entries into the canonical SkillRef superset `id`, `version`, `digest`, `required`, `config`, `entrypoint`, and `requiredTools`; verify omitted, null, empty, explicit-default, and required values remain distinguishable in the conversion report and stored source record.
-- [ ] 4.3 Add explicit draft.1-to-draft.2 migration without rewriting draft.1 identities or relabeling source digests; verify every normalized definition records its source profile/digest and target profile/digest in an immutable migration receipt.
-- [ ] 4.4 Update AgentArtifact projection to retain the canonical definition reference and pass full SkillRef plus all five v2 requirements into private binding; verify projection storage alone never produces an `exact` or supported runtime disposition.
+- [x] 4.1 Update `src/uar/compiler/{ir.rs,parser.rs,storage.rs}` to preserve source metadata identity, exact source headings, authored presence, complete v1.1/v2 IR, original authoring sections, and explicit rename mappings; verify the adapter accepts only the fixed Agent heading vocabulary and does not create Team, Workflow, Binding, or Grant Markdown kinds.
+- [x] 4.2 Normalize legacy skill entries into the canonical SkillRef superset `id`, `version`, `digest`, `required`, `config`, `entrypoint`, and `requiredTools`; verify omitted, null, empty, explicit-default, and required values remain distinguishable in the conversion report and stored source record.
+- [x] 4.3 Add explicit draft.1-to-draft.2 migration without rewriting draft.1 identities or relabeling source digests; verify every normalized definition records its source profile/digest and target profile/digest in an immutable migration receipt.
+- [x] 4.4 Update AgentArtifact projection to retain the canonical definition reference and pass full SkillRef plus all five v2 requirements into private binding; verify projection storage alone never produces an `exact` or supported runtime disposition.
 
 ## 5. Effective binding and private RepresentationGrant boundary
 
