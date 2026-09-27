@@ -26,7 +26,7 @@ macro_rules! post {
 
 const MODEL: &str = "gpt-5.4-mini";
 const PROFILE: &str = "urn:prometheus:uar:collaboration:0.1.0-draft.2";
-const SOURCE_REVISION: &str = "fba2b34a6449c501b0ad9de29936eb63f5726843";
+const SOURCE_REVISION: &str = "7a02a249396fd77f297cdb3f9672c4ca35341a63";
 const WORKSPACE: &str = "workspace:c03";
 const PACKAGE_ID: &str = "urn:uar:c03:package";
 const BINDING_ID: &str = "urn:uar:c03:binding";
@@ -192,7 +192,7 @@ async fn c03_completed_path_emits_one_acceptance_receipt() {
         json!({"commandId":"c03-grant-1","expectedRevision":0,"grant":grant_v1}),
         StatusCode::CREATED
     );
-    let binding = parse_fixture(BINDING);
+    let binding = binding_for_model(&backend.model);
     let installed_binding = post!(
         api,
         "effective binding install",
@@ -202,7 +202,7 @@ async fn c03_completed_path_emits_one_acceptance_receipt() {
     );
     assert_eq!(installed_binding["preflight"]["activationSupported"], true);
 
-    let mut blocked_binding = parse_fixture(BINDING);
+    let mut blocked_binding = binding.clone();
     blocked_binding["id"] = Value::String("urn:uar:c03:blocked-binding".to_owned());
     blocked_binding["package"] = blocked_package["preflight"]["package"].clone();
     let blocked_skill = parse_fixture(BLOCKED_AGENT)["skills"][0].clone();
@@ -358,7 +358,7 @@ async fn c03_completed_path_emits_one_acceptance_receipt() {
             "template retained private field {private_field}"
         );
     }
-    let source_binding = parse_fixture(BINDING);
+    let source_binding = binding.clone();
     for (pointer, private_value) in [
         ("/ownerId", &source_binding["ownerId"]),
         ("/workspaceId", &source_binding["workspaceId"]),
@@ -410,7 +410,7 @@ async fn c03_completed_path_emits_one_acceptance_receipt() {
     );
     assert_eq!(downgrade["status"], "refused");
 
-    let mut stale_policy = parse_fixture(BINDING);
+    let mut stale_policy = binding;
     stale_policy["revision"] = json!(2);
     stale_policy["policyRevision"] = Value::String("policy:c03:2".to_owned());
     finalize(&mut stale_policy);
@@ -494,4 +494,12 @@ async fn c03_completed_path_emits_one_acceptance_receipt() {
         "C03_ACCEPTANCE_RECEIPT={}",
         serde_json::to_string(&acceptance).expect("acceptance receipt JSON")
     );
+}
+
+fn binding_for_model(model: &str) -> Value {
+    let mut binding = parse_fixture(BINDING);
+    let model_id = model.split_once('/').map_or(model, |(_, id)| id);
+    binding["modelBindings"][0]["modelId"] = Value::String(model_id.to_owned());
+    finalize(&mut binding);
+    binding
 }
