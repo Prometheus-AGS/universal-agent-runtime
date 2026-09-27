@@ -11,10 +11,10 @@
 
 ## 3. Authoritative runtime validation and evidence types
 
-- [ ] 3.1 Extend `src/uar/domain/collaboration.rs` with draft.2 document identity, full SkillRef, RepresentationGrant, ConversionReport, EffectiveBindingReceipt, DeploymentBindingTemplate, and migration receipt types; verify their serialized field names and revision/immutability classes match the published schemas by static comparison.
-- [ ] 3.2 Replace duplicated shape decisions in `src/uar/compiler/collaboration/validation/**` with the registered draft.2 schema/discriminator pipeline while retaining relational, digest, graph, capability, and authority checks as semantic validation; verify callers cannot supply a kind that disagrees with the document.
-- [ ] 3.3 Produce RFC 6901 field diagnostics with source identity/profile, target profile or harness, disposition, stable reason code, redacted message, and optional effective-binding reference; verify unknown required semantics block activation and unknown optional values remain present in the immutable record.
-- [ ] 3.4 Implement structured authority/recognized-secret exclusion for every portable extensible value with redacted diagnostic paths and no secret logging; verify the planned fixtures cover extensions, source descriptors, legacy sections, skill config, contracts, and free text.
+- [x] 3.1 Extend `src/uar/domain/collaboration.rs` with draft.2 document identity, full SkillRef, RepresentationGrant, ConversionReport, EffectiveBindingReceipt, DeploymentBindingTemplate, and migration receipt types; verify their serialized field names and revision/immutability classes match the published schemas by static comparison.
+- [x] 3.2 Replace duplicated shape decisions in `src/uar/compiler/collaboration/validation/**` with the registered draft.2 schema/discriminator pipeline while retaining relational, digest, graph, capability, and authority checks as semantic validation; verify callers cannot supply a kind that disagrees with the document.
+- [x] 3.3 Produce RFC 6901 field diagnostics with source identity/profile, target profile or harness, disposition, stable reason code, redacted message, and optional effective-binding reference; verify unknown required semantics block activation and unknown optional values remain present in the immutable record.
+- [x] 3.4 Implement structured authority/recognized-secret exclusion for every portable extensible value with redacted diagnostic paths and no secret logging; verify the planned fixtures cover extensions, source descriptors, legacy sections, skill config, contracts, and free text.
 
 ## 4. Legacy Agent Markdown and lossless canonical conversion
 
