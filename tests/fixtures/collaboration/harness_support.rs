@@ -1,6 +1,7 @@
 //! Helpers for the C03 completed-path integration fixture.
 
 use std::collections::BTreeMap;
+use std::fmt::Write as _;
 use std::time::Duration;
 
 use reqwest::{Method, StatusCode};
@@ -10,7 +11,11 @@ use sha2::{Digest, Sha256};
 use super::{AGENT, MANIFEST, PROFILE, TEAM, WORKFLOW, WORKSPACE};
 
 pub(super) fn sha256(bytes: &[u8]) -> String {
-    format!("sha256:{:x}", Sha256::digest(bytes))
+    let mut encoded = String::from("sha256:");
+    for byte in Sha256::digest(bytes) {
+        write!(&mut encoded, "{byte:02x}").expect("writing to String cannot fail");
+    }
+    encoded
 }
 
 fn canonical(value: &Value) -> Value {
@@ -137,18 +142,20 @@ impl Api<'_> {
 }
 
 pub(super) async fn compile_legacy(api: &Api<'_>, source: &str) -> Value {
-    post!(
-        api,
+    api.post(
         "legacy compiler ingress",
         "/api/uar/compiler/compile",
         json!({"content": source}),
-        StatusCode::OK
+        StatusCode::OK,
     )
+    .await
 }
 
 pub(super) async fn wait_for_run(api: &Api<'_>, run_id: &str) -> Value {
     for _ in 0..200 {
-        let body = get!(api, "bound run status", &format!("/api/uar/runs/{run_id}"));
+        let body = api
+            .get("bound run status", &format!("/api/uar/runs/{run_id}"))
+            .await;
         if matches!(
             body["status"].as_str(),
             Some("done" | "error" | "cancelled")
