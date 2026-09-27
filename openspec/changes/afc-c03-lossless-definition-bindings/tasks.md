@@ -1,13 +1,13 @@
 ## 1. Contract and workflow checkpoint
 
-- [ ] 1.1 Record the repository source receipt for C01 `afc.convergence-contract.v1` and `afc.identity-state-action.v1` `1.0.0`, I1 merge `79414bb7e134dad45330008999ee1dca999d44af` and implementation `676f995c73dc7dacdce71c929ffac88ac3618bb0`, C02 `afc.governed-effect/1` `1.1.0` at `59df10a102c5d46da9db5983a73fbcf20ca09590`, and initiative tasks C03.1-C03.3; verify each revision resolves and the receipt names this repository change without moving unrelated KBD state.
-- [ ] 1.2 Claim one writer for each ordered surface in design section 9 and record that review, verification, and integration roles remain dormant until production implementation is complete; verify no claimed file overlaps another active assignment.
+- [x] 1.1 Record the repository source receipt for C01 `afc.convergence-contract.v1` and `afc.identity-state-action.v1` `1.0.0`, I1 merge `79414bb7e134dad45330008999ee1dca999d44af` and implementation `676f995c73dc7dacdce71c929ffac88ac3618bb0`, C02 `afc.governed-effect/1` `1.1.0` at `59df10a102c5d46da9db5983a73fbcf20ca09590`, and initiative tasks C03.1-C03.3; verify each revision resolves and the receipt names this repository change without moving unrelated KBD state.
+- [x] 1.2 Claim one writer for each ordered surface in design section 9 and record that review, verification, and integration roles remain dormant until production implementation is complete; verify no claimed file overlaps another active assignment.
 
 ## 2. Draft.2 collaboration profile and schemas
 
-- [ ] 2.1 Publish `docs/agents/collaboration/v0.1.0-draft.2/` with the 15 exact normative headings, independent version domains, compatibility rules, and immutable source pins; verify draft.1 files and `$id` values remain unchanged.
-- [ ] 2.2 Define the draft.2 `common`, top-level discriminator, AgentDefinition, TeamDefinition, WorkflowDefinition, PackageManifest, private DeploymentBinding, private RepresentationGrant, ConversionReport, EffectiveBindingReceipt, and DeploymentBindingTemplate schemas; verify every `$id`, `profile`, `kind`, required member, `additionalProperties` rule, and package-kind exclusion agrees with the spec delta.
-- [ ] 2.3 Add valid and invalid draft.2 schema fixtures for all document kinds, canonical SkillRef, unknown optional/required extensions, immutable digest/lock conflicts, private-state exclusion, and sanitized templates; verify the fixture inventory covers every schema branch without running the phase integration gate yet.
+- [x] 2.1 Publish `docs/agents/collaboration/v0.1.0-draft.2/` with the 15 exact normative headings, independent version domains, compatibility rules, and immutable source pins; verify draft.1 files and `$id` values remain unchanged.
+- [x] 2.2 Define the draft.2 `common`, top-level discriminator, AgentDefinition, TeamDefinition, WorkflowDefinition, PackageManifest, private DeploymentBinding, private RepresentationGrant, ConversionReport, EffectiveBindingReceipt, and DeploymentBindingTemplate schemas; verify every `$id`, `profile`, `kind`, required member, `additionalProperties` rule, and package-kind exclusion agrees with the spec delta.
+- [x] 2.3 Add valid and invalid draft.2 schema fixtures for all document kinds, canonical SkillRef, unknown optional/required extensions, immutable digest/lock conflicts, private-state exclusion, and sanitized templates; verify the fixture inventory covers every schema branch without running the phase integration gate yet.
 
 ## 3. Authoritative runtime validation and evidence types
 
