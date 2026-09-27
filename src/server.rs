@@ -1334,7 +1334,8 @@ async fn run_server_with_listener(
     };
     info!("Compiler service initialized");
     let collaboration_catalog = Arc::new(
-        uar::compiler::collaboration::CollaborationCatalogService::new(collaboration_storage),
+        uar::compiler::collaboration::CollaborationCatalogService::new(collaboration_storage)
+            .with_skill_service(Arc::clone(&skill_service)),
     );
     info!("Collaboration package catalog initialized");
 

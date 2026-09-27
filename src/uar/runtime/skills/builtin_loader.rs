@@ -43,6 +43,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 use tracing::{debug, info, warn};
 use walkdir::WalkDir;
 
@@ -450,10 +451,15 @@ fn parse_manifest(path: &Path) -> Result<Skill> {
         phases: mr.phases,
         routing_reference: mr.routing_reference,
     });
+    let artifact_digest = format!("sha256:{:x}", Sha256::digest(raw.as_bytes()));
 
     Ok(Skill {
         skill_id: String::new(),
         version: meta.version.unwrap_or_else(|| "0.0.0".to_string()),
+        artifact_digest: Some(artifact_digest),
+        installed_location: Some(format!("file://{}", path.display())),
+        entrypoint: None,
+        required_tools: preferred_tools.clone(),
         title: meta.name,
         description: meta.description,
         triggers,

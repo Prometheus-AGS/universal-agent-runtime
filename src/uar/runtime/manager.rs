@@ -2280,6 +2280,7 @@ impl RunManager {
                 authorization_digest: checkpoint_authorization_digest,
             }),
             inherited_history: None,
+            collaboration_binding: None,
             skill_attachments: Vec::new(),
             working_directory: None,
         })
@@ -2312,6 +2313,24 @@ impl RunManager {
         }
         self.execute_request_inner(request, run_id, None, None, None, None)
             .await
+    }
+
+    /// Execute an ordinary agent only after its persisted private binding has
+    /// been revalidated against the current catalog, policy, skills, and grants.
+    pub async fn execute_bound_request(
+        &self,
+        request: crate::uar::runtime::turn::RunExecutionRequest,
+    ) -> Result<String, crate::uar::compiler::collaboration::CollaborationError> {
+        let binding = request.collaboration_binding.as_ref().ok_or_else(|| {
+            crate::uar::compiler::collaboration::CollaborationError::Invalid(
+                "bound execution request has no effective binding receipt".to_owned(),
+            )
+        })?;
+        binding
+            .revalidate(&request.artifact)
+            .await
+            .map_err(crate::uar::compiler::collaboration::CollaborationError::from)?;
+        Ok(self.execute_request(request).await)
     }
 
     /// Preserve an observable failure even when root persistence fails before
@@ -2569,6 +2588,7 @@ impl RunManager {
             reasoning_effort,
             checkpoint_resume,
             inherited_history,
+            collaboration_binding,
             skill_attachments: _,
             working_directory,
             verified_owner,
@@ -3388,7 +3408,13 @@ impl RunManager {
                 run_cancellation.clone(),
             )
         }) {
-            Ok(admission) => Arc::new(admission),
+            Ok(admission) => {
+                let admission = match &collaboration_binding {
+                    Some(binding) => admission.with_claim_revalidator(Arc::new(binding.clone())),
+                    None => admission,
+                };
+                Arc::new(admission)
+            }
             Err(error) => {
                 if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
                     state.run.status = RunStatus::Error;
@@ -3781,6 +3807,15 @@ impl RunManager {
                 return run_id;
             }
         };
+        if let Some(binding) = &collaboration_binding {
+            activation_context.lock().await.set_binding_configs(
+                binding
+                    .receipt
+                    .resolved_skills
+                    .iter()
+                    .map(|resolved| (resolved.skill.id.clone(), resolved.skill.config.clone())),
+            );
+        }
         let register_turn_tools = async {
             native_skills
                 .register(

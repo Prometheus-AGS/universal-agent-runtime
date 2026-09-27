@@ -394,6 +394,9 @@ impl ToolAdmissionEvidence {
 impl ToolAdmissionRuntime {
     /// Persist claim intent before any native, MCP, or delegated side effect.
     pub async fn claim(&self, admitted: &AdmittedToolInvocation) -> anyhow::Result<()> {
+        if let Some(revalidator) = &self.claim_revalidator {
+            revalidator.revalidate().await?;
+        }
         self.lifecycle.claim(admitted).await
     }
 

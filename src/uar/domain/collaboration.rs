@@ -400,6 +400,8 @@ pub struct DeploymentBindingRecord {
     pub package: ImmutableDefinitionRef,
     pub activation_supported: bool,
     pub preflight_diagnostics: Vec<ConversionDiagnostic>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub effective_binding_receipt: Option<EffectiveBindingReceipt>,
     pub updated_at: DateTime<Utc>,
 }
 
@@ -426,6 +428,12 @@ pub struct CollaborationCatalogState {
     pub bindings: BTreeMap<String, DeploymentBindingRecord>,
     #[serde(default)]
     pub binding_history: BTreeMap<String, DeploymentBindingRecord>,
+    #[serde(default)]
+    pub representation_grants: BTreeMap<String, RepresentationGrant>,
+    #[serde(default)]
+    pub representation_grant_history: BTreeMap<String, RepresentationGrant>,
+    #[serde(default)]
+    pub effective_binding_receipts: BTreeMap<String, EffectiveBindingReceipt>,
     pub command_receipts: BTreeMap<String, CollaborationCommandReceipt>,
 }
 

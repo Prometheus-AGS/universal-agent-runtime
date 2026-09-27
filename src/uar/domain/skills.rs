@@ -67,6 +67,18 @@ pub struct ScopedSkillConfig {
 pub struct Skill {
     pub skill_id: String,
     pub version: String,
+    /// Digest of the exact installed artifact bytes used for private binding.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub artifact_digest: Option<String>,
+    /// Opaque installed artifact location; this is never an executable recipe.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub installed_location: Option<String>,
+    /// Installed artifact entrypoint identity, when the artifact declares one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entrypoint: Option<String>,
+    /// Tool identities required by the installed artifact.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub required_tools: Vec<String>,
     pub title: String,
     pub description: String,
     pub triggers: SkillTriggers,
