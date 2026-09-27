@@ -3982,13 +3982,18 @@ impl RunManager {
             bindings.models.for_policy(&bindings.policy)
         } else {
             let preferred_llm_config = policy_llm_config.unwrap_or_else(|| self.llm_config.clone());
-            let skill_preferred_model = matched_skills.iter().find_map(|skill| {
-                skill
-                    .execution_config
-                    .preferred_model
-                    .as_ref()
-                    .map(|model| (skill.skill_id.as_str(), model.as_str()))
-            });
+            let skill_preferred_model = collaboration_binding
+                .is_none()
+                .then(|| {
+                    matched_skills.iter().find_map(|skill| {
+                        skill
+                            .execution_config
+                            .preferred_model
+                            .as_ref()
+                            .map(|model| (skill.skill_id.as_str(), model.as_str()))
+                    })
+                })
+                .flatten();
             let run_llm_config = if let Some(ref registry) = self.provider_registry {
                 let policy_preferred_model = qualified_model_name(&preferred_llm_config);
                 let (policy_provider, _) =
@@ -4117,24 +4122,25 @@ impl RunManager {
                 run_llm_config.reasoning_effort = Some(effort);
                 run_llm_config.thinking_budget = effort.thinking_budget();
             }
-            let run_failover_config = if run_credentials.is_some() {
-                let mut failover = self.failover_config.clone();
-                failover.fallback_models = artifact
-                    .policy
-                    .provider
-                    .fallbacks
-                    .iter()
-                    .map(|fallback| crate::config::FallbackModel {
-                        model: format!("{}/{}", fallback.provider, fallback.model),
-                        api_key: None,
-                        base_url: None,
-                    })
-                    .collect();
-                failover.enabled = !failover.fallback_models.is_empty();
-                failover
-            } else {
-                self.failover_config.clone()
-            };
+            let run_failover_config =
+                if run_credentials.is_some() || collaboration_binding.is_some() {
+                    let mut failover = self.failover_config.clone();
+                    failover.fallback_models = artifact
+                        .policy
+                        .provider
+                        .fallbacks
+                        .iter()
+                        .map(|fallback| crate::config::FallbackModel {
+                            model: format!("{}/{}", fallback.provider, fallback.model),
+                            api_key: None,
+                            base_url: None,
+                        })
+                        .collect();
+                    failover.enabled = !failover.fallback_models.is_empty();
+                    failover
+                } else {
+                    self.failover_config.clone()
+                };
 
             // This artifact's session ceiling belongs to the captured root session,
             // not the aggregate spend of every session using the same agent.

@@ -189,6 +189,16 @@ impl RunExecutionRequest {
             service,
         };
         let mut request = Self::new(artifact, input);
+        request.host_policy_constraint = collaboration_binding
+            .receipt
+            .effective
+            .get("contextStrategy")
+            .cloned()
+            .and_then(|value| serde_json::from_value(value).ok())
+            .map(|context_strategy| RunPolicy {
+                context_strategy: Some(context_strategy),
+                ..RunPolicy::default()
+            });
         request.skill_attachments = skill_attachments;
         request.collaboration_binding = Some(collaboration_binding);
         request

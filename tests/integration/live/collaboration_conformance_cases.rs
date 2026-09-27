@@ -201,6 +201,8 @@ async fn c03_completed_path_emits_one_acceptance_receipt() {
         StatusCode::CREATED
     );
     assert_eq!(installed_binding["preflight"]["activationSupported"], true);
+    assert_enforced_runtime_semantics(&installed_binding);
+    assert_required_runtime_semantics_refused(&api, &binding).await;
 
     let mut blocked_binding = binding.clone();
     blocked_binding["id"] = Value::String("urn:uar:c03:blocked-binding".to_owned());
@@ -289,6 +291,14 @@ async fn c03_completed_path_emits_one_acceptance_receipt() {
     let run_id = started["run_id"].as_str().expect("bound run id");
     let run = wait_for_run(&api, run_id).await;
     assert_eq!(run["status"], "done", "bound run failed: {run}");
+    assert_eq!(
+        run["effective_run_policy"]["context_strategy"],
+        json!({"type":"sliding_window","max_messages":1})
+    );
+    assert_eq!(
+        run["effective_run_policy"]["provenance"]["context_strategy"],
+        "turn"
+    );
     let replay = replay_run(&api, run_id).await;
     let observed_response = response_text(&replay);
     assert!(
@@ -467,7 +477,18 @@ async fn c03_completed_path_emits_one_acceptance_receipt() {
         "profile": PROFILE,
         "schemaValidity": {"legacyIngress":3,"documentKinds":["AgentDefinition","TeamDefinition","WorkflowDefinition"],"requiredUnsupportedObserved":true},
         "catalogPersistence": {"coldRestart":true,"catalogRevision":1,"package":package["identity"],"definitionDigests":main_manifest["files"].as_array().expect("manifest files").iter().map(|file| file["definition"]["digest"].clone()).collect::<Vec<_>>()},
-        "effectiveRuntimeSemantics": {"bindingRevision":receipt["revision"],"bindingDigest":receipt["bindingRef"]["digest"],"policyRevision":receipt["policyRevision"],"resolvedSkills":receipt["resolvedSkills"],"immutableConflict":true,"downgradeRefused":true},
+        "effectiveRuntimeSemantics": {
+            "bindingRevision":receipt["revision"],
+            "bindingDigest":receipt["bindingRef"]["digest"],
+            "policyRevision":receipt["policyRevision"],
+            "resolvedSkills":receipt["resolvedSkills"],
+            "effective":receipt["effective"],
+            "diagnostics":receipt["diagnostics"],
+            "requiredRuntimeSemanticsRefused":true,
+            "observedContextPolicy":run["effective_run_policy"]["context_strategy"],
+            "immutableConflict":true,
+            "downgradeRefused":true
+        },
         "privateAuthorityExclusion": {
             "portablePrivateAuthorityRejected":true,
             "grantId":GRANT_ID,

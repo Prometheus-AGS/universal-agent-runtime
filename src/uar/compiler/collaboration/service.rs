@@ -52,6 +52,7 @@ impl From<serde_json::Error> for CollaborationError {
 pub struct CollaborationCatalogService {
     pub(super) storage: Arc<dyn CollaborationStorage>,
     pub(super) skill_service: Option<Arc<crate::uar::runtime::skills::SkillService>>,
+    pub(super) provider_registry: Option<Arc<crate::llm::ProviderRegistry>>,
 }
 
 impl CollaborationCatalogService {
@@ -60,6 +61,7 @@ impl CollaborationCatalogService {
         Self {
             storage,
             skill_service: None,
+            provider_registry: None,
         }
     }
 
@@ -74,6 +76,15 @@ impl CollaborationCatalogService {
         skill_service: Arc<crate::uar::runtime::skills::SkillService>,
     ) -> Self {
         self.skill_service = Some(skill_service);
+        self
+    }
+
+    #[must_use]
+    pub fn with_provider_registry(
+        mut self,
+        provider_registry: Arc<crate::llm::ProviderRegistry>,
+    ) -> Self {
+        self.provider_registry = Some(provider_registry);
         self
     }
 

@@ -93,6 +93,78 @@ pub(super) fn single_agent_package(command_id: &str, package_id: &str, agent: &V
     })
 }
 
+pub(super) fn assert_enforced_runtime_semantics(installed_binding: &Value) {
+    for (pointer, reason_code) in [
+        ("/modelRequirements", "runtime.model-capabilities-enforced"),
+        ("/promptDialect", "runtime.prompt-dialect-enforced"),
+        ("/contextStrategy", "runtime.context-policy-enforced"),
+    ] {
+        assert!(
+            installed_binding["preflight"]["diagnostics"]
+                .as_array()
+                .is_some_and(|items| items
+                    .iter()
+                    .any(|item| { item["field"] == pointer && item["disposition"] == "exact" }))
+        );
+        assert!(
+            installed_binding["binding"]["effectiveBindingReceipt"]["diagnostics"]
+                .as_array()
+                .is_some_and(|items| items.iter().any(|item| {
+                    item["pointer"] == pointer && item["reasonCode"] == reason_code
+                }))
+        );
+    }
+}
+
+pub(super) async fn assert_required_runtime_semantics_refused(api: &Api<'_>, binding: &Value) {
+    let mut agent = parse_fixture(AGENT);
+    agent["id"] = Value::String("urn:uar:c03:runtime-unsupported".to_owned());
+    agent["promptDialect"]["value"] = serde_json::json!({"dialect":"anthropic_xml"});
+    agent["modelRequirements"]["value"] =
+        serde_json::json!({"capabilities":["text","unsupported-fixture-capability"]});
+    agent["contextStrategy"]["value"] = serde_json::json!({"mode":"unmapped-fixture-strategy"});
+    finalize(&mut agent);
+    let package = api
+        .post(
+            "unsupported runtime semantics package",
+            "/api/v1/collaboration/packages:install",
+            single_agent_package(
+                "c03-runtime-unsupported-package",
+                "urn:uar:c03:runtime-unsupported-package",
+                &agent,
+            ),
+            StatusCode::CREATED,
+        )
+        .await;
+    let mut binding = binding.clone();
+    binding["id"] = Value::String("urn:uar:c03:runtime-unsupported-binding".to_owned());
+    binding["package"] = package["preflight"]["package"].clone();
+    binding["representationGrantRefs"] = serde_json::json!([]);
+    finalize(&mut binding);
+    let response = api
+        .post(
+            "required runtime semantics refusal",
+            "/api/v1/collaboration/deployment-bindings:preflight",
+            serde_json::json!({
+                "commandId":"c03-runtime-unsupported-binding",
+                "expectedRevision":0,
+                "binding":binding
+            }),
+            StatusCode::OK,
+        )
+        .await;
+    assert_eq!(response["activationSupported"], false);
+    for pointer in ["/modelRequirements", "/promptDialect", "/contextStrategy"] {
+        assert!(
+            response["diagnostics"]
+                .as_array()
+                .is_some_and(|items| items.iter().any(|item| {
+                    item["field"] == pointer && item["disposition"] == "required-unsupported"
+                }))
+        );
+    }
+}
+
 pub(super) struct Api<'a> {
     pub(super) client: &'a reqwest::Client,
     pub(super) base_url: &'a str,

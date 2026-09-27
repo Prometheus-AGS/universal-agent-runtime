@@ -3,6 +3,7 @@
 mod bindings;
 mod export;
 mod grants;
+mod runtime_semantics;
 mod service;
 mod storage;
 mod validation;

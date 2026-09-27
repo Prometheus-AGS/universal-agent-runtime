@@ -17,7 +17,7 @@
   "package": {
     "id": "urn:uar:c03:package",
     "version": "1.0.0",
-    "digest": "sha256:e70757386a120d3819092633a6127ca93e29bac56e72194a837ba5d392a55c11"
+    "digest": "sha256:88db2cb40bf1de1d3a24d822f8cfb2b14239a8d73197bf5c5a71d4957c1fdeef"
   },
   "ownerId": "v1:s:17:live-harness-peer",
   "workspaceId": "workspace:c03",
@@ -75,5 +75,5 @@
   ],
   "status": "ready",
   "effectiveBindingReceiptRef": null,
-  "contentDigest": "sha256:3f1d5599f837adbff73cf4897065b0b1cd7507e3419c12e3a37365fa0f22369d"
+  "contentDigest": "sha256:114937b0786ff5384246deb19e29c5e41b312913ac84b6501531d72c553283c4"
 }

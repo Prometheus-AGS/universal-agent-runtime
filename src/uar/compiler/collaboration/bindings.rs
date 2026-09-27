@@ -207,6 +207,7 @@ impl CollaborationCatalogService {
     ) -> Result<(BindingPreflightResponse, EffectiveBindingReceipt), CollaborationError> {
         validate_binding(
             self.skill_service.as_deref(),
+            self.provider_registry.as_deref(),
             owner_id,
             workspace_id,
             request,
@@ -218,6 +219,7 @@ impl CollaborationCatalogService {
 
 async fn validate_binding(
     skill_service: Option<&crate::uar::runtime::skills::SkillService>,
+    provider_registry: Option<&crate::llm::ProviderRegistry>,
     owner_id: &str,
     workspace_id: &str,
     request: &BindingCommandRequest,
@@ -305,11 +307,13 @@ async fn validate_binding(
     let (resolved_skills, mut field_diagnostics) =
         resolve_skills(skill_service, document, definition).await?;
     let resolved_models = resolve_models(document, definition, &mut field_diagnostics)?;
-    let effective = resolve_v2_fields(
+    let effective = super::runtime_semantics::resolve_runtime_semantics(
         definition,
-        !resolved_models.is_empty(),
+        &resolved_models,
+        provider_registry,
         &mut field_diagnostics,
-    );
+    )
+    .await;
     let representation_grants =
         super::grants::validate_binding_grants(owner_id, workspace_id, document, state)?;
     let activation_supported = !field_diagnostics
@@ -575,58 +579,6 @@ fn resolve_models(
         });
     }
     Ok(resolved)
-}
-
-fn resolve_v2_fields(
-    definition: &CollaborationDefinitionRecord,
-    model_binding_available: bool,
-    diagnostics: &mut Vec<FieldDiagnostic>,
-) -> Value {
-    let mut effective = serde_json::Map::new();
-    for (field, supported) in [
-        ("modelRequirements", model_binding_available),
-        ("promptDialect", true),
-        ("ragConfiguration", false),
-        ("contextStrategy", true),
-        ("apiHarness", false),
-    ] {
-        let Some(requirement) = definition.document.get(field) else {
-            continue;
-        };
-        let required = requirement
-            .get("required")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-        let pointer = format!("/{field}");
-        if supported {
-            effective.insert(
-                field.to_owned(),
-                requirement.get("value").cloned().unwrap_or(Value::Null),
-            );
-            diagnostics.push(FieldDiagnostic {
-                pointer,
-                disposition: ConversionDisposition::Exact,
-                reason_code: "runtime.enforced".to_owned(),
-                message: "The requested field is bound to an enforcing runtime component."
-                    .to_owned(),
-                effective_binding_ref: None,
-            });
-        } else {
-            diagnostics.push(FieldDiagnostic {
-                pointer,
-                disposition: if required {
-                    ConversionDisposition::RequiredUnsupported
-                } else {
-                    ConversionDisposition::OptionalUnsupported
-                },
-                reason_code: "runtime.component-unavailable".to_owned(),
-                message: "The field is preserved without an enforcing runtime component."
-                    .to_owned(),
-                effective_binding_ref: None,
-            });
-        }
-    }
-    Value::Object(effective)
 }
 
 #[allow(clippy::too_many_arguments)]

@@ -124,7 +124,7 @@
   "promptDialect": {
     "required": true,
     "value": {
-      "id": "uar.prompt/plain-v1"
+      "dialect": "openai_json"
     }
   },
   "ragConfiguration": {
@@ -136,7 +136,8 @@
   "contextStrategy": {
     "required": true,
     "value": {
-      "mode": "selected"
+      "type": "sliding_window",
+      "max_messages": 1
     }
   },
   "apiHarness": {
@@ -169,5 +170,5 @@
       }
     ]
   },
-  "contentDigest": "sha256:16d97147b0d56a7883a2b9428be4210fc6754df0826af9e431954361a03ae14a"
+  "contentDigest": "sha256:4e2824e906599cf4c05ba85865790f3c38129a065206ef01129d6be3cedff145"
 }
