@@ -7,6 +7,7 @@ use crate::uar::domain::skills::{Skill, SkillManifest};
 use async_trait::async_trait;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::fs;
@@ -18,6 +19,14 @@ use walkdir::WalkDir;
 enum FilesystemDiscoveryMode {
     Project,
     StandardAgentDirectory,
+}
+
+fn sha256_digest(bytes: &[u8]) -> String {
+    let mut encoded = String::from("sha256:");
+    for byte in Sha256::digest(bytes) {
+        write!(&mut encoded, "{byte:02x}").expect("writing to String cannot fail");
+    }
+    encoded
 }
 
 /// Discovers skills from a local filesystem directory.
@@ -133,7 +142,7 @@ impl FilesystemStorageProvider {
         let skill = Skill {
             skill_id: skill_id.clone(),
             version: manifest.version,
-            artifact_digest: Some(format!("sha256:{:x}", Sha256::digest(content.as_bytes()))),
+            artifact_digest: Some(sha256_digest(content.as_bytes())),
             installed_location: Some(format!("file://{}", path.display())),
             entrypoint: None,
             required_tools: manifest.tools.clone(),

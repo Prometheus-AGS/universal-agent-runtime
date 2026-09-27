@@ -38,6 +38,7 @@
 //!   CH-08 skill-activation-metrics.
 
 use std::collections::{HashMap, HashSet};
+use std::fmt::Write as _;
 use std::io::Read as _;
 use std::path::{Path, PathBuf};
 
@@ -55,6 +56,14 @@ use crate::uar::domain::skills::{
 use super::pack_detection::{self, PackProvenance};
 
 const MAX_SKILL_MANIFEST_BYTES: u64 = 1024 * 1024;
+
+fn sha256_digest(bytes: &[u8]) -> String {
+    let mut encoded = String::from("sha256:");
+    for byte in Sha256::digest(bytes) {
+        write!(&mut encoded, "{byte:02x}").expect("writing to String cannot fail");
+    }
+    encoded
+}
 
 /// Frontmatter shape we pull out of `SKILL.md`. Skill-system uses several
 /// optional fields beyond these; unrecognized ones are ignored (`serde`
@@ -451,7 +460,7 @@ fn parse_manifest(path: &Path) -> Result<Skill> {
         phases: mr.phases,
         routing_reference: mr.routing_reference,
     });
-    let artifact_digest = format!("sha256:{:x}", Sha256::digest(raw.as_bytes()));
+    let artifact_digest = sha256_digest(raw.as_bytes());
 
     Ok(Skill {
         skill_id: String::new(),

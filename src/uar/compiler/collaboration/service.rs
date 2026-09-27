@@ -42,6 +42,12 @@ impl From<anyhow::Error> for CollaborationError {
     }
 }
 
+impl From<serde_json::Error> for CollaborationError {
+    fn from(error: serde_json::Error) -> Self {
+        Self::Invalid(error.to_string())
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct CollaborationCatalogService {
     pub(super) storage: Arc<dyn CollaborationStorage>,

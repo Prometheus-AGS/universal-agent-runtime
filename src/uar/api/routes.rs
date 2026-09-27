@@ -25,9 +25,12 @@ pub struct RunApiState {
         Arc<crate::uar::compiler::collaboration::CollaborationCatalogService>,
 }
 
-impl axum::extract::FromRef<Arc<RunApiState>> for Arc<RunManager> {
+#[derive(Clone)]
+struct RunManagerState(Arc<RunManager>);
+
+impl axum::extract::FromRef<Arc<RunApiState>> for RunManagerState {
     fn from_ref(state: &Arc<RunApiState>) -> Self {
-        Arc::clone(&state.manager)
+        Self(Arc::clone(&state.manager))
     }
 }
 
@@ -135,7 +138,7 @@ impl From<crate::uar::domain::runs::Run> for RunInspection {
 }
 
 async fn list_runs(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
 ) -> Json<Vec<RunInspection>> {
     Json(
@@ -149,7 +152,7 @@ async fn list_runs(
 }
 
 async fn read_run(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> Result<Json<RunInspection>, StatusCode> {
@@ -637,7 +640,7 @@ async fn resolve_run_agent(
 }
 
 async fn stream_run(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
     Query(params): Query<StreamParams>,
@@ -785,7 +788,7 @@ struct ToolApprovalRequest {
 /// Submit an approval or rejection decision for a pending tool call.
 /// Returns 200 OK if the decision was delivered, 404 if no pending approval exists.
 async fn api_tool_approval(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
     Json(body): Json<ToolApprovalRequest>,
@@ -820,7 +823,7 @@ async fn api_tool_approval(
 /// Replays the owner-scoped live waiter with its stable approval identity and
 /// original stream cursor. It never creates a new waiter.
 async fn api_pending_tool_approval(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
@@ -846,7 +849,7 @@ async fn api_pending_tool_approval(
 /// Returns sanitized append-only lifecycle evidence. The owner filter is
 /// applied in storage before the requested run tree is selected.
 async fn api_tool_admission_evidence(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
@@ -881,7 +884,7 @@ async fn api_tool_admission_evidence(
 /// cancelled, `false` for an unknown or already-terminal run (no error, no
 /// duplicate terminal event).
 async fn api_cancel_run(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
@@ -901,7 +904,7 @@ async fn api_cancel_run(
 /// Revoke an admitted downstream credential and cancel its run. A replacement
 /// is accepted only through the ordinary authenticated resume boundary.
 async fn api_revoke_run_mcp_grant(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path((run_id, server)): Path<(String, String)>,
 ) -> impl IntoResponse {
@@ -928,7 +931,7 @@ async fn api_revoke_run_mcp_grant(
 ///
 /// Cancel the active run projected through a stable conversation session id.
 async fn api_cancel_session_run(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(session_id): Path<String>,
 ) -> impl IntoResponse {
@@ -951,7 +954,7 @@ struct CheckpointListResponse {
 /// List all persisted checkpoints for a run, ordered by creation time.
 /// Returns 503 if no persistence layer is configured.
 async fn list_checkpoints(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
@@ -1028,7 +1031,7 @@ fn resume_artifact(
 ///
 /// Resume a run from its latest checkpoint (if any), or start fresh.
 async fn resume_run(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
     Json(req): Json<ResumeRequest>,
@@ -1102,7 +1105,7 @@ async fn resume_run(
 /// Resume a run from a specific named checkpoint.
 /// The checkpoint's saved state is injected as context into the new run.
 async fn resume_run_from_checkpoint(
-    State(manager): State<Arc<RunManager>>,
+    State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path((run_id, checkpoint_id)): Path<(String, String)>,
     Json(req): Json<ResumeRequest>,
@@ -1248,7 +1251,9 @@ async fn resume_run_from_checkpoint(
 ///
 /// Returns the resolved default model configuration (provider + model) or an error
 /// if no model is available. Used by the frontend to guard chat before starting a run.
-async fn resolve_model(State(manager): State<Arc<RunManager>>) -> impl IntoResponse {
+async fn resolve_model(
+    State(RunManagerState(manager)): State<RunManagerState>,
+) -> impl IntoResponse {
     let model = manager.resolve_default_model().await;
     match model {
         Some((provider_id, model_id)) => Json(serde_json::json!({
