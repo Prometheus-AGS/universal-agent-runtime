@@ -265,11 +265,11 @@ async fn c03_completed_path_emits_one_acceptance_receipt() {
         &format!("/api/v1/collaboration/representation-grants/{GRANT_ID}/history")
     );
     assert_eq!(
-        receipt["resolvedSkills"][0]["digest"].as_str(),
+        receipt["resolvedSkills"][0]["skill"]["digest"].as_str(),
         Some(skill_digest.as_str())
     );
     assert_eq!(
-        receipt["resolvedSkills"][0]["requiredTools"],
+        receipt["resolvedSkills"][0]["skill"]["requiredTools"],
         json!(["native_echo"])
     );
     assert_eq!(
