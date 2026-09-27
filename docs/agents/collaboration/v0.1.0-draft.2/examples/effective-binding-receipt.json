@@ -1,0 +1,110 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "EffectiveBindingReceipt",
+  "exportClass": "private-binding-evidence",
+  "id": "urn:uar:binding-receipt:example/review",
+  "revision": 1,
+  "bindingRef": {
+    "id": "urn:uar:binding:example/review",
+    "revision": 1,
+    "digest": "sha256:f873f89b395999a1b2eba9711034f5c372c3104252600ac20def192f7e7e47ed"
+  },
+  "package": {
+    "id": "urn:uar:example:draft2/review-package",
+    "version": "1.0.0",
+    "digest": "sha256:be31380ba55dce52929001f9ad545d1cf2437834c032d214a7caf9277fe424cf"
+  },
+  "requested": {
+    "definition": {
+      "id": "urn:uar:example:draft2/reviewer",
+      "version": "1.0.0",
+      "digest": "sha256:b27996aada68ccc1bc79f2b6a296018145b78a6a520b9329a904752da2fbdd6e"
+    },
+    "skills": [
+      {
+        "id": "urn:uar:skill:review",
+        "version": "2.1.0",
+        "digest": "sha256:3b3816290748ea6b1f71c43c34e4043e2aed44ff4b7a462e7b212bf88cf0b65f",
+        "required": true,
+        "config": {
+          "mode": "strict",
+          "output": "json"
+        },
+        "entrypoint": "review",
+        "requiredTools": [
+          "read-artifact"
+        ]
+      }
+    ]
+  },
+  "effective": {
+    "modelRequirements": {
+      "capabilities": [
+        "text",
+        "tool-calling"
+      ]
+    },
+    "promptDialect": {
+      "id": "uar.prompt/plain-v1"
+    },
+    "contextStrategy": {
+      "mode": "selected"
+    }
+  },
+  "resolvedSkills": [
+    {
+      "skill": {
+        "id": "urn:uar:skill:review",
+        "version": "2.1.0",
+        "digest": "sha256:3b3816290748ea6b1f71c43c34e4043e2aed44ff4b7a462e7b212bf88cf0b65f",
+        "required": true,
+        "config": {
+          "mode": "strict",
+          "output": "json"
+        },
+        "entrypoint": "review",
+        "requiredTools": [
+          "read-artifact"
+        ]
+      },
+      "installedLocation": "skill-store://review/2.1.0"
+    }
+  ],
+  "resolvedModels": [
+    {
+      "requestedAlias": "team-default",
+      "providerId": "provider:example",
+      "modelId": "model:example"
+    }
+  ],
+  "policyRevision": "policy:example:1",
+  "representationGrants": [
+    {
+      "grantId": "urn:uar:grant:example/reviewer-office",
+      "revision": 1,
+      "constraintDigest": "sha256:7e8297d9998ee21c0c22f391faace673eb2a905247c3f2d6024a0e92dc2ddb0c"
+    }
+  ],
+  "runtimeCapabilities": [
+    "collaboration_definition_packages_v2",
+    "collaboration_deployment_bindings_v2",
+    "collaboration_conversion_reports_v1",
+    "collaboration_representation_grant_refs_v1"
+  ],
+  "diagnostics": [
+    {
+      "pointer": "/skills/0",
+      "disposition": "exact",
+      "reasonCode": "skill.enforced",
+      "message": "The required skill identity, configuration, and tools are bound.",
+      "effectiveBindingRef": {
+        "id": "urn:uar:binding:example/review",
+        "revision": 1,
+        "digest": "sha256:f873f89b395999a1b2eba9711034f5c372c3104252600ac20def192f7e7e47ed"
+      }
+    }
+  ],
+  "admitted": true,
+  "createdAt": "2026-09-27T00:00:00Z",
+  "contentDigest": "sha256:c9eea8dd7bcf6167e809706ed93059bd329e17ae89d1777ef7be04bbad699eb4"
+}

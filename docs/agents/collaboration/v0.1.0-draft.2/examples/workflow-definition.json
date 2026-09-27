@@ -1,0 +1,72 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "WorkflowDefinition",
+  "id": "urn:uar:example:draft2/review-workflow",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration draft.2 contract checkpoint fixtures",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [],
+  "extensions": {},
+  "title": "One bounded review task",
+  "input": {
+    "type": "object",
+    "properties": {
+      "brief": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "artifact": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "artifact"
+    ],
+    "additionalProperties": false
+  },
+  "steps": [
+    {
+      "id": "review",
+      "role": "reviewer",
+      "dependsOn": [],
+      "inputMapping": {
+        "brief": "workflow-input:brief"
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "read",
+      "approval": "current-authority",
+      "retry": {
+        "maxAttempts": 1,
+        "onUnknownEffect": "reconcile-before-retry"
+      },
+      "completion": "artifact",
+      "instructions": "Review once."
+    }
+  ],
+  "failurePolicy": "stop-dependent",
+  "maxActivations": 1,
+  "contentDigest": "sha256:17893ce629b7c193a12309d70deab903876fe529f97b6691303c79e3a72b1087"
+}

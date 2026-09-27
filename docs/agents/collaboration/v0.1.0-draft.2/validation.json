@@ -1,0 +1,54 @@
+{
+  "schema": "uar.collaboration.static-validation/1",
+  "status": "PASS_STATIC_CONTRACT_CHECKPOINT",
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "checks": {
+    "jsonFilesParsed": 33,
+    "schemaFiles": 11,
+    "uniqueSchemaIds": 11,
+    "localRefsResolved": 140,
+    "topLevelDispatcherBranches": 9,
+    "concreteProfileConstants": 9,
+    "packageDefinitionKinds": [
+      "AgentDefinition",
+      "TeamDefinition",
+      "WorkflowDefinition"
+    ],
+    "canonicalSkillFields": [
+      "id",
+      "version",
+      "digest",
+      "required",
+      "config",
+      "entrypoint",
+      "requiredTools"
+    ],
+    "validExamples": 9,
+    "schemaInvalidFixtures": 4,
+    "semanticInvalidFixtures": 6,
+    "legacyFixtures": 3,
+    "fixedLegacyV11Headings": 15,
+    "agentSpecV2Headings": 5,
+    "canonicalContentDigestsRecomputed": true,
+    "packageByteDigestsRecomputed": true,
+    "draft1ByteManifestUnchanged": true
+  },
+  "inspectedBy": [
+    "JSON.parse",
+    "local $ref and JSON Pointer resolution",
+    "static schema invariant inspection",
+    "RFC-8785-safe fixture canonicalization for ASCII/integer examples",
+    "SHA-256 byte recomputation",
+    "Git diff scope inspection"
+  ],
+  "notRun": [
+    "JSON Schema validation suite",
+    "unit tests",
+    "integration tests",
+    "build",
+    "runtime import",
+    "runtime binding",
+    "ordinary-agent execution"
+  ],
+  "runtimeConformance": false
+}
