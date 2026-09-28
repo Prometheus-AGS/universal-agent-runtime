@@ -1,5 +1,7 @@
 //! C09.1 team planning over the existing atomic collaboration catalog state.
 
+mod claims;
+
 use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::Utc;
@@ -272,8 +274,18 @@ impl CollaborationCatalogService {
                 output_contract: request.output_contract.clone(),
                 output: None,
                 depends_on: request.depends_on.clone(),
-                status: "queued".to_owned(),
+                status: if request.depends_on.is_empty() {
+                    "ready".to_owned()
+                } else {
+                    "queued".to_owned()
+                },
                 revision: 1,
+                assignee_member_id: None,
+                ownership_epoch: 0,
+                assignment_authority: None,
+                reviewer_member_id: None,
+                reviewer_epoch: 0,
+                state_reason: None,
                 created_at: now,
                 updated_at: now,
             });

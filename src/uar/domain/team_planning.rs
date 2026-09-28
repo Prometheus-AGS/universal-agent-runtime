@@ -61,6 +61,34 @@ pub struct CreateTeamTaskRequest {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AssignTeamTaskRequest {
+    pub command_id: String,
+    pub expected_team_revision: u64,
+    pub expected_task_revision: u64,
+    pub member_id: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AssignTeamReviewerRequest {
+    pub command_id: String,
+    pub expected_team_revision: u64,
+    pub expected_task_revision: u64,
+    pub member_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct TransitionTeamTaskRequest {
+    pub command_id: String,
+    pub expected_team_revision: u64,
+    pub expected_task_revision: u64,
+    pub status: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TeamBindingRef {
     pub id: String,
@@ -79,6 +107,21 @@ pub struct TeamMember {
     pub status: String,
 }
 
+/// A durable, non-executable assignment constraint. Current host and Cedar grants
+/// must be recomputed before a turn or effect can be admitted.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssignmentAuthority {
+    pub binding_id: String,
+    pub binding_revision: u64,
+    pub workspace_id: String,
+    pub role: String,
+    pub member_id: String,
+    pub ownership_epoch: u64,
+    pub can_execute: bool,
+    pub can_use_tools: bool,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TeamTask {
@@ -91,6 +134,18 @@ pub struct TeamTask {
     pub depends_on: Vec<String>,
     pub status: String,
     pub revision: u64,
+    #[serde(default)]
+    pub assignee_member_id: Option<String>,
+    #[serde(default)]
+    pub ownership_epoch: u64,
+    #[serde(default)]
+    pub assignment_authority: Option<AssignmentAuthority>,
+    #[serde(default)]
+    pub reviewer_member_id: Option<String>,
+    #[serde(default)]
+    pub reviewer_epoch: u64,
+    #[serde(default)]
+    pub state_reason: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

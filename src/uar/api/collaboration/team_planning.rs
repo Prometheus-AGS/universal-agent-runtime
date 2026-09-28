@@ -1,4 +1,4 @@
-//! Authenticated, workspace-scoped C09.1 planning board routes.
+//! Authenticated, workspace-scoped team planning and task ownership routes.
 
 use std::sync::Arc;
 
@@ -11,7 +11,10 @@ use axum::{
 };
 
 use crate::uar::{
-    domain::team_planning::{CreateTeamRequest, CreateTeamTaskRequest},
+    domain::team_planning::{
+        AssignTeamReviewerRequest, AssignTeamTaskRequest, CreateTeamRequest, CreateTeamTaskRequest,
+        TransitionTeamTaskRequest,
+    },
     security::claims::UserContext,
 };
 
@@ -27,6 +30,22 @@ pub(super) fn build_router() -> Router<Arc<CollaborationApiState>> {
             get(list_tasks).post(create_task),
         )
         .route("/team-instances/{id}/tasks/{task_id}", get(get_task))
+        .route(
+            "/team-instances/{id}/tasks/{task_id}/claim",
+            axum::routing::post(claim_task),
+        )
+        .route(
+            "/team-instances/{id}/tasks/{task_id}/reassign",
+            axum::routing::post(reassign_task),
+        )
+        .route(
+            "/team-instances/{id}/tasks/{task_id}/reviewer",
+            axum::routing::post(assign_reviewer),
+        )
+        .route(
+            "/team-instances/{id}/tasks/{task_id}/state",
+            axum::routing::post(transition_task),
+        )
 }
 
 async fn list_definitions(
@@ -153,4 +172,80 @@ async fn get_task(
         },
         Err(error) => error_response(error),
     }
+}
+
+async fn claim_task(
+    State(state): State<Arc<CollaborationApiState>>,
+    Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
+    Path((id, task_id)): Path<(String, String)>,
+    Json(request): Json<AssignTeamTaskRequest>,
+) -> Response {
+    let (owner, workspace) = match private_scope(&user, &headers) {
+        Ok(scope) => scope,
+        Err(response) => return response,
+    };
+    result_response(
+        state
+            .service
+            .claim_team_task(&owner, &workspace, &id, &task_id, request)
+            .await,
+    )
+}
+
+async fn reassign_task(
+    State(state): State<Arc<CollaborationApiState>>,
+    Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
+    Path((id, task_id)): Path<(String, String)>,
+    Json(request): Json<AssignTeamTaskRequest>,
+) -> Response {
+    let (owner, workspace) = match private_scope(&user, &headers) {
+        Ok(scope) => scope,
+        Err(response) => return response,
+    };
+    result_response(
+        state
+            .service
+            .reassign_team_task(&owner, &workspace, &id, &task_id, request)
+            .await,
+    )
+}
+
+async fn assign_reviewer(
+    State(state): State<Arc<CollaborationApiState>>,
+    Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
+    Path((id, task_id)): Path<(String, String)>,
+    Json(request): Json<AssignTeamReviewerRequest>,
+) -> Response {
+    let (owner, workspace) = match private_scope(&user, &headers) {
+        Ok(scope) => scope,
+        Err(response) => return response,
+    };
+    result_response(
+        state
+            .service
+            .assign_team_reviewer(&owner, &workspace, &id, &task_id, request)
+            .await,
+    )
+}
+
+async fn transition_task(
+    State(state): State<Arc<CollaborationApiState>>,
+    Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
+    Path((id, task_id)): Path<(String, String)>,
+    Json(request): Json<TransitionTeamTaskRequest>,
+) -> Response {
+    let (owner, workspace) = match private_scope(&user, &headers) {
+        Ok(scope) => scope,
+        Err(response) => return response,
+    };
+    result_response(
+        state
+            .service
+            .transition_team_task(&owner, &workspace, &id, &task_id, request)
+            .await,
+    )
 }
