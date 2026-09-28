@@ -153,6 +153,13 @@ name = "agent_fabric_c06_gate"
 path = "tests/agent_fabric_c06_gate.rs"
 required-features = ["server", "surreal-backend", "afc-c06-gate"]
 
+# C07's one real-process boundary exercises the transactional source outbox,
+# scoped subscriptions and durable monitor admission without the wider suite.
+[[test]]
+name = "agent_fabric_c07_gate"
+path = "tests/agent_fabric_c07_gate.rs"
+required-features = ["server", "surreal-backend", "afc-c07-gate"]
+
 # CH-20: Criterion benchmarks for the router/dialect/context hot path.
 # harness = false because Criterion drives its own main().
 [[bench]]
@@ -233,6 +240,7 @@ in-memory-backend = []
 # Enables the focused C06 real-process integration target and its governed
 # protected-tool approval path.
 afc-c06-gate = ["cedar-governance"]
+afc-c07-gate = ["afc-c06-gate"]
 
 ## Local response-quality detection and optional corrective pass.
 response-quality = ["dep:sycophancy-core"]

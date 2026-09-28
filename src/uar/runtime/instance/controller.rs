@@ -134,6 +134,7 @@ impl AgentInstanceController {
             active_attempt: None,
             events: Vec::new(),
             next_event_sequence: 0,
+            newly_appended_events: Vec::new(),
             restart_attempts: 0,
             last_error_code: None,
             reconciliation_receipt: None,
@@ -625,7 +626,7 @@ pub(crate) fn append_event(
     if record.events.len() >= record.limits.retained_events as usize {
         record.events.remove(0);
     }
-    record.events.push(AgentInstanceEvent {
+    let event = AgentInstanceEvent {
         sequence,
         kind: kind.to_owned(),
         command_id: command_id.map(str::to_owned),
@@ -633,7 +634,9 @@ pub(crate) fn append_event(
         root_run_id: run_id.map(str::to_owned),
         epoch: record.epoch,
         committed_at: Utc::now(),
-    });
+    };
+    record.newly_appended_events.push(event.clone());
+    record.events.push(event);
     Ok(())
 }
 

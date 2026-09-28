@@ -164,6 +164,10 @@ pub struct AgentInstanceRecord {
     pub active_attempt: Option<AgentInstanceAttempt>,
     pub events: Vec<AgentInstanceEvent>,
     pub next_event_sequence: u64,
+    /// This mutation's complete semantic events, including any trimmed from the
+    /// bounded UI projection. The outbox writes them with the source CAS.
+    #[serde(skip)]
+    pub newly_appended_events: Vec<AgentInstanceEvent>,
     pub restart_attempts: u32,
     pub last_error_code: Option<String>,
     /// Exact operator/effect receipt required to settle an uncertain outcome.
@@ -411,22 +415,26 @@ impl AgentInstanceRecord {
                 return Err(AgentInstanceStoreError::InvalidRecord);
             }
         }
-        let old_event_end = self.next_event_sequence;
-        let mut expected_sequence = old_event_end;
-        for event in next
-            .events
-            .iter()
-            .filter(|event| event.sequence >= old_event_end)
-        {
-            if event.sequence != expected_sequence {
+        let mut appended_sequence = self.next_event_sequence;
+        for event in &next.newly_appended_events {
+            if event.sequence != appended_sequence {
                 return Err(AgentInstanceStoreError::InvalidRecord);
             }
-            expected_sequence = expected_sequence
+            appended_sequence = appended_sequence
                 .checked_add(1)
                 .ok_or(AgentInstanceStoreError::RevisionExhausted)?;
         }
-        if expected_sequence != next.next_event_sequence {
+        if appended_sequence != next.next_event_sequence {
             return Err(AgentInstanceStoreError::InvalidRecord);
+        }
+        for event in next
+            .events
+            .iter()
+            .filter(|event| event.sequence >= self.next_event_sequence)
+        {
+            if !next.newly_appended_events.contains(event) {
+                return Err(AgentInstanceStoreError::InvalidRecord);
+            }
         }
         for previous in &self.events {
             if let Some(current) = next
