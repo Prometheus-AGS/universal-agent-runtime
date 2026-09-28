@@ -235,7 +235,7 @@ jobs:
     name: The Boss sidecar (${{ matrix.platform }})
     if: ${{ startsWith(github.ref, 'refs/tags/boss-sidecar-') }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 120
+    timeout-minutes: ${{ matrix.platform == 'darwin-x64' && 180 || 120 }}
     strategy:
       fail-fast: false
       matrix:
