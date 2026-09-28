@@ -116,6 +116,7 @@ impl RequestFingerprint {
 #[derive(Debug, Clone, Default)]
 pub struct FixtureSet {
     responses: HashMap<RequestFingerprint, FixtureResponse>,
+    prompt_prefix_responses: Vec<(String, FixtureResponse)>,
 }
 
 impl FixtureSet {
@@ -127,6 +128,13 @@ impl FixtureSet {
     #[must_use]
     pub fn with(mut self, fingerprint: RequestFingerprint, response: FixtureResponse) -> Self {
         self.responses.insert(fingerprint, response);
+        self
+    }
+
+    /// Match a generated runtime prompt whose occurrence IDs/timestamps vary per run.
+    #[must_use]
+    pub fn with_prompt_prefix(mut self, prefix: impl Into<String>, response: FixtureResponse) -> Self {
+        self.prompt_prefix_responses.push((prefix.into(), response));
         self
     }
 }
@@ -246,7 +254,11 @@ async fn chat_completions_handler(
         .push(body.clone());
 
     let fingerprint = RequestFingerprint::from_request_body(&body);
-    let Some(fixture) = state.fixtures.responses.get(&fingerprint) else {
+    let Some(fixture) = state.fixtures.responses.get(&fingerprint).or_else(|| {
+        state.fixtures.prompt_prefix_responses.iter()
+            .find(|(prefix, _)| fingerprint.last_user_message.starts_with(prefix))
+            .map(|(_, response)| response)
+    }) else {
         return (
             StatusCode::NOT_FOUND,
             Json(json!({

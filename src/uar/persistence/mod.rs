@@ -14,6 +14,7 @@ use uuid::Uuid;
 
 pub mod agent_instances;
 pub mod agent_threads;
+pub mod observers;
 pub mod presentations;
 pub mod providers;
 pub mod tool_admission;
@@ -21,6 +22,9 @@ pub mod tool_admission;
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use agent_instances::{AgentInstanceRecord, AgentInstanceStoreError};
 use agent_threads::{CanonicalToolReceipt, PersistedAgentThread};
+use observers::{
+    ObserverOccurrence, ObserverOccurrenceBounds, ObserverStoreError, ObserverSubscription,
+};
 use tool_admission::ToolAdmissionEvidence;
 
 pub(crate) fn tenant_storage_key(owner_id: &str, resource_id: &str) -> String {
@@ -49,6 +53,70 @@ pub struct PostgresProvider;
 
 #[async_trait]
 pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
+    /// True only for a provider with a transactional instance outbox and durable observer inbox.
+    fn supports_durable_observers(&self) -> bool {
+        false
+    }
+
+    async fn create_observer_subscription(
+        &self,
+        _subscription: &ObserverSubscription,
+    ) -> Result<ObserverSubscription> {
+        Err(ObserverStoreError::Unsupported.into())
+    }
+
+    async fn load_observer_subscription(
+        &self,
+        _owner_id: &str,
+        _workspace_id: &str,
+        _subscription_id: &str,
+    ) -> Result<Option<ObserverSubscription>> {
+        Err(ObserverStoreError::Unsupported.into())
+    }
+
+    async fn list_observer_subscriptions(
+        &self,
+        _owner_id: &str,
+        _workspace_id: &str,
+    ) -> Result<Vec<ObserverSubscription>> {
+        Err(ObserverStoreError::Unsupported.into())
+    }
+
+    /// Trusted runtime restart scan; API handlers must use scoped listing instead.
+    async fn list_all_observer_subscriptions(&self) -> Result<Vec<ObserverSubscription>> {
+        Err(ObserverStoreError::Unsupported.into())
+    }
+
+    async fn compare_and_swap_observer_subscription(
+        &self,
+        _owner_id: &str,
+        _workspace_id: &str,
+        _expected_revision: u64,
+        _next: &ObserverSubscription,
+    ) -> Result<bool> {
+        Err(ObserverStoreError::Unsupported.into())
+    }
+
+    async fn list_instance_occurrences(
+        &self,
+        _owner_id: &str,
+        _workspace_id: &str,
+        _source_instance_id: &str,
+        _after_sequence: Option<u64>,
+        _limit: usize,
+    ) -> Result<Vec<ObserverOccurrence>> {
+        Err(ObserverStoreError::Unsupported.into())
+    }
+
+    async fn instance_occurrence_bounds(
+        &self,
+        _owner_id: &str,
+        _workspace_id: &str,
+        _source_instance_id: &str,
+    ) -> Result<ObserverOccurrenceBounds> {
+        Err(ObserverStoreError::Unsupported.into())
+    }
+
     /// True only when this provider persists logical instances across restarts.
     fn supports_durable_agent_instances(&self) -> bool {
         false

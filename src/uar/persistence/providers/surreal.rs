@@ -11,12 +11,16 @@ use crate::uar::persistence::agent_threads::{
     self, AgentThreadStoreError, CanonicalReceiptStoreError, CanonicalToolReceipt,
     PersistedAgentThread,
 };
+use crate::uar::persistence::observers::{
+    ObserverOccurrence, ObserverOccurrenceBounds, ObserverStoreError, ObserverSubscription,
+};
 use crate::uar::persistence::presentations::{self, PresentationStoreError};
 use crate::uar::persistence::tool_admission::ToolAdmissionEvidence;
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use sha2::{Digest, Sha256};
 use surrealdb::Surreal;
 use surrealdb::engine::any::{self, Any};
 use surrealdb::opt::auth::{Database, Namespace, Root};
@@ -120,6 +124,12 @@ impl SurrealDbProvider {
 
         db.query(include_str!(
             "../../../../migrations/surrealdb/agent_instances.surql"
+        ))
+        .await?
+        .check()?;
+
+        db.query(include_str!(
+            "../../../../migrations/surrealdb/observers.surql"
         ))
         .await?
         .check()?;
@@ -354,6 +364,81 @@ fn check_agent_instance_create(mut response: surrealdb::IndexedResults) -> Resul
     Ok(())
 }
 
+const OBSERVER_OUTBOX_RETAINED_EVENTS: u64 = 1024;
+
+fn observer_subscription_key(owner_id: &str, workspace_id: &str, subscription_id: &str) -> String {
+    agent_instance_key(owner_id, workspace_id, subscription_id)
+}
+
+fn observer_subscription_payload(record: &ObserverSubscription) -> Result<serde_json::Value> {
+    Ok(serde_json::json!({
+        "owner_id": record.owner_id,
+        "workspace_id": record.workspace_id,
+        "subscription_id": record.subscription_id,
+        "revision": record.revision as i64,
+        "data": serde_json::to_string(record)?,
+    }))
+}
+
+fn occurrence_from_instance(
+    record: &AgentInstanceRecord,
+    event: &crate::uar::persistence::agent_instances::AgentInstanceEvent,
+) -> Result<ObserverOccurrence> {
+    let identity = serde_json::to_vec(&(
+        &record.owner_id,
+        &record.workspace_id,
+        &record.instance_id,
+        &record.session_id,
+        event.sequence,
+        &event.kind,
+    ))?;
+    let digest = Sha256::digest(identity);
+    let occurrence_id = digest.iter().map(|byte| format!("{byte:02x}")).collect();
+    Ok(ObserverOccurrence {
+        occurrence_id,
+        owner_id: record.owner_id.clone(),
+        workspace_id: record.workspace_id.clone(),
+        source_instance_id: record.instance_id.clone(),
+        conversation_id: record.session_id.clone(),
+        sequence: event.sequence,
+        kind: event.kind.clone(),
+        command_id: event.command_id.clone(),
+        attempt_id: event.attempt_id.clone(),
+        root_run_id: event.root_run_id.clone(),
+        epoch: event.epoch,
+        committed_at: event.committed_at,
+    })
+}
+
+fn occurrence_payload(occurrence: &ObserverOccurrence) -> Result<serde_json::Value> {
+    Ok(serde_json::json!({
+        "occurrence_id": occurrence.occurrence_id,
+        "owner_id": occurrence.owner_id,
+        "workspace_id": occurrence.workspace_id,
+        "source_instance_id": occurrence.source_instance_id,
+        "conversation_id": occurrence.conversation_id,
+        "sequence": occurrence.sequence as i64,
+        "data": serde_json::to_string(occurrence)?,
+    }))
+}
+
+fn check_observer_write(mut response: surrealdb::IndexedResults) -> Result<bool> {
+    let errors = response.take_errors();
+    for error in errors.values() {
+        let message = error.to_string();
+        if message.contains("uar_observer_conflict") {
+            return Ok(false);
+        }
+        if message.contains("uar_observer_exists") {
+            return Err(ObserverStoreError::AlreadyExists.into());
+        }
+    }
+    if let Some((_, error)) = errors.into_iter().min_by_key(|(index, _)| *index) {
+        return Err(error.into());
+    }
+    Ok(true)
+}
+
 fn canonical_receipt_payload(receipt: &CanonicalToolReceipt) -> Result<serde_json::Value> {
     Ok(serde_json::json!({
         "owner_id": receipt.owner_id,
@@ -513,6 +598,260 @@ impl SurrealDbProvider {
 
 #[async_trait]
 impl PersistenceLayer for SurrealDbProvider {
+    fn supports_durable_observers(&self) -> bool {
+        self.durable_instances
+    }
+
+    async fn create_observer_subscription(
+        &self,
+        subscription: &ObserverSubscription,
+    ) -> Result<ObserverSubscription> {
+        if !self.durable_instances {
+            return Err(ObserverStoreError::Unsupported.into());
+        }
+        subscription.validate(&subscription.owner_id, &subscription.workspace_id)?;
+        if subscription.revision != 0
+            || !subscription.inbox.is_empty()
+            || !subscription.gaps.is_empty()
+            || !subscription.cursors.is_empty()
+            || subscription.revoked
+        {
+            return Err(ObserverStoreError::InvalidRecord.into());
+        }
+        let key = observer_subscription_key(
+            &subscription.owner_id,
+            &subscription.workspace_id,
+            &subscription.subscription_id,
+        );
+        let response = self
+            .db
+            .query(
+                "BEGIN TRANSACTION;
+             LET $old = (SELECT * FROM type::record('observer_subscriptions', $key))[0];
+             IF $old != NONE { THROW 'uar_observer_exists'; };
+             CREATE type::record('observer_subscriptions', $key) CONTENT $payload;
+             COMMIT TRANSACTION;",
+            )
+            .bind(("key", key))
+            .bind(("payload", observer_subscription_payload(subscription)?))
+            .await?;
+        check_observer_write(response)?;
+        Ok(subscription.clone())
+    }
+
+    async fn load_observer_subscription(
+        &self,
+        owner_id: &str,
+        workspace_id: &str,
+        subscription_id: &str,
+    ) -> Result<Option<ObserverSubscription>> {
+        if !self.durable_instances {
+            return Err(ObserverStoreError::Unsupported.into());
+        }
+        let key = observer_subscription_key(owner_id, workspace_id, subscription_id);
+        let mut response = self
+            .db
+            .query("SELECT VALUE data FROM type::record('observer_subscriptions', $key)")
+            .bind(("key", key))
+            .await?
+            .check()?;
+        let rows: Vec<String> = response.take(0)?;
+        if rows.len() > 1 {
+            return Err(ObserverStoreError::InvalidRecord.into());
+        }
+        rows.into_iter()
+            .next()
+            .map(|data| {
+                let record: ObserverSubscription = serde_json::from_str(&data)?;
+                record.validate(owner_id, workspace_id)?;
+                if record.subscription_id != subscription_id {
+                    return Err(ObserverStoreError::InvalidRecord.into());
+                }
+                Ok(record)
+            })
+            .transpose()
+    }
+
+    async fn list_observer_subscriptions(
+        &self,
+        owner_id: &str,
+        workspace_id: &str,
+    ) -> Result<Vec<ObserverSubscription>> {
+        if !self.durable_instances {
+            return Err(ObserverStoreError::Unsupported.into());
+        }
+        let mut response = self.db.query(
+            "SELECT VALUE data FROM observer_subscriptions WHERE owner_id = $owner AND workspace_id = $workspace",
+        ).bind(("owner", owner_id.to_string()))
+        .bind(("workspace", workspace_id.to_string()))
+        .await?.check()?;
+        let rows: Vec<String> = response.take(0)?;
+        let mut records = rows
+            .into_iter()
+            .map(|data| {
+                let record: ObserverSubscription = serde_json::from_str(&data)?;
+                record.validate(owner_id, workspace_id)?;
+                Ok(record)
+            })
+            .collect::<Result<Vec<_>>>()?;
+        records.sort_by(|left, right| left.subscription_id.cmp(&right.subscription_id));
+        Ok(records)
+    }
+
+    async fn list_all_observer_subscriptions(&self) -> Result<Vec<ObserverSubscription>> {
+        if !self.durable_instances {
+            return Err(ObserverStoreError::Unsupported.into());
+        }
+        let mut response = self
+            .db
+            .query("SELECT VALUE data FROM observer_subscriptions")
+            .await?
+            .check()?;
+        let rows: Vec<String> = response.take(0)?;
+        let mut records = rows
+            .into_iter()
+            .map(|data| {
+                let record: ObserverSubscription = serde_json::from_str(&data)?;
+                record.validate(&record.owner_id, &record.workspace_id)?;
+                Ok(record)
+            })
+            .collect::<Result<Vec<_>>>()?;
+        records.sort_by(|left, right| {
+            (&left.owner_id, &left.workspace_id, &left.subscription_id).cmp(&(
+                &right.owner_id,
+                &right.workspace_id,
+                &right.subscription_id,
+            ))
+        });
+        Ok(records)
+    }
+
+    async fn compare_and_swap_observer_subscription(
+        &self,
+        owner_id: &str,
+        workspace_id: &str,
+        expected_revision: u64,
+        next: &ObserverSubscription,
+    ) -> Result<bool> {
+        if !self.durable_instances {
+            return Err(ObserverStoreError::Unsupported.into());
+        }
+        if next.owner_id != owner_id || next.workspace_id != workspace_id {
+            return Err(ObserverStoreError::ScopeMismatch.into());
+        }
+        let current = self
+            .load_observer_subscription(owner_id, workspace_id, &next.subscription_id)
+            .await?
+            .ok_or(ObserverStoreError::NotFound)?;
+        if current.revision != expected_revision {
+            return Ok(false);
+        }
+        current.validate_next(next)?;
+        let key = observer_subscription_key(owner_id, workspace_id, &next.subscription_id);
+        let mut response = self
+            .db
+            .query(
+                "UPDATE type::record('observer_subscriptions', $key) CONTENT $payload
+             WHERE owner_id = $owner AND workspace_id = $workspace
+               AND revision = $revision AND data = $old_data RETURN AFTER",
+            )
+            .bind(("key", key))
+            .bind(("owner", owner_id.to_string()))
+            .bind(("workspace", workspace_id.to_string()))
+            .bind(("revision", expected_revision as i64))
+            .bind(("old_data", serde_json::to_string(&current)?))
+            .bind(("payload", observer_subscription_payload(next)?))
+            .await?
+            .check()?;
+        let rows: Vec<surrealdb::types::Value> = response.take(0)?;
+        Ok(rows.len() == 1)
+    }
+
+    async fn list_instance_occurrences(
+        &self,
+        owner_id: &str,
+        workspace_id: &str,
+        source_instance_id: &str,
+        after_sequence: Option<u64>,
+        limit: usize,
+    ) -> Result<Vec<ObserverOccurrence>> {
+        if !self.durable_instances {
+            return Err(ObserverStoreError::Unsupported.into());
+        }
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+        let query = if after_sequence.is_some() {
+            "SELECT VALUE data FROM agent_instance_occurrences
+             WHERE owner_id = $owner AND workspace_id = $workspace
+               AND source_instance_id = $source AND sequence > $after
+             ORDER BY sequence ASC LIMIT $limit"
+        } else {
+            "SELECT VALUE data FROM agent_instance_occurrences
+             WHERE owner_id = $owner AND workspace_id = $workspace
+               AND source_instance_id = $source
+             ORDER BY sequence ASC LIMIT $limit"
+        };
+        let mut response = self
+            .db
+            .query(query)
+            .bind(("owner", owner_id.to_string()))
+            .bind(("workspace", workspace_id.to_string()))
+            .bind(("source", source_instance_id.to_string()))
+            .bind(("after", after_sequence.unwrap_or(0) as i64))
+            .bind((
+                "limit",
+                limit.min(OBSERVER_OUTBOX_RETAINED_EVENTS as usize) as i64,
+            ))
+            .await?
+            .check()?;
+        let rows: Vec<String> = response.take(0)?;
+        rows.into_iter()
+            .map(|data| {
+                let occurrence: ObserverOccurrence = serde_json::from_str(&data)?;
+                if occurrence.owner_id != owner_id
+                    || occurrence.workspace_id != workspace_id
+                    || occurrence.source_instance_id != source_instance_id
+                {
+                    return Err(ObserverStoreError::ScopeMismatch.into());
+                }
+                Ok(occurrence)
+            })
+            .collect()
+    }
+
+    async fn instance_occurrence_bounds(
+        &self,
+        owner_id: &str,
+        workspace_id: &str,
+        source_instance_id: &str,
+    ) -> Result<ObserverOccurrenceBounds> {
+        if !self.durable_instances {
+            return Err(ObserverStoreError::Unsupported.into());
+        }
+        let mut response = self
+            .db
+            .query(
+                "SELECT VALUE sequence FROM agent_instance_occurrences
+             WHERE owner_id = $owner AND workspace_id = $workspace AND source_instance_id = $source
+             ORDER BY sequence ASC LIMIT 1;
+             SELECT VALUE sequence FROM agent_instance_occurrences
+             WHERE owner_id = $owner AND workspace_id = $workspace AND source_instance_id = $source
+             ORDER BY sequence DESC LIMIT 1;",
+            )
+            .bind(("owner", owner_id.to_string()))
+            .bind(("workspace", workspace_id.to_string()))
+            .bind(("source", source_instance_id.to_string()))
+            .await?
+            .check()?;
+        let low: Vec<i64> = response.take(0)?;
+        let high: Vec<i64> = response.take(1)?;
+        Ok(ObserverOccurrenceBounds {
+            low: low.into_iter().next().map(|value| value as u64),
+            high: high.into_iter().next().map(|value| value as u64),
+        })
+    }
+
     fn supports_durable_agent_instances(&self) -> bool {
         self.durable_instances
     }
@@ -634,25 +973,151 @@ impl PersistenceLayer for SurrealDbProvider {
             return Ok(false);
         }
         current.validate_next(next)?;
+        let occurrences = next
+            .newly_appended_events
+            .iter()
+            .map(|event| {
+                occurrence_from_instance(next, event)
+                    .and_then(|occurrence| occurrence_payload(&occurrence))
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        // Retention is part of this source transaction. If a lagging subscription
+        // loses an occurrence, its exact gap is recorded before any row is removed.
+        let retention_cutoff = next
+            .next_event_sequence
+            .checked_sub(OBSERVER_OUTBOX_RETAINED_EVENTS + 1);
+        let mut subscription_updates = Vec::new();
+        if let Some(cutoff) = retention_cutoff {
+            for current_subscription in self
+                .list_observer_subscriptions(owner_id, workspace_id)
+                .await?
+            {
+                if current_subscription.revoked
+                    || !current_subscription
+                        .source_instance_ids
+                        .contains(&next.instance_id)
+                {
+                    continue;
+                }
+                let cursor_start = current_subscription
+                    .cursors
+                    .get(&next.instance_id)
+                    .and_then(|sequence| sequence.checked_add(1))
+                    .unwrap_or(0);
+                let prior_gap_end = current_subscription
+                    .gaps
+                    .iter()
+                    .filter(|gap| gap.source_instance_id == next.instance_id)
+                    .map(|gap| gap.missing_through)
+                    .max();
+                let missing_from = prior_gap_end
+                    .and_then(|sequence| sequence.checked_add(1))
+                    .map_or(cursor_start, |after_gap| after_gap.max(cursor_start));
+                if missing_from > cutoff {
+                    continue;
+                }
+                let mut subscription = current_subscription.clone();
+                if let Some(gap) = subscription.gaps.iter_mut().find(|gap| {
+                    gap.source_instance_id == next.instance_id
+                        && gap.acknowledged_at.is_none()
+                        && gap.missing_through.checked_add(1) == Some(missing_from)
+                }) {
+                    gap.missing_through = cutoff;
+                } else {
+                    if subscription.gaps.len()
+                        >= crate::uar::persistence::observers::MAX_OBSERVER_GAPS
+                    {
+                        if let Some(index) = subscription
+                            .gaps
+                            .iter()
+                            .position(|gap| gap.acknowledged_at.is_some())
+                        {
+                            subscription.gaps.remove(index);
+                        }
+                    }
+                    subscription
+                        .gaps
+                        .push(crate::uar::persistence::observers::ObserverGap {
+                            source_instance_id: next.instance_id.clone(),
+                            missing_from,
+                            missing_through: cutoff,
+                            detected_at: chrono::Utc::now(),
+                            acknowledged_at: None,
+                        });
+                }
+                subscription.revision = subscription
+                    .revision
+                    .checked_add(1)
+                    .ok_or(ObserverStoreError::RevisionExhausted)?;
+                subscription.updated_at = chrono::Utc::now().max(subscription.updated_at);
+                current_subscription.validate_next(&subscription)?;
+                subscription_updates.push(serde_json::json!({
+                    "key": observer_subscription_key(owner_id, workspace_id, &subscription.subscription_id),
+                    "old_data": serde_json::to_string(&current_subscription)?,
+                    "revision": current_subscription.revision as i64,
+                    "payload": observer_subscription_payload(&subscription)?,
+                }));
+            }
+        }
         let key = agent_instance_key(owner_id, workspace_id, &next.instance_id);
         let mut response = self
             .db
             .query(
-                "UPDATE type::record('agent_instances', $key) CONTENT $payload
-             WHERE owner_id = $owner AND workspace_id = $workspace
-               AND revision = $revision AND epoch = $epoch AND data = $old_data
-             RETURN AFTER",
+                "BEGIN TRANSACTION;
+                 LET $updated = UPDATE type::record('agent_instances', $key) CONTENT $payload
+                     WHERE owner_id = $owner AND workspace_id = $workspace
+                       AND revision = $revision AND epoch = $epoch AND data = $old_data
+                     RETURN AFTER;
+                 IF array::len($updated) != 1 {
+                     THROW 'uar_agent_instance_conflict';
+                 };
+                 FOR $occurrence IN $occurrences {
+                     CREATE type::record('agent_instance_occurrences', $occurrence.occurrence_id)
+                         CONTENT $occurrence;
+                 };
+                 FOR $subscription IN $subscription_updates {
+                     LET $updated_subscription = UPDATE type::record('observer_subscriptions', $subscription.key)
+                         CONTENT $subscription.payload
+                         WHERE revision = $subscription.revision AND data = $subscription.old_data
+                         RETURN AFTER;
+                     IF array::len($updated_subscription) != 1 {
+                         THROW 'uar_observer_conflict';
+                     };
+                 };
+                 IF $prune {
+                     DELETE agent_instance_occurrences WHERE owner_id = $owner
+                         AND workspace_id = $workspace AND source_instance_id = $source
+                         AND sequence <= $cutoff;
+                 };
+                 COMMIT TRANSACTION;",
             )
             .bind(("key", key))
             .bind(("owner", owner_id.to_string()))
             .bind(("workspace", workspace_id.to_string()))
+            .bind(("source", next.instance_id.clone()))
             .bind(("revision", expected_revision as i64))
             .bind(("epoch", expected_epoch as i64))
             .bind(("old_data", serde_json::to_string(&current)?))
             .bind(("payload", agent_instance_payload(next)?))
+            .bind(("occurrences", occurrences))
+            .bind(("subscription_updates", subscription_updates))
+            .bind(("prune", retention_cutoff.is_some()))
+            .bind(("cutoff", retention_cutoff.unwrap_or(0) as i64))
             .await?;
-        let rows: Vec<surrealdb::types::Value> = response.take(0)?;
-        Ok(rows.len() == 1)
+        let errors = response.take_errors();
+        for error in errors.values() {
+            let message = error.to_string();
+            if message.contains("uar_agent_instance_conflict")
+                || message.contains("uar_observer_conflict")
+            {
+                return Ok(false);
+            }
+        }
+        if let Some((_, error)) = errors.into_iter().min_by_key(|(index, _)| *index) {
+            return Err(error.into());
+        }
+        Ok(true)
     }
 
     async fn create_presentation(

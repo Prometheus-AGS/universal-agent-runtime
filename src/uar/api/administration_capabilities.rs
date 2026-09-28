@@ -114,7 +114,10 @@ fn surface(
 }
 
 /// Returns the canonical UAR administration manifest for this runtime build.
-pub fn administration_capabilities(durable_instances: bool) -> AdministrationCapabilities {
+pub fn administration_capabilities(
+    durable_instances: bool,
+    durable_observers: bool,
+) -> AdministrationCapabilities {
     use AdministrationGroup::{Administration, Agents, Experience, Runtime};
     use AdministrationScope::{Admin, Host, Owner, Public};
     use ApplyMode::{HostControlled, Live, NextTurn, Read, Restart, Unavailable};
@@ -1681,6 +1684,22 @@ pub fn administration_capabilities(durable_instances: bool) -> AdministrationCap
                 Owner,
                 mutating
             ),
+        ],
+    ));
+    let observer_availability = if durable_observers { Available } else { FeatureGated };
+    let observer_mutation = if durable_observers { Live } else { Unavailable };
+    administration.surfaces.push(surface(
+        "local-scoped-observers",
+        Agents,
+        observer_availability,
+        vec![
+            endpoint!("observers.list", "GET", "/api/uar/observers/v1/", Owner, Read),
+            endpoint!("observers.create", "POST", "/api/uar/observers/v1/", Owner, observer_mutation),
+            endpoint!("observers.read", "GET", "/api/uar/observers/v1/{id}", Owner, Read),
+            endpoint!("observers.pause", "POST", "/api/uar/observers/v1/{id}/pause", Owner, observer_mutation),
+            endpoint!("observers.resume", "POST", "/api/uar/observers/v1/{id}/resume", Owner, observer_mutation),
+            endpoint!("observers.revoke", "DELETE", "/api/uar/observers/v1/{id}", Owner, observer_mutation),
+            endpoint!("observers.gap.acknowledge", "POST", "/api/uar/observers/v1/{id}/gaps/acknowledge", Admin, observer_mutation),
         ],
     ));
     administration

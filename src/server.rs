@@ -783,6 +783,9 @@ async fn run_server_with_listener(
     if persistence_layer.supports_durable_agent_instances() {
         implemented_capabilities.push("durable_agent_instances_v1");
     }
+    if persistence_layer.supports_durable_observers() {
+        implemented_capabilities.push("local_scoped_observers_v1");
+    }
     let service_instance = Arc::new(uar::service_instance::ServiceInstanceAuthority::new(
         &config.service_instance,
         &config.a2a.instance_id,
@@ -1361,6 +1364,13 @@ async fn run_server_with_listener(
         Arc::clone(&persistence_layer),
         Arc::clone(&collaboration_catalog),
     );
+    let observer_controller = uar::runtime::observer::ObserverController::new(
+        Arc::clone(&agent_instance_controller),
+        Arc::clone(&persistence_layer),
+    );
+    if persistence_layer.supports_durable_observers() {
+        observer_controller.start();
+    }
 
     let full_harness_authority = Arc::new(uar::api::full_harness::FullHarnessTaskAuthority::new(
         Arc::clone(&run_manager),
@@ -1616,6 +1626,11 @@ async fn run_server_with_listener(
             "/api/uar/agent-instances/v1",
             uar::api::agent_instances::build_router()
                 .with_state::<AppState>(Arc::clone(&agent_instance_controller)),
+        )
+        .nest(
+            "/api/uar/observers/v1",
+            uar::api::observers::build_router()
+                .with_state::<AppState>(Arc::clone(&observer_controller)),
         )
         // Skills API
         .nest(

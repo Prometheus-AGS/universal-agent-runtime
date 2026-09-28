@@ -41,6 +41,31 @@ impl ActorOwner {
         &self.user_id
     }
 
+    /// Rehydrate an identity captured at authenticated subscription creation.
+    /// This only reconstructs the namespace; callers must recheck live authority.
+    pub(crate) fn from_persisted_identity(
+        user_id: &str,
+        tenant_id: Option<&str>,
+        expected_owner_key: &str,
+    ) -> anyhow::Result<Self> {
+        if user_id.trim().is_empty() || user_id == "anonymous" {
+            anyhow::bail!("Persisted observer principal is invalid");
+        }
+        let owner = Self {
+            user_id: user_id.to_owned(),
+            tenant_id: tenant_id.map(str::to_owned),
+        };
+        if owner.presentation_owner_key() != expected_owner_key {
+            anyhow::bail!("Persisted observer principal does not match its owner scope");
+        }
+        Ok(owner)
+    }
+
+    /// The tenant part of a host-verified owner, if present.
+    pub(crate) fn tenant_id(&self) -> Option<&str> {
+        self.tenant_id.as_deref()
+    }
+
     /// Catalog partition for this host-verified tenant and subject.
     /// Matches the existing principal storage-key encoding, including lengths.
     pub(crate) fn presentation_owner_key(&self) -> String {

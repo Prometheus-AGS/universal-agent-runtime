@@ -11,6 +11,7 @@ pub mod manager;
 pub mod matching;
 pub mod native_skill;
 pub mod native_skills;
+pub mod observer;
 pub(crate) mod presentations;
 pub mod project_instructions;
 pub mod prompt;
