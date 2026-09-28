@@ -9,6 +9,11 @@
     reason = "static json! literal is guaranteed to parse"
 )]
 pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
+    // utoipa 5 accepts operation parameters inline, but does not deserialize
+    // reusable components.parameters references.
+    let admission_id = serde_json::json!({"name": "admission_id", "in": "path", "required": true, "schema": {"type": "string"}});
+    let task_id = serde_json::json!({"name": "task_id", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^fh-"}});
+    let workspace_id = serde_json::json!({"name": "x-uar-workspace-id", "in": "header", "required": true, "schema": {"type": "string", "minLength": 1}, "description": "Authenticated workspace partition for admission, reconciliation, observation, and control"});
     serde_json::from_value(serde_json::json!({
         "openapi": "3.1.0",
         "info": {
@@ -156,7 +161,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "description": "Reserves owner-and-workspace-scoped admission, task, and native run identities before entering UAR's sole execution loop. Exact retries return the existing process-local receipt; this profile does not claim restart recovery.",
                     "tags": ["full-harness"],
                     "security": [{"bearerAuth": []}],
-                    "parameters": [{"$ref": "#/components/parameters/FullHarnessWorkspaceId"}],
+                    "parameters": [workspace_id.clone()],
                     "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessAdmissionRequest"}}}},
                     "responses": {
                         "202": {"description": "Task admitted or exact accepted admission replayed", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessTaskReceipt"}}}},
@@ -182,7 +187,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "summary": "Reconcile an admission",
                     "description": "Returns the owner-scoped process-local receipt without creating or replaying a run.",
                     "tags": ["full-harness"], "security": [{"bearerAuth": []}],
-                    "parameters": [{"$ref": "#/components/parameters/AdmissionId"}, {"$ref": "#/components/parameters/FullHarnessWorkspaceId"}],
+                    "parameters": [admission_id, workspace_id.clone()],
                     "responses": {
                         "200": {"description": "Authoritative admission receipt", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessTaskReceipt"}}}},
                         "404": {"description": "No current process-local admission record", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
@@ -194,7 +199,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                 "get": {
                     "summary": "Get delegated task status",
                     "tags": ["full-harness"], "security": [{"bearerAuth": []}],
-                    "parameters": [{"$ref": "#/components/parameters/FullHarnessTaskId"}, {"$ref": "#/components/parameters/FullHarnessWorkspaceId"}],
+                    "parameters": [task_id.clone(), workspace_id.clone()],
                     "responses": {
                         "200": {"description": "Authoritative process-local task receipt", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessTaskReceipt"}}}},
                         "404": {"description": "Task ID is outside the full-harness authority", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
@@ -209,8 +214,8 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "description": "Replays retained native events and follows the live stream. Disconnecting detaches the observer and does not cancel the run.",
                     "tags": ["full-harness"], "security": [{"bearerAuth": []}],
                     "parameters": [
-                        {"$ref": "#/components/parameters/FullHarnessTaskId"},
-                        {"$ref": "#/components/parameters/FullHarnessWorkspaceId"},
+                        task_id.clone(),
+                        workspace_id.clone(),
                         {"name": "last_event_id", "in": "query", "required": false, "schema": {"type": "integer", "format": "uint64"}},
                         {"name": "Last-Event-ID", "in": "header", "required": false, "schema": {"type": "integer", "format": "uint64"}, "description": "Used when last_event_id is omitted"}
                     ],
@@ -225,7 +230,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                 "post": {
                     "summary": "Resolve the current native tool approval",
                     "tags": ["full-harness"], "security": [{"bearerAuth": []}],
-                    "parameters": [{"$ref": "#/components/parameters/FullHarnessTaskId"}, {"$ref": "#/components/parameters/FullHarnessWorkspaceId"}],
+                    "parameters": [task_id.clone(), workspace_id.clone()],
                     "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessApprovalRequest"}}}},
                     "responses": {
                         "200": {"description": "Updated receipt after approval forwarding", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessTaskReceipt"}}}},
@@ -240,7 +245,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "summary": "Request cancellation of the native run",
                     "description": "The receipt distinguishes request, executor acknowledgement, terminal cancellation, and cleanup uncertainty.",
                     "tags": ["full-harness"], "security": [{"bearerAuth": []}],
-                    "parameters": [{"$ref": "#/components/parameters/FullHarnessTaskId"}, {"$ref": "#/components/parameters/FullHarnessWorkspaceId"}],
+                    "parameters": [task_id.clone(), workspace_id.clone()],
                     "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessMutationRequest"}}}},
                     "responses": {
                         "200": {"description": "Updated cancellation receipt; acknowledgement is not terminal completion", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessTaskReceipt"}}}},
@@ -255,7 +260,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "summary": "Detach from a delegated task",
                     "description": "Records detachment without requesting cancellation.",
                     "tags": ["full-harness"], "security": [{"bearerAuth": []}],
-                    "parameters": [{"$ref": "#/components/parameters/FullHarnessTaskId"}, {"$ref": "#/components/parameters/FullHarnessWorkspaceId"}],
+                    "parameters": [task_id.clone(), workspace_id.clone()],
                     "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessDetachRequest"}}}},
                     "responses": {
                         "200": {"description": "Updated receipt with detached set", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessTaskReceipt"}}}},
@@ -271,7 +276,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "summary": "Steer a delegated task",
                     "description": "The process-ephemeral v1 profile explicitly refuses steering and never creates a replacement run.",
                     "tags": ["full-harness"], "security": [{"bearerAuth": []}],
-                    "parameters": [{"$ref": "#/components/parameters/FullHarnessTaskId"}, {"$ref": "#/components/parameters/FullHarnessWorkspaceId"}],
+                    "parameters": [task_id, workspace_id],
                     "responses": {
                         "404": {"description": "Task not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
                         "409": {"description": "Prior runtime epoch with unsupported recovery", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
@@ -385,11 +390,6 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
         "components": {
             "securitySchemes": {
                 "bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
-            },
-            "parameters": {
-                "AdmissionId": {"name": "admission_id", "in": "path", "required": true, "schema": {"type": "string"}},
-                "FullHarnessTaskId": {"name": "task_id", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^fh-"}},
-                "FullHarnessWorkspaceId": {"name": "x-uar-workspace-id", "in": "header", "required": true, "schema": {"type": "string", "minLength": 1}, "description": "Authenticated workspace partition for admission, reconciliation, observation, and control"}
             },
             "schemas": {
                 "FullHarnessAdmissionRequest": {
