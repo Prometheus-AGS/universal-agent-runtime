@@ -4642,7 +4642,10 @@ impl RunManager {
         } else {
             None
         };
-        let model_context_window = configured_window.or_else(|| {
+        let host_window = run_credentials.as_ref().and_then(|credentials| {
+            credentials.context_window_for(&catalog_provider, &catalog_model_id)
+        });
+        let model_context_window = host_window.or(configured_window).or_else(|| {
             crate::llm::catalog::ModelCatalog::global()
                 .model(&catalog_provider, &catalog_model_id)
                 .map(|model| model.limits.context_window as usize)
