@@ -12,7 +12,7 @@ use uuid::Uuid;
 use crate::uar::{
     persistence::{PersistenceLayer, channel_observers::{
         CHANNEL_OBSERVER_PROFILE, ChannelInboxEntry, ChannelInboxStatus,
-        ChannelSourceScope, ChannelSubscription,
+        ChannelProjectionClass, ChannelSourceScope, ChannelSubscription,
     }},
     runtime::{actor::messages::ActorOwner, instance::{AgentInstanceCommandView, AgentInstanceController}},
 };
@@ -38,6 +38,10 @@ pub struct ChannelDeliveryInput {
     pub original_actor: String,
     pub grant_issuer: String,
     pub grant_id: String,
+    #[serde(default)]
+    pub classification: ChannelProjectionClass,
+    #[serde(default)]
+    pub text_projection: Option<String>,
     pub root_occurrence_id: String,
     pub parent_action_id: Option<Uuid>,
     pub action_id: Uuid,
@@ -92,9 +96,19 @@ impl FabricRoutedObserver {
         if self.profile != "frf.routed-observer/1" || self.delivery.subscriber_id != subscription_id {
             return Err(ChannelObserverError::Unsupported("fabric_subscriber_profile_mismatch"));
         }
-        if self.delivery.classification != "metadata_only" || !self.projection.is_object() {
-            return Err(ChannelObserverError::Unsupported("only_metadata_projection_is_supported"));
-        }
+        let (classification, text_projection) = match self.delivery.classification.as_str() {
+            "metadata_only" if self.projection.is_object() => (ChannelProjectionClass::MetadataOnly, None),
+            "policy_filtered" => {
+                let Some(object) = self.projection.as_object() else {
+                    return Err(ChannelObserverError::Invalid("text projection must be an object"));
+                };
+                let Some(text) = object.get("text").and_then(Value::as_str).filter(|_| object.len() == 1) else {
+                    return Err(ChannelObserverError::Invalid("policy-filtered projection must contain only text"));
+                };
+                (ChannelProjectionClass::PolicyFiltered, Some(text.to_owned()))
+            }
+            _ => return Err(ChannelObserverError::Unsupported("channel_projection_class_unsupported")),
+        };
         if self.source.native_message_id.trim().is_empty() || self.source.tenant_id.trim().is_empty()
             || self.causal.action_id.trim().is_empty()
             || self.causal.parent_action_id.as_ref().is_some_and(|id| id.trim().is_empty())
@@ -118,6 +132,7 @@ impl FabricRoutedObserver {
             original_principal: self.selection.original_principal,
             original_actor: self.source.sender,
             grant_issuer: String::new(), grant_id: String::new(),
+            classification, text_projection,
             root_occurrence_id: self.causal.root_occurrence_id,
             parent_action_id: self.causal.parent_action_id.as_deref().map(|id| stable_uuid(&[id])),
             action_id: stable_uuid(&[&self.causal.action_id]),
@@ -285,7 +300,10 @@ impl ChannelObserverController {
         let instance = self.instances.load(owner, workspace, &subscription.observer_instance_id).await
             .map_err(|_| ChannelObserverError::NotFound)?;
         self.instances.bound(&instance).await.map_err(|_| ChannelObserverError::Withheld("observer_binding_changed"))?;
-        let payload_sha256 = sha256_hex(&serde_json::to_vec(&(&input.occurrence_id, &input.native_message_id, &input.scope, &input.route_id, &input.subscriber_cursor_id)).map_err(|_| ChannelObserverError::Invalid("source encoding"))?);
+        let payload_sha256 = match input.classification {
+            ChannelProjectionClass::PolicyFiltered => sha256_hex(input.text_projection.as_deref().unwrap_or_default().as_bytes()),
+            ChannelProjectionClass::MetadataOnly => sha256_hex(&serde_json::to_vec(&(&input.occurrence_id, &input.native_message_id, &input.scope, &input.route_id, &input.subscriber_cursor_id)).map_err(|_| ChannelObserverError::Invalid("source encoding"))?),
+        };
         let now = Utc::now();
         let pending = ChannelInboxEntry {
             subscription_id: subscription_id.to_owned(), owner_id: owner.presentation_owner_key(),
@@ -295,6 +313,7 @@ impl ChannelObserverController {
             route_id: input.route_id.clone(), route_revision: input.route_revision.clone(),
             binding_revision: input.binding_revision.clone(), policy_revision: input.policy_revision.clone(),
             original_actor: input.original_actor.clone(), original_principal: input.original_principal.clone(), payload_sha256: payload_sha256.clone(),
+            classification: input.classification, text_projection: None,
             status: ChannelInboxStatus::PendingAuthority, gate_receipt_id: None,
             admitted_at: now, updated_at: now,
         };
@@ -307,7 +326,11 @@ impl ChannelObserverController {
         let mut next = existing.clone();
         next.updated_at = Utc::now();
         match receipt {
-            Ok(receipt) => { next.status = ChannelInboxStatus::Admitted; next.gate_receipt_id = Some(receipt); }
+            Ok(receipt) => {
+                next.status = ChannelInboxStatus::Admitted;
+                next.gate_receipt_id = Some(receipt);
+                next.text_projection.clone_from(&input.text_projection);
+            }
             Err("channel_effect_uncertain") => { next.status = ChannelInboxStatus::Uncertain; }
             Err("channel_gate_unreachable" | "channel_gate_response_invalid" | "channel_gate_configuration_invalid") => {
                 return Err(ChannelObserverError::Unsupported("channel_gate_evaluation_unavailable"));
@@ -358,6 +381,10 @@ impl ChannelObserverController {
             return Err(ChannelObserverError::Withheld("source_tenant_mismatch"));
         }
         if prompt.trim().is_empty() { return Err(ChannelObserverError::Invalid("handler prompt is empty")); }
+        if input.classification == ChannelProjectionClass::PolicyFiltered
+            && input.text_projection.as_deref() != Some(prompt) {
+            return Err(ChannelObserverError::Invalid("handler prompt differs from authorized text projection"));
+        }
         let _lock = self.admission.lock().await;
         let instance = self.instances.load(owner, workspace, &input.selected_handler_id).await
             .map_err(|_| ChannelObserverError::NotFound)?;
@@ -374,7 +401,8 @@ impl ChannelObserverController {
             route_revision: input.route_revision.clone(), binding_revision: input.binding_revision.clone(),
             policy_revision: input.policy_revision.clone(), original_actor: input.original_actor.clone(),
             original_principal: input.original_principal.clone(),
-            payload_sha256: digest.clone(), status: ChannelInboxStatus::PendingAuthority,
+            payload_sha256: digest.clone(), classification: input.classification,
+            text_projection: None, status: ChannelInboxStatus::PendingAuthority,
             gate_receipt_id: None, admitted_at: now, updated_at: now,
         };
         let existing = self.store.create_channel_inbox_entry(&pending).await.map_err(ChannelObserverError::Store)?;
@@ -426,6 +454,11 @@ fn validate_input(input: &ChannelDeliveryInput, workspace: &str) -> Result<(), C
             .into_iter().any(|value| value.trim().is_empty())
         || input.action_id.is_nil() || input.remaining_depth == 0 || input.remaining_fanout == 0
         || input.remaining_depth > 4 || input.remaining_fanout > 8
+        || match input.classification {
+            ChannelProjectionClass::MetadataOnly => input.text_projection.is_some(),
+            ChannelProjectionClass::PolicyFiltered => input.text_projection.as_ref()
+                .is_none_or(|text| text.as_bytes().len() > crate::uar::persistence::agent_instances::MAX_INSTANCE_COMMAND_BYTES - 1024),
+        }
         || input.visited_routes.iter().any(|route| route.trim().is_empty() || route == &input.route_id)
         || input.visited_routes.iter().collect::<HashSet<_>>().len() != input.visited_routes.len() {
         return Err(ChannelObserverError::Invalid("source, route, grant, or causal budget is invalid"));
@@ -447,7 +480,7 @@ fn gate_request(input: &ChannelDeliveryInput, recipient: &str,
         "handler": handler,
         "route_revision": input.route_revision,
         "payload": {"algorithm": "sha256", "sha256": payload_sha256},
-        "classification": "metadata_only",
+        "classification": input.classification.as_str(),
         "causality": {"root_occurrence_id": input.root_occurrence_id,
             "parent_action_id": input.parent_action_id,
             "action_id": stable_uuid(&[&input.action_id.to_string(), &input.delivery_id, action]),
@@ -482,5 +515,5 @@ fn same_delivery(expected: &ChannelInboxEntry, actual: &ChannelInboxEntry) -> bo
         && expected.route_id == actual.route_id && expected.route_revision == actual.route_revision
         && expected.binding_revision == actual.binding_revision && expected.policy_revision == actual.policy_revision
         && expected.original_actor == actual.original_actor && expected.original_principal == actual.original_principal
-        && expected.payload_sha256 == actual.payload_sha256
+        && expected.payload_sha256 == actual.payload_sha256 && expected.classification == actual.classification
 }

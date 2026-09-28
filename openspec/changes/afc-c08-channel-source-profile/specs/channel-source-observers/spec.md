@@ -8,8 +8,14 @@ UAR MUST negotiate `uar.channel-source/1` separately from C07 logical-instance o
 
 #### Scenario: Fabric delivery
 
-- **WHEN** an authenticated host submits a `frf.routed-observer/1` metadata payload for a matching subscriber
+- **WHEN** an authenticated host submits a `frf.routed-observer/1` metadata payload or an exact policy-filtered text projection for a matching subscriber
 - **THEN** UAR persists one exact receipt keyed by owner, workspace, subscription and delivery ID, and independent subscribers retain independent cursors.
+
+#### Scenario: Authorized text projection
+
+- **WHEN** BossFang has disclosed a text-only source projection and UAR receives the matching `policy_filtered` `{ "text": "..." }` Fabric envelope
+- **THEN** UAR hashes the exact UTF-8 text, obtains a fresh Gate recipient-delivery release for that digest and classification, and only then persists the text for that subscriber.
+- **AND** metadata-only deliveries never persist text; media, attachments, chunks, or arbitrary projection keys are rejected.
 
 ### Requirement: Current authority at each effect
 

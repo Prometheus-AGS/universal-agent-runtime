@@ -12,7 +12,7 @@ use crate::uar::persistence::agent_threads::{
     PersistedAgentThread,
 };
 use crate::uar::persistence::channel_observers::{
-    ChannelInboxEntry, ChannelObserverStoreError, ChannelSubscription,
+    ChannelInboxEntry, ChannelObserverStoreError, ChannelProjectionClass, ChannelSubscription,
 };
 use crate::uar::persistence::observers::{
     ObserverOccurrence, ObserverOccurrenceBounds, ObserverStoreError, ObserverSubscription,
@@ -747,7 +747,13 @@ impl PersistenceLayer for SurrealDbProvider {
             || before.route_id != after.route_id || before.route_revision != after.route_revision
             || before.binding_revision != after.binding_revision || before.policy_revision != after.policy_revision
             || before.original_actor != after.original_actor || before.original_principal != after.original_principal
-            || before.payload_sha256 != after.payload_sha256 || before.admitted_at != after.admitted_at {
+            || before.payload_sha256 != after.payload_sha256 || before.admitted_at != after.admitted_at
+            || before.classification != after.classification
+            || (before.text_projection.is_some() && before.text_projection != after.text_projection)
+            || (after.classification == ChannelProjectionClass::MetadataOnly && after.text_projection.is_some())
+            || after.text_projection.as_ref().is_some_and(|text| {
+                hex::encode(Sha256::digest(text.as_bytes())) != after.payload_sha256
+            }) {
             return Err(ChannelObserverStoreError::ScopeMismatch.into());
         }
         let key = agent_instance_key(&before.owner_id, &before.workspace_id, &format!("{}:{}", before.subscription_id, before.delivery_id));
