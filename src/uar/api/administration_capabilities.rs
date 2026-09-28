@@ -1610,14 +1610,14 @@ pub fn administration_capabilities(
             endpoint!(
                 "agent-instances.list",
                 "GET",
-                "/api/uar/agent-instances/v1/",
+                "/api/uar/agent-instances/v1",
                 Owner,
                 Read
             ),
             endpoint!(
                 "agent-instances.create",
                 "POST",
-                "/api/uar/agent-instances/v1/",
+                "/api/uar/agent-instances/v1",
                 Owner,
                 mutating
             ),
@@ -1693,8 +1693,8 @@ pub fn administration_capabilities(
         Agents,
         observer_availability,
         vec![
-            endpoint!("observers.list", "GET", "/api/uar/observers/v1/", Owner, Read),
-            endpoint!("observers.create", "POST", "/api/uar/observers/v1/", Owner, observer_mutation),
+            endpoint!("observers.list", "GET", "/api/uar/observers/v1", Owner, Read),
+            endpoint!("observers.create", "POST", "/api/uar/observers/v1", Owner, observer_mutation),
             endpoint!("observers.read", "GET", "/api/uar/observers/v1/{id}", Owner, Read),
             endpoint!("observers.pause", "POST", "/api/uar/observers/v1/{id}/pause", Owner, observer_mutation),
             endpoint!("observers.resume", "POST", "/api/uar/observers/v1/{id}/resume", Owner, observer_mutation),
