@@ -67,46 +67,48 @@ pub fn build_router() -> Router<Arc<RunApiState>> {
         .route("/resolve-model", get(resolve_model))
 }
 
-#[derive(Deserialize)]
-struct CreateRunRequest {
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct CreateRunRequest {
     #[serde(default)]
-    artifact: Option<AgentArtifact>,
+    pub(crate) artifact: Option<AgentArtifact>,
     #[serde(default)]
-    agent_id: Option<String>,
+    pub(crate) agent_id: Option<String>,
     #[serde(default)]
-    deployment_binding_id: Option<String>,
+    pub(crate) deployment_binding_id: Option<String>,
     #[serde(default)]
-    service_placement: Option<crate::uar::service_instance::ServicePlacementExpectation>,
-    input: String,
-    session_id: Option<String>,
+    pub(crate) service_placement: Option<crate::uar::service_instance::ServicePlacementExpectation>,
+    pub(crate) input: String,
+    pub(crate) session_id: Option<String>,
     #[serde(default)]
-    run_credentials: Option<Vec<crate::uar::runtime::turn::host::RunCredentialInput>>,
+    pub(crate) run_credentials: Option<Vec<crate::uar::runtime::turn::host::RunCredentialInput>>,
     #[serde(default)]
-    mcp_servers: Option<Vec<crate::uar::runtime::turn::host::RunMcpServerInput>>,
+    pub(crate) mcp_servers: Option<Vec<crate::uar::runtime::turn::host::RunMcpServerInput>>,
     #[serde(default)]
-    tool_admission: Option<crate::uar::runtime::tool_admission::RunToolAdmissionInput>,
+    pub(crate) tool_admission: Option<crate::uar::runtime::tool_admission::RunToolAdmissionInput>,
     #[serde(default)]
-    working_directory: Option<std::path::PathBuf>,
+    pub(crate) working_directory: Option<std::path::PathBuf>,
     #[serde(default)]
-    reasoning_effort: Option<String>,
+    pub(crate) reasoning_effort: Option<String>,
     #[serde(default)]
-    history: Option<crate::uar::runtime::turn::host::HostHistoryInput>,
+    pub(crate) history: Option<crate::uar::runtime::turn::host::HostHistoryInput>,
     #[serde(default)]
-    skill_attachments: Vec<String>,
+    pub(crate) skill_attachments: Vec<String>,
     #[serde(flatten)]
-    presentation_negotiation: crate::uar::a2ui::presentation_selection::PresentationNegotiation,
+    pub(crate) presentation_negotiation:
+        crate::uar::a2ui::presentation_selection::PresentationNegotiation,
 }
 
-#[derive(serde::Serialize)]
-struct CreateRunResponse {
-    run_id: String,
-    stream_url: String,
+#[derive(Clone, serde::Serialize)]
+pub(crate) struct CreateRunResponse {
+    pub(crate) run_id: String,
+    pub(crate) stream_url: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    effective_service_binding: Option<crate::uar::service_instance::EffectiveServiceBinding>,
+    pub(crate) effective_service_binding:
+        Option<crate::uar::service_instance::EffectiveServiceBinding>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    activation_failures: Vec<crate::uar::runtime::skills::activation::ActivationFailure>,
-    history: crate::uar::runtime::turn::host::HistorySeedStatus,
-    seeded_messages: usize,
+    pub(crate) activation_failures: Vec<crate::uar::runtime::skills::activation::ActivationFailure>,
+    pub(crate) history: crate::uar::runtime::turn::host::HistorySeedStatus,
+    pub(crate) seeded_messages: usize,
 }
 
 #[derive(Serialize)]
@@ -180,6 +182,20 @@ pub(crate) struct RunApiError {
     status: StatusCode,
     code: &'static str,
     message: String,
+}
+
+impl RunApiError {
+    pub(crate) fn status(&self) -> StatusCode {
+        self.status
+    }
+
+    pub(crate) fn code(&self) -> &'static str {
+        self.code
+    }
+
+    pub(crate) fn message(&self) -> &str {
+        &self.message
+    }
 }
 
 impl From<crate::uar::runtime::turn::host::HostInputError> for RunApiError {
@@ -424,6 +440,26 @@ async fn create_run(
     host_authenticated: Option<Extension<HostAuthenticated>>,
     Json(req): Json<CreateRunRequest>,
 ) -> Result<Json<CreateRunResponse>, RunApiError> {
+    admit_run(
+        state,
+        user,
+        headers,
+        host_authenticated.is_some(),
+        req,
+        None,
+    )
+    .await
+    .map(Json)
+}
+
+pub(crate) async fn admit_run(
+    state: Arc<RunApiState>,
+    user: UserContext,
+    headers: HeaderMap,
+    host_authenticated: bool,
+    req: CreateRunRequest,
+    reserved_run_id: Option<String>,
+) -> Result<CreateRunResponse, RunApiError> {
     let CreateRunRequest {
         artifact,
         agent_id,
@@ -530,7 +566,7 @@ async fn create_run(
     request.skill_attachments = skill_attachments;
     request.presentation_negotiation = presentation_negotiation;
     if let Some(input) = tool_admission {
-        if host_authenticated.is_none() {
+        if !host_authenticated {
             return Err(RunApiError {
                 status: StatusCode::FORBIDDEN,
                 code: "tool_admission_host_authentication_required",
@@ -559,11 +595,24 @@ async fn create_run(
     )
     .await?;
     let run_id = if bound_selector {
+        if let Some(run_id) = reserved_run_id {
+            state
+                .manager
+                .execute_bound_request_with_run_id(request, run_id)
+                .await
+                .map_err(collaboration_run_error)?
+        } else {
+            state
+                .manager
+                .execute_bound_request(request)
+                .await
+                .map_err(collaboration_run_error)?
+        }
+    } else if let Some(run_id) = reserved_run_id {
         state
             .manager
-            .execute_bound_request(request)
+            .execute_request_with_run_id(request, run_id)
             .await
-            .map_err(collaboration_run_error)?
     } else {
         state.manager.execute_request(request).await
     };
@@ -588,14 +637,20 @@ async fn create_run(
         .and_then(serde_json::Value::as_u64)
         .and_then(|value| usize::try_from(value).ok())
         .unwrap_or_default();
-    Ok(Json(CreateRunResponse {
+    let effective_service_binding = response_service_binding.or_else(|| {
+        run_context
+            .get("effective_service_binding")
+            .cloned()
+            .and_then(|value| serde_json::from_value(value).ok())
+    });
+    Ok(CreateRunResponse {
         run_id: run_id.clone(),
         stream_url: format!("/api/uar/runs/{run_id}/stream"),
-        effective_service_binding: response_service_binding,
+        effective_service_binding,
         activation_failures,
         history,
         seeded_messages,
-    }))
+    })
 }
 
 fn service_placement_error(
@@ -843,7 +898,7 @@ async fn stream_run(
     build_sse_response(stream, agui_spec, replay_snapshot).into_response()
 }
 
-fn unrecoverable_stream_gap(run_id: &str, last_id: u64) -> StreamEvent {
+pub(crate) fn unrecoverable_stream_gap(run_id: &str, last_id: u64) -> StreamEvent {
     StreamEvent {
         id: last_id.saturating_add(1),
         event: crate::uar::domain::events::NormalizedEvent::Error {
@@ -852,6 +907,16 @@ fn unrecoverable_stream_gap(run_id: &str, last_id: u64) -> StreamEvent {
             message: "Run stream lost events that are no longer available for replay".to_owned(),
         },
     }
+}
+
+pub(crate) fn is_terminal_stream_event(event: &StreamEvent) -> bool {
+    matches!(
+        &event.event,
+        crate::uar::domain::events::NormalizedEvent::RunDone { .. }
+            | crate::uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. }
+            | crate::uar::domain::events::NormalizedEvent::Cancelled { .. }
+            | crate::uar::domain::events::NormalizedEvent::Error { .. }
+    )
 }
 
 #[derive(Deserialize)]

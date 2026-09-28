@@ -102,6 +102,45 @@ fn task_error(error: TaskError) -> Status {
     }
 }
 
+fn full_harness_task_error(error: crate::uar::api::full_harness::ApiError) -> Status {
+    match error.code() {
+        "retention_expired" => Status::failed_precondition(error.to_string()),
+        "recovery_unsupported" => Status::failed_precondition(error.to_string()),
+        "revision_conflict" => Status::aborted(error.to_string()),
+        "task_unresolved" => Status::unavailable(error.to_string()),
+        _ => Status::not_found(error.to_string()),
+    }
+}
+
+fn grpc_workspace<T>(request: &Request<T>) -> Result<Option<String>, Status> {
+    request
+        .metadata()
+        .get("x-uar-workspace-id")
+        .map(|value| {
+            value
+                .to_str()
+                .map(str::trim)
+                .map(str::to_owned)
+                .map_err(|_| Status::invalid_argument("invalid x-uar-workspace-id"))
+        })
+        .transpose()
+        .map(|workspace| workspace.filter(|value| !value.is_empty()))
+}
+
+fn grpc_expected_revision<T>(request: &Request<T>) -> Result<Option<u64>, Status> {
+    request
+        .metadata()
+        .get("x-uar-expected-revision")
+        .map(|value| {
+            value
+                .to_str()
+                .map_err(|_| Status::invalid_argument("invalid x-uar-expected-revision"))?
+                .parse::<u64>()
+                .map_err(|_| Status::invalid_argument("invalid x-uar-expected-revision"))
+        })
+        .transpose()
+}
+
 #[tonic::async_trait]
 impl AgentService for GrpcAgentService {
     async fn message_send(
@@ -140,12 +179,27 @@ impl AgentService for GrpcAgentService {
         request: Request<GetTaskRequest>,
     ) -> Result<Response<PbTaskResponse>, Status> {
         let (owner, _, agent_id) = self.caller(&request).await?;
-        let task = self
-            .state
-            .threads
-            .get(&owner, &agent_id, &request.into_inner().task_id)
-            .await
-            .map_err(task_error)?;
+        let workspace_id = grpc_workspace(&request)?;
+        let task_id = request.into_inner().task_id;
+        let task = if let Some(authority) = self.state.threads.full_harness()
+            && authority.is_task_id(&task_id)
+        {
+            let workspace_id = workspace_id.as_deref().ok_or_else(|| {
+                Status::invalid_argument(
+                    "x-uar-workspace-id is required for full-harness task lookup",
+                )
+            })?;
+            authority
+                .a2a_get(&owner, workspace_id, &agent_id, &task_id)
+                .await
+                .map_err(full_harness_task_error)?
+        } else {
+            self.state
+                .threads
+                .get(&owner, &agent_id, &task_id)
+                .await
+                .map_err(task_error)?
+        };
         Ok(Response::new(task_to_pb(&task)))
     }
 
@@ -154,12 +208,33 @@ impl AgentService for GrpcAgentService {
         request: Request<CancelTaskRequest>,
     ) -> Result<Response<PbTaskResponse>, Status> {
         let (owner, _, agent_id) = self.caller(&request).await?;
-        let task = self
-            .state
-            .threads
-            .cancel(&owner, &agent_id, &request.into_inner().task_id)
-            .await
-            .map_err(task_error)?;
+        let workspace_id = grpc_workspace(&request)?;
+        let task_id = request.get_ref().task_id.clone();
+        let task = if let Some(authority) = self.state.threads.full_harness()
+            && authority.is_task_id(&task_id)
+        {
+            let workspace_id = workspace_id.as_deref().ok_or_else(|| {
+                Status::invalid_argument(
+                    "x-uar-workspace-id is required for full-harness task cancellation",
+                )
+            })?;
+            let expected_revision = grpc_expected_revision(&request)?;
+            let expected_revision = expected_revision.ok_or_else(|| {
+                Status::invalid_argument(
+                    "x-uar-expected-revision is required for full-harness task cancellation",
+                )
+            })?;
+            authority
+                .a2a_cancel(&owner, workspace_id, &agent_id, &task_id, expected_revision)
+                .await
+                .map_err(full_harness_task_error)?
+        } else {
+            self.state
+                .threads
+                .cancel(&owner, &agent_id, &task_id)
+                .await
+                .map_err(task_error)?
+        };
         Ok(Response::new(task_to_pb(&task)))
     }
 

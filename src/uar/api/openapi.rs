@@ -25,6 +25,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
             {"name": "tools", "description": "MCP tool discovery and health"},
             {"name": "skills", "description": "Skill management"},
             {"name": "runs", "description": "Governed agent run lifecycle"},
+            {"name": "full-harness", "description": "Process-ephemeral, retry-safe full-run delegation"},
             {"name": "providers", "description": "Runtime provider configuration"},
             {"name": "knowledge", "description": "Tenant-scoped knowledge bases and retrieval"},
             {"name": "auth", "description": "API key management and token exchange"},
@@ -149,6 +150,136 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "responses": { "200": { "description": "Normalized SSE event stream" } }
                 }
             },
+            "/api/uar/full-harness/v1/tasks": {
+                "post": {
+                    "summary": "Admit a complete delegated run",
+                    "description": "Reserves owner-and-workspace-scoped admission, task, and native run identities before entering UAR's sole execution loop. Exact retries return the existing process-local receipt; this profile does not claim restart recovery.",
+                    "tags": ["full-harness"],
+                    "security": [{"bearerAuth": []}],
+                    "parameters": [{"$ref": "#/components/parameters/FullHarnessWorkspaceId"}],
+                    "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessAdmissionRequest"}}}},
+                    "responses": {
+                        "202": {"description": "Task admitted or exact accepted admission replayed", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessTaskReceipt"}}}},
+                        "400": {"description": "Invalid admission request or native admission refusal", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "401": {"description": "Verified principal required", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "409": {"description": "Admission ID reused with a different canonical request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}}
+                    }
+                }
+            },
+            "/api/uar/full-harness/v1/capabilities": {
+                "get": {
+                    "summary": "Describe the process-ephemeral full-harness profile",
+                    "description": "Returns the current runtime epoch and explicit unsupported-after-restart recovery posture so clients can distinguish restart loss from an unknown task.",
+                    "tags": ["full-harness"], "security": [{"bearerAuth": []}],
+                    "responses": {
+                        "200": {"description": "Current full-harness runtime descriptor", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessRuntimeDescriptor"}}}},
+                        "401": {"description": "Verified principal required", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}}
+                    }
+                }
+            },
+            "/api/uar/full-harness/v1/admissions/{admission_id}": {
+                "get": {
+                    "summary": "Reconcile an admission",
+                    "description": "Returns the owner-scoped process-local receipt without creating or replaying a run.",
+                    "tags": ["full-harness"], "security": [{"bearerAuth": []}],
+                    "parameters": [{"$ref": "#/components/parameters/AdmissionId"}, {"$ref": "#/components/parameters/FullHarnessWorkspaceId"}],
+                    "responses": {
+                        "200": {"description": "Authoritative admission receipt", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessTaskReceipt"}}}},
+                        "404": {"description": "No current process-local admission record", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "410": {"description": "Advertised retention expired", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}}
+                    }
+                }
+            },
+            "/api/uar/full-harness/v1/tasks/{task_id}": {
+                "get": {
+                    "summary": "Get delegated task status",
+                    "tags": ["full-harness"], "security": [{"bearerAuth": []}],
+                    "parameters": [{"$ref": "#/components/parameters/FullHarnessTaskId"}, {"$ref": "#/components/parameters/FullHarnessWorkspaceId"}],
+                    "responses": {
+                        "200": {"description": "Authoritative process-local task receipt", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessTaskReceipt"}}}},
+                        "404": {"description": "Task ID is outside the full-harness authority", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "409": {"description": "Prior runtime epoch with unsupported recovery", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "410": {"description": "Expired record or unresolved current-epoch task", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}}
+                    }
+                }
+            },
+            "/api/uar/full-harness/v1/tasks/{task_id}/stream": {
+                "get": {
+                    "summary": "Observe delegated run events without owning its lifetime",
+                    "description": "Replays retained native events and follows the live stream. Disconnecting detaches the observer and does not cancel the run.",
+                    "tags": ["full-harness"], "security": [{"bearerAuth": []}],
+                    "parameters": [
+                        {"$ref": "#/components/parameters/FullHarnessTaskId"},
+                        {"$ref": "#/components/parameters/FullHarnessWorkspaceId"},
+                        {"name": "last_event_id", "in": "query", "required": false, "schema": {"type": "integer", "format": "uint64"}},
+                        {"name": "Last-Event-ID", "in": "header", "required": false, "schema": {"type": "integer", "format": "uint64"}, "description": "Used when last_event_id is omitted"}
+                    ],
+                    "responses": {
+                        "200": {"description": "Normalized native run event stream", "content": {"text/event-stream": {"schema": {"type": "string"}}}},
+                        "409": {"description": "Prior runtime epoch with unsupported recovery", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "410": {"description": "Task or native run stream is unavailable", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}}
+                    }
+                }
+            },
+            "/api/uar/full-harness/v1/tasks/{task_id}/tool-approval": {
+                "post": {
+                    "summary": "Resolve the current native tool approval",
+                    "tags": ["full-harness"], "security": [{"bearerAuth": []}],
+                    "parameters": [{"$ref": "#/components/parameters/FullHarnessTaskId"}, {"$ref": "#/components/parameters/FullHarnessWorkspaceId"}],
+                    "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessApprovalRequest"}}}},
+                    "responses": {
+                        "200": {"description": "Updated receipt after approval forwarding", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessTaskReceipt"}}}},
+                        "409": {"description": "Revision conflict, unresolved approval, or prior runtime epoch", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "404": {"description": "Task not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "410": {"description": "Task retention expired or native task is unresolved", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}}
+                    }
+                }
+            },
+            "/api/uar/full-harness/v1/tasks/{task_id}/cancel": {
+                "post": {
+                    "summary": "Request cancellation of the native run",
+                    "description": "The receipt distinguishes request, executor acknowledgement, terminal cancellation, and cleanup uncertainty.",
+                    "tags": ["full-harness"], "security": [{"bearerAuth": []}],
+                    "parameters": [{"$ref": "#/components/parameters/FullHarnessTaskId"}, {"$ref": "#/components/parameters/FullHarnessWorkspaceId"}],
+                    "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessMutationRequest"}}}},
+                    "responses": {
+                        "200": {"description": "Updated cancellation receipt; acknowledgement is not terminal completion", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessTaskReceipt"}}}},
+                        "409": {"description": "Revision conflict or prior runtime epoch", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "404": {"description": "Task not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "410": {"description": "Task retention expired or unresolved", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}}
+                    }
+                }
+            },
+            "/api/uar/full-harness/v1/tasks/{task_id}/detach": {
+                "post": {
+                    "summary": "Detach from a delegated task",
+                    "description": "Records detachment without requesting cancellation.",
+                    "tags": ["full-harness"], "security": [{"bearerAuth": []}],
+                    "parameters": [{"$ref": "#/components/parameters/FullHarnessTaskId"}, {"$ref": "#/components/parameters/FullHarnessWorkspaceId"}],
+                    "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessDetachRequest"}}}},
+                    "responses": {
+                        "200": {"description": "Updated receipt with detached set", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessTaskReceipt"}}}},
+                        "400": {"description": "observer_id is empty", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "409": {"description": "Revision conflict or prior runtime epoch", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "404": {"description": "Task not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "410": {"description": "Task retention expired or unresolved", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}}
+                    }
+                }
+            },
+            "/api/uar/full-harness/v1/tasks/{task_id}/steer": {
+                "post": {
+                    "summary": "Steer a delegated task",
+                    "description": "The process-ephemeral v1 profile explicitly refuses steering and never creates a replacement run.",
+                    "tags": ["full-harness"], "security": [{"bearerAuth": []}],
+                    "parameters": [{"$ref": "#/components/parameters/FullHarnessTaskId"}, {"$ref": "#/components/parameters/FullHarnessWorkspaceId"}],
+                    "responses": {
+                        "404": {"description": "Task not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "409": {"description": "Prior runtime epoch with unsupported recovery", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "410": {"description": "Task retention expired or unresolved", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}},
+                        "422": {"description": "capability_unsupported", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FullHarnessError"}}}}
+                    }
+                }
+            },
             "/api/uar/providers": {
                 "get": {
                     "summary": "List configured providers",
@@ -250,6 +381,97 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "responses": { "200": { "description": "Entity mutation SSE stream" } }
                 }
             }
+        },
+        "components": {
+            "securitySchemes": {
+                "bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
+            },
+            "parameters": {
+                "AdmissionId": {"name": "admission_id", "in": "path", "required": true, "schema": {"type": "string"}},
+                "FullHarnessTaskId": {"name": "task_id", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^fh-"}},
+                "FullHarnessWorkspaceId": {"name": "x-uar-workspace-id", "in": "header", "required": true, "schema": {"type": "string", "minLength": 1}, "description": "Authenticated workspace partition for admission, reconciliation, observation, and control"}
+            },
+            "schemas": {
+                "FullHarnessAdmissionRequest": {
+                    "type": "object",
+                    "required": ["admission_id", "native_task_id", "input"],
+                    "oneOf": [
+                        {"required": ["deployment_binding_id"], "not": {"anyOf": [{"required": ["agent_id"]}, {"required": ["artifact"]}]}},
+                        {"required": ["agent_id"], "not": {"anyOf": [{"required": ["deployment_binding_id"]}, {"required": ["artifact"]}]}},
+                        {"required": ["artifact"], "not": {"anyOf": [{"required": ["deployment_binding_id"]}, {"required": ["agent_id"]}]}}
+                    ],
+                    "properties": {
+                        "admission_id": {"type": "string", "minLength": 1, "description": "Owner-scoped idempotency identity"},
+                        "native_task_id": {"type": "string", "minLength": 1, "description": "Caller correlation identity; not UAR execution authority"},
+                        "artifact": {"type": ["object", "null"]}, "agent_id": {"type": ["string", "null"]},
+                        "deployment_binding_id": {"type": ["string", "null"]}, "service_placement": {"type": ["object", "null"]},
+                        "input": {"type": "string"}, "session_id": {"type": ["string", "null"]},
+                        "run_credentials": {"type": ["array", "null"], "items": {"type": "object"}},
+                        "mcp_servers": {"type": ["array", "null"], "items": {"type": "object"}},
+                        "tool_admission": {"type": ["object", "null"]}, "working_directory": {"type": ["string", "null"]},
+                        "reasoning_effort": {"type": ["string", "null"]}, "history": {"type": ["object", "null"]},
+                        "skill_attachments": {"type": "array", "items": {"type": "string"}, "default": []},
+                        "presentation_mode": {"type": ["string", "null"], "enum": ["auto", "text", "a2ui", "hybrid", null]},
+                        "client_rendering": {"type": ["object", "null"], "properties": {"a2ui_profiles": {"type": "array", "items": {"type": "string"}}}}
+                    },
+                    "description": "UAR computes the canonical digest from the complete deserialized request plus normalized workspace identity and never returns or persists request credential material in the receipt."
+                },
+                "FullHarnessRetention": {
+                    "type": "object", "required": ["mode", "terminal_ttl_seconds", "terminal_record_cap"],
+                    "properties": {"mode": {"type": "string", "enum": ["process_ephemeral"]}, "terminal_ttl_seconds": {"type": "integer", "format": "uint64"}, "terminal_record_cap": {"type": "integer", "minimum": 0}}
+                },
+                "FullHarnessRuntimeDescriptor": {
+                    "type": "object", "required": ["profile", "runtime_epoch", "recovery", "retention", "steer_supported"],
+                    "properties": {
+                        "profile": {"type": "string", "enum": ["full_harness_v1"]},
+                        "runtime_epoch": {"type": "string"},
+                        "recovery": {"type": "string", "enum": ["unsupported_after_restart"]},
+                        "retention": {"$ref": "#/components/schemas/FullHarnessRetention"},
+                        "steer_supported": {"type": "boolean", "const": false}
+                    }
+                },
+                "FullHarnessCancellation": {
+                    "type": "object", "required": ["requested", "acknowledged", "terminal", "cleanup_uncertain"],
+                    "properties": {"requested": {"type": "boolean"}, "acknowledged": {"type": "boolean"}, "terminal": {"type": "boolean"}, "cleanup_uncertain": {"type": "boolean"}}
+                },
+                "FullHarnessMutationRequest": {
+                    "type": "object", "required": ["expected_revision"],
+                    "properties": {"expected_revision": {"type": "integer", "format": "uint64"}}
+                },
+                "FullHarnessApprovalRequest": {
+                    "type": "object", "required": ["expected_revision", "approved", "approval_id"],
+                    "properties": {"expected_revision": {"type": "integer", "format": "uint64"}, "approved": {"type": "boolean"}, "approval_id": {"type": "string", "minLength": 1}}
+                },
+                "FullHarnessDetachRequest": {
+                    "type": "object", "required": ["expected_revision", "observer_id"],
+                    "properties": {"expected_revision": {"type": "integer", "format": "uint64"}, "observer_id": {"type": "string", "minLength": 1}}
+                },
+                "FullHarnessTaskReceipt": {
+                    "type": "object",
+                    "required": ["admission_id", "task_id", "native_task_id", "run_id", "workspace_id", "runtime_epoch", "revision", "state", "retention", "diagnostics", "cancellation", "detached", "detached_observers", "created_at", "unsupported_semantics", "links"],
+                    "properties": {
+                        "admission_id": {"type": "string"}, "task_id": {"type": "string", "pattern": "^fh-"}, "native_task_id": {"type": "string"},
+                        "run_id": {"type": "string"}, "agent_id": {"type": ["string", "null"]}, "workspace_id": {"type": "string"}, "runtime_epoch": {"type": "string"},
+                        "revision": {"type": "integer", "format": "uint64"}, "cursor": {"type": ["integer", "null"], "format": "uint64"},
+                        "state": {"type": "string", "enum": ["reserved", "submitted", "working", "input_required", "completed", "failed", "cancelled", "rejected"]},
+                        "retention": {"$ref": "#/components/schemas/FullHarnessRetention"},
+                        "effective_service_binding": {"type": ["object", "null"]},
+                        "diagnostics": {"type": "array", "items": {"type": "object", "required": ["code", "message"], "properties": {"code": {"type": "string"}, "message": {"type": "string"}}}},
+                        "cancellation": {"$ref": "#/components/schemas/FullHarnessCancellation"}, "detached": {"type": "boolean"},
+                        "detached_observers": {"type": "array", "items": {"type": "string"}},
+                        "created_at": {"type": "string", "format": "date-time"}, "terminal_at": {"type": ["string", "null"], "format": "date-time"}, "expires_at": {"type": ["string", "null"], "format": "date-time"},
+                        "unsupported_semantics": {"type": "array", "items": {"type": "string"}},
+                        "links": {"type": "object", "required": ["status", "stream", "tool_approval", "cancel", "detach", "steer"], "properties": {"status": {"type": "string"}, "stream": {"type": "string"}, "tool_approval": {"type": "string"}, "cancel": {"type": "string"}, "detach": {"type": "string"}, "steer": {"type": "string"}}}
+                    }
+                },
+                "FullHarnessError": {
+                    "type": "object", "required": ["error"],
+                    "properties": {"error": {"type": "object", "required": ["code", "message"], "properties": {
+                        "code": {"type": "string", "description": "Stable full-harness or native run-admission error code, including admission_invalid, admission_digest_conflict, workspace_required, recovery_unsupported, retention_expired, task_unresolved, task_not_found, revision_conflict, detach_invalid, approval_invalid, approval_unresolved, capability_unsupported, and principal_invalid"},
+                        "message": {"type": "string"}, "task_id": {"type": ["string", "null"]}, "admission_id": {"type": ["string", "null"]}
+                    }}}
+                }
+            }
         }
     }))
     .expect("OpenAPI spec JSON is valid")
@@ -267,6 +489,15 @@ mod tests {
         for path in [
             "/v1/chat/completions",
             "/api/uar/runs",
+            "/api/uar/full-harness/v1/tasks",
+            "/api/uar/full-harness/v1/capabilities",
+            "/api/uar/full-harness/v1/admissions/{admission_id}",
+            "/api/uar/full-harness/v1/tasks/{task_id}",
+            "/api/uar/full-harness/v1/tasks/{task_id}/stream",
+            "/api/uar/full-harness/v1/tasks/{task_id}/tool-approval",
+            "/api/uar/full-harness/v1/tasks/{task_id}/cancel",
+            "/api/uar/full-harness/v1/tasks/{task_id}/detach",
+            "/api/uar/full-harness/v1/tasks/{task_id}/steer",
             "/api/uar/providers",
             "/api/uar/skills",
             "/api/uar/skills/refresh",

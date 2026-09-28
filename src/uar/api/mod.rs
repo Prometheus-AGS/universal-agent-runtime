@@ -12,13 +12,15 @@ pub mod administration_capabilities;
 pub mod auth;
 #[cfg(feature = "server")]
 pub mod capabilities;
+pub mod collaboration;
 #[cfg(feature = "server")]
 pub mod compiler;
-pub mod collaboration;
 #[cfg(feature = "server")]
 pub mod credentials;
 #[cfg(feature = "server")]
 pub mod discovery;
+#[cfg(feature = "server")]
+pub mod full_harness;
 #[cfg(feature = "server")]
 pub mod ingest;
 #[cfg(feature = "server")]

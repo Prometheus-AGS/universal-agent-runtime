@@ -633,9 +633,8 @@ async fn run_server_with_listener(
             (
                 Arc::new(InMemoryProvider::new()) as Arc<dyn PersistenceLayer>,
                 None,
-                Arc::new(
-                    crate::uar::compiler::collaboration::InMemoryCollaborationStorage::new(),
-                ) as Arc<dyn crate::uar::compiler::collaboration::CollaborationStorage>,
+                Arc::new(crate::uar::compiler::collaboration::InMemoryCollaborationStorage::new())
+                    as Arc<dyn crate::uar::compiler::collaboration::CollaborationStorage>,
                 None,
                 None,
                 None,
@@ -683,7 +682,8 @@ async fn run_server_with_listener(
             );
             let collaboration_store = Arc::new(
                 crate::uar::compiler::collaboration::SurrealCollaborationStorage::new(db.clone()),
-            ) as Arc<dyn crate::uar::compiler::collaboration::CollaborationStorage>;
+            )
+                as Arc<dyn crate::uar::compiler::collaboration::CollaborationStorage>;
             let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> =
                 Arc::clone(&compiler_store) as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
             let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
@@ -745,8 +745,11 @@ async fn run_server_with_listener(
                 crate::uar::compiler::storage::postgres::PostgresCompilerStorage::new(pool.clone()),
             );
             let collaboration_store = Arc::new(
-                crate::uar::compiler::collaboration::PostgresCollaborationStorage::new(pool.clone()),
-            ) as Arc<dyn crate::uar::compiler::collaboration::CollaborationStorage>;
+                crate::uar::compiler::collaboration::PostgresCollaborationStorage::new(
+                    pool.clone(),
+                ),
+            )
+                as Arc<dyn crate::uar::compiler::collaboration::CollaborationStorage>;
             let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> =
                 Arc::clone(&compiler_store) as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
             let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
@@ -867,7 +870,11 @@ async fn run_server_with_listener(
                 );
                 registry
             }
-            Err(error) if error.downcast_ref::<std::io::Error>().is_some_and(|io| io.kind() == std::io::ErrorKind::NotFound) => {
+            Err(error)
+                if error
+                    .downcast_ref::<std::io::Error>()
+                    .is_some_and(|io| io.kind() == std::io::ErrorKind::NotFound) =>
+            {
                 info!(
                     path = %mcp_config_path.display(),
                     "Sidecar mode — no MCP destination catalog configured"
@@ -1345,12 +1352,19 @@ async fn run_server_with_listener(
     );
     info!("Collaboration package catalog initialized");
 
+    let full_harness_authority = Arc::new(uar::api::full_harness::FullHarnessTaskAuthority::new(
+        Arc::clone(&run_manager),
+        config.runs,
+    ));
+    info!("Process-ephemeral full-harness task authority initialized");
+
     // Both A2A transports share the existing mailbox/persisted-thread host.
     #[cfg(feature = "a2a-transport")]
     let a2a_state = Arc::new(uar::api::a2a::A2AState {
         threads: Arc::new(
             uar::api::a2a::thread_service::A2AThreadService::new(Arc::clone(&actor_system))
-                .with_instance_id(service_instance.descriptor().instance.id.clone()),
+                .with_instance_id(service_instance.descriptor().instance.id.clone())
+                .with_full_harness(Arc::clone(&full_harness_authority)),
         ),
         security: config.security.clone(),
         base_url: format!("http://{}:{}", config.server.host, config.server.port),
@@ -1574,6 +1588,19 @@ async fn run_server_with_listener(
                     uar::a2ui::routes::build_response_router()
                         .with_state::<AppState>(a2ui_api_state.clone()),
                 ),
+        )
+        .nest(
+            "/api/uar/full-harness/v1",
+            uar::api::full_harness::build_router().with_state::<AppState>(Arc::new(
+                uar::api::full_harness::FullHarnessApiState {
+                    authority: Arc::clone(&full_harness_authority),
+                    runs: Arc::new(uar::api::routes::RunApiState {
+                        manager: Arc::clone(&state.run_manager),
+                        collaboration_catalog: Arc::clone(&state.collaboration_catalog),
+                        service_instance: Arc::clone(&service_instance),
+                    }),
+                },
+            )),
         )
         // Skills API
         .nest(

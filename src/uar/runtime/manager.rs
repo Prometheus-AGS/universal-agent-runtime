@@ -1774,6 +1774,18 @@ impl RunManager {
         self.cancel_run(run_id).await
     }
 
+    /// Cancel only when the exact verified actor owner owns the run.
+    pub async fn cancel_run_for_owner(
+        &self,
+        owner: &crate::uar::runtime::actor::messages::ActorOwner,
+        run_id: &str,
+    ) -> bool {
+        if self.get_run_for_owner(owner, run_id).await.is_none() {
+            return false;
+        }
+        self.cancel_run(run_id).await
+    }
+
     /// Revoke one run-owned remote MCP credential for its exact verified
     /// owner. Revocation cannot install a replacement; the host must resume at
     /// a safe boundary with a compatible renewed grant.
@@ -2414,6 +2426,16 @@ impl RunManager {
         request: crate::uar::runtime::turn::RunExecutionRequest,
     ) -> String {
         let run_id = Uuid::new_v4().to_string();
+        self.execute_request_with_run_id(request, run_id).await
+    }
+
+    /// Execute through the native run path using an identity reserved by an
+    /// authenticated admission authority before kernel entry.
+    pub(crate) async fn execute_request_with_run_id(
+        &self,
+        request: crate::uar::runtime::turn::RunExecutionRequest,
+        run_id: String,
+    ) -> String {
         if self.uses_agent_graph(&request.artifact) {
             let result = self
                 .graph_roots
@@ -2452,6 +2474,24 @@ impl RunManager {
             .await
             .map_err(crate::uar::compiler::collaboration::CollaborationError::from)?;
         Ok(self.execute_request(request).await)
+    }
+
+    /// Revalidate a bound request, then execute it with a pre-reserved run ID.
+    pub(crate) async fn execute_bound_request_with_run_id(
+        &self,
+        request: crate::uar::runtime::turn::RunExecutionRequest,
+        run_id: String,
+    ) -> Result<String, crate::uar::compiler::collaboration::CollaborationError> {
+        let binding = request.collaboration_binding.as_ref().ok_or_else(|| {
+            crate::uar::compiler::collaboration::CollaborationError::Invalid(
+                "bound execution request has no effective binding receipt".to_owned(),
+            )
+        })?;
+        binding
+            .revalidate(&request.artifact)
+            .await
+            .map_err(crate::uar::compiler::collaboration::CollaborationError::from)?;
+        Ok(self.execute_request_with_run_id(request, run_id).await)
     }
 
     /// Preserve an observable failure even when root persistence fails before
