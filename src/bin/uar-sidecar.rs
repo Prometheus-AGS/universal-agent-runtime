@@ -248,6 +248,9 @@ where
 }
 
 fn main() {
+    #[cfg(feature = "tract-embeddings")]
+    ort::set_api(ort_tract::api());
+
     let bootstrap = match prepare_sidecar_process() {
         Ok(bootstrap) => bootstrap,
         Err(error) => {
