@@ -814,6 +814,48 @@ pub fn administration_capabilities(
                         Owner,
                         Read
                     ),
+                    endpoint!(
+                        "team-instances.tasks.claim",
+                        "POST",
+                        "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}:claim",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "team-instances.tasks.reassign",
+                        "POST",
+                        "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}:reassign",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "team-instances.tasks.reviewer",
+                        "POST",
+                        "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}:reviewer",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "team-instances.tasks.state",
+                        "POST",
+                        "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}:state",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "team-instances.messages.list",
+                        "GET",
+                        "/api/v1/collaboration/team-instances/{id}/messages",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "team-instances.messages.send",
+                        "POST",
+                        "/api/v1/collaboration/team-instances/{id}/messages",
+                        Owner,
+                        Live
+                    ),
                 ],
             ),
             surface(

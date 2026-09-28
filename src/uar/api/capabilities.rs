@@ -116,6 +116,8 @@ pub struct CollaborationActivationLimits {
     pub ordinary_agent: bool,
     /// Persistent team/member/task administration only; no team execution.
     pub team_planning: bool,
+    pub task_ownership: bool,
+    pub team_mailbox: bool,
     pub team_instance: bool,
     pub workflow: bool,
     pub human_representation: bool,
@@ -162,6 +164,8 @@ pub fn collaboration_capabilities() -> CollaborationCapabilities {
         activation: CollaborationActivationLimits {
             ordinary_agent: true,
             team_planning: true,
+            task_ownership: true,
+            team_mailbox: true,
             team_instance: false,
             workflow: false,
             human_representation: false,
