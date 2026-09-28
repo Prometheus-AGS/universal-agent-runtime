@@ -31,6 +31,10 @@ cpSync(binary, path.join(packageRoot, executable))
 cpSync(path.join(root, 'src', 'uar', 'runtime', 'matching', 'models'), path.join(packageRoot, 'uar-models'), {
   recursive: true
 })
+mkdirSync(path.join(packageRoot, 'policies'))
+for (const policy of ['default.cedar', 'skill-mutation.cedar', 'tool-approval.cedar']) {
+  cpSync(path.join(root, 'policies', policy), path.join(packageRoot, 'policies', policy))
+}
 cpSync(path.join(root, 'LICENSE'), path.join(packageRoot, 'LICENSE'))
 
 function visit(directory, depth = 0) {
