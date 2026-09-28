@@ -146,6 +146,13 @@ name = "run_retention"
 path = "tests/run_retention.rs"
 required-features = ["server", "test-probes", "telemetry"]
 
+# C06 completed-phase integration gate keeps the real-process scenario and its
+# child-server helper together without running unrelated live test cases.
+[[test]]
+name = "agent_fabric_c06_gate"
+path = "tests/agent_fabric_c06_gate.rs"
+required-features = ["server", "surreal-backend", "afc-c06-gate"]
+
 # CH-20: Criterion benchmarks for the router/dialect/context hot path.
 # harness = false because Criterion drives its own main().
 [[bench]]
@@ -222,6 +229,10 @@ surreal-backend = ["dep:surrealdb"]
 ## Process-local, non-durable persistence for minimal deployments and tests.
 ## Do not use when state must survive process restart.
 in-memory-backend = []
+
+# Enables the focused C06 real-process integration target and its governed
+# protected-tool approval path.
+afc-c06-gate = ["cedar-governance"]
 
 ## Local response-quality detection and optional corrective pass.
 response-quality = ["dep:sycophancy-core"]

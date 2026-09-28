@@ -98,9 +98,10 @@ pub struct RunExecutionRequest {
     /// Private effective binding captured by the authenticated collaboration
     /// adapter. It is revalidated before execution and again before tool claim.
     pub(crate) collaboration_binding: Option<CollaborationRunBinding>,
+    /// Exact host-owned logical activation, checked again before protected effects.
+    pub(crate) instance_binding: Option<crate::uar::runtime::instance::InstanceEpochBinding>,
     /// Host-selected service identity verified before executable admission.
-    pub(crate) service_binding:
-        Option<crate::uar::service_instance::EffectiveServiceBinding>,
+    pub(crate) service_binding: Option<crate::uar::service_instance::EffectiveServiceBinding>,
     pub skill_attachments: Vec<String>,
     /// Host-selected cwd. This never grants workspace trust or file permissions.
     pub working_directory: Option<std::path::PathBuf>,
@@ -132,6 +133,7 @@ impl RunExecutionRequest {
             checkpoint_resume: None,
             inherited_history: None,
             collaboration_binding: None,
+            instance_binding: None,
             service_binding: None,
             skill_attachments: Vec::new(),
             working_directory: None,

@@ -6,6 +6,7 @@ use crate::uar::domain::knowledge::{
 use crate::uar::domain::prompt_caching::UserPromptCachingSettings;
 use crate::uar::domain::skills::{Skill, SkillMatch};
 use crate::uar::persistence::PersistenceLayer;
+use crate::uar::persistence::agent_instances::{AgentInstanceRecord, AgentInstanceStoreError};
 use crate::uar::persistence::agent_threads::{
     self, AgentThreadStoreError, CanonicalReceiptStoreError, CanonicalToolReceipt,
     PersistedAgentThread,
@@ -23,6 +24,7 @@ use surrealdb::opt::auth::{Database, Namespace, Root};
 #[derive(Debug)]
 pub struct SurrealDbProvider {
     db: Surreal<Any>,
+    durable_instances: bool,
 }
 
 impl SurrealDbProvider {
@@ -117,6 +119,12 @@ impl SurrealDbProvider {
         .check()?;
 
         db.query(include_str!(
+            "../../../../migrations/surrealdb/agent_instances.surql"
+        ))
+        .await?
+        .check()?;
+
+        db.query(include_str!(
             "../../../../migrations/surrealdb/canonical_tool_receipts.surql"
         ))
         .await?
@@ -148,7 +156,13 @@ impl SurrealDbProvider {
 
         tracing::info!("SurrealDB connected successfully");
 
-        Ok(Self { db })
+        // A remote endpoint does not reveal whether its server uses persistent
+        // storage. Advertise durable instances only for the known local engine.
+        let durable_instances = endpoint.to_ascii_lowercase().starts_with("surrealkv://");
+        Ok(Self {
+            db,
+            durable_instances,
+        })
     }
 
     pub fn client(&self) -> Surreal<Any> {
@@ -300,6 +314,38 @@ fn check_agent_thread_write(mut response: surrealdb::IndexedResults) -> Result<(
         }
         if message.contains("uar_agent_thread_missing") {
             return Err(AgentThreadStoreError::NotFound.into());
+        }
+    }
+    if let Some((_, error)) = errors.into_iter().min_by_key(|(index, _)| *index) {
+        return Err(error.into());
+    }
+    Ok(())
+}
+
+fn agent_instance_key(owner_id: &str, workspace_id: &str, instance_id: &str) -> String {
+    crate::uar::persistence::tenant_storage_key(
+        owner_id,
+        &crate::uar::persistence::tenant_storage_key(workspace_id, instance_id),
+    )
+}
+
+fn agent_instance_payload(record: &AgentInstanceRecord) -> Result<serde_json::Value> {
+    Ok(serde_json::json!({
+        "owner_id": record.owner_id,
+        "workspace_id": record.workspace_id,
+        "instance_id": record.instance_id,
+        "schema_version": record.schema_version,
+        "revision": record.revision as i64,
+        "epoch": record.epoch as i64,
+        "data": serde_json::to_string(record)?,
+    }))
+}
+
+fn check_agent_instance_create(mut response: surrealdb::IndexedResults) -> Result<()> {
+    let errors = response.take_errors();
+    for error in errors.values() {
+        if error.to_string().contains("uar_agent_instance_exists") {
+            return Err(AgentInstanceStoreError::AlreadyExists.into());
         }
     }
     if let Some((_, error)) = errors.into_iter().min_by_key(|(index, _)| *index) {
@@ -467,6 +513,148 @@ impl SurrealDbProvider {
 
 #[async_trait]
 impl PersistenceLayer for SurrealDbProvider {
+    fn supports_durable_agent_instances(&self) -> bool {
+        self.durable_instances
+    }
+
+    async fn create_agent_instance(
+        &self,
+        record: &AgentInstanceRecord,
+    ) -> Result<AgentInstanceRecord> {
+        if !self.durable_instances {
+            return Err(AgentInstanceStoreError::Unsupported.into());
+        }
+        record.validate(&record.owner_id, &record.workspace_id)?;
+        if record.revision != 0
+            || record.epoch != 0
+            || record.active_attempt.is_some()
+            || !record.inbox.is_empty()
+            || !record.events.is_empty()
+            || record.next_event_sequence != 0
+        {
+            return Err(AgentInstanceStoreError::InvalidRecord.into());
+        }
+        let key = agent_instance_key(&record.owner_id, &record.workspace_id, &record.instance_id);
+        let response = self
+            .db
+            .query(
+                "BEGIN TRANSACTION;
+             LET $old = (SELECT * FROM type::record('agent_instances', $key))[0];
+             IF $old != NONE { THROW 'uar_agent_instance_exists'; };
+             CREATE type::record('agent_instances', $key) CONTENT $payload;
+             COMMIT TRANSACTION;",
+            )
+            .bind(("key", key))
+            .bind(("payload", agent_instance_payload(record)?))
+            .await?;
+        check_agent_instance_create(response)?;
+        Ok(record.clone())
+    }
+
+    async fn load_agent_instance(
+        &self,
+        owner_id: &str,
+        workspace_id: &str,
+        instance_id: &str,
+    ) -> Result<Option<AgentInstanceRecord>> {
+        if !self.durable_instances {
+            return Err(AgentInstanceStoreError::Unsupported.into());
+        }
+        let key = agent_instance_key(owner_id, workspace_id, instance_id);
+        let mut response = self
+            .db
+            .query("SELECT VALUE data FROM type::record('agent_instances', $key)")
+            .bind(("key", key))
+            .await?
+            .check()?;
+        let rows: Vec<String> = response.take(0)?;
+        if rows.len() > 1 {
+            return Err(AgentInstanceStoreError::InvalidRecord.into());
+        }
+        rows.into_iter()
+            .next()
+            .map(|data| {
+                let record: AgentInstanceRecord = serde_json::from_str(&data)?;
+                record.validate(owner_id, workspace_id)?;
+                if record.instance_id != instance_id {
+                    return Err(AgentInstanceStoreError::InvalidRecord.into());
+                }
+                Ok(record)
+            })
+            .transpose()
+    }
+
+    async fn list_agent_instances(
+        &self,
+        owner_id: &str,
+        workspace_id: &str,
+    ) -> Result<Vec<AgentInstanceRecord>> {
+        if !self.durable_instances {
+            return Err(AgentInstanceStoreError::Unsupported.into());
+        }
+        let mut response = self.db.query(
+            "SELECT VALUE data FROM agent_instances WHERE owner_id = $owner AND workspace_id = $workspace",
+        )
+        .bind(("owner", owner_id.to_string()))
+        .bind(("workspace", workspace_id.to_string()))
+        .await?
+        .check()?;
+        let rows: Vec<String> = response.take(0)?;
+        let mut records = rows
+            .into_iter()
+            .map(|data| {
+                let record: AgentInstanceRecord = serde_json::from_str(&data)?;
+                record.validate(owner_id, workspace_id)?;
+                Ok(record)
+            })
+            .collect::<Result<Vec<_>>>()?;
+        records.sort_by(|left, right| left.instance_id.cmp(&right.instance_id));
+        Ok(records)
+    }
+
+    async fn compare_and_swap_agent_instance(
+        &self,
+        owner_id: &str,
+        workspace_id: &str,
+        expected_revision: u64,
+        expected_epoch: u64,
+        next: &AgentInstanceRecord,
+    ) -> Result<bool> {
+        if !self.durable_instances {
+            return Err(AgentInstanceStoreError::Unsupported.into());
+        }
+        if next.owner_id != owner_id || next.workspace_id != workspace_id {
+            return Err(AgentInstanceStoreError::ScopeMismatch.into());
+        }
+        let current = self
+            .load_agent_instance(owner_id, workspace_id, &next.instance_id)
+            .await?
+            .ok_or(AgentInstanceStoreError::NotFound)?;
+        if current.revision != expected_revision || current.epoch != expected_epoch {
+            return Ok(false);
+        }
+        current.validate_next(next)?;
+        let key = agent_instance_key(owner_id, workspace_id, &next.instance_id);
+        let mut response = self
+            .db
+            .query(
+                "UPDATE type::record('agent_instances', $key) CONTENT $payload
+             WHERE owner_id = $owner AND workspace_id = $workspace
+               AND revision = $revision AND epoch = $epoch AND data = $old_data
+             RETURN AFTER",
+            )
+            .bind(("key", key))
+            .bind(("owner", owner_id.to_string()))
+            .bind(("workspace", workspace_id.to_string()))
+            .bind(("revision", expected_revision as i64))
+            .bind(("epoch", expected_epoch as i64))
+            .bind(("old_data", serde_json::to_string(&current)?))
+            .bind(("payload", agent_instance_payload(next)?))
+            .await?;
+        let rows: Vec<surrealdb::types::Value> = response.take(0)?;
+        Ok(rows.len() == 1)
+    }
+
     async fn create_presentation(
         &self,
         owner_id: &str,
@@ -866,10 +1054,11 @@ impl PersistenceLayer for SurrealDbProvider {
                 Ok(evidence.clone())
             }
             Err(_) => {
-                let stored = self.list_tool_admission_evidence(&evidence.owner_id).await?;
+                let stored = self
+                    .list_tool_admission_evidence(&evidence.owner_id)
+                    .await?;
                 let stored = stored.into_iter().find(|stored| {
-                    stored.invocation_id == evidence.invocation_id
-                        && stored.state == evidence.state
+                    stored.invocation_id == evidence.invocation_id && stored.state == evidence.state
                 });
                 let Some(stored) = stored else {
                     anyhow::bail!("Tool admission evidence write failed");

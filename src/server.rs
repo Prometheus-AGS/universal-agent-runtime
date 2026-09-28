@@ -522,16 +522,6 @@ async fn run_server_with_listener(
         launch_token.map(|token| Arc::new(SidecarGuard::new(token, primary_addr.port())));
     let sidecar_mode = sidecar_guard.is_some();
     let bound_origin = format!("http://{primary_addr}");
-    let service_instance = Arc::new(uar::service_instance::ServiceInstanceAuthority::new(
-        &config.service_instance,
-        &config.a2a.instance_id,
-        &bound_origin,
-        sidecar_mode,
-        &uar::api::capabilities::IMPLEMENTED_CAPABILITIES,
-    ));
-    let mut effective_a2a_config = config.a2a.clone();
-    effective_a2a_config.instance_id = service_instance.descriptor().instance.id.clone();
-
     info!(name: "startup.step", step = 3, stage = "companion_listener", "UAR startup progress");
     let companion = if sidecar_mode {
         None
@@ -789,6 +779,19 @@ async fn run_server_with_listener(
         }
     };
     let persistence = Some(Arc::clone(&persistence_layer));
+    let mut implemented_capabilities = uar::api::capabilities::IMPLEMENTED_CAPABILITIES.to_vec();
+    if persistence_layer.supports_durable_agent_instances() {
+        implemented_capabilities.push("durable_agent_instances_v1");
+    }
+    let service_instance = Arc::new(uar::service_instance::ServiceInstanceAuthority::new(
+        &config.service_instance,
+        &config.a2a.instance_id,
+        &bound_origin,
+        sidecar_mode,
+        &implemented_capabilities,
+    ));
+    let mut effective_a2a_config = config.a2a.clone();
+    effective_a2a_config.instance_id = service_instance.descriptor().instance.id.clone();
 
     // Initialize Ingest Service if persistence is available
     let mut ingestion_watcher = None;
@@ -1352,6 +1355,13 @@ async fn run_server_with_listener(
     );
     info!("Collaboration package catalog initialized");
 
+    let agent_instance_controller = uar::runtime::instance::AgentInstanceController::new(
+        Arc::clone(&run_manager),
+        Arc::clone(&actor_system),
+        Arc::clone(&persistence_layer),
+        Arc::clone(&collaboration_catalog),
+    );
+
     let full_harness_authority = Arc::new(uar::api::full_harness::FullHarnessTaskAuthority::new(
         Arc::clone(&run_manager),
         config.runs,
@@ -1601,6 +1611,11 @@ async fn run_server_with_listener(
                     }),
                 },
             )),
+        )
+        .nest(
+            "/api/uar/agent-instances/v1",
+            uar::api::agent_instances::build_router()
+                .with_state::<AppState>(Arc::clone(&agent_instance_controller)),
         )
         // Skills API
         .nest(

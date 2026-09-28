@@ -12,12 +12,14 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+pub mod agent_instances;
 pub mod agent_threads;
 pub mod presentations;
 pub mod providers;
 pub mod tool_admission;
 
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
+use agent_instances::{AgentInstanceRecord, AgentInstanceStoreError};
 use agent_threads::{CanonicalToolReceipt, PersistedAgentThread};
 use tool_admission::ToolAdmissionEvidence;
 
@@ -47,6 +49,51 @@ pub struct PostgresProvider;
 
 #[async_trait]
 pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
+    /// True only when this provider persists logical instances across restarts.
+    fn supports_durable_agent_instances(&self) -> bool {
+        false
+    }
+
+    /// Create an exact owner/workspace-scoped logical instance, never upserting.
+    async fn create_agent_instance(
+        &self,
+        _record: &AgentInstanceRecord,
+    ) -> Result<AgentInstanceRecord> {
+        Err(AgentInstanceStoreError::Unsupported.into())
+    }
+
+    /// Read one exact logical instance without owner/workspace fallback.
+    async fn load_agent_instance(
+        &self,
+        _owner_id: &str,
+        _workspace_id: &str,
+        _instance_id: &str,
+    ) -> Result<Option<AgentInstanceRecord>> {
+        Err(AgentInstanceStoreError::Unsupported.into())
+    }
+
+    /// List one authorized workspace's logical instances.
+    async fn list_agent_instances(
+        &self,
+        _owner_id: &str,
+        _workspace_id: &str,
+    ) -> Result<Vec<AgentInstanceRecord>> {
+        Err(AgentInstanceStoreError::Unsupported.into())
+    }
+
+    /// Atomically replace bounded state only while revision and epoch match.
+    /// False means a caller must reload and reconcile before retrying.
+    async fn compare_and_swap_agent_instance(
+        &self,
+        _owner_id: &str,
+        _workspace_id: &str,
+        _expected_revision: u64,
+        _expected_epoch: u64,
+        _next: &AgentInstanceRecord,
+    ) -> Result<bool> {
+        Err(AgentInstanceStoreError::Unsupported.into())
+    }
+
     /// Create a validated template in the verified owner's partition.
     async fn create_presentation(
         &self,

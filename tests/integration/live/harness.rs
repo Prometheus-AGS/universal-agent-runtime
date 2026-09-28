@@ -114,6 +114,22 @@ pub struct ProcessTestServerHandle {
 }
 
 impl ProcessTestServerHandle {
+    /// Terminate the owned host without running its graceful shutdown path.
+    /// Used by the C06 phase gate to observe recovery of a persisted active turn.
+    #[allow(dead_code)] // Only the C06 real-host gate needs abrupt termination.
+    pub async fn crash(mut self) {
+        let mut child = self.child.take().expect("child server process");
+        child.kill().expect("kill active child server process");
+        let status = tokio::task::spawn_blocking(move || child.wait())
+            .await
+            .expect("join crashed child-server wait task")
+            .expect("wait for crashed child server process");
+        assert!(
+            !status.success(),
+            "child exited gracefully instead of crashing"
+        );
+    }
+
     /// Trigger the child harness's caller-owned token and await normal process
     /// exit after the post-runtime resource-release barrier.
     #[allow(dead_code)] // Consumed by capability cases, which the BDD target omits.
@@ -190,7 +206,19 @@ impl ProcessTestServerHandle {
             );
             assert!(
                 tokio::time::Instant::now() < deadline,
-                "child did not release server resources within 10s"
+                "child did not release server resources within 10s; child stderr tail:\n{}",
+                {
+                    let stderr = std::fs::read_to_string(control_dir.path().join("stderr.log"))
+                        .unwrap_or_else(|error| format!("<stderr unavailable: {error}>"));
+                    stderr
+                        .chars()
+                        .rev()
+                        .take(8_192)
+                        .collect::<String>()
+                        .chars()
+                        .rev()
+                        .collect::<String>()
+                }
             );
             tokio::time::sleep(Duration::from_millis(50)).await;
         }
@@ -374,7 +402,16 @@ pub async fn boot_test_server(
     needs: ServiceNeeds,
 ) -> TestServerHandle {
     let persistence_path = unique_temp_path("persistence");
-    boot_test_server_inner(llm_base_url, llm_model, needs, persistence_path).await
+    boot_test_server_inner(
+        llm_base_url,
+        llm_model,
+        needs,
+        persistence_path,
+        None,
+        None,
+        None,
+    )
+    .await
 }
 
 /// Boot a real UAR server on a caller-owned persistence path. The process
@@ -386,11 +423,36 @@ pub async fn boot_test_server_with_persistence_path(
     needs: ServiceNeeds,
     persistence_path: &std::path::Path,
 ) -> TestServerHandle {
+    boot_test_server_with_persistence_path_and_instance_id(
+        llm_base_url,
+        llm_model,
+        needs,
+        persistence_path,
+        None,
+        None,
+        None,
+    )
+    .await
+}
+
+/// The C06 live gate keeps one configured service identity across process boots.
+pub async fn boot_test_server_with_persistence_path_and_instance_id(
+    llm_base_url: &str,
+    llm_model: &str,
+    needs: ServiceNeeds,
+    persistence_path: &std::path::Path,
+    service_instance_id: Option<&str>,
+    http_port: Option<u16>,
+    file_root: Option<&std::path::Path>,
+) -> TestServerHandle {
     boot_test_server_inner(
         llm_base_url,
         llm_model,
         needs,
         persistence_path.to_path_buf(),
+        service_instance_id,
+        http_port,
+        file_root,
     )
     .await
 }
@@ -404,29 +466,63 @@ pub async fn boot_test_server_process(
     needs: ServiceNeeds,
     persistence_path: &std::path::Path,
 ) -> ProcessTestServerHandle {
+    boot_test_server_process_with_instance_id(
+        llm_base_url,
+        llm_model,
+        needs,
+        persistence_path,
+        None,
+        None,
+        None,
+    )
+    .await
+}
+
+/// Boot the same production path with an explicit, restart-stable service identity.
+pub async fn boot_test_server_process_with_instance_id(
+    llm_base_url: &str,
+    llm_model: &str,
+    needs: ServiceNeeds,
+    persistence_path: &std::path::Path,
+    service_instance_id: Option<&str>,
+    http_port: Option<u16>,
+    file_root: Option<&std::path::Path>,
+) -> ProcessTestServerHandle {
     let control_dir = tempfile::tempdir().expect("create child-server control directory");
     let ready_path = control_dir.path().join("ready");
     let stderr_file = std::fs::File::create(control_dir.path().join("stderr.log"))
         .expect("create child-server stderr capture");
-    let mut child = std::process::Command::new(
+    let mut command = std::process::Command::new(
         std::env::current_exe().expect("resolve integration test executable"),
-    )
-    .arg("--exact")
-    .arg("live::harness::tests::process_server_helper")
-    .arg("--nocapture")
-    .arg("--test-threads=1")
-    .env("UAR_TEST_SERVER_CHILD", "1")
-    .env("UAR_TEST_SERVER_LLM_BASE_URL", llm_base_url)
-    .env("UAR_TEST_SERVER_LLM_MODEL", llm_model)
-    .env(
-        "UAR_TEST_SERVER_MEMORY",
-        if needs.memory { "1" } else { "0" },
-    )
-    .env("UAR_TEST_SERVER_PERSISTENCE_PATH", persistence_path)
-    .env("UAR_TEST_SERVER_CONTROL_DIR", control_dir.path())
-    .stderr(std::process::Stdio::from(stderr_file))
-    .spawn()
-    .expect("spawn child server process");
+    );
+    command
+        .arg("--exact")
+        .arg("live::harness::tests::process_server_helper")
+        .arg("--nocapture")
+        .arg("--test-threads=1")
+        .env("UAR_TEST_SERVER_CHILD", "1")
+        .env("UAR_TEST_SERVER_LLM_BASE_URL", llm_base_url)
+        .env("UAR_TEST_SERVER_LLM_MODEL", llm_model)
+        .env(
+            "UAR_TEST_SERVER_MEMORY",
+            if needs.memory { "1" } else { "0" },
+        )
+        .env("UAR_TEST_SERVER_PERSISTENCE_PATH", persistence_path)
+        .env("UAR_TEST_SERVER_CONTROL_DIR", control_dir.path())
+        .env_remove("UAR_TEST_SERVER_INSTANCE_ID")
+        .env_remove("UAR_TEST_SERVER_HTTP_PORT")
+        .env_remove("UAR_TEST_SERVER_FILE_ROOT")
+        .stderr(std::process::Stdio::from(stderr_file));
+    if let Some(instance_id) = service_instance_id {
+        command.env("UAR_TEST_SERVER_INSTANCE_ID", instance_id);
+    }
+    if let Some(port) = http_port {
+        command.env("UAR_TEST_SERVER_HTTP_PORT", port.to_string());
+    }
+    if let Some(root) = file_root {
+        command.env("UAR_TEST_SERVER_FILE_ROOT", root);
+    }
+    let mut child = command.spawn().expect("spawn child server process");
 
     // Enclose the inner 120s startup wait and subsequent 30s health probe.
     let deadline = tokio::time::Instant::now() + Duration::from_secs(180);
@@ -457,11 +553,14 @@ async fn boot_test_server_inner(
     llm_model: &str,
     needs: ServiceNeeds,
     persistence_path: std::path::PathBuf,
+    service_instance_id: Option<&str>,
+    http_port: Option<u16>,
+    file_root: Option<&std::path::Path>,
 ) -> TestServerHandle {
     init_tracing_once();
     SCRATCH_SWEEP.call_once(sweep_stale_scratch);
-    let listener =
-        std::net::TcpListener::bind("127.0.0.1:0").expect("bind ephemeral harness listener");
+    let listener = std::net::TcpListener::bind(("127.0.0.1", http_port.unwrap_or(0)))
+        .expect("bind harness listener");
     listener
         .set_nonblocking(true)
         .expect("set harness listener nonblocking");
@@ -493,15 +592,28 @@ async fn boot_test_server_inner(
         String::new()
     };
 
+    let service_instance_yaml = service_instance_id.map_or_else(String::new, |instance_id| {
+        format!("service_instance:\n  instance_id: \"{instance_id}\"\n")
+    });
+    let native_tools_yaml = file_root.map_or_else(String::new, |root| {
+        let quoted = serde_json::to_string(root.to_string_lossy().as_ref())
+            .expect("quote C06 file root for YAML");
+        format!(
+            "native_tools:\n  file_tools_enabled: true\n  file_allowed_paths:\n    - {quoted}\n"
+        )
+    });
+    // The C06 protected-tool fixture uses authenticated, mandatory governance.
+    // Other live-harness cases retain their existing optional local posture.
+    let jwt_required = file_root.is_some();
     let yaml = format!(
-        "security:\n  jwt_required: false\n  jwt_secret: \"{HARNESS_JWT_SECRET}\"\n  settings_admin_key: \"live-harness-admin-key\"\n\
+        "security:\n  jwt_required: {jwt_required}\n  jwt_secret: \"{HARNESS_JWT_SECRET}\"\n  settings_admin_key: \"live-harness-admin-key\"\n\
          resilience:\n  rate_limit_enabled: false\n\
          persistence:\n  provider: \"surreal\"\n  database_url: \"surrealkv://{}\"\n\
          acp:\n  enabled: true\n  path: \"/acp\"\n  auth_required: true\n\
          llm:\n  model: \"{llm_model}\"\n  base_url: \"{llm_base_url}\"\n\
          server:\n  host: \"127.0.0.1\"\n  port: {port}\n  shutdown_timeout_secs: 30\n\
   grpc_port: {grpc_port}\n\
-         {memory_yaml}",
+         {memory_yaml}{service_instance_yaml}{native_tools_yaml}",
         persistence_path.display(),
     );
 
@@ -587,7 +699,7 @@ async fn boot_test_server_inner(
         .expect("server did not signal readiness within 120s")
         .expect("server exited before signaling readiness");
     let base_url = format!("http://{ready_addr}");
-    wait_for_health(&base_url).await;
+    wait_for_health(&base_url, jwt_required).await;
 
     TestServerHandle {
         base_url,
@@ -602,11 +714,15 @@ async fn boot_test_server_inner(
 /// the real 34MB BGE embedding model and builds an ONNX Runtime session
 /// (fix-embeddings-fastembed), which legitimately adds several seconds on
 /// slower machines.
-async fn wait_for_health(base_url: &str) {
+async fn wait_for_health(base_url: &str, jwt_required: bool) {
     let client = reqwest::Client::new();
     let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
     loop {
-        if let Ok(resp) = client.get(format!("{base_url}/health")).send().await
+        let mut request = client.get(format!("{base_url}/health"));
+        if jwt_required {
+            request = request.bearer_auth(mint_harness_peer_token());
+        }
+        if let Ok(resp) = request.send().await
             && resp.status().is_success()
         {
             return;
@@ -629,12 +745,15 @@ mod tests {
         unused_imports,
         reason = "the Cucumber custom test harness compiles this unit-test module without executing it"
     )]
+    #[cfg(not(feature = "afc-c06-gate"))]
     use crate::live::stub_llm::{FixtureResponse, RequestFingerprint};
     #[allow(
         unused_imports,
         reason = "the Cucumber custom test harness compiles this unit-test module without executing it"
     )]
+    #[cfg(not(feature = "afc-c06-gate"))]
     use crate::live::stub_llm::{FixtureSet, start_stub_llm};
+    #[cfg(not(feature = "afc-c06-gate"))]
     use serial_test::serial;
 
     // #[serial]: booting a real server (real embedded SurrealDB, real
@@ -644,6 +763,7 @@ mod tests {
     // module individually but failed 7/16 tests together. Every test that
     // calls boot_test_server (here and in baseline_cases.rs) is #[serial]
     // for this reason, not for shared mutable state.
+    #[cfg(not(feature = "afc-c06-gate"))]
     #[tokio::test]
     #[serial]
     async fn boots_and_answers_health_check() {
@@ -665,6 +785,7 @@ mod tests {
         assert!(resp.status().is_success());
     }
 
+    #[cfg(not(feature = "afc-c06-gate"))]
     #[tokio::test]
     #[serial]
     async fn chat_completion_flows_through_the_real_server_to_the_stub() {
@@ -713,6 +834,7 @@ mod tests {
         );
     }
 
+    #[cfg(not(feature = "afc-c06-gate"))]
     #[tokio::test]
     #[serial]
     async fn caller_owned_http_cancellation_remains_nonterminating_before_sigint() {
@@ -750,11 +872,19 @@ mod tests {
                 .expect("child-server control directory"),
         );
 
-        let server = boot_test_server_with_persistence_path(
+        let service_instance_id = std::env::var("UAR_TEST_SERVER_INSTANCE_ID").ok();
+        let http_port = std::env::var("UAR_TEST_SERVER_HTTP_PORT")
+            .ok()
+            .map(|value| value.parse::<u16>().expect("child-server HTTP port"));
+        let file_root = std::env::var_os("UAR_TEST_SERVER_FILE_ROOT").map(std::path::PathBuf::from);
+        let server = boot_test_server_with_persistence_path_and_instance_id(
             &llm_base_url,
             &llm_model,
             needs,
             &persistence_path,
+            service_instance_id.as_deref(),
+            http_port,
+            file_root.as_deref(),
         )
         .await;
         std::fs::write(control_dir.join("ready"), &server.base_url)

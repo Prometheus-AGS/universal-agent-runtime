@@ -125,12 +125,20 @@ impl std::fmt::Debug for ActorSession {
 
 impl ActorSession {
     pub fn submit_prompt(&self, content: String) -> anyhow::Result<ActorTurn> {
+        self.submit_reserved_prompt(uuid::Uuid::new_v4().to_string(), content)
+    }
+
+    /// Submit a turn whose identity was already committed to a logical-instance inbox.
+    pub(crate) fn submit_reserved_prompt(
+        &self,
+        run_id: String,
+        content: String,
+    ) -> anyhow::Result<ActorTurn> {
         let handle = &self.handle;
         anyhow::ensure!(
             !handle.cancellation.is_cancelled() && !handle.is_finished(),
             "Actor is stopping or stopped"
         );
-        let run_id = uuid::Uuid::new_v4().to_string();
         let artifacts = crate::uar::runtime::thread::artifacts::RunArtifactCollector::new(
             self.key.0.clone(),
             run_id.clone(),
@@ -243,8 +251,28 @@ impl ActorCollaboration {
         agent_id: String,
         system_prompt: Option<String>,
     ) -> anyhow::Result<ActorSession> {
-        self.spawn_session_inner(owner, actor_name, agent_id, system_prompt, None)
+        self.spawn_session_inner(owner, actor_name, agent_id, system_prompt, None, None)
             .await
+    }
+
+    /// Activate a durable logical instance with its pinned conversation identity.
+    pub(crate) async fn spawn_instance_session(
+        &self,
+        owner: &ActorOwner,
+        actor_name: String,
+        session_id: String,
+        instance: crate::uar::runtime::thread::actor_host::InstanceRootConstraints,
+    ) -> anyhow::Result<ActorSession> {
+        let agent_id = instance.bound.artifact.id.clone();
+        self.spawn_session_inner(
+            owner,
+            actor_name,
+            agent_id,
+            None,
+            None,
+            Some((session_id, instance)),
+        )
+        .await
     }
 
     pub(crate) async fn spawn_governed_session(
@@ -274,6 +302,7 @@ impl ActorCollaboration {
                 sandbox,
                 accounting_id,
             )),
+            None,
         )
         .await
     }
@@ -292,11 +321,18 @@ impl ActorCollaboration {
             crate::uar::runtime::thread::policy_intersection::SandboxPermissions,
             String,
         )>,
+        instance: Option<(
+            String,
+            crate::uar::runtime::thread::actor_host::InstanceRootConstraints,
+        )>,
     ) -> anyhow::Result<ActorSession> {
         let persistence = self.persistence.as_ref().ok_or_else(|| {
             anyhow::anyhow!("Actor threads require a configured persistence provider")
         })?;
-        let mut artifact = self.manager.resolve_registered_agent(&agent_id).await?;
+        let mut artifact = match &instance {
+            Some((_, activation)) => activation.bound.artifact.clone(),
+            None => self.manager.resolve_registered_agent(&agent_id).await?,
+        };
         // Preserve the authenticated root user's explicit prompt override on
         // this execution copy; never mutate the registered artifact or policy.
         if let Some(system_prompt) = system_prompt {
@@ -314,7 +350,9 @@ impl ActorCollaboration {
             anyhow::bail!("Actor with name '{actor_name}' already exists");
         }
 
-        let session_id = uuid::Uuid::new_v4().to_string();
+        let session_id = instance
+            .as_ref()
+            .map_or_else(|| uuid::Uuid::new_v4().to_string(), |(id, _)| id.clone());
         let constraints = match constraints {
             Some((
                 policy,
@@ -362,6 +400,7 @@ impl ActorCollaboration {
                 state,
                 Arc::clone(&owned_root),
                 constraints,
+                instance.map(|(_, activation)| activation),
             ),
         ));
         let args = AgentActorArgs {

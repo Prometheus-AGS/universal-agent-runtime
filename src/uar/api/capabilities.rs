@@ -25,7 +25,7 @@ pub const AGUI_PROFILE_REVISION: u32 = 1;
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.
-pub const CAPABILITY_VOCABULARY: [&str; 18] = [
+pub const CAPABILITY_VOCABULARY: [&str; 19] = [
     "agui_stream_fidelity",
     "approval_lifecycle_v1",
     "collaboration_definition_packages_v1",
@@ -34,6 +34,7 @@ pub const CAPABILITY_VOCABULARY: [&str; 18] = [
     "collaboration_deployment_bindings_v2",
     "collaboration_conversion_reports_v1",
     "collaboration_representation_grant_refs_v1",
+    "durable_agent_instances_v1",
     "full_harness_delegation_v1",
     "host_history",
     "ingest_scoped_credentials",
@@ -178,7 +179,12 @@ pub fn capabilities_response(service_instance: &ServiceInstanceAuthority) -> Cap
         placement: descriptor.placement.clone(),
         capabilities: descriptor.capabilities.clone(),
         collaboration: collaboration_capabilities(),
-        administration: super::administration_capabilities::administration_capabilities(),
+        administration: super::administration_capabilities::administration_capabilities(
+            descriptor
+                .capabilities
+                .iter()
+                .any(|capability| capability == "durable_agent_instances_v1"),
+        ),
     }
 }
 

@@ -6,6 +6,7 @@ pub mod checkpoint;
 pub mod context;
 pub mod cost_budget;
 pub mod graph;
+pub mod instance;
 pub mod manager;
 pub mod matching;
 pub mod native_skill;

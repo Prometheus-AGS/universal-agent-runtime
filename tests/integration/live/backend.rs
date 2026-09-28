@@ -63,7 +63,7 @@ pub async fn resolve(fixtures: FixtureSet) -> ResolvedBackend {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "afc-c06-gate")))]
 mod tests {
     use super::*;
     use crate::live::stub_llm::{FixtureResponse, RequestFingerprint};
