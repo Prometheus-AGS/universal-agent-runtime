@@ -25,7 +25,7 @@ pub const AGUI_PROFILE_REVISION: u32 = 1;
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.
-pub const CAPABILITY_VOCABULARY: [&str; 20] = [
+pub const CAPABILITY_VOCABULARY: [&str; 21] = [
     "agui_stream_fidelity",
     "approval_lifecycle_v1",
     "collaboration_definition_packages_v1",
@@ -34,6 +34,7 @@ pub const CAPABILITY_VOCABULARY: [&str; 20] = [
     "collaboration_deployment_bindings_v2",
     "collaboration_conversion_reports_v1",
     "collaboration_representation_grant_refs_v1",
+    "collaboration_team_planning_v1",
     "durable_agent_instances_v1",
     "full_harness_delegation_v1",
     "host_history",
@@ -50,7 +51,7 @@ pub const CAPABILITY_VOCABULARY: [&str; 20] = [
 
 /// Capabilities this binary implements. Each owning change adds its name in
 /// the same commit as the behaviour.
-pub const IMPLEMENTED_CAPABILITIES: [&str; 15] = [
+pub const IMPLEMENTED_CAPABILITIES: [&str; 16] = [
     "approval_lifecycle_v1",
     "collaboration_definition_packages_v1",
     "collaboration_definition_packages_v2",
@@ -58,6 +59,7 @@ pub const IMPLEMENTED_CAPABILITIES: [&str; 15] = [
     "collaboration_deployment_bindings_v2",
     "collaboration_conversion_reports_v1",
     "collaboration_representation_grant_refs_v1",
+    "collaboration_team_planning_v1",
     "full_harness_delegation_v1",
     "host_history",
     "reasoning_effort",
@@ -112,6 +114,8 @@ pub struct CollaborationCapabilities {
 #[serde(rename_all = "camelCase")]
 pub struct CollaborationActivationLimits {
     pub ordinary_agent: bool,
+    /// Persistent team/member/task administration only; no team execution.
+    pub team_planning: bool,
     pub team_instance: bool,
     pub workflow: bool,
     pub human_representation: bool,
@@ -157,6 +161,7 @@ pub fn collaboration_capabilities() -> CollaborationCapabilities {
         ],
         activation: CollaborationActivationLimits {
             ordinary_agent: true,
+            team_planning: true,
             team_instance: false,
             workflow: false,
             human_representation: false,
