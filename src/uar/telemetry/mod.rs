@@ -87,6 +87,9 @@ pub fn init(
                 )
             })?;
         BoxMakeWriter::new(std::sync::Mutex::new(file))
+    } else if std::env::var_os("UAR_SIDECAR").as_deref() == Some(std::ffi::OsStr::new("1")) {
+        // The sidecar's stdout is its READY:<port> control channel.
+        BoxMakeWriter::new(std::io::stderr)
     } else {
         BoxMakeWriter::new(std::io::stdout)
     };
