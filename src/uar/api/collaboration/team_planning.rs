@@ -31,19 +31,19 @@ pub(super) fn build_router() -> Router<Arc<CollaborationApiState>> {
         )
         .route("/team-instances/{id}/tasks/{task_id}", get(get_task))
         .route(
-            "/team-instances/{id}/tasks/{task_id}:claim",
+            "/team-instances/{id}/tasks/{task_id}/claim",
             axum::routing::post(claim_task),
         )
         .route(
-            "/team-instances/{id}/tasks/{task_id}:reassign",
+            "/team-instances/{id}/tasks/{task_id}/reassign",
             axum::routing::post(reassign_task),
         )
         .route(
-            "/team-instances/{id}/tasks/{task_id}:reviewer",
+            "/team-instances/{id}/tasks/{task_id}/reviewer",
             axum::routing::post(assign_reviewer),
         )
         .route(
-            "/team-instances/{id}/tasks/{task_id}:state",
+            "/team-instances/{id}/tasks/{task_id}/state",
             axum::routing::post(transition_task),
         )
 }

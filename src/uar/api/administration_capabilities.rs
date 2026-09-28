@@ -817,28 +817,28 @@ pub fn administration_capabilities(
                     endpoint!(
                         "team-instances.tasks.claim",
                         "POST",
-                        "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}:claim",
+                        "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}/claim",
                         Owner,
                         Live
                     ),
                     endpoint!(
                         "team-instances.tasks.reassign",
                         "POST",
-                        "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}:reassign",
+                        "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}/reassign",
                         Owner,
                         Live
                     ),
                     endpoint!(
                         "team-instances.tasks.reviewer",
                         "POST",
-                        "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}:reviewer",
+                        "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}/reviewer",
                         Owner,
                         Live
                     ),
                     endpoint!(
                         "team-instances.tasks.state",
                         "POST",
-                        "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}:state",
+                        "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}/state",
                         Owner,
                         Live
                     ),
