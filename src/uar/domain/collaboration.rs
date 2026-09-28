@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::artifact::AgentArtifact;
+use super::team_mailbox::{TeamInboxMessage, TeamMailboxCommandReceipt};
+use super::team_planning::{TeamInstance, TeamPlanningCommandReceipt};
 
 pub const COLLABORATION_PROFILE_DRAFT_1: &str = "urn:prometheus:uar:collaboration:0.1.0-draft.1";
 pub const COLLABORATION_PROFILE_DRAFT_2: &str = "urn:prometheus:uar:collaboration:0.1.0-draft.2";
@@ -437,6 +439,14 @@ pub struct CollaborationCatalogState {
     #[serde(default)]
     pub effective_binding_receipts: BTreeMap<String, EffectiveBindingReceipt>,
     pub command_receipts: BTreeMap<String, CollaborationCommandReceipt>,
+    #[serde(default)]
+    pub team_instances: BTreeMap<String, TeamInstance>,
+    #[serde(default)]
+    pub team_command_receipts: BTreeMap<String, TeamPlanningCommandReceipt>,
+    #[serde(default)]
+    pub team_inbox_messages: BTreeMap<String, TeamInboxMessage>,
+    #[serde(default)]
+    pub team_mailbox_command_receipts: BTreeMap<String, TeamMailboxCommandReceipt>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -53,6 +53,8 @@ DeploymentBinding is private, owner/workspace/runtime-scoped, and revisioned. It
 
 Credential and connection values remain in protected stores; the document contains references only. DeploymentBinding is forbidden from portable packages and ordinary package export.
 
+A binding used only for a TeamDefinition planning board may have an empty `modelBindings` array. Planning does not start a model turn. Ordinary AgentDefinition activation still requires its authored model requirements to resolve to configured models; an empty array does not admit ordinary execution. This additive draft.2 clarification permits fresh offline team planning without a fabricated model credential.
+
 ## RepresentationGrant
 
 RepresentationGrant is private authority-plane state aligned with `afc.governed-effect/1` version `1.1.0`. It records grant ID, issuer and subject principals, grantee AgentInstance, organization/office/purpose, scoped audience/action/resource/data permissions, approval/disclosure requirements, protected evidence references, revision, status, validity, constraint digest, revocation, retention, offboarding, and restrictions.

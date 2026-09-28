@@ -305,6 +305,48 @@ async fn validate_binding(
             package.id, package.version, package.digest
         )));
     }
+    if let Some(team_definition) = bound_team_definition(state, &package)? {
+        let mut diagnostics = vec![FieldDiagnostic {
+            pointer: "/package/entrypoints".to_owned(),
+            disposition: ConversionDisposition::RequiredUnsupported,
+            reason_code: "team.execution-not-implemented".to_owned(),
+            message:
+                "The team can be planned, but team execution is not available in this runtime."
+                    .to_owned(),
+            effective_binding_ref: None,
+        }];
+        let service_binding =
+            resolve_service_binding(service_instance, document, &mut diagnostics)?;
+        let representation_grants =
+            super::grants::validate_binding_grants(owner_id, workspace_id, document, state)?;
+        let preflight = BindingPreflightResponse {
+            binding_id: required_string(document, "id")?.to_owned(),
+            package: package.clone(),
+            diagnostics: diagnostics
+                .iter()
+                .map(|item| ConversionDiagnostic {
+                    field: item.pointer.clone(),
+                    disposition: item.disposition.clone(),
+                    message: item.message.clone(),
+                })
+                .collect(),
+            activation_supported: false,
+            request_digest: request_digest(request).map_err(CollaborationError::from)?,
+        };
+        let receipt = effective_receipt(
+            document,
+            package,
+            team_definition,
+            Vec::new(),
+            Vec::new(),
+            representation_grants,
+            service_binding,
+            json!({"teamPlanning": true}),
+            diagnostics,
+            false,
+        )?;
+        return Ok((preflight, receipt));
+    }
     let definition = bound_agent_definition(state, &package)?;
     let (resolved_skills, mut field_diagnostics) =
         resolve_skills(skill_service, document, definition).await?;
@@ -452,6 +494,40 @@ pub(super) fn bound_agent_definition<'a>(
         ));
     }
     Ok(agents[0])
+}
+
+fn bound_team_definition<'a>(
+    state: &'a CollaborationCatalogState,
+    package: &ImmutableDefinitionRef,
+) -> Result<Option<&'a CollaborationDefinitionRecord>, CollaborationError> {
+    let package_record = state
+        .packages
+        .get(&package.storage_key())
+        .ok_or_else(|| CollaborationError::NotFound(package.id.clone()))?;
+    let entrypoints = package_record.manifest["entrypoints"]
+        .as_array()
+        .ok_or_else(|| CollaborationError::Invalid("package entrypoints are missing".to_owned()))?;
+    let mut teams = Vec::new();
+    let mut has_agent = false;
+    for entrypoint in entrypoints {
+        let reference = parse_reference(entrypoint)?;
+        if let Some(definition) = state.definitions.get(&reference.storage_key()) {
+            match &definition.kind {
+                CollaborationKind::TeamDefinition => teams.push(definition),
+                CollaborationKind::AgentDefinition => has_agent = true,
+                _ => {}
+            }
+        }
+    }
+    if has_agent || teams.is_empty() {
+        return Ok(None);
+    }
+    if teams.len() != 1 {
+        return Err(CollaborationError::Invalid(
+            "team planning binding requires exactly one TeamDefinition entrypoint".to_owned(),
+        ));
+    }
+    Ok(Some(teams[0]))
 }
 
 async fn resolve_skills(
