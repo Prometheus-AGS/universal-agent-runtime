@@ -1806,5 +1806,18 @@ pub fn administration_capabilities(
             endpoint!("observers.gap.acknowledge", "POST", "/api/uar/observers/v1/{id}/gaps/acknowledge", Admin, observer_mutation),
         ],
     ));
+    administration.surfaces.push(surface(
+        "channel-source-observers",
+        Agents,
+        HostSurface,
+        vec![
+            endpoint!("channel-observers.capabilities", "GET", "/api/uar/channel-observers/v1/capabilities", Host, Read),
+            endpoint!("channel-observers.list", "GET", "/api/uar/channel-observers/v1/subscriptions", Owner, Read),
+            endpoint!("channel-observers.create", "POST", "/api/uar/channel-observers/v1/subscriptions", Owner, HostControlled),
+            endpoint!("channel-observers.deliver", "POST", "/api/uar/channel-observers/v1/subscriptions/{id}/deliveries", Host, HostControlled),
+            endpoint!("channel-observers.acknowledge", "POST", "/api/uar/channel-observers/v1/subscriptions/{id}/deliveries/{delivery}/acknowledge", Owner, HostControlled),
+            endpoint!("channel-observers.handler-turn", "POST", "/api/uar/channel-observers/v1/handler-turns", Host, HostControlled),
+        ],
+    ));
     administration
 }

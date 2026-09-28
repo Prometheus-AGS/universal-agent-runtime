@@ -14,6 +14,7 @@ use uuid::Uuid;
 
 pub mod agent_instances;
 pub mod agent_threads;
+pub mod channel_observers;
 pub mod observers;
 pub mod presentations;
 pub mod providers;
@@ -22,6 +23,7 @@ pub mod tool_admission;
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use agent_instances::{AgentInstanceRecord, AgentInstanceStoreError};
 use agent_threads::{CanonicalToolReceipt, PersistedAgentThread};
+use channel_observers::{ChannelInboxEntry, ChannelSubscription, ChannelObserverStoreError};
 use observers::{
     ObserverOccurrence, ObserverOccurrenceBounds, ObserverStoreError, ObserverSubscription,
 };
@@ -53,6 +55,39 @@ pub struct PostgresProvider;
 
 #[async_trait]
 pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
+    /// Channel-source observations are a separate, explicitly negotiated profile.
+    fn supports_channel_observers(&self) -> bool { false }
+
+    fn channel_observer_unavailable_reason(&self) -> &'static str { "durable_channel_store_unavailable" }
+
+    async fn create_channel_subscription(&self, _record: &ChannelSubscription) -> Result<ChannelSubscription> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
+    async fn load_channel_subscription(&self, _owner: &str, _workspace: &str, _id: &str) -> Result<Option<ChannelSubscription>> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
+    async fn list_channel_subscriptions(&self, _owner: &str, _workspace: &str) -> Result<Vec<ChannelSubscription>> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
+    async fn compare_and_swap_channel_subscription(&self, _before: &ChannelSubscription, _after: &ChannelSubscription) -> Result<bool> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
+    async fn create_channel_inbox_entry(&self, _record: &ChannelInboxEntry) -> Result<ChannelInboxEntry> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
+    async fn load_channel_inbox_entry(&self, _owner: &str, _workspace: &str, _subscription: &str, _delivery: &str) -> Result<Option<ChannelInboxEntry>> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
+    async fn compare_and_swap_channel_inbox_entry(&self, _before: &ChannelInboxEntry, _after: &ChannelInboxEntry) -> Result<bool> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
     /// True only for a provider with a transactional instance outbox and durable observer inbox.
     fn supports_durable_observers(&self) -> bool {
         false
