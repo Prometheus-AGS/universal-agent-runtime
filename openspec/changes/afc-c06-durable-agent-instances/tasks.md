@@ -4,7 +4,7 @@ Complete production work in C06.1-C06.3 order. A task's named observable behavio
 
 ## 1. C06.1 — Durable identity and activation profiles
 
-- [ ] 1.1 Pin the C05 UAR revision, accepted C01-C04/P1 contracts, source file claims and SurrealDB 3.3.0 store capability in the C06 implementation receipt; verify the recorded source and actual provider match before application code changes.
+- [x] 1.1 Pin the C05 UAR revision, accepted C01-C04/P1 contracts, source file claims and SurrealDB 3.3.0 store capability in the C06 implementation receipt; verify the recorded source and actual provider match before application code changes.
 - [x] 1.2 Add a focused, versioned owner/workspace-scoped logical-instance record and Surreal-backed conditional store, separate from collaboration catalog and service-instance identity; verify an implementation trace from authenticated owner/workspace to stored instance revision and exact definition/binding.
 - [x] 1.3 Add explicit request, on-demand and opt-in resident profiles above the existing actor/thread host, creating a fresh root per turn; verify a trace from one logical instance through two distinct root IDs without a second model loop or reusable root.
 - [x] 1.4 Expose the durable profile only for a provider with proven restart storage; memory remains non-durable and Postgres is either implemented against the same contract or refused; verify capability discovery and admission represent the actual selected provider.
