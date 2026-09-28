@@ -294,6 +294,34 @@ yourself across every root, not just this folder.
 
 Outside the managed region. Re-running the bootstrap will not touch this.
 
+### Hourly delivery verification boundary
+
+For the Agent Fabric Convergence hourly delivery cadence, finish the entire
+current-hour production slice before testing it. A slice includes the usable
+runtime behavior, persistence and contracts, and the settings or UI needed to
+operate it. If the hour ends with incomplete functionality, continue the work
+in the next hour; do not test or release a partial slice.
+
+This project rule overrides the managed base instructions to run “Tier 0 every
+edit,” “Tier 1 unit complete,” and “one edit and its cheap check” during the
+hourly implementation. Use source inspection and reasoning while writing code.
+Do not run unit or mock tests, lint, typechecks, Cargo checks, review-driven
+verification, or standalone builds before the whole slice is implemented. A
+narrow compiler invocation is permitted only when an observed compiler error
+blocks further implementation; stop after resolving that blocker.
+
+At the completed hourly boundary, run one serialized production integration
+gate that exercises the current-hour functionality through its real path and
+includes the customer build for an independently usable delivery. When the
+slice includes The Boss, that gate includes `pnpm build:mac:arm64`. Record the
+command, result, and produced artifact. Fix a failure and rerun only its failed
+gate. Do not rerun accepted prior-hour tests or gates unless this hour changed
+their behavior or an observed regression requires it. Do not expand a passing
+gate into broader checks. Earlier acceptance never certifies new work.
+
+This scheduling override preserves trust-boundary requirements, single-writer
+build discipline, and truthful reporting of what was actually verified.
+
 ### UI design skill precedence
 
 For user-interface design, evaluation, refactoring, or implementation, use the
