@@ -972,11 +972,18 @@ async fn run_server_with_listener(
     );
 
     #[cfg(feature = "response-quality")]
-    let orchestrator = Arc::new(Orchestrator::new(
-        llm_config.clone(),
-        Arc::clone(&mcp),
-        Arc::clone(&native_skill_registry),
-    )?);
+    let orchestrator = if sidecar_mode {
+        // The host configures providers through the authenticated API after
+        // startup. Do not require a default OpenAI credential just to open
+        // the administration surface. Runs resolve their own provider binding.
+        None
+    } else {
+        Some(Arc::new(Orchestrator::new(
+            llm_config.clone(),
+            Arc::clone(&mcp),
+            Arc::clone(&native_skill_registry),
+        )?))
+    };
 
     // Session store
     let sessions = SessionStore::new();
@@ -6260,7 +6267,7 @@ pub(crate) async fn api_chat_completion(
                                 let mgr = Arc::clone(&state.run_manager);
                                 let rid = run_id.clone();
                                 let text = assistant_text_for_capture.clone();
-                                let orchestrator = Arc::clone(&state.orchestrator);
+                                let orchestrator = state.orchestrator.clone();
                                 tokio::spawn(async move {
                                     let Some(outcome) = uar::quality::detect(&sycophancy_cfg, &text)
                                     else {
@@ -6293,6 +6300,13 @@ pub(crate) async fn api_chat_completion(
                                         // rewrite the flagged response and emit it as a
                                         // follow-up. Never delays the original stream.
                                         if sycophancy_cfg.auto_correct && !sycophancy_cfg.log_only {
+                                            let Some(orchestrator) = orchestrator else {
+                                                tracing::warn!(
+                                                    run_id = %rid,
+                                                    "Response correction is unavailable in an unconfigured sidecar"
+                                                );
+                                                return;
+                                            };
                                             match orchestrator
                                                 .chat_non_streaming(
                                                     uar::quality::correction_messages(&text),
