@@ -454,6 +454,18 @@ async fn c06_durable_instances_complete_live_boundary() {
             .to_string(),
         },
     );
+    fixtures = fixtures.with(
+        RequestFingerprint {
+            model: MODEL.to_owned(),
+            last_user_message: "C06_CLAIMED_TOOL".to_owned(),
+            has_tools: true,
+            has_tool_result: false,
+        },
+        FixtureResponse::ToolCall {
+            name: "terminal_exec".to_owned(),
+            arguments: json!({"command":"exec /bin/sleep 30","timeout_secs":30}).to_string(),
+        },
+    );
     let recorded = std::env::var(BACKEND_ENV_VAR).as_deref() != Ok("live");
     let backend = resolve(fixtures).await;
     let reserved = std::net::TcpListener::bind("127.0.0.1:0")
@@ -1183,6 +1195,171 @@ async fn c06_durable_instances_complete_live_boundary() {
             !blocked_tool_file.exists(),
             "stale approval executed a protected file write"
         );
+
+        // A claimed code-execution effect cannot be treated as cancelled just
+        // because its run is stopped. Keep restart queued until an operator
+        // resolves the effect whose terminal receipt was never persisted.
+        let claimed_instance = post(
+            &client,
+            &restarted.base_url,
+            &token,
+            FIRST_WORKSPACE,
+            "/api/uar/agent-instances/v1",
+            json!({"deploymentBindingId":FIRST_BINDING,"profile":"on_demand",
+                "limits":{"max_inbox":2,"retained_commands":8,"retained_events":16,
+                    "max_restart_attempts":3,"idle_timeout_secs":300}}),
+            StatusCode::CREATED,
+        )
+        .await;
+        let claimed_id = claimed_instance["instanceId"]
+            .as_str()
+            .expect("claimed-tool instance ID");
+        let claimed_path = format!("/api/uar/agent-instances/v1/{claimed_id}");
+        post(
+            &client,
+            &restarted.base_url,
+            &token,
+            FIRST_WORKSPACE,
+            &format!("{claimed_path}/turns"),
+            json!({"commandId":"c06-claimed-tool-turn","prompt":"C06_CLAIMED_TOOL"}),
+            StatusCode::ACCEPTED,
+        )
+        .await;
+        let (claimed_run_id, pending) =
+            wait_for_tool_approval(&client, &restarted.base_url, &token, claimed_id).await;
+        assert_eq!(pending["pending"]["name"], "terminal_exec");
+        let claimed_approval_id = pending["pending"]["approvalId"]
+            .as_str()
+            .expect("claimed-tool approval ID");
+        let before_claim = get(
+            &client,
+            &restarted.base_url,
+            &token,
+            FIRST_WORKSPACE,
+            &claimed_path,
+            StatusCode::OK,
+        )
+        .await;
+        let epoch_at_claim = before_claim["epoch"]
+            .as_u64()
+            .expect("epoch before protected effect claim");
+        post(
+            &client,
+            &restarted.base_url,
+            &token,
+            FIRST_WORKSPACE,
+            &format!("/api/uar/runs/{claimed_run_id}/tool-approval"),
+            json!({"approved":true,"approval_id":claimed_approval_id}),
+            StatusCode::OK,
+        )
+        .await;
+        let claimed_evidence_path =
+            format!("/api/uar/runs/{claimed_run_id}/tool-admission-evidence");
+        let claim_deadline = tokio::time::Instant::now() + Duration::from_secs(15);
+        let claimed_invocation_id = loop {
+            let evidence = get(
+                &client,
+                &restarted.base_url,
+                &token,
+                FIRST_WORKSPACE,
+                &claimed_evidence_path,
+                StatusCode::OK,
+            )
+            .await;
+            if let Some(invocation_id) = evidence["records"]
+                .as_array()
+                .and_then(|records| {
+                    records.iter().find(|record| {
+                        record["tool_name"] == "terminal_exec" && record["state"] == "claim_intent"
+                    })
+                })
+                .and_then(|record| record["invocation_id"].as_str())
+            {
+                break invocation_id.to_owned();
+            }
+            assert!(
+                tokio::time::Instant::now() < claim_deadline,
+                "protected terminal effect never persisted ClaimIntent: {evidence}"
+            );
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        };
+        let initial_claimed_requests =
+            model_request_count(&backend.base_url, "C06_CLAIMED_TOOL", &client).await;
+        assert_eq!(initial_claimed_requests, 1);
+        post(
+            &client,
+            &restarted.base_url,
+            &token,
+            FIRST_WORKSPACE,
+            &format!("{claimed_path}/restart"),
+            json!({"commandId":"c06-restart-after-claim"}),
+            StatusCode::OK,
+        )
+        .await;
+        let uncertain_deadline = tokio::time::Instant::now() + Duration::from_secs(30);
+        let uncertain_claim = loop {
+            let view = get(
+                &client,
+                &restarted.base_url,
+                &token,
+                FIRST_WORKSPACE,
+                &claimed_path,
+                StatusCode::OK,
+            )
+            .await;
+            if view["recovery"] == "effect_uncertain" {
+                break view;
+            }
+            assert!(
+                tokio::time::Instant::now() < uncertain_deadline,
+                "claimed effect did not settle as uncertain: {view}"
+            );
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        };
+        assert_eq!(uncertain_claim["epoch"].as_u64(), Some(epoch_at_claim));
+        assert!(
+            uncertain_claim["commands"]
+                .as_array()
+                .is_some_and(|commands| {
+                    commands.iter().any(|command| {
+                        command["commandId"] == "c06-claimed-tool-turn"
+                            && command["status"] == "uncertain"
+                    }) && commands.iter().any(|command| {
+                        command["commandId"] == "c06-restart-after-claim"
+                            && command["status"] == "accepted"
+                    })
+                }),
+            "claimed effect lost its uncertain turn or queued restart: {uncertain_claim}"
+        );
+        let claim_evidence = get(
+            &client,
+            &restarted.base_url,
+            &token,
+            FIRST_WORKSPACE,
+            &claimed_evidence_path,
+            StatusCode::OK,
+        )
+        .await;
+        assert!(
+            claim_evidence["records"].as_array().is_some_and(|records| {
+                records.iter().any(|record| {
+                    record["invocation_id"] == claimed_invocation_id
+                        && matches!(
+                            record["state"].as_str(),
+                            Some("claim_intent" | "outcome_unknown")
+                        )
+                }) && !records.iter().any(|record| {
+                    record["invocation_id"] == claimed_invocation_id
+                        && matches!(record["state"].as_str(), Some("succeeded" | "failed"))
+                })
+            }),
+            "cancelled claimed effect gained a terminal execution receipt: {claim_evidence}"
+        );
+        assert_eq!(
+            model_request_count(&backend.base_url, "C06_CLAIMED_TOOL", &client).await,
+            initial_claimed_requests,
+            "unresolved claimed turn replayed automatically"
+        );
     }
     let final_view = get(
         &client,
@@ -1629,6 +1806,7 @@ async fn c06_durable_instances_complete_live_boundary() {
         "occupiedTurnTwoStageRestart":recorded,
         "blockedToolApprovalCancellation":recorded,
         "staleApprovalAfterEpochHandoff":recorded,
+        "postClaimCancellationRetainsEffectUncertainty":recorded,
         "activeAttemptCrashAndOperatorReconciliation":recorded,
         "activationFailureRetryExhaustionAfterRestart":recorded,
         "coldSurrealKvBackupRestore":true,

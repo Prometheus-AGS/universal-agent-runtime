@@ -599,7 +599,7 @@ async fn boot_test_server_inner(
         let quoted = serde_json::to_string(root.to_string_lossy().as_ref())
             .expect("quote C06 file root for YAML");
         format!(
-            "native_tools:\n  file_tools_enabled: true\n  file_allowed_paths:\n    - {quoted}\n"
+            "native_tools:\n  file_tools_enabled: true\n  file_allowed_paths:\n    - {quoted}\n  terminal_exec_enabled: true\n  terminal_use_sandbox: false\n"
         )
     });
     // The C06 protected-tool fixture uses authenticated, mandatory governance.
