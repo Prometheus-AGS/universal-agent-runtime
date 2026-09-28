@@ -25,7 +25,7 @@ pub const AGUI_PROFILE_REVISION: u32 = 1;
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.
-pub const CAPABILITY_VOCABULARY: [&str; 17] = [
+pub const CAPABILITY_VOCABULARY: [&str; 18] = [
     "agui_stream_fidelity",
     "approval_lifecycle_v1",
     "collaboration_definition_packages_v1",
@@ -34,6 +34,7 @@ pub const CAPABILITY_VOCABULARY: [&str; 17] = [
     "collaboration_deployment_bindings_v2",
     "collaboration_conversion_reports_v1",
     "collaboration_representation_grant_refs_v1",
+    "full_harness_delegation_v1",
     "host_history",
     "ingest_scoped_credentials",
     "reasoning_effort",
@@ -47,7 +48,7 @@ pub const CAPABILITY_VOCABULARY: [&str; 17] = [
 
 /// Capabilities this binary implements. Each owning change adds its name in
 /// the same commit as the behaviour.
-pub const IMPLEMENTED_CAPABILITIES: [&str; 14] = [
+pub const IMPLEMENTED_CAPABILITIES: [&str; 15] = [
     "approval_lifecycle_v1",
     "collaboration_definition_packages_v1",
     "collaboration_definition_packages_v2",
@@ -55,6 +56,7 @@ pub const IMPLEMENTED_CAPABILITIES: [&str; 14] = [
     "collaboration_deployment_bindings_v2",
     "collaboration_conversion_reports_v1",
     "collaboration_representation_grant_refs_v1",
+    "full_harness_delegation_v1",
     "host_history",
     "reasoning_effort",
     "run_scoped_credentials",
@@ -161,9 +163,7 @@ pub fn collaboration_capabilities() -> CollaborationCapabilities {
 }
 
 /// `GET /api/uar/capabilities`
-pub fn capabilities_response(
-    service_instance: &ServiceInstanceAuthority,
-) -> CapabilitiesResponse {
+pub fn capabilities_response(service_instance: &ServiceInstanceAuthority) -> CapabilitiesResponse {
     let descriptor = service_instance.descriptor();
     CapabilitiesResponse {
         uar_version: env!("CARGO_PKG_VERSION"),

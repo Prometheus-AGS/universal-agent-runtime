@@ -98,11 +98,66 @@ async fn dispatch(
             Err(error) => return JsonRpcResponse::err(req.id, rpc_error::INVALID_PARAMS, error),
         },
         "tasks/get" => match parse_params::<TaskGetParams>(req.params) {
-            Ok(params) => state.threads.get(&owner, agent_id, &params.id).await,
+            Ok(params) => {
+                if let Some(authority) = state.threads.full_harness()
+                    && authority.is_task_id(&params.id)
+                {
+                    let Some(workspace_id) = normalized_workspace(params.workspace_id.as_deref())
+                    else {
+                        return JsonRpcResponse::err(
+                            req.id,
+                            rpc_error::INVALID_PARAMS,
+                            "workspace_id is required for full-harness task lookup",
+                        );
+                    };
+                    return match authority
+                        .a2a_get(&owner, workspace_id, agent_id, &params.id)
+                        .await
+                    {
+                        Ok(task) => JsonRpcResponse::ok(req.id, task),
+                        Err(error) => full_harness_error(req.id, error),
+                    };
+                }
+                state.threads.get(&owner, agent_id, &params.id).await
+            }
             Err(error) => return JsonRpcResponse::err(req.id, rpc_error::INVALID_PARAMS, error),
         },
         "tasks/cancel" => match parse_params::<TaskCancelParams>(req.params) {
-            Ok(params) => state.threads.cancel(&owner, agent_id, &params.id).await,
+            Ok(params) => {
+                if let Some(authority) = state.threads.full_harness()
+                    && authority.is_task_id(&params.id)
+                {
+                    let Some(workspace_id) = normalized_workspace(params.workspace_id.as_deref())
+                    else {
+                        return JsonRpcResponse::err(
+                            req.id,
+                            rpc_error::INVALID_PARAMS,
+                            "workspace_id is required for full-harness task cancellation",
+                        );
+                    };
+                    let Some(expected_revision) = params.expected_revision else {
+                        return JsonRpcResponse::err(
+                            req.id,
+                            rpc_error::INVALID_PARAMS,
+                            "expected_revision is required for full-harness task cancellation",
+                        );
+                    };
+                    return match authority
+                        .a2a_cancel(
+                            &owner,
+                            workspace_id,
+                            agent_id,
+                            &params.id,
+                            expected_revision,
+                        )
+                        .await
+                    {
+                        Ok(task) => JsonRpcResponse::ok(req.id, task),
+                        Err(error) => full_harness_error(req.id, error),
+                    };
+                }
+                state.threads.cancel(&owner, agent_id, &params.id).await
+            }
             Err(error) => return JsonRpcResponse::err(req.id, rpc_error::INVALID_PARAMS, error),
         },
         _ => return JsonRpcResponse::err(req.id, rpc_error::METHOD_NOT_FOUND, "method not found"),
@@ -122,6 +177,24 @@ async fn dispatch(
             JsonRpcResponse::err(req.id, code, error.to_string())
         }
     }
+}
+
+fn full_harness_error(
+    id: Option<serde_json::Value>,
+    error: crate::uar::api::full_harness::ApiError,
+) -> JsonRpcResponse {
+    let code = match error.code() {
+        "retention_expired" => rpc_error::TASK_RETENTION_EXPIRED,
+        "task_unresolved" => rpc_error::TASK_UNRESOLVED,
+        "recovery_unsupported" => rpc_error::TASK_RECOVERY_UNSUPPORTED,
+        "revision_conflict" => rpc_error::TASK_REVISION_CONFLICT,
+        _ => rpc_error::TASK_NOT_FOUND,
+    };
+    JsonRpcResponse::err_data(id, code, error.to_string(), error.data())
+}
+
+fn normalized_workspace(value: Option<&str>) -> Option<&str> {
+    value.map(str::trim).filter(|value| !value.is_empty())
 }
 
 /// Existing public compiler AgentCard; execution requires verified identity.

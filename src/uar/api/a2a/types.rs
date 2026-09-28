@@ -59,6 +59,24 @@ impl JsonRpcResponse {
             }),
         }
     }
+
+    pub fn err_data(
+        id: Option<serde_json::Value>,
+        code: i32,
+        message: impl Into<String>,
+        data: serde_json::Value,
+    ) -> Self {
+        Self {
+            jsonrpc: "2.0".into(),
+            id,
+            result: None,
+            error: Some(JsonRpcError {
+                code,
+                message: message.into(),
+                data: Some(data),
+            }),
+        }
+    }
 }
 
 /// A JSON-RPC 2.0 error object.
@@ -81,6 +99,14 @@ pub mod rpc_error {
     pub const TASK_NOT_FOUND: i32 = -32001;
     /// Task cannot be cancelled (A2A extension).
     pub const TASK_NOT_CANCELABLE: i32 = -32002;
+    /// Process-ephemeral task exceeded its advertised terminal retention.
+    pub const TASK_RETENTION_EXPIRED: i32 = -32003;
+    /// A current-epoch task or admission cannot be resolved authoritatively.
+    pub const TASK_UNRESOLVED: i32 = -32004;
+    /// Task belongs to a prior process epoch and restart recovery is unsupported.
+    pub const TASK_RECOVERY_UNSUPPORTED: i32 = -32005;
+    /// Mutation expected a task revision that is no longer current.
+    pub const TASK_REVISION_CONFLICT: i32 = -32006;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -311,10 +337,16 @@ pub struct MessageSendParams {
 #[derive(Debug, Deserialize)]
 pub struct TaskGetParams {
     pub id: String,
+    #[serde(default)]
+    pub workspace_id: Option<String>,
 }
 
 /// Params for `tasks/cancel`.
 #[derive(Debug, Deserialize)]
 pub struct TaskCancelParams {
     pub id: String,
+    #[serde(default)]
+    pub workspace_id: Option<String>,
+    #[serde(default)]
+    pub expected_revision: Option<u64>,
 }

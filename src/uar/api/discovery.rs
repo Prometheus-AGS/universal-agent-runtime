@@ -478,12 +478,7 @@ pub async fn execute_tool(
     let start = std::time::Instant::now();
     match state
         .run_manager
-        .execute_direct_tool(
-            principal_id.clone(),
-            principal_id,
-            &name,
-            body.arguments,
-        )
+        .execute_direct_tool(principal_id.clone(), principal_id, &name, body.arguments)
         .await
     {
         Ok(result) => {

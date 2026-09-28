@@ -206,6 +206,7 @@ pub struct A2AThreadService {
     actors: Arc<ActorCollaboration>,
     bindings: Mutex<Bindings>,
     instance_id: Option<String>,
+    full_harness: Option<Arc<crate::uar::api::full_harness::FullHarnessTaskAuthority>>,
 }
 
 impl std::fmt::Debug for A2AThreadService {
@@ -249,6 +250,7 @@ impl A2AThreadService {
             actors,
             bindings: Mutex::new(Bindings::default()),
             instance_id: None,
+            full_harness: None,
         }
     }
 
@@ -257,6 +259,21 @@ impl A2AThreadService {
         let instance_id = instance_id.into();
         self.instance_id = (!instance_id.trim().is_empty()).then_some(instance_id);
         self
+    }
+
+    #[must_use]
+    pub fn with_full_harness(
+        mut self,
+        authority: Arc<crate::uar::api::full_harness::FullHarnessTaskAuthority>,
+    ) -> Self {
+        self.full_harness = Some(authority);
+        self
+    }
+
+    pub(crate) fn full_harness(
+        &self,
+    ) -> Option<&Arc<crate::uar::api::full_harness::FullHarnessTaskAuthority>> {
+        self.full_harness.as_ref()
     }
 
     pub async fn send(
