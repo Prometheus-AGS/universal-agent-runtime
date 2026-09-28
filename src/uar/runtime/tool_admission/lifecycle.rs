@@ -5,9 +5,7 @@ use tokio::sync::{Mutex, OnceCell};
 use uuid::Uuid;
 
 use crate::uar::persistence::PersistenceLayer;
-use crate::uar::persistence::tool_admission::{
-    ToolAdmissionEvidence, ToolAdmissionEvidenceState,
-};
+use crate::uar::persistence::tool_admission::{ToolAdmissionEvidence, ToolAdmissionEvidenceState};
 
 use super::{
     AdmittedToolInvocation, HostAdmissionPreparation, HostToolAdmissionPort,
@@ -153,13 +151,12 @@ impl AdmissionLifecycle {
             *state == LiveState::AwaitingApproval,
             "Tool invocation is no longer pending"
         );
-        let evidence_state = if preparation.host_disposition
-            == super::HostAdmissionDisposition::Deny
-        {
-            ToolAdmissionEvidenceState::Denied
-        } else {
-            ToolAdmissionEvidenceState::AwaitingApproval
-        };
+        let evidence_state =
+            if preparation.host_disposition == super::HostAdmissionDisposition::Deny {
+                ToolAdmissionEvidenceState::Denied
+            } else {
+                ToolAdmissionEvidenceState::AwaitingApproval
+            };
         self.save_evidence(&ToolAdmissionEvidence::new(
             invocation,
             &preparation.admission_id,
@@ -226,7 +223,9 @@ impl AdmissionLifecycle {
         succeeded: bool,
     ) -> anyhow::Result<()> {
         let invocation = admitted.prepared.as_ref();
-        let cell = self.cell(&invocation.invocation_id, LiveState::Claimed).await;
+        let cell = self
+            .cell(&invocation.invocation_id, LiveState::Claimed)
+            .await;
         let mut state = cell.lock().await;
         anyhow::ensure!(
             matches!(*state, LiveState::Claimed | LiveState::ClaimedUnknown),
@@ -304,12 +303,8 @@ impl AdmissionLifecycle {
         let outcome = host.cancel(invocation, admission_id, reason).await?;
         let evidence_state = match outcome {
             AdmissionCancellationOutcome::Cancelled => match reason {
-                AdmissionCancellationReason::Cancelled => {
-                    ToolAdmissionEvidenceState::Cancelled
-                }
-                AdmissionCancellationReason::Invalidated => {
-                    ToolAdmissionEvidenceState::Invalidated
-                }
+                AdmissionCancellationReason::Cancelled => ToolAdmissionEvidenceState::Cancelled,
+                AdmissionCancellationReason::Invalidated => ToolAdmissionEvidenceState::Invalidated,
             },
             AdmissionCancellationOutcome::AlreadyClaimed
             | AdmissionCancellationOutcome::AlreadyTerminal => {
@@ -401,7 +396,7 @@ impl ToolAdmissionRuntime {
             !self.cancellation.is_cancelled(),
             "Tool invocation was cancelled before claim"
         );
-        if let Some(revalidator) = &self.claim_revalidator {
+        for revalidator in &self.claim_revalidators {
             revalidator.revalidate().await?;
         }
         let refreshed = self.host.revalidate_claim(admitted).await?;
@@ -412,7 +407,9 @@ impl ToolAdmissionRuntime {
         let governance_is_active = self
             .governance_gate
             .as_ref()
-            .map_or(self.governance_engine.is_some(), |gate| gate.effective_enabled());
+            .map_or(self.governance_engine.is_some(), |gate| {
+                gate.effective_enabled()
+            });
         if governance_is_active {
             let engine = self
                 .governance_engine

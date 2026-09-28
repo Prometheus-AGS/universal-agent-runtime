@@ -75,9 +75,10 @@ impl ToolAdmissionContext {
         governance_policy_revision: String,
         host: HostAdmissionBinding,
     ) -> anyhow::Result<Self> {
-        let catalog_revision = artifact
-            .catalog_metadata()
-            .map_or_else(|| artifact.definition_revision(), |metadata| metadata.revision);
+        let catalog_revision = artifact.catalog_metadata().map_or_else(
+            || artifact.definition_revision(),
+            |metadata| metadata.revision,
+        );
         let run_policy_revision = digest_json(&serde_json::to_value(policy)?);
         let grant_revision = digest_json(&serde_json::json!({
             "tools": &policy.tools,
@@ -92,12 +93,8 @@ impl ToolAdmissionContext {
             "runtimeEpoch": &runtime_epoch,
             "hostEpoch": &host.host_epoch,
         }));
-        let budget_revision = digest_json(
-            artifact
-                .extensions
-                .get("budgets")
-                .unwrap_or(&Value::Null),
-        );
+        let budget_revision =
+            digest_json(artifact.extensions.get("budgets").unwrap_or(&Value::Null));
         let authority_ttl = artifact
             .extensions
             .get("budgets")
@@ -370,7 +367,10 @@ impl std::fmt::Debug for PreparedToolInvocation {
             .field("native_tool_name", &self.native_tool_name)
             .field("provider_tool_name", &self.provider_tool_name)
             .field("run_policy_revision", &self.run_policy_revision)
-            .field("governance_policy_revision", &self.governance_policy_revision)
+            .field(
+                "governance_policy_revision",
+                &self.governance_policy_revision,
+            )
             .field("tool_policy_revision", &self.tool_policy_revision)
             .field("resource_revision", &self.resource_revision)
             .field("payload_revision", &self.payload_revision)
@@ -424,7 +424,10 @@ impl PreparedToolInvocation {
             &self.budget_reservation.unit,
             &self.authority_revision,
         ] {
-            anyhow::ensure!(!value.trim().is_empty(), "Tool authority envelope is incomplete");
+            anyhow::ensure!(
+                !value.trim().is_empty(),
+                "Tool authority envelope is incomplete"
+            );
         }
         anyhow::ensure!(
             digest_json(&self.validated_arguments) == self.payload_revision,
@@ -626,7 +629,7 @@ pub struct ToolAdmissionRuntime {
     cancellation: tokio_util::sync::CancellationToken,
     governance_engine: Option<Arc<crate::uar::governance::engine::GovernanceEngine>>,
     governance_gate: Option<crate::uar::governance::runtime_control::GovernanceGateHandle>,
-    claim_revalidator: Option<Arc<dyn ClaimRevalidator>>,
+    claim_revalidators: Vec<Arc<dyn ClaimRevalidator>>,
 }
 
 impl std::fmt::Debug for ToolAdmissionRuntime {
@@ -654,8 +657,10 @@ impl ToolAdmissionRuntime {
                 executing_run_id: format!("standalone:{runtime_epoch}"),
                 owner_id: "standalone".to_string(),
                 principal_id: "standalone".to_string(),
-                workspace: std::env::current_dir()
-                    .map_or_else(|_| "standalone".to_string(), |path| path.display().to_string()),
+                workspace: std::env::current_dir().map_or_else(
+                    |_| "standalone".to_string(),
+                    |path| path.display().to_string(),
+                ),
                 runtime_epoch,
                 catalog_revision: "standalone".to_string(),
                 run_policy_revision: "standalone".to_string(),
@@ -674,7 +679,7 @@ impl ToolAdmissionRuntime {
             cancellation: tokio_util::sync::CancellationToken::new(),
             governance_engine: None,
             governance_gate: None,
-            claim_revalidator: None,
+            claim_revalidators: Vec::new(),
         }
     }
 
@@ -697,16 +702,13 @@ impl ToolAdmissionRuntime {
             cancellation,
             governance_engine,
             governance_gate,
-            claim_revalidator: None,
+            claim_revalidators: Vec::new(),
         })
     }
 
     #[must_use]
-    pub fn with_claim_revalidator(
-        mut self,
-        claim_revalidator: Arc<dyn ClaimRevalidator>,
-    ) -> Self {
-        self.claim_revalidator = Some(claim_revalidator);
+    pub fn with_claim_revalidator(mut self, claim_revalidator: Arc<dyn ClaimRevalidator>) -> Self {
+        self.claim_revalidators.push(claim_revalidator);
         self
     }
 
@@ -783,17 +785,11 @@ impl ToolAdmissionRuntime {
         let admission_id = preparation.admission_id.clone();
         let admitted = self
             .host
-            .resolve(
-                invocation.clone(),
-                preparation,
-                local_disposition,
-                approved,
-            )
+            .resolve(invocation.clone(), preparation, local_disposition, approved)
             .await?;
         let Some(admitted) = admitted else {
             anyhow::ensure!(!approved, "Host omitted an approved admission receipt");
-            self.reject(invocation.as_ref(), &admission_id)
-                .await?;
+            self.reject(invocation.as_ref(), &admission_id).await?;
             return Ok(None);
         };
         let receipt = &admitted.host_receipt;
@@ -860,11 +856,7 @@ fn canonical_json(value: &Value) -> String {
                 entries
                     .into_iter()
                     .map(|(key, value)| {
-                        format!(
-                            "{}:{}",
-                            Value::String(key.clone()),
-                            canonical_json(value)
-                        )
+                        format!("{}:{}", Value::String(key.clone()), canonical_json(value))
                     })
                     .collect::<Vec<_>>()
                     .join(",")

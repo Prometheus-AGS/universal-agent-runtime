@@ -6,7 +6,7 @@
 use serde::Serialize;
 
 /// Schema revision for [`AdministrationCapabilities`].
-pub const ADMINISTRATION_SCHEMA_VERSION: u32 = 3;
+pub const ADMINISTRATION_SCHEMA_VERSION: u32 = 4;
 
 /// Navigation group for an administration surface.
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -114,7 +114,7 @@ fn surface(
 }
 
 /// Returns the canonical UAR administration manifest for this runtime build.
-pub fn administration_capabilities() -> AdministrationCapabilities {
+pub fn administration_capabilities(durable_instances: bool) -> AdministrationCapabilities {
     use AdministrationGroup::{Administration, Agents, Experience, Runtime};
     use AdministrationScope::{Admin, Host, Owner, Public};
     use ApplyMode::{HostControlled, Live, NextTurn, Read, Restart, Unavailable};
@@ -360,7 +360,7 @@ pub fn administration_capabilities() -> AdministrationCapabilities {
         runtime_settings.push(endpoint!(update_id, "PUT", path, Admin, apply));
     }
 
-    AdministrationCapabilities {
+    let mut administration = AdministrationCapabilities {
         schema_version: ADMINISTRATION_SCHEMA_VERSION,
         scopes: ["public", "admin", "owner", "host"],
         surfaces: vec![
@@ -1592,5 +1592,96 @@ pub fn administration_capabilities() -> AdministrationCapabilities {
                 ],
             ),
         ],
-    }
+    };
+    let availability = if durable_instances {
+        Available
+    } else {
+        FeatureGated
+    };
+    let mutating = if durable_instances { Live } else { Unavailable };
+    administration.surfaces.push(surface(
+        "durable-agent-instances",
+        Agents,
+        availability,
+        vec![
+            endpoint!(
+                "agent-instances.list",
+                "GET",
+                "/api/uar/agent-instances/v1/",
+                Owner,
+                Read
+            ),
+            endpoint!(
+                "agent-instances.create",
+                "POST",
+                "/api/uar/agent-instances/v1/",
+                Owner,
+                mutating
+            ),
+            endpoint!(
+                "agent-instances.read",
+                "GET",
+                "/api/uar/agent-instances/v1/{id}",
+                Owner,
+                Read
+            ),
+            endpoint!(
+                "agent-instances.events",
+                "GET",
+                "/api/uar/agent-instances/v1/{id}/events",
+                Owner,
+                Read
+            ),
+            endpoint!(
+                "agent-instances.turn",
+                "POST",
+                "/api/uar/agent-instances/v1/{id}/turns",
+                Owner,
+                mutating
+            ),
+            endpoint!(
+                "agent-instances.activate",
+                "POST",
+                "/api/uar/agent-instances/v1/{id}/activate",
+                Owner,
+                mutating
+            ),
+            endpoint!(
+                "agent-instances.passivate",
+                "POST",
+                "/api/uar/agent-instances/v1/{id}/passivate",
+                Owner,
+                mutating
+            ),
+            endpoint!(
+                "agent-instances.drain",
+                "POST",
+                "/api/uar/agent-instances/v1/{id}/drain",
+                Owner,
+                mutating
+            ),
+            endpoint!(
+                "agent-instances.disable",
+                "POST",
+                "/api/uar/agent-instances/v1/{id}/disable",
+                Owner,
+                mutating
+            ),
+            endpoint!(
+                "agent-instances.restart",
+                "POST",
+                "/api/uar/agent-instances/v1/{id}/restart",
+                Owner,
+                mutating
+            ),
+            endpoint!(
+                "agent-instances.cancel",
+                "POST",
+                "/api/uar/agent-instances/v1/{id}/cancel",
+                Owner,
+                mutating
+            ),
+        ],
+    ));
+    administration
 }

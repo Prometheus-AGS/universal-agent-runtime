@@ -9,6 +9,8 @@ pub mod adapters;
 #[cfg(feature = "server")]
 pub mod administration_capabilities;
 #[cfg(feature = "server")]
+pub mod agent_instances;
+#[cfg(feature = "server")]
 pub mod auth;
 #[cfg(feature = "server")]
 pub mod capabilities;

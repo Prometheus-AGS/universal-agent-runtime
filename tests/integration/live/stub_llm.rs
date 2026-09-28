@@ -33,6 +33,12 @@ use tokio::net::TcpListener;
 #[derive(Debug, Clone)]
 pub enum FixtureResponse {
     Content(String),
+    /// Hold a real HTTP model request after it reaches the stub, so the live
+    /// UAR integration gate can inspect and cancel an occupied turn.
+    DelayedContent {
+        delay_ms: u64,
+        text: String,
+    },
     #[allow(
         dead_code,
         reason = "constructed by the stub's grounded-content unit fixture, which is not compiled into every integration-test binary"
@@ -282,37 +288,48 @@ async fn chat_completions_handler(
         }
     }
 
+    let fixture = match fixture.clone() {
+        FixtureResponse::DelayedContent { delay_ms, text } => {
+            tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+            FixtureResponse::Content(text)
+        }
+        other => other,
+    };
     let stream = body.get("stream").and_then(Value::as_bool).unwrap_or(false);
     let model = fingerprint.model.clone();
 
     if stream {
-        streaming_response(model, fixture.clone()).into_response()
+        streaming_response(model, fixture).into_response()
     } else {
-        non_streaming_response(model, fixture.clone()).into_response()
+        non_streaming_response(model, fixture).into_response()
     }
 }
 
 fn non_streaming_response(model: String, fixture: FixtureResponse) -> Json<Value> {
     let finish_reason = match &fixture {
-        FixtureResponse::Content(_) | FixtureResponse::GroundedContent { .. } => "stop",
+        FixtureResponse::Content(_)
+        | FixtureResponse::DelayedContent { .. }
+        | FixtureResponse::GroundedContent { .. } => "stop",
         FixtureResponse::ToolCall { .. } => "tool_calls",
     };
     let message = match fixture {
-        FixtureResponse::Content(text) | FixtureResponse::GroundedContent { text, .. } => {
+        FixtureResponse::Content(text)
+        | FixtureResponse::DelayedContent { text, .. }
+        | FixtureResponse::GroundedContent { text, .. } => {
             json!({ "role": "assistant", "content": text })
         }
         FixtureResponse::ToolCall { name, arguments } => {
             let call_id = fixture_call_id(&name, &arguments);
             json!({
-            "role": "assistant",
-            "content": null,
-            "tool_calls": [{
-                "id": call_id,
-                "type": "function",
-                "function": { "name": name, "arguments": arguments },
-            }],
-        })
-        },
+                "role": "assistant",
+                "content": null,
+                "tool_calls": [{
+                    "id": call_id,
+                    "type": "function",
+                    "function": { "name": name, "arguments": arguments },
+                }],
+            })
+        }
     };
     Json(json!({
         "id": "chatcmpl-stub",
@@ -329,24 +346,26 @@ fn non_streaming_response(model: String, fixture: FixtureResponse) -> Json<Value
 /// reconstruct a complete message.
 fn streaming_response(model: String, fixture: FixtureResponse) -> impl IntoResponse {
     let (delta, finish_reason) = match fixture {
-        FixtureResponse::Content(text) | FixtureResponse::GroundedContent { text, .. } => {
+        FixtureResponse::Content(text)
+        | FixtureResponse::DelayedContent { text, .. }
+        | FixtureResponse::GroundedContent { text, .. } => {
             (json!({ "role": "assistant", "content": text }), "stop")
         }
         FixtureResponse::ToolCall { name, arguments } => {
             let call_id = fixture_call_id(&name, &arguments);
             (
                 json!({
-                "role": "assistant",
-                "tool_calls": [{
-                    "index": 0,
-                    "id": call_id,
-                    "type": "function",
-                    "function": { "name": name, "arguments": arguments },
-                }],
-            }),
+                    "role": "assistant",
+                    "tool_calls": [{
+                        "index": 0,
+                        "id": call_id,
+                        "type": "function",
+                        "function": { "name": name, "arguments": arguments },
+                    }],
+                }),
                 "tool_calls",
             )
-        },
+        }
     };
 
     let chunk1 = json!({
@@ -373,7 +392,7 @@ fn fixture_call_id(name: &str, arguments: &str) -> String {
     format!("call_stub_{:016x}", hasher.finish())
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "afc-c06-gate")))]
 mod tests {
     use super::*;
 

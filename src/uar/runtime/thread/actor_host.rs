@@ -113,6 +113,18 @@ pub(crate) struct ActorThreadSession {
     state: watch::Sender<Option<PersistedAgentThread>>,
     owned_root: Arc<tokio::sync::Mutex<Option<ActorRootBinding>>>,
     remote_constraints: Option<RemoteRootConstraints>,
+    instance: Option<InstanceRootConstraints>,
+}
+
+/// A verified activation's immutable catalog, epoch, and cold-start history.
+#[derive(Clone)]
+pub(crate) struct InstanceRootConstraints {
+    pub(crate) bound: crate::uar::compiler::collaboration::BoundAgentRun,
+    pub(crate) owner_key: String,
+    pub(crate) workspace_id: String,
+    pub(crate) catalog: Arc<crate::uar::compiler::collaboration::CollaborationCatalogService>,
+    pub(crate) epoch: crate::uar::runtime::instance::InstanceEpochBinding,
+    pub(crate) restored_history: Vec<crate::llm::Message>,
 }
 
 #[derive(Clone)]
@@ -146,6 +158,7 @@ impl ActorThreadSession {
             state,
             owned_root,
             None,
+            None,
         )
     }
 
@@ -159,6 +172,7 @@ impl ActorThreadSession {
         state: watch::Sender<Option<PersistedAgentThread>>,
         owned_root: Arc<tokio::sync::Mutex<Option<ActorRootBinding>>>,
         remote_constraints: Option<RemoteRootConstraints>,
+        instance: Option<InstanceRootConstraints>,
     ) -> Self {
         Self {
             owner,
@@ -172,6 +186,7 @@ impl ActorThreadSession {
             state,
             owned_root,
             remote_constraints,
+            instance,
         }
     }
 
@@ -191,8 +206,22 @@ impl ActorThreadSession {
         run_id: String,
         artifacts: Option<super::artifacts::RunArtifactCollector>,
     ) -> anyhow::Result<PersistedAgentThread> {
-        let mut request = RunExecutionRequest::new(self.artifact.clone(), content)
-            .with_verified_owner(self.owner.clone());
+        let mut request = match &self.instance {
+            Some(instance) => {
+                let mut request = RunExecutionRequest::from_bound_agent(
+                    instance.bound.clone(),
+                    content,
+                    instance.owner_key.clone(),
+                    instance.workspace_id.clone(),
+                    Arc::clone(&instance.catalog),
+                );
+                request.instance_binding = Some(instance.epoch.for_run(&run_id));
+                request.host_history = Some(instance.restored_history.clone());
+                request.with_verified_owner(self.owner.clone())
+            }
+            None => RunExecutionRequest::new(self.artifact.clone(), content)
+                .with_verified_owner(self.owner.clone()),
+        };
         if let Some(constraints) = &self.remote_constraints {
             request.presentation_negotiation = constraints
                 .presentation_negotiation
@@ -227,6 +256,13 @@ impl ActorThreadSession {
         if let Some(artifacts) = &artifacts {
             artifacts.check_binding(&self.owner, &run_id)?;
         }
+        if let Some(binding) = &request.collaboration_binding {
+            binding.revalidate(&request.artifact).await?;
+        }
+        if let Some(binding) = &request.instance_binding {
+            binding.revalidate().await?;
+        }
+        let instance_binding = request.instance_binding.clone();
         self.settle_uncertain().await?;
         if self.cancellation.is_cancelled() {
             anyhow::bail!("Actor has been stopped");
@@ -288,6 +324,18 @@ impl ActorThreadSession {
         } else {
             self.owned_root.lock().await.take();
         }
+        if self.instance.is_some()
+            && let Err(error) = self
+                .manager
+                .persist_instance_session(self.owner.user_id(), &self.session_id)
+                .await
+        {
+            tracing::error!(%error, "Logical instance conversation persistence is unconfirmed");
+            result = AgentThreadResult::Failed {
+                code: "session_persistence_unconfirmed".into(),
+                message: "Conversation history could not be confirmed in storage".into(),
+            };
+        }
         let mut next = self
             .current
             .as_ref()
@@ -295,6 +343,9 @@ impl ActorThreadSession {
             .thread
             .clone();
         next.finish_turn(result)?;
+        if let Some(binding) = &instance_binding {
+            binding.revalidate().await?;
+        }
         self.persist(next).await
     }
 
@@ -305,6 +356,13 @@ impl ActorThreadSession {
         if let Some(current) = &self.current
             && !current.thread.status.is_terminal()
         {
+            if let Some(instance) = &self.instance {
+                instance
+                    .epoch
+                    .for_run(&current.thread.root_run_id)
+                    .revalidate()
+                    .await?;
+            }
             let mut next = current.thread.clone();
             next.finish_turn(if self.cancellation.is_cancelled() {
                 AgentThreadResult::Cancelled
