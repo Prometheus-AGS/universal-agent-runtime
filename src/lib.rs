@@ -89,8 +89,9 @@ pub struct AppState {
     #[allow(dead_code)]
     pub mcp: Arc<McpRegistry>,
     /// LLM orchestrator for the optional response-quality correction pass.
+    /// A supervised sidecar can start before its host configures a provider.
     #[cfg(feature = "response-quality")]
-    pub orchestrator: Arc<Orchestrator>,
+    pub orchestrator: Option<Arc<Orchestrator>>,
     /// Session store for conversation management.
     pub sessions: SessionStore,
     /// Run Manager

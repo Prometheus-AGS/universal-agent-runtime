@@ -6,7 +6,9 @@ on:
       - main
     tags:
       - boss-sidecar-win32-x64-v*
+      - boss-sidecar-win32-arm64-v*
       - boss-sidecar-darwin-arm64-v*
+      - boss-sidecar-darwin-x64-v*
   workflow_dispatch:
     inputs:
       image_tag:
@@ -237,7 +239,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(contains(github.ref_name, 'win32-x64') && '[{"platform":"win32-x64","runner":"windows-2025","target":"x86_64-pc-windows-msvc"}]' || '[{"platform":"darwin-arm64","runner":"macos-15","target":"aarch64-apple-darwin"}]') }}
+        include: >-
+          ${{ fromJSON(
+            startsWith(github.ref_name, 'boss-sidecar-win32-x64-v') && '[{"platform":"win32-x64","runner":"windows-2025","target":"x86_64-pc-windows-msvc"}]' ||
+            startsWith(github.ref_name, 'boss-sidecar-win32-arm64-v') && '[{"platform":"win32-arm64","runner":"windows-11-arm","target":"aarch64-pc-windows-msvc"}]' ||
+            startsWith(github.ref_name, 'boss-sidecar-darwin-arm64-v') && '[{"platform":"darwin-arm64","runner":"macos-15","target":"aarch64-apple-darwin"}]' ||
+            '[{"platform":"darwin-x64","runner":"macos-15-intel","target":"x86_64-apple-darwin"}]'
+          ) }}
     env:
       CARGO_BUILD_JOBS: 2
       CARGO_INCREMENTAL: 0
@@ -261,13 +269,13 @@ jobs:
       - name: Restore Rust build cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          shared-key: boss-sidecar-${{ matrix.platform }}-${{ matrix.target }}-minimal-a2a-local-models-document-intelligence-wasm-runtime
+          shared-key: boss-sidecar-${{ matrix.platform }}-${{ matrix.target }}-server-full
           workspaces: ". -> target"
           cache-targets: "true"
       - name: Build production sidecar
         run: >-
           cargo build --release --locked --no-default-features
-          --features minimal,a2a-transport,local-models,document-intelligence,wasm-runtime
+          --features server-full
           --bin uar-sidecar --target ${{ matrix.target }}
       - name: Package complete sidecar payload
         run: node scripts/package-boss-sidecar.mjs ${{ matrix.platform }} ${{ matrix.target }}
@@ -303,4 +311,4 @@ jobs:
           dist/boss-sidecar/uar-sidecar-*.json
           --verify-tag --latest=false --prerelease
           --title "The Boss UAR sidecar ${GITHUB_REF_NAME}"
-          --notes "Immutable ${GITHUB_REF_NAME} payload for The Boss P1 preview. The archive includes the production feature set, local embedding assets, runtime libraries found beside the built binary, licenses, and a checksummed file manifest."
+          --notes "Immutable ${GITHUB_REF_NAME} payload for The Boss. Built natively with the server-full feature; the archive includes local embedding assets, Cedar policies, runtime libraries found beside the binary, licenses, and a checksummed file manifest."
