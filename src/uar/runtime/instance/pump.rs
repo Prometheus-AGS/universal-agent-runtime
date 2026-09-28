@@ -1,12 +1,15 @@
 //! One bounded command pump per logical instance; no second model loop.
 
-use std::{future::Future, pin::Pin, sync::Arc};
+use std::{collections::HashSet, pin::Pin, sync::Arc};
 
 use chrono::Utc;
 use uuid::Uuid;
 
 use crate::uar::{
-    persistence::agent_instances::{AgentInstanceAttempt, AgentInstanceRecord},
+    persistence::{
+        agent_instances::{AgentInstanceAttempt, AgentInstanceRecord},
+        tool_admission::ToolAdmissionEvidenceState,
+    },
     runtime::{
         actor::messages::{ActorOwner, ActorRunError},
         thread::AgentThreadResult,
@@ -190,7 +193,7 @@ impl AgentInstanceController {
                     &command_id,
                     &attempt_id,
                     &run_id,
-                    TurnSettlement::Failed,
+                    TurnSettlement::BindingUnavailable,
                 )
                 .await?;
                 continue;
@@ -217,16 +220,17 @@ impl AgentInstanceController {
                 },
                 Err(_) => TurnSettlement::Failed,
             };
-            self.settle_turn(
-                owner,
-                workspace,
-                id,
-                &command_id,
-                &attempt_id,
-                &run_id,
-                outcome,
-            )
-            .await?;
+            let outcome = self
+                .settle_turn(
+                    owner,
+                    workspace,
+                    id,
+                    &command_id,
+                    &attempt_id,
+                    &run_id,
+                    outcome,
+                )
+                .await?;
             if outcome == TurnSettlement::Uncertain {
                 return Ok(());
             }
@@ -242,7 +246,18 @@ impl AgentInstanceController {
         attempt_id: &str,
         run_id: &str,
         outcome: TurnSettlement,
-    ) -> Result<(), AgentInstanceError> {
+    ) -> Result<TurnSettlement, AgentInstanceError> {
+        let evidence = if outcome == TurnSettlement::Uncertain {
+            None
+        } else {
+            Some(self.has_unsettled_effect_claim(owner, run_id).await)
+        };
+        let evidence_unavailable = matches!(evidence.as_ref(), Some(Err(_)));
+        let outcome = if matches!(evidence.as_ref(), Some(Ok(true) | Err(_))) {
+            TurnSettlement::Uncertain
+        } else {
+            outcome
+        };
         self.update(owner, workspace, id, |next| {
             let Some(active) = &next.active_attempt else {
                 return Ok(false);
@@ -257,7 +272,9 @@ impl AgentInstanceController {
             let status = match outcome {
                 TurnSettlement::Completed => InstanceCommandStatus::Completed,
                 TurnSettlement::Cancelled => InstanceCommandStatus::Cancelled,
-                TurnSettlement::Failed => InstanceCommandStatus::Failed,
+                TurnSettlement::Failed | TurnSettlement::BindingUnavailable => {
+                    InstanceCommandStatus::Failed
+                }
                 TurnSettlement::Uncertain => InstanceCommandStatus::Uncertain,
             };
             let command = next
@@ -272,7 +289,16 @@ impl AgentInstanceController {
             next.active_attempt = None;
             if outcome == TurnSettlement::Uncertain {
                 next.recovery = InstanceRecovery::EffectUncertain;
-                next.last_error_code = Some("turn_outcome_uncertain".into());
+                next.last_error_code = Some(
+                    if evidence_unavailable {
+                        "tool_admission_evidence_unavailable"
+                    } else {
+                        "turn_outcome_uncertain"
+                    }
+                    .into(),
+                );
+            } else if outcome == TurnSettlement::BindingUnavailable {
+                next.last_error_code = Some("required_binding_unavailable".into());
             }
             append_event(
                 next,
@@ -280,6 +306,7 @@ impl AgentInstanceController {
                     TurnSettlement::Completed => "turn_completed",
                     TurnSettlement::Cancelled => "turn_cancelled",
                     TurnSettlement::Failed => "turn_failed",
+                    TurnSettlement::BindingUnavailable => "turn_binding_unavailable",
                     TurnSettlement::Uncertain => "turn_outcome_uncertain",
                 },
                 Some(command_id),
@@ -289,7 +316,37 @@ impl AgentInstanceController {
             Ok(true)
         })
         .await?;
-        Ok(())
+        Ok(outcome)
+    }
+
+    async fn has_unsettled_effect_claim(
+        &self,
+        owner: &ActorOwner,
+        run_id: &str,
+    ) -> Result<bool, AgentInstanceError> {
+        let evidence = self
+            .store
+            .list_tool_admission_evidence(owner.user_id())
+            .await
+            .map_err(super::controller::store_error)?;
+        let mut claimed = HashSet::new();
+        let mut confirmed = HashSet::new();
+        for record in evidence
+            .into_iter()
+            .filter(|record| record.root_run_id == run_id)
+        {
+            match record.state {
+                ToolAdmissionEvidenceState::ClaimIntent
+                | ToolAdmissionEvidenceState::OutcomeUnknown => {
+                    claimed.insert(record.invocation_id);
+                }
+                ToolAdmissionEvidenceState::Succeeded | ToolAdmissionEvidenceState::Failed => {
+                    confirmed.insert(record.invocation_id);
+                }
+                _ => {}
+            }
+        }
+        Ok(claimed.difference(&confirmed).next().is_some())
     }
 
     async fn maybe_idle_passivate(
@@ -357,5 +414,6 @@ enum TurnSettlement {
     Completed,
     Cancelled,
     Failed,
+    BindingUnavailable,
     Uncertain,
 }

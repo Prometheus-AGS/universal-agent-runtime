@@ -72,6 +72,22 @@ fn binding(workspace: &str, id: &str, model: &str) -> Value {
     binding
 }
 
+fn copy_cold_datastore(source: &std::path::Path, destination: &std::path::Path) {
+    std::fs::create_dir(destination).expect("create C06 backup datastore directory");
+    for entry in std::fs::read_dir(source).expect("read closed C06 SurrealKV datastore") {
+        let entry = entry.expect("read SurrealKV directory entry");
+        let target = destination.join(entry.file_name());
+        let kind = entry.file_type().expect("read SurrealKV entry kind");
+        if kind.is_dir() {
+            copy_cold_datastore(&entry.path(), &target);
+        } else if kind.is_file() {
+            std::fs::copy(entry.path(), target).expect("copy closed SurrealKV file");
+        } else {
+            panic!("SurrealKV backup contains an unsupported entry kind");
+        }
+    }
+}
+
 async fn request(
     client: &reqwest::Client,
     base_url: &str,
@@ -142,6 +158,21 @@ async fn post(
         expected,
     )
     .await
+}
+
+async fn read_sse_until(response: &mut reqwest::Response, expected: &str) -> String {
+    tokio::time::timeout(Duration::from_secs(90), async {
+        let mut body = String::new();
+        while let Some(chunk) = response.chunk().await.expect("C06 instance stream chunk") {
+            body.push_str(&String::from_utf8_lossy(&chunk));
+            if body.contains(expected) {
+                return body;
+            }
+        }
+        panic!("C06 instance stream ended before {expected}: {body}");
+    })
+    .await
+    .unwrap_or_else(|_| panic!("C06 instance stream timed out waiting for {expected}"))
 }
 
 async fn wait_for_command(
@@ -377,6 +408,7 @@ async fn c06_durable_instances_complete_live_boundary() {
     let prompts = [
         ("C06_FIRST_TURN", "C06_FIRST_RESULT"),
         ("C06_SECOND_TURN", "C06_SECOND_RESULT"),
+        ("C06_STREAM_TURN", "C06_STREAM_RESULT"),
         ("C06_ORDINARY_RUN", "C06_ORDINARY_RESULT"),
         ("C06_AFTER_RECONCILE", "C06_RECOVERED_RESULT"),
     ];
@@ -531,7 +563,7 @@ async fn c06_durable_instances_complete_live_boundary() {
         &token,
         SECOND_WORKSPACE,
         "/api/uar/agent-instances/v1",
-        json!({"deploymentBindingId":SECOND_BINDING,"profile":"request"}),
+        json!({"deploymentBindingId":SECOND_BINDING,"profile":"on_demand"}),
         StatusCode::CREATED,
     )
     .await;
@@ -560,6 +592,66 @@ async fn c06_durable_instances_complete_live_boundary() {
     .await;
     assert_eq!(isolated.as_array().map(Vec::len), Some(1));
     assert_eq!(isolated[0]["instanceId"], second_id);
+
+    let stream_path = format!("/api/uar/agent-instances/v1/{second_id}/events/stream");
+    let mut snapshot_stream = client
+        .get(format!("{}{stream_path}", first.base_url))
+        .bearer_auth(&token)
+        .header("x-uar-workspace-id", SECOND_WORKSPACE)
+        .send()
+        .await
+        .expect("C06 instance snapshot stream");
+    assert_eq!(snapshot_stream.status(), StatusCode::OK);
+    let snapshot_frame = read_sse_until(&mut snapshot_stream, "event: instance.snapshot").await;
+    assert!(snapshot_frame.contains(&second_id));
+    assert!(
+        !snapshot_frame.contains("id: 0\n"),
+        "empty snapshot invented event cursor"
+    );
+    drop(snapshot_stream);
+    post(
+        &client,
+        &first.base_url,
+        &token,
+        SECOND_WORKSPACE,
+        &format!("/api/uar/agent-instances/v1/{second_id}/activate"),
+        json!({"commandId":"c06-stream-activation"}),
+        StatusCode::OK,
+    )
+    .await;
+    let mut replay_stream = client
+        .get(format!("{}{stream_path}", first.base_url))
+        .bearer_auth(&token)
+        .header("x-uar-workspace-id", SECOND_WORKSPACE)
+        .header("Last-Event-ID", "0")
+        .send()
+        .await
+        .expect("C06 instance replay stream");
+    assert_eq!(replay_stream.status(), StatusCode::OK);
+    let replay_frame = read_sse_until(&mut replay_stream, "\"delivery\":\"replay\"").await;
+    assert!(replay_frame.contains("event: instance.event"));
+    post(
+        &client,
+        &first.base_url,
+        &token,
+        SECOND_WORKSPACE,
+        &format!("/api/uar/agent-instances/v1/{second_id}/turns"),
+        json!({"commandId":"c06-stream-turn","prompt":"C06_STREAM_TURN"}),
+        StatusCode::ACCEPTED,
+    )
+    .await;
+    let live_frame = read_sse_until(&mut replay_stream, "\"delivery\":\"live\"").await;
+    assert!(live_frame.contains("event: instance.event"));
+    wait_for_command(
+        &client,
+        &first.base_url,
+        &token,
+        SECOND_WORKSPACE,
+        &second_id,
+        "c06-stream-turn",
+    )
+    .await;
+    drop(replay_stream);
 
     let turn_path = format!("/api/uar/agent-instances/v1/{first_id}/turns");
     let first_turn = post(
@@ -756,6 +848,20 @@ async fn c06_durable_instances_complete_live_boundary() {
         "retained cursor gap was hidden: {events}"
     );
     assert_eq!(events["snapshot"]["instanceId"], first_id);
+    let mut gap_stream = client
+        .get(format!(
+            "{}/api/uar/agent-instances/v1/{first_id}/events/stream?after=0",
+            restarted.base_url
+        ))
+        .bearer_auth(&token)
+        .header("x-uar-workspace-id", FIRST_WORKSPACE)
+        .send()
+        .await
+        .expect("C06 instance gap stream");
+    assert_eq!(gap_stream.status(), StatusCode::OK);
+    let gap_frame = read_sse_until(&mut gap_stream, "event: instance.gap").await;
+    assert!(gap_frame.contains("\"gap\":true"));
+    drop(gap_stream);
 
     let ordinary = post(
         &client,
@@ -1317,8 +1423,187 @@ async fn c06_durable_instances_complete_live_boundary() {
             initial_model_requests,
             "new activation replayed the uncertain old command"
         );
+
+        // An installed binding can advance independently of an instance's
+        // immutable activation snapshot. Each failed activation must consume
+        // one retry and leave a durable, truthful command receipt.
+        let retry_instance = post(
+            &client,
+            &recovery_host.base_url,
+            &token,
+            FIRST_WORKSPACE,
+            "/api/uar/agent-instances/v1",
+            json!({"deploymentBindingId":FIRST_BINDING,"profile":"request",
+                "limits":{"max_inbox":2,"retained_commands":8,"retained_events":16,
+                    "max_restart_attempts":2,"idle_timeout_secs":300}}),
+            StatusCode::CREATED,
+        )
+        .await;
+        let retry_id = retry_instance["instanceId"]
+            .as_str()
+            .expect("activation-retry instance ID");
+        let retry_path = format!("/api/uar/agent-instances/v1/{retry_id}");
+        let mut newer_binding = binding(FIRST_WORKSPACE, FIRST_BINDING, &backend.model);
+        newer_binding["revision"] = json!(2);
+        newer_binding["effectiveBudget"]["maxTokens"] = json!(4000);
+        finalize(&mut newer_binding);
+        post(
+            &client,
+            &recovery_host.base_url,
+            &token,
+            FIRST_WORKSPACE,
+            "/api/v1/collaboration/deployment-bindings",
+            json!({"commandId":"c06-binding-invalidates-pinned-instance",
+                "expectedRevision":1,"binding":newer_binding}),
+            StatusCode::CREATED,
+        )
+        .await;
+        for attempt in 1..=2 {
+            post(
+                &client,
+                &recovery_host.base_url,
+                &token,
+                FIRST_WORKSPACE,
+                &format!("{retry_path}/activate"),
+                json!({"commandId":format!("c06-failed-activation-{attempt}")}),
+                StatusCode::CONFLICT,
+            )
+            .await;
+            let failed_attempt = get(
+                &client,
+                &recovery_host.base_url,
+                &token,
+                FIRST_WORKSPACE,
+                &retry_path,
+                StatusCode::OK,
+            )
+            .await;
+            assert_eq!(
+                failed_attempt["restartAttempts"].as_u64(),
+                Some(attempt),
+                "activation failure was not counted: {failed_attempt}"
+            );
+            assert_eq!(failed_attempt["lastErrorCode"], "activation_failed");
+            assert_eq!(
+                failed_attempt["lifecycle"],
+                if attempt == 2 { "failed" } else { "dormant" }
+            );
+            let command_id = format!("c06-failed-activation-{attempt}");
+            assert!(
+                failed_attempt["commands"]
+                    .as_array()
+                    .is_some_and(|commands| {
+                        commands.iter().any(|command| {
+                            command["commandId"] == command_id && command["status"] == "failed"
+                        })
+                    }),
+                "failed activation has no durable failed receipt: {failed_attempt}"
+            );
+        }
         recovery_host.shutdown().await;
+        let exhausted_host = boot_test_server_process_with_instance_id(
+            &backend.base_url,
+            &backend.model,
+            ServiceNeeds::default(),
+            &db_path,
+            Some(SERVICE_INSTANCE_ID),
+            Some(fixed_http_port),
+            Some(&file_root),
+        )
+        .await;
+        let exhausted = get(
+            &client,
+            &exhausted_host.base_url,
+            &token,
+            FIRST_WORKSPACE,
+            &retry_path,
+            StatusCode::OK,
+        )
+        .await;
+        assert_eq!(
+            exhausted["restartAttempts"], 2,
+            "cold restart lost the activation retry count: {exhausted}"
+        );
+        assert_eq!(exhausted["lifecycle"], "failed");
+        assert_eq!(exhausted["lastErrorCode"], "activation_failed");
+        post(
+            &client,
+            &exhausted_host.base_url,
+            &token,
+            FIRST_WORKSPACE,
+            &format!("{retry_path}/activate"),
+            json!({"commandId":"c06-activation-over-budget"}),
+            StatusCode::CONFLICT,
+        )
+        .await;
+        let still_exhausted = get(
+            &client,
+            &exhausted_host.base_url,
+            &token,
+            FIRST_WORKSPACE,
+            &retry_path,
+            StatusCode::OK,
+        )
+        .await;
+        assert_eq!(
+            still_exhausted["revision"], exhausted["revision"],
+            "exhausted retry changed durable instance state"
+        );
+        exhausted_host.shutdown().await;
     }
+    let backup_path = scratch.path().join("surrealkv-cold-backup");
+    copy_cold_datastore(&db_path, &backup_path);
+    let backup_host = boot_test_server_process_with_instance_id(
+        &backend.base_url,
+        &backend.model,
+        ServiceNeeds::default(),
+        &backup_path,
+        Some(SERVICE_INSTANCE_ID),
+        Some(fixed_http_port),
+        Some(&file_root),
+    )
+    .await;
+    let backed_up = get(
+        &client,
+        &backup_host.base_url,
+        &token,
+        FIRST_WORKSPACE,
+        &format!("/api/uar/agent-instances/v1/{first_id}"),
+        StatusCode::OK,
+    )
+    .await;
+    assert_eq!(backed_up["instanceId"], first_id);
+    assert!(
+        backed_up["commands"].as_array().is_some_and(|commands| {
+            commands.iter().any(|command| {
+                command["commandId"] == "c06-turn-1"
+                    && command["status"] == "completed"
+                    && command["rootRunId"] == root_one
+            })
+        }),
+        "cold datastore copy lost a completed C06 command receipt: {backed_up}"
+    );
+    get(
+        &client,
+        &backup_host.base_url,
+        &token,
+        FIRST_WORKSPACE,
+        &format!("/api/uar/agent-instances/v1/{ordinary_run_id}"),
+        StatusCode::NOT_FOUND,
+    )
+    .await;
+    // Ordinary run inspection is process-local; its old run ID is not a
+    // durable logical instance or command receipt in the copied datastore.
+    get(
+        &client,
+        &backup_host.base_url,
+        &token,
+        FIRST_WORKSPACE,
+        &format!("/api/uar/runs/{ordinary_run_id}"),
+        StatusCode::NOT_FOUND,
+    )
+    .await;
+    backup_host.shutdown().await;
     // SAFETY: paired restoration after the serial integration case above.
     unsafe {
         match original_skill_root {
@@ -1345,6 +1630,10 @@ async fn c06_durable_instances_complete_live_boundary() {
         "blockedToolApprovalCancellation":recorded,
         "staleApprovalAfterEpochHandoff":recorded,
         "activeAttemptCrashAndOperatorReconciliation":recorded,
+        "activationFailureRetryExhaustionAfterRestart":recorded,
+        "coldSurrealKvBackupRestore":true,
+        "ordinaryRunNotProjectedAsInstance":true,
+        "ordinaryRunInspectionRemainsProcessLocal":true,
         "notCoveredByThisScenario":["stale-epoch protected-effect claim/dispatch race"]
     });
     println!("C06_INTEGRATION_RECEIPT={receipt}");

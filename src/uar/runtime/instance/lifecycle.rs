@@ -380,7 +380,7 @@ impl AgentInstanceController {
         id: &str,
     ) -> Result<(), AgentInstanceError> {
         let before = self.load(owner, workspace, id).await?;
-        if before.active_attempt.is_some() {
+        if before.recovery != InstanceRecovery::Ready || before.active_attempt.is_some() {
             return Ok(());
         }
         let pending = before.inbox.iter().find(|command| {
@@ -406,7 +406,7 @@ impl AgentInstanceController {
         }
         let record = self
             .update(owner, workspace, id, |next| {
-                if next.active_attempt.is_some() {
+                if next.recovery != InstanceRecovery::Ready || next.active_attempt.is_some() {
                     return Ok(false);
                 }
                 if kind == InstanceCommandKind::Drain && has_accepted_turn(next) {
