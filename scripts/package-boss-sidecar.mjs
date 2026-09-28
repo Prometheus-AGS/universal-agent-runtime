@@ -7,10 +7,15 @@ import { fileURLToPath } from 'node:url'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const [platform, target] = process.argv.slice(2)
 
-if (!/^(?:win32-x64|darwin-arm64)$/.test(platform ?? '')) {
-  throw new Error('usage: package-boss-sidecar.mjs <win32-x64|darwin-arm64> <rust-target>')
+const targets = {
+  'win32-x64': 'x86_64-pc-windows-msvc',
+  'win32-arm64': 'aarch64-pc-windows-msvc',
+  'darwin-arm64': 'aarch64-apple-darwin',
+  'darwin-x64': 'x86_64-apple-darwin'
 }
-if (!/^[a-z0-9_-]+$/.test(target ?? '')) throw new Error('A Rust target triple is required')
+if (!Object.hasOwn(targets, platform ?? '') || target !== targets[platform]) {
+  throw new Error('usage: package-boss-sidecar.mjs <platform> <matching-rust-target>; platforms: win32-x64, win32-arm64, darwin-arm64, darwin-x64')
+}
 
 const executable = `uar-sidecar${platform.startsWith('win32-') ? '.exe' : ''}`
 const releaseDir = path.join(root, 'target', target, 'release')
@@ -21,6 +26,10 @@ const versionMatch = readFileSync(path.join(root, 'Cargo.toml'), 'utf8').match(
   /\[package\][\s\S]*?\nversion\s*=\s*"([^"]+)"/
 )
 if (!versionMatch) throw new Error('Cargo package version is missing')
+const releaseTag = process.env.GITHUB_REF_TYPE === 'tag' ? process.env.GITHUB_REF_NAME : undefined
+if (releaseTag && !releaseTag.startsWith(`boss-sidecar-${platform}-v${versionMatch[1]}-`)) {
+  throw new Error(`Sidecar release tag does not match ${platform} v${versionMatch[1]}: ${releaseTag}`)
+}
 
 const output = path.join(root, 'dist', 'boss-sidecar')
 const packageName = `uar-sidecar-${platform}`
@@ -74,7 +83,7 @@ const payload = {
   version: versionMatch[1],
   platform,
   source,
-  features: ['minimal', 'a2a-transport', 'local-models', 'document-intelligence', 'wasm-runtime'],
+  features: ['server-full'],
   files
 }
 writeFileSync(path.join(packageRoot, 'payload-manifest.json'), `${JSON.stringify(payload, null, 2)}\n`)
@@ -91,6 +100,8 @@ const record = {
   version: versionMatch[1],
   platform,
   source,
+  ...(releaseTag ? { releaseTag } : {}),
+  features: ['server-full'],
   asset,
   sha256: createHash('sha256').update(readFileSync(archive)).digest('hex'),
   archive: 'tar.gz',
