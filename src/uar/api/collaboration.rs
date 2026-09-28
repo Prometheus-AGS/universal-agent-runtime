@@ -1,5 +1,7 @@
 //! Authenticated I1 collaboration package and deployment-binding resources.
 
+mod team_planning;
+
 use std::sync::Arc;
 
 use axum::{
@@ -35,6 +37,7 @@ struct CollaborationCapabilitiesResponse {
 /// The versioned collaboration administration contract consumed by host adapters.
 pub fn build_router() -> Router<Arc<CollaborationApiState>> {
     Router::new()
+        .merge(team_planning::build_router())
         .route("/capabilities", get(collaboration_capabilities))
         .route("/packages:preflight", post(preflight_package))
         .route("/packages:install", post(install_package))

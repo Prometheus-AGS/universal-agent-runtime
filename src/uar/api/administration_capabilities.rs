@@ -765,6 +765,55 @@ pub fn administration_capabilities(
                         Owner,
                         Read
                     ),
+                    endpoint!(
+                        "team-definitions.list",
+                        "GET",
+                        "/api/v1/collaboration/team-definitions",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "team-instances.list",
+                        "GET",
+                        "/api/v1/collaboration/team-instances",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "team-instances.create",
+                        "POST",
+                        "/api/v1/collaboration/team-instances",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "team-instances.read",
+                        "GET",
+                        "/api/v1/collaboration/team-instances/{id}",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "team-instances.tasks.list",
+                        "GET",
+                        "/api/v1/collaboration/team-instances/{id}/tasks",
+                        Owner,
+                        Read
+                    ),
+                    endpoint!(
+                        "team-instances.tasks.create",
+                        "POST",
+                        "/api/v1/collaboration/team-instances/{id}/tasks",
+                        Owner,
+                        Live
+                    ),
+                    endpoint!(
+                        "team-instances.tasks.read",
+                        "GET",
+                        "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}",
+                        Owner,
+                        Read
+                    ),
                 ],
             ),
             surface(
