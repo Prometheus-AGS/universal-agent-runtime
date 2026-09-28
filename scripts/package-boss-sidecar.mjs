@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const [platform, target] = process.argv.slice(2)
+const features = (process.env.UAR_SIDECAR_FEATURES || 'server-full').split(',')
 
 const targets = {
   'win32-x64': 'x86_64-pc-windows-msvc',
@@ -83,7 +84,7 @@ const payload = {
   version: versionMatch[1],
   platform,
   source,
-  features: ['server-full'],
+  features,
   files
 }
 writeFileSync(path.join(packageRoot, 'payload-manifest.json'), `${JSON.stringify(payload, null, 2)}\n`)
@@ -101,7 +102,7 @@ const record = {
   platform,
   source,
   ...(releaseTag ? { releaseTag } : {}),
-  features: ['server-full'],
+  features,
   asset,
   sha256: createHash('sha256').update(readFileSync(archive)).digest('hex'),
   archive: 'tar.gz',

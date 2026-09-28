@@ -250,6 +250,9 @@ admin-ui = []
 
 ## On-device BGE embedding inference from packaged ONNX assets.
 local-models = ["dep:fastembed"]
+# ort no longer publishes an Intel macOS runtime. Keep the same local embedding
+# feature there by selecting its CPU-only tract backend in the sidecar build.
+tract-embeddings = ["local-models", "dep:ort", "dep:ort-tract", "ort/alternative-backend"]
 
 ## Local embedding inference via Candle (transformers/BERT/Jina).
 candle-embeddings = ["dep:candle-core", "dep:candle-nn", "dep:candle-transformers", "dep:tokenizers"]
@@ -450,6 +453,8 @@ serde_norway = "0.9.42"
 fastembed = { version = "5", optional = true, default-features = false, features = [
   "ort-download-binaries",
 ] }
+ort = { version = "=2.0.0-rc.13", optional = true, default-features = false, features = ["std", "ndarray"] }
+ort-tract = { version = "=0.4.1+0.23", optional = true }
 # Local embedding inference via Candle (optional, gated by `candle-embeddings`).
 candle-core = { version = "0.11.0", optional = true }
 candle-nn = { version = "0.11.0", optional = true }
