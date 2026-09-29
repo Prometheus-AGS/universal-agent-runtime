@@ -8,6 +8,7 @@ The Boss can route a UAR run through a live liter-llm alias absent from UAR's em
 - Apply the hint only when the selected provider and model exactly match that credential's `default_model`.
 - Preserve configured and embedded catalog limits when the host supplies no matching hint.
 - Preserve a host gateway's exact model alias, including `/`, and leave provider-specific request fields to that gateway's own translation layer.
+- Give UUID-namespaced MCP tools provider-safe function names that begin with a letter and fit the gateway's 64-character limit while preserving deterministic dispatch.
 
 ## Capabilities
 

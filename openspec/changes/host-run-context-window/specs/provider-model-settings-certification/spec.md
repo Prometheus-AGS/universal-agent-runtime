@@ -21,3 +21,10 @@ For a host-supplied OpenAI-compatible connection, the runtime SHALL send the sel
 #### Scenario: Slash-containing gateway alias
 - **WHEN** a host selects `custom/kimi` through provider `the-boss-gateway`
 - **THEN** UAR sends `custom/kimi` and retains that exact model for the run's context-window hint
+
+### Requirement: MCP function names remain executable through the gateway
+UAR SHALL derive a deterministic, collision-checked provider-visible function name from each MCP server and tool identity. A UUID server identity SHALL NOT leave the function name starting with a digit, and provider-visible names SHALL fit within 64 ASCII characters. Tool execution SHALL still resolve to the original server and tool identity.
+
+#### Scenario: Host bridge uses UUID MCP server IDs
+- **WHEN** a host exposes filesystem and memory tools under UUID server identities
+- **THEN** the OpenAI-compatible gateway receives legal function names and a returned function call resolves to its original MCP tool
