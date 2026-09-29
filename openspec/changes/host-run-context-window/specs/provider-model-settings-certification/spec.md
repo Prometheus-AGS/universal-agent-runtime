@@ -10,3 +10,14 @@ For a host-supplied run credential with a selected `default_model`, the runtime 
 #### Scenario: Another model is selected
 - **WHEN** the run selects a different provider or model than the credential's `default_model`
 - **THEN** the credential's context-window hint does not affect that run's context sizing
+
+### Requirement: Host gateways own provider-specific request translation
+For a host-supplied OpenAI-compatible connection, the runtime SHALL send the selected model alias unchanged and SHALL NOT add model-dialect-specific fields to the request body. A slash within a gateway alias SHALL NOT be treated as a UAR provider separator unless it matches the selected credential's exact provider prefix.
+
+#### Scenario: liter-llm Kimi alias
+- **WHEN** a host selects `kimi-for-coding` through its liter-llm gateway
+- **THEN** the gateway receives that alias without UAR's Kimi-specific `thinking` field
+
+#### Scenario: Slash-containing gateway alias
+- **WHEN** a host selects `custom/kimi` through provider `the-boss-gateway`
+- **THEN** UAR sends `custom/kimi` and retains that exact model for the run's context-window hint

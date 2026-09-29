@@ -7,6 +7,7 @@ The Boss can route a UAR run through a live liter-llm alias absent from UAR's em
 - Accept an optional, bounded context window in an existing host run credential.
 - Apply the hint only when the selected provider and model exactly match that credential's `default_model`.
 - Preserve configured and embedded catalog limits when the host supplies no matching hint.
+- Preserve a host gateway's exact model alias, including `/`, and leave provider-specific request fields to that gateway's own translation layer.
 
 ## Capabilities
 
@@ -16,4 +17,4 @@ The Boss can route a UAR run through a live liter-llm alias absent from UAR's em
 
 ## Impact
 
-`RunCredentialInput` decoding and run context sizing change additively. No new storage, endpoint, or credential exposure is introduced.
+`RunCredentialInput` decoding, run context sizing, and the outbound request for host-supplied OpenAI-compatible connections change. No new storage, endpoint, or credential exposure is introduced.

@@ -102,7 +102,7 @@ impl RunCredentials {
             if input
                 .default_model
                 .as_deref()
-                .is_some_and(|model| model.trim().is_empty() || model.contains('/'))
+                .is_some_and(|model| model.trim().is_empty())
             {
                 return Err(HostInputError::new(
                     "run_credential_invalid",
@@ -185,11 +185,11 @@ impl RunCredentials {
                     "selected provider requires a model",
                 )
             })?;
-        let model = model
-            .rsplit_once('/')
-            .map_or(model.as_str(), |(_, model)| model)
+        let qualified_prefix = format!("{provider_id}/");
+        base.model = model
+            .strip_prefix(&qualified_prefix)
+            .unwrap_or(&model)
             .to_owned();
-        base.model = model;
         base.resolved_provider_id = Some(credential.provider_id.clone());
         base.host_provider_kind = Some(credential.provider_kind.protocol().to_owned());
         base.host_supplied_connection = true;
