@@ -12,5 +12,6 @@ pub mod prompt_caching;
 pub mod runs;
 pub mod skills;
 pub mod team_mailbox;
+pub mod team_execution;
 pub mod team_planning;
 pub mod tools;

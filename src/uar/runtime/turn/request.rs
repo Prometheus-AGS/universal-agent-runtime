@@ -12,26 +12,39 @@ pub struct CollaborationRunBinding {
     pub owner_id: String,
     pub workspace_id: String,
     pub receipt: EffectiveBindingReceipt,
+    pub(crate) team_attempt: Option<crate::uar::domain::team_execution::TeamExecutionAttempt>,
     service: std::sync::Arc<crate::uar::compiler::collaboration::CollaborationCatalogService>,
 }
 
 impl CollaborationRunBinding {
     pub async fn revalidate(&self, artifact: &AgentArtifact) -> anyhow::Result<()> {
         super::bindings::validate_effective_binding_artifact(&self.receipt, artifact)?;
-        self.service
-            .revalidate_effective_binding(&self.owner_id, &self.workspace_id, &self.receipt)
-            .await
-            .map_err(anyhow::Error::from)
+        self.revalidate_authority().await
+    }
+
+    async fn revalidate_authority(&self) -> anyhow::Result<()> {
+        match &self.team_attempt {
+            Some(attempt) => {
+                crate::uar::runtime::team_execution::revalidate_member_binding(
+                    &self.service,
+                    attempt,
+                    &self.receipt,
+                )
+                .await
+            }
+            None => self
+                .service
+                .revalidate_effective_binding(&self.owner_id, &self.workspace_id, &self.receipt)
+                .await
+                .map_err(anyhow::Error::from),
+        }
     }
 }
 
 #[async_trait::async_trait]
 impl crate::uar::runtime::tool_admission::ClaimRevalidator for CollaborationRunBinding {
     async fn revalidate(&self) -> anyhow::Result<()> {
-        self.service
-            .revalidate_effective_binding(&self.owner_id, &self.workspace_id, &self.receipt)
-            .await
-            .map_err(anyhow::Error::from)
+        self.revalidate_authority().await
     }
 }
 
@@ -193,6 +206,7 @@ impl RunExecutionRequest {
             owner_id,
             workspace_id,
             receipt: bound.effective_binding_receipt,
+            team_attempt: None,
             service,
         };
         let mut request = Self::new(artifact, input);
@@ -210,6 +224,16 @@ impl RunExecutionRequest {
         request.collaboration_binding = Some(collaboration_binding);
         request.service_binding = service_binding;
         request
+    }
+
+    pub(crate) fn with_team_attempt(
+        mut self,
+        attempt: crate::uar::domain::team_execution::TeamExecutionAttempt,
+    ) -> Self {
+        if let Some(binding) = &mut self.collaboration_binding {
+            binding.team_attempt = Some(attempt);
+        }
+        self
     }
 
     /// Retain the identity verified by the ingress host, without decoding a

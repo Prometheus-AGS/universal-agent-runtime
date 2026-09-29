@@ -42,6 +42,8 @@ impl CollaborationCatalogService {
                     purpose: required_text(&record.document, "purpose")?.to_owned(),
                     package: record.package,
                     members,
+                    budget: record.document["budget"].clone(),
+                    limits: record.document["limits"].clone(),
                 })
             })
             .collect()

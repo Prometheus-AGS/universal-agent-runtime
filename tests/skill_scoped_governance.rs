@@ -107,6 +107,7 @@ fn local_provider() -> ProviderConfig {
         protocol: ProtocolSetting::Auto,
         default_model: Some("b4-test-model".to_string()),
         models: vec![ModelConfig {
+            pricing_identity: None,
             id: "b4-test-model".to_string(),
             display_name: Some("B4 test model".to_string()),
             context_window: Some(8_192),

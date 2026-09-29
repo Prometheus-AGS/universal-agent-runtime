@@ -25,7 +25,7 @@ pub const AGUI_PROFILE_REVISION: u32 = 1;
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.
-pub const CAPABILITY_VOCABULARY: [&str; 21] = [
+pub const CAPABILITY_VOCABULARY: [&str; 22] = [
     "agui_stream_fidelity",
     "approval_lifecycle_v1",
     "collaboration_definition_packages_v1",
@@ -35,6 +35,7 @@ pub const CAPABILITY_VOCABULARY: [&str; 21] = [
     "collaboration_conversion_reports_v1",
     "collaboration_representation_grant_refs_v1",
     "collaboration_team_planning_v1",
+    "collaboration_team_execution_v1",
     "durable_agent_instances_v1",
     "full_harness_delegation_v1",
     "host_history",
@@ -119,6 +120,7 @@ pub struct CollaborationActivationLimits {
     pub task_ownership: bool,
     pub team_mailbox: bool,
     pub team_instance: bool,
+    pub team_execution: bool,
     pub workflow: bool,
     pub human_representation: bool,
 }
@@ -167,6 +169,7 @@ pub fn collaboration_capabilities() -> CollaborationCapabilities {
             task_ownership: true,
             team_mailbox: true,
             team_instance: false,
+            team_execution: false,
             workflow: false,
             human_representation: false,
         },

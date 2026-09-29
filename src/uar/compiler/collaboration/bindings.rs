@@ -395,7 +395,7 @@ async fn validate_binding(
     Ok((preflight, receipt))
 }
 
-fn resolve_service_binding(
+pub(super) fn resolve_service_binding(
     authority: Option<&crate::uar::service_instance::ServiceInstanceAuthority>,
     binding: &Value,
     diagnostics: &mut Vec<FieldDiagnostic>,
@@ -530,7 +530,7 @@ fn bound_team_definition<'a>(
     Ok(Some(teams[0]))
 }
 
-async fn resolve_skills(
+pub(super) async fn resolve_skills(
     skill_service: Option<&crate::uar::runtime::skills::SkillService>,
     binding: &Value,
     definition: &CollaborationDefinitionRecord,
@@ -674,7 +674,7 @@ fn binding_diagnostic(pointer: String, skill: &SkillRef, reason: &str) -> FieldD
     }
 }
 
-fn resolve_models(
+pub(super) fn resolve_models(
     binding: &Value,
     definition: &CollaborationDefinitionRecord,
     diagnostics: &mut Vec<FieldDiagnostic>,
@@ -734,7 +734,7 @@ fn resolve_models(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn effective_receipt(
+pub(super) fn effective_receipt(
     binding: &Value,
     package: ImmutableDefinitionRef,
     definition: &CollaborationDefinitionRecord,

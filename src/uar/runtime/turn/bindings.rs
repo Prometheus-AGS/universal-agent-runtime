@@ -48,6 +48,8 @@ pub(crate) fn validate_effective_binding_artifact(
 /// Host-only child inputs. The manager must not resolve replacements from its
 /// global registries when any inherited binding is unavailable.
 pub(crate) struct InheritedRunBindings {
+    pub(crate) collaboration_binding: Option<super::CollaborationRunBinding>,
+    pub(crate) instance_binding: Option<crate::uar::runtime::instance::InstanceEpochBinding>,
     pub(crate) policy: Arc<ThreadPolicy>,
     pub(crate) presentations: Arc<super::super::presentations::RunPresentationSnapshot>,
     pub(crate) thread: crate::uar::runtime::thread::AgentThread,
@@ -65,6 +67,8 @@ pub(crate) struct InheritedRunBindings {
 /// Executable resources retained by one live root, not recipes for rebuilding
 /// clients. The run index holds only a weak reference to this capture.
 pub(crate) struct RunDelegationBindings {
+    pub(crate) collaboration_binding: Option<super::CollaborationRunBinding>,
+    pub(crate) instance_binding: Option<crate::uar::runtime::instance::InstanceEpochBinding>,
     pub(crate) owner: crate::uar::runtime::actor::messages::ActorOwner,
     pub(crate) run_id: String,
     pub(crate) artifact: crate::uar::domain::artifact::AgentArtifact,
@@ -151,6 +155,7 @@ impl RunSkillBindings {
 #[derive(Clone)]
 struct BoundModel {
     model: String,
+    pricing_model: String,
     grant: CredentialGrant,
     driver: Arc<dyn LlmDriver>,
 }
@@ -159,6 +164,7 @@ impl BoundModel {
     fn capture(model: String, driver: Arc<dyn LlmDriver>) -> Self {
         let (provider, _) = crate::llm::registry::split_model_string_pub(&model);
         Self {
+            pricing_model: model.clone(),
             model,
             driver,
             grant: CredentialGrant {
@@ -208,7 +214,10 @@ impl RunModelBindings {
             .as_deref()
             .unwrap_or(&model_provider);
         let primary_model = format!("{provider}/{model}");
-        let primary = BoundModel::capture(primary_model.clone(), primary);
+        let mut primary = BoundModel::capture(primary_model.clone(), primary);
+        if let Some(pricing_model) = &config.catalog_pricing_model {
+            primary.pricing_model.clone_from(pricing_model);
+        }
         let mut fallbacks = Vec::new();
         if failover.enabled {
             for fallback in &failover.fallback_models {
@@ -259,8 +268,10 @@ impl RunModelBindings {
     }
 
     pub(crate) fn primary(&self) -> Arc<dyn LlmDriver> {
-        self.budget
-            .bind(self.primary.model.clone(), Arc::clone(&self.primary.driver))
+        self.budget.bind(
+            self.primary.pricing_model.clone(),
+            Arc::clone(&self.primary.driver),
+        )
     }
 
     pub(crate) fn config(&self) -> &LlmConfig {
@@ -311,6 +322,11 @@ impl RunModelBindings {
                     anyhow::anyhow!("Child model has no inherited credential binding")
                 })?;
             Ok(BoundModel {
+                pricing_model: if binding.model == qualified {
+                    binding.pricing_model.clone()
+                } else {
+                    qualified.clone()
+                },
                 driver: if binding.model == qualified {
                     Arc::clone(&binding.driver)
                 } else {
@@ -378,8 +394,10 @@ impl RunModelBindings {
                         .map(|binding| {
                             (
                                 binding.model.clone(),
-                                self.budget
-                                    .bind(binding.model.clone(), Arc::clone(&binding.driver)),
+                                self.budget.bind(
+                                    binding.pricing_model.clone(),
+                                    Arc::clone(&binding.driver),
+                                ),
                             )
                         })
                         .collect(),

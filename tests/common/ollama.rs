@@ -102,6 +102,7 @@ pub fn provider() -> ProviderConfig {
         protocol: ProtocolSetting::Auto,
         default_model: Some(m.clone()),
         models: vec![ModelConfig {
+            pricing_identity: None,
             id: m.clone(),
             display_name: Some(m),
             context_window: Some(8_192),

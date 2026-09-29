@@ -856,6 +856,12 @@ pub fn administration_capabilities(
                         Owner,
                         Live
                     ),
+                    endpoint!("team-instances.tasks.admit", "POST", "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}/admit", Owner, Live),
+                    endpoint!("team-instances.execution", "GET", "/api/v1/collaboration/team-instances/{id}/execution", Owner, Read),
+                    endpoint!("team-instances.attempts.cancel", "POST", "/api/v1/collaboration/team-instances/{id}/attempts/{attemptId}/cancel", Owner, Live),
+                    endpoint!("team-instances.recover", "POST", "/api/v1/collaboration/team-instances/{id}/recover", Owner, Live),
+                    endpoint!("team-instances.members.revoke", "POST", "/api/v1/collaboration/team-instances/{id}/members/{memberId}/revoke", Owner, Live),
+                    endpoint!("team-instances.artifacts", "GET", "/api/v1/collaboration/team-instances/{id}/artifacts", Owner, Read),
                 ],
             ),
             surface(

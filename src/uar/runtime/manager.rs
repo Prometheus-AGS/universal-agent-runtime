@@ -569,6 +569,7 @@ fn apply_routed_connection(mut base: LlmConfig, routed: LlmConfig) -> LlmConfig 
     let provider_changed = provider_id_for_config(&base) != provider_id_for_config(&routed);
     base.model = routed.model;
     base.resolved_provider_id = routed.resolved_provider_id;
+    base.catalog_pricing_model = routed.catalog_pricing_model;
     if provider_changed {
         base.api_key = routed.api_key;
         base.api_key_env = None;
@@ -2859,6 +2860,16 @@ impl RunManager {
             host_usage_grant,
             host_sandbox_constraint,
         } = request;
+        let collaboration_binding = collaboration_binding.or_else(|| {
+            inherited
+                .as_ref()
+                .and_then(|bindings| bindings.collaboration_binding.clone())
+        });
+        let instance_binding = instance_binding.or_else(|| {
+            inherited
+                .as_ref()
+                .and_then(|bindings| bindings.instance_binding.clone())
+        });
         let is_checkpoint_resume = checkpoint_resume.is_some();
         let (restored_state, checkpoint_history, checkpoint_authorization_digest) =
             match checkpoint_resume {
@@ -4353,6 +4364,9 @@ impl RunManager {
                 let mut config = preferred_llm_config;
                 if let Some((skill_id, model)) = skill_preferred_model {
                     tracing::info!(skill_id, model, "Skill overrides LLM model");
+                    if config.model != model {
+                        config.catalog_pricing_model = None;
+                    }
                     config.model = model.to_string();
                 }
                 config
@@ -4519,6 +4533,8 @@ impl RunManager {
         let delegation_lifetime = crate::uar::runtime::turn::bindings::RunDelegationLifetime(
             verified_owner.clone().filter(|_| !child_run).map(|owner| {
                 Arc::new(crate::uar::runtime::turn::bindings::RunDelegationBindings {
+                    collaboration_binding: collaboration_binding.clone(),
+                    instance_binding: instance_binding.clone(),
                     owner,
                     run_id: run_id.clone(),
                     policy: effective_policy.clone(),

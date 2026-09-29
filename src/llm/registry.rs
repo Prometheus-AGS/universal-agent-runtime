@@ -78,6 +78,10 @@ pub enum ProtocolSetting {
 pub struct ModelConfig {
     /// Model identifier (e.g., "gpt-4o", "llama-3.3-70b-versatile").
     pub id: String,
+    /// Operator-controlled catalog identity for a gateway alias's variable usage price.
+    /// Routing still uses this model's id and its configured provider endpoint.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pricing_identity: Option<ModelPricingIdentity>,
     /// Human-friendly display name.
     #[serde(default)]
     pub display_name: Option<String>,
@@ -105,6 +109,45 @@ pub struct ModelConfig {
     /// Whether UAR may route runs to this model.
     #[serde(default = "default_enabled")]
     pub enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct ModelPricingIdentity {
+    pub provider_id: String,
+    pub model_id: String,
+}
+
+impl ModelPricingIdentity {
+    pub(crate) fn qualified_model(&self) -> anyhow::Result<String> {
+        let price = ModelCatalog::global()
+            .model(&self.provider_id, &self.model_id)
+            .and_then(|model| model.cost.as_ref())
+            .ok_or_else(|| anyhow::anyhow!("Gateway pricing identity has no catalog price"))?;
+        anyhow::ensure!(
+            [
+                Some(price.input),
+                Some(price.output),
+                price.cache_read,
+                price.cache_write
+            ]
+            .into_iter()
+            .flatten()
+            .all(|rate| rate.is_finite() && rate >= 0.0),
+            "Gateway catalog price is invalid"
+        );
+        Ok(format!("{}/{}", self.provider_id, self.model_id))
+    }
+}
+
+fn validate_pricing_identities(config: &ProviderConfig) -> anyhow::Result<()> {
+    for identity in config
+        .models
+        .iter()
+        .filter_map(|model| model.pricing_identity.as_ref())
+    {
+        identity.qualified_model()?;
+    }
+    Ok(())
 }
 
 fn default_supports_tools() -> bool {
@@ -171,6 +214,7 @@ impl ProviderRegistry {
                 .iter()
                 .find(|m| m.id == model_id)
                 .map(|m| ModelConfig {
+                    pricing_identity: None,
                     id: m.id.clone(),
                     display_name: if m.name.is_empty() {
                         None
@@ -200,6 +244,7 @@ impl ProviderRegistry {
         } else {
             // Model not in catalog (custom/local) — store a minimal entry.
             vec![ModelConfig {
+                pricing_identity: None,
                 id: model_id.clone(),
                 display_name: None,
                 context_window: None,
@@ -287,6 +332,7 @@ impl ProviderRegistry {
 
     /// Register a new provider (internal / seeding use).
     pub async fn register(&self, config: ProviderConfig) -> anyhow::Result<()> {
+        validate_pricing_identities(&config)?;
         let mut providers = self.providers.write().await;
         tracing::info!(provider_id = %config.id, "Registering provider");
         providers.insert(config.id.clone(), config);
@@ -309,6 +355,7 @@ impl ProviderRegistry {
         }
 
         enrich_provider_config(&mut config);
+        validate_pricing_identities(&config)?;
 
         let mut providers = self.providers.write().await;
 
@@ -379,6 +426,7 @@ impl ProviderRegistry {
 
     /// Update an existing provider.
     pub async fn update(&self, config: ProviderConfig) -> anyhow::Result<()> {
+        validate_pricing_identities(&config)?;
         let mut providers = self.providers.write().await;
         if !providers.contains_key(&config.id) {
             anyhow::bail!("Provider '{}' not found", config.id);
@@ -449,6 +497,16 @@ impl ProviderRegistry {
             return None;
         }
 
+        let pricing_model = match config
+            .models
+            .iter()
+            .find(|candidate| candidate.id == resolved_model)
+            .and_then(|candidate| candidate.pricing_identity.as_ref())
+        {
+            Some(identity) => Some(identity.qualified_model().ok()?),
+            None => None,
+        };
+
         // When base_url is explicitly set, the provider routing is already handled
         // and the API expects just the model ID (e.g., "gpt-4o" not "openai/gpt-4o").
         // Only use provider/model format when liter-llm needs to auto-detect the provider.
@@ -462,6 +520,7 @@ impl ProviderRegistry {
         Some(LlmConfig {
             model: model_for_driver,
             resolved_provider_id: Some(provider_id.to_string()),
+            catalog_pricing_model: pricing_model,
             api_key: config.api_key.clone(),
             base_url: if config.base_url.is_empty() {
                 None
@@ -603,6 +662,7 @@ fn models_from_catalog(provider: &ProviderInfo) -> Vec<ModelConfig> {
         .models
         .iter()
         .map(|m| ModelConfig {
+            pricing_identity: None,
             id: m.id.clone(),
             display_name: if m.name.is_empty() {
                 None
@@ -772,6 +832,7 @@ mod tests {
         let registry = ProviderRegistry::new();
         let mut config = make_test_config("openai", "https://api.openai.com");
         config.models = vec![ModelConfig {
+            pricing_identity: None,
             id: "test-model".to_string(),
             display_name: Some("Test model".to_string()),
             context_window: Some(8_192),

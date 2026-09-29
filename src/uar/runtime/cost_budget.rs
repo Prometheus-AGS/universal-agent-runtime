@@ -110,6 +110,9 @@ pub(crate) struct RemoteBudgetReservation {
 
 #[derive(Debug, Default)]
 struct RunUsage {
+    usage_reports: u64,
+    completed_usage_reports: u64,
+    unpriced_usage: bool,
     total_tokens: u64,
     cost_usd: f64,
     tool_calls: u64,
@@ -120,6 +123,9 @@ struct RunUsage {
 
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct RunUsageSnapshot {
+    pub(crate) usage_reports: u64,
+    pub(crate) completed_usage_reports: u64,
+    pub(crate) unpriced_usage: bool,
     pub(crate) total_tokens: u64,
     pub(crate) cost_usd: f64,
     pub(crate) model_requests: u64,
@@ -177,6 +183,9 @@ impl CostBudgetTracker {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         let activity = inner.runs.get(run_id);
         RunUsageSnapshot {
+            usage_reports: activity.map_or(0, |usage| usage.usage_reports),
+            completed_usage_reports: activity.map_or(0, |usage| usage.completed_usage_reports),
+            unpriced_usage: activity.is_some_and(|usage| usage.unpriced_usage),
             total_tokens: activity.map_or(0, |usage| usage.total_tokens),
             cost_usd: activity.map_or(0.0, |usage| usage.cost_usd),
             model_requests: activity.map_or(0, |usage| usage.total_requests),
@@ -403,6 +412,29 @@ impl CostBudgetTracker {
         if let Some(remote) = remote {
             let usage = inner.runs.entry(remote.accounting_id.clone()).or_default();
             usage.tool_calls = usage.tool_calls.saturating_add(1);
+        }
+        Ok(())
+    }
+
+    fn record_usage_report(
+        &self,
+        usage_id: &str,
+        remote: Option<&RemoteUsageGrantBinding>,
+        priced: bool,
+        completed: bool,
+    ) -> anyhow::Result<()> {
+        let mut inner = self
+            .inner
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?;
+        for id in std::iter::once(usage_id).chain(remote.map(|remote| remote.accounting_id.as_str())) {
+            let usage = inner.runs.entry(id.to_owned()).or_default();
+            if completed {
+                usage.completed_usage_reports = usage.completed_usage_reports.saturating_add(1);
+            } else {
+                usage.usage_reports = usage.usage_reports.saturating_add(1);
+            }
+            usage.unpriced_usage |= !priced;
         }
         Ok(())
     }
@@ -1072,6 +1104,9 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
         Ok(Box::pin(async_stream::stream! {
             let mut charged = 0.0_f64;
             let mut charged_tokens = 0_u64;
+            let mut reported_usage = false;
+            let mut confirmed_usage = false;
+            let mut stream_failed = false;
             loop {
                 let next = tokio::select! {
                     biased;
@@ -1085,15 +1120,29 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
                     }
                     next = stream.next() => next,
                 };
-                let Some(event) = next else { break };
+                let Some(event) = next else {
+                    if reported_usage && !confirmed_usage && !stream_failed {
+                        if let Err(error) = budget.tracker.record_usage_report(&budget.usage_id, budget.remote.as_ref(), true, true) { yield Err(error); }
+                    }
+                    break;
+                };
+                stream_failed |= event.is_err() || matches!(&event, Ok(crate::normalized::NormalizedEvent::Error { .. }));
                 if let Ok(crate::normalized::NormalizedEvent::Usage {
                     prompt_tokens, completion_tokens, cached_tokens, cache_creation_tokens, ..
                 }) = &event {
-                    let cost = crate::llm::catalog::estimate_cost_with_cache_write(
+                    let price = crate::llm::catalog::estimate_cost_with_cache_write(
                         &model, u64::from(*prompt_tokens), u64::from(*completion_tokens),
                         u64::from(cached_tokens.unwrap_or(0)),
                         u64::from(cache_creation_tokens.unwrap_or(0)),
-                    ).unwrap_or(charged);
+                    );
+                    if !reported_usage {
+                        if let Err(error) = budget.tracker.record_usage_report(&budget.usage_id, budget.remote.as_ref(), price.is_some(), false) {
+                            yield Err(error);
+                            break;
+                        }
+                        reported_usage = true;
+                    }
+                    let cost = price.unwrap_or(charged);
                     // Replace this request's cumulative estimate, not add it
                     // again. Later cache counts may reduce that estimate.
                     let delta = cost - charged;
@@ -1112,6 +1161,12 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
                     }
                     charged = cost;
                     charged_tokens = charged_tokens.max(tokens);
+                }
+                // A partial cumulative report followed by cancellation is not
+                // a terminal provider counter and cannot release a reservation.
+                if matches!(&event, Ok(crate::normalized::NormalizedEvent::Done)) && reported_usage && !confirmed_usage && !stream_failed {
+                    if let Err(error) = budget.tracker.record_usage_report(&budget.usage_id, budget.remote.as_ref(), true, true) { yield Err(error); break; }
+                    confirmed_usage = true;
                 }
                 yield event;
             }

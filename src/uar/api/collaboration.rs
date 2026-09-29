@@ -2,6 +2,8 @@
 
 mod team_mailbox;
 mod team_planning;
+mod team_execution;
+mod team_scope;
 
 use std::sync::Arc;
 
@@ -25,6 +27,7 @@ use crate::uar::security::claims::UserContext;
 pub struct CollaborationApiState {
     pub service: Arc<CollaborationCatalogService>,
     pub service_instance: Arc<crate::uar::service_instance::ServiceInstanceAuthority>,
+    pub runtime: Arc<crate::uar::runtime::team_execution::TeamExecutionRuntime>,
 }
 
 #[derive(Serialize)]
@@ -40,6 +43,8 @@ pub fn build_router() -> Router<Arc<CollaborationApiState>> {
     Router::new()
         .merge(team_planning::build_router())
         .merge(team_mailbox::build_router())
+        .merge(team_execution::build_router())
+        .merge(team_scope::build_router())
         .route("/capabilities", get(collaboration_capabilities))
         .route("/packages:preflight", post(preflight_package))
         .route("/packages:install", post(install_package))
@@ -86,7 +91,13 @@ async fn collaboration_capabilities(
         Ok(owner) => owner,
         Err(response) => return response,
     };
-    let runtime = super::capabilities::capabilities_response(&state.service_instance);
+    let mut runtime = super::capabilities::capabilities_response(&state.service_instance);
+    runtime.collaboration.activation.team_instance = state.runtime.available();
+    runtime.collaboration.activation.team_execution = state.runtime.available();
+    if state.runtime.available() {
+        runtime.capabilities.push("collaboration_team_execution_v1".into());
+        runtime.capabilities.sort();
+    }
     Json(CollaborationCapabilitiesResponse {
         runtime,
         binding_owner_id,

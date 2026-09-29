@@ -12,6 +12,7 @@ use serde_json::Value;
 use super::artifact::AgentArtifact;
 use super::team_mailbox::{TeamInboxMessage, TeamMailboxCommandReceipt};
 use super::team_planning::{TeamInstance, TeamPlanningCommandReceipt};
+use super::team_execution::{TeamArtifact, TeamExecutionAttempt, TeamExecutionCommandReceipt};
 
 pub const COLLABORATION_PROFILE_DRAFT_1: &str = "urn:prometheus:uar:collaboration:0.1.0-draft.1";
 pub const COLLABORATION_PROFILE_DRAFT_2: &str = "urn:prometheus:uar:collaboration:0.1.0-draft.2";
@@ -426,6 +427,12 @@ pub struct CollaborationCommandReceipt {
 #[serde(rename_all = "camelCase")]
 pub struct CollaborationCatalogState {
     pub generation: u64,
+    #[serde(default)]
+    pub team_execution_attempts: BTreeMap<String, TeamExecutionAttempt>,
+    #[serde(default)]
+    pub team_execution_command_receipts: BTreeMap<String, TeamExecutionCommandReceipt>,
+    #[serde(default)]
+    pub team_artifacts: BTreeMap<String, TeamArtifact>,
     pub catalog_revision: u64,
     pub definitions: BTreeMap<String, CollaborationDefinitionRecord>,
     pub packages: BTreeMap<String, CollaborationPackageRecord>,

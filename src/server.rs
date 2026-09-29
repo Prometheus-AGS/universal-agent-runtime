@@ -1365,6 +1365,18 @@ async fn run_server_with_listener(
     );
     info!("Collaboration package catalog initialized");
 
+    let team_execution_available = persistence_layer.supports_durable_agent_instances()
+        || (matches!(config.persistence.provider.as_str(), "surreal" | "surrealdb")
+            && ["ws://", "wss://", "http://", "https://"]
+                .iter()
+                .any(|scheme| config.persistence.database_url.starts_with(scheme)));
+    let team_execution_runtime = uar::runtime::team_execution::TeamExecutionRuntime::new(
+        Arc::clone(&collaboration_catalog),
+        Arc::clone(&run_manager),
+        Arc::clone(&persistence_layer),
+        team_execution_available,
+    );
+
     let agent_instance_controller = uar::runtime::instance::AgentInstanceController::new(
         Arc::clone(&run_manager),
         Arc::clone(&actor_system),
@@ -1685,6 +1697,7 @@ async fn run_server_with_listener(
                 uar::api::collaboration::CollaborationApiState {
                     service: Arc::clone(&collaboration_catalog),
                     service_instance: Arc::clone(&service_instance),
+                    runtime: Arc::clone(&team_execution_runtime),
                 },
             )),
         )
@@ -2101,6 +2114,7 @@ async fn run_server_with_listener(
         .map(|pool| Arc::new(move || pool.shutdown()) as Arc<dyn Fn() + Send + Sync + 'static>);
     let async_resource_cleanup = {
         let actor_system = Arc::clone(&actor_system);
+        let team_execution_runtime = Arc::clone(&team_execution_runtime);
         let sandbox_manager = Arc::clone(&sandbox_manager);
         let mcp = Arc::clone(&mcp);
         let projected_mcp_runtime = projected_mcp_runtime.clone();
@@ -2108,12 +2122,17 @@ async fn run_server_with_listener(
         let shutdown_coordinator = shutdown_coordinator.clone();
         Arc::new(move || {
             let actor_system = Arc::clone(&actor_system);
+            let team_execution_runtime = Arc::clone(&team_execution_runtime);
             let sandbox_manager = Arc::clone(&sandbox_manager);
             let mcp = Arc::clone(&mcp);
             let projected_mcp_runtime = projected_mcp_runtime.clone();
             let surreal_live_bus = surreal_live_bus.clone();
             let shutdown_coordinator = shutdown_coordinator.clone();
             Box::pin(async move {
+                if let Err(error) = team_execution_runtime.shutdown().await {
+                    shutdown_coordinator.record_cleanup_failure(&error);
+                    tracing::error!(%error, "Team execution shutdown retains unconfirmed work");
+                }
                 // Mailboxes retain kernel completion and durable thread writes.
                 // Join them before closing their shared transport dependencies.
                 if let Err(error) = actor_system.shutdown_all().await {

@@ -26,6 +26,8 @@ pub struct TeamDefinitionSummary {
     pub purpose: String,
     pub package: ImmutableDefinitionRef,
     pub members: Vec<TeamMemberSpec>,
+    pub budget: Value,
+    pub limits: Value,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
