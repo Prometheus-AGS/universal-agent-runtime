@@ -3636,6 +3636,16 @@ impl RunManager {
                     .as_ref()
                     .map(|resources| resources.environment().directory().to_path_buf())
             });
+        // A team attempt's context is its explicitly selected task/artifacts.
+        // This applies to its delegated children as well as its fresh root.
+        let project_instructions_config = if collaboration_binding
+            .as_ref()
+            .is_some_and(|binding| binding.team_attempt.is_some())
+        {
+            crate::uar::runtime::project_instructions::ProjectInstructionsConfig::default()
+        } else {
+            self.project_instructions_config.clone()
+        };
         let world_state = match working_directory
             .map(Ok)
             .unwrap_or_else(std::env::current_dir)
@@ -3643,7 +3653,7 @@ impl RunManager {
                 crate::uar::runtime::world_state::runtime::WorldStateRuntime::new(
                     session.clone(),
                     cwd,
-                    self.project_instructions_config.clone(),
+                    project_instructions_config,
                     self.world_state_config,
                     effective_policy.clone(),
                     Arc::clone(&self.world_state_clock),

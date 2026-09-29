@@ -229,11 +229,19 @@ impl RunExecutionRequest {
     pub(crate) fn with_team_attempt(
         mut self,
         attempt: crate::uar::domain::team_execution::TeamExecutionAttempt,
-    ) -> Self {
-        if let Some(binding) = &mut self.collaboration_binding {
-            binding.team_attempt = Some(attempt);
-        }
-        self
+    ) -> anyhow::Result<Self> {
+        let binding = self
+            .collaboration_binding
+            .as_mut()
+            .ok_or_else(|| anyhow::anyhow!("Team attempt has no bound member receipt"))?;
+        let policy = binding
+            .receipt
+            .effective
+            .get("teamRunPolicy")
+            .ok_or_else(|| anyhow::anyhow!("Team member receipt has no resource policy"))?;
+        self.host_policy_constraint = Some(serde_json::from_value(policy.clone())?);
+        binding.team_attempt = Some(attempt);
+        Ok(self)
     }
 
     /// Retain the identity verified by the ingress host, without decoding a

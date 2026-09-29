@@ -195,17 +195,8 @@ impl TeamExecutionRuntime {
             Arc::clone(&self.catalog),
         )
         .with_verified_owner(owner.clone())
-        .with_team_attempt(attempt.clone());
+        .with_team_attempt(attempt.clone())?;
         request.session_id = Some(format!("team-attempt:{}", attempt.id));
-        // The admission contract selects artifacts explicitly and grants no
-        // ambient knowledge-base retrieval or private conversation history.
-        let constraint = request
-            .host_policy_constraint
-            .get_or_insert_with(Default::default);
-        constraint.knowledge_bases = crate::uar::domain::policy::ResourceSelection {
-            mode: crate::uar::domain::policy::SelectionMode::None,
-            ..Default::default()
-        };
         request.host_budget_constraint = Some(ThreadBudgets {
             max_tokens_per_turn: Some(attempt.reservation.tokens),
             max_tokens_per_session: Some(attempt.reservation.tokens),

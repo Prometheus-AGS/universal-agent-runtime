@@ -6,6 +6,7 @@ use super::super::{
 };
 use crate::uar::domain::{
     collaboration::{CollaborationKind, ConversionDisposition},
+    policy::{ResourceSelection, RunPolicy, SelectionMode},
     team_execution::TeamExecutionAttempt,
 };
 
@@ -82,7 +83,7 @@ impl CollaborationCatalogService {
                 }
             }
         }
-        let effective = runtime_semantics::resolve_runtime_semantics(
+        let mut effective = runtime_semantics::resolve_runtime_semantics(
             definition,
             &models,
             self.provider_registry.as_deref(),
@@ -108,6 +109,55 @@ impl CollaborationCatalogService {
                 "Member resources cannot be executed by the current runtime".into(),
             ));
         }
+        // Team attempts admit the immutable member's resources, rather than
+        // inheriting the host's complete skill/tool/context inventory.
+        let selected = |ids: Vec<String>| {
+            if ids.is_empty() {
+                ResourceSelection {
+                    mode: SelectionMode::None,
+                    ..Default::default()
+                }
+            } else {
+                ResourceSelection::selected(ids)
+            }
+        };
+        let skill_ids = skills.iter().map(|skill| skill.skill.id.clone()).collect();
+        let mut tool_ids = skills
+            .iter()
+            .flat_map(|skill| skill.skill.required_tools.iter().cloned())
+            .collect::<Vec<_>>();
+        // These factories remain bound to the ordinary host's control policy.
+        tool_ids.extend(
+            crate::uar::runtime::thread::control::AGENT_TOOL_NAMES
+                .into_iter()
+                .map(str::to_owned),
+        );
+        tool_ids.push("activate_skill".into());
+        tool_ids.push(crate::uar::runtime::native_skills::search_tools::SEARCH_TOOLS_NAME.into());
+        let installed = match self.skill_service.as_deref() {
+            Some(service) => service.get_skills().await,
+            None => Vec::new(),
+        };
+        let server_ids = installed
+            .iter()
+            .filter(|installed| skills.iter().any(|skill| skill.skill.id == installed.skill_id))
+            .filter_map(|skill| skill.mcp_config.as_ref())
+            .flat_map(|config| config.mcp_servers.keys().cloned())
+            .collect();
+        let team_policy = RunPolicy {
+            skills: selected(skill_ids),
+            tools: selected(tool_ids),
+            mcp_servers: selected(server_ids),
+            knowledge_bases: selected(Vec::new()),
+            presentations: selected(Vec::new()),
+            memory_enabled: Some(false),
+            context_strategy: effective
+                .get("contextStrategy")
+                .cloned()
+                .and_then(|value| serde_json::from_value(value).ok()),
+            ..Default::default()
+        };
+        effective["teamRunPolicy"] = serde_json::to_value(team_policy)?;
         let receipt = bindings::effective_receipt(
             &binding.document,
             binding.package.clone(),
