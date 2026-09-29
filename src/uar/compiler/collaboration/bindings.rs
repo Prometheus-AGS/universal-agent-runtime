@@ -306,19 +306,32 @@ async fn validate_binding(
         )));
     }
     if let Some(team_definition) = bound_team_definition(state, &package)? {
-        let mut diagnostics = vec![FieldDiagnostic {
-            pointer: "/package/entrypoints".to_owned(),
-            disposition: ConversionDisposition::RequiredUnsupported,
-            reason_code: "team.execution-not-implemented".to_owned(),
-            message:
-                "The team can be planned, but team execution is not available in this runtime."
-                    .to_owned(),
-            effective_binding_ref: None,
-        }];
+        let mut diagnostics = Vec::new();
+        let execution_available = service_instance.is_some_and(|authority| {
+            authority
+                .descriptor()
+                .capabilities
+                .iter()
+                .any(|capability| capability == "collaboration_team_execution_v1")
+        });
+        if !execution_available {
+            diagnostics.push(FieldDiagnostic {
+                pointer: "/package/entrypoints".to_owned(),
+                disposition: ConversionDisposition::RequiredUnsupported,
+                reason_code: "team.execution-unavailable".to_owned(),
+                message:
+                    "The team can be planned, but durable team execution is unavailable in this runtime."
+                        .to_owned(),
+                effective_binding_ref: None,
+            });
+        }
         let service_binding =
             resolve_service_binding(service_instance, document, &mut diagnostics)?;
         let representation_grants =
             super::grants::validate_binding_grants(owner_id, workspace_id, document, state)?;
+        let activation_supported = !diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.disposition == ConversionDisposition::RequiredUnsupported);
         let preflight = BindingPreflightResponse {
             binding_id: required_string(document, "id")?.to_owned(),
             package: package.clone(),
@@ -330,7 +343,7 @@ async fn validate_binding(
                     message: item.message.clone(),
                 })
                 .collect(),
-            activation_supported: false,
+            activation_supported,
             request_digest: request_digest(request).map_err(CollaborationError::from)?,
         };
         let receipt = effective_receipt(
@@ -341,9 +354,9 @@ async fn validate_binding(
             Vec::new(),
             representation_grants,
             service_binding,
-            json!({"teamPlanning": true}),
+            json!({"teamPlanning": true, "teamExecution": activation_supported}),
             diagnostics,
-            false,
+            activation_supported,
         )?;
         return Ok((preflight, receipt));
     }

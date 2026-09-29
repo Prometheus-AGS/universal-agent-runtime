@@ -91,13 +91,7 @@ async fn collaboration_capabilities(
         Ok(owner) => owner,
         Err(response) => return response,
     };
-    let mut runtime = super::capabilities::capabilities_response(&state.service_instance);
-    runtime.collaboration.activation.team_instance = state.runtime.available();
-    runtime.collaboration.activation.team_execution = state.runtime.available();
-    if state.runtime.available() {
-        runtime.capabilities.push("collaboration_team_execution_v1".into());
-        runtime.capabilities.sort();
-    }
+    let runtime = super::capabilities::capabilities_response(&state.service_instance);
     Json(CollaborationCapabilitiesResponse {
         runtime,
         binding_owner_id,

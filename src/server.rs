@@ -779,12 +779,20 @@ async fn run_server_with_listener(
         }
     };
     let persistence = Some(Arc::clone(&persistence_layer));
+    let team_execution_available = persistence_layer.supports_durable_agent_instances()
+        || (matches!(config.persistence.provider.as_str(), "surreal" | "surrealdb")
+            && ["ws://", "wss://", "http://", "https://"]
+                .iter()
+                .any(|scheme| config.persistence.database_url.starts_with(scheme)));
     let mut implemented_capabilities = uar::api::capabilities::IMPLEMENTED_CAPABILITIES.to_vec();
     if persistence_layer.supports_durable_agent_instances() {
         implemented_capabilities.push("durable_agent_instances_v1");
     }
     if persistence_layer.supports_durable_observers() {
         implemented_capabilities.push("local_scoped_observers_v1");
+    }
+    if team_execution_available {
+        implemented_capabilities.push("collaboration_team_execution_v1");
     }
     let service_instance = Arc::new(uar::service_instance::ServiceInstanceAuthority::new(
         &config.service_instance,
@@ -1365,11 +1373,6 @@ async fn run_server_with_listener(
     );
     info!("Collaboration package catalog initialized");
 
-    let team_execution_available = persistence_layer.supports_durable_agent_instances()
-        || (matches!(config.persistence.provider.as_str(), "surreal" | "surrealdb")
-            && ["ws://", "wss://", "http://", "https://"]
-                .iter()
-                .any(|scheme| config.persistence.database_url.starts_with(scheme)));
     let team_execution_runtime = uar::runtime::team_execution::TeamExecutionRuntime::new(
         Arc::clone(&collaboration_catalog),
         Arc::clone(&run_manager),

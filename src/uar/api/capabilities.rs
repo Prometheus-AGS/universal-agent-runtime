@@ -179,6 +179,13 @@ pub fn collaboration_capabilities() -> CollaborationCapabilities {
 /// `GET /api/uar/capabilities`
 pub fn capabilities_response(service_instance: &ServiceInstanceAuthority) -> CapabilitiesResponse {
     let descriptor = service_instance.descriptor();
+    let mut collaboration = collaboration_capabilities();
+    let team_execution_available = descriptor
+        .capabilities
+        .iter()
+        .any(|capability| capability == "collaboration_team_execution_v1");
+    collaboration.activation.team_instance = team_execution_available;
+    collaboration.activation.team_execution = team_execution_available;
     CapabilitiesResponse {
         uar_version: env!("CARGO_PKG_VERSION"),
         agui: AguiProfile {
@@ -191,7 +198,7 @@ pub fn capabilities_response(service_instance: &ServiceInstanceAuthority) -> Cap
         references: descriptor.references.clone(),
         placement: descriptor.placement.clone(),
         capabilities: descriptor.capabilities.clone(),
-        collaboration: collaboration_capabilities(),
+        collaboration,
         administration: super::administration_capabilities::administration_capabilities(
             descriptor
                 .capabilities
