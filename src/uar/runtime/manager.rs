@@ -560,7 +560,12 @@ fn provider_id_for_config(config: &LlmConfig) -> String {
 }
 
 fn qualified_model_name(config: &LlmConfig) -> String {
-    let (_, model_id) = crate::llm::registry::split_model_string_pub(&config.model);
+    let model_id = if config.host_supplied_connection {
+        config.model.clone()
+    } else {
+        crate::llm::registry::split_model_string_pub(&config.model)
+            .1
+    };
     let provider_id = provider_id_for_config(config);
     format!("{provider_id}/{model_id}")
 }
@@ -4642,7 +4647,10 @@ impl RunManager {
         } else {
             None
         };
-        let model_context_window = configured_window.or_else(|| {
+        let host_window = run_credentials.as_ref().and_then(|credentials| {
+            credentials.context_window_for(&catalog_provider, &catalog_model_id)
+        });
+        let model_context_window = host_window.or(configured_window).or_else(|| {
             crate::llm::catalog::ModelCatalog::global()
                 .model(&catalog_provider, &catalog_model_id)
                 .map(|model| model.limits.context_window as usize)

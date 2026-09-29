@@ -1691,8 +1691,16 @@ impl Orchestrator {
                 // reasoning-persistence toggles) keyed off the model id.
                 // `thinking_budget` doubles as the "this deployment wants
                 // reasoning" signal — it was otherwise a dead config knob.
-                let dialect_params = super::prompt_dialect::PromptDialectEngine::new()
-                    .request_params(
+                // A host-supplied OpenAI-compatible gateway owns translation to
+                // the underlying provider. Its public request schema need not
+                // accept provider-specific fields such as Kimi's `thinking`.
+                let dialect_params = if orchestrator.llm_config.host_supplied_connection
+                    && orchestrator.llm_config.host_provider_kind.as_deref()
+                        == Some("openai_compatible")
+                {
+                    serde_json::json!({})
+                } else {
+                    super::prompt_dialect::PromptDialectEngine::new().request_params(
                         &orchestrator.llm_config.model,
                         super::prompt_dialect::DialectRequest {
                             wants_reasoning: orchestrator.llm_config.thinking_budget.is_some(),
@@ -1700,7 +1708,8 @@ impl Orchestrator {
                             hard: orchestrator.llm_config.thinking_budget.unwrap_or(0) > 4096,
                             effort: orchestrator.llm_config.reasoning_effort,
                         },
-                    );
+                    )
+                };
                 let base_req = LlmRequest {
                     messages: request_messages,
                     tools: tools.clone(),

@@ -29,6 +29,8 @@ pub struct RunCredentialInput {
     pub api_key: SecretString,
     #[serde(default)]
     pub default_model: Option<String>,
+    #[serde(default)]
+    pub context_window: Option<u32>,
 }
 
 impl std::fmt::Debug for RunCredentialInput {
@@ -39,6 +41,7 @@ impl std::fmt::Debug for RunCredentialInput {
             .field("base_url", &"[REDACTED]")
             .field("api_key", &"[REDACTED]")
             .field("default_model", &self.default_model)
+            .field("context_window", &self.context_window)
             .finish()
     }
 }
@@ -50,6 +53,7 @@ struct RunCredential {
     base_url: SecretString,
     api_key: SecretString,
     default_model: Option<String>,
+    context_window: Option<u32>,
 }
 
 /// Complete run-local provider set. It deliberately has no Serialize impl.
@@ -98,11 +102,21 @@ impl RunCredentials {
             if input
                 .default_model
                 .as_deref()
-                .is_some_and(|model| model.trim().is_empty() || model.contains('/'))
+                .is_some_and(|model| model.trim().is_empty())
             {
                 return Err(HostInputError::new(
                     "run_credential_invalid",
                     "run credential default_model is invalid",
+                ));
+            }
+            if input
+                .context_window
+                .is_some_and(|window| window == 0 || window > 2_000_000)
+                || (input.context_window.is_some() && input.default_model.is_none())
+            {
+                return Err(HostInputError::new(
+                    "run_credential_invalid",
+                    "run credential context window requires a model and must be at most 2000000 tokens",
                 ));
             }
             let credential = RunCredential {
@@ -111,6 +125,7 @@ impl RunCredentials {
                 base_url: input.base_url,
                 api_key: input.api_key,
                 default_model: input.default_model,
+                context_window: input.context_window,
             };
             if credentials
                 .insert(provider_id.to_owned(), credential)
@@ -140,6 +155,14 @@ impl RunCredentials {
         self.0.contains_key(provider_id)
     }
 
+    #[must_use]
+    pub fn context_window_for(&self, provider_id: &str, model_id: &str) -> Option<usize> {
+        let credential = self.0.get(provider_id)?;
+        (credential.default_model.as_deref() == Some(model_id))
+            .then_some(credential.context_window?)
+            .map(|window| window as usize)
+    }
+
     pub(crate) fn config_for(
         &self,
         provider_id: &str,
@@ -162,11 +185,11 @@ impl RunCredentials {
                     "selected provider requires a model",
                 )
             })?;
-        let model = model
-            .rsplit_once('/')
-            .map_or(model.as_str(), |(_, model)| model)
+        let qualified_prefix = format!("{provider_id}/");
+        base.model = model
+            .strip_prefix(&qualified_prefix)
+            .unwrap_or(&model)
             .to_owned();
-        base.model = model;
         base.resolved_provider_id = Some(credential.provider_id.clone());
         base.host_provider_kind = Some(credential.provider_kind.protocol().to_owned());
         base.host_supplied_connection = true;
