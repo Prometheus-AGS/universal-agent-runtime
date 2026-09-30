@@ -73,6 +73,11 @@ impl TeamExecutionRuntime {
         })
     }
 
+    pub async fn quiesce(&self) -> anyhow::Result<crate::uar::domain::team_execution::TeamExecutionFencingEvidence> {
+        self.shutdown().await?;
+        Ok(self.catalog.record_joined_execution_owner().await?)
+    }
+
     pub fn available(&self) -> bool {
         self.available
     }
@@ -241,6 +246,8 @@ impl TeamExecutionRuntime {
     }
 
     pub async fn shutdown(&self) -> anyhow::Result<()> {
+        if !self.catalog.execution_ownership_view().await?.owns_execution { return Ok(()); }
+        self.catalog.drain_execution_owner().await?;
         self.cancellation.cancel();
         let jobs = self.jobs.lock().await.values().cloned().collect::<Vec<_>>();
         for job in &jobs {

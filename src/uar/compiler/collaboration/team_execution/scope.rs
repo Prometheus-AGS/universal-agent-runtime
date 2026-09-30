@@ -100,6 +100,7 @@ impl CollaborationCatalogService {
     ) -> Result<TeamArtifact, CollaborationError> {
         for _ in 0..MAX_CAS_ATTEMPTS {
             let current = self.load_state().await?;
+            self.require_execution_owner(&current, false)?;
             fence(&current, expected)?;
             let actual = attempt(&current, expected)?;
             let id = format!("artifact-{}", actual.id);
@@ -163,6 +164,7 @@ impl CollaborationCatalogService {
         let receipt_key = format!("{owner}\u{1f}{workspace}\u{1f}{}", request.command_id);
         for _ in 0..MAX_CAS_ATTEMPTS {
             let current = self.load_state().await?;
+            self.require_execution_owner(&current, false)?;
             let mut current_team = team(&current, owner, workspace, team_id)?.clone();
             if let Some(receipt) = current.team_execution_command_receipts.get(&receipt_key) {
                 if receipt.owner_id != owner
@@ -235,6 +237,9 @@ impl CollaborationCatalogService {
             }) {
                 if active.status == "queued" {
                     active.status = "cancelled".to_owned();
+                    active.execution_outcome = Some("cancelled".to_owned());
+                    active.effect_disposition = "confirmed".into();
+                    active.accounting_state = "settled".into();
                     active.usage = Some(TeamReservation::default());
                     active.usage_revision = increment(active.usage_revision, "usage revision")?;
                     if let Some(task) = current_team.tasks.iter_mut().find(|task| {

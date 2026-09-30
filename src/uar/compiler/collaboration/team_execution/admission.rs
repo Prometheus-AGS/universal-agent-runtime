@@ -33,6 +33,7 @@ impl CollaborationCatalogService {
         let run_id = Uuid::new_v4().to_string();
         for _ in 0..MAX_CAS_ATTEMPTS {
             let current = self.load_state().await?;
+            let execution_fence = self.require_execution_owner(&current, false)?;
             let selected = team(&current, owner, workspace, team_id)?;
             if let Some(receipt) = current.team_execution_command_receipts.get(&command_key) {
                 if receipt.request_digest != digest
@@ -216,6 +217,10 @@ impl CollaborationCatalogService {
                 ownership_epoch: task.ownership_epoch,
                 binding_revision: binding.revision,
                 execution_epoch: 1,
+                execution_fence: Some(execution_fence),
+                effective_models: self.capture_team_models(&current, selected, member).await?,
+                effect_disposition: "confirmed".into(),
+                accounting_state: "reserved-unknown".into(),
                 status: "queued".to_owned(),
                 execution_outcome: None,
                 reservation: request.reservation.clone(),
@@ -224,6 +229,7 @@ impl CollaborationCatalogService {
                 usage_revision: 0,
                 output: None,
                 state_reason: None,
+                diagnostic: None,
                 created_at: now,
                 updated_at: now,
             };

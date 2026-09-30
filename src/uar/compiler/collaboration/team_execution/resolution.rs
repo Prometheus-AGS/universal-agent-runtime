@@ -7,7 +7,7 @@ use super::super::{
 use crate::uar::domain::{
     collaboration::{CollaborationKind, ConversionDisposition},
     policy::{ResourceSelection, RunPolicy, SelectionMode},
-    team_execution::TeamExecutionAttempt,
+    team_execution::{TeamExecutionAttempt, TeamModelSettingsRequest},
 };
 
 impl CollaborationCatalogService {
@@ -62,24 +62,37 @@ impl CollaborationCatalogService {
         let (skills, mut diagnostics) =
             bindings::resolve_skills(self.skill_service.as_deref(), &binding.document, definition)
                 .await?;
+        runtime_semantics::resolve_legacy_team_context(definition, &binding.document, &mut diagnostics);
         let mut models = bindings::resolve_models(&binding.document, definition, &mut diagnostics)?;
-        if let Some(registry) = self.provider_registry.as_deref() {
-            for model in &mut models {
-                let provider_id = model["providerId"].as_str().unwrap_or_default();
-                let model_id = model["modelId"].as_str().unwrap_or_default();
-                if let Some(provider) = registry.get(provider_id).await {
-                    if let Some(identity) = provider
-                        .models
-                        .iter()
-                        .find(|configured| configured.id == model_id)
-                        .and_then(|configured| configured.pricing_identity.as_ref())
-                    {
-                        identity
-                            .qualified_model()
-                            .map_err(|error| CollaborationError::Conflict(error.to_string()))?;
-                        model["pricingIdentity"] = serde_json::to_value(identity)
-                            .map_err(|error| CollaborationError::Storage(error.to_string()))?;
-                    }
+        let registry = self.provider_registry.as_deref()
+            .ok_or_else(|| CollaborationError::Conflict("TEAM_PROFILE_UNSUPPORTED".into()))?;
+        for model in &mut models {
+            let provider_id = model["providerId"].as_str().unwrap_or_default().to_owned();
+            let model_id = model["modelId"].as_str().unwrap_or_default().to_owned();
+            let captured = attempt.effective_models.iter().find(|captured|
+                captured.route.provider_id == provider_id && captured.route.model_id == model_id)
+                .ok_or_else(|| CollaborationError::Conflict("TEAM_ROUTE_PROFILE_MISMATCH".into()))?;
+            let current = registry.resolve_team_model_settings(&TeamModelSettingsRequest {
+                route: captured.route.clone(), profile: captured.profile.clone(),
+                expected_settings_revision: captured.settings_revision,
+                reasoning: captured.requested_reasoning.clone(),
+            }).await.map_err(|error| CollaborationError::Conflict(error.to_string()))?;
+            if serde_json::to_value(&current)? != serde_json::to_value(captured)? {
+                return Err(CollaborationError::Conflict("TEAM_ROUTE_PROFILE_MISMATCH".into()));
+            }
+            model["effectiveModel"] = serde_json::to_value(captured)?;
+            if let Some(provider) = registry.get(&provider_id).await {
+                if let Some(identity) = provider
+                    .models
+                    .iter()
+                    .find(|configured| configured.id == model_id)
+                    .and_then(|configured| configured.pricing_identity.as_ref())
+                {
+                    identity
+                        .qualified_model()
+                        .map_err(|error| CollaborationError::Conflict(error.to_string()))?;
+                    model["pricingIdentity"] = serde_json::to_value(identity)
+                        .map_err(|error| CollaborationError::Storage(error.to_string()))?;
                 }
             }
         }
@@ -126,10 +139,14 @@ impl CollaborationCatalogService {
             .iter()
             .flat_map(|skill| skill.skill.required_tools.iter().cloned())
             .collect::<Vec<_>>();
+        if tool_ids.iter().any(|tool| tool == "spawn_agent") {
+            return Err(CollaborationError::Conflict("TEAM_CAPABILITY_UNSUPPORTED".into()));
+        }
         // These factories remain bound to the ordinary host's control policy.
         tool_ids.extend(
             crate::uar::runtime::thread::control::AGENT_TOOL_NAMES
                 .into_iter()
+                .filter(|tool| *tool != "spawn_agent")
                 .map(str::to_owned),
         );
         tool_ids.push("activate_skill".into());

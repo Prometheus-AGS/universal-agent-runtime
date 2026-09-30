@@ -292,8 +292,10 @@ async fn run_sidecar(bootstrap: SidecarBootstrap) {
     };
 
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel();
-    let server =
-        server::start_server_sidecar(config_manager, listener, bootstrap.token, ready_tx, None);
+    let process_shutdown = tokio_util::sync::CancellationToken::new();
+    let server = server::start_server_sidecar(
+        config_manager, listener, bootstrap.token, ready_tx, Some(process_shutdown.clone()),
+    );
     tokio::pin!(server);
     let ready_addr = match await_server_readiness(ready_rx, server.as_mut()).await {
         Ok(addr) => addr,
@@ -311,7 +313,7 @@ async fn run_sidecar(bootstrap: SidecarBootstrap) {
         .expect("Failed to write READY signal to stdout");
     std::io::stdout().flush().expect("Failed to flush stdout");
 
-    // Spawn a task that reads stdin until EOF, then exits the process.
+    // EOF requests the same bounded graceful cleanup used by server shutdown.
     // Electron closes the child's stdin pipe on app quit, triggering this path.
     tokio::spawn(async move {
         let mut stdin = tokio::io::stdin();
@@ -323,8 +325,8 @@ async fn run_sidecar(bootstrap: SidecarBootstrap) {
                 Ok(_) => {} // ignore any bytes written to stdin
             }
         }
-        tracing::info!(name = "sidecar.stdin_eof", "stdin closed — exiting");
-        std::process::exit(0);
+        tracing::info!(name = "sidecar.stdin_eof", "stdin closed — requesting graceful shutdown");
+        process_shutdown.cancel();
     });
 
     if let Err(error) = server.await {

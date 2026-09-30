@@ -17,7 +17,8 @@ use std::time::{Duration, Instant};
 
 use futures::StreamExt;
 
-use crate::llm::registry::{ModelConfig, ProviderConfig, ProviderRegistry, enrich_provider_config};
+use crate::llm::registry::{ModelConfig, ProviderConfig, ProviderRegistry, enrich_provider_config,
+    prepare_provider_update};
 use crate::llm::{LlmDriver, LlmRequest};
 use crate::uar::security::credentials::{CredentialScope, ProviderService};
 use crate::uar::settings::manager::SettingsManager;
@@ -192,6 +193,7 @@ async fn create_provider(
     State(state): State<ProviderApiState>,
     Json(config): Json<ProviderConfig>,
 ) -> Result<(StatusCode, Json<ProviderView>), (StatusCode, Json<ErrorResponse>)> {
+    let _administration = state.registry.administration_guard().await;
     if state.registry.get(&config.id).await.is_some() {
         return Err((
             StatusCode::CONFLICT,
@@ -208,7 +210,7 @@ async fn create_provider(
         .await
         .map_err(|e| {
             (
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::BAD_REQUEST,
                 Json(ErrorResponse {
                     error: e.to_string(),
                 }),
@@ -222,12 +224,12 @@ async fn create_provider(
         }),
     ))?;
 
-    if let Err(e) = persist_provider_config(&state, &response).await {
+    if persist_provider_config(&state, &response).await.is_err() {
         let _ = state.registry.remove(&id).await;
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ErrorResponse {
-                error: format!("Failed to persist provider: {e}"),
+                error: "Provider settings could not be persisted".into(),
             }),
         ));
     }
@@ -244,31 +246,29 @@ async fn update_provider(
     Path(id): Path<String>,
     Json(mut config): Json<ProviderConfig>,
 ) -> Result<Json<ProviderView>, (StatusCode, Json<ErrorResponse>)> {
+    let _administration = state.registry.administration_guard().await;
     config.id = id;
     enrich_provider_config(&mut config);
-    if config.api_key.is_none()
-        && let Some(existing) = state.registry.get(&config.id).await
-    {
-        config.api_key = existing.api_key;
-    }
-    let response = config.clone();
-    state.registry.update(config).await.map_err(|e| {
-        (
-            StatusCode::NOT_FOUND,
-            Json(ErrorResponse {
-                error: e.to_string(),
-            }),
-        )
+    let existing = state.registry.get(&config.id).await.ok_or((StatusCode::NOT_FOUND,
+        Json(ErrorResponse { error: "Provider not found".into() })))?;
+    if config.api_key.is_none() { config.api_key.clone_from(&existing.api_key); }
+    let response = prepare_provider_update(&existing, config).map_err(|error| {
+        let code = error.to_string();
+        (if code == "TEAM_REVISION_CONFLICT" { StatusCode::CONFLICT } else { StatusCode::BAD_REQUEST },
+            Json(ErrorResponse { error: code }))
     })?;
 
-    if let Err(e) = persist_provider_config(&state, &response).await {
+    if persist_provider_config(&state, &response).await.is_err() {
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ErrorResponse {
-                error: format!("Failed to persist provider: {e}"),
+                error: "Provider settings could not be persisted".into(),
             }),
         ));
     }
+
+    state.registry.update(response.clone()).await.map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR,
+        Json(ErrorResponse { error: "Provider settings could not be applied".into() })))?;
 
     Ok(Json(provider_view(&state, response).await))
 }
@@ -278,6 +278,7 @@ async fn delete_provider(
     State(state): State<ProviderApiState>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
+    let _administration = state.registry.administration_guard().await;
     if state.registry.get(&id).await.is_none() {
         return Err((
             StatusCode::NOT_FOUND,
@@ -334,12 +335,9 @@ async fn list_models(
     State(state): State<ProviderApiState>,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<ModelConfig>>, StatusCode> {
-    state
-        .registry
-        .models(&id)
-        .await
-        .map(Json)
-        .ok_or(StatusCode::NOT_FOUND)
+    let mut provider = state.registry.get(&id).await.ok_or(StatusCode::NOT_FOUND)?;
+    project_team_model_defaults(&mut provider);
+    Ok(Json(provider.models))
 }
 
 /// Set a provider as the default.
@@ -580,7 +578,16 @@ struct ProviderView {
     credential_configured: bool,
 }
 
-async fn provider_view(state: &ProviderApiState, provider: ProviderConfig) -> ProviderView {
+fn project_team_model_defaults(provider: &mut ProviderConfig) {
+    if provider.base_url.trim().is_empty()
+        || matches!(provider.protocol, crate::llm::registry::ProtocolSetting::Responses) { return; }
+    for model in &mut provider.models {
+        model.execution_profile.get_or_insert_with(Default::default);
+    }
+}
+
+async fn provider_view(state: &ProviderApiState, mut provider: ProviderConfig) -> ProviderView {
+    project_team_model_defaults(&mut provider);
     let protected = if let Some(service) = state.provider_service.as_ref() {
         service
             .store()

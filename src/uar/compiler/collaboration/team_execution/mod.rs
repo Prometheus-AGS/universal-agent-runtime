@@ -1,5 +1,8 @@
 //! Catalog-owned team admission. Runtime workers consume durable dispatch intents.
 mod admission;
+mod dispatch;
+mod ownership;
+mod model_capture;
 mod recovery;
 mod resolution;
 mod scope;
@@ -52,6 +55,7 @@ fn fence(
     state: &CollaborationCatalogState,
     expected: &TeamExecutionAttempt,
 ) -> Result<(), CollaborationError> {
+    self::ownership::require_attempt_fence(state, expected, false)?;
     let actual = attempt(state, expected)?;
     let team = team(
         state,
@@ -136,7 +140,9 @@ impl CollaborationCatalogService {
         &self,
         expected: &TeamExecutionAttempt,
     ) -> Result<(), CollaborationError> {
-        fence(&self.load_state().await?, expected)
+        let state = self.load_state().await?;
+        self.require_execution_owner(&state, false)?;
+        fence(&state, expected)
     }
 
     pub async fn team_execution_summary(

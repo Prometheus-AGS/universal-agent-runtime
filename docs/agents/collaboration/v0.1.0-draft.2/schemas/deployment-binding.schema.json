@@ -52,17 +52,40 @@
       "const": "uar.service-instance/1"
     },
     "workspaceLocation": {
-      "enum": ["local", "remote"]
+      "enum": [
+        "local",
+        "remote"
+      ]
     },
     "endpointRoles": {
       "type": "object",
       "properties": {
-        "runtime": { "type": "string", "format": "uri" },
-        "administration": { "type": "string", "format": "uri" },
-        "models": { "type": "string", "format": "uri" },
-        "console": { "type": ["string", "null"], "format": "uri" }
+        "runtime": {
+          "type": "string",
+          "format": "uri"
+        },
+        "administration": {
+          "type": "string",
+          "format": "uri"
+        },
+        "models": {
+          "type": "string",
+          "format": "uri"
+        },
+        "console": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        }
       },
-      "required": ["runtime", "administration", "models", "console"],
+      "required": [
+        "runtime",
+        "administration",
+        "models",
+        "console"
+      ],
       "additionalProperties": false
     },
     "runtimeCredentialRef": {
@@ -96,6 +119,25 @@
           "credentialRef": {
             "type": "string",
             "minLength": 1
+          },
+          "profile": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              "revision": {
+                "$ref": "common.schema.json#/$defs/revision"
+              }
+            },
+            "required": [
+              "id",
+              "revision"
+            ],
+            "additionalProperties": false
+          },
+          "settingsRevision": {
+            "$ref": "common.schema.json#/$defs/revision"
           }
         },
         "required": [

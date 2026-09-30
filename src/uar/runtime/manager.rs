@@ -4235,6 +4235,7 @@ impl RunManager {
             .into_iter()
             .map(|entry| entry.skill)
             .collect();
+        let is_team_attempt = collaboration_binding.as_ref().is_some_and(|binding| binding.team_attempt.is_some());
         let policy_llm_config = if inherited.is_none()
             && let Some(ref registry) = self.provider_registry
         {
@@ -4243,10 +4244,10 @@ impl RunManager {
                 provider_policy.default.provider = route.provider_id.clone();
                 provider_policy.default.model = route.model_id.clone();
             }
-            match registry
-                .resolve_llm_config_from_policy(&provider_policy)
-                .await
-            {
+            let resolved = if is_team_attempt {
+                registry.resolve_to_llm_config(&provider_policy.default.provider, &provider_policy.default.model).await
+            } else { registry.resolve_llm_config_from_policy(&provider_policy).await };
+            match resolved {
                 Some(resolved) => {
                     tracing::info!(
                         provider = %provider_policy.default.provider,
@@ -4255,7 +4256,7 @@ impl RunManager {
                     );
                     Some(resolved)
                 }
-                None if run_credentials.is_some() => None,
+                None if run_credentials.is_some() && !is_team_attempt => None,
                 None => {
                     tracing::warn!(
                         provider = %provider_policy.default.provider,
@@ -4307,7 +4308,11 @@ impl RunManager {
                     })
                 })
                 .flatten();
-            let run_llm_config = if let Some(ref registry) = self.provider_registry {
+            let run_llm_config = if is_team_attempt {
+                // Admission selected an exact route. Availability routing may not
+                // replace it with another provider/model after that capture.
+                preferred_llm_config
+            } else if let Some(ref registry) = self.provider_registry {
                 let policy_preferred_model = qualified_model_name(&preferred_llm_config);
                 let (policy_provider, _) =
                     crate::llm::registry::split_model_string_pub(&policy_preferred_model);
@@ -4438,7 +4443,7 @@ impl RunManager {
                 run_llm_config.reasoning_effort = Some(effort);
                 run_llm_config.thinking_budget = effort.thinking_budget();
             }
-            let run_failover_config =
+            let mut run_failover_config =
                 if run_credentials.is_some() || collaboration_binding.is_some() {
                     let mut failover = self.failover_config.clone();
                     failover.fallback_models = artifact
@@ -4457,6 +4462,53 @@ impl RunManager {
                 } else {
                     self.failover_config.clone()
                 };
+
+            let team_profiles = async {
+                let mut profiles = std::collections::BTreeMap::new();
+                let mut pricing_models = std::collections::BTreeMap::new();
+                if !is_team_attempt { return Ok((profiles, pricing_models)); }
+                anyhow::ensure!(reasoning_effort.is_none(), "TEAM_REASONING_UNSUPPORTED");
+                let registry = self.provider_registry.as_deref()
+                    .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
+                let binding = collaboration_binding.as_ref()
+                    .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
+                for model in &binding.receipt.resolved_models {
+                    let effective: crate::uar::domain::team_execution::EffectiveTeamModelReceipt =
+                        serde_json::from_value(model["effectiveModel"].clone())
+                            .map_err(|_| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
+                    let profile = registry.capture_team_endpoint_profile(&effective).await?;
+                    if let Some(price) = effective.pricing_identity {
+                        pricing_models.insert(profile.qualified_model.clone(), format!("{}/{}", price.provider_id, price.model_id));
+                    }
+                    profiles.insert(profile.qualified_model.clone(), profile);
+                }
+                anyhow::ensure!(!profiles.is_empty(), "TEAM_PROFILE_UNSUPPORTED");
+                let route = effective_policy.model.as_ref();
+                let provider = route.map_or(artifact.policy.provider.default.provider.as_str(), |route| route.provider_id.as_str());
+                let model = route.map_or(artifact.policy.provider.default.model.as_str(), |route| route.model_id.as_str());
+                let selected = profiles.get(&format!("{provider}/{model}"))
+                    .ok_or_else(|| anyhow::anyhow!("TEAM_ROUTE_PROFILE_MISMATCH"))?;
+                anyhow::ensure!(run_llm_config.resolved_provider_id.as_deref() == Some(provider), "TEAM_ROUTE_PROFILE_MISMATCH");
+                // Request credentials supply connection authority only. Restore
+                // the admitted complete alias and administrator-owned price.
+                run_llm_config.model.clone_from(&selected.qualified_model);
+                run_llm_config.catalog_pricing_model = pricing_models.get(&selected.qualified_model).cloned();
+                for fallback in &mut run_failover_config.fallback_models {
+                    let profile = profiles.get(&fallback.model)
+                        .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
+                    let (_, model_id) = crate::llm::registry::split_model_string_pub(&profile.qualified_model);
+                    let config = registry.resolve_to_llm_config(&profile.provider_id, &model_id).await
+                        .ok_or_else(|| anyhow::anyhow!("TEAM_ROUTE_PROFILE_MISMATCH"))?;
+                    let config = match &run_credentials {
+                        Some(credentials) => credentials.config_for(&profile.provider_id, Some(&model_id), config)?,
+                        None => apply_credential_layer(config, self.provider_service.as_ref(),
+                            user_id_for_creds.as_deref(), session_id_for_creds.as_deref(), artifact.id.as_str()).await,
+                    };
+                    fallback.api_key = config.api_key;
+                    fallback.base_url = config.base_url;
+                }
+                Ok::<_, anyhow::Error>((profiles, pricing_models))
+            }.await;
 
             // This artifact's session ceiling belongs to the captured root session,
             // not the aggregate spend of every session using the same agent.
@@ -4481,11 +4533,11 @@ impl RunManager {
             // Capture once before any summarization or model execution. Rebuilding
             // a client from the same config can resolve different environment or
             // provider credentials, and cannot serve as an inherited binding.
-            match model_budget {
-                Ok(model_budget) => {
+            match (model_budget, team_profiles) {
+                (Ok(model_budget), Ok((profiles, pricing_models))) => {
                     crate::uar::runtime::turn::bindings::RunModelBindings::capture(
                         run_llm_config.clone(),
-                        if run_credentials.is_some() {
+                        if run_credentials.is_some() || is_team_attempt {
                             None
                         } else {
                             self.primary_driver.clone()
@@ -4500,10 +4552,12 @@ impl RunManager {
                         },
                         model_budget,
                         run_credentials.as_ref(),
+                        profiles,
+                        pricing_models,
                     )
                     .await
                 }
-                Err(error) => Err(error),
+                (Err(error), _) | (_, Err(error)) => Err(error),
             }
         };
         let model_bindings = match model_bindings_result {
@@ -4513,16 +4567,30 @@ impl RunManager {
                     || error.to_string(),
                     |credentials| credentials.scrub(&error.to_string()),
                 );
-                tracing::error!(%error, "Failed to capture run model bindings");
+                if !is_team_attempt {
+                    tracing::error!(%error, "Failed to capture run model bindings");
+                }
                 activation_context.lock().await.record_outcomes(false);
                 if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
                     state.run.status = RunStatus::Error;
                 }
+                let code = if is_team_attempt {
+                    match error.as_str() {
+                        "TEAM_PROFILE_UNSUPPORTED" | "TEAM_ROUTE_PROFILE_MISMATCH"
+                        | "TEAM_REVISION_CONFLICT" | "TEAM_REASONING_UNSUPPORTED" => error.as_str(),
+                        _ => "TEAM_PROVIDER_REQUEST_REJECTED",
+                    }
+                } else { "orchestrator_start_failed" };
+                let message = if is_team_attempt {
+                    let reference = uuid::Uuid::new_v4();
+                    tracing::error!(code, diagnostic_reference = %reference, "Team model capture refused");
+                    format!("{code}; diagnostic reference {reference}")
+                } else { "Failed to create the run orchestrator".into() };
                 emitter
                     .emit(NormalizedEvent::Error {
                         run_id: run_id.clone(),
-                        code: "orchestrator_start_failed".into(),
-                        message: "Failed to create the run orchestrator".into(),
+                        code: code.into(),
+                        message: message.into(),
                     })
                     .await;
                 emitter

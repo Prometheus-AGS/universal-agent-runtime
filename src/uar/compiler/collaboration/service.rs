@@ -51,6 +51,7 @@ impl From<serde_json::Error> for CollaborationError {
 #[derive(Debug, Clone)]
 pub struct CollaborationCatalogService {
     pub(super) storage: Arc<dyn CollaborationStorage>,
+    pub(super) execution_identity: Arc<std::sync::RwLock<crate::uar::domain::team_execution::TeamExecutionFence>>,
     pub(super) skill_service: Option<Arc<crate::uar::runtime::skills::SkillService>>,
     pub(super) provider_registry: Option<Arc<crate::llm::ProviderRegistry>>,
     pub(super) service_instance:
@@ -62,6 +63,7 @@ impl CollaborationCatalogService {
     pub fn new(storage: Arc<dyn CollaborationStorage>) -> Self {
         Self {
             storage,
+            execution_identity: Arc::new(std::sync::RwLock::new(crate::uar::domain::team_execution::TeamExecutionFence { catalog_id: "uar-collaboration-catalog".into(), service_instance_id: "unconfigured".into(), incarnation_id: uuid::Uuid::new_v4().to_string(), epoch: 0 })),
             skill_service: None,
             provider_registry: None,
             service_instance: None,
@@ -96,6 +98,9 @@ impl CollaborationCatalogService {
         mut self,
         service_instance: Arc<crate::uar::service_instance::ServiceInstanceAuthority>,
     ) -> Self {
+        if let Ok(mut identity) = self.execution_identity.write() {
+            identity.service_instance_id = service_instance.descriptor().instance.id.clone();
+        }
         self.service_instance = Some(service_instance);
         self
     }

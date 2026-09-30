@@ -363,7 +363,7 @@ fn supported(
         disposition: ConversionDisposition::Exact,
         reason_code: reason_code.to_owned(),
         message: message.to_owned(),
-        effective_binding_ref: None,
+        effective_binding_ref: None, source_kind: None, source_definition: None,
     });
 }
 
@@ -386,7 +386,7 @@ fn unsupported(
         },
         reason_code: "runtime.component-unavailable".to_owned(),
         message,
-        effective_binding_ref: None,
+        effective_binding_ref: None, source_kind: None, source_definition: None,
     });
 }
 
@@ -396,4 +396,21 @@ fn string_field<'a>(value: &'a Value, field: &str) -> Result<&'a str, String> {
         .and_then(Value::as_str)
         .filter(|value| !value.is_empty())
         .ok_or_else(|| format!("Resolved model is missing '{field}'."))
+}
+
+/// Legacy resource declarations remain required until a runtime mapping exists.
+pub(super) fn resolve_legacy_team_context(definition: &CollaborationDefinitionRecord, binding: &Value, diagnostics: &mut Vec<FieldDiagnostic>) {
+    let mut add = |pointer: String, code: &str| diagnostics.push(FieldDiagnostic {
+        source_kind: Some(if pointer.starts_with("/contextGrants/") { crate::uar::domain::collaboration::CollaborationKind::DeploymentBinding } else { definition.kind.clone() }),
+        source_definition: (!pointer.starts_with("/contextGrants/")).then(|| definition.identity.clone()),
+        pointer, disposition: ConversionDisposition::RequiredUnsupported, reason_code: code.into(),
+        message: "This declared resource has no executable mapping in the narrow team profile; explicitly revise the definition or binding.".into(), effective_binding_ref: None,
+    });
+    if definition.document.pointer("/context/mode").and_then(Value::as_str) == Some("authorized-fork") { add("/context/mode".into(), "TEAM_CONTEXT_REQUIRED_UNSUPPORTED"); }
+    for field in ["artifacts", "memoryScopes"] {
+        for (i, _) in definition.document.pointer(&format!("/context/{field}")).and_then(Value::as_array).into_iter().flatten().enumerate() { add(format!("/context/{field}/{i}"), "TEAM_CONTEXT_REQUIRED_UNSUPPORTED"); }
+    }
+    if matches!(definition.document.pointer("/context/history").and_then(Value::as_str), Some("selected" | "authorized-summary")) { add("/context/history".into(), "TEAM_CONTEXT_REQUIRED_UNSUPPORTED"); }
+    for (i, _) in binding.get("contextGrants").and_then(Value::as_array).into_iter().flatten().enumerate() { add(format!("/contextGrants/{i}"), "TEAM_CONTEXT_REQUIRED_UNSUPPORTED"); }
+    for (i, _) in definition.document.get("permittedChildren").and_then(Value::as_array).into_iter().flatten().enumerate() { add(format!("/permittedChildren/{i}"), "TEAM_CAPABILITY_UNSUPPORTED"); }
 }

@@ -6,7 +6,7 @@
 use serde::Serialize;
 
 /// Schema revision for [`AdministrationCapabilities`].
-pub const ADMINISTRATION_SCHEMA_VERSION: u32 = 4;
+pub const ADMINISTRATION_SCHEMA_VERSION: u32 = 5;
 
 /// Navigation group for an administration surface.
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -857,6 +857,11 @@ pub fn administration_capabilities(
                         Live
                     ),
                     endpoint!("team-instances.tasks.admit", "POST", "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}/admit", Owner, Live),
+                    endpoint!("team-instances.tasks.admit-queued", "POST", "/api/v1/collaboration/team-instances/{id}/tasks/{taskId}/admit-queued", Admin, Live),
+                    endpoint!("team-instances.attempts.dispatch", "POST", "/api/v1/collaboration/team-instances/{id}/attempts/{attemptId}/dispatch", Admin, Live),
+                    endpoint!("team-execution.owner.read", "GET", "/api/v1/collaboration/execution-owner", Owner, Read),
+                    endpoint!("team-execution.owner.quiesce", "POST", "/api/v1/collaboration/execution-owner/quiesce", Admin, Live),
+                    endpoint!("team-execution.owner.reclaim", "POST", "/api/v1/collaboration/execution-owner/reclaim", Admin, Live),
                     endpoint!("team-instances.execution", "GET", "/api/v1/collaboration/team-instances/{id}/execution", Owner, Read),
                     endpoint!("team-instances.attempts.cancel", "POST", "/api/v1/collaboration/team-instances/{id}/attempts/{attemptId}/cancel", Owner, Live),
                     endpoint!("team-instances.recover", "POST", "/api/v1/collaboration/team-instances/{id}/recover", Owner, Live),

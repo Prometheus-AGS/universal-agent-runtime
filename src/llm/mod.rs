@@ -28,6 +28,7 @@ pub mod orchestrator;
 pub mod prompt_dialect;
 pub mod provider_error;
 pub mod registry;
+pub mod team_profile;
 pub mod router;
 pub mod tool_extractor;
 pub mod tool_normalizer;

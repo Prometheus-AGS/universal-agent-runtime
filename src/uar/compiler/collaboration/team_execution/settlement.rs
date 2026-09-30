@@ -3,7 +3,7 @@ use super::{
     team_key,
 };
 use crate::uar::domain::team_execution::{
-    TeamControlRequest, TeamExecutionAttempt, TeamExecutionCommandReceipt, TeamReservation,
+    TeamControlRequest, TeamExecutionAttempt, TeamExecutionCommandReceipt, TeamExecutionDiagnostic, TeamReservation,
 };
 use chrono::Utc;
 use serde_json::{Value, json};
@@ -15,6 +15,7 @@ impl CollaborationCatalogService {
     ) -> Result<TeamExecutionAttempt, CollaborationError> {
         for _ in 0..MAX_CAS_ATTEMPTS {
             let current = self.load_state().await?;
+            self.require_execution_owner(&current, false)?;
             fence(&current, expected)?;
             let mut item = attempt(&current, expected)?.clone();
             if item.status != "queued" {
@@ -54,6 +55,8 @@ impl CollaborationCatalogService {
         }
         for _ in 0..MAX_CAS_ATTEMPTS {
             let current = self.load_state().await?;
+            self.require_execution_owner(&current, true)?;
+            super::ownership::require_attempt_fence(&current, expected, true)?;
             let mut item = attempt(&current, expected)?.clone();
             if item.run_id != expected.run_id || item.execution_epoch != expected.execution_epoch {
                 return Err(CollaborationError::Conflict(
@@ -74,12 +77,14 @@ impl CollaborationCatalogService {
                 }
                 return Ok(item);
             }
+            if matches!(item.execution_outcome.as_deref(), Some("succeeded" | "failed" | "cancelled"))
+                && (item.execution_outcome.as_deref() != Some(status) || item.output != output) {
+                return Err(CollaborationError::Conflict("settled execution outcome is immutable even when accounting is unknown".into()));
+            }
             let now = Utc::now();
-            item.status = if usage.is_none() {
-                "uncertain".to_owned()
-            } else {
-                status.to_owned()
-            };
+            item.status = status.to_owned();
+            item.effect_disposition = if status == "uncertain" { "uncertain" } else { "confirmed" }.into();
+            item.accounting_state = if usage.is_some() { "settled" } else { "reserved-unknown" }.into();
             item.execution_outcome = Some(status.to_owned());
             item.usage = usage.clone();
             item.usage_revision += 1;
@@ -89,6 +94,7 @@ impl CollaborationCatalogService {
                     "Provider usage or effects are uncertain; reservation retained".to_owned()
                 })
             });
+            item.diagnostic = reason.as_deref().and_then(provider_diagnostic);
             item.updated_at = now;
             let mut next = current.clone();
             next.generation += 1;
@@ -162,6 +168,7 @@ impl CollaborationCatalogService {
         let receipt_key = format!("{owner}\u{1f}{workspace}\u{1f}{}", request.command_id);
         for _ in 0..MAX_CAS_ATTEMPTS {
             let current = self.load_state().await?;
+            self.require_execution_owner(&current, false)?;
             let selected = team(&current, owner, workspace, team_id)?;
             let mut item = current
                 .team_execution_attempts
@@ -183,7 +190,7 @@ impl CollaborationCatalogService {
             }
             let now = Utc::now();
             match item.status.as_str() {
-                "queued" => { item.status = "cancelled".to_owned(); item.execution_outcome = Some("cancelled".to_owned()); item.usage = Some(TeamReservation::default()); item.usage_revision += 1; }
+                "queued" => { item.status = "cancelled".to_owned(); item.execution_outcome = Some("cancelled".to_owned()); item.effect_disposition = "confirmed".into(); item.accounting_state = "settled".into(); item.usage = Some(TeamReservation::default()); item.usage_revision += 1; }
                 "running" | "cancellation_requested" => item.status = "cancellation_requested".to_owned(),
                 "uncertain" => return Err(CollaborationError::Conflict("uncertain execution cannot be released by cancellation; reconcile provider/effect receipts".to_owned())),
                 _ => return Err(CollaborationError::Conflict("attempt is already terminal".to_owned())),
@@ -239,6 +246,7 @@ impl CollaborationCatalogService {
     ) -> Result<Vec<TeamExecutionAttempt>, CollaborationError> {
         for _ in 0..MAX_CAS_ATTEMPTS {
             let current = self.load_state().await?;
+            self.require_execution_owner(&current, false)?;
             team(&current, owner, workspace, team_id)?;
             let mut next = current.clone();
             let mut queued = Vec::new();
@@ -250,6 +258,8 @@ impl CollaborationCatalogService {
                     "queued" => queued.push(item.clone()),
                     "running" | "cancellation_requested" => {
                         item.status = "uncertain".to_owned();
+                        item.effect_disposition = "uncertain".into();
+                        item.accounting_state = "reserved-unknown".into();
                         item.updated_at = Utc::now();
                         item.state_reason = Some("Runtime interrupted after dispatch; inspect original run and provider/effect receipts before retrying".to_owned());
                         changed = true;
@@ -269,4 +279,11 @@ impl CollaborationCatalogService {
             "team recovery changed concurrently".to_owned(),
         ))
     }
+}
+
+fn provider_diagnostic(reason: &str) -> Option<TeamExecutionDiagnostic> {
+    let (code, reference) = reason.split_once("; diagnostic reference ")?;
+    if !matches!(code, "TEAM_PROVIDER_REQUEST_REJECTED" | "TEAM_PROVIDER_STREAM_FAILED") { return None; }
+    let reference = uuid::Uuid::parse_str(reference).ok()?.to_string();
+    Some(TeamExecutionDiagnostic { code: code.into(), field: None, retryable: false, action: "change-settings".into(), protected_diagnostic_ref: Some(reference) })
 }

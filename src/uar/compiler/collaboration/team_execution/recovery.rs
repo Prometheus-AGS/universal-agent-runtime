@@ -16,6 +16,7 @@ impl CollaborationCatalogService {
         request: &TeamControlRequest,
     ) -> Result<Option<Vec<TeamExecutionAttempt>>, CollaborationError> {
         let state = self.load_state().await?;
+        self.require_execution_owner(&state, false)?;
         team(&state, owner, workspace, team_id)?;
         let receipt_key = format!("{owner}\u{1f}{workspace}\u{1f}{}", request.command_id);
         let Some(receipt) = state.team_execution_command_receipts.get(&receipt_key) else {
@@ -73,6 +74,7 @@ impl CollaborationCatalogService {
                 return Ok(result);
             }
             let current = self.load_state().await?;
+            self.require_execution_owner(&current, false)?;
             let selected = team(&current, owner, workspace, team_id)?;
             // Retry when another writer committed between the two reads.
             if current
@@ -105,6 +107,8 @@ impl CollaborationCatalogService {
                     "queued" => queued.push(item.clone()),
                     "running" | "cancellation_requested" => {
                         item.status = "uncertain".to_owned();
+                        item.effect_disposition = "uncertain".into();
+                        item.accounting_state = "reserved-unknown".into();
                         item.updated_at = now;
                         item.state_reason=Some("Runtime interrupted after dispatch; reservation retained until original provider/effect receipts are reconciled".to_owned());
                     }

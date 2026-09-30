@@ -255,6 +255,10 @@ pub struct FieldDiagnostic {
     /// Safe operator-facing text. Source values never belong in this field.
     pub message: String,
     pub effective_binding_ref: Option<PrivateRevisionRef>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_kind: Option<CollaborationKind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_definition: Option<ImmutableDefinitionRef>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -427,6 +431,11 @@ pub struct CollaborationCommandReceipt {
 #[serde(rename_all = "camelCase")]
 pub struct CollaborationCatalogState {
     pub generation: u64,
+    #[serde(default)] pub execution_claim: Option<crate::uar::domain::team_execution::TeamExecutionClaim>,
+    #[serde(default)] pub execution_claim_history: BTreeMap<String, crate::uar::domain::team_execution::TeamExecutionClaim>,
+    #[serde(default)] pub execution_reclaim_receipts: BTreeMap<String, crate::uar::domain::team_execution::TeamExecutionReclaimReceipt>,
+    #[serde(default)] pub execution_fencing_evidence: BTreeMap<String, crate::uar::domain::team_execution::TeamExecutionFencingEvidence>,
+    #[serde(default)] pub execution_transfers: BTreeMap<String, crate::uar::domain::team_execution::TeamExecutionFence>,
     #[serde(default)]
     pub team_execution_attempts: BTreeMap<String, TeamExecutionAttempt>,
     #[serde(default)]

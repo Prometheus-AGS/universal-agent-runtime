@@ -492,7 +492,7 @@ impl PromptDialectEngine {
     /// - OpenAI: no reasoning body param here (Responses `text.format` is a
     ///   structured-output concern set by the caller's schema, not reasoning).
     /// - Kimi: `thinking: {type: "enabled", keep: "all"}` to preserve reasoning
-    ///   across turns; on k2.7-code this is always-on and harmless to send.
+    ///   across turns when reasoning is requested.
     /// - GLM: `thinking: {type: "enabled"}` + `reasoning_effort: "max"|"high"`.
     /// - Qwen: `enable_thinking: true` (+ `preserve_thinking` for multi-turn);
     ///   the DashScope-vs-vLLM wrapper is the driver's concern.
@@ -514,9 +514,7 @@ impl PromptDialectEngine {
             PromptDialect::OpenAiJson if wants_reasoning && effort.is_some() => json!({
                 "reasoning_effort": effort
             }),
-            PromptDialect::KimiMarkdown
-                if wants_reasoning || (explicit.is_none() && req.multi_turn) =>
-            {
+            PromptDialect::KimiMarkdown if wants_reasoning => {
                 json!({
                     "thinking": { "type": "enabled", "keep": "all" }
                 })
@@ -594,6 +592,7 @@ mod tests {
         let p = e.request_params(
             "moonshot/kimi-k2.6",
             DialectRequest {
+                wants_reasoning: true,
                 multi_turn: true,
                 ..Default::default()
             },

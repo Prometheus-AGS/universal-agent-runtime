@@ -74,6 +74,7 @@ pub const IMPLEMENTED_CAPABILITIES: [&str; 16] = [
 #[derive(Debug, Clone)]
 pub struct CapabilitiesApiState {
     pub service_instance: Arc<ServiceInstanceAuthority>,
+    pub collaboration_catalog: Arc<crate::uar::compiler::collaboration::CollaborationCatalogService>,
 }
 
 /// AG-UI profile section of [`CapabilitiesResponse`].
@@ -216,7 +217,12 @@ pub fn capabilities_response(service_instance: &ServiceInstanceAuthority) -> Cap
 pub async fn capabilities_handler(
     State(state): State<Arc<CapabilitiesApiState>>,
 ) -> Json<CapabilitiesResponse> {
-    Json(capabilities_response(&state.service_instance))
+    let mut response = capabilities_response(&state.service_instance);
+    if !state.collaboration_catalog.execution_ownership_view().await.is_ok_and(|v| v.owns_execution) {
+        response.capabilities.retain(|c| c != "collaboration_team_execution_v1");
+        response.collaboration.activation.team_execution = false;
+    }
+    Json(response)
 }
 
 /// `POST /api/uar/compatibility`
@@ -224,6 +230,10 @@ pub async fn compatibility_handler(
     State(state): State<Arc<CapabilitiesApiState>>,
     Json(expectation): Json<ServicePlacementExpectation>,
 ) -> Json<CompatibilityResponse> {
+    if expectation.required_capabilities.iter().any(|c| c == "collaboration_team_execution_v1")
+        && !state.collaboration_catalog.execution_ownership_view().await.is_ok_and(|v| v.owns_execution) {
+        return Json(CompatibilityResponse { compatible: false, diagnostics: vec![crate::uar::service_instance::CompatibilityDiagnostic { field: "requiredCapabilities", code: "TEAM_EXECUTION_OWNER_CONFLICT", message: "This executor does not hold the catalog execution authority.".into() }], effective_binding: None });
+    }
     Json(
         state
             .service_instance

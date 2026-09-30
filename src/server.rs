@@ -1371,6 +1371,12 @@ async fn run_server_with_listener(
             .with_provider_registry(Arc::clone(&provider_registry))
             .with_service_instance(Arc::clone(&service_instance)),
     );
+    let _owns_team_catalog = if team_execution_available {
+        match collaboration_catalog.acquire_execution_owner().await {
+            Ok(_) => true,
+            Err(error) => { tracing::warn!(%error, "Team catalog is read-only for this executor"); false }
+        }
+    } else { false };
     info!("Collaboration package catalog initialized");
 
     let team_execution_runtime = uar::runtime::team_execution::TeamExecutionRuntime::new(
@@ -1585,6 +1591,7 @@ async fn run_server_with_listener(
             get(uar::api::capabilities::capabilities_handler).with_state(Arc::new(
                 uar::api::capabilities::CapabilitiesApiState {
                     service_instance: Arc::clone(&service_instance),
+                    collaboration_catalog: Arc::clone(&collaboration_catalog),
                 },
             )),
         )
@@ -1699,6 +1706,7 @@ async fn run_server_with_listener(
             uar::api::collaboration::build_router().with_state(Arc::new(
                 uar::api::collaboration::CollaborationApiState {
                     service: Arc::clone(&collaboration_catalog),
+                    admin_key: config.security.settings_admin_key.clone(),
                     service_instance: Arc::clone(&service_instance),
                     runtime: Arc::clone(&team_execution_runtime),
                 },
@@ -2118,6 +2126,7 @@ async fn run_server_with_listener(
     let async_resource_cleanup = {
         let actor_system = Arc::clone(&actor_system);
         let team_execution_runtime = Arc::clone(&team_execution_runtime);
+        let collaboration_catalog = Arc::clone(&collaboration_catalog);
         let sandbox_manager = Arc::clone(&sandbox_manager);
         let mcp = Arc::clone(&mcp);
         let projected_mcp_runtime = projected_mcp_runtime.clone();
@@ -2126,6 +2135,7 @@ async fn run_server_with_listener(
         Arc::new(move || {
             let actor_system = Arc::clone(&actor_system);
             let team_execution_runtime = Arc::clone(&team_execution_runtime);
+            let collaboration_catalog = Arc::clone(&collaboration_catalog);
             let sandbox_manager = Arc::clone(&sandbox_manager);
             let mcp = Arc::clone(&mcp);
             let projected_mcp_runtime = projected_mcp_runtime.clone();
@@ -2166,6 +2176,13 @@ async fn run_server_with_listener(
                 if let Err(error) = projected_result {
                     shutdown_coordinator.record_cleanup_failure(&error);
                     tracing::error!(%error, "Projected MCP shutdown retains unconfirmed resources");
+                }
+                if shutdown_coordinator.cleanup_result().is_ok()
+                    && collaboration_catalog.execution_ownership_view().await.is_ok_and(|v| v.claim.is_some_and(|c| c.state == "draining" && c.fence == v.current_fence)) {
+                    if let Err(error) = collaboration_catalog.release_execution_owner().await {
+                        shutdown_coordinator.record_cleanup_failure(&error);
+                        tracing::error!(%error, "Execution ownership release remains unconfirmed");
+                    }
                 }
             }) as Pin<Box<dyn Future<Output = ()> + Send + 'static>>
         }) as ShutdownAsyncCleanup
@@ -2269,8 +2286,8 @@ pub async fn start_server_sidecar(
         None,
         None,
         Some(ready),
+        http_shutdown.clone(),
         http_shutdown,
-        None,
         true,
         Some(launch_token),
     )

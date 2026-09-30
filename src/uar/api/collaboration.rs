@@ -26,6 +26,7 @@ use crate::uar::security::claims::UserContext;
 #[derive(Debug, Clone)]
 pub struct CollaborationApiState {
     pub service: Arc<CollaborationCatalogService>,
+    pub admin_key: Option<secrecy::SecretString>,
     pub service_instance: Arc<crate::uar::service_instance::ServiceInstanceAuthority>,
     pub runtime: Arc<crate::uar::runtime::team_execution::TeamExecutionRuntime>,
 }
@@ -91,7 +92,11 @@ async fn collaboration_capabilities(
         Ok(owner) => owner,
         Err(response) => return response,
     };
-    let runtime = super::capabilities::capabilities_response(&state.service_instance);
+    let mut runtime = super::capabilities::capabilities_response(&state.service_instance);
+    if !state.service.execution_ownership_view().await.is_ok_and(|v| v.owns_execution) {
+        runtime.capabilities.retain(|c| c != "collaboration_team_execution_v1");
+        runtime.collaboration.activation.team_execution = false;
+    }
     Json(CollaborationCapabilitiesResponse {
         runtime,
         binding_owner_id,
@@ -448,15 +453,7 @@ fn error_response(error: CollaborationError) -> Response {
             )
         }
     };
-    (
-        status,
-        Json(json!({
-            "error": {
-                "code": code,
-                "messageKey": message_key,
-                "detail": detail
-            }
-        })),
-    )
-        .into_response()
+    let team_code = detail.as_deref().filter(|d| d.starts_with("TEAM_") && d.bytes().all(|b| b.is_ascii_uppercase() || b == b'_'));
+    let diagnostic = team_code.map(|code| json!({"code":code,"retryable":false,"action":match code { "TEAM_RECLAIM_EVIDENCE_REQUIRED" | "TEAM_EFFECTS_UNCERTAIN" => "reconcile", "TEAM_EXECUTION_OWNER_CONFLICT" | "TEAM_EXECUTION_EPOCH_STALE" | "TEAM_RECLAIM_UNAUTHORIZED" => "contact-operator", "TEAM_REASONING_UNSUPPORTED" => "change-settings", _ => "rebind" }}));
+    (status, Json(json!({"error":{"code":team_code.unwrap_or(code),"messageKey":message_key,"detail":detail,"diagnostic":diagnostic}}))).into_response()
 }

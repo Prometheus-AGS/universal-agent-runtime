@@ -287,7 +287,7 @@ fn compatibility_export_refusal(
                 "The requested target does not declare support for this semantic."
             }
             .to_owned(),
-            effective_binding_ref: None,
+            effective_binding_ref: None, source_kind: None, source_definition: None,
         });
     }
     for (index, skill) in definition
@@ -317,7 +317,7 @@ fn compatibility_export_refusal(
                 },
                 reason_code: "export.target-skill-ref-unsupported".to_owned(),
                 message: "The requested target has no canonical full SkillRef encoder.".to_owned(),
-                effective_binding_ref: None,
+                effective_binding_ref: None, source_kind: None, source_definition: None,
             });
         }
     }
@@ -327,7 +327,7 @@ fn compatibility_export_refusal(
         reason_code: "export.target-encoder-unavailable".to_owned(),
         message: "UAR cannot encode the requested compatibility target without changing immutable semantics."
             .to_owned(),
-        effective_binding_ref: None,
+        effective_binding_ref: None, source_kind: None, source_definition: None,
     });
     let source = definition
         .document

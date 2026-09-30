@@ -464,7 +464,7 @@
         },
         "reasonCode": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9.-]*$"
+          "pattern": "^(?:[a-z][a-z0-9.-]*|TEAM_[A-Z0-9_]+)$"
         },
         "message": {
           "type": "string",
@@ -479,6 +479,22 @@
               "type": "null"
             }
           ]
+        },
+        "sourceKind": {
+          "enum": [
+            "AgentDefinition",
+            "TeamDefinition",
+            "WorkflowDefinition",
+            "PackageManifest",
+            "DeploymentBinding",
+            "RepresentationGrant",
+            "ConversionReport",
+            "EffectiveBindingReceipt",
+            "DeploymentBindingTemplate"
+          ]
+        },
+        "sourceDefinition": {
+          "$ref": "#/$defs/immutableRef"
         }
       },
       "required": [
