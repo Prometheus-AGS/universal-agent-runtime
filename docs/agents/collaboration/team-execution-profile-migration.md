@@ -1,6 +1,6 @@
 # Legacy declaration migration for the narrow team execution profile
 
-Status: Delivery A implementation guidance, 2026-09-30. The frozen narrow execution-profile contract governs these migration decisions. Source wiring is present; completed-delivery build, functional operation, and installed acceptance remain pending. This document is not an acceptance receipt.
+Status: Delivery A/B implementation guidance, 2026-09-30. The frozen narrow execution-profile contract governs these migration decisions. Delivery B source wiring is being completed; its completed-delivery build, functional operation, and installed acceptance remain pending. This document is not an acceptance receipt.
 
 ## Evidence and scope
 
@@ -8,7 +8,15 @@ Historical baseline: UAR `006eeaf1f90e0a640b0f8fd568419badac5f4320`; The Boss `c
 
 The draft.2 AgentDefinition uses `/context`, whose closed schema defines `mode`, `artifacts`, `history` and `memoryScopes`; DeploymentBinding separately uses `/contextGrants`. These are the exact source identifiers. `context` is not a TeamDefinition field in the baseline. See [common.schema.json:91](../../../docs/agents/collaboration/v0.1.0-draft.2/schemas/common.schema.json:91), [AgentDefinition:79](../../../docs/agents/collaboration/v0.1.0-draft.2/schemas/agent-definition.schema.json:79) and [DeploymentBinding:196](../../../docs/agents/collaboration/v0.1.0-draft.2/schemas/deployment-binding.schema.json:196).
 
-The ordinary semantics resolver evaluates the five semantic requirement fields but not these legacy selection fields. The team receipt narrows KB/presentation selection to none and disables ambient memory. The working selected-artifact path consumes **attempt** `contextArtifactIds`; it does not consume AgentDefinition `/context/artifacts` or binding `/contextGrants`. See [runtime_semantics.rs:17](../../../src/uar/compiler/collaboration/runtime_semantics.rs:17), [team policy:147](../../../src/uar/compiler/collaboration/team_execution/resolution.rs:147) and [selected_team_context:46](../../../src/uar/compiler/collaboration/team_execution/scope.rs:46). Baseline storage/schema acceptance is not execution support.
+The ordinary semantics resolver evaluates the five semantic requirement fields but not these legacy selection fields. The team receipt narrows KB/presentation selection to none and disables ambient memory. The selected-artifact path consumes **attempt** `contextArtifactIds`; it does not consume AgentDefinition `/context/artifacts` or binding `/contextGrants`. See [runtime_semantics.rs](../../../src/uar/compiler/collaboration/runtime_semantics.rs), [team policy](../../../src/uar/compiler/collaboration/team_execution/resolution.rs) and [typed context selection](../../../src/uar/compiler/collaboration/team_execution/context.rs). Baseline storage/schema acceptance is not execution support.
+
+## Shared instructions and exact member skills
+
+TeamDefinition may now omit `/instructions` or provide the closed `{revision,digest,text}` object. Null, unknown fields, invalid revision, a mismatching exact UTF-8 text digest, or text exceeding 16,384 bytes refuse with the corresponding `/instructions` pointer. Existing definitions without guidance stay readable. No background migration rewrites their identities. Publish a new immutable team/package version to add or revise guidance; ordinary expected-revision binding rules still apply.
+
+The compiler retains all SkillRef fields in `uar.collaboration/skill-refs` and the canonical definition extension; the preferred-ID list is only a compatibility index. Member resolution compares ID, version, digest, required flag, config, entrypoint and requiredTools against the installed private binding and captures full resolved references. Context selection preserves those exact metadata values without exposing installed filesystem locations or claiming skill-body activation. See [compatibility projection](../../../src/uar/compiler/collaboration/validation/projection.rs), [legacy artifact conversion](../../../src/uar/compiler/to_artifact.rs) and [exact installed resolution](../../../src/uar/compiler/collaboration/bindings.rs).
+
+Selection receipts record the actual admitted root/approval scope, self/assignment, authorized bounded roster and selected input/artifact/message/skill metadata. A continuation includes every ordered terminal target outcome, including failed/cancelled rows with no artifacts. Revoked disclosure edges or oversized required roster/selection material refuse; no truncated guidance or partial success view is dispatched. Token count remains explicitly unknown unless independently qualified. This does not implement shared knowledge bases, implicit memory/history, or nested teams.
 
 ## Field-specific changes
 
@@ -53,7 +61,7 @@ The uncomfortable limitation is deliberate: a definition that previously appeare
 
 ## Implementation provenance
 
-Delivery A installs field-specific required-unsupported diagnostics in team binding preflight and admission. Production acceptance receipt is pending the completed-delivery operation; this document does not certify packaged behavior. Retained legacy attempts without an execution fence or captured endpoint settings require explicit reconciliation and are never silently upgraded.
+Delivery A installs field-specific required-unsupported diagnostics in team binding preflight and admission. The parent lead recorded Gate A passing before authorizing Delivery B; its canonical operation receipt is the authority for that result. Delivery B additions are not yet certified by this document, and installed customer acceptance remains separate. Retained legacy attempts without an execution fence or captured endpoint settings require explicit reconciliation and are never silently upgraded.
 
 ## Catalog authority and recovery
 

@@ -141,6 +141,9 @@ pub(super) fn validate_portable_document(
     }
     validate_portable_authority(document)?;
     validate_contracts(document)?;
+    if selected_kind == CollaborationKind::TeamDefinition {
+        super::team_instructions::resolve_team_instructions(document)?;
+    }
     Ok(selected_kind)
 }
 

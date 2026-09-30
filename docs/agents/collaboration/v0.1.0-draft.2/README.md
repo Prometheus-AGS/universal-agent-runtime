@@ -39,6 +39,10 @@ Canonical SkillRef requires `id`, `version`, `digest`, `required`, `config`, `en
 
 TeamDefinition is portable and immutable. It pins agent or subteam definitions by ID, version, and digest; declares unique roles, bounded cardinality, one coordinator role, communication edges, allowed workflows, routing, limits, budget, and input/output contracts. Team graphs must be acyclic and within root ceilings.
 
+The compatible shared-guidance addition is optional `instructions: { revision, digest, text }`. All three fields are required when the object is present; omission preserves older definitions and explicit null is invalid. Revision is an integer from 1 through 9,007,199,254,740,991. Digest hashes the exact UTF-8 bytes of text, without trimming or normalization; text is at most 16,384 UTF-8 bytes. The enclosing definition and package retain their independent content/byte digests. Changing instructions requires a new immutable definition/package version and deliberate binding, not modification of an installed identity. See [shared-guidance authoring example](examples/shared-team-instructions.md).
+
+Within the narrow team execution profile, approved team guidance follows host policy and precedes member specialization and approved task instructions. Ordinary task input, peer messages and artifacts remain attributed untrusted data. Guidance never grants tools, credentials, memory or approval authority. Schema support alone is not runtime conformance.
+
 Registration does not create a TeamInstance. This checkpoint does not claim durable team activation.
 
 ## WorkflowDefinition

@@ -41,6 +41,26 @@
       "type": "string",
       "minLength": 1
     },
+    "instructions": {
+      "description": "Optional immutable approved team guidance. Digest is SHA-256 of the exact UTF-8 text bytes; runtime enforces the 16,384-byte limit.",
+      "type": "object",
+      "properties": {
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "digest": {
+          "$ref": "common.schema.json#/$defs/digest"
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 16384
+        }
+      },
+      "required": ["revision", "digest", "text"],
+      "additionalProperties": false
+    },
     "members": {
       "type": "array",
       "items": {
