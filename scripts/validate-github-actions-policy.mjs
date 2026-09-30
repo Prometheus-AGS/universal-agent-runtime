@@ -8,7 +8,7 @@ const scriptPath = fileURLToPath(import.meta.url);
 const defaultRoot = resolve(dirname(scriptPath), "..");
 
 const allowedWorkflows = new Map([
-  ["deploy.yml", ["kubectl set image", "kubectl rollout status", "/readyz", "/healthz"]],
+  ["deploy.yml", ["ghcr.io/prometheus-ags/universal-agent-runtime", "docker buildx imagetools create", "docker buildx imagetools inspect"]],
   ["docs.yml", ["actions/upload-pages-artifact@", "actions/deploy-pages@"]],
 ]);
 
