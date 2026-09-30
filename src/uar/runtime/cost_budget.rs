@@ -452,7 +452,38 @@ impl CostBudgetTracker {
                 .inner
                 .lock()
                 .map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?;
-            let remote_status = check_remote_grant(&inner, remote, false, false, tokens, cost);
+            let remote_status = check_remote_grant(&inner, remote, false, false, tokens, cost)
+                .map_err(|_| {
+                    if let Some(remote) = remote {
+                        let usage = inner.runs.get(&remote.accounting_id);
+                        let observed_tokens = usage.map_or(0, |usage| usage.total_tokens);
+                        let observed_cost = usage.map_or(0.0, |usage| usage.cost_usd);
+                        tracing::warn!(
+                            name: "cost.remote_grant.rejected",
+                            observed_tokens,
+                            additional_tokens = tokens,
+                            projected_tokens = observed_tokens.saturating_add(tokens),
+                            max_total_tokens = ?remote.grant.max_total_tokens,
+                            observed_cost_usd = observed_cost,
+                            additional_cost_usd = cost,
+                            projected_cost_usd = observed_cost + cost,
+                            max_total_cost_usd = ?remote.grant.max_total_cost_usd,
+                            model_requests = usage.map_or(0, |usage| usage.total_requests),
+                            max_total_model_requests = ?remote.grant.max_total_model_requests,
+                            tool_calls = usage.map_or(0, |usage| usage.tool_calls),
+                            max_total_tool_calls = ?remote.grant.max_total_tool_calls,
+                            elapsed_seconds = remote.started_at.elapsed().as_secs(),
+                            expires_after_seconds = ?remote.grant.expires_after_seconds,
+                            "Host cumulative usage grant rejected model usage"
+                        );
+                    }
+                    anyhow::Error::new(crate::llm::provider_error::ProviderError::new(
+                        None,
+                        crate::llm::provider_error::ProviderErrorKind::BudgetExceeded,
+                        None,
+                        "Host cumulative usage grant rejected model usage",
+                    ))
+                });
             let activity = inner.runs.entry(usage_id.to_owned()).or_default();
             activity.total_tokens = activity.total_tokens.saturating_add(tokens);
             activity.cost_usd = (activity.cost_usd + cost).max(0.0);

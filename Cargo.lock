@@ -6100,9 +6100,9 @@ dependencies = [
 
 [[package]]
 name = "jsonschema"
-version = "0.56.0"
+version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6a806f80c1f5560431009ce5ec29b59d38f950e0cd7db5f1b8925e6d8104e21"
+checksum = "71160ed5f6dbe36a2d6be79f4ca03ee09a99d2866f340faed49458913449aefa"
 dependencies = [
  "ahash 0.8.12",
  "bytecount",
@@ -6113,12 +6113,12 @@ dependencies = [
  "getrandom 0.3.4",
  "idna",
  "itoa",
- "jsonschema-regex 0.56.0",
- "jsonschema-value 0.56.0",
+ "jsonschema-regex 0.57.0",
+ "jsonschema-value 0.57.0",
  "num-cmp",
  "num-traits",
  "percent-encoding",
- "referencing 0.56.0",
+ "referencing 0.57.0",
  "regex",
  "reqwest 0.13.4",
  "rustls",
@@ -6140,9 +6140,9 @@ dependencies = [
 
 [[package]]
 name = "jsonschema-regex"
-version = "0.56.0"
+version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb862addfa7782108933abcf842fe25334523a9df5b89ea4d9620e3dd7b42181"
+checksum = "48d2120d8466ffcdc1b3be4b88ff0e9191bf5b6b09b1b1af1eef9aff8f465ea3"
 dependencies = [
  "regex-syntax",
 ]
@@ -6163,9 +6163,9 @@ dependencies = [
 
 [[package]]
 name = "jsonschema-value"
-version = "0.56.0"
+version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a05cd404c5ff6e2731dbbf7e290a27417750acfb59e329560a1d0af384c93fb0"
+checksum = "3fbfa40a42415369d940b3848f3ce08099f1f1ac04d73e8580f4d652617c4f44"
 dependencies = [
  "ahash 0.8.12",
  "bytecount",
@@ -6610,7 +6610,7 @@ checksum = "92daf443525c4cce67b150400bc2316076100ce0b3686209eb8cf3c31612e6f0"
 
 [[package]]
 name = "liter-llm"
-version = "2.0.3"
+version = "2.1.1"
 dependencies = [
  "ahash 0.8.12",
  "arc-swap",
@@ -6628,12 +6628,12 @@ dependencies = [
  "gcp_auth",
  "gloo-timers",
  "hex",
- "jsonschema 0.56.0",
+ "jsonschema 0.57.0",
  "jsonwebtoken 11.0.0",
  "memchr",
  "opendal",
  "opendal-http-transport-reqwest",
- "opentelemetry",
+ "opentelemetry 0.33.0",
  "pin-project-lite",
  "rand 0.10.2",
  "regex",
@@ -6655,9 +6655,9 @@ dependencies = [
  "tower-http 0.7.0",
  "tracing",
  "tracing-core",
- "tracing-opentelemetry",
+ "tracing-opentelemetry 0.34.0",
  "url",
- "utoipa",
+ "utoipa 6.0.0",
  "web-time",
 ]
 
@@ -8045,6 +8045,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "opentelemetry"
+version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6cdb0b1b267eb9db3331b434ed9ddab10d50e280a9adf9d13e5233e2002b61b5"
+dependencies = [
+ "futures-core",
+ "futures-sink",
+ "js-sys",
+ "pin-project-lite",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
 name = "opentelemetry-http"
 version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8053,7 +8067,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "http 1.5.0",
- "opentelemetry",
+ "opentelemetry 0.32.0",
  "reqwest 0.13.4",
 ]
 
@@ -8064,7 +8078,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9966929966d17620d7c316c643ba62631826e10021409357772d5eea84f62c35"
 dependencies = [
  "http 1.5.0",
- "opentelemetry",
+ "opentelemetry 0.32.0",
  "opentelemetry-http",
  "opentelemetry-proto",
  "opentelemetry_sdk",
@@ -8079,7 +8093,7 @@ version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56d658ba1faf63f7b9c492cfbe6e0ec365440a16132d3270c1065f7b33f1b638"
 dependencies = [
- "opentelemetry",
+ "opentelemetry 0.32.0",
  "opentelemetry_sdk",
  "prost",
 ]
@@ -8093,7 +8107,7 @@ dependencies = [
  "futures-channel",
  "futures-executor",
  "futures-util",
- "opentelemetry",
+ "opentelemetry 0.32.0",
  "percent-encoding",
  "portable-atomic",
  "rand 0.9.4",
@@ -9735,9 +9749,9 @@ dependencies = [
 
 [[package]]
 name = "referencing"
-version = "0.56.0"
+version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3b4a92fac7e28c27de3ad26df2ecb9e652f227b258e845af034052e5b22c96c"
+checksum = "b06f6798be4fed305e74df8b1fb90cf59c6b8cc17aa3febeb1830c0c6b627b3e"
 dependencies = [
  "ahash 0.8.12",
  "fluent-uri",
@@ -13652,7 +13666,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "adbc64cba7137545b8044cb1fe9814f7aacf3c6b5f9b45be8bb5db538befdb26"
 dependencies = [
  "js-sys",
- "opentelemetry",
+ "opentelemetry 0.32.0",
+ "smallvec",
+ "tracing",
+ "tracing-core",
+ "tracing-log",
+ "tracing-subscriber",
+ "web-time",
+]
+
+[[package]]
+name = "tracing-opentelemetry"
+version = "0.34.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a904802a1b902f43638b677ff2a650847e3b4404101b6c586d648e8c1e3e8fe"
+dependencies = [
+ "js-sys",
+ "opentelemetry 0.33.0",
  "smallvec",
  "tracing",
  "tracing-core",
@@ -14267,7 +14297,7 @@ dependencies = [
  "nonzero_ext",
  "notify",
  "num_cpus",
- "opentelemetry",
+ "opentelemetry 0.32.0",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "ort",
@@ -14317,10 +14347,10 @@ dependencies = [
  "tower-http 0.7.0",
  "tracing",
  "tracing-error",
- "tracing-opentelemetry",
+ "tracing-opentelemetry 0.33.0",
  "tracing-subscriber",
  "url",
- "utoipa",
+ "utoipa 5.5.0",
  "utoipa-swagger-ui",
  "uuid",
  "vaultrs",
@@ -14478,7 +14508,19 @@ dependencies = [
  "indexmap 2.14.0",
  "serde",
  "serde_json",
- "utoipa-gen",
+ "utoipa-gen 5.5.0",
+]
+
+[[package]]
+name = "utoipa"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8765fe27aeff71012a3f90fa474cf1df863a7d0dd81ed25de4e63fff2544994f"
+dependencies = [
+ "indexmap 2.14.0",
+ "serde",
+ "serde_json",
+ "utoipa-gen 6.0.1",
 ]
 
 [[package]]
@@ -14491,6 +14533,18 @@ dependencies = [
  "quote",
  "regex",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "utoipa-gen"
+version = "6.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d935f1c83fdf8b88f09bbe050d0cea78ea4afee6d7b0317403228c1200b2c8ab"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn 3.0.3",
 ]
 
 [[package]]
@@ -14507,7 +14561,7 @@ dependencies = [
  "serde",
  "serde_json",
  "url",
- "utoipa",
+ "utoipa 5.5.0",
  "utoipa-swagger-ui-vendored",
  "zip 3.0.0",
 ]

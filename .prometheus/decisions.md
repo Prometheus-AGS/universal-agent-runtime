@@ -1886,3 +1886,7 @@ reports the fallback instead of succeeding silently.
 **Finite authority window.** Every effect lease and one-tool-call budget reservation has a finite Unix expiry. UAR uses the configured run budget timeout when present and otherwise uses the existing 300-second tool-approval TTL. Direct authenticated calls and the explicit constrained-local adapter receive the same 300-second default.
 
 **Uncomfortable constraint.** The paired host must implement the additive `/uar/admission/v1/claim` operation and return the unchanged authority revision before any managed tool can dispatch. Until The Boss maps that operation to its current policy/grant/approval facts (and, when configured, `afc.governed-effect/1` revalidation), managed effects fail closed. No Cargo command, test, build, or review ran during this production implementation; the AFC C02 integration gate remains pending.
+
+## 2026-09-30 — Operator-requested latest Liter fork for the next Boss build
+
+The operator explicitly requested updated liter-llm and Prometheus mini submodule links during C09.3. Pin vendor/git/liter-llm to GQAdonis/liter-llm 12a2fae9675e34b88e9373caa2bca9959f416493 (2.1.1), matching mini's accepted fork revision. Preserve versions.toml as operator-owned history; its older Liter baseline is superseded for this delivery by this explicit request and the checked-in gitlink/Cargo.lock/catalog provenance. No unrelated dependency upgrades or tests are authorized by this refresh. Actual native build and packaged feature operation remain required before completion.
