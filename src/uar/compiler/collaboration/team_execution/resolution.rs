@@ -139,16 +139,14 @@ impl CollaborationCatalogService {
             .iter()
             .flat_map(|skill| skill.skill.required_tools.iter().cloned())
             .collect::<Vec<_>>();
-        if tool_ids.iter().any(|tool| tool == "spawn_agent") {
+        // Team attempts use the team-scoped collaboration controls. The
+        // ordinary parent-thread controls name a different roster and can
+        // divert a member away from its durable team task.
+        if tool_ids.iter().any(|tool| {
+            crate::uar::runtime::thread::control::AGENT_TOOL_NAMES.contains(&tool.as_str())
+        }) {
             return Err(CollaborationError::Conflict("TEAM_CAPABILITY_UNSUPPORTED".into()));
         }
-        // These factories remain bound to the ordinary host's control policy.
-        tool_ids.extend(
-            crate::uar::runtime::thread::control::AGENT_TOOL_NAMES
-                .into_iter()
-                .filter(|tool| *tool != "spawn_agent")
-                .map(str::to_owned),
-        );
         if crate::uar::api::capabilities::team_execution_b_enabled(){tool_ids.extend(["team_roster","team_send","team_delegate","team_wait"].into_iter().map(str::to_owned));}
         tool_ids.push("activate_skill".into());
         tool_ids.push(crate::uar::runtime::native_skills::search_tools::SEARCH_TOOLS_NAME.into());
