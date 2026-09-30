@@ -32,6 +32,18 @@ B3 state/runtime adds queued-versus-active accounting, catalog-order controller 
 
 Gate B includes allowed and **forbidden/revoked same-team directed edges**: valid member identity cannot disclose inbox, send or delegate over the latter; queue-only permission cannot start work. Operate all-target completion, failed/cancelled target outcomes, cyclic wait refusal and reassignment/revocation invalidating old wait authority. Repeated notifications/restart cannot duplicate continuation or blindly replay dispatched work. Ordinary root-local child tools retain their meanings; no broad inbox/broadcast/cross-team/timer/subteam feature is implied.
 
+### Scenario: Packaged sidecar supervised outside The Boss
+
+The first actual Gate B operation reached packaged UAR `READY` but failed The Boss's initial `instances.test` before inference: sidecar bootstrap overwrote explicit `UAR_SERVICE_INSTANCE__OWNERSHIP=external` with `managed`. The operation host owns this isolated process's launch/shutdown, so it is external to The Boss even though it uses the packaged sidecar executable.
+
+- **WHEN** a trusted supervisor explicitly sets `UAR_SERVICE_INSTANCE__OWNERSHIP=external` before launching the packaged sidecar
+- **THEN** bootstrap preserves that ownership and discovery reports external ownership for The Boss's unchanged compatibility check.
+- **WHEN** the ownership environment variable is absent
+- **THEN** sidecar bootstrap defaults to managed ownership, preserving ordinary The Boss-managed launches.
+- **AND** loopback binding, forced local workspace location, launch-token authentication, stdin EOF shutdown and execution qualification gates remain unchanged.
+
+This records the observed failure and intended correction; successful rebuilt negotiation and cooperating inference still require the actual completed-boundary operation receipt.
+
 ## Release and limits
 
 Finish the entire relevant source/DTO/UI/13-locale/payload increment before one designated build/operation boundary; review agents remain dormant until then. Local `pnpm build:mac:arm64`, packaged launch and actual feature receipts are required per product success. Rerun only the failed relevant boundary after an observed repair. Cadence iteration 4 continues without reset; next full publication remains delivery 5, four Mac/Windows installers/assets/checksums/source/architecture/signing/metadata/site links, no Linux. Child return is no successful delivery. Windows human installed acceptance remains separate.

@@ -149,6 +149,7 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
 
     let configured_uar_jwt = std::env::var_os("UAR_SECURITY__JWT_REQUIRED");
     let configured_legacy_jwt = std::env::var_os("JWT_REQUIRED");
+    let configured_service_ownership = std::env::var_os("UAR_SERVICE_INSTANCE__OWNERSHIP");
     let disable_sidecar_jwt = should_disable_sidecar_jwt(
         configured_uar_jwt.as_deref(),
         configured_legacy_jwt.as_deref(),
@@ -174,7 +175,11 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
         }
         std::env::set_var("UAR_SERVER__HOST", "127.0.0.1");
         std::env::set_var("UAR_SERVER__LOG_FORMAT", "json");
-        std::env::set_var("UAR_SERVICE_INSTANCE__OWNERSHIP", "managed");
+        // Ownership is relative to the connecting host; another supervisor can
+        // explicitly expose this packaged executable as external to The Boss.
+        if configured_service_ownership.is_none() {
+            std::env::set_var("UAR_SERVICE_INSTANCE__OWNERSHIP", "managed");
+        }
         std::env::set_var("UAR_SERVICE_INSTANCE__WORKSPACE_LOCATION", "local");
         if disable_sidecar_jwt {
             std::env::set_var("UAR_SECURITY__JWT_REQUIRED", "false");
