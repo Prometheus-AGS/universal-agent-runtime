@@ -4130,6 +4130,12 @@ impl RunManager {
             );
         }
         let register_turn_tools = async {
+            if let Some(binding) = &collaboration_binding {
+                if let Some(attempt) = binding.team_attempt.as_ref().filter(|_|crate::uar::api::capabilities::team_execution_b_enabled()) {
+                    crate::uar::runtime::native_skills::team_tools::register(&native_skills,
+                        crate::uar::runtime::native_skills::team_tools::TeamToolBinding {catalog: Arc::clone(&binding.service), attempt:attempt.clone(), yielded:Arc::clone(&binding.team_yield)}).await?;
+                }
+            }
             native_skills
                 .register(
                     crate::uar::runtime::native_skills::activate_skill::ActivateSkillTool::new(
@@ -5101,6 +5107,17 @@ impl RunManager {
                 );
             prompt_fragments.extend(bounded_skill_fragments);
         }
+        if let Some(binding)=collaboration_binding.as_ref().filter(|b|b.team_attempt.is_some()) {
+            let mut member_guidance=Vec::new();
+            for fragment in &mut prompt_fragments {
+                if fragment.id=="agent.identity" {
+                    let mut specialization=fragment.clone();specialization.section=PromptSection::HostInstructions;specialization.id="10.member.specialization".into();member_guidance.push(specialization);
+                    *fragment=PromptFragment::new("agent.identity",PromptSection::AgentIdentity,format!("artifact:{}",artifact.id),Authority::System,PromptRole::System,Retention::Session,format!("Team member identity: {}",artifact.id));
+                } else if fragment.id.starts_with("host.instruction.") {fragment.section=PromptSection::HostInstructions;fragment.id=format!("10.member.{}",fragment.id);}
+            }
+            prompt_fragments.extend(member_guidance);
+            if let Some(guidance)=&binding.team_instructions { prompt_fragments.push(PromptFragment::new("00.team.instructions",PromptSection::HostInstructions,format!("team-guidance:{}:{}",guidance.revision,guidance.digest),Authority::Host,PromptRole::System,Retention::Turn,guidance.text.clone())); }
+        }
         let mut manifest_budgets = PromptBudgets::for_rendered(&render_with_options(
             &prompt_fragments,
             RenderOptions {
@@ -5340,6 +5357,7 @@ impl RunManager {
                 .with_tool_admission(Arc::clone(&tool_admission))
                 .with_resolved_turn(Arc::clone(&resolved_turn))
                 .with_canonical_receipt_store(self.persistence.clone())
+                .with_team_model_handoff(collaboration_binding.clone().filter(|b|b.team_attempt.is_some()))
                 .with_world_state(Arc::clone(&world_state))
                 .with_skill_activation(
                     Arc::clone(&activation_context),

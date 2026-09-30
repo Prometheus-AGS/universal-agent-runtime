@@ -431,6 +431,13 @@ pub struct CollaborationCommandReceipt {
 #[serde(rename_all = "camelCase")]
 pub struct CollaborationCatalogState {
     pub generation: u64,
+    #[serde(default)] pub team_waits: BTreeMap<String, super::team_wait::TeamWait>,
+    #[serde(default)] pub team_continuations: BTreeMap<String, super::team_wait::ContinuationReceipt>,
+    #[serde(default)] pub team_peer_commands: BTreeMap<String, super::team_wait::TeamPeerCommandReceipt>,
+    #[serde(default)] pub team_peer_messages: BTreeMap<String, super::team_wait::TeamPeerMessage>,
+    #[serde(default)] pub team_message_deliveries: BTreeMap<String, super::team_wait::MessageDelivery>,
+    #[serde(default)] pub team_yields: BTreeMap<String, super::team_wait::KernelTeamYield>,
+    #[serde(default)] pub team_context_receipts: BTreeMap<String, super::team_context::TeamContextReceipt>,
     #[serde(default)] pub execution_claim: Option<crate::uar::domain::team_execution::TeamExecutionClaim>,
     #[serde(default)] pub execution_claim_history: BTreeMap<String, crate::uar::domain::team_execution::TeamExecutionClaim>,
     #[serde(default)] pub execution_reclaim_receipts: BTreeMap<String, crate::uar::domain::team_execution::TeamExecutionReclaimReceipt>,

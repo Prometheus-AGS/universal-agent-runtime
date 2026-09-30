@@ -149,6 +149,9 @@ pub trait NativeSkill: Send + Sync {
         self.execute(args).await
     }
 
+    /// Host-only durable team control; ordinary JSON results cannot create it.
+    async fn finish_team_yield(&self, _remaining: Vec<crate::uar::domain::team_wait::UnexecutedTeamToolCall>) -> anyhow::Result<Option<crate::uar::domain::team_wait::KernelTeamYield>> { Ok(None) }
+
     /// Remove host-only raw-stream metadata from a successful typed result.
     /// Ordinary native skills have no separate byte streams.
     fn take_canonical_receipt_data(

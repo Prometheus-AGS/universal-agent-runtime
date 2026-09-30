@@ -793,6 +793,7 @@ async fn run_server_with_listener(
     }
     if team_execution_available {
         implemented_capabilities.push("collaboration_team_execution_v1");
+        if uar::api::capabilities::team_execution_b_enabled(){implemented_capabilities.extend(uar::api::capabilities::TEAM_EXECUTION_B_CAPABILITIES); }
     }
     let service_instance = Arc::new(uar::service_instance::ServiceInstanceAuthority::new(
         &config.service_instance,

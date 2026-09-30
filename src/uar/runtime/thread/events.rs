@@ -48,7 +48,7 @@ impl PersistedAgentThread {
         let (status, terminal_outcome) = match thread.status {
             AgentThreadStatus::Pending => (AgentLifecycleStatus::Pending, None),
             AgentThreadStatus::Running => (AgentLifecycleStatus::Running, None),
-            AgentThreadStatus::Waiting => (AgentLifecycleStatus::Waiting, None),
+            AgentThreadStatus::Waiting | AgentThreadStatus::Yielded => (AgentLifecycleStatus::Waiting, None),
             AgentThreadStatus::Completed => (
                 AgentLifecycleStatus::Completed,
                 Some(AgentLifecycleOutcome::Completed),
@@ -85,7 +85,7 @@ impl PersistedAgentThread {
             }
             AgentThreadStatus::Pending
             | AgentThreadStatus::Running
-            | AgentThreadStatus::Waiting => {
+            | AgentThreadStatus::Waiting | AgentThreadStatus::Yielded => {
                 NormalizedEvent::AgentThreadUpdated { run_id, lifecycle }
             }
             AgentThreadStatus::Completed => {

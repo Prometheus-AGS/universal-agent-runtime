@@ -1,8 +1,15 @@
 //! Catalog-owned team admission. Runtime workers consume durable dispatch intents.
 mod admission;
+mod context;
+mod context_evidence;
+mod continuations;
+pub(crate) mod peer;
+mod peer_commands;
+mod waits;
+pub use context::SelectedTeamContext;
 mod dispatch;
-mod ownership;
 mod model_capture;
+mod ownership;
 mod recovery;
 mod resolution;
 mod scope;
@@ -85,7 +92,7 @@ fn fence(
         || member.revision != expected.member_revision
         || task.assignee_member_id.as_deref() != Some(expected.member_id.as_str())
         || task.ownership_epoch != expected.ownership_epoch
-        || task.status != "running"
+        || !matches!(task.status.as_str(), "running" | "ready" | "queued")
         || binding.revision != expected.binding_revision
         || actual.execution_epoch != expected.execution_epoch
         || actual.run_id != expected.run_id
@@ -120,6 +127,19 @@ fn add(left: &mut TeamReservation, right: &TeamReservation) -> Result<(), Collab
 }
 
 impl CollaborationCatalogService {
+    pub async fn queued_team_attempts(
+        &self,
+    ) -> Result<Vec<TeamExecutionAttempt>, CollaborationError> {
+        let state = self.load_state().await?;
+        self.require_execution_owner(&state, false)?;
+        Ok(state
+            .team_execution_attempts
+            .values()
+            .filter(|a| a.status == "queued")
+            .cloned()
+            .collect())
+    }
+
     pub async fn get_team_attempt(
         &self,
         owner: &str,
@@ -190,6 +210,46 @@ impl CollaborationCatalogService {
         }
         let mut result = crate::uar::domain::team_execution::TeamExecutionSummary {
             attempts: Vec::new(),
+            command_receipts: state
+                .team_peer_commands
+                .values()
+                .filter(|r| {
+                    r.scope.owner_id == owner
+                        && r.scope.workspace_id == workspace
+                        && r.scope.team_id == team_id
+                })
+                .cloned()
+                .collect(),
+            waits: state
+                .team_waits
+                .values()
+                .filter(|w| {
+                    w.authority.owner_id == owner
+                        && w.authority.workspace_id == workspace
+                        && w.authority.team_id == team_id
+                })
+                .cloned()
+                .collect(),
+            continuations: state
+                .team_continuations
+                .values()
+                .filter(|w| {
+                    w.authority.owner_id == owner
+                        && w.authority.workspace_id == workspace
+                        && w.authority.team_id == team_id
+                })
+                .cloned()
+                .collect(),
+            context_receipts: state
+                .team_context_receipts
+                .values()
+                .filter(|w| {
+                    w.authority.owner_id == owner
+                        && w.authority.workspace_id == workspace
+                        && w.authority.team_id == team_id
+                })
+                .cloned()
+                .collect(),
             committed: TeamReservation::default(),
             reserved: TeamReservation::default(),
             uncertain_attempts: Vec::new(),
@@ -211,6 +271,83 @@ impl CollaborationCatalogService {
             }
             result.attempts.push(item.clone());
         }
+        // Historical context retains its provenance privately; disclosure is current-authority only.
+        result.context_receipts.retain(|receipt| {
+            let Some(attempt) = state.team_execution_attempts.get(&key(
+                owner,
+                workspace,
+                team_id,
+                &receipt.authority.attempt_id,
+            )) else {
+                return false;
+            };
+            peer::authorized_roster(&state, attempt).is_ok_and(|(visible, _, _)| {
+                receipt
+                    .roster
+                    .iter()
+                    .all(|m| visible.iter().any(|v| v.member_id == m.member_id))
+            }) && receipt
+                .target_outcomes
+                .iter()
+                .all(|o| peer::require_result_edge(&state, attempt, &o.member_id).is_ok())
+                && receipt
+                    .selections
+                    .iter()
+                    .filter(|s| {
+                        s.source_kind
+                            == crate::uar::domain::team_context::ContextSourceKind::Artifact
+                            && s.disposition
+                                == crate::uar::domain::team_context::ContextDisposition::Selected
+                    })
+                    .all(|selection| {
+                        state
+                            .team_artifacts
+                            .values()
+                            .find(|a| {
+                                a.id == selection.source_id
+                                    && a.owner_id == owner
+                                    && a.workspace_id == workspace
+                                    && a.team_id == team_id
+                            })
+                            .is_some_and(|a| {
+                                peer::require_artifact_edge(&state, attempt, &a.member_id).is_ok()
+                            })
+                    })
+        });
+        for wait in &mut result.waits {
+            let Some(attempt) = state.team_execution_attempts.get(&key(
+                owner,
+                workspace,
+                team_id,
+                &wait.authority.attempt_id,
+            )) else {
+                continue;
+            };
+            if wait
+                .wake_outcomes
+                .iter()
+                .any(|o| peer::require_result_edge(&state, attempt, &o.member_id).is_err())
+            {
+                // Never return a partial outcome list as a successful projection.
+                return Err(peer::denied("TEAM_EDGE_DENIED"));
+            }
+        }
+        result.continuations.retain(|receipt| {
+            state
+                .team_execution_attempts
+                .get(&key(
+                    owner,
+                    workspace,
+                    team_id,
+                    &receipt.authority.attempt_id,
+                ))
+                .is_some_and(|attempt| {
+                    receipt
+                        .target_outcomes
+                        .iter()
+                        .all(|o| peer::require_result_edge(&state, attempt, &o.member_id).is_ok())
+                })
+        });
         result.attempts.sort_by_key(|item| item.created_at);
         Ok(result)
     }

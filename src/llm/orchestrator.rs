@@ -254,6 +254,7 @@ pub struct Orchestrator {
     shadow_turn: Option<(Arc<crate::uar::runtime::turn::ResolvedTurn>, Vec<Message>)>,
     world_state: Option<Arc<crate::uar::runtime::world_state::runtime::WorldStateRuntime>>,
     canonical_receipt_store: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
+    team_model_handoff: Option<crate::uar::runtime::turn::CollaborationRunBinding>,
 }
 
 #[derive(Clone)]
@@ -678,12 +679,15 @@ impl Orchestrator {
             shadow_turn: None,
             world_state: None,
             canonical_receipt_store: None,
+            team_model_handoff: None,
         }
     }
 
     /// Share host-owned activations without persisting their reclaimable bodies
     /// in the history that compaction summarizes.
     #[must_use]
+    pub(crate) fn with_team_model_handoff(mut self,binding:Option<crate::uar::runtime::turn::CollaborationRunBinding>)->Self{self.team_model_handoff=binding;self}
+
     pub fn with_skill_activation(
         mut self,
         context: Arc<
@@ -1909,6 +1913,7 @@ impl Orchestrator {
                                 &fragments,
                             )?;
                             let manifest = orchestrator.attempt_manifest(&model, &request);
+                            if let Some(binding)=&orchestrator.team_model_handoff { if let Some(attempt)=&binding.team_attempt { binding.service.validate_team_model_handoff(attempt).await?; } }
                             let stream = open_driver_stream(
                                 driver.as_ref(),
                                 request,
@@ -1916,6 +1921,7 @@ impl Orchestrator {
                                 stream_idle_timeout,
                             )
                             .await?;
+                            if let Some(binding)=&orchestrator.team_model_handoff { if let Some(attempt)=&binding.team_attempt { binding.service.record_team_model_handoff(attempt).await?; } }
                             Ok(prepend_attempt_manifest(stream, manifest))
                         }
                     })
@@ -2006,14 +2012,12 @@ impl Orchestrator {
                                     Ok(request) => {
                                         let manifest = orchestrator
                                             .attempt_manifest(&fallback.model, &request);
-                                        open_driver_stream(
-                                            fallback.driver.as_ref(),
-                                            request,
-                                            stream_start_timeout,
-                                            stream_idle_timeout,
-                                        )
-                                        .await
-                                        .map(|stream| prepend_attempt_manifest(stream, manifest))
+                                        async {
+                                            if let Some(binding)=&orchestrator.team_model_handoff {if let Some(attempt)=&binding.team_attempt {binding.service.validate_team_model_handoff(attempt).await?;}}
+                                            let stream=open_driver_stream(fallback.driver.as_ref(),request,stream_start_timeout,stream_idle_timeout).await?;
+                                            if let Some(binding)=&orchestrator.team_model_handoff {if let Some(attempt)=&binding.team_attempt {binding.service.record_team_model_handoff(attempt).await?;}}
+                                            Ok::<_,anyhow::Error>(prepend_attempt_manifest(stream,manifest))
+                                        }.await
                                     }
                                     Err(error) => Err(error),
                                 };
@@ -2306,6 +2310,7 @@ impl Orchestrator {
                 if orchestrator.llm_config.parallel_tool_calls == Some(true)
                     && tool_calls.len() > 1
                     && schedulable
+                    && !tool_calls.iter().any(|call|call.function.name=="team_wait")
                 {
                     let batch_descriptors = Arc::new(
                         batch_descriptors.expect("schedulable batches have one descriptor per call"),
@@ -2726,6 +2731,16 @@ impl Orchestrator {
                         success,
                     };
 
+                    if success && tool_name == "team_wait" {
+                        if let Some(tool) = orchestrator.native_skills.get(tool_name).await {
+                            let remaining=tool_calls.iter().skip(idx+1).map(|call|crate::uar::domain::team_wait::UnexecutedTeamToolCall{tool_call_id:call.id.clone(),disposition:"not-executed-due-to-yield".into()}).collect();
+                            match tool.finish_team_yield(remaining).await {
+                                Ok(Some(_)) => { yield NormalizedEvent::RuntimeStep {step,kind:RuntimeStepKind::Finished}; yield NormalizedEvent::Done; return; },
+                                Ok(None) => {},
+                                Err(_) => {yield NormalizedEvent::Error{message:"TEAM_EFFECTS_UNCERTAIN".into(),code:Some("TEAM_EFFECTS_UNCERTAIN".into())};return;}
+                            }
+                        }
+                    }
                     // Add tool result to message history
                     message_json.push(serde_json::json!({
                         "role": "tool",

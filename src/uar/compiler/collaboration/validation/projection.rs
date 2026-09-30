@@ -26,7 +26,7 @@ pub(super) fn conversion_diagnostics(
         .flatten()
         .filter_map(Value::as_str)
     {
-        if !SUPPORTED_INSTALL_CAPABILITIES.contains(&capability) {
+        if !SUPPORTED_INSTALL_CAPABILITIES.contains(&capability) && !(crate::uar::api::capabilities::team_execution_b_enabled() && crate::uar::api::capabilities::TEAM_EXECUTION_B_CAPABILITIES.contains(&capability)) {
             diagnostics.push(ConversionDiagnostic {
                 field: "requiredCapabilities".to_owned(),
                 disposition: ConversionDisposition::RequiredUnsupported,

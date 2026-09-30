@@ -30,6 +30,7 @@ impl TeamExecutionRuntime {
         let outcome = self
             .execute_turn(&owner, &attempt, cancellation.clone(), &entered)
             .await;
+        let mut yielded = None;
         let mut output = None;
         let mut reason = None;
         let mut status = match outcome {
@@ -38,10 +39,21 @@ impl TeamExecutionRuntime {
                     output = Some(Value::String(text));
                     "succeeded"
                 }
+                Some(AgentThreadResult::Yielded { control }) => {
+                    yielded = Some(control);
+                    "yielded"
+                }
                 Some(AgentThreadResult::Cancelled) => "cancelled",
                 Some(AgentThreadResult::Failed { code, message }) => {
                     reason = Some(match message.split_once("; diagnostic reference ") {
-                        Some((safe_code, reference)) if matches!(safe_code, "TEAM_PROVIDER_REQUEST_REJECTED" | "TEAM_PROVIDER_STREAM_FAILED") && uuid::Uuid::parse_str(reference).is_ok() => message,
+                        Some((safe_code, reference))
+                            if matches!(
+                                safe_code,
+                                "TEAM_PROVIDER_REQUEST_REJECTED" | "TEAM_PROVIDER_STREAM_FAILED"
+                            ) && uuid::Uuid::parse_str(reference).is_ok() =>
+                        {
+                            message
+                        }
                         _ => code,
                     });
                     "failed"
@@ -168,6 +180,16 @@ impl TeamExecutionRuntime {
         if !usage_known {
             reason.get_or_insert_with(|| "team_usage_or_effect_outcome_uncertain".into());
         }
+        if let Some(control) = yielded.as_ref().filter(|_| effects_confirmed) {
+            if let Err(error) = self
+                .catalog
+                .finalize_team_yield(&attempt, control, usage)
+                .await
+            {
+                tracing::error!(attempt_id=%attempt.id,%error,"Team yield settlement remains unconfirmed");
+            }
+            return;
+        }
         if let Err(error) = self
             .catalog
             .settle_team_attempt(&attempt, status, usage, output, reason)
@@ -189,16 +211,26 @@ impl TeamExecutionRuntime {
             "Team attempt cancelled before actor entry"
         );
         let bound = self.catalog.resolve_team_member_run(attempt).await?;
-        let context = self.catalog.selected_team_context(attempt).await?;
+        let context = self
+            .catalog
+            .selected_team_context(attempt, &bound.effective_binding_receipt.resolved_skills)
+            .await?;
+        self.catalog
+            .record_team_context_selection(attempt, &context.receipt)
+            .await?;
+        let guidance = context.receipt.team_instructions.clone();
         let mut request = RunExecutionRequest::from_bound_agent(
             bound,
-            serde_json::to_string(&context)?,
+            serde_json::to_string(&context.data)?,
             attempt.owner_id.clone(),
             attempt.workspace_id.clone(),
             Arc::clone(&self.catalog),
         )
         .with_verified_owner(owner.clone())
         .with_team_attempt(attempt.clone())?;
+        if let Some(binding) = request.collaboration_binding.as_mut() {
+            binding.team_instructions = guidance;
+        }
         request.session_id = Some(format!("team-attempt:{}", attempt.id));
         request.host_budget_constraint = Some(ThreadBudgets {
             max_tokens_per_turn: Some(attempt.reservation.tokens),

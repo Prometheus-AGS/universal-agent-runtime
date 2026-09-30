@@ -31,6 +31,7 @@ impl CollaborationCatalogService {
         let command_key = format!("{owner}\u{1f}{workspace}\u{1f}{}", request.command_id);
         let id = Uuid::new_v4().to_string();
         let run_id = Uuid::new_v4().to_string();
+        let root_id = Uuid::new_v4().to_string();
         for _ in 0..MAX_CAS_ATTEMPTS {
             let current = self.load_state().await?;
             let execution_fence = self.require_execution_owner(&current, false)?;
@@ -126,7 +127,6 @@ impl CollaborationCatalogService {
                 return Err(CollaborationError::Invalid("Runtime pricing is in USD; team and effective binding budget currency must be USD".to_owned()));
             }
             let mut consumed = TeamReservation::default();
-            let mut active = 0_u64;
             for prior in current.team_execution_attempts.values().filter(|a| {
                 a.owner_id == owner && a.workspace_id == workspace && a.team_id == team_id
             }) {
@@ -143,24 +143,41 @@ impl CollaborationCatalogService {
                         Some("succeeded" | "failed" | "cancelled")
                     ))
                 {
-                    active += 1;
                     if prior.member_id == member.id {
                         return Err(CollaborationError::Conflict("member has an active or uncertain attempt; resolve it before another turn".to_owned()));
                     }
                 }
             }
-            let concurrency = definition.document["limits"]["concurrentTurns"]
+            if current.team_waits.values().any(|w| {
+                w.authority.owner_id == owner
+                    && w.authority.workspace_id == workspace
+                    && w.authority.team_id == team_id
+                    && w.authority.member_id == member.id
+                    && matches!(w.state.as_str(), "yield_requested" | "waiting" | "blocked")
+            }) {
+                return Err(CollaborationError::Conflict("TEAM_WAIT_INVALIDATED".into()));
+            }
+            let pending = current
+                .team_execution_attempts
+                .values()
+                .filter(|a| {
+                    a.owner_id == owner
+                        && a.workspace_id == workspace
+                        && a.team_id == team_id
+                        && a.status == "queued"
+                })
+                .count() as u64;
+            let pending_limit = definition.document["limits"]["maxPendingTasks"]
                 .as_u64()
-                .ok_or_else(|| {
-                    CollaborationError::Storage("team concurrentTurns is missing".to_owned())
-                })?;
-            let narrowed = binding.document["effectiveLimits"]["concurrentTurns"]
-                .as_u64()
-                .unwrap_or(concurrency)
-                .min(concurrency);
-            if active >= narrowed {
+                .unwrap_or(0)
+                .min(
+                    binding.document["effectiveLimits"]["maxPendingTasks"]
+                        .as_u64()
+                        .unwrap_or(u64::MAX),
+                );
+            if pending >= pending_limit {
                 return Err(CollaborationError::Conflict(
-                    "team concurrent turn limit reached".to_owned(),
+                    "TEAM_PENDING_LIMIT".to_owned(),
                 ));
             }
             add(&mut consumed, &request.reservation)?;
@@ -208,6 +225,10 @@ impl CollaborationCatalogService {
             let attempt = TeamExecutionAttempt {
                 id: id.clone(),
                 run_id: run_id.clone(),
+                root_id: root_id.clone(),
+                approval_scope_id: root_id.clone(),
+                queue_sequence: current.generation + 1,
+                continuation_of_wait_id: None,
                 owner_id: owner.to_owned(),
                 workspace_id: workspace.to_owned(),
                 team_id: team_id.to_owned(),
@@ -243,7 +264,7 @@ impl CollaborationCatalogService {
                 .iter_mut()
                 .find(|t| t.id == task_id)
                 .ok_or_else(|| CollaborationError::NotFound(task_id.to_owned()))?;
-            task.status = "running".to_owned();
+            task.status = "ready".to_owned();
             task.revision += 1;
             task.updated_at = now;
             updated.revision += 1;

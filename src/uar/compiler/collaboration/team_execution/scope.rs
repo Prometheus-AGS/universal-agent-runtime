@@ -1,7 +1,7 @@
 //! Explicit artifact disclosure and revisioned membership revocation.
 
 use chrono::Utc;
-use serde_json::{Value, json};
+use serde_json::Value;
 
 use crate::uar::domain::team_execution::{
     TeamArtifact, TeamControlRequest, TeamExecutionAttempt, TeamExecutionCommandReceipt,
@@ -40,56 +40,6 @@ impl CollaborationCatalogService {
                 .then_with(|| left.id.cmp(&right.id))
         });
         Ok(artifacts)
-    }
-
-    /// Projects declared task input and only explicitly selected durable artifacts.
-    pub async fn selected_team_context(
-        &self,
-        expected: &TeamExecutionAttempt,
-    ) -> Result<Value, CollaborationError> {
-        let state = self.load_state().await?;
-        fence(&state, expected)?;
-        let actual = attempt(&state, expected)?;
-        let current_team = team(
-            &state,
-            &actual.owner_id,
-            &actual.workspace_id,
-            &actual.team_id,
-        )?;
-        let task = current_team
-            .tasks
-            .iter()
-            .find(|task| task.id == actual.task_id)
-            .ok_or_else(|| CollaborationError::NotFound(actual.task_id.clone()))?;
-        let artifacts = actual
-            .context_artifact_ids
-            .iter()
-            .map(|id| {
-                validate_id(id)?;
-                state
-                    .team_artifacts
-                    .get(&key(
-                        &actual.owner_id,
-                        &actual.workspace_id,
-                        &actual.team_id,
-                        id,
-                    ))
-                    .filter(|artifact| {
-                        artifact.owner_id == actual.owner_id
-                            && artifact.workspace_id == actual.workspace_id
-                            && artifact.team_id == actual.team_id
-                            && artifact.id == *id
-                    })
-                    .cloned()
-                    .ok_or_else(|| CollaborationError::NotFound(id.clone()))
-            })
-            .collect::<Result<Vec<_>, CollaborationError>>()?;
-        Ok(json!({
-            "teamInput": current_team.input,
-            "taskInput": task.input,
-            "taskOutputContract": task.output_contract,
-            "artifacts": artifacts,
-        }))
     }
 
     /// Persists one immutable output artifact for the currently authorized attempt.
@@ -280,7 +230,9 @@ impl CollaborationCatalogService {
                     committed_at: now,
                 },
             );
+            self.evaluate_team_waits(&mut next).await?;
             if self.cas(current.generation, &next).await? {
+                self.team_execution_notify.notify_one();
                 return Ok(current_team);
             }
         }

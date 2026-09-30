@@ -128,6 +128,7 @@ impl Entry {
                             Some(Message::agent_text("Agent artifact receipt is unavailable")),
                         )
                     }
+                    Some(AgentThreadResult::Yielded { .. }) => (TaskState::InputRequired, None),
                     Some(AgentThreadResult::Cancelled) => (TaskState::Canceled, None),
                     Some(AgentThreadResult::Failed { code, .. }) => {
                         if matches!(

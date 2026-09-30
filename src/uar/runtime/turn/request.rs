@@ -13,7 +13,11 @@ pub struct CollaborationRunBinding {
     pub workspace_id: String,
     pub receipt: EffectiveBindingReceipt,
     pub(crate) team_attempt: Option<crate::uar::domain::team_execution::TeamExecutionAttempt>,
-    service: std::sync::Arc<crate::uar::compiler::collaboration::CollaborationCatalogService>,
+    pub(crate) team_instructions: Option<crate::uar::domain::team_context::TeamInstructions>,
+    pub(crate) team_yield:
+        std::sync::Arc<std::sync::Mutex<Option<crate::uar::domain::team_wait::KernelTeamYield>>>,
+    pub(crate) service:
+        std::sync::Arc<crate::uar::compiler::collaboration::CollaborationCatalogService>,
 }
 
 impl CollaborationRunBinding {
@@ -207,6 +211,8 @@ impl RunExecutionRequest {
             workspace_id,
             receipt: bound.effective_binding_receipt,
             team_attempt: None,
+            team_yield: Default::default(),
+            team_instructions: None,
             service,
         };
         let mut request = Self::new(artifact, input);

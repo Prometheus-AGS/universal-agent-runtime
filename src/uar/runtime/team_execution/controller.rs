@@ -6,7 +6,7 @@ use std::{
     },
 };
 
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, Semaphore};
 use tokio_util::sync::CancellationToken;
 
 use crate::uar::{
@@ -45,6 +45,9 @@ pub struct TeamExecutionRuntime {
     cancellation: CancellationToken,
     jobs: Mutex<BTreeMap<String, Arc<Job>>>,
     members: Mutex<BTreeMap<String, Arc<Mutex<()>>>>,
+    active: Arc<Semaphore>,
+    owners: Mutex<BTreeMap<String, ActorOwner>>,
+    last_team: Mutex<Option<String>>,
 }
 
 impl std::fmt::Debug for TeamExecutionRuntime {
@@ -62,7 +65,7 @@ impl TeamExecutionRuntime {
         persistence: Arc<dyn PersistenceLayer>,
         available: bool,
     ) -> Arc<Self> {
-        Arc::new(Self {
+        let runtime = Arc::new(Self {
             catalog,
             cancellation: manager.root_cancellation_token().child_token(),
             manager,
@@ -70,10 +73,30 @@ impl TeamExecutionRuntime {
             available,
             jobs: Mutex::new(BTreeMap::new()),
             members: Mutex::new(BTreeMap::new()),
-        })
+            active: Arc::new(Semaphore::new(
+                std::env::var("UAR_TEAM_EXECUTION_MAX_ACTIVE")
+                    .ok()
+                    .and_then(|v| v.parse().ok())
+                    .filter(|v| *v > 0)
+                    .unwrap_or(4),
+            )),
+            owners: Mutex::new(BTreeMap::new()),
+            last_team: Mutex::new(None),
+        });
+        let weak = Arc::downgrade(&runtime);
+        let notify = Arc::clone(&runtime.catalog.team_execution_notify);
+        let cancel = runtime.cancellation.clone();
+        tokio::spawn(async move {
+            loop {
+                tokio::select! {_ = cancel.cancelled()=>break,_=notify.notified()=>{if let Some(runtime)=weak.upgrade(){runtime.drain().await;}else{break;}}}
+            }
+        });
+        runtime
     }
 
-    pub async fn quiesce(&self) -> anyhow::Result<crate::uar::domain::team_execution::TeamExecutionFencingEvidence> {
+    pub async fn quiesce(
+        &self,
+    ) -> anyhow::Result<crate::uar::domain::team_execution::TeamExecutionFencingEvidence> {
         self.shutdown().await?;
         Ok(self.catalog.record_joined_execution_owner().await?)
     }
@@ -101,6 +124,10 @@ impl TeamExecutionRuntime {
         if attempt.status != "queued" {
             return Ok(attempt);
         }
+        self.owners
+            .lock()
+            .await
+            .insert(attempt.owner_id.clone(), owner.clone());
         let member_key = format!(
             "{}\u{1f}{}\u{1f}{}\u{1f}{}",
             attempt.owner_id, attempt.workspace_id, attempt.team_id, attempt.member_id
@@ -112,6 +139,14 @@ impl TeamExecutionRuntime {
             .entry(member_key)
             .or_insert_with(|| Arc::new(Mutex::new(())))
             .clone();
+        let serial = match lane.clone().try_lock_owned() {
+            Ok(guard) => guard,
+            Err(_) => return Ok(attempt),
+        };
+        let permit = match self.active.clone().try_acquire_owned() {
+            Ok(permit) => permit,
+            Err(_) => return Ok(attempt),
+        };
         let mut jobs = self.jobs.lock().await;
         if jobs.contains_key(&attempt.id) {
             return self
@@ -126,8 +161,10 @@ impl TeamExecutionRuntime {
         }
         // Resolve before claiming dispatch; unavailable resources cannot start a turn.
         let prepared = async {
-            self.catalog.resolve_team_member_run(&attempt).await?;
-            self.catalog.selected_team_context(&attempt).await?;
+            let bound = self.catalog.resolve_team_member_run(&attempt).await?;
+            self.catalog
+                .selected_team_context(&attempt, &bound.effective_binding_receipt.resolved_skills)
+                .await?;
             Ok::<_, CollaborationError>(())
         }
         .await;
@@ -143,7 +180,13 @@ impl TeamExecutionRuntime {
                 .await?;
             return Err(error);
         }
-        let attempt = self.catalog.claim_team_dispatch(&attempt).await?;
+        let attempt = match self.catalog.claim_team_dispatch(&attempt).await {
+            Ok(attempt) => attempt,
+            Err(CollaborationError::Conflict(code)) if code == "TEAM_PENDING_LIMIT" => {
+                return Ok(attempt);
+            }
+            Err(error) => return Err(error),
+        };
         let job = Arc::new(Job {
             attempt: attempt.clone(),
             cancellation: self.cancellation.child_token(),
@@ -153,15 +196,84 @@ impl TeamExecutionRuntime {
         let runtime = Arc::clone(self);
         let worker = Arc::clone(&job);
         let handle = tokio::spawn(async move {
-            let _serial = lane.lock().await;
+            let _serial = serial;
+            let _active = permit;
             runtime
                 .execute(owner, worker.attempt.clone(), worker.cancellation.clone())
                 .await;
             worker.finished.store(true, Ordering::Release);
+            drop(_serial);
+            drop(_active);
+            runtime.catalog.team_execution_notify.notify_one();
         });
         *job.handle.lock().await = Some(handle);
         jobs.insert(attempt.id.clone(), job);
         Ok(attempt)
+    }
+
+    async fn drain(self: &Arc<Self>) {
+        if !self.available || self.cancellation.is_cancelled() {
+            return;
+        }
+        let queued = match self.catalog.queued_team_attempts().await {
+            Ok(v) => v,
+            Err(_) => return,
+        };
+        let mut teams = std::collections::BTreeMap::<String, Vec<TeamExecutionAttempt>>::new();
+        for attempt in queued {
+            teams
+                .entry(format!(
+                    "{}:{}:{}",
+                    attempt.owner_id, attempt.workspace_id, attempt.team_id
+                ))
+                .or_default()
+                .push(attempt);
+        }
+        for attempts in teams.values_mut() {
+            attempts.sort_by(|a, b| {
+                a.queue_sequence
+                    .cmp(&b.queue_sequence)
+                    .then_with(|| a.created_at.cmp(&b.created_at))
+                    .then_with(|| a.id.cmp(&b.id))
+            });
+        }
+        let mut names: Vec<_> = teams.keys().cloned().collect();
+        if let Some(last) = self.last_team.lock().await.clone() {
+            if let Some(index) = names.iter().position(|name| name == &last) {
+                let len = names.len();
+                names.rotate_left((index + 1) % len);
+            }
+        }
+        let mut progress = true;
+        while progress && self.active.available_permits() > 0 {
+            progress = false;
+            for name in &names {
+                if self.active.available_permits() == 0 {
+                    break;
+                }
+                let Some(attempt) = teams.get_mut(name).and_then(|v| {
+                    if v.is_empty() {
+                        None
+                    } else {
+                        Some(v.remove(0))
+                    }
+                }) else {
+                    continue;
+                };
+                progress = true;
+                let owner = self.owners.lock().await.get(&attempt.owner_id).cloned();
+                let Some(owner) = owner else {
+                    continue;
+                };
+                match self.dispatch(owner, attempt).await {
+                    Ok(a) if a.status == "running" => {
+                        *self.last_team.lock().await = Some(name.clone());
+                        progress = true;
+                    }
+                    _ => {}
+                }
+            }
+        }
     }
 
     pub async fn cancel(
@@ -228,6 +340,9 @@ impl TeamExecutionRuntime {
                 ));
             }
         }
+        let joined_yields = self
+            .confirmed_joined_yields(&owner, workspace, team)
+            .await?;
         let queued = self
             .catalog
             .recover_team_attempts_control(
@@ -235,6 +350,7 @@ impl TeamExecutionRuntime {
                 workspace,
                 team,
                 request,
+                joined_yields,
             )
             .await?;
         drop(jobs);
@@ -246,7 +362,14 @@ impl TeamExecutionRuntime {
     }
 
     pub async fn shutdown(&self) -> anyhow::Result<()> {
-        if !self.catalog.execution_ownership_view().await?.owns_execution { return Ok(()); }
+        if !self
+            .catalog
+            .execution_ownership_view()
+            .await?
+            .owns_execution
+        {
+            return Ok(());
+        }
         self.catalog.drain_execution_owner().await?;
         self.cancellation.cancel();
         let jobs = self.jobs.lock().await.values().cloned().collect::<Vec<_>>();

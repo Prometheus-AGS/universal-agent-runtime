@@ -94,7 +94,7 @@ async fn collaboration_capabilities(
     };
     let mut runtime = super::capabilities::capabilities_response(&state.service_instance);
     if !state.service.execution_ownership_view().await.is_ok_and(|v| v.owns_execution) {
-        runtime.capabilities.retain(|c| c != "collaboration_team_execution_v1");
+        runtime.capabilities.retain(|c| c != "collaboration_team_execution_v1" && !super::capabilities::TEAM_EXECUTION_B_CAPABILITIES.contains(&c.as_str()));
         runtime.collaboration.activation.team_execution = false;
     }
     Json(CollaborationCapabilitiesResponse {

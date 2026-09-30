@@ -338,7 +338,9 @@ impl CollaborationCatalogService {
                     committed_at: now,
                 },
             );
+            self.evaluate_team_waits(&mut next).await?;
             if self.cas(current.generation, &next).await? {
+                self.team_execution_notify.notify_one();
                 return Ok(team);
             }
         }

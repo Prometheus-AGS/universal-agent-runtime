@@ -149,6 +149,7 @@ impl CollaborationCatalogService {
                 .filter(|tool| *tool != "spawn_agent")
                 .map(str::to_owned),
         );
+        if crate::uar::api::capabilities::team_execution_b_enabled(){tool_ids.extend(["team_roster","team_send","team_delegate","team_wait"].into_iter().map(str::to_owned));}
         tool_ids.push("activate_skill".into());
         tool_ids.push(crate::uar::runtime::native_skills::search_tools::SEARCH_TOOLS_NAME.into());
         let installed = match self.skill_service.as_deref() {

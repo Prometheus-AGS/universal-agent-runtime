@@ -8,6 +8,45 @@ use chrono::Utc;
 use serde_json::json;
 
 impl CollaborationCatalogService {
+    pub async fn pending_team_yield_recoveries(
+        &self,
+        owner: &str,
+        workspace: &str,
+        team_id: &str,
+    ) -> Result<
+        Vec<(
+            TeamExecutionAttempt,
+            crate::uar::domain::team_wait::KernelTeamYield,
+        )>,
+        CollaborationError,
+    > {
+        let state = self.load_state().await?;
+        self.require_execution_owner(&state, false)?;
+        team(&state, owner, workspace, team_id)?;
+        Ok(state
+            .team_execution_attempts
+            .values()
+            .filter(|a| {
+                a.owner_id == owner
+                    && a.workspace_id == workspace
+                    && a.team_id == team_id
+                    && matches!(a.status.as_str(), "running" | "uncertain")
+            })
+            .filter_map(|a| {
+                state
+                    .team_yields
+                    .get(&a.id)
+                    .filter(|y| {
+                        state
+                            .team_waits
+                            .get(&y.wait_id)
+                            .is_some_and(|w| w.state == "yield_requested")
+                    })
+                    .map(|y| (a.clone(), y.clone()))
+            })
+            .collect())
+    }
+
     pub async fn team_recovery_receipt(
         &self,
         owner: &str,
@@ -55,6 +94,10 @@ impl CollaborationCatalogService {
         workspace: &str,
         team_id: &str,
         request: TeamControlRequest,
+        joined_yields: Vec<(
+            TeamExecutionAttempt,
+            crate::uar::domain::team_wait::KernelTeamYield,
+        )>,
     ) -> Result<Vec<TeamExecutionAttempt>, CollaborationError> {
         super::super::validation::validate_id(&request.command_id)?;
         if request.reason.trim().is_empty() {
@@ -99,6 +142,15 @@ impl CollaborationCatalogService {
             }
             let now = Utc::now();
             let mut next = current.clone();
+            for (attempt, control) in &joined_yields {
+                if attempt.owner_id != owner
+                    || attempt.workspace_id != workspace
+                    || attempt.team_id != team_id
+                {
+                    return Err(CollaborationError::Conflict("TEAM_SCOPE_DENIED".into()));
+                }
+                super::waits::apply_confirmed_team_yield(&mut next, attempt, control, None)?;
+            }
             let mut queued = Vec::new();
             for item in next.team_execution_attempts.values_mut().filter(|a| {
                 a.owner_id == owner && a.workspace_id == workspace && a.team_id == team_id
@@ -137,6 +189,18 @@ impl CollaborationCatalogService {
             }
             selected.revision += 1;
             selected.updated_at = now;
+            self.evaluate_team_waits(&mut next).await?;
+            queued = next
+                .team_execution_attempts
+                .values()
+                .filter(|a| {
+                    a.owner_id == owner
+                        && a.workspace_id == workspace
+                        && a.team_id == team_id
+                        && a.status == "queued"
+                })
+                .cloned()
+                .collect();
             next.generation += 1;
             next.team_execution_command_receipts.insert(
                 receipt_key.clone(),
@@ -153,6 +217,7 @@ impl CollaborationCatalogService {
                 },
             );
             if self.cas(current.generation, &next).await? {
+                self.team_execution_notify.notify_one();
                 return Ok(queued);
             }
         }

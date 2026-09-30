@@ -66,6 +66,7 @@ impl AgentActorState {
                 let (content, success) = match record.thread.result {
                     Some(AgentThreadResult::Completed { output }) => (output, true),
                     Some(AgentThreadResult::Failed { message, .. }) => (message, false),
+                    Some(AgentThreadResult::Yielded { .. }) => ("Team turn yielded".into(), false),
                     Some(AgentThreadResult::Cancelled) => ("Run cancelled".into(), false),
                     None => ("Thread returned without a terminal result".into(), false),
                 };

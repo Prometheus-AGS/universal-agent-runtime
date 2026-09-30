@@ -551,6 +551,7 @@ impl ActorCollaboration {
             Some(crate::uar::runtime::thread::AgentThreadResult::Failed { message, .. }) => {
                 (message, false)
             }
+            Some(crate::uar::runtime::thread::AgentThreadResult::Yielded { .. }) => anyhow::bail!("Team continuation remains pending"),
             Some(crate::uar::runtime::thread::AgentThreadResult::Cancelled) => {
                 ("Run cancelled".into(), false)
             }

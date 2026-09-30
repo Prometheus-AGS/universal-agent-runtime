@@ -3,7 +3,8 @@ use super::{
     team_key,
 };
 use crate::uar::domain::team_execution::{
-    TeamControlRequest, TeamExecutionAttempt, TeamExecutionCommandReceipt, TeamExecutionDiagnostic, TeamReservation,
+    TeamControlRequest, TeamExecutionAttempt, TeamExecutionCommandReceipt, TeamExecutionDiagnostic,
+    TeamReservation,
 };
 use chrono::Utc;
 use serde_json::{Value, json};
@@ -23,6 +24,69 @@ impl CollaborationCatalogService {
                     "team dispatch was already claimed".to_owned(),
                 ));
             }
+            let selected = team(&current, &item.owner_id, &item.workspace_id, &item.team_id)?;
+            let task = selected
+                .tasks
+                .iter()
+                .find(|t| t.id == item.task_id)
+                .ok_or_else(|| CollaborationError::NotFound(item.task_id.clone()))?;
+            if !task.depends_on.iter().all(|id| {
+                selected
+                    .tasks
+                    .iter()
+                    .any(|t| &t.id == id && t.status == "succeeded")
+            }) {
+                return Err(CollaborationError::Conflict("TEAM_PENDING_LIMIT".into()));
+            }
+            let definition = current
+                .definitions
+                .get(&selected.definition.storage_key())
+                .ok_or_else(|| CollaborationError::NotFound(selected.definition.id.clone()))?;
+            let binding = current
+                .bindings
+                .get(&super::super::bindings::binding_key(
+                    &item.owner_id,
+                    &item.workspace_id,
+                    &selected.binding.id,
+                ))
+                .ok_or_else(|| CollaborationError::NotFound(selected.binding.id.clone()))?;
+            let limit = definition.document["limits"]["concurrentTurns"]
+                .as_u64()
+                .unwrap_or(0)
+                .min(
+                    binding.document["effectiveLimits"]["concurrentTurns"]
+                        .as_u64()
+                        .unwrap_or(u64::MAX),
+                );
+            let active = |a: &&TeamExecutionAttempt| {
+                matches!(a.status.as_str(), "running" | "cancellation_requested")
+                    || (a.status == "uncertain" && a.effect_disposition != "confirmed")
+            };
+            let global = std::env::var("UAR_TEAM_EXECUTION_MAX_ACTIVE")
+                .ok()
+                .and_then(|v| v.parse::<u64>().ok())
+                .filter(|v| *v > 0)
+                .unwrap_or(4);
+            if current
+                .team_execution_attempts
+                .values()
+                .filter(active)
+                .count() as u64
+                >= global
+                || current
+                    .team_execution_attempts
+                    .values()
+                    .filter(|a| {
+                        a.owner_id == item.owner_id
+                            && a.workspace_id == item.workspace_id
+                            && a.team_id == item.team_id
+                    })
+                    .filter(active)
+                    .count() as u64
+                    >= limit
+            {
+                return Err(CollaborationError::Conflict("TEAM_PENDING_LIMIT".into()));
+            }
             item.status = "running".to_owned();
             item.updated_at = Utc::now();
             let mut next = current.clone();
@@ -31,6 +95,19 @@ impl CollaborationCatalogService {
                 key(&item.owner_id, &item.workspace_id, &item.team_id, &item.id),
                 item.clone(),
             );
+            if item.status == "running" {
+                if let Some(selected) = next.team_instances.get_mut(&team_key(
+                    &item.owner_id,
+                    &item.workspace_id,
+                    &item.team_id,
+                )) {
+                    if let Some(task) = selected.tasks.iter_mut().find(|t| t.id == item.task_id) {
+                        task.status = "running".into();
+                        task.revision += 1;
+                    }
+                    selected.revision += 1;
+                }
+            }
             if self.cas(current.generation, &next).await? {
                 return Ok(item);
             }
@@ -77,14 +154,29 @@ impl CollaborationCatalogService {
                 }
                 return Ok(item);
             }
-            if matches!(item.execution_outcome.as_deref(), Some("succeeded" | "failed" | "cancelled"))
-                && (item.execution_outcome.as_deref() != Some(status) || item.output != output) {
-                return Err(CollaborationError::Conflict("settled execution outcome is immutable even when accounting is unknown".into()));
+            if matches!(
+                item.execution_outcome.as_deref(),
+                Some("succeeded" | "failed" | "cancelled")
+            ) && (item.execution_outcome.as_deref() != Some(status) || item.output != output)
+            {
+                return Err(CollaborationError::Conflict(
+                    "settled execution outcome is immutable even when accounting is unknown".into(),
+                ));
             }
             let now = Utc::now();
             item.status = status.to_owned();
-            item.effect_disposition = if status == "uncertain" { "uncertain" } else { "confirmed" }.into();
-            item.accounting_state = if usage.is_some() { "settled" } else { "reserved-unknown" }.into();
+            item.effect_disposition = if status == "uncertain" {
+                "uncertain"
+            } else {
+                "confirmed"
+            }
+            .into();
+            item.accounting_state = if usage.is_some() {
+                "settled"
+            } else {
+                "reserved-unknown"
+            }
+            .into();
             item.execution_outcome = Some(status.to_owned());
             item.usage = usage.clone();
             item.usage_revision += 1;
@@ -135,11 +227,23 @@ impl CollaborationCatalogService {
                     }
                 }
             }
+            if matches!(status, "succeeded" | "failed" | "cancelled") {
+                for wait in next
+                    .team_waits
+                    .values_mut()
+                    .filter(|w| w.authority.attempt_id == item.id && w.state == "yield_requested")
+                {
+                    wait.state = "invalidated".into();
+                    wait.reason_code = Some("TEAM_WAIT_INVALIDATED".into());
+                }
+            }
             next.team_execution_attempts.insert(
                 key(&item.owner_id, &item.workspace_id, &item.team_id, &item.id),
                 item.clone(),
             );
+            self.evaluate_team_waits(&mut next).await?;
             if self.cas(current.generation, &next).await? {
+                self.team_execution_notify.notify_one();
                 return Ok(item);
             }
         }
@@ -192,6 +296,7 @@ impl CollaborationCatalogService {
             match item.status.as_str() {
                 "queued" => { item.status = "cancelled".to_owned(); item.execution_outcome = Some("cancelled".to_owned()); item.effect_disposition = "confirmed".into(); item.accounting_state = "settled".into(); item.usage = Some(TeamReservation::default()); item.usage_revision += 1; }
                 "running" | "cancellation_requested" => item.status = "cancellation_requested".to_owned(),
+                "yielded" if current.team_waits.values().any(|w|w.authority.attempt_id==item.id&&matches!(w.state.as_str(),"waiting"|"blocked")) => {},
                 "uncertain" => return Err(CollaborationError::Conflict("uncertain execution cannot be released by cancellation; reconcile provider/effect receipts".to_owned())),
                 _ => return Err(CollaborationError::Conflict("attempt is already terminal".to_owned())),
             }
@@ -205,13 +310,20 @@ impl CollaborationCatalogService {
                 .ok_or_else(|| CollaborationError::NotFound(team_id.to_owned()))?;
             updated.revision += 1;
             updated.updated_at = now;
-            if item.status == "cancelled"
+            if matches!(item.status.as_str(), "cancelled" | "yielded")
                 && let Some(task) = updated.tasks.iter_mut().find(|t| t.id == item.task_id)
             {
                 task.status = "cancelled".to_owned();
                 task.state_reason = item.state_reason.clone();
                 task.revision += 1;
                 task.updated_at = now;
+            }
+            for wait in next.team_waits.values_mut().filter(|w| {
+                w.authority.attempt_id == item.id
+                    && matches!(w.state.as_str(), "yield_requested" | "waiting" | "blocked")
+            }) {
+                wait.state = "invalidated".into();
+                wait.reason_code = Some("TEAM_WAIT_INVALIDATED".into());
             }
             next.team_execution_attempts
                 .insert(key(owner, workspace, team_id, attempt_id), item.clone());
@@ -283,7 +395,18 @@ impl CollaborationCatalogService {
 
 fn provider_diagnostic(reason: &str) -> Option<TeamExecutionDiagnostic> {
     let (code, reference) = reason.split_once("; diagnostic reference ")?;
-    if !matches!(code, "TEAM_PROVIDER_REQUEST_REJECTED" | "TEAM_PROVIDER_STREAM_FAILED") { return None; }
+    if !matches!(
+        code,
+        "TEAM_PROVIDER_REQUEST_REJECTED" | "TEAM_PROVIDER_STREAM_FAILED"
+    ) {
+        return None;
+    }
     let reference = uuid::Uuid::parse_str(reference).ok()?.to_string();
-    Some(TeamExecutionDiagnostic { code: code.into(), field: None, retryable: false, action: "change-settings".into(), protected_diagnostic_ref: Some(reference) })
+    Some(TeamExecutionDiagnostic {
+        code: code.into(),
+        field: None,
+        retryable: false,
+        action: "change-settings".into(),
+        protected_diagnostic_ref: Some(reference),
+    })
 }
