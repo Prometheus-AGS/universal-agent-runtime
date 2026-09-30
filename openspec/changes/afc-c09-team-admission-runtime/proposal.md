@@ -16,3 +16,7 @@ C09.1 persists team plans and C09.2 persists fenced task ownership and mailbox i
 This is the initiative's C09.3 product increment; it depends on C09.1/C09.2. UAR remains execution owner; The Boss remains the trusted UI/host boundary. Existing ordinary runs and external protocol clients retain their behavior. The current durable `AgentInstanceController` supports local `surrealkv://` only, while the team catalog has remote Surreal support. This change must use a team-catalog-owned durable admission ledger and prove the selected remote path before advertising remote team execution. It must not silently fall back to local storage for an explicitly remote team.
 
 The KBD task stays pending until a source-pinned Mac ARM64 application build and one installed-app integration scenario demonstrate a bounded member turn, protected-effect denial after revocation, reservation settlement and restart recovery. Windows x64 and Mac Apple Silicon public release remains a separate cadence publication obligation.
+
+## Documentation-approved parent repair amendment — 2026-09-30
+
+[Parent execution amendment](parent-execution-amendment.md) refines existing pending C09.3 through A1–A6 and records approved additive planning scope C09.4/B1–B5. Parent product execution remains separately gated. Preserve the existing kernel, exact routing/profile/settings, one catalog executor with privileged evidenced recovery, field-specific unsupported-resource migration and truthful accounting. No production completion or passing operation is claimed by this documentation update.
