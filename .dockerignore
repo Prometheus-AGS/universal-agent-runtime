@@ -61,6 +61,8 @@ data/
 /CLAUDE.md
 /CLINE.md
 docs/
+# Compiled in via include_str! (src/uar/compiler/collaboration/validation/schema_registry.rs).
+!docs/agents/collaboration/v0.1.0-draft.2/schemas/
 plans/
 openspec/
 
