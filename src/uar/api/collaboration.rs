@@ -37,6 +37,7 @@ struct CollaborationCapabilitiesResponse {
     #[serde(flatten)]
     runtime: super::capabilities::CapabilitiesResponse,
     binding_owner_id: String,
+    catalog_storage: crate::uar::compiler::collaboration::CollaborationStorageDescriptor,
 }
 
 /// The versioned collaboration administration contract consumed by host adapters.
@@ -100,6 +101,7 @@ async fn collaboration_capabilities(
     Json(CollaborationCapabilitiesResponse {
         runtime,
         binding_owner_id,
+        catalog_storage: state.service.storage_descriptor(),
     })
     .into_response()
 }

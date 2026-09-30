@@ -44,6 +44,17 @@ The first actual Gate B operation reached packaged UAR `READY` but failed The Bo
 
 This records the observed failure and intended correction; successful rebuilt negotiation and cooperating inference still require the actual completed-boundary operation receipt.
 
+### Scenario: Starter binds to the selected catalog storage
+
+After external connection and gateway selection succeeded, actual Gate B starter setup called The Boss's managed `ensureReady` path instead of using the selected external runtime. The external endpoint has no managed storage profile, so its catalog backend must come from runtime discovery rather than lifecycle ownership.
+
+- **WHEN** an authenticated host reads `/api/v1/collaboration/capabilities`
+- **THEN** `catalogStorage.backend` identifies the initialized catalog as `surrealdb`, `surrealkv`, `postgresql` or `memory`, without URLs, paths or credentials.
+- **AND** The Boss uses the selected catalog's backend for starter bindings rather than starting a different managed runtime or treating external ownership as remote database storage.
+- **AND** a remote SurrealDB connection does not claim its server's disk durability; the backend descriptor is separate from the binding's configured durability declaration and operation qualification.
+
+Successful rebuilt starter setup remains pending the actual completed-boundary receipt.
+
 ## Release and limits
 
 Finish the entire relevant source/DTO/UI/13-locale/payload increment before one designated build/operation boundary; review agents remain dormant until then. Local `pnpm build:mac:arm64`, packaged launch and actual feature receipts are required per product success. Rerun only the failed relevant boundary after an observed repair. Cadence iteration 4 continues without reset; next full publication remains delivery 5, four Mac/Windows installers/assets/checksums/source/architecture/signing/metadata/site links, no Linux. Child return is no successful delivery. Windows human installed acceptance remains separate.

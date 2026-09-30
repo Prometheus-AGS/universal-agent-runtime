@@ -60,6 +60,12 @@ pub struct CollaborationCatalogService {
 }
 
 impl CollaborationCatalogService {
+    /// Inspect the initialized store without exposing connection configuration.
+    #[must_use]
+    pub fn storage_descriptor(&self) -> super::storage::CollaborationStorageDescriptor {
+        self.storage.descriptor()
+    }
+
     #[must_use]
     pub fn new(storage: Arc<dyn CollaborationStorage>) -> Self {
         Self {

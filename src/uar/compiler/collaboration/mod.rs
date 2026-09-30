@@ -21,4 +21,4 @@ pub use service::{BoundAgentRun, CollaborationCatalogService, CollaborationError
 pub use storage::PostgresCollaborationStorage;
 #[cfg(feature = "surreal-backend")]
 pub use storage::SurrealCollaborationStorage;
-pub use storage::{CollaborationStorage, InMemoryCollaborationStorage};
+pub use storage::{CollaborationStorage, CollaborationStorageDescriptor, InMemoryCollaborationStorage};

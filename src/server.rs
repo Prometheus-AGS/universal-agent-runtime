@@ -671,7 +671,10 @@ async fn run_server_with_listener(
                 crate::uar::compiler::storage::surreal::SurrealCompilerStorage::new(db.clone()),
             );
             let collaboration_store = Arc::new(
-                crate::uar::compiler::collaboration::SurrealCollaborationStorage::new(db.clone()),
+                crate::uar::compiler::collaboration::SurrealCollaborationStorage::new(
+                    db.clone(),
+                    provider.catalog_storage_backend(),
+                ),
             )
                 as Arc<dyn crate::uar::compiler::collaboration::CollaborationStorage>;
             let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> =
