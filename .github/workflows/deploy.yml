@@ -9,6 +9,9 @@ on:
       - boss-sidecar-win32-arm64-v*
       - boss-sidecar-darwin-arm64-v*
       - boss-sidecar-darwin-x64-v*
+      # Publishes the public multi-arch GHCR image (ghcr-build/ghcr-merge
+      # jobs below). Does NOT match the boss-sidecar-*-v* tags above.
+      - "v*"
   workflow_dispatch:
     inputs:
       image_tag:
@@ -34,8 +37,10 @@ jobs:
     name: Build & Push Image
     runs-on: ubuntu-latest
     # Skipped on manual dispatch with skip_build=true so an already-built image
-    # can be deployed without the ~45min Rust/toolchain rebuild.
-    if: ${{ !startsWith(github.ref, 'refs/tags/boss-sidecar-') && (github.event_name != 'workflow_dispatch' || inputs.skip_build != true) }}
+    # can be deployed without the ~45min Rust/toolchain rebuild. Also skipped
+    # on `v*` tag pushes (those exist only to trigger the ghcr-build/ghcr-merge
+    # jobs below) so the Azure pipeline's trigger set is unchanged.
+    if: ${{ !startsWith(github.ref, 'refs/tags/boss-sidecar-') && (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && (github.event_name != 'workflow_dispatch' || inputs.skip_build != true) }}
     # The image is a ~3GB 5-toolchain build + full Rust release compile; a cold
     # gha cache needs >30min. cache-to: gha,mode=max makes warm runs much faster.
     timeout-minutes: 75
@@ -107,8 +112,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     # Run when build succeeded, OR when build was intentionally skipped
-    # (skip_build dispatch) — but never if build actually failed/was cancelled.
-    if: ${{ always() && !startsWith(github.ref, 'refs/tags/boss-sidecar-') && needs.build.result != 'failure' && needs.build.result != 'cancelled' }}
+    # (skip_build dispatch) — but never if build actually failed/was cancelled,
+    # and never on the `v*` GHCR-publish tags (same gate as the build job).
+    if: ${{ always() && !startsWith(github.ref, 'refs/tags/boss-sidecar-') && (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && needs.build.result != 'failure' && needs.build.result != 'cancelled' }}
     timeout-minutes: 15
 
     # Azure OIDC token (same as the build job) for the azure/login step.
@@ -230,6 +236,158 @@ jobs:
             http://${{ steps.endpoint.outputs.endpoint }}:${{ steps.endpoint.outputs.port }}/healthz \
             | grep -q "200"
           echo "healthz check passed"
+
+  # ── 4. GHCR Multi-Arch Publish ───────────────────────────────────────────
+  # Publishes a public ghcr.io/prometheus-ags/universal-agent-runtime image so
+  # other projects can `docker pull` UAR instead of rebuilding it from source.
+  # Independent of the Azure build/deploy/smoke-test jobs above: no shared
+  # `needs`, so a failure on either side never blocks the other. Runs on
+  # pushes to main, `v*` tags, and workflow_dispatch — never on the
+  # boss-sidecar-* tags used by the sidecar release jobs below.
+  ghcr-build:
+    name: GHCR Build (${{ matrix.platform }})
+    if: ${{ !startsWith(github.ref, 'refs/tags/boss-sidecar-') }}
+    runs-on: ${{ matrix.runner }}
+    # Same rationale as the ACR build job: ~3GB 5-toolchain image, full Rust
+    # release compile. Native arm64 runner avoids QEMU emulation entirely.
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Complete recursive submodule checkout
+        shell: bash
+        run: bash scripts/update-submodules.sh
+
+      # GitHub-hosted runners (amd64 and arm64) ship preinstalled toolchains
+      # that are unused here but consume disk space the 5-toolchain UAR image
+      # build needs. Remove the largest offenders before building.
+      - name: Free disk space
+        shell: bash
+        run: |
+          echo "Disk space before cleanup:"
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+          docker system prune -af || true
+          echo "Disk space after cleanup:"
+          df -h /
+
+      - name: Set platform pair
+        run: |
+          platform="${{ matrix.platform }}"
+          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # Build-by-digest: each arch pushes an untagged manifest and reports its
+      # digest; ghcr-merge below assembles the multi-arch manifest list and
+      # applies the real tags. Standard docker/build-push-action pattern for
+      # multi-platform images across a build matrix.
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ matrix.platform }}
+          # Token for cargo git deps over SSH (kreuzberg) + any private
+          # fetches, same as the ACR build job.
+          secrets: |
+            github_token=${{ secrets.SUBMODULES_TOKEN }}
+          outputs: type=image,name=ghcr.io/prometheus-ags/universal-agent-runtime,push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=ghcr-${{ env.PLATFORM_PAIR }}
+          cache-to: type=gha,mode=max,scope=ghcr-${{ env.PLATFORM_PAIR }}
+
+      - name: Export digest
+        run: |
+          mkdir -p "${{ runner.temp }}/digests"
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v5
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  ghcr-merge:
+    name: GHCR Merge Manifest
+    if: ${{ !startsWith(github.ref, 'refs/tags/boss-sidecar-') }}
+    needs: ghcr-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v6
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/prometheus-ags/universal-agent-runtime
+          tags: |
+            type=sha,format=long
+            type=raw,value=main,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          # shellcheck disable=SC2046  # intentional word-splitting: each -t
+          # tag and each name@digest must be its own argv element.
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf 'ghcr.io/prometheus-ags/universal-agent-runtime@sha256:%s ' *)
+
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect ghcr.io/prometheus-ags/universal-agent-runtime:${{ steps.meta.outputs.version }}
 
   boss-sidecar-build:
     name: The Boss sidecar (${{ matrix.platform }})
