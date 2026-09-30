@@ -1,7 +1,7 @@
 //! Explicit artifact disclosure and revisioned membership revocation.
 
 use chrono::Utc;
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::uar::domain::team_execution::{
     TeamArtifact, TeamControlRequest, TeamExecutionAttempt, TeamExecutionCommandReceipt,
