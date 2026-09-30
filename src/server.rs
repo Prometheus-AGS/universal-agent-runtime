@@ -1600,6 +1600,7 @@ async fn run_server_with_listener(
             post(uar::api::capabilities::compatibility_handler).with_state(Arc::new(
                 uar::api::capabilities::CapabilitiesApiState {
                     service_instance: Arc::clone(&service_instance),
+                    collaboration_catalog: Arc::clone(&collaboration_catalog),
                 },
             )),
         )
@@ -2180,6 +2181,7 @@ async fn run_server_with_listener(
                 if shutdown_coordinator.cleanup_result().is_ok()
                     && collaboration_catalog.execution_ownership_view().await.is_ok_and(|v| v.claim.is_some_and(|c| c.state == "draining" && c.fence == v.current_fence)) {
                     if let Err(error) = collaboration_catalog.release_execution_owner().await {
+                        let error = anyhow::Error::from(error);
                         shutdown_coordinator.record_cleanup_failure(&error);
                         tracing::error!(%error, "Execution ownership release remains unconfirmed");
                     }
