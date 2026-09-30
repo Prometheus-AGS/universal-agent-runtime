@@ -27,9 +27,10 @@ pub const TEAM_EXECUTION_B_CAPABILITIES: [&str; 3] = [
     "team_execution_shared_instructions_v1",
     "team_execution_continuations_v1",
 ];
-/// Promote only after the operated-source/binary Gate B receipt is recorded.
-pub const TEAM_EXECUTION_B_QUALIFIED: bool = false;
-pub const TEAM_EXECUTION_B_QUALIFICATION_RECEIPT: Option<&str> = None;
+/// Operated-source Gate B receipt in agent-fabric-convergence, committed at ad2ad1617.
+pub const TEAM_EXECUTION_B_QUALIFIED: bool = true;
+pub const TEAM_EXECUTION_B_QUALIFICATION_RECEIPT: Option<&str> =
+    Some("sha256:5a96786980812effbd79661290e51dee2ec1cde524854566d588eab934d1a058");
 pub fn team_execution_profile_stage() -> &'static str {
     match std::env::var("UAR_TEAM_EXECUTION_PROFILE_STAGE").as_deref() {
         Ok("operation") => "operation",
