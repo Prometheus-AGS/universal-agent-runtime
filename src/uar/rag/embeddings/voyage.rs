@@ -48,6 +48,10 @@ impl EmbeddingBackend for VoyageEmbeddingBackend {
         self.vector_dimension
     }
 
+    fn model_id(&self) -> &str {
+        &self.model
+    }
+
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
         if texts.is_empty() {
             return Ok(vec![]);

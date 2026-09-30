@@ -82,6 +82,11 @@ impl EmbeddingBackend for CandleEmbeddingBackend {
         self.expected_dimension
     }
 
+    // The model is whatever weights live in the configured directory.
+    fn model_id(&self) -> &str {
+        self.models_dir.to_str().unwrap_or("candle-local")
+    }
+
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
         if texts.is_empty() {
             return Ok(vec![]);

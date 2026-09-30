@@ -35,6 +35,15 @@ pub enum NormalizedEvent {
         run_id: String,
         citations: Vec<RagCitation>,
     },
+    /// Knowledge-base retrieval could not run as configured (for example a KB
+    /// indexed in a different embedding space than the active backend). Not
+    /// terminal: the run continues without that KB, and the client is told
+    /// why its answer carries no citations from it.
+    RagDiagnostic {
+        run_id: String,
+        code: String,
+        message: String,
+    },
     MemoryRecall {
         run_id: String,
         items: Vec<MemoryItem>,

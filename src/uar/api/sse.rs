@@ -450,6 +450,18 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 }),
             ))
         }
+        NormalizedEvent::RagDiagnostic {
+            run_id,
+            code,
+            message,
+        } => Some((
+            "agui.custom",
+            serde_json::json!({
+                "kind": "custom", "request_id": run_id,
+                "name": "uar.rag.diagnostic",
+                "value": { "code": code, "message": message }
+            }),
+        )),
         NormalizedEvent::MemoryRecall { run_id, items } => {
             // Distinguish pre-call context hits (source == "memory_context") from
             // model-provided memory updates so clients can render them differently.

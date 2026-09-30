@@ -116,6 +116,15 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
             Some(run_id),
             serde_json::json!({ "citations": citations }),
         ),
+        NormalizedEvent::RagDiagnostic {
+            run_id,
+            code,
+            message,
+        } => custom(
+            "uar.rag.diagnostic",
+            Some(run_id),
+            serde_json::json!({ "code": code, "message": message }),
+        ),
         NormalizedEvent::MemoryRecall { run_id, items } => custom(
             "uar.memory.recall",
             Some(run_id),

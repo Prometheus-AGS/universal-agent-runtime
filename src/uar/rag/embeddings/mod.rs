@@ -16,6 +16,14 @@ pub trait EmbeddingBackend: Send + Sync + Debug {
     /// Return the expected output vector dimension.
     fn vector_dimension(&self) -> usize;
 
+    /// Return the model identifier, used to fingerprint the embedding space a
+    /// knowledge base was indexed in. Implementations with a configurable
+    /// model must override this; two models of equal dimension are not
+    /// interchangeable.
+    fn model_id(&self) -> &str {
+        "unknown"
+    }
+
     /// Embed a batch of texts. The returned outer vector has the same length as
     /// `texts` (unless `texts` is empty, in which case an empty vector is
     /// returned). Each inner vector has `vector_dimension()` elements.
@@ -58,6 +66,15 @@ impl EmbeddingBackend for UnavailableEmbeddingBackend {
 }
 
 impl dyn EmbeddingBackend {
+    /// The embedding space this backend produces vectors in.
+    pub fn fingerprint(&self) -> crate::uar::domain::knowledge::EmbeddingFingerprint {
+        crate::uar::domain::knowledge::EmbeddingFingerprint {
+            backend: self.backend_name().to_string(),
+            model: self.model_id().to_string(),
+            dimension: self.vector_dimension(),
+        }
+    }
+
     /// Embed a single text and return the first (only) embedding.
     pub async fn embed_one(&self, text: &str) -> Result<Vec<f32>, EmbeddingError> {
         let mut batch = self.embed(&[text]).await?;
