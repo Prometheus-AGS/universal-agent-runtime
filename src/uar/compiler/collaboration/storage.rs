@@ -5,8 +5,16 @@ use async_trait::async_trait;
 
 use crate::uar::domain::collaboration::CollaborationCatalogState;
 
+/// Credential-free description of the initialized collaboration store.
+#[derive(Debug, Clone, Copy, serde::Serialize)]
+pub struct CollaborationStorageDescriptor {
+    pub backend: &'static str,
+}
+
 #[async_trait]
 pub trait CollaborationStorage: Send + Sync + std::fmt::Debug {
+    fn descriptor(&self) -> CollaborationStorageDescriptor;
+
     async fn load_state(&self) -> Result<CollaborationCatalogState>;
 
     /// Replace the complete catalog only when its durable generation still
@@ -32,6 +40,10 @@ impl InMemoryCollaborationStorage {
 
 #[async_trait]
 impl CollaborationStorage for InMemoryCollaborationStorage {
+    fn descriptor(&self) -> CollaborationStorageDescriptor {
+        CollaborationStorageDescriptor { backend: "memory" }
+    }
+
     async fn load_state(&self) -> Result<CollaborationCatalogState> {
         self.state
             .read()
@@ -60,19 +72,24 @@ impl CollaborationStorage for InMemoryCollaborationStorage {
 #[derive(Debug)]
 pub struct SurrealCollaborationStorage {
     db: surrealdb::Surreal<surrealdb::engine::any::Any>,
+    backend: &'static str,
 }
 
 #[cfg(feature = "surreal-backend")]
 impl SurrealCollaborationStorage {
     #[must_use]
-    pub fn new(db: surrealdb::Surreal<surrealdb::engine::any::Any>) -> Self {
-        Self { db }
+    pub fn new(db: surrealdb::Surreal<surrealdb::engine::any::Any>, backend: &'static str) -> Self {
+        Self { db, backend }
     }
 }
 
 #[cfg(feature = "surreal-backend")]
 #[async_trait]
 impl CollaborationStorage for SurrealCollaborationStorage {
+    fn descriptor(&self) -> CollaborationStorageDescriptor {
+        CollaborationStorageDescriptor { backend: self.backend }
+    }
+
     async fn load_state(&self) -> Result<CollaborationCatalogState> {
         use crate::uar::persistence::providers::surreal::none_when_table_missing;
 
@@ -149,6 +166,10 @@ impl PostgresCollaborationStorage {
 #[cfg(feature = "postgres-backend")]
 #[async_trait]
 impl CollaborationStorage for PostgresCollaborationStorage {
+    fn descriptor(&self) -> CollaborationStorageDescriptor {
+        CollaborationStorageDescriptor { backend: "postgresql" }
+    }
+
     async fn load_state(&self) -> Result<CollaborationCatalogState> {
         use sqlx::Row;
 

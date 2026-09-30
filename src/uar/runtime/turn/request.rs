@@ -12,26 +12,43 @@ pub struct CollaborationRunBinding {
     pub owner_id: String,
     pub workspace_id: String,
     pub receipt: EffectiveBindingReceipt,
-    service: std::sync::Arc<crate::uar::compiler::collaboration::CollaborationCatalogService>,
+    pub(crate) team_attempt: Option<crate::uar::domain::team_execution::TeamExecutionAttempt>,
+    pub(crate) team_instructions: Option<crate::uar::domain::team_context::TeamInstructions>,
+    pub(crate) team_yield:
+        std::sync::Arc<std::sync::Mutex<Option<crate::uar::domain::team_wait::KernelTeamYield>>>,
+    pub(crate) service:
+        std::sync::Arc<crate::uar::compiler::collaboration::CollaborationCatalogService>,
 }
 
 impl CollaborationRunBinding {
     pub async fn revalidate(&self, artifact: &AgentArtifact) -> anyhow::Result<()> {
         super::bindings::validate_effective_binding_artifact(&self.receipt, artifact)?;
-        self.service
-            .revalidate_effective_binding(&self.owner_id, &self.workspace_id, &self.receipt)
-            .await
-            .map_err(anyhow::Error::from)
+        self.revalidate_authority().await
+    }
+
+    async fn revalidate_authority(&self) -> anyhow::Result<()> {
+        match &self.team_attempt {
+            Some(attempt) => {
+                crate::uar::runtime::team_execution::revalidate_member_binding(
+                    &self.service,
+                    attempt,
+                    &self.receipt,
+                )
+                .await
+            }
+            None => self
+                .service
+                .revalidate_effective_binding(&self.owner_id, &self.workspace_id, &self.receipt)
+                .await
+                .map_err(anyhow::Error::from),
+        }
     }
 }
 
 #[async_trait::async_trait]
 impl crate::uar::runtime::tool_admission::ClaimRevalidator for CollaborationRunBinding {
     async fn revalidate(&self) -> anyhow::Result<()> {
-        self.service
-            .revalidate_effective_binding(&self.owner_id, &self.workspace_id, &self.receipt)
-            .await
-            .map_err(anyhow::Error::from)
+        self.revalidate_authority().await
     }
 }
 
@@ -193,6 +210,9 @@ impl RunExecutionRequest {
             owner_id,
             workspace_id,
             receipt: bound.effective_binding_receipt,
+            team_attempt: None,
+            team_yield: Default::default(),
+            team_instructions: None,
             service,
         };
         let mut request = Self::new(artifact, input);
@@ -210,6 +230,24 @@ impl RunExecutionRequest {
         request.collaboration_binding = Some(collaboration_binding);
         request.service_binding = service_binding;
         request
+    }
+
+    pub(crate) fn with_team_attempt(
+        mut self,
+        attempt: crate::uar::domain::team_execution::TeamExecutionAttempt,
+    ) -> anyhow::Result<Self> {
+        let binding = self
+            .collaboration_binding
+            .as_mut()
+            .ok_or_else(|| anyhow::anyhow!("Team attempt has no bound member receipt"))?;
+        let policy = binding
+            .receipt
+            .effective
+            .get("teamRunPolicy")
+            .ok_or_else(|| anyhow::anyhow!("Team member receipt has no resource policy"))?;
+        self.host_policy_constraint = Some(serde_json::from_value(policy.clone())?);
+        binding.team_attempt = Some(attempt);
+        Ok(self)
     }
 
     /// Retain the identity verified by the ingress host, without decoding a

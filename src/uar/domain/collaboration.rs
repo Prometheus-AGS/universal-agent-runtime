@@ -12,6 +12,7 @@ use serde_json::Value;
 use super::artifact::AgentArtifact;
 use super::team_mailbox::{TeamInboxMessage, TeamMailboxCommandReceipt};
 use super::team_planning::{TeamInstance, TeamPlanningCommandReceipt};
+use super::team_execution::{TeamArtifact, TeamExecutionAttempt, TeamExecutionCommandReceipt};
 
 pub const COLLABORATION_PROFILE_DRAFT_1: &str = "urn:prometheus:uar:collaboration:0.1.0-draft.1";
 pub const COLLABORATION_PROFILE_DRAFT_2: &str = "urn:prometheus:uar:collaboration:0.1.0-draft.2";
@@ -254,6 +255,10 @@ pub struct FieldDiagnostic {
     /// Safe operator-facing text. Source values never belong in this field.
     pub message: String,
     pub effective_binding_ref: Option<PrivateRevisionRef>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_kind: Option<CollaborationKind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_definition: Option<ImmutableDefinitionRef>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -426,6 +431,24 @@ pub struct CollaborationCommandReceipt {
 #[serde(rename_all = "camelCase")]
 pub struct CollaborationCatalogState {
     pub generation: u64,
+    #[serde(default)] pub team_waits: BTreeMap<String, super::team_wait::TeamWait>,
+    #[serde(default)] pub team_continuations: BTreeMap<String, super::team_wait::ContinuationReceipt>,
+    #[serde(default)] pub team_peer_commands: BTreeMap<String, super::team_wait::TeamPeerCommandReceipt>,
+    #[serde(default)] pub team_peer_messages: BTreeMap<String, super::team_wait::TeamPeerMessage>,
+    #[serde(default)] pub team_message_deliveries: BTreeMap<String, super::team_wait::MessageDelivery>,
+    #[serde(default)] pub team_yields: BTreeMap<String, super::team_wait::KernelTeamYield>,
+    #[serde(default)] pub team_context_receipts: BTreeMap<String, super::team_context::TeamContextReceipt>,
+    #[serde(default)] pub execution_claim: Option<crate::uar::domain::team_execution::TeamExecutionClaim>,
+    #[serde(default)] pub execution_claim_history: BTreeMap<String, crate::uar::domain::team_execution::TeamExecutionClaim>,
+    #[serde(default)] pub execution_reclaim_receipts: BTreeMap<String, crate::uar::domain::team_execution::TeamExecutionReclaimReceipt>,
+    #[serde(default)] pub execution_fencing_evidence: BTreeMap<String, crate::uar::domain::team_execution::TeamExecutionFencingEvidence>,
+    #[serde(default)] pub execution_transfers: BTreeMap<String, crate::uar::domain::team_execution::TeamExecutionFence>,
+    #[serde(default)]
+    pub team_execution_attempts: BTreeMap<String, TeamExecutionAttempt>,
+    #[serde(default)]
+    pub team_execution_command_receipts: BTreeMap<String, TeamExecutionCommandReceipt>,
+    #[serde(default)]
+    pub team_artifacts: BTreeMap<String, TeamArtifact>,
     pub catalog_revision: u64,
     pub definitions: BTreeMap<String, CollaborationDefinitionRecord>,
     pub packages: BTreeMap<String, CollaborationPackageRecord>,

@@ -149,6 +149,7 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
 
     let configured_uar_jwt = std::env::var_os("UAR_SECURITY__JWT_REQUIRED");
     let configured_legacy_jwt = std::env::var_os("JWT_REQUIRED");
+    let configured_service_ownership = std::env::var_os("UAR_SERVICE_INSTANCE__OWNERSHIP");
     let disable_sidecar_jwt = should_disable_sidecar_jwt(
         configured_uar_jwt.as_deref(),
         configured_legacy_jwt.as_deref(),
@@ -174,7 +175,11 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
         }
         std::env::set_var("UAR_SERVER__HOST", "127.0.0.1");
         std::env::set_var("UAR_SERVER__LOG_FORMAT", "json");
-        std::env::set_var("UAR_SERVICE_INSTANCE__OWNERSHIP", "managed");
+        // Ownership is relative to the connecting host; another supervisor can
+        // explicitly expose this packaged executable as external to The Boss.
+        if configured_service_ownership.is_none() {
+            std::env::set_var("UAR_SERVICE_INSTANCE__OWNERSHIP", "managed");
+        }
         std::env::set_var("UAR_SERVICE_INSTANCE__WORKSPACE_LOCATION", "local");
         if disable_sidecar_jwt {
             std::env::set_var("UAR_SECURITY__JWT_REQUIRED", "false");
@@ -292,8 +297,10 @@ async fn run_sidecar(bootstrap: SidecarBootstrap) {
     };
 
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel();
-    let server =
-        server::start_server_sidecar(config_manager, listener, bootstrap.token, ready_tx, None);
+    let process_shutdown = tokio_util::sync::CancellationToken::new();
+    let server = server::start_server_sidecar(
+        config_manager, listener, bootstrap.token, ready_tx, Some(process_shutdown.clone()),
+    );
     tokio::pin!(server);
     let ready_addr = match await_server_readiness(ready_rx, server.as_mut()).await {
         Ok(addr) => addr,
@@ -311,7 +318,7 @@ async fn run_sidecar(bootstrap: SidecarBootstrap) {
         .expect("Failed to write READY signal to stdout");
     std::io::stdout().flush().expect("Failed to flush stdout");
 
-    // Spawn a task that reads stdin until EOF, then exits the process.
+    // EOF requests the same bounded graceful cleanup used by server shutdown.
     // Electron closes the child's stdin pipe on app quit, triggering this path.
     tokio::spawn(async move {
         let mut stdin = tokio::io::stdin();
@@ -323,8 +330,8 @@ async fn run_sidecar(bootstrap: SidecarBootstrap) {
                 Ok(_) => {} // ignore any bytes written to stdin
             }
         }
-        tracing::info!(name = "sidecar.stdin_eof", "stdin closed — exiting");
-        std::process::exit(0);
+        tracing::info!(name = "sidecar.stdin_eof", "stdin closed — requesting graceful shutdown");
+        process_shutdown.cancel();
     });
 
     if let Err(error) = server.await {

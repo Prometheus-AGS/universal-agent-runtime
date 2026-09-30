@@ -29,6 +29,7 @@ use surrealdb::opt::auth::{Database, Namespace, Root};
 pub struct SurrealDbProvider {
     db: Surreal<Any>,
     durable_instances: bool,
+    catalog_storage_backend: &'static str,
 }
 
 impl SurrealDbProvider {
@@ -169,10 +170,23 @@ impl SurrealDbProvider {
         // A remote endpoint does not reveal whether its server uses persistent
         // storage. Advertise durable instances only for the known local engine.
         let durable_instances = endpoint.to_ascii_lowercase().starts_with("surrealkv://");
+        let catalog_storage_backend = if is_server_endpoint(&endpoint) {
+            "surrealdb"
+        } else if durable_instances {
+            "surrealkv"
+        } else {
+            "memory"
+        };
         Ok(Self {
             db,
             durable_instances,
+            catalog_storage_backend,
         })
+    }
+
+    /// Backend of the successfully initialized connection, without its endpoint.
+    pub fn catalog_storage_backend(&self) -> &'static str {
+        self.catalog_storage_backend
     }
 
     pub fn client(&self) -> Surreal<Any> {

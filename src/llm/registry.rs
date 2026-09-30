@@ -78,6 +78,13 @@ pub enum ProtocolSetting {
 pub struct ModelConfig {
     /// Model identifier (e.g., "gpt-4o", "llama-3.3-70b-versatile").
     pub id: String,
+    /// Operator-controlled catalog identity for a gateway alias's variable usage price.
+    /// Routing still uses this model's id and its configured provider endpoint.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pricing_identity: Option<ModelPricingIdentity>,
+    /// Revisioned trusted request settings, separate from pricing identity.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_profile: Option<super::team_profile::TeamModelExecutionSettings>,
     /// Human-friendly display name.
     #[serde(default)]
     pub display_name: Option<String>,
@@ -107,6 +114,93 @@ pub struct ModelConfig {
     pub enabled: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct ModelPricingIdentity {
+    pub provider_id: String,
+    pub model_id: String,
+}
+
+impl ModelPricingIdentity {
+    pub(crate) fn qualified_model(&self) -> anyhow::Result<String> {
+        let price = ModelCatalog::global()
+            .model(&self.provider_id, &self.model_id)
+            .and_then(|model| model.cost.as_ref())
+            .ok_or_else(|| anyhow::anyhow!("Gateway pricing identity has no catalog price"))?;
+        anyhow::ensure!(
+            [
+                Some(price.input),
+                Some(price.output),
+                price.cache_read,
+                price.cache_write
+            ]
+            .into_iter()
+            .flatten()
+            .all(|rate| rate.is_finite() && rate >= 0.0),
+            "Gateway catalog price is invalid"
+        );
+        Ok(format!("{}/{}", self.provider_id, self.model_id))
+    }
+}
+
+fn validate_pricing_identities(config: &ProviderConfig) -> anyhow::Result<()> {
+    for settings in config.models.iter().filter_map(|model| model.execution_profile.as_ref()) {
+        settings.validate()?;
+    }
+    for identity in config
+        .models
+        .iter()
+        .filter_map(|model| model.pricing_identity.as_ref())
+    {
+        identity.qualified_model()?;
+    }
+    Ok(())
+}
+
+/// Preserve omitted protected metadata and compare each edited settings revision.
+/// Called under the API administration lock before persistence and publication.
+pub(crate) fn prepare_provider_update(
+    existing: &ProviderConfig,
+    mut incoming: ProviderConfig,
+) -> anyhow::Result<ProviderConfig> {
+    let endpoint_changed = existing.base_url != incoming.base_url
+        || std::mem::discriminant(&existing.protocol) != std::mem::discriminant(&incoming.protocol);
+    for model in &mut incoming.models {
+        if let Some(previous) = existing.models.iter().find(|entry| entry.id == model.id) {
+            if model.pricing_identity.is_none() {
+                model.pricing_identity.clone_from(&previous.pricing_identity);
+            }
+            let before = previous.execution_profile.clone().unwrap_or_default();
+            match &mut model.execution_profile {
+                Some(settings) => {
+                    settings.validate()?;
+                    anyhow::ensure!(settings.settings_revision == before.settings_revision,
+                        "TEAM_REVISION_CONFLICT");
+                    if settings.profile != before.profile || settings.reasoning != before.reasoning
+                        || endpoint_changed
+                    {
+                        settings.settings_revision = before.settings_revision.checked_add(1)
+                            .filter(|revision| *revision <= 9_007_199_254_740_991)
+                            .ok_or_else(|| anyhow::anyhow!("TEAM_REVISION_CONFLICT"))?;
+                    }
+                }
+                None if endpoint_changed => {
+                    let mut settings = before;
+                    settings.settings_revision = settings.settings_revision.checked_add(1)
+                        .filter(|revision| *revision <= 9_007_199_254_740_991)
+                        .ok_or_else(|| anyhow::anyhow!("TEAM_REVISION_CONFLICT"))?;
+                    model.execution_profile = Some(settings);
+                }
+                None => model.execution_profile.clone_from(&previous.execution_profile),
+            }
+        } else if let Some(settings) = &model.execution_profile {
+            settings.validate()?;
+            anyhow::ensure!(settings.settings_revision == 1, "TEAM_REVISION_CONFLICT");
+        }
+    }
+    validate_pricing_identities(&incoming)?;
+    Ok(incoming)
+}
+
 fn default_supports_tools() -> bool {
     true
 }
@@ -133,6 +227,7 @@ pub struct ProviderRegistry {
     /// Per-provider health/cooldown tracking, shared with `ModelRouter` and
     /// every `Orchestrator` (CH-03).
     health: std::sync::Arc<super::health::ProviderHealthMonitor>,
+    administration: tokio::sync::Mutex<()>,
 }
 
 impl ProviderRegistry {
@@ -142,6 +237,7 @@ impl ProviderRegistry {
             providers: RwLock::new(HashMap::new()),
             default_id: RwLock::new(None),
             health: std::sync::Arc::new(super::health::ProviderHealthMonitor::new()),
+            administration: tokio::sync::Mutex::new(()),
         }
     }
 
@@ -151,6 +247,10 @@ impl ProviderRegistry {
     #[must_use]
     pub fn health(&self) -> &std::sync::Arc<super::health::ProviderHealthMonitor> {
         &self.health
+    }
+
+    pub(crate) async fn administration_guard(&self) -> tokio::sync::MutexGuard<'_, ()> {
+        self.administration.lock().await
     }
 
     /// Seed the registry from the global `LlmConfig`.
@@ -171,6 +271,8 @@ impl ProviderRegistry {
                 .iter()
                 .find(|m| m.id == model_id)
                 .map(|m| ModelConfig {
+                    pricing_identity: None,
+                    execution_profile: None,
                     id: m.id.clone(),
                     display_name: if m.name.is_empty() {
                         None
@@ -200,6 +302,8 @@ impl ProviderRegistry {
         } else {
             // Model not in catalog (custom/local) — store a minimal entry.
             vec![ModelConfig {
+                pricing_identity: None,
+                execution_profile: None,
                 id: model_id.clone(),
                 display_name: None,
                 context_window: None,
@@ -287,6 +391,7 @@ impl ProviderRegistry {
 
     /// Register a new provider (internal / seeding use).
     pub async fn register(&self, config: ProviderConfig) -> anyhow::Result<()> {
+        validate_pricing_identities(&config)?;
         let mut providers = self.providers.write().await;
         tracing::info!(provider_id = %config.id, "Registering provider");
         providers.insert(config.id.clone(), config);
@@ -309,6 +414,7 @@ impl ProviderRegistry {
         }
 
         enrich_provider_config(&mut config);
+        validate_pricing_identities(&config)?;
 
         let mut providers = self.providers.write().await;
 
@@ -379,6 +485,7 @@ impl ProviderRegistry {
 
     /// Update an existing provider.
     pub async fn update(&self, config: ProviderConfig) -> anyhow::Result<()> {
+        validate_pricing_identities(&config)?;
         let mut providers = self.providers.write().await;
         if !providers.contains_key(&config.id) {
             anyhow::bail!("Provider '{}' not found", config.id);
@@ -449,6 +556,16 @@ impl ProviderRegistry {
             return None;
         }
 
+        let pricing_model = match config
+            .models
+            .iter()
+            .find(|candidate| candidate.id == resolved_model)
+            .and_then(|candidate| candidate.pricing_identity.as_ref())
+        {
+            Some(identity) => Some(identity.qualified_model().ok()?),
+            None => None,
+        };
+
         // When base_url is explicitly set, the provider routing is already handled
         // and the API expects just the model ID (e.g., "gpt-4o" not "openai/gpt-4o").
         // Only use provider/model format when liter-llm needs to auto-detect the provider.
@@ -462,6 +579,7 @@ impl ProviderRegistry {
         Some(LlmConfig {
             model: model_for_driver,
             resolved_provider_id: Some(provider_id.to_string()),
+            catalog_pricing_model: pricing_model,
             api_key: config.api_key.clone(),
             base_url: if config.base_url.is_empty() {
                 None
@@ -603,6 +721,8 @@ fn models_from_catalog(provider: &ProviderInfo) -> Vec<ModelConfig> {
         .models
         .iter()
         .map(|m| ModelConfig {
+            pricing_identity: None,
+            execution_profile: None,
             id: m.id.clone(),
             display_name: if m.name.is_empty() {
                 None
@@ -772,6 +892,8 @@ mod tests {
         let registry = ProviderRegistry::new();
         let mut config = make_test_config("openai", "https://api.openai.com");
         config.models = vec![ModelConfig {
+            pricing_identity: None,
+            execution_profile: None,
             id: "test-model".to_string(),
             display_name: Some("Test model".to_string()),
             context_window: Some(8_192),

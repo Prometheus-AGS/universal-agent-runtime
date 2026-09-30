@@ -48,6 +48,8 @@ pub(crate) fn validate_effective_binding_artifact(
 /// Host-only child inputs. The manager must not resolve replacements from its
 /// global registries when any inherited binding is unavailable.
 pub(crate) struct InheritedRunBindings {
+    pub(crate) collaboration_binding: Option<super::CollaborationRunBinding>,
+    pub(crate) instance_binding: Option<crate::uar::runtime::instance::InstanceEpochBinding>,
     pub(crate) policy: Arc<ThreadPolicy>,
     pub(crate) presentations: Arc<super::super::presentations::RunPresentationSnapshot>,
     pub(crate) thread: crate::uar::runtime::thread::AgentThread,
@@ -65,6 +67,8 @@ pub(crate) struct InheritedRunBindings {
 /// Executable resources retained by one live root, not recipes for rebuilding
 /// clients. The run index holds only a weak reference to this capture.
 pub(crate) struct RunDelegationBindings {
+    pub(crate) collaboration_binding: Option<super::CollaborationRunBinding>,
+    pub(crate) instance_binding: Option<crate::uar::runtime::instance::InstanceEpochBinding>,
     pub(crate) owner: crate::uar::runtime::actor::messages::ActorOwner,
     pub(crate) run_id: String,
     pub(crate) artifact: crate::uar::domain::artifact::AgentArtifact,
@@ -151,16 +155,20 @@ impl RunSkillBindings {
 #[derive(Clone)]
 struct BoundModel {
     model: String,
+    pricing_model: String,
     grant: CredentialGrant,
     driver: Arc<dyn LlmDriver>,
+    endpoint_profile: Option<crate::llm::EndpointRequestProfile>,
 }
 
 impl BoundModel {
     fn capture(model: String, driver: Arc<dyn LlmDriver>) -> Self {
         let (provider, _) = crate::llm::registry::split_model_string_pub(&model);
         Self {
+            pricing_model: model.clone(),
             model,
             driver,
+            endpoint_profile: None,
             grant: CredentialGrant {
                 target: CredentialTarget::Provider(provider),
                 binding_id: uuid::Uuid::new_v4().to_string(),
@@ -190,17 +198,36 @@ impl RunModelBindings {
     /// Returns the primary client's construction failure. Unavailable fallback
     /// clients retain the existing skip-and-report behavior.
     pub(crate) async fn capture(
-        config: LlmConfig,
+        mut config: LlmConfig,
         supplied_primary: Option<Arc<dyn LlmDriver>>,
         failover: FailoverConfig,
         health: Option<Arc<ProviderHealthMonitor>>,
         budget: crate::uar::runtime::cost_budget::ModelCallBudget,
         run_credentials: Option<&super::host::RunCredentials>,
+        endpoint_profiles: std::collections::BTreeMap<String, crate::llm::EndpointRequestProfile>,
+        pricing_models: std::collections::BTreeMap<String, String>,
     ) -> anyhow::Result<Self> {
         budget.admit()?;
+        let settings_only = !endpoint_profiles.is_empty();
+        let selected_profile = if settings_only {
+            let selected = endpoint_profiles.values().find(|profile| {
+                config.resolved_provider_id.as_deref() == Some(profile.provider_id.as_str())
+                    && (config.model == profile.wire_model || config.model == profile.qualified_model)
+            }).cloned().ok_or_else(|| anyhow::anyhow!("TEAM_ROUTE_PROFILE_MISMATCH"))?;
+            config.model.clone_from(&selected.qualified_model);
+            config.reasoning_effort = None;
+            config.thinking_budget = None;
+            Some(selected)
+        } else { None };
         let primary = match supplied_primary {
+            Some(_) if settings_only => anyhow::bail!("TEAM_ROUTE_PROFILE_MISMATCH"),
             Some(driver) => driver,
-            None => crate::llm::orchestrator::build_driver(&config)?,
+            None => match &selected_profile {
+                Some(profile) => Arc::new(crate::llm::LiterLlmDriver::from_endpoint_profile(
+                    crate::config::build_client_config(&config), config.parallel_tool_calls, profile.clone(),
+                )?) as Arc<dyn LlmDriver>,
+                None => crate::llm::orchestrator::build_driver(&config)?,
+            },
         };
         let (model_provider, model) = crate::llm::registry::split_model_string_pub(&config.model);
         let provider = config
@@ -208,7 +235,11 @@ impl RunModelBindings {
             .as_deref()
             .unwrap_or(&model_provider);
         let primary_model = format!("{provider}/{model}");
-        let primary = BoundModel::capture(primary_model.clone(), primary);
+        let mut primary = BoundModel::capture(primary_model.clone(), primary);
+        primary.endpoint_profile = selected_profile;
+        if let Some(pricing_model) = &config.catalog_pricing_model {
+            primary.pricing_model.clone_from(pricing_model);
+        }
         let mut fallbacks = Vec::new();
         if failover.enabled {
             for fallback in &failover.fallback_models {
@@ -224,20 +255,39 @@ impl RunModelBindings {
                         "Skipping fallback provider in cooldown while capturing run bindings");
                     continue;
                 }
-                let driver = match run_credentials {
-                    Some(credentials) => credentials
+                let fallback_profile = if settings_only {
+                    Some(endpoint_profiles.get(&fallback.model).cloned()
+                        .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?)
+                } else { None };
+                let driver = match (&fallback_profile, run_credentials) {
+                    (Some(profile), _) => {
+                        let mut fallback_config = config.clone();
+                        fallback_config.model.clone_from(&fallback.model);
+                        fallback_config.api_key.clone_from(&fallback.api_key);
+                        fallback_config.base_url.clone_from(&fallback.base_url);
+                        crate::llm::LiterLlmDriver::from_endpoint_profile(
+                            crate::config::build_client_config(&fallback_config),
+                            fallback_config.parallel_tool_calls, profile.clone(),
+                        ).map(|driver| Arc::new(driver) as Arc<dyn LlmDriver>)
+                    }
+                    (None, Some(credentials)) => credentials
                         .config_for(&provider, Some(&fallback.model), config.clone())
                         .map_err(anyhow::Error::from)
                         .and_then(|fallback_config| {
                             crate::llm::orchestrator::build_driver(&fallback_config)
                         }),
-                    None => Orchestrator::build_fallback_driver(&config, fallback),
+                    (None, None) => Orchestrator::build_fallback_driver(&config, fallback),
                 };
                 match driver {
                     Ok(driver) => {
-                        fallbacks.push(BoundModel::capture(fallback.model.clone(), driver))
+                        let mut bound = BoundModel::capture(fallback.model.clone(), driver);
+                        bound.endpoint_profile = fallback_profile;
+                        if let Some(pricing_model) = pricing_models.get(&fallback.model) {
+                            bound.pricing_model.clone_from(pricing_model);
+                        }
+                        fallbacks.push(bound)
                     }
-                    Err(error) if run_credentials.is_some() => return Err(error),
+                    Err(error) if run_credentials.is_some() || settings_only => return Err(error),
                     Err(error) => tracing::warn!(model = %fallback.model, %error,
                         "Failed to capture fallback driver; continuing with remaining candidates"),
                 }
@@ -259,8 +309,10 @@ impl RunModelBindings {
     }
 
     pub(crate) fn primary(&self) -> Arc<dyn LlmDriver> {
-        self.budget
-            .bind(self.primary.model.clone(), Arc::clone(&self.primary.driver))
+        self.budget.bind(
+            self.primary.pricing_model.clone(),
+            Arc::clone(&self.primary.driver),
+        )
     }
 
     pub(crate) fn config(&self) -> &LlmConfig {
@@ -311,6 +363,11 @@ impl RunModelBindings {
                     anyhow::anyhow!("Child model has no inherited credential binding")
                 })?;
             Ok(BoundModel {
+                pricing_model: if binding.model == qualified {
+                    binding.pricing_model.clone()
+                } else {
+                    qualified.clone()
+                },
                 driver: if binding.model == qualified {
                     Arc::clone(&binding.driver)
                 } else {
@@ -318,6 +375,7 @@ impl RunModelBindings {
                 },
                 model: qualified,
                 grant: binding.grant.clone(),
+                endpoint_profile: binding.endpoint_profile.clone(),
             })
         };
         let primary = bind(&route.provider_id, &route.model_id)?;
@@ -378,13 +436,19 @@ impl RunModelBindings {
                         .map(|binding| {
                             (
                                 binding.model.clone(),
-                                self.budget
-                                    .bind(binding.model.clone(), Arc::clone(&binding.driver)),
+                                self.budget.bind(
+                                    binding.pricing_model.clone(),
+                                    Arc::clone(&binding.driver),
+                                ),
                             )
                         })
                         .collect(),
                     self.failover.clone(),
                 );
+        let profiles = std::iter::once(&self.primary).chain(self.fallbacks.iter())
+            .filter_map(|binding| binding.endpoint_profile.clone())
+            .map(|profile| (profile.qualified_model.clone(), profile)).collect();
+        let orchestrator = orchestrator.with_endpoint_settings_profiles(profiles);
         match &self.health {
             Some(health) => orchestrator.with_health_monitor(Arc::clone(health)),
             None => orchestrator,

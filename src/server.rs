@@ -671,7 +671,10 @@ async fn run_server_with_listener(
                 crate::uar::compiler::storage::surreal::SurrealCompilerStorage::new(db.clone()),
             );
             let collaboration_store = Arc::new(
-                crate::uar::compiler::collaboration::SurrealCollaborationStorage::new(db.clone()),
+                crate::uar::compiler::collaboration::SurrealCollaborationStorage::new(
+                    db.clone(),
+                    provider.catalog_storage_backend(),
+                ),
             )
                 as Arc<dyn crate::uar::compiler::collaboration::CollaborationStorage>;
             let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> =
@@ -779,12 +782,21 @@ async fn run_server_with_listener(
         }
     };
     let persistence = Some(Arc::clone(&persistence_layer));
+    let team_execution_available = persistence_layer.supports_durable_agent_instances()
+        || (matches!(config.persistence.provider.as_str(), "surreal" | "surrealdb")
+            && ["ws://", "wss://", "http://", "https://"]
+                .iter()
+                .any(|scheme| config.persistence.database_url.starts_with(scheme)));
     let mut implemented_capabilities = uar::api::capabilities::IMPLEMENTED_CAPABILITIES.to_vec();
     if persistence_layer.supports_durable_agent_instances() {
         implemented_capabilities.push("durable_agent_instances_v1");
     }
     if persistence_layer.supports_durable_observers() {
         implemented_capabilities.push("local_scoped_observers_v1");
+    }
+    if team_execution_available {
+        implemented_capabilities.push("collaboration_team_execution_v1");
+        if uar::api::capabilities::team_execution_b_enabled(){implemented_capabilities.extend(uar::api::capabilities::TEAM_EXECUTION_B_CAPABILITIES); }
     }
     let service_instance = Arc::new(uar::service_instance::ServiceInstanceAuthority::new(
         &config.service_instance,
@@ -1363,7 +1375,20 @@ async fn run_server_with_listener(
             .with_provider_registry(Arc::clone(&provider_registry))
             .with_service_instance(Arc::clone(&service_instance)),
     );
+    let _owns_team_catalog = if team_execution_available {
+        match collaboration_catalog.acquire_execution_owner().await {
+            Ok(_) => true,
+            Err(error) => { tracing::warn!(%error, "Team catalog is read-only for this executor"); false }
+        }
+    } else { false };
     info!("Collaboration package catalog initialized");
+
+    let team_execution_runtime = uar::runtime::team_execution::TeamExecutionRuntime::new(
+        Arc::clone(&collaboration_catalog),
+        Arc::clone(&run_manager),
+        Arc::clone(&persistence_layer),
+        team_execution_available,
+    );
 
     let agent_instance_controller = uar::runtime::instance::AgentInstanceController::new(
         Arc::clone(&run_manager),
@@ -1570,6 +1595,7 @@ async fn run_server_with_listener(
             get(uar::api::capabilities::capabilities_handler).with_state(Arc::new(
                 uar::api::capabilities::CapabilitiesApiState {
                     service_instance: Arc::clone(&service_instance),
+                    collaboration_catalog: Arc::clone(&collaboration_catalog),
                 },
             )),
         )
@@ -1578,6 +1604,7 @@ async fn run_server_with_listener(
             post(uar::api::capabilities::compatibility_handler).with_state(Arc::new(
                 uar::api::capabilities::CapabilitiesApiState {
                     service_instance: Arc::clone(&service_instance),
+                    collaboration_catalog: Arc::clone(&collaboration_catalog),
                 },
             )),
         )
@@ -1684,7 +1711,9 @@ async fn run_server_with_listener(
             uar::api::collaboration::build_router().with_state(Arc::new(
                 uar::api::collaboration::CollaborationApiState {
                     service: Arc::clone(&collaboration_catalog),
+                    admin_key: config.security.settings_admin_key.clone(),
                     service_instance: Arc::clone(&service_instance),
+                    runtime: Arc::clone(&team_execution_runtime),
                 },
             )),
         )
@@ -2101,6 +2130,8 @@ async fn run_server_with_listener(
         .map(|pool| Arc::new(move || pool.shutdown()) as Arc<dyn Fn() + Send + Sync + 'static>);
     let async_resource_cleanup = {
         let actor_system = Arc::clone(&actor_system);
+        let team_execution_runtime = Arc::clone(&team_execution_runtime);
+        let collaboration_catalog = Arc::clone(&collaboration_catalog);
         let sandbox_manager = Arc::clone(&sandbox_manager);
         let mcp = Arc::clone(&mcp);
         let projected_mcp_runtime = projected_mcp_runtime.clone();
@@ -2108,12 +2139,18 @@ async fn run_server_with_listener(
         let shutdown_coordinator = shutdown_coordinator.clone();
         Arc::new(move || {
             let actor_system = Arc::clone(&actor_system);
+            let team_execution_runtime = Arc::clone(&team_execution_runtime);
+            let collaboration_catalog = Arc::clone(&collaboration_catalog);
             let sandbox_manager = Arc::clone(&sandbox_manager);
             let mcp = Arc::clone(&mcp);
             let projected_mcp_runtime = projected_mcp_runtime.clone();
             let surreal_live_bus = surreal_live_bus.clone();
             let shutdown_coordinator = shutdown_coordinator.clone();
             Box::pin(async move {
+                if let Err(error) = team_execution_runtime.shutdown().await {
+                    shutdown_coordinator.record_cleanup_failure(&error);
+                    tracing::error!(%error, "Team execution shutdown retains unconfirmed work");
+                }
                 // Mailboxes retain kernel completion and durable thread writes.
                 // Join them before closing their shared transport dependencies.
                 if let Err(error) = actor_system.shutdown_all().await {
@@ -2144,6 +2181,14 @@ async fn run_server_with_listener(
                 if let Err(error) = projected_result {
                     shutdown_coordinator.record_cleanup_failure(&error);
                     tracing::error!(%error, "Projected MCP shutdown retains unconfirmed resources");
+                }
+                if shutdown_coordinator.cleanup_result().is_ok()
+                    && collaboration_catalog.execution_ownership_view().await.is_ok_and(|v| v.claim.is_some_and(|c| c.state == "draining" && c.fence == v.current_fence)) {
+                    if let Err(error) = collaboration_catalog.release_execution_owner().await {
+                        let error = anyhow::Error::from(error);
+                        shutdown_coordinator.record_cleanup_failure(&error);
+                        tracing::error!(%error, "Execution ownership release remains unconfirmed");
+                    }
                 }
             }) as Pin<Box<dyn Future<Output = ()> + Send + 'static>>
         }) as ShutdownAsyncCleanup
@@ -2247,8 +2292,8 @@ pub async fn start_server_sidecar(
         None,
         None,
         Some(ready),
+        http_shutdown.clone(),
         http_shutdown,
-        None,
         true,
         Some(launch_token),
     )

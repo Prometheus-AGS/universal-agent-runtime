@@ -255,6 +255,12 @@ impl CapturedThreadKernel {
     }
 
     async fn check_execution_bindings(&self, policy: &ThreadPolicy) -> anyhow::Result<()> {
+        if let Some(binding) = &self.resources.collaboration_binding {
+            binding.revalidate(&self.resources.artifact).await?;
+        }
+        if let Some(binding) = &self.resources.instance_binding {
+            binding.revalidate_effect().await?;
+        }
         self.check_bindings(policy, true).await
     }
 
@@ -600,6 +606,8 @@ impl CapturedThreadKernel {
             .clone()
             .ok_or_else(|| anyhow::anyhow!("Child run ID is missing"))?;
         let bindings = InheritedRunBindings {
+            collaboration_binding: self.resources.collaboration_binding.clone(),
+            instance_binding: self.resources.instance_binding.clone(),
             policy: turn.policy,
             presentations: Arc::clone(&self.resources.presentations),
             thread: thread.clone(),

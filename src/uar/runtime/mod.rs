@@ -17,6 +17,7 @@ pub mod project_instructions;
 pub mod prompt;
 pub mod skills;
 pub mod thread;
+pub mod team_execution;
 pub mod tool_admission;
 pub mod turn;
 pub mod user_settings_store;

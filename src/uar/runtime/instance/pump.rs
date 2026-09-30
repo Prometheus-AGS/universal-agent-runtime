@@ -209,7 +209,7 @@ impl AgentInstanceController {
                             {
                                 TurnSettlement::Failed
                             }
-                            Some(AgentThreadResult::Failed { .. }) | None => {
+                            Some(AgentThreadResult::Failed { .. }) | Some(AgentThreadResult::Yielded { .. }) | None => {
                                 TurnSettlement::Uncertain
                             }
                         },

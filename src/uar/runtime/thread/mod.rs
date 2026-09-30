@@ -28,6 +28,7 @@ pub enum AgentThreadStatus {
     Running,
     Waiting,
     Completed,
+    Yielded,
     Failed,
     Cancelled,
 }
@@ -35,7 +36,7 @@ pub enum AgentThreadStatus {
 impl AgentThreadStatus {
     /// A terminal turn releases its concurrent-child slot, not its lifetime count.
     pub const fn is_terminal(self) -> bool {
-        matches!(self, Self::Completed | Self::Failed | Self::Cancelled)
+        matches!(self, Self::Completed | Self::Yielded | Self::Failed | Self::Cancelled)
     }
 }
 
@@ -45,6 +46,7 @@ impl AgentThreadStatus {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum AgentThreadResult {
     Completed { output: String },
+    Yielded { control: crate::uar::domain::team_wait::KernelTeamYield },
     Failed { code: String, message: String },
     Cancelled,
 }
@@ -53,6 +55,7 @@ impl AgentThreadResult {
     pub const fn status(&self) -> AgentThreadStatus {
         match self {
             Self::Completed { .. } => AgentThreadStatus::Completed,
+            Self::Yielded { .. } => AgentThreadStatus::Yielded,
             Self::Failed { .. } => AgentThreadStatus::Failed,
             Self::Cancelled => AgentThreadStatus::Cancelled,
         }

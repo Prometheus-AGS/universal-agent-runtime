@@ -8,6 +8,7 @@ mod service;
 mod storage;
 mod team_mailbox;
 mod team_planning;
+mod team_execution;
 mod validation;
 
 pub use export::{
@@ -20,4 +21,4 @@ pub use service::{BoundAgentRun, CollaborationCatalogService, CollaborationError
 pub use storage::PostgresCollaborationStorage;
 #[cfg(feature = "surreal-backend")]
 pub use storage::SurrealCollaborationStorage;
-pub use storage::{CollaborationStorage, InMemoryCollaborationStorage};
+pub use storage::{CollaborationStorage, CollaborationStorageDescriptor, InMemoryCollaborationStorage};

@@ -263,6 +263,7 @@ impl ActorThreadSession {
             binding.revalidate().await?;
         }
         let instance_binding = request.instance_binding.clone();
+        let team_binding = request.collaboration_binding.clone();
         self.settle_uncertain().await?;
         if self.cancellation.is_cancelled() {
             anyhow::bail!("Actor has been stopped");
@@ -278,11 +279,15 @@ impl ActorThreadSession {
         // changing only run_id would retain the previous run's tree identity,
         // approval root and admission counters. History remains in session_id;
         // the durable roots remain separate and are never overwritten.
-        let next = AgentThread::root(
+        let mut next = AgentThread::root(
             self.owner.user_id().to_owned(),
             self.artifact.id.clone(),
             run_id.clone(),
         )?;
+        if let Some(attempt)=team_binding.as_ref().and_then(|b|b.team_attempt.as_ref()) {
+            anyhow::ensure!(!attempt.root_id.is_empty()&&attempt.approval_scope_id==attempt.root_id,"TEAM_SCOPE_DENIED");
+            next.thread_id=attempt.root_id.clone();next.root_thread_id=attempt.root_id.clone();
+        }
         let record = self.persist(next).await?;
         let root = ActorRootBinding {
             record,
@@ -335,6 +340,11 @@ impl ActorThreadSession {
                 code: "session_persistence_unconfirmed".into(),
                 message: "Conversation history could not be confirmed in storage".into(),
             };
+        }
+        if matches!(result, AgentThreadResult::Completed {..}) {
+            if let Some(binding)=&team_binding {
+                if let Some(control)=binding.team_yield.lock().map_err(|_|anyhow::anyhow!("TEAM_EFFECTS_UNCERTAIN"))?.clone(){result=AgentThreadResult::Yielded{control};}
+            }
         }
         let mut next = self
             .current

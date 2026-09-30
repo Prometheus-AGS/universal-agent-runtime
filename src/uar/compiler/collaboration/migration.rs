@@ -425,7 +425,7 @@ fn field_diagnostic(
         disposition,
         reason_code: reason_code.to_owned(),
         message: message.to_owned(),
-        effective_binding_ref: None,
+        effective_binding_ref: None, source_kind: None, source_definition: None,
     }
 }
 

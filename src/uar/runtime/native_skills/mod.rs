@@ -155,3 +155,5 @@ pub async fn register_builtins(
     tracing::info!("Built-in native skills registration complete");
     Ok(())
 }
+
+pub(crate) mod team_tools;

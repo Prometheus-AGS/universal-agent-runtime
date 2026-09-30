@@ -209,6 +209,7 @@ impl CollaborationCatalogService {
             self.skill_service.as_deref(),
             self.provider_registry.as_deref(),
             self.service_instance.as_deref(),
+            &self.execution_identity()?,
             owner_id,
             workspace_id,
             request,
@@ -222,6 +223,7 @@ async fn validate_binding(
     skill_service: Option<&crate::uar::runtime::skills::SkillService>,
     provider_registry: Option<&crate::llm::ProviderRegistry>,
     service_instance: Option<&crate::uar::service_instance::ServiceInstanceAuthority>,
+    execution_identity: &crate::uar::domain::team_execution::TeamExecutionFence,
     owner_id: &str,
     workspace_id: &str,
     request: &BindingCommandRequest,
@@ -306,19 +308,48 @@ async fn validate_binding(
         )));
     }
     if let Some(team_definition) = bound_team_definition(state, &package)? {
-        let mut diagnostics = vec![FieldDiagnostic {
-            pointer: "/package/entrypoints".to_owned(),
-            disposition: ConversionDisposition::RequiredUnsupported,
-            reason_code: "team.execution-not-implemented".to_owned(),
-            message:
-                "The team can be planned, but team execution is not available in this runtime."
-                    .to_owned(),
-            effective_binding_ref: None,
-        }];
+        let mut diagnostics = Vec::new();
+        if state.execution_claim.as_ref().is_none_or(|claim| claim.state != "held" || claim.fence != *execution_identity) {
+            diagnostics.push(FieldDiagnostic { pointer: "/runtimeInstanceId".into(), disposition: ConversionDisposition::RequiredUnsupported, reason_code: "TEAM_EXECUTION_OWNER_CONFLICT".into(), message: "The catalog executing authority belongs to another service or is draining.".into(), effective_binding_ref: None, source_kind: Some(CollaborationKind::DeploymentBinding), source_definition: None });
+        }
+        for (index, member) in team_definition.document["members"].as_array().into_iter().flatten().enumerate() {
+            if member["kind"].as_str() == Some("team") {
+                diagnostics.push(FieldDiagnostic { pointer: format!("/members/{index}/kind"), disposition: ConversionDisposition::RequiredUnsupported, reason_code: "TEAM_CAPABILITY_UNSUPPORTED".into(), message: "Nested team execution is not supported by this profile.".into(), effective_binding_ref: None, source_kind: Some(team_definition.kind.clone()), source_definition: Some(team_definition.identity.clone()) });
+            } else if let Ok(reference) = serde_json::from_value::<ImmutableDefinitionRef>(member["definition"].clone()) {
+                if let Some(definition) = state.definitions.get(&reference.storage_key()) {
+                    let start = diagnostics.len();
+                    super::runtime_semantics::resolve_legacy_team_context(definition, document, &mut diagnostics);
+                    let models = resolve_models(document, definition, &mut diagnostics)?;
+                    super::runtime_semantics::resolve_runtime_semantics(definition, &models, provider_registry, &mut diagnostics).await;
+                    assign_diagnostic_sources(&mut diagnostics[start..], definition);
+                }
+            }
+        }
+        let execution_available = service_instance.is_some_and(|authority| {
+            authority
+                .descriptor()
+                .capabilities
+                .iter()
+                .any(|capability| capability == "collaboration_team_execution_v1")
+        });
+        if !execution_available {
+            diagnostics.push(FieldDiagnostic {
+                pointer: "/package/entrypoints".to_owned(),
+                disposition: ConversionDisposition::RequiredUnsupported,
+                reason_code: "team.execution-unavailable".to_owned(),
+                message:
+                    "The team can be planned, but durable team execution is unavailable in this runtime."
+                        .to_owned(),
+                effective_binding_ref: None, source_kind: None, source_definition: None,
+            });
+        }
         let service_binding =
             resolve_service_binding(service_instance, document, &mut diagnostics)?;
         let representation_grants =
             super::grants::validate_binding_grants(owner_id, workspace_id, document, state)?;
+        let activation_supported = !diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.disposition == ConversionDisposition::RequiredUnsupported);
         let preflight = BindingPreflightResponse {
             binding_id: required_string(document, "id")?.to_owned(),
             package: package.clone(),
@@ -330,7 +361,7 @@ async fn validate_binding(
                     message: item.message.clone(),
                 })
                 .collect(),
-            activation_supported: false,
+            activation_supported,
             request_digest: request_digest(request).map_err(CollaborationError::from)?,
         };
         let receipt = effective_receipt(
@@ -341,9 +372,9 @@ async fn validate_binding(
             Vec::new(),
             representation_grants,
             service_binding,
-            json!({"teamPlanning": true}),
+            json!({"teamPlanning": true, "teamExecution": activation_supported}),
             diagnostics,
-            false,
+            activation_supported,
         )?;
         return Ok((preflight, receipt));
     }
@@ -395,7 +426,7 @@ async fn validate_binding(
     Ok((preflight, receipt))
 }
 
-fn resolve_service_binding(
+pub(super) fn resolve_service_binding(
     authority: Option<&crate::uar::service_instance::ServiceInstanceAuthority>,
     binding: &Value,
     diagnostics: &mut Vec<FieldDiagnostic>,
@@ -460,7 +491,7 @@ fn resolve_service_binding(
             disposition: ConversionDisposition::RequiredUnsupported,
             reason_code: diagnostic.code.to_owned(),
             message: diagnostic.message,
-            effective_binding_ref: None,
+            effective_binding_ref: None, source_kind: None, source_definition: None,
         });
     }
     Ok(response.effective_binding)
@@ -530,7 +561,7 @@ fn bound_team_definition<'a>(
     Ok(Some(teams[0]))
 }
 
-async fn resolve_skills(
+pub(super) async fn resolve_skills(
     skill_service: Option<&crate::uar::runtime::skills::SkillService>,
     binding: &Value,
     definition: &CollaborationDefinitionRecord,
@@ -609,7 +640,7 @@ async fn resolve_skills(
             reason_code: "skill.bound-exactly".to_owned(),
             message: "The complete SkillRef resolves to the exact enabled installed artifact."
                 .to_owned(),
-            effective_binding_ref: None,
+            effective_binding_ref: None, source_kind: None, source_definition: None,
         });
         resolved.push(ResolvedSkill {
             skill: requested,
@@ -670,11 +701,11 @@ fn binding_diagnostic(pointer: String, skill: &SkillRef, reason: &str) -> FieldD
             "The optional skill is preserved but does not resolve to an installed artifact."
         }
         .to_owned(),
-        effective_binding_ref: None,
+        effective_binding_ref: None, source_kind: None, source_definition: None,
     }
 }
 
-fn resolve_models(
+pub(super) fn resolve_models(
     binding: &Value,
     definition: &CollaborationDefinitionRecord,
     diagnostics: &mut Vec<FieldDiagnostic>,
@@ -712,7 +743,7 @@ fn resolve_models(
                 reason_code: "model.binding-missing".to_owned(),
                 message: "No model binding resolves a preferred immutable definition alias."
                     .to_owned(),
-                effective_binding_ref: None,
+                effective_binding_ref: None, source_kind: None, source_definition: None,
             });
             continue;
         };
@@ -721,20 +752,22 @@ fn resolve_models(
             "requestedAlias": selected.get("requestedAlias"),
             "providerId": selected.get("providerId"),
             "modelId": selected.get("modelId"),
+            "profile": selected.get("profile"),
+            "settingsRevision": selected.get("settingsRevision"),
         }));
         diagnostics.push(FieldDiagnostic {
             pointer: format!("/models/{index}"),
             disposition: ConversionDisposition::Exact,
             reason_code: "model.bound-exactly".to_owned(),
             message: "The model role resolves through a declared preferred alias.".to_owned(),
-            effective_binding_ref: None,
+            effective_binding_ref: None, source_kind: None, source_definition: None,
         });
     }
     Ok(resolved)
 }
 
 #[allow(clippy::too_many_arguments)]
-fn effective_receipt(
+pub(super) fn effective_receipt(
     binding: &Value,
     package: ImmutableDefinitionRef,
     definition: &CollaborationDefinitionRecord,
@@ -757,6 +790,7 @@ fn effective_receipt(
     for diagnostic in &mut diagnostics {
         diagnostic.effective_binding_ref = Some(binding_ref.clone());
     }
+    assign_diagnostic_sources(&mut diagnostics, definition);
     let requested = json!({
         "definition": definition.identity,
         "skills": definition.document.get("skills").cloned().unwrap_or_else(|| json!([])),
@@ -801,6 +835,18 @@ fn effective_receipt(
     };
     receipt.content_digest = canonical_digest(&serde_json::to_value(&receipt)?)?;
     Ok(receipt)
+}
+
+fn assign_diagnostic_sources(diagnostics: &mut [FieldDiagnostic], definition: &CollaborationDefinitionRecord) {
+    for diagnostic in diagnostics {
+        if diagnostic.source_kind.is_some() { continue; }
+        if ["/modelBindings", "/skillBindings", "/contextGrants", "/runtimeInstanceId", "/requiredCapabilities", "/workspaceLocation", "/endpointRoles"].iter().any(|prefix| diagnostic.pointer.starts_with(prefix)) {
+            diagnostic.source_kind = Some(CollaborationKind::DeploymentBinding);
+        } else {
+            diagnostic.source_kind = Some(definition.kind.clone());
+            diagnostic.source_definition = Some(definition.identity.clone());
+        }
+    }
 }
 
 fn enforce_binding_revision(

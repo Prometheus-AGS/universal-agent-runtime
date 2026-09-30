@@ -77,6 +77,11 @@ impl TaskCommand {
                     .iter()
                     .find(|member| member.id == request.member_id)
                     .ok_or_else(|| CollaborationError::NotFound(request.member_id.clone()))?;
+                if matches!(member.status.as_str(), "revoked" | "stopped") {
+                    return Err(CollaborationError::Conflict(
+                        "assignee membership is revoked or stopped".to_owned(),
+                    ));
+                }
                 if member.role != task.role {
                     return Err(CollaborationError::Invalid(
                         "assignee does not occupy the task role".to_owned(),
@@ -125,8 +130,15 @@ impl TaskCommand {
                 }
                 if let Some(member_id) = &request.member_id {
                     validate_id(member_id)?;
-                    if !team.members.iter().any(|member| member.id == *member_id) {
-                        return Err(CollaborationError::NotFound(member_id.clone()));
+                    let member = team
+                        .members
+                        .iter()
+                        .find(|member| member.id == *member_id)
+                        .ok_or_else(|| CollaborationError::NotFound(member_id.clone()))?;
+                    if matches!(member.status.as_str(), "revoked" | "stopped") {
+                        return Err(CollaborationError::Conflict(
+                            "reviewer membership is revoked or stopped".to_owned(),
+                        ));
                     }
                     if task.assignee_member_id.as_deref() == Some(member_id.as_str()) {
                         return Err(CollaborationError::Invalid(
@@ -326,7 +338,9 @@ impl CollaborationCatalogService {
                     committed_at: now,
                 },
             );
+            self.evaluate_team_waits(&mut next).await?;
             if self.cas(current.generation, &next).await? {
+                self.team_execution_notify.notify_one();
                 return Ok(team);
             }
         }

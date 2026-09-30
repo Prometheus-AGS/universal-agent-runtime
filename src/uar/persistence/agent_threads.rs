@@ -612,6 +612,7 @@ pub(crate) fn next_record(
                 next.status != AgentThreadStatus::Pending && next.run_id == before.run_id
             }
             AgentThreadStatus::Completed
+            | AgentThreadStatus::Yielded
             | AgentThreadStatus::Failed
             | AgentThreadStatus::Cancelled => {
                 next.status == AgentThreadStatus::Running

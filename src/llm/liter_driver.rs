@@ -70,6 +70,28 @@ impl std::fmt::Debug for LiterLlmDriver {
 }
 
 impl LiterLlmDriver {
+    /// Bind a settings-only OpenAI chat profile to the real client and wire alias.
+    /// Construction uses the trusted adapter contract, never alias-family detection.
+    pub fn from_endpoint_profile(
+        mut config: ClientConfig,
+        parallel_tool_calls: Option<bool>,
+        profile: EndpointRequestProfile,
+    ) -> anyhow::Result<Self> {
+        super::local_only::check_base_url(config.base_url.as_deref())?;
+        let fingerprint = config.base_url.as_deref().map(endpoint_fingerprint);
+        validate_endpoint_profile(&profile, &profile.qualified_model, fingerprint.as_deref())?;
+        anyhow::ensure!(profile.transform == EndpointRequestTransform::OpenAiCompatibleChatV1,
+            "TEAM_PROFILE_UNSUPPORTED");
+        // The captured endpoint is authoritative; provider environment overrides
+        // and redirects must not replace it after admission.
+        config.load_env = false;
+        config.redact_base_url = true;
+        config.transport = config.transport.with_redirects_disabled(true);
+        // Liter pins generic chat when an explicit URL and a non-native hint are supplied.
+        let client = Arc::new(DefaultClient::new(config, Some("uar-settings-profile"))?);
+        Self::from_client(client, profile.qualified_model.clone(), parallel_tool_calls, fingerprint)
+            .with_endpoint_profile(profile)
+    }
     /// Create a new driver from a `ClientConfig` and model identifier.
     ///
     /// The `model` should use liter-llm's `provider/model` naming convention
@@ -224,13 +246,6 @@ fn validate_endpoint_profile(
     };
     if profile.endpoint_fingerprint != bound_endpoint_fingerprint {
         anyhow::bail!("endpoint request profile does not match the driver endpoint");
-    }
-    if profile.transform == EndpointRequestTransform::OpenAiCompatibleChatV1
-        && profile.wire_model != profile.qualified_model
-    {
-        anyhow::bail!(
-            "OpenAI-compatible exact profiles require identical qualified and wire model values"
-        );
     }
     let allowed = profile
         .allowed_request_fields
@@ -458,7 +473,7 @@ fn build_chat_request(
     let tools = convert_tools(&req.tools)?;
 
     let mut chat_req = ChatCompletionRequest::default();
-    chat_req.model = model.to_owned();
+    chat_req.model = endpoint_profile.map_or_else(|| model.to_owned(), |profile| profile.wire_model.clone());
     chat_req.messages = messages;
     chat_req.tools = if tools.is_empty() { None } else { Some(tools) };
     chat_req.parallel_tool_calls = parallel_tool_calls;
@@ -582,6 +597,7 @@ impl LlmDriver for LiterLlmDriver {
         // stream immediately so the orchestrator's stream-start timeout covers
         // only request establishment, not the full model completion.
         let metrics_model = self.model.clone();
+        let require_terminal = self.endpoint_profile.is_some();
 
         // Time the full LLM call (request → stream completion) and record it as
         // a per-call latency histogram when the returned stream finishes.
@@ -597,6 +613,7 @@ impl LlmDriver for LiterLlmDriver {
             let mut tool_accum: BTreeMap<u32, ToolAccum> = BTreeMap::new();
             let mut chunk_count: u64 = 0;
             let mut event_count: u64 = 0;
+            let mut saw_terminal = false;
 
             loop {
                 let next_chunk = futures::future::poll_fn(|cx| {
@@ -655,6 +672,7 @@ impl LlmDriver for LiterLlmDriver {
                     }
 
                     if let Some(ref reason) = choice.finish_reason {
+                        saw_terminal = true;
                         if matches!(reason, FinishReason::ToolCalls) {
                             for (idx, accum) in &tool_accum {
                                 if let (Some(id), Some(name)) = (&accum.id, &accum.name) {
@@ -721,6 +739,10 @@ impl LlmDriver for LiterLlmDriver {
                 );
             });
 
+            if require_terminal && !saw_terminal {
+                yield Err(ProviderError::invalid_request("Provider stream ended without a terminal completion").into());
+                return;
+            }
             yield Ok(NormalizedEvent::Done);
         };
 

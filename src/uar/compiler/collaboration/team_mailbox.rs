@@ -277,7 +277,10 @@ impl TeamMailboxGrant {
         let member = team
             .members
             .iter()
-            .find(|member| member.id == request.recipient_member_id && member.status != "stopped")
+            .find(|member| {
+                member.id == request.recipient_member_id
+                    && !matches!(member.status.as_str(), "stopped" | "revoked")
+            })
             .ok_or_else(|| CollaborationError::NotFound(request.recipient_member_id.clone()))?;
         let task_epoch = match (&request.task_id, request.expected_task_epoch) {
             (None, None) => None,
@@ -294,6 +297,16 @@ impl TeamMailboxGrant {
                     return Err(CollaborationError::Conflict(
                         "task assignment or ownership epoch changed".to_owned(),
                     ));
+                }
+                if let Some(reviewer_id) = &task.reviewer_member_id {
+                    if !team.members.iter().any(|reviewer| {
+                        reviewer.id == *reviewer_id
+                            && !matches!(reviewer.status.as_str(), "stopped" | "revoked")
+                    }) {
+                        return Err(CollaborationError::Conflict(
+                            "task reviewer membership is no longer current".to_owned(),
+                        ));
+                    }
                 }
                 let authority = task.assignment_authority.as_ref().ok_or_else(|| {
                     CollaborationError::Conflict(

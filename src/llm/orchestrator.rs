@@ -241,6 +241,8 @@ pub struct Orchestrator {
     /// Exact model/template/settings contracts used to rebuild every provider
     /// attempt from canonical history.
     destination_preparations: Option<Arc<DestinationRequestPreparations>>,
+    /// Settings-only exact profiles captured on the leaf clients for this run.
+    endpoint_settings_profiles: BTreeMap<String, super::EndpointRequestProfile>,
     /// Unrendered, unreduced messages captured by the trusted host. Completed
     /// tool records are appended to this stream, never to a prepared view only.
     canonical_history: Option<Vec<Message>>,
@@ -252,6 +254,7 @@ pub struct Orchestrator {
     shadow_turn: Option<(Arc<crate::uar::runtime::turn::ResolvedTurn>, Vec<Message>)>,
     world_state: Option<Arc<crate::uar::runtime::world_state::runtime::WorldStateRuntime>>,
     canonical_receipt_store: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
+    team_model_handoff: Option<crate::uar::runtime::turn::CollaborationRunBinding>,
 }
 
 #[derive(Clone)]
@@ -666,6 +669,7 @@ impl Orchestrator {
             cache_strategy: None,
             request_budget_contract: None,
             destination_preparations: None,
+            endpoint_settings_profiles: BTreeMap::new(),
             canonical_history: None,
             canonical_fragments: None,
             protected_continuity: None,
@@ -675,12 +679,15 @@ impl Orchestrator {
             shadow_turn: None,
             world_state: None,
             canonical_receipt_store: None,
+            team_model_handoff: None,
         }
     }
 
     /// Share host-owned activations without persisting their reclaimable bodies
     /// in the history that compaction summarizes.
     #[must_use]
+    pub(crate) fn with_team_model_handoff(mut self,binding:Option<crate::uar::runtime::turn::CollaborationRunBinding>)->Self{self.team_model_handoff=binding;self}
+
     pub fn with_skill_activation(
         mut self,
         context: Arc<
@@ -735,13 +742,32 @@ impl Orchestrator {
         self
     }
 
+    #[must_use]
+    pub fn with_endpoint_settings_profiles(
+        mut self, profiles: BTreeMap<String, super::EndpointRequestProfile>,
+    ) -> Self {
+        self.endpoint_settings_profiles = profiles;
+        self
+    }
+
     fn prepare_attempt(
         &self,
         model: &str,
-        request: LlmRequest,
+        mut request: LlmRequest,
         canonical_messages: &[serde_json::Value],
         fragments: &[crate::uar::runtime::prompt::PromptFragment],
     ) -> anyhow::Result<LlmRequest> {
+        if !self.endpoint_settings_profiles.is_empty() {
+            let profile = self.endpoint_settings_profiles.get(model)
+                .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
+            anyhow::ensure!(profile.qualified_model == model, "TEAM_ROUTE_PROFILE_MISMATCH");
+            // The registered narrow profile has only off reasoning. Never inject
+            // family or multi-turn parameters into this captured destination.
+            request.extra_params = None;
+            request.thinking_config = None;
+            request.budget_contract = None;
+            return Ok(request);
+        }
         match &self.destination_preparations {
             Some(preparations) => preparations.prepare(
                 model,
@@ -755,6 +781,16 @@ impl Orchestrator {
     }
 
     fn attempt_manifest(&self, model: &str, request: &LlmRequest) -> serde_json::Value {
+        if let Some(profile) = self.endpoint_settings_profiles.get(model) {
+            return serde_json::json!({
+                "schema_version": "uar.attempt-manifest.v1",
+                "destination_model": model, "wire_model_alias": profile.wire_model,
+                "profile": {"id":profile.profile_id,"revision":profile.profile_revision},
+                "settings_revision":profile.settings_revision,
+                "reasoning":{"mode":"off"},
+                "budgeting":{"label":"settings-only","contract_present":false,"fit_guarantee":false},
+            });
+        }
         match &self.destination_preparations {
             Some(preparations) => {
                 let preparation = preparations.profiles.get(model);
@@ -785,6 +821,32 @@ impl Orchestrator {
                 "warning": "Provider dispatch is using the legacy unbudgeted path",
             }),
         }
+    }
+
+    fn provider_failure(&self, error: &anyhow::Error, streaming: bool) -> NormalizedEvent {
+        if !self.endpoint_settings_profiles.is_empty() {
+            let code = if streaming { "TEAM_PROVIDER_STREAM_FAILED" } else { "TEAM_PROVIDER_REQUEST_REJECTED" };
+            let reference = uuid::Uuid::new_v4();
+            tracing::warn!(code, diagnostic_reference = %reference,
+                provider_error_kind = super::ProviderError::from_anyhow(error)
+                    .map_or("provider_error", super::ProviderError::code),
+                "Captured safe team provider failure");
+            return NormalizedEvent::Error {
+                message: format!("{code}; diagnostic reference {reference}"),
+                code: Some(code.into()),
+            };
+        }
+        NormalizedEvent::Error {
+            message: error.to_string(),
+            code: Some(super::ProviderError::from_anyhow(error)
+                .map_or("provider_error", super::ProviderError::code).to_owned()),
+        }
+    }
+
+    fn provider_log_summary(&self, error: &anyhow::Error) -> String {
+        if self.endpoint_settings_profiles.is_empty() { error.to_string() }
+        else { super::ProviderError::from_anyhow(error)
+            .map_or("provider_error", super::ProviderError::code).to_owned() }
     }
 
     #[must_use]
@@ -1803,14 +1865,15 @@ impl Orchestrator {
                 let mut attempt_source = base_req;
                 attempt_source.tools.clone_from(&req.tools);
 
-                // Log the full request being sent to the LLM
-                tracing::debug!(
-                    request_id = %request_id,
-                    iteration = iteration,
-                    messages = ?req.messages,
-                    tool_count = req.tools.len(),
-                    "Sending request to LLM driver"
-                );
+                if orchestrator.endpoint_settings_profiles.is_empty() {
+                    tracing::debug!(request_id = %request_id, iteration,
+                        messages = ?req.messages, tool_count = req.tools.len(),
+                        "Sending request to LLM driver");
+                } else {
+                    tracing::debug!(request_id = %request_id, iteration,
+                        message_count = req.messages.len(), tool_count = req.tools.len(),
+                        "Sending captured team request to LLM driver");
+                }
 
                 // Stream from the driver (with automatic failover if configured).
                 // CH-03: every outcome is recorded against the shared health
@@ -1859,6 +1922,7 @@ impl Orchestrator {
                                 &fragments,
                             )?;
                             let manifest = orchestrator.attempt_manifest(&model, &request);
+                            if let Some(binding)=&orchestrator.team_model_handoff { if let Some(attempt)=&binding.team_attempt { binding.service.validate_team_model_handoff(attempt).await?; } }
                             let stream = open_driver_stream(
                                 driver.as_ref(),
                                 request,
@@ -1866,6 +1930,7 @@ impl Orchestrator {
                                 stream_idle_timeout,
                             )
                             .await?;
+                            if let Some(binding)=&orchestrator.team_model_handoff { if let Some(attempt)=&binding.team_attempt { binding.service.record_team_model_handoff(attempt).await?; } }
                             Ok(prepend_attempt_manifest(stream, manifest))
                         }
                     })
@@ -1897,7 +1962,7 @@ impl Orchestrator {
                             attempt,
                             max_attempts,
                             delay_ms = delay.as_millis(),
-                            error = %error,
+                            error = %orchestrator.provider_log_summary(error),
                             "LLM stream creation failed; retrying before semantic events"
                         );
                         attempt = attempt.saturating_add(1);
@@ -1943,7 +2008,7 @@ impl Orchestrator {
                                 tracing::warn!(
                                     request_id = %request_id,
                                     iteration,
-                                    primary_error = %e,
+                                    primary_error = %orchestrator.provider_log_summary(&e),
                                     fallback_model = %fallback.model,
                                     "Primary LLM driver failed; attempting fallback",
                                 );
@@ -1956,14 +2021,12 @@ impl Orchestrator {
                                     Ok(request) => {
                                         let manifest = orchestrator
                                             .attempt_manifest(&fallback.model, &request);
-                                        open_driver_stream(
-                                            fallback.driver.as_ref(),
-                                            request,
-                                            stream_start_timeout,
-                                            stream_idle_timeout,
-                                        )
-                                        .await
-                                        .map(|stream| prepend_attempt_manifest(stream, manifest))
+                                        async {
+                                            if let Some(binding)=&orchestrator.team_model_handoff {if let Some(attempt)=&binding.team_attempt {binding.service.validate_team_model_handoff(attempt).await?;}}
+                                            let stream=open_driver_stream(fallback.driver.as_ref(),request,stream_start_timeout,stream_idle_timeout).await?;
+                                            if let Some(binding)=&orchestrator.team_model_handoff {if let Some(attempt)=&binding.team_attempt {binding.service.record_team_model_handoff(attempt).await?;}}
+                                            Ok::<_,anyhow::Error>(prepend_attempt_manifest(stream,manifest))
+                                        }.await
                                     }
                                     Err(error) => Err(error),
                                 };
@@ -1989,12 +2052,12 @@ impl Orchestrator {
                                         }
                                         tracing::warn!(
                                             request_id = %request_id,
-                                            primary_error = %e,
-                                            fallback_error = %fe,
+                                            primary_error = %orchestrator.provider_log_summary(&e),
+                                            fallback_error = %orchestrator.provider_log_summary(&fe),
                                             fallback_model = %fallback.model,
                                             "Fallback driver failed; trying the next candidate",
                                         );
-                                        fallback_errors.push(format!("{}: {fe}", fallback.model));
+                                        fallback_errors.push(format!("{}: {}", fallback.model, orchestrator.provider_log_summary(&fe)));
                                     }
                                 }
                             }
@@ -2004,7 +2067,7 @@ impl Orchestrator {
                                 tracing::error!(
                                     request_id = %request_id,
                                     iteration = iteration,
-                                    error = %e,
+                                    error = %orchestrator.provider_log_summary(&e),
                                     fallback_errors = ?fallback_errors,
                                     "Primary driver failed; no healthy fallback succeeded",
                                 );
@@ -2013,10 +2076,13 @@ impl Orchestrator {
                                 } else {
                                     fallback_errors.join("; ")
                                 };
-                                yield NormalizedEvent::Error {
-                                    message: format!("primary: {e}; fallbacks: {fallback_detail}"),
-                                    code: None,
-                                };
+                                yield if orchestrator.endpoint_settings_profiles.is_empty() {
+                                    NormalizedEvent::Error {
+                                        message: format!("primary: {e}; fallbacks: {fallback_detail}"),
+                                        code: Some(super::ProviderError::from_anyhow(&e)
+                                            .map_or("provider_error", super::ProviderError::code).to_owned()),
+                                    }
+                                } else { orchestrator.provider_failure(&e, false) };
                                 break;
                             }
                         }
@@ -2033,13 +2099,10 @@ impl Orchestrator {
                             tracing::error!(
                                 request_id = %request_id,
                                 iteration = iteration,
-                                error = %e,
+                                error = %orchestrator.provider_log_summary(&e),
                                 "Failed to create driver stream"
                             );
-                            yield NormalizedEvent::Error {
-                                message: e.to_string(),
-                                code: None,
-                            };
+                            yield orchestrator.provider_failure(&e, false);
                             break;
                         }
                     }
@@ -2117,8 +2180,9 @@ impl Orchestrator {
                                     }
                                     continue;
                                 }
-                                NormalizedEvent::Error { .. } => {
-                                    yield event;
+                                NormalizedEvent::Error { message, .. } => {
+                                    yield if orchestrator.endpoint_settings_profiles.is_empty() { event }
+                                    else { orchestrator.provider_failure(&anyhow::anyhow!(message.clone()), true) };
                                     return;
                                 }
                                 _ => {}
@@ -2126,10 +2190,7 @@ impl Orchestrator {
                             yield event;
                         }
                         Err(e) => {
-                            yield NormalizedEvent::Error {
-                                message: e.to_string(),
-                                code: None,
-                            };
+                            yield orchestrator.provider_failure(&e, true);
                             return;
                         }
                     }
@@ -2258,6 +2319,7 @@ impl Orchestrator {
                 if orchestrator.llm_config.parallel_tool_calls == Some(true)
                     && tool_calls.len() > 1
                     && schedulable
+                    && !tool_calls.iter().any(|call|call.function.name=="team_wait")
                 {
                     let batch_descriptors = Arc::new(
                         batch_descriptors.expect("schedulable batches have one descriptor per call"),
@@ -2678,6 +2740,16 @@ impl Orchestrator {
                         success,
                     };
 
+                    if success && tool_name == "team_wait" {
+                        if let Some(tool) = orchestrator.native_skills.get(tool_name).await {
+                            let remaining=tool_calls.iter().skip(idx+1).map(|call|crate::uar::domain::team_wait::UnexecutedTeamToolCall{tool_call_id:call.id.clone(),disposition:"not-executed-due-to-yield".into()}).collect();
+                            match tool.finish_team_yield(remaining).await {
+                                Ok(Some(_)) => { yield NormalizedEvent::RuntimeStep {step,kind:RuntimeStepKind::Finished}; yield NormalizedEvent::Done; return; },
+                                Ok(None) => {},
+                                Err(_) => {yield NormalizedEvent::Error{message:"TEAM_EFFECTS_UNCERTAIN".into(),code:Some("TEAM_EFFECTS_UNCERTAIN".into())};return;}
+                            }
+                        }
+                    }
                     // Add tool result to message history
                     message_json.push(serde_json::json!({
                         "role": "tool",

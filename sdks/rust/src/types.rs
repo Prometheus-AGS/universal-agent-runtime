@@ -21,6 +21,8 @@ pub struct ProviderView {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ProviderModelConfig {
     pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pricing_identity: Option<ProviderModelPricingIdentity>,
     pub display_name: Option<String>,
     pub context_window: Option<u32>,
     pub supports_vision: bool,
@@ -34,6 +36,13 @@ pub struct ProviderModelConfig {
     pub max_output_tokens: Option<u32>,
     #[serde(default = "sdk_default_true")]
     pub enabled: bool,
+}
+
+/// Explicit catalog source used to price a configured gateway alias.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ProviderModelPricingIdentity {
+    pub provider_id: String,
+    pub model_id: String,
 }
 
 const fn sdk_default_true() -> bool {
@@ -422,6 +431,7 @@ mod tests {
     fn provider_model_capabilities_round_trip() {
         let model = ProviderModelConfig {
             id: "gemma-4-e2b".to_owned(),
+            pricing_identity: None,
             display_name: Some("Gemma 4 E2B".to_owned()),
             context_window: Some(8_192),
             supports_vision: false,

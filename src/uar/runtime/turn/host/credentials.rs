@@ -175,6 +175,9 @@ impl RunCredentials {
                 "selected provider has no run credential",
             )
         })?;
+        // Request credentials carry connection authority, not an administrator's
+        // catalog price mapping for a previously selected provider/model.
+        base.catalog_pricing_model = None;
         let model = requested_model
             .filter(|model| !model.trim().is_empty())
             .map(str::to_owned)

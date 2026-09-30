@@ -1840,6 +1840,11 @@ pub struct LlmConfig {
     #[serde(skip)]
     #[schemars(skip)]
     pub resolved_provider_id: Option<String>,
+    /// Validated pricing identity captured from trusted provider administration.
+    /// Kept separate from the model alias sent to the configured gateway.
+    #[serde(skip)]
+    #[schemars(skip)]
+    pub catalog_pricing_model: Option<String>,
     /// Wire protocol selected by a host-supplied run credential. The provider
     /// id remains the host's stable identity and may differ from this protocol.
     #[serde(skip)]
@@ -1982,6 +1987,7 @@ impl Default for LlmConfig {
         Self {
             model: Self::default_model(),
             resolved_provider_id: None,
+            catalog_pricing_model: None,
             host_provider_kind: None,
             host_supplied_connection: false,
             reasoning_effort: None,

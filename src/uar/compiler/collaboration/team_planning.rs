@@ -35,6 +35,7 @@ impl CollaborationCatalogService {
                 let members: Vec<TeamMemberSpec> =
                     serde_json::from_value(record.document["members"].clone())?;
                 Ok(TeamDefinitionSummary {
+                    instructions: record.document.get("instructions").cloned().map(serde_json::from_value).transpose()?,
                     id: record.identity.id,
                     version: record.identity.version,
                     digest: record.identity.digest,
@@ -42,6 +43,8 @@ impl CollaborationCatalogService {
                     purpose: required_text(&record.document, "purpose")?.to_owned(),
                     package: record.package,
                     members,
+                    budget: record.document["budget"].clone(),
+                    limits: record.document["limits"].clone(),
                 })
             })
             .collect()

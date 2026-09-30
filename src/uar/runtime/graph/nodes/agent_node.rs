@@ -123,6 +123,7 @@ impl AgentNode {
                 state,
                 format!("AgentNode '{}' child failed ({code}): {message}", self.id),
             ),
+            Some(AgentThreadResult::Yielded { .. }) => NodeResult::Error(state,"Team continuation requires its durable team controller".into()),
             Some(AgentThreadResult::Cancelled) => NodeResult::Error(
                 state,
                 format!("AgentNode '{}' child was cancelled", self.id),

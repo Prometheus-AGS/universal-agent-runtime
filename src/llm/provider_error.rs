@@ -30,6 +30,23 @@ pub struct ProviderError {
 }
 
 impl ProviderError {
+    /// Stable diagnostic identity retained by actor and team outcome records.
+    #[must_use]
+    pub const fn code(&self) -> &'static str {
+        match self.kind {
+            ProviderErrorKind::Authentication => "provider_authentication_failed",
+            ProviderErrorKind::InvalidRequest => "provider_invalid_request",
+            ProviderErrorKind::RateLimited => "provider_rate_limited",
+            ProviderErrorKind::Overloaded => "provider_overloaded",
+            ProviderErrorKind::Timeout => "provider_timeout",
+            ProviderErrorKind::Transport => "provider_transport_failed",
+            ProviderErrorKind::Stream => "provider_stream_failed",
+            ProviderErrorKind::BudgetExceeded => "provider_budget_exceeded",
+            ProviderErrorKind::External => "provider_external_error",
+            ProviderErrorKind::Internal => "provider_internal_error",
+        }
+    }
+
     #[must_use]
     pub fn new(
         status: Option<u16>,

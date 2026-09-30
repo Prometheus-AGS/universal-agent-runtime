@@ -19,6 +19,8 @@ pub struct TeamMemberSpec {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TeamDefinitionSummary {
+    #[serde(default,skip_serializing_if="Option::is_none")]
+    pub instructions: Option<crate::uar::domain::team_context::TeamInstructions>,
     pub id: String,
     pub version: String,
     pub digest: String,
@@ -26,6 +28,8 @@ pub struct TeamDefinitionSummary {
     pub purpose: String,
     pub package: ImmutableDefinitionRef,
     pub members: Vec<TeamMemberSpec>,
+    pub budget: Value,
+    pub limits: Value,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

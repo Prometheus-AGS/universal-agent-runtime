@@ -7,6 +7,7 @@ mod graph;
 mod projection;
 mod schema;
 mod schema_registry;
+mod team_instructions;
 
 use std::collections::BTreeMap;
 
@@ -29,6 +30,7 @@ use schema_registry::validate_document;
 
 pub(super) use canonical::{canonical_digest, request_digest};
 pub(super) use schema::{validate_common_sections, validate_digest, validate_id, validate_semver};
+pub(super) use team_instructions::resolve_team_instructions;
 
 pub fn prepare_package(request: &PackageSourceRequest) -> Result<PreparedPackage> {
     if request.command_id.trim().is_empty() {

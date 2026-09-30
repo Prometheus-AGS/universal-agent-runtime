@@ -43,9 +43,9 @@ pub use types::{
     CancelRunResponse, ChatCompletionRequest, ChatCompletionResponse, ChatMessage, Checkpoint,
     CheckpointListResponse, CreateKnowledgeBaseRequest, CreateRunRequest, Document, Embedding,
     EmbeddingRequest, EmbeddingResponse, IngestRequest, IngestResponse, KnowledgeBase,
-    KnowledgeBaseConfig, ProviderModelConfig, ProviderTestResponse, ProviderView,
-    ProvidersResponse, ResumeRunRequest, RunResponse, SaveProviderConfig, SearchRequest,
-    SearchResponse, SearchResult, StreamEvent, ToolCallRequest, ToolCallResponse,
+    KnowledgeBaseConfig, ProviderModelConfig, ProviderModelPricingIdentity, ProviderTestResponse,
+    ProviderView, ProvidersResponse, ResumeRunRequest, RunResponse, SaveProviderConfig,
+    SearchRequest, SearchResponse, SearchResult, StreamEvent, ToolCallRequest, ToolCallResponse,
     UpdateKnowledgeBaseRequest,
 };
 
