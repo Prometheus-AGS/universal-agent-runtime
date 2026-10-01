@@ -108,6 +108,12 @@ name = "test_a2a_grpc"
 path = "tests/test_a2a_grpc.rs"
 required-features = ["a2a-transport"]
 
+# JWKS ES256/RS256 verification is observed through the A2A gRPC auth path.
+[[test]]
+name = "jwks_es256_verification"
+path = "tests/jwks_es256_verification.rs"
+required-features = ["a2a-transport"]
+
 # The embedding integration suite initializes the optional on-device model.
 # Profiles without local inference must not execute it; `server-full` does.
 [[test]]
