@@ -27,6 +27,17 @@ impl VectorMatcher {
         }
     }
 
+    /// The backend every embedding in this process is produced with — the
+    /// one built from `llm.embedding`, shared with ingestion.
+    pub fn embedding_backend(&self) -> &Arc<dyn EmbeddingBackend> {
+        &self.backend
+    }
+
+    /// The embedding space queries are produced in.
+    pub fn embedding_fingerprint(&self) -> crate::uar::domain::knowledge::EmbeddingFingerprint {
+        self.backend.fingerprint()
+    }
+
     /// Convenience constructor from `EmbeddingConfig`.
     pub fn from_config(config: &EmbeddingConfig, threshold: f32) -> Result<Self> {
         let backend = crate::uar::rag::embeddings::build_backend(config)

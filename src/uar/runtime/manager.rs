@@ -325,14 +325,12 @@ impl RetrievalBackend for ChatRagSearchBackend<'_> {
         limit: usize,
         min_score: f32,
     ) -> anyhow::Result<Vec<crate::uar::domain::knowledge::KnowledgeMatch>> {
-        let embeddings = self
+        // Same backend as ingestion (`llm.embedding`); see the KB search route.
+        let query_vec = self
             .vector_matcher
-            .embed_batch(vec![sub_query.to_string()])
+            .embedding_backend()
+            .embed_one(sub_query)
             .await?;
-        let query_vec = embeddings
-            .into_iter()
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("no embedding generated for chat sub-query"))?;
         let kb_id_refs = self.kb_ids.iter().map(String::as_str).collect::<Vec<_>>();
         self.persistence
             .search_knowledge_scoped(self.owner_id, &kb_id_refs, &query_vec, limit, min_score)
@@ -3789,6 +3787,9 @@ impl RunManager {
             && let Some(db) = &self.persistence
         {
             let mut kb_ids = Vec::new();
+            let active_space = self.vector_matcher.embedding_fingerprint();
+            let mut space_mismatches: Vec<crate::uar::domain::knowledge::EmbeddingSpaceMismatch> =
+                Vec::new();
             for id_or_name in &effective_policy.knowledge_bases.ids {
                 let resolved = db
                     .get_knowledge_base(&owner_id, id_or_name)
@@ -3806,8 +3807,33 @@ impl RunManager {
                 if let Some(kb) = resolved
                     && !kb_ids.contains(&kb.id)
                 {
-                    kb_ids.push(kb.id);
+                    match kb.ensure_embedding_space(&active_space) {
+                        Ok(()) => kb_ids.push(kb.id),
+                        Err(mismatch) => {
+                            if !space_mismatches.iter().any(|m| m.kb_id == mismatch.kb_id) {
+                                space_mismatches.push(mismatch);
+                            }
+                        }
+                    }
                 }
+            }
+            // Searching a KB from another embedding space returns nothing;
+            // skip it and say so instead of answering without its content.
+            for mismatch in space_mismatches {
+                tracing::warn!(
+                    run_id = %run_id,
+                    kb_id = %mismatch.kb_id,
+                    indexed = %mismatch.indexed,
+                    active = %mismatch.active,
+                    "knowledge base skipped for RAG: embedding space mismatch"
+                );
+                emitter
+                    .emit(NormalizedEvent::RagDiagnostic {
+                        run_id: run_id.to_string(),
+                        code: "embedding_space_mismatch".to_string(),
+                        message: mismatch.to_string(),
+                    })
+                    .await;
             }
 
             // A configured selection that resolves to nothing is a safe empty

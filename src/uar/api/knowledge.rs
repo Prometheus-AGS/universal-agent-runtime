@@ -6,6 +6,7 @@ use axum::{
     Json, Router,
     extract::{Extension, Multipart, Path, Query, State},
     http::StatusCode,
+    response::{IntoResponse, Response},
     routing::{get, post},
 };
 use serde::{Deserialize, Serialize};
@@ -13,7 +14,8 @@ use std::sync::Arc;
 
 use crate::uar::{
     domain::knowledge::{
-        DocumentStatus, KbConfig, KnowledgeBase, KnowledgeDocument, KnowledgeMatch,
+        DocumentStatus, EmbeddingSpaceMismatch, KbConfig, KnowledgeBase, KnowledgeDocument,
+        KnowledgeMatch,
     },
     persistence::PersistenceLayer,
     rag::{
@@ -560,14 +562,13 @@ impl RetrievalBackend for KbSearchBackend<'_> {
         limit: usize,
         min_score: f32,
     ) -> anyhow::Result<Vec<KnowledgeMatch>> {
-        let embeddings = self
+        // Embed with the same backend ingestion used (`llm.embedding`), not
+        // the skill-matching facade, which is disabled without `local-models`.
+        let query_vec = self
             .vector_matcher
-            .embed_batch(vec![sub_query.to_string()])
+            .embedding_backend()
+            .embed_one(sub_query)
             .await?;
-        let query_vec = embeddings
-            .into_iter()
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("no embedding generated for sub-query"))?;
         self.persistence
             .search_knowledge_scoped(self.owner_id, &[self.kb_id], &query_vec, limit, min_score)
             .await
@@ -587,17 +588,25 @@ async fn search_knowledge_base(
     Extension(user): Extension<UserContext>,
     Path(kb_id): Path<String>,
     Json(req): Json<SearchRequest>,
-) -> Result<Json<SearchResponse>, (StatusCode, String)> {
+) -> Result<Json<SearchResponse>, Response> {
     // Verify KB exists
     let kb = state
         .persistence
         .get_knowledge_base(&user.user_id, &kb_id)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        .ok_or((
-            StatusCode::NOT_FOUND,
-            format!("Knowledge base '{kb_id}' not found"),
-        ))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response())?
+        .ok_or_else(|| {
+            (
+                StatusCode::NOT_FOUND,
+                format!("Knowledge base '{kb_id}' not found"),
+            )
+                .into_response()
+        })?;
+
+    // Comparing vectors from different embedding spaces yields meaningless
+    // scores that fall under `min_score`, i.e. a silent empty result.
+    kb.ensure_embedding_space(&state.vector_matcher.embedding_fingerprint())
+        .map_err(embedding_mismatch_response)?;
 
     tracing::debug!(
         "Search in KB '{}': query='{}', limit={}",
@@ -615,7 +624,7 @@ async fn search_knowledge_base(
     let matches = RagRetrievalPipeline::new()
         .retrieve(&backend, &kb_id, &req.query, req.limit, req.min_score)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response())?;
 
     // Transform to response
     let results = matches
@@ -634,6 +643,25 @@ async fn search_knowledge_base(
 // =============================================================================
 // Helper Functions
 // =============================================================================
+
+/// 409: the KB exists but cannot be searched with the active embedding space.
+fn embedding_mismatch_response(err: EmbeddingSpaceMismatch) -> Response {
+    tracing::warn!(kb_id = %err.kb_id, indexed = %err.indexed, active = %err.active,
+        "knowledge base search refused: embedding space mismatch");
+    (
+        StatusCode::CONFLICT,
+        Json(serde_json::json!({
+            "error": {
+                "code": "embedding_space_mismatch",
+                "message": err.to_string(),
+                "kb_id": err.kb_id,
+                "indexed_embedding": err.indexed,
+                "active_embedding": err.active,
+            }
+        })),
+    )
+        .into_response()
+}
 
 fn kb_to_response(kb: KnowledgeBase, document_count: usize) -> KnowledgeBaseResponse {
     KnowledgeBaseResponse {
@@ -675,17 +703,18 @@ fn doc_to_response(doc: KnowledgeDocument) -> DocumentResponse {
     }
 }
 
-/// The only embedding engine actually wired into retrieval. Anything else is
-/// accepted for backward compatibility but warned about loudly — silently
-/// storing an unsupported provider is how `embedding_provider` spent months
-/// as a config lie (fix-embeddings-fastembed).
+/// A per-KB `embedding_provider` is descriptive only. Ingestion and every
+/// query path embed with the single global `llm.embedding` backend, and the
+/// space actually used is recorded in `KbConfig::indexed_embedding`. Anything
+/// other than the default is accepted for backward compatibility but warned
+/// about, so the field cannot silently pose as a per-KB selector.
 fn validate_embedding_provider(provider: &str) {
     if provider != "fastembed" {
         tracing::warn!(
             requested = %provider,
-            "unsupported embedding_provider — retrieval uses the local fastembed \
-             engine (bge-small-en-v1.5) regardless; update the KB config to \
-             'fastembed' to silence this warning"
+            "per-KB embedding_provider is not a selector — ingestion and retrieval \
+             both use the global llm.embedding backend; configure llm.embedding \
+             to change the embedding model"
         );
     }
 }
@@ -705,6 +734,7 @@ fn build_kb_config(req: Option<KbConfigRequest>) -> KbConfig {
                 .file_processor
                 .unwrap_or_else(KbConfig::default_file_processor),
             chunk_strategy: parse_chunk_strategy(cfg.chunk_strategy.as_deref(), cfg.chunk_size),
+            indexed_embedding: None,
         },
         None => KbConfig::default(),
     }

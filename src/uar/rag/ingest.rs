@@ -42,6 +42,22 @@ impl IngestService {
         }
     }
 
+    /// Record the KB's embedding space on its first ingest, or refuse to mix
+    /// a different space into chunks that were already written. Queries check
+    /// the same record (see `KnowledgeBase::ensure_embedding_space`).
+    async fn bind_embedding_space(&self, owner_id: &str, kb_id: &str) -> Result<()> {
+        let Some(mut kb) = self.persistence.get_knowledge_base(owner_id, kb_id).await? else {
+            return Ok(());
+        };
+        let active = self.embedding_backend.fingerprint();
+        kb.ensure_embedding_space(&active)?;
+        if kb.config.indexed_embedding.is_none() {
+            kb.config.indexed_embedding = Some(active);
+            self.persistence.save_knowledge_base(&kb).await?;
+        }
+        Ok(())
+    }
+
     /// Process a single file
     pub async fn ingest_file(&self, path: &Path, kb_id: &str) -> Result<()> {
         let extension = path.extension().and_then(|s| s.to_str()).unwrap_or("");
@@ -69,6 +85,8 @@ impl IngestService {
         // 2. Embedding
         let refs: Vec<&str> = chunks.iter().map(|s| s.as_str()).collect();
         let embeddings = self.embedding_backend.embed(&refs).await?;
+        self.bind_embedding_space(ANONYMOUS_KNOWLEDGE_OWNER, kb_id)
+            .await?;
 
         // 3. Storage
         for (i, segment) in chunks.into_iter().enumerate() {
@@ -139,6 +157,7 @@ impl IngestService {
         // 2. Embedding
         let refs: Vec<&str> = chunks.iter().map(|s| s.as_str()).collect();
         let embeddings = self.embedding_backend.embed(&refs).await?;
+        self.bind_embedding_space(owner_id, kb_id).await?;
 
         // 3. Storage
         for (i, segment) in chunks.iter().enumerate() {

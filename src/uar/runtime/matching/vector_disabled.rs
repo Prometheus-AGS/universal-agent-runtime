@@ -13,7 +13,7 @@ use crate::uar::{
 /// Vector matcher facade for builds without `local-models`.
 #[derive(Debug)]
 pub struct VectorMatcher {
-    _backend: Arc<dyn EmbeddingBackend>,
+    backend: Arc<dyn EmbeddingBackend>,
     _threshold: f32,
 }
 
@@ -22,9 +22,21 @@ impl VectorMatcher {
     #[must_use]
     pub fn new(backend: Arc<dyn EmbeddingBackend>, threshold: f32) -> Self {
         Self {
-            _backend: backend,
+            backend,
             _threshold: threshold,
         }
+    }
+
+    /// The backend built from `llm.embedding`, shared with ingestion. Only
+    /// skill matching is disabled in this build; knowledge-base retrieval
+    /// embeds through this backend directly, so hosted backends still work.
+    pub fn embedding_backend(&self) -> &Arc<dyn EmbeddingBackend> {
+        &self.backend
+    }
+
+    /// The embedding space queries are produced in.
+    pub fn embedding_fingerprint(&self) -> crate::uar::domain::knowledge::EmbeddingFingerprint {
+        self.backend.fingerprint()
     }
 
     /// Report that local model initialization is unavailable.

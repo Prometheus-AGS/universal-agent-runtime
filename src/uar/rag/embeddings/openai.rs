@@ -14,6 +14,9 @@ pub struct OpenAiEmbeddingBackend {
     api_key: String,
     model: String,
     vector_dimension: usize,
+    /// Maximum inputs per request. Some OpenAI-compatible providers cap it
+    /// (DashScope text-embedding-v4 rejects more than 10).
+    batch_size: usize,
 }
 
 impl OpenAiEmbeddingBackend {
@@ -34,6 +37,7 @@ impl OpenAiEmbeddingBackend {
             api_key,
             model: config.model.clone(),
             vector_dimension: config.vector_dimension,
+            batch_size: config.batch_size.max(1),
         })
     }
 }
@@ -48,11 +52,27 @@ impl EmbeddingBackend for OpenAiEmbeddingBackend {
         self.vector_dimension
     }
 
+    fn model_id(&self) -> &str {
+        &self.model
+    }
+
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
         if texts.is_empty() {
             return Ok(vec![]);
         }
 
+        let mut embeddings = Vec::with_capacity(texts.len());
+        for chunk in texts.chunks(self.batch_size) {
+            embeddings.extend(self.embed_chunk(chunk).await?);
+        }
+        Ok(embeddings)
+    }
+}
+
+impl OpenAiEmbeddingBackend {
+    /// One `/embeddings` request for at most `batch_size` inputs, returned in
+    /// input order.
+    async fn embed_chunk(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
         let body = OpenAiRequest {
             model: self.model.clone(),
             input: texts.iter().map(|s| s.to_string()).collect(),
@@ -88,7 +108,9 @@ impl EmbeddingBackend for OpenAiEmbeddingBackend {
             .await
             .map_err(|e| EmbeddingError::RequestFailed(format!("failed to parse response: {e}")))?;
 
-        Ok(resp.data.into_iter().map(|d| d.embedding).collect())
+        let mut data = resp.data;
+        data.sort_by_key(|d| d.index);
+        Ok(data.into_iter().map(|d| d.embedding).collect())
     }
 }
 
@@ -107,6 +129,8 @@ struct OpenAiResponse {
 
 #[derive(Deserialize)]
 struct OpenAiEmbedding {
+    #[serde(default)]
+    index: usize,
     embedding: Vec<f32>,
 }
 
