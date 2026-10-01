@@ -269,6 +269,9 @@ COPY --from=builder /out/bin/universal-agent-runtime /usr/local/bin/universal-ag
 COPY --from=builder /out/static /opt/uar/static
 COPY --from=builder /out/skills /opt/uar/skills
 COPY --from=builder /out/models /opt/uar/models
+# Governed startup refuses to boot without a Cedar policy set; the engine
+# reads the relative "policies" directory, i.e. /opt/uar/policies.
+COPY --from=builder /src/policies /opt/uar/policies
 
 RUN mkdir -p /var/lib/uar/skills-user \
         /var/lib/uar/skills-derived \
