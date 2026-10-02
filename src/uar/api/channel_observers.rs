@@ -38,7 +38,7 @@ pub fn build_router() -> Router<Arc<ChannelObserverController>> {
         .route("/subscriptions/{id}/pause", post(pause))
         .route("/subscriptions/{id}/resume", post(resume))
         .route("/subscriptions/{id}/revoke", post(revoke))
-        .route("/subscriptions/{id}/deliveries", post(deliver))
+        .route("/subscriptions/{id}/deliveries", get(deliveries).post(deliver))
         .route("/subscriptions/{id}/deliveries/{delivery}/acknowledge", post(acknowledge))
         .route("/handler-turns", post(handler_turn))
 }
@@ -89,6 +89,14 @@ async fn change(controller: Arc<ChannelObserverController>, user: UserContext,
     let (owner, workspace) = match scope(&user, &headers) { Ok(value) => value, Err(error) => return error };
     match controller.set_status(&owner, &workspace, &id, revision, paused, revoke).await {
         Ok(record) => Json(record).into_response(), Err(error) => error_response(error),
+    }
+}
+
+async fn deliveries(State(controller): State<Arc<ChannelObserverController>>,
+    Extension(user): Extension<UserContext>, headers: HeaderMap, Path(id): Path<String>) -> Response {
+    let (owner, workspace) = match scope(&user, &headers) { Ok(value) => value, Err(error) => return error };
+    match controller.delivery_inventory(&owner, &workspace, &id).await {
+        Ok(inventory) => Json(inventory).into_response(), Err(error) => error_response(error),
     }
 }
 

@@ -84,6 +84,11 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
         Err(ChannelObserverStoreError::Unsupported.into())
     }
 
+    /// Read the exact owner's subscription inbox without changing its cursor or state.
+    async fn list_channel_inbox_entries(&self, _owner: &str, _workspace: &str, _subscription: &str) -> Result<Vec<ChannelInboxEntry>> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
     async fn compare_and_swap_channel_inbox_entry(&self, _before: &ChannelInboxEntry, _after: &ChannelInboxEntry) -> Result<bool> {
         Err(ChannelObserverStoreError::Unsupported.into())
     }

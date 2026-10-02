@@ -43,3 +43,17 @@ UAR MUST NOT advertise a remote SurrealDB instance as durable from its URL alone
 
 - **WHEN** UAR connects to a remote SurrealDB endpoint without a trusted durability attestation
 - **THEN** durable channel admission remains unsupported with an explicit reason, while the local SurrealKV profile remains available.
+
+### Requirement: Operators can inspect delivery state without source disclosure
+
+UAR MUST expose a read-only delivery inventory for the authenticated owner's exact workspace and subscription, including paused or revoked subscriptions. The inventory MUST contain only delivery and occurrence identities, the independent subscriber cursor identity, actual persisted status and timestamps. Text projections, principal identities, grants and Gate receipts MUST NOT appear in this inventory.
+
+#### Scenario: Inspect a paused subscription
+
+- **WHEN** the authenticated owner reads `/api/uar/channel-observers/v1/subscriptions/{id}/deliveries` for a paused subscription
+- **THEN** UAR returns its current subscription cursor and stored delivery metadata without resuming release, acknowledging a delivery or changing execution.
+
+#### Scenario: A different owner requests an inventory
+
+- **WHEN** a caller requests a subscription outside their authenticated owner or workspace scope
+- **THEN** UAR refuses the lookup without disclosing delivery metadata.

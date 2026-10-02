@@ -7,5 +7,5 @@ mod delivery;
 mod error;
 
 pub use controller::{ObserverController, ObserverSourceStatus, ObserverStatus};
-pub use channel::{ChannelCapability, ChannelDeliveryInput, ChannelObserverController, ChannelObserverError, FabricRoutedObserver};
+pub use channel::{ChannelCapability, ChannelDeliveryInput, ChannelDeliveryInventory, ChannelObserverController, ChannelObserverError, FabricRoutedObserver};
 pub use error::ObserverError;

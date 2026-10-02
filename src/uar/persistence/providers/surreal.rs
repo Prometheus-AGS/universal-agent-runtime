@@ -33,7 +33,6 @@ pub struct SurrealDbProvider {
     db: Surreal<Any>,
     durable_instances: bool,
     catalog_storage_backend: &'static str,
-    durable_channel_observers: bool,
     remote_requires_durability_attestation: bool,
 }
 
@@ -178,26 +177,24 @@ impl SurrealDbProvider {
 
         tracing::info!("SurrealDB connected successfully");
 
-        // A remote endpoint does not reveal whether its server uses persistent
-        // storage. Advertise durable instances only for the known local engine.
-        let durable_instances = endpoint.to_ascii_lowercase().starts_with("surrealkv://");
-        let catalog_storage_backend = if is_server_endpoint(&endpoint) {
+        // A remote URI cannot establish persistence; the trusted supervisor
+        // attests it before the shared C06/C07/C08 SQL stores become eligible.
+        let local_durable = endpoint.to_ascii_lowercase().starts_with("surrealkv://");
+        let remote = is_server_endpoint(&endpoint);
+        let attested = std::env::var("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED")
+            .is_ok_and(|value| value == "1");
+        let durable_instances = local_durable || (remote && attested);
+        let catalog_storage_backend = if remote {
             "surrealdb"
-        } else if durable_instances {
+        } else if local_durable {
             "surrealkv"
         } else {
             "memory"
         };
-        // C08's supervisor attestation applies only to the channel-source profile.
-        // Keep the existing instance and local-observer durability contract unchanged.
-        let remote = is_server_endpoint(&endpoint);
-        let attested = std::env::var("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED")
-            .is_ok_and(|value| value == "1");
         Ok(Self {
             db,
             durable_instances,
             catalog_storage_backend,
-            durable_channel_observers: durable_instances || (remote && attested),
             remote_requires_durability_attestation: remote && !attested,
         })
     }
@@ -736,6 +733,20 @@ impl PersistenceLayer for SurrealDbProvider {
             return Err(ChannelObserverStoreError::ScopeMismatch.into());
         }
         Ok(record)
+    }
+
+    async fn list_channel_inbox_entries(&self, owner: &str, workspace: &str, subscription: &str) -> Result<Vec<ChannelInboxEntry>> {
+        if !self.durable_instances { return Err(ChannelObserverStoreError::Unsupported.into()); }
+        let mut response = self.db.query("SELECT VALUE data FROM channel_observer_inbox WHERE owner_id = $owner AND workspace_id = $workspace AND subscription_id = $subscription")
+            .bind(("owner", owner.to_owned())).bind(("workspace", workspace.to_owned()))
+            .bind(("subscription", subscription.to_owned())).await?.check()?;
+        let rows: Vec<String> = response.take(0)?;
+        let mut records = rows.into_iter().map(|data| serde_json::from_str::<ChannelInboxEntry>(&data).map_err(Into::into)).collect::<Result<Vec<_>>>()?;
+        if records.iter().any(|record| record.owner_id != owner || record.workspace_id != workspace || record.subscription_id != subscription) {
+            return Err(ChannelObserverStoreError::ScopeMismatch.into());
+        }
+        records.sort_by(|left, right| left.admitted_at.cmp(&right.admitted_at).then_with(|| left.delivery_id.cmp(&right.delivery_id)));
+        Ok(records)
     }
 
     async fn compare_and_swap_channel_inbox_entry(&self, before: &ChannelInboxEntry, after: &ChannelInboxEntry) -> Result<bool> {

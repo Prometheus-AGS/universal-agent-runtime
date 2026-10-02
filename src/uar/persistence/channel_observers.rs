@@ -106,6 +106,31 @@ pub enum ChannelInboxStatus {
     Acknowledged,
 }
 
+/// Content-free delivery state for the authenticated operator inventory.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChannelDeliveryMetadata {
+    pub delivery_id: String,
+    pub occurrence_id: String,
+    pub subscriber_cursor_id: String,
+    pub status: ChannelInboxStatus,
+    pub admitted_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl From<ChannelInboxEntry> for ChannelDeliveryMetadata {
+    fn from(entry: ChannelInboxEntry) -> Self {
+        Self {
+            delivery_id: entry.delivery_id,
+            occurrence_id: entry.occurrence_id,
+            subscriber_cursor_id: entry.subscriber_cursor_id,
+            status: entry.status,
+            admitted_at: entry.admitted_at,
+            updated_at: entry.updated_at,
+        }
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum ChannelObserverStoreError {
     #[error("channel observer persistence is unsupported")]
