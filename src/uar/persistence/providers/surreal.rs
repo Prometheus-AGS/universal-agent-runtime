@@ -763,7 +763,11 @@ impl PersistenceLayer for SurrealDbProvider {
             || (before.text_projection.is_some() && before.text_projection != after.text_projection)
             || (after.classification == ChannelProjectionClass::MetadataOnly && after.text_projection.is_some())
             || after.text_projection.as_ref().is_some_and(|text| {
-                hex::encode(Sha256::digest(text.as_bytes())) != after.payload_sha256
+                Sha256::digest(text.as_bytes())
+                    .iter()
+                    .map(|byte| format!("{byte:02x}"))
+                    .collect::<String>()
+                    != after.payload_sha256
             }) {
             return Err(ChannelObserverStoreError::ScopeMismatch.into());
         }
