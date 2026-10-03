@@ -46,7 +46,11 @@ pub struct ChannelDeliveryInput {
     pub parent_action_id: Option<Uuid>,
     pub action_id: Uuid,
     pub visited_routes: Vec<String>,
+    /// Path hops remaining after the current action was admitted. Zero means
+    /// this action is terminal; it does not invalidate the current effect.
     pub remaining_depth: u8,
+    /// Root fanout remaining after the current action was admitted. Zero means
+    /// no sibling may follow; it does not invalidate the current effect.
     pub remaining_fanout: u8,
 }
 
@@ -364,8 +368,7 @@ fn validate_input(input: &ChannelDeliveryInput, workspace: &str) -> Result<(), C
             &input.binding_revision, &input.policy_revision, &input.selected_handler_id,
             &input.original_principal, &input.original_actor, &input.grant_issuer, &input.grant_id, &input.root_occurrence_id]
             .into_iter().any(|value| value.trim().is_empty())
-        || input.action_id.is_nil() || input.remaining_depth == 0 || input.remaining_fanout == 0
-        || input.remaining_depth > 4 || input.remaining_fanout > 8
+        || input.action_id.is_nil() || input.remaining_depth > 4 || input.remaining_fanout > 8
         || match input.classification {
             ChannelProjectionClass::MetadataOnly => input.text_projection.is_some(),
             ChannelProjectionClass::PolicyFiltered => input.text_projection.as_ref()

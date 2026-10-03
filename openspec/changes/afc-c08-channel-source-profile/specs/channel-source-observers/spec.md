@@ -33,6 +33,20 @@ The Gate request identity MUST come from the protected supervisor configuration 
 - **WHEN** a grant is revoked before recipient delivery or selected handler execution
 - **THEN** UAR withholds that effect and preserves the occurrence and recovery status without executing a different handler.
 
+#### Scenario: Terminal admitted effect
+
+- **WHEN** BossFang sends an admitted recipient delivery or selected-handler
+  execution with zero depth or fanout remaining after that current action
+- **THEN** UAR requests Gate authority for that exact terminal effect instead of
+  rejecting it as exhausted, and the zero value authorizes no later descendant
+  or sibling effect.
+
+#### Scenario: Invalid causal route or budget
+
+- **WHEN** a channel effect exceeds the shared depth or fanout maximum or its
+  current route already appears in the visited-route history
+- **THEN** UAR rejects it before requesting or executing the effect.
+
 ### Requirement: Replay and uncertain outcome
 
 UAR MUST use immutable delivery identity and a deterministic selected-handler command ID. A repeated Gate release with an uncertain outcome MUST NOT blindly resubmit a handler turn.
