@@ -558,7 +558,7 @@ fn provider_id_for_config(config: &LlmConfig) -> String {
 }
 
 fn qualified_model_name(config: &LlmConfig) -> String {
-    let model_id = if config.host_supplied_connection {
+    let model_id = if config.host_supplied_connection || config.base_url.is_some() {
         config.model.clone()
     } else {
         crate::llm::registry::split_model_string_pub(&config.model)
