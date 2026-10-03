@@ -1400,6 +1400,10 @@ async fn run_server_with_listener(
         Arc::clone(&agent_instance_controller),
         Arc::clone(&persistence_layer),
     );
+    let channel_observer_controller = uar::runtime::observer::ChannelObserverController::new(
+        Arc::clone(&agent_instance_controller),
+        Arc::clone(&persistence_layer),
+    );
     if persistence_layer.supports_durable_observers() {
         observer_controller.start();
     }
@@ -1665,6 +1669,11 @@ async fn run_server_with_listener(
             "/api/uar/observers/v1",
             uar::api::observers::build_router()
                 .with_state::<AppState>(Arc::clone(&observer_controller)),
+        )
+        .nest(
+            "/api/uar/channel-observers/v1",
+            uar::api::channel_observers::build_router()
+                .with_state::<AppState>(Arc::clone(&channel_observer_controller)),
         )
         // Skills API
         .nest(
