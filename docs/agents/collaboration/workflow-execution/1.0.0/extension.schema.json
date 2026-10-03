@@ -14,7 +14,16 @@
         "version": {"const": "1.0.0"},
         "mode": {"const": "sequential-feedback-draft"},
         "mappingVersion": {"const": "1.0.0"},
-        "completionGate": {"const": {"kind": "operator-decision", "presentedStep": "draft", "decisions": ["accept", "reject", "cancel"]}}
+        "completionGate": {
+          "type": "object",
+          "required": ["kind", "presentedStep", "decisions"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {"const": "operator-decision"},
+            "presentedStep": {"const": "draft"},
+            "decisions": {"const": ["accept", "reject", "cancel"]}
+          }
+        }
       }
     }
   }
