@@ -43,3 +43,14 @@ Each workflow attempt SHALL receive only its pinned step instructions, bounded w
 #### Scenario: Draft follows classification
 - **WHEN** the classifier commits a valid artifact
 - **THEN** draft receives that exact artifact and feedback, while unrelated team context is absent
+
+### Requirement: Negotiate authenticated principal interpretation
+The runtime SHALL report `authentication.principalMode` as `host-asserted` only when the current capability request carries the trusted `HostAuthenticated` extension inserted by successful sidecar launch-token authentication. Otherwise it SHALL report `token-subject`. Process ownership and generic capability names SHALL NOT select the principal mode.
+
+#### Scenario: Externally supervised token sidecar
+- **WHEN** an external supervisor starts the sidecar and its launch token authenticates a capability request
+- **THEN** the response declares `host-asserted` so the host can supply its scoped principal on subsequent requests without treating every external server as a host-asserted endpoint
+
+#### Scenario: Regular token subject server
+- **WHEN** a capability request has no trusted sidecar authentication extension
+- **THEN** the response declares `token-subject` and the existing token subject authentication boundary remains unchanged

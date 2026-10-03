@@ -37,3 +37,5 @@ The uncomfortable boundary: source and compiler success do not prove pinned
 restart, actual provider execution, overhead, mobile operation or offline storage.
 Those measurements belong to the complete UAR + packaged Boss operation. Timers,
 joins, loops, automatic retry, compensation and connector writes are unsupported.
+
+Capability discovery includes `authentication: { principalMode: "host-asserted" | "token-subject" }`. The value comes from the authenticated request transport, independently of process ownership. A host forwards `x-uar-principal` only for a negotiated host-asserted transport; ordinary external token authentication derives the subject from the token.

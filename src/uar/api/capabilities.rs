@@ -8,9 +8,13 @@
 
 use std::sync::Arc;
 
-use axum::{Json, extract::State};
+use axum::{
+    Json,
+    extract::{Extension, State},
+};
 use serde::Serialize;
 
+use crate::uar::security::sidecar_guard::HostAuthenticated;
 use crate::uar::service_instance::{
     CompatibilityResponse, PlacementSupport, ServiceEndpointRoles, ServiceInstanceAuthority,
     ServiceInstanceIdentity, ServiceInstanceReferences, ServicePlacementExpectation,
@@ -120,9 +124,24 @@ pub struct AguiProfile {
     pub profile_revision: u32,
 }
 
+/// Principal contract of the authenticated transport serving this request.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthenticationCapabilities {
+    pub principal_mode: PrincipalMode,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PrincipalMode {
+    HostAsserted,
+    TokenSubject,
+}
+
 /// Body of `GET /api/uar/capabilities`.
 #[derive(Debug, Serialize)]
 pub struct CapabilitiesResponse {
+    pub authentication: AuthenticationCapabilities,
     #[serde(rename = "executionProfile")]
     pub execution_profile: &'static str,
     #[serde(rename = "executionProfileStage")]
@@ -227,7 +246,10 @@ pub fn collaboration_capabilities() -> CollaborationCapabilities {
 }
 
 /// `GET /api/uar/capabilities`
-pub fn capabilities_response(service_instance: &ServiceInstanceAuthority) -> CapabilitiesResponse {
+pub fn capabilities_response(
+    service_instance: &ServiceInstanceAuthority,
+    host_authenticated: Option<&HostAuthenticated>,
+) -> CapabilitiesResponse {
     let descriptor = service_instance.descriptor();
     let mut collaboration = collaboration_capabilities();
     let team_execution_available = descriptor
@@ -239,6 +261,13 @@ pub fn capabilities_response(service_instance: &ServiceInstanceAuthority) -> Cap
     collaboration.workflow_execution.available = team_execution_available && workflow_execution_enabled();
     collaboration.activation.workflow = collaboration.workflow_execution.available;
     CapabilitiesResponse {
+        authentication: AuthenticationCapabilities {
+            principal_mode: if host_authenticated.is_some() {
+                PrincipalMode::HostAsserted
+            } else {
+                PrincipalMode::TokenSubject
+            },
+        },
         execution_profile: TEAM_EXECUTION_PROFILE,
         execution_profile_stage: team_execution_profile_stage(),
         uar_version: env!("CARGO_PKG_VERSION"),
@@ -269,8 +298,12 @@ pub fn capabilities_response(service_instance: &ServiceInstanceAuthority) -> Cap
 /// `GET /api/uar/capabilities`
 pub async fn capabilities_handler(
     State(state): State<Arc<CapabilitiesApiState>>,
+    host_authenticated: Option<Extension<HostAuthenticated>>,
 ) -> Json<CapabilitiesResponse> {
-    let mut response = capabilities_response(&state.service_instance);
+    let mut response = capabilities_response(
+        &state.service_instance,
+        host_authenticated.as_ref().map(|Extension(host)| host),
+    );
     if !state
         .collaboration_catalog
         .execution_ownership_view()
