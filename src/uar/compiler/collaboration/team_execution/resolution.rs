@@ -59,7 +59,8 @@ impl CollaborationCatalogService {
                 "Member definition is outside the installed team package".into(),
             ));
         }
-        let (skills, mut diagnostics) =
+        let workflow = self.workflow_attempt(attempt).await?;
+        let (mut skills, mut diagnostics) =
             bindings::resolve_skills(self.skill_service.as_deref(), &binding.document, definition)
                 .await?;
         runtime_semantics::resolve_legacy_team_context(definition, &binding.document, &mut diagnostics);
@@ -134,6 +135,7 @@ impl CollaborationCatalogService {
                 ResourceSelection::selected(ids)
             }
         };
+        if workflow.is_some() { skills.clear(); }
         let skill_ids = skills.iter().map(|skill| skill.skill.id.clone()).collect();
         let mut tool_ids = skills
             .iter()
@@ -160,6 +162,7 @@ impl CollaborationCatalogService {
             .filter_map(|skill| skill.mcp_config.as_ref())
             .flat_map(|config| config.mcp_servers.keys().cloned())
             .collect();
+        if workflow.is_some() { tool_ids.clear(); }
         let team_policy = RunPolicy {
             skills: selected(skill_ids),
             tools: selected(tool_ids),
@@ -186,11 +189,18 @@ impl CollaborationCatalogService {
             diagnostics,
             true,
         )?;
-        let artifact = definition.compatibility_agent.clone().ok_or_else(|| {
+        let mut artifact = definition.compatibility_agent.clone().ok_or_else(|| {
             CollaborationError::Conflict(
                 "Member definition has no ordinary-agent projection".into(),
             )
         })?;
+        if let Some(workflow) = workflow {
+            let step_id = workflow.steps.iter().find(|s|s.task_id==attempt.task_id)
+                .ok_or_else(||CollaborationError::Conflict("WORKFLOW_TASK_UNAVAILABLE".into()))?.step_id.clone();
+            let step = workflow.plan.steps.iter().find(|s|s.id==step_id)
+                .ok_or_else(||CollaborationError::Conflict("WORKFLOW_PLAN_UNAVAILABLE".into()))?;
+            artifact.prompt.instructions = vec![step.instructions.clone()];
+        }
         self.revalidate_team_attempt(attempt).await?;
         Ok(BoundAgentRun {
             artifact,

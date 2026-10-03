@@ -21,6 +21,17 @@ pub const AGUI_PROFILE: &str = "uar.agui/1";
 
 /// AG-UI profile revision of the runs stream.
 pub const AGUI_PROFILE_REVISION: u32 = 1;
+pub const WORKFLOW_EXECUTION_QUALIFIED: bool = false;
+pub fn workflow_execution_enabled() -> bool { WORKFLOW_EXECUTION_QUALIFIED || std::env::var("UAR_WORKFLOW_EXECUTION_PROFILE_STAGE").as_deref() == Ok("operation") }
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkflowExecutionCapability {
+    pub capability: &'static str,
+    pub interpretation_version: &'static str,
+    pub stage: &'static str,
+    pub available: bool,
+    pub qualified: bool,
+}
 pub const TEAM_EXECUTION_PROFILE: &str = "urn:prometheus:uar:team-execution:0.1.0";
 pub const TEAM_EXECUTION_B_CAPABILITIES: [&str; 3] = [
     "team_execution_peer_tools_v1",
@@ -45,7 +56,8 @@ pub fn team_execution_b_enabled() -> bool {
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.
-pub const CAPABILITY_VOCABULARY: [&str; 25] = [
+pub const CAPABILITY_VOCABULARY: [&str; 26] = [
+    crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY,
     "agui_stream_fidelity",
     "approval_lifecycle_v1",
     "collaboration_definition_packages_v1",
@@ -132,9 +144,10 @@ pub struct CapabilitiesResponse {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CollaborationCapabilities {
+    pub workflow_execution: WorkflowExecutionCapability,
     pub accepted_profiles: [&'static str; 2],
     pub document_kinds: [&'static str; 9],
-    pub schema_ids: [&'static str; 11],
+    pub schema_ids: [&'static str; 12],
     pub export_classes: [&'static str; 5],
     pub activation: CollaborationActivationLimits,
 }
@@ -157,6 +170,13 @@ pub struct CollaborationActivationLimits {
 /// Return the exact collaboration profiles and schema family implemented here.
 pub fn collaboration_capabilities() -> CollaborationCapabilities {
     CollaborationCapabilities {
+        workflow_execution: WorkflowExecutionCapability {
+            capability: crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY,
+            interpretation_version: "1.0.0",
+            stage: if WORKFLOW_EXECUTION_QUALIFIED {"qualified"} else if workflow_execution_enabled() {"operation"} else {"unqualified"},
+            available: false,
+            qualified: WORKFLOW_EXECUTION_QUALIFIED,
+        },
         accepted_profiles: [
             crate::uar::domain::collaboration::COLLABORATION_PROFILE_DRAFT_1,
             crate::uar::domain::collaboration::COLLABORATION_PROFILE_DRAFT_2,
@@ -173,6 +193,7 @@ pub fn collaboration_capabilities() -> CollaborationCapabilities {
             "DeploymentBindingTemplate",
         ],
         schema_ids: [
+            "https://schemas.prometheus-ags.dev/uar/collaboration/workflow-execution/1.0.0/extension.schema.json",
             "https://schemas.prometheus-ags.dev/uar/collaboration/0.1.0-draft.2/common.schema.json",
             "https://schemas.prometheus-ags.dev/uar/collaboration/0.1.0-draft.2/collaboration-document.schema.json",
             "https://schemas.prometheus-ags.dev/uar/collaboration/0.1.0-draft.2/agent-definition.schema.json",
@@ -215,6 +236,8 @@ pub fn capabilities_response(service_instance: &ServiceInstanceAuthority) -> Cap
         .any(|capability| capability == "collaboration_team_execution_v1");
     collaboration.activation.team_instance = team_execution_available;
     collaboration.activation.team_execution = team_execution_available;
+    collaboration.workflow_execution.available = team_execution_available && workflow_execution_enabled();
+    collaboration.activation.workflow = collaboration.workflow_execution.available;
     CapabilitiesResponse {
         execution_profile: TEAM_EXECUTION_PROFILE,
         execution_profile_stage: team_execution_profile_stage(),
@@ -256,9 +279,12 @@ pub async fn capabilities_handler(
     {
         response.capabilities.retain(|c| {
             c != "collaboration_team_execution_v1"
+                && c != crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY
                 && !TEAM_EXECUTION_B_CAPABILITIES.contains(&c.as_str())
         });
         response.collaboration.activation.team_execution = false;
+        response.collaboration.activation.workflow = false;
+        response.collaboration.workflow_execution.available = false;
     }
     Json(response)
 }
@@ -270,6 +296,7 @@ pub async fn compatibility_handler(
 ) -> Json<CompatibilityResponse> {
     if expectation.required_capabilities.iter().any(|c| {
         c == "collaboration_team_execution_v1"
+            || c == crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY
             || TEAM_EXECUTION_B_CAPABILITIES.contains(&c.as_str())
     }) && !state
         .collaboration_catalog

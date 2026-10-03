@@ -430,6 +430,8 @@ pub struct CollaborationCommandReceipt {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CollaborationCatalogState {
+    #[serde(default)] pub workflow_runs: BTreeMap<String, super::workflow_execution::WorkflowRun>,
+    #[serde(default)] pub workflow_commands: BTreeMap<String, super::workflow_execution::WorkflowCommandReceipt>,
     pub generation: u64,
     #[serde(default)] pub team_waits: BTreeMap<String, super::team_wait::TeamWait>,
     #[serde(default)] pub team_continuations: BTreeMap<String, super::team_wait::ContinuationReceipt>,

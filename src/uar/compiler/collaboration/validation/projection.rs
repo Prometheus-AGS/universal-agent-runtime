@@ -26,7 +26,7 @@ pub(super) fn conversion_diagnostics(
         .flatten()
         .filter_map(Value::as_str)
     {
-        if !SUPPORTED_INSTALL_CAPABILITIES.contains(&capability) && !(crate::uar::api::capabilities::team_execution_b_enabled() && crate::uar::api::capabilities::TEAM_EXECUTION_B_CAPABILITIES.contains(&capability)) {
+        if !(crate::uar::api::capabilities::workflow_execution_enabled() && capability == crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY) && !SUPPORTED_INSTALL_CAPABILITIES.contains(&capability) && !(crate::uar::api::capabilities::team_execution_b_enabled() && crate::uar::api::capabilities::TEAM_EXECUTION_B_CAPABILITIES.contains(&capability)) {
             diagnostics.push(ConversionDiagnostic {
                 field: "requiredCapabilities".to_owned(),
                 disposition: ConversionDisposition::RequiredUnsupported,
@@ -40,6 +40,12 @@ pub(super) fn conversion_diagnostics(
         .into_iter()
         .flatten()
     {
+        if name == crate::uar::domain::workflow_execution::WORKFLOW_EXTENSION
+            && crate::uar::api::capabilities::workflow_execution_enabled()
+            && serde_json::from_str::<Value>(include_str!("../../../../../docs/agents/collaboration/workflow-execution/1.0.0/extension.schema.json"))
+                .ok().and_then(|schema|jsonschema::validator_for(&schema).ok()).is_some_and(|validator|validator.is_valid(extension)) {
+            continue;
+        }
         diagnostics.push(ConversionDiagnostic {
             field: format!("extensions.{name}"),
             disposition: if extension

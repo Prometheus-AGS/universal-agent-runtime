@@ -4,6 +4,7 @@ mod team_mailbox;
 mod team_planning;
 mod team_execution;
 mod team_scope;
+mod workflow_execution;
 
 use std::sync::Arc;
 
@@ -47,6 +48,7 @@ pub fn build_router() -> Router<Arc<CollaborationApiState>> {
         .merge(team_mailbox::build_router())
         .merge(team_execution::build_router())
         .merge(team_scope::build_router())
+        .merge(workflow_execution::build_router())
         .route("/capabilities", get(collaboration_capabilities))
         .route("/packages:preflight", post(preflight_package))
         .route("/packages:install", post(install_package))
@@ -95,8 +97,10 @@ async fn collaboration_capabilities(
     };
     let mut runtime = super::capabilities::capabilities_response(&state.service_instance);
     if !state.service.execution_ownership_view().await.is_ok_and(|v| v.owns_execution) {
-        runtime.capabilities.retain(|c| c != "collaboration_team_execution_v1" && !super::capabilities::TEAM_EXECUTION_B_CAPABILITIES.contains(&c.as_str()));
+        runtime.capabilities.retain(|c| c != "collaboration_team_execution_v1" && c != crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY && !super::capabilities::TEAM_EXECUTION_B_CAPABILITIES.contains(&c.as_str()));
         runtime.collaboration.activation.team_execution = false;
+        runtime.collaboration.activation.workflow = false;
+        runtime.collaboration.workflow_execution.available = false;
     }
     Json(CollaborationCapabilitiesResponse {
         runtime,

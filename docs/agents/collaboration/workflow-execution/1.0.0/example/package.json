@@ -1,0 +1,112 @@
+{
+  "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+  "kind": "PackageManifest",
+  "id": "urn:uar:workflow-feedback:package",
+  "version": "1.0.0",
+  "provenance": {
+    "source": "UAR collaboration draft.2 contract checkpoint fixtures",
+    "authors": [
+      "Prometheus-AGS"
+    ]
+  },
+  "requiredCapabilities": [
+    "collaboration_definition_packages_v2",
+    "prometheus.workflow-execution/1.0.0"
+  ],
+  "extensions": {},
+  "entrypoints": [
+    {
+      "id": "urn:uar:workflow-feedback:team",
+      "version": "1.0.0",
+      "digest": "sha256:c81acc3faffb92969007395708a9f94c25d2ad73d44d213bf659734a44281c8a"
+    },
+    {
+      "id": "urn:uar:workflow-feedback:classify-draft",
+      "version": "1.0.0",
+      "digest": "sha256:fb51362d6c9bce91ffa7f8d03b2d5c519d103b9b913e148f3f00cf83e50bfac0"
+    }
+  ],
+  "files": [
+    {
+      "path": "classifier.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:workflow-feedback:classifier",
+        "version": "1.0.0",
+        "digest": "sha256:a814f762329c704eb5423eb7d6a402099e4f4a30999974d2b38139341c36738d"
+      },
+      "byteDigest": "sha256:49ecfbb5ae438b8853798070df639cb5d5fd9dcfadd49eef2dc4d90e92cbd13c"
+    },
+    {
+      "path": "drafter.json",
+      "kind": "AgentDefinition",
+      "definition": {
+        "id": "urn:uar:workflow-feedback:drafter",
+        "version": "1.0.0",
+        "digest": "sha256:f5b88851909910b1d405c5c709d4801e153454a4467a015ad7c49e98319732fb"
+      },
+      "byteDigest": "sha256:04163c1c6d92836adf818fb1fce82bfd3344d7fb7a7ab1ecc3902faec39fbac4"
+    },
+    {
+      "path": "workflow.json",
+      "kind": "WorkflowDefinition",
+      "definition": {
+        "id": "urn:uar:workflow-feedback:classify-draft",
+        "version": "1.0.0",
+        "digest": "sha256:fb51362d6c9bce91ffa7f8d03b2d5c519d103b9b913e148f3f00cf83e50bfac0"
+      },
+      "byteDigest": "sha256:e01ebefea83d0b27efa69a732e70721d7d3eda86ca3efc263daaee753245cc9d"
+    },
+    {
+      "path": "team.json",
+      "kind": "TeamDefinition",
+      "definition": {
+        "id": "urn:uar:workflow-feedback:team",
+        "version": "1.0.0",
+        "digest": "sha256:c81acc3faffb92969007395708a9f94c25d2ad73d44d213bf659734a44281c8a"
+      },
+      "byteDigest": "sha256:950b665b244d67b285ccd7bd90c1383d29d4bc3f9d0c34c56cf903b75a0a2c4b"
+    }
+  ],
+  "lock": [
+    {
+      "requestedBy": "urn:uar:workflow-feedback:team",
+      "reference": {
+        "id": "urn:uar:workflow-feedback:classifier",
+        "version": "1.0.0",
+        "digest": "sha256:a814f762329c704eb5423eb7d6a402099e4f4a30999974d2b38139341c36738d"
+      },
+      "resolvedPath": "classifier.json"
+    },
+    {
+      "requestedBy": "urn:uar:workflow-feedback:team",
+      "reference": {
+        "id": "urn:uar:workflow-feedback:drafter",
+        "version": "1.0.0",
+        "digest": "sha256:f5b88851909910b1d405c5c709d4801e153454a4467a015ad7c49e98319732fb"
+      },
+      "resolvedPath": "drafter.json"
+    },
+    {
+      "requestedBy": "urn:uar:workflow-feedback:team",
+      "reference": {
+        "id": "urn:uar:workflow-feedback:classify-draft",
+        "version": "1.0.0",
+        "digest": "sha256:fb51362d6c9bce91ffa7f8d03b2d5c519d103b9b913e148f3f00cf83e50bfac0"
+      },
+      "resolvedPath": "workflow.json"
+    }
+  ],
+  "capabilityDeclarations": [
+    {
+      "capability": "collaboration_definition_packages_v2",
+      "required": true
+    },
+    {
+      "capability": "prometheus.workflow-execution/1.0.0",
+      "required": true
+    }
+  ],
+  "resolution": "exact-version-and-digest",
+  "contentDigest": "sha256:5c42684691f62b51d8eb3f273eebb16ab557d1f6eea00eb9a0659d89a57e1d7e"
+}

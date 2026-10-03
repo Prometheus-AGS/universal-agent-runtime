@@ -4064,3 +4064,13 @@ this append-only log are the fallback records. production-ready has no date.
 - Exact next work: /kbd-execute runtime-harness-gap-closure
 - Verification:
   - none recorded
+
+## 2026-10-03 — AFC C10 workflow owner production/build boundary
+
+Implemented the approved UAR-owned classify→draft workflow using the C09 admission, attempts, settlement, artifact, owner-fence and recovery path. Added a closed versioned extension/compiler, pinned durable run/decision/command records, scoped operator APIs, no-effect selected context, explicit operation-stage capability and complete portable example package. Workflow admission, current owner/member/binding authority and artifact-bound decisions are trust boundaries; unknown execution is never replayed.
+
+Completed production source before the native packaging build. Strict OpenSpec validation passed. The first build was blocked by missing pinned submodules; exact gitlinks were initialized without dependency changes. An interrupted build exposed idle sccache clients; the same release build resumed with per-command RUSTC_WRAPPER= and preserved caches. Application diagnostics required one visibility correction: the existing owner-fence helper is now accessible only within collaboration. Final command `RUSTC_WRAPPER= cargo build --release --locked --no-default-features --features server-full --bin uar-sidecar --target aarch64-apple-darwin` exited 0, release profile completed in 8m10s. Existing warnings and an oversized unwind-table linker warning remain. No test suites ran.
+
+The uncomfortable boundary: successful compilation is not workflow operation or qualification evidence. Packaged Boss typed-IPC/UI operation, exact original-attempt restart, negative controls and substrate measurement remain pending; the versioned capability is unqualified by default and only enabled explicitly for operation. OpenSpec tasks remain unchecked until that actual path is observed. No external-effect path, second executor or generic scheduler was added.
+
+Commit tooling boundary: the mandatory pnpm hook silently started a workspace dependency bootstrap and stalled before policy validation. It was stopped; no tracked dependency changes resulted. The coordinator authorized a one-command hook bypass after direct `node scripts/validate-github-actions-policy.mjs` passed (deployment workflows only; Pages publisher docs.yml). Commitlint did not run; the commit uses a conventional message and required Assisted-by trailer.
