@@ -20,7 +20,7 @@
       "definition": {
         "id": "urn:uar:workflow-feedback:classifier",
         "version": "1.0.0",
-        "digest": "sha256:a814f762329c704eb5423eb7d6a402099e4f4a30999974d2b38139341c36738d"
+        "digest": "sha256:b863e983e41cdce42406d705ab02f8fb6c9690c99a87d3362a65565900777c63"
       },
       "min": 1,
       "max": 1,
@@ -32,7 +32,7 @@
       "definition": {
         "id": "urn:uar:workflow-feedback:drafter",
         "version": "1.0.0",
-        "digest": "sha256:f5b88851909910b1d405c5c709d4801e153454a4467a015ad7c49e98319732fb"
+        "digest": "sha256:49ee6f1791933ac317df2d02fa7a144f1c9d6f86f9191829322a5e85c6f853e9"
       },
       "min": 1,
       "max": 1,
@@ -122,5 +122,5 @@
     ],
     "additionalProperties": false
   },
-  "contentDigest": "sha256:c81acc3faffb92969007395708a9f94c25d2ad73d44d213bf659734a44281c8a"
+  "contentDigest": "sha256:35ffb36cda8c3a254932805879fc3a7c9b36485e54e666c052b99dccfbf13e7f"
 }

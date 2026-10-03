@@ -131,5 +131,23 @@
       "id": "uar.ordinary-agent/1"
     }
   },
-  "contentDigest": "sha256:f5b88851909910b1d405c5c709d4801e153454a4467a015ad7c49e98319732fb"
+  "sourceIdentity": {
+    "profile": "urn:uar:workflow-feedback:source:1",
+    "id": "urn:uar:workflow-feedback:drafter",
+    "version": "1.0.0",
+    "digest": "sha256:f5b88851909910b1d405c5c709d4801e153454a4467a015ad7c49e98319732fb",
+    "revision": null
+  },
+  "renameMapping": {
+    "sourceId": "urn:uar:workflow-feedback:drafter",
+    "targetId": "urn:uar:workflow-feedback:drafter",
+    "reason": "unchanged"
+  },
+  "authoredFields": [],
+  "legacySections": {},
+  "sourceDescriptor": {
+    "format": "uar-native-workflow-feedback",
+    "originalContentDigest": "sha256:f5b88851909910b1d405c5c709d4801e153454a4467a015ad7c49e98319732fb"
+  },
+  "contentDigest": "sha256:49ee6f1791933ac317df2d02fa7a144f1c9d6f86f9191829322a5e85c6f853e9"
 }
