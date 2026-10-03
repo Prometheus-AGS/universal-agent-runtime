@@ -21,6 +21,13 @@ UAR MUST negotiate `uar.channel-source/1` separately from C07 logical-instance o
 
 UAR MUST obtain current Gate recipient-delivery authority before admitting a subscriber copy and current handler-execution authority before submitting the selected handler's C06 turn. A caller-supplied permit or transport admission MUST NOT substitute for Gate's authenticated release.
 
+The Gate request identity MUST come from the protected supervisor configuration associated with UAR's authenticated service credential. Channel payload fields, including the original sender or principal, MUST remain provenance and MUST NOT be promoted to a verified Gate identity.
+
+#### Scenario: Channel sender differs from the execution service
+
+- **WHEN** UAR rechecks recipient delivery for a message whose original sender is not the authenticated UAR execution service
+- **THEN** Cedar evaluates the supervisor-configured service identity while preserving the sender only as channel provenance.
+
 #### Scenario: Revoked queued grant
 
 - **WHEN** a grant is revoked before recipient delivery or selected handler execution

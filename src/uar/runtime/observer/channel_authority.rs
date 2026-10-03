@@ -6,7 +6,7 @@ use std::time::Duration;
 use reqwest::Url;
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
-use serde_json::Value;
+use serde_json::{json, Value};
 
 const CONTRACT: &str = "afc.channel-authority/1";
 const PROTOCOL: &str = "afc.channel-effect/1";
@@ -15,6 +15,9 @@ pub struct ChannelGateClient {
     client: reqwest::Client,
     base: Url,
     bearer: SecretString,
+    identity_issuer: String,
+    identity_subject: String,
+    identity_revision: String,
 }
 
 impl std::fmt::Debug for ChannelGateClient {
@@ -37,12 +40,20 @@ struct GateDecision {
 impl ChannelGateClient {
     /// The host supplies these only to the sidecar process; they never enter API JSON.
     pub fn from_process_environment() -> Option<Self> {
+        let configured = |name: &str| {
+            std::env::var(name)
+                .ok()
+                .filter(|value| !value.trim().is_empty())
+        };
         let mut base = Url::parse(&std::env::var("UAR_CHANNEL_GATE_URL").ok()?).ok()?;
         let loopback = matches!(base.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"));
         if base.scheme() != "https" && !(base.scheme() == "http" && loopback) {
             return None;
         }
-        let bearer = std::env::var("UAR_CHANNEL_GATE_BEARER_TOKEN").ok()?;
+        let bearer = configured("UAR_CHANNEL_GATE_BEARER_TOKEN")?;
+        let identity_issuer = configured("UAR_CHANNEL_GATE_IDENTITY_ISSUER")?;
+        let identity_subject = configured("UAR_CHANNEL_GATE_IDENTITY_SUBJECT")?;
+        let identity_revision = configured("UAR_CHANNEL_GATE_IDENTITY_REVISION")?;
         if bearer.trim().is_empty() || !base.username().is_empty() || base.password().is_some()
             || base.query().is_some() || base.fragment().is_some() {
             return None;
@@ -55,12 +66,29 @@ impl ChannelGateClient {
             .timeout(Duration::from_secs(10))
             .redirect(reqwest::redirect::Policy::none())
             .build().ok()?;
-        Some(Self { client, base, bearer: SecretString::from(bearer) })
+        Some(Self {
+            client,
+            base,
+            bearer: SecretString::from(bearer),
+            identity_issuer,
+            identity_subject,
+            identity_revision,
+        })
     }
 
     /// Evaluate and revalidate one exact action under Gate's current grant and policy.
     /// A repeated release reports uncertain, never a fresh permit.
     pub async fn release(&self, request: &Value) -> Result<String, &'static str> {
+        let mut request = request.clone();
+        let object = request.as_object_mut().ok_or("channel_effect_invalid")?;
+        object.insert("identity".to_owned(), json!({
+            "issuer": self.identity_issuer,
+            "subject": self.identity_subject,
+            "subject_kind": "service",
+            "identity_revision": self.identity_revision,
+            "verified": true,
+            "revoked": false,
+        }));
         let effect_id = request.get("effect_id").and_then(Value::as_str).ok_or("channel_effect_invalid")?;
         let occurrence_id = request.get("occurrence_id").and_then(Value::as_str).ok_or("channel_effect_invalid")?;
         let action = request.get("action").and_then(Value::as_str).ok_or("channel_effect_invalid")?;
@@ -69,7 +97,7 @@ impl ChannelGateClient {
             let url = self.base.join(&format!("authority/channels/{stage}")).map_err(|_| "channel_gate_configuration_invalid")?;
             let response = self.client.post(url)
                 .bearer_auth(self.bearer.expose_secret())
-                .json(request)
+                .json(&request)
                 .send().await.map_err(|_| if stage == "release" { "channel_effect_uncertain" } else { "channel_gate_unreachable" })?;
             if !response.status().is_success() {
                 return Err(if stage == "release" && response.status().is_server_error() {

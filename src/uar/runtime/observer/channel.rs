@@ -398,10 +398,6 @@ fn gate_request(input: &ChannelDeliveryInput, recipient: &str,
             "action_id": stable_uuid(&[&input.action_id.to_string(), &input.delivery_id, action]),
             "route_identity": input.route_id, "visited_routes": input.visited_routes,
             "remaining_depth": input.remaining_depth, "remaining_fanout": input.remaining_fanout},
-        "identity": {"issuer": "uar.authenticated-host", "subject": input.original_principal,
-            "subject_kind": "user", "actor": input.original_actor, "audience": ["uar"],
-            "tenant": input.source_tenant_id, "identity_revision": input.policy_revision,
-            "verified": true, "revoked": false},
         "grant_issuer": input.grant_issuer, "grant_id": input.grant_id,
     })
 }
