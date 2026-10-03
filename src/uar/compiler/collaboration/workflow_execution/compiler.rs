@@ -25,10 +25,14 @@ pub(super) fn compile(
     ))?;
     let validator = jsonschema::validator_for(&schema)
         .map_err(|_| unsupported("/extensions", "extension schema unavailable"))?;
-    if !validator.is_valid(extension) {
+    if let Some(error) = validator.iter_errors(extension).next() {
         return Err(unsupported(
             "/extensions/prometheus.workflow-execution",
-            "closed version 1.0.0 extension required",
+            &format!(
+                "closed version 1.0.0 extension required (instance path: {}; schema path: {})",
+                error.instance_path(),
+                error.schema_path(),
+            ),
         ));
     }
     if !doc["requiredCapabilities"].as_array().is_some_and(|items| {
