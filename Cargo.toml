@@ -23,7 +23,7 @@ resolver = "2"
 esaxx-rs = { path = "vendor/crates/esaxx-rs" }
 
 [workspace.dependencies]
-jsonwebtoken = { version = "=11.0.0", default-features = false, features = ["rust_crypto"] }
+jsonwebtoken = { version = "=11.1.0", default-features = false, features = ["rust_crypto"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-service = "=0.8.1"
