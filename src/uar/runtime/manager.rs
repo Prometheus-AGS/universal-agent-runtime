@@ -3787,6 +3787,7 @@ impl RunManager {
             && let Some(db) = &self.persistence
         {
             let mut kb_ids = Vec::new();
+            let mut kb_configs: Vec<crate::uar::domain::knowledge::KbConfig> = Vec::new();
             let active_space = self.vector_matcher.embedding_fingerprint();
             let mut space_mismatches: Vec<crate::uar::domain::knowledge::EmbeddingSpaceMismatch> =
                 Vec::new();
@@ -3808,7 +3809,10 @@ impl RunManager {
                     && !kb_ids.contains(&kb.id)
                 {
                     match kb.ensure_embedding_space(&active_space) {
-                        Ok(()) => kb_ids.push(kb.id),
+                        Ok(()) => {
+                            kb_configs.push(kb.config.clone());
+                            kb_ids.push(kb.id);
+                        }
                         Err(mismatch) => {
                             if !space_mismatches.iter().any(|m| m.kb_id == mismatch.kb_id) {
                                 space_mismatches.push(mismatch);
@@ -3847,8 +3851,12 @@ impl RunManager {
                     owner_id: &owner_id,
                     kb_ids: &kb_ids,
                 };
+                let kb_config_refs: Vec<&crate::uar::domain::knowledge::KbConfig> =
+                    kb_configs.iter().collect();
+                let (top_k, min_score) =
+                    crate::uar::domain::knowledge::retrieval_params(&kb_config_refs);
                 RagRetrievalPipeline::new()
-                    .retrieve(&backend, &kb_ids.join(","), &input, 3, 0.7)
+                    .retrieve(&backend, &kb_ids.join(","), &input, top_k, min_score)
                     .await
             };
 
