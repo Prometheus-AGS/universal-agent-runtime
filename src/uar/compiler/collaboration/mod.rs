@@ -2,6 +2,7 @@
 
 mod bindings;
 mod reviewed_skills;
+mod connector_effect;
 mod export;
 mod grants;
 mod runtime_semantics;

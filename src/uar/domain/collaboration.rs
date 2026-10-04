@@ -432,6 +432,9 @@ pub struct CollaborationCommandReceipt {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CollaborationCatalogState {
+    #[serde(default)] pub connector_bindings: BTreeMap<String, super::connector_effect::ConnectorBinding>,
+    #[serde(default)] pub connector_effects: BTreeMap<String, super::connector_effect::ConnectorEffect>,
+    #[serde(default)] pub connector_commands: BTreeMap<String, super::connector_effect::ConnectorCommandReceipt>,
     #[serde(default)] pub workflow_runs: BTreeMap<String, super::workflow_execution::WorkflowRun>,
     #[serde(default)] pub workflow_commands: BTreeMap<String, super::workflow_execution::WorkflowCommandReceipt>,
     pub generation: u64,
