@@ -182,6 +182,70 @@ pub struct KbConfig {
         deserialize_with = "deserialize_chunk_strategy"
     )]
     pub chunk_strategy: crate::uar::rag::chunking::ChunkingStrategy,
+    /// Embedding space the stored chunks were written in, recorded by the
+    /// first successful ingest. `None` means nothing has been indexed since
+    /// this field existed, so the space is unknown and not enforced.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub indexed_embedding: Option<EmbeddingFingerprint>,
+}
+
+/// Identity of an embedding space: vectors are comparable only when all three
+/// fields match. Recorded on a knowledge base at ingest and compared with the
+/// active query backend before every retrieval.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EmbeddingFingerprint {
+    /// Backend identifier (`fastembed`, `openai`, ...).
+    pub backend: String,
+    /// Model identifier as configured for the backend.
+    pub model: String,
+    /// Output vector dimension.
+    pub dimension: usize,
+}
+
+impl std::fmt::Display for EmbeddingFingerprint {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}/{} ({} dims)",
+            self.backend, self.model, self.dimension
+        )
+    }
+}
+
+/// A knowledge base was indexed in a different embedding space than the one
+/// the active backend produces. Searching it would compare incompatible
+/// vectors and silently return nothing, so callers must surface this instead.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error(
+    "knowledge base '{kb_id}' was indexed with {indexed} but the active embedding backend is \
+     {active}; re-ingest its documents or restore the original llm.embedding settings"
+)]
+pub struct EmbeddingSpaceMismatch {
+    pub kb_id: String,
+    pub indexed: EmbeddingFingerprint,
+    pub active: EmbeddingFingerprint,
+}
+
+impl KnowledgeBase {
+    /// Check that vectors from `active` are comparable with this KB's chunks.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EmbeddingSpaceMismatch`] when the KB recorded a different
+    /// embedding space. A KB with no recorded space passes.
+    pub fn ensure_embedding_space(
+        &self,
+        active: &EmbeddingFingerprint,
+    ) -> Result<(), EmbeddingSpaceMismatch> {
+        match &self.config.indexed_embedding {
+            Some(indexed) if indexed != active => Err(EmbeddingSpaceMismatch {
+                kb_id: self.id.clone(),
+                indexed: indexed.clone(),
+                active: active.clone(),
+            }),
+            _ => Ok(()),
+        }
+    }
 }
 
 impl KbConfig {
@@ -209,6 +273,7 @@ impl Default for KbConfig {
             vector_dimensions: None,
             file_processor: Self::default_file_processor(),
             chunk_strategy: crate::uar::rag::chunking::ChunkingStrategy::Recursive { size: 512 },
+            indexed_embedding: None,
         }
     }
 }

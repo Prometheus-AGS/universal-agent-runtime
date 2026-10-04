@@ -74,6 +74,9 @@ pub struct ServicePlacementExpectation {
     pub binding_id: Option<String>,
     #[serde(default)]
     pub binding_revision: Option<u64>,
+    /// Opaque caller-host credential reference. The runtime validates its
+    /// shape and echoes it in the effective binding, but cannot compare
+    /// private store locations across independent hosts.
     #[serde(default)]
     pub credential_ref: Option<String>,
 }
@@ -261,12 +264,6 @@ impl ServiceInstanceAuthority {
                     "credentialRef",
                     "instance.credential-reference-invalid",
                     "The runtime credential reference must be an opaque host-store reference.",
-                ));
-            } else if self.descriptor.references.credential.as_ref() != Some(reference) {
-                diagnostics.push(diagnostic(
-                    "credentialRef",
-                    "instance.credential-reference-mismatch",
-                    "The runtime credential reference does not match this service instance.",
                 ));
             }
         }

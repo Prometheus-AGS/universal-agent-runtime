@@ -269,6 +269,7 @@ pub async fn ensure_default_knowledge_base(
             vector_dimensions: cfg.vector_dimensions,
             file_processor: cfg.file_processor.clone(),
             chunk_strategy,
+            indexed_embedding: None,
         }
     } else {
         KbConfig::default()

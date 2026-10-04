@@ -13,6 +13,7 @@ use rmcp::{
     },
 };
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 use std::{
     collections::{BTreeMap, HashMap},
     path::{Path, PathBuf},
@@ -1480,7 +1481,8 @@ impl McpRegistry {
 
     /// Sanitize tool names for `OpenAI` API compatibility.
     fn sanitize_tool_name(name: &str) -> String {
-        name.chars()
+        let mut sanitized: String = name
+            .chars()
             .map(|c| {
                 if c.is_ascii_alphanumeric() || c == '_' || c == '-' {
                     c
@@ -1489,7 +1491,26 @@ impl McpRegistry {
                     '_'
                 }
             })
-            .collect()
+            .collect();
+        if sanitized
+            .as_bytes()
+            .first()
+            .is_none_or(|first| !first.is_ascii_alphabetic())
+        {
+            sanitized.insert(0, 't');
+        }
+        if sanitized.len() > 64 {
+            let digest = Sha256::digest(name.as_bytes());
+            let mut suffix = String::with_capacity(12);
+            use std::fmt::Write as _;
+            for byte in &digest[..6] {
+                write!(&mut suffix, "{byte:02x}").expect("writing to a String cannot fail");
+            }
+            sanitized.truncate(51);
+            sanitized.push('_');
+            sanitized.push_str(&suffix);
+        }
+        sanitized
     }
 
     /// Return namespaced tools as `(namespaced_name, Tool)`

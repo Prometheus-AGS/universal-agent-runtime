@@ -11,6 +11,8 @@ pub mod administration_capabilities;
 #[cfg(feature = "server")]
 pub mod agent_instances;
 #[cfg(feature = "server")]
+pub mod channel_observers;
+#[cfg(feature = "server")]
 pub mod observers;
 #[cfg(feature = "server")]
 pub mod auth;

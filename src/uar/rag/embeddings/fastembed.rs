@@ -121,6 +121,12 @@ impl EmbeddingBackend for FastEmbedBackend {
         self.vector_dimension
     }
 
+    // The packaged ONNX assets are always BGE small; `llm.embedding.model` is
+    // not consulted by this backend.
+    fn model_id(&self) -> &str {
+        "bge-small-en-v1.5"
+    }
+
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
         if texts.is_empty() {
             return Ok(vec![]);

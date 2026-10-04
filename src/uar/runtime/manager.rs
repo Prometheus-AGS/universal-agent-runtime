@@ -325,14 +325,12 @@ impl RetrievalBackend for ChatRagSearchBackend<'_> {
         limit: usize,
         min_score: f32,
     ) -> anyhow::Result<Vec<crate::uar::domain::knowledge::KnowledgeMatch>> {
-        let embeddings = self
+        // Same backend as ingestion (`llm.embedding`); see the KB search route.
+        let query_vec = self
             .vector_matcher
-            .embed_batch(vec![sub_query.to_string()])
+            .embedding_backend()
+            .embed_one(sub_query)
             .await?;
-        let query_vec = embeddings
-            .into_iter()
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("no embedding generated for chat sub-query"))?;
         let kb_id_refs = self.kb_ids.iter().map(String::as_str).collect::<Vec<_>>();
         self.persistence
             .search_knowledge_scoped(self.owner_id, &kb_id_refs, &query_vec, limit, min_score)
@@ -560,7 +558,12 @@ fn provider_id_for_config(config: &LlmConfig) -> String {
 }
 
 fn qualified_model_name(config: &LlmConfig) -> String {
-    let (_, model_id) = crate::llm::registry::split_model_string_pub(&config.model);
+    let model_id = if config.host_supplied_connection || config.base_url.is_some() {
+        config.model.clone()
+    } else {
+        crate::llm::registry::split_model_string_pub(&config.model)
+            .1
+    };
     let provider_id = provider_id_for_config(config);
     format!("{provider_id}/{model_id}")
 }
@@ -3784,6 +3787,9 @@ impl RunManager {
             && let Some(db) = &self.persistence
         {
             let mut kb_ids = Vec::new();
+            let active_space = self.vector_matcher.embedding_fingerprint();
+            let mut space_mismatches: Vec<crate::uar::domain::knowledge::EmbeddingSpaceMismatch> =
+                Vec::new();
             for id_or_name in &effective_policy.knowledge_bases.ids {
                 let resolved = db
                     .get_knowledge_base(&owner_id, id_or_name)
@@ -3801,8 +3807,33 @@ impl RunManager {
                 if let Some(kb) = resolved
                     && !kb_ids.contains(&kb.id)
                 {
-                    kb_ids.push(kb.id);
+                    match kb.ensure_embedding_space(&active_space) {
+                        Ok(()) => kb_ids.push(kb.id),
+                        Err(mismatch) => {
+                            if !space_mismatches.iter().any(|m| m.kb_id == mismatch.kb_id) {
+                                space_mismatches.push(mismatch);
+                            }
+                        }
+                    }
                 }
+            }
+            // Searching a KB from another embedding space returns nothing;
+            // skip it and say so instead of answering without its content.
+            for mismatch in space_mismatches {
+                tracing::warn!(
+                    run_id = %run_id,
+                    kb_id = %mismatch.kb_id,
+                    indexed = %mismatch.indexed,
+                    active = %mismatch.active,
+                    "knowledge base skipped for RAG: embedding space mismatch"
+                );
+                emitter
+                    .emit(NormalizedEvent::RagDiagnostic {
+                        run_id: run_id.to_string(),
+                        code: "embedding_space_mismatch".to_string(),
+                        message: mismatch.to_string(),
+                    })
+                    .await;
             }
 
             // A configured selection that resolves to nothing is a safe empty
@@ -4130,32 +4161,34 @@ impl RunManager {
             );
         }
         let register_turn_tools = async {
-            if let Some(binding) = &collaboration_binding {
-                if let Some(attempt) = binding.team_attempt.as_ref().filter(|_|crate::uar::api::capabilities::team_execution_b_enabled()) {
-                    crate::uar::runtime::native_skills::team_tools::register(&native_skills,
-                        crate::uar::runtime::native_skills::team_tools::TeamToolBinding {catalog: Arc::clone(&binding.service), attempt:attempt.clone(), yielded:Arc::clone(&binding.team_yield)}).await?;
+            if effective_policy.tools.mode != SelectionMode::None {
+                if let Some(binding) = &collaboration_binding {
+                    if let Some(attempt) = binding.team_attempt.as_ref().filter(|_|crate::uar::api::capabilities::team_execution_b_enabled()) {
+                        crate::uar::runtime::native_skills::team_tools::register(&native_skills,
+                            crate::uar::runtime::native_skills::team_tools::TeamToolBinding {catalog: Arc::clone(&binding.service), attempt:attempt.clone(), yielded:Arc::clone(&binding.team_yield)}).await?;
+                    }
                 }
-            }
-            native_skills
-                .register(
-                    crate::uar::runtime::native_skills::activate_skill::ActivateSkillTool::new(
-                        Arc::clone(&activation_context),
+                native_skills
+                    .register(
+                        crate::uar::runtime::native_skills::activate_skill::ActivateSkillTool::new(
+                            Arc::clone(&activation_context),
+                        )
+                        .with_thread_policy(
+                            inherited
+                                .as_ref()
+                                .map(|bindings| Arc::clone(&bindings.policy)),
+                        ),
                     )
-                    .with_thread_policy(
-                        inherited
-                            .as_ref()
-                            .map(|bindings| Arc::clone(&bindings.policy)),
-                    ),
-                )
-                .await?;
-            if let Some(bindings) = &inherited {
-                let controls = crate::uar::runtime::native_skills::agents::registry_for_turn(
-                    Arc::clone(&bindings.controls),
-                )
-                .await?;
-                for name in controls.names().await {
-                    if let Some(handler) = controls.get(&name).await {
-                        native_skills.register_arc(handler).await?;
+                    .await?;
+                if let Some(bindings) = &inherited {
+                    let controls = crate::uar::runtime::native_skills::agents::registry_for_turn(
+                        Arc::clone(&bindings.controls),
+                    )
+                    .await?;
+                    for name in controls.names().await {
+                        if let Some(handler) = controls.get(&name).await {
+                            native_skills.register_arc(handler).await?;
+                        }
                     }
                 }
             }
@@ -4675,12 +4708,14 @@ impl RunManager {
                     .map_err(|_| anyhow::anyhow!("Actor root already has a thread service"))?;
                 let root_controls = service.root_controls().await?;
                 graph_controls = Some(Arc::clone(&root_controls));
-                let controls =
-                    crate::uar::runtime::native_skills::agents::registry_for_turn(root_controls)
-                        .await?;
-                for name in controls.names().await {
-                    if let Some(handler) = controls.get(&name).await {
-                        native_skills.register_arc(handler).await?;
+                if effective_policy.tools.mode != SelectionMode::None {
+                    let controls =
+                        crate::uar::runtime::native_skills::agents::registry_for_turn(root_controls)
+                            .await?;
+                    for name in controls.names().await {
+                        if let Some(handler) = controls.get(&name).await {
+                            native_skills.register_arc(handler).await?;
+                        }
                     }
                 }
                 activation_context
@@ -4742,7 +4777,10 @@ impl RunManager {
         } else {
             None
         };
-        let model_context_window = configured_window.or_else(|| {
+        let host_window = run_credentials.as_ref().and_then(|credentials| {
+            credentials.context_window_for(&catalog_provider, &catalog_model_id)
+        });
+        let model_context_window = host_window.or(configured_window).or_else(|| {
             crate::llm::catalog::ModelCatalog::global()
                 .model(&catalog_provider, &catalog_model_id)
                 .map(|model| model.limits.context_window as usize)

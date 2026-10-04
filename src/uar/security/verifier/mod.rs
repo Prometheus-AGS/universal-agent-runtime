@@ -5,7 +5,10 @@ use std::{
 };
 
 use async_trait::async_trait;
-use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode_header, jwk::JwkSet};
+use jsonwebtoken::{
+    Algorithm, DecodingKey, Validation, decode_header,
+    jwk::{AlgorithmParameters, EllipticCurve, Jwk, JwkSet, KeyAlgorithm},
+};
 use tokio::sync::RwLock;
 
 use super::{
@@ -53,8 +56,14 @@ pub(crate) enum VerificationError {
     Token(#[from] jsonwebtoken::errors::Error),
     #[error("JWT is missing the required kid header")]
     MissingKeyId,
-    #[error("JWKS verification requires RS256, but the token declares {0:?}")]
+    #[error("JWKS verification accepts RS256, ES256 or ES384, but the token declares {0:?}")]
     UnsupportedAlgorithm(Algorithm),
+    #[error("JWKS key {kid} is bound to {key:?}, but the token declares {token:?}")]
+    AlgorithmMismatch {
+        kid: String,
+        key: Algorithm,
+        token: Algorithm,
+    },
     #[error("JWKS endpoint {url} could not be read: {source}")]
     JwksFetch {
         url: String,
@@ -152,9 +161,44 @@ impl TokenVerifier for SharedSecretVerifier<'_> {
     }
 }
 
+/// Asymmetric algorithms accepted on the JWKS path. HMAC and `none` are never
+/// accepted here: a JWKS publishes public keys, so a symmetric algorithm would
+/// let anyone holding the published key material mint tokens.
+const JWKS_ALGORITHMS: [Algorithm; 3] = [Algorithm::RS256, Algorithm::ES256, Algorithm::ES384];
+
+/// A JWKS public key bound to the single algorithm it may verify.
+///
+/// The binding comes from the key itself (`kty`/`crv`, and `alg` when the JWK
+/// declares one), never from the token header, so an RSA key cannot verify an
+/// ECDSA token or the reverse.
+#[derive(Clone)]
+struct JwksKey {
+    key: DecodingKey,
+    algorithm: Algorithm,
+}
+
+/// The algorithm a JWK is bound to, or `None` when the key is not usable on
+/// the JWKS path (unsupported key type or curve, or a declared `alg` that
+/// contradicts the key type).
+fn jwk_algorithm(jwk: &Jwk) -> Option<Algorithm> {
+    let algorithm = match &jwk.algorithm {
+        AlgorithmParameters::RSA(_) => Algorithm::RS256,
+        AlgorithmParameters::EllipticCurve(params) => match params.curve {
+            EllipticCurve::P256 => Algorithm::ES256,
+            EllipticCurve::P384 => Algorithm::ES384,
+            _ => return None,
+        },
+        _ => return None,
+    };
+    match jwk.common.key_algorithm {
+        Some(declared) if declared != KeyAlgorithm::from(algorithm) => None,
+        _ => Some(algorithm),
+    }
+}
+
 #[derive(Default)]
 struct JwksCache {
-    keys: RwLock<HashMap<String, DecodingKey>>,
+    keys: RwLock<HashMap<String, JwksKey>>,
     refreshed_at: RwLock<Option<SystemTime>>,
 }
 
@@ -203,7 +247,7 @@ impl JwksVerifier {
         }
     }
 
-    async fn cached_key(&self, kid: &str) -> Option<DecodingKey> {
+    async fn cached_key(&self, kid: &str) -> Option<JwksKey> {
         self.cache.keys.read().await.get(kid).cloned()
     }
 
@@ -225,7 +269,12 @@ impl JwksVerifier {
             let Some(kid) = jwk.common.key_id.clone() else {
                 continue;
             };
-            keys.insert(kid, DecodingKey::from_jwk(&jwk)?);
+            let Some(algorithm) = jwk_algorithm(&jwk) else {
+                tracing::debug!(jwks_url = %self.url, kid = %kid, "skipping JWK unusable on the JWKS path");
+                continue;
+            };
+            let key = DecodingKey::from_jwk(&jwk)?;
+            keys.insert(kid, JwksKey { key, algorithm });
         }
 
         *self.cache.keys.write().await = keys;
@@ -241,9 +290,9 @@ impl JwksVerifier {
         }
     }
 
-    fn validation(&self) -> Validation {
+    fn validation(&self, algorithm: Algorithm) -> Validation {
         claim_validation(
-            Algorithm::RS256,
+            algorithm,
             self.issuer.as_deref(),
             self.audience.as_deref(),
             self.validate_nbf,
@@ -265,7 +314,7 @@ impl TokenVerifier for JwksVerifier {
 
         jwt::ensure_rustcrypto_provider()?;
         let header = decode_header(&token)?;
-        if header.alg != Algorithm::RS256 {
+        if !JWKS_ALGORITHMS.contains(&header.alg) {
             return Err(VerificationError::UnsupportedAlgorithm(header.alg));
         }
         let kid = header.kid.ok_or(VerificationError::MissingKeyId)?;
@@ -282,7 +331,16 @@ impl TokenVerifier for JwksVerifier {
                 })?
         };
 
-        let token_data = jwt::decode::<UserClaims>(token, &key, &self.validation())?;
+        if key.algorithm != header.alg {
+            return Err(VerificationError::AlgorithmMismatch {
+                kid,
+                key: key.algorithm,
+                token: header.alg,
+            });
+        }
+
+        let token_data =
+            jwt::decode::<UserClaims>(token, &key.key, &self.validation(key.algorithm))?;
         let claims = token_data.claims;
         Ok(Principal {
             subject: claims.sub.clone(),

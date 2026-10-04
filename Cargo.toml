@@ -108,6 +108,12 @@ name = "test_a2a_grpc"
 path = "tests/test_a2a_grpc.rs"
 required-features = ["a2a-transport"]
 
+# JWKS ES256/RS256 verification is observed through the A2A gRPC auth path.
+[[test]]
+name = "jwks_es256_verification"
+path = "tests/jwks_es256_verification.rs"
+required-features = ["a2a-transport"]
+
 # The embedding integration suite initializes the optional on-device model.
 # Profiles without local inference must not execute it; `server-full` does.
 [[test]]
@@ -366,7 +372,7 @@ reqwest_mcp = { package = "reqwest", version = "=0.13.4", default-features = fal
 # fixes GHSA-89vp-x53w-74fx, a DNS-rebinding vuln in the Streamable HTTP
 # server transport (patched >=1.4.0) -- this project enables
 # transport-streamable-http-server below, so it was directly exposed.
-rmcp = { version = "=3.1.2", features = [
+rmcp = { version = "=3.4.1", features = [
   "client",
   "server",
   "macros",
