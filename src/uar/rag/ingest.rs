@@ -58,6 +58,24 @@ impl IngestService {
         Ok(())
     }
 
+    /// Chunk `text` with the strategy stored on the knowledge base, so the
+    /// KB's `config.chunk_strategy` decides how its documents are split. When
+    /// the KB cannot be found the service-wide strategy still applies, as it
+    /// did before per-KB strategies were honoured.
+    async fn chunk_for_kb(&self, owner_id: &str, kb_id: &str, text: &str) -> Result<Vec<String>> {
+        match self.persistence.get_knowledge_base(owner_id, kb_id).await? {
+            Some(kb) => {
+                Chunker::new(
+                    kb.config.chunk_strategy,
+                    Some(Arc::clone(&self.embedding_backend)),
+                )
+                .chunk(text)
+                .await
+            }
+            None => self.chunker.chunk(text).await,
+        }
+    }
+
     /// Process a single file
     pub async fn ingest_file(&self, path: &Path, kb_id: &str) -> Result<()> {
         let extension = path.extension().and_then(|s| s.to_str()).unwrap_or("");
@@ -76,7 +94,9 @@ impl IngestService {
         tracing::info!("Ingesting processed file: {}", filename);
 
         // 1. Chunking
-        let chunks = self.chunker.chunk(&content).await?;
+        let chunks = self
+            .chunk_for_kb(ANONYMOUS_KNOWLEDGE_OWNER, kb_id, &content)
+            .await?;
 
         if chunks.is_empty() {
             return Ok(());
@@ -148,7 +168,7 @@ impl IngestService {
         extra_metadata: HashMap<String, serde_json::Value>,
     ) -> Result<usize> {
         // 1. Chunking
-        let chunks = self.chunker.chunk(content).await?;
+        let chunks = self.chunk_for_kb(owner_id, kb_id, content).await?;
 
         if chunks.is_empty() {
             return Ok(0);
