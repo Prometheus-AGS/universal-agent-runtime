@@ -64,16 +64,7 @@ impl Chunker {
                 let splitter = TextSplitter::new(config);
                 Ok(splitter.chunks(text).map(|s: &str| s.to_string()).collect())
             }
-            ChunkingStrategy::Sentence => {
-                // Simple split by punctuation or newlines
-                // Or use unicode_segmentation if available.
-                // Falling back to simple split for MVP.
-                Ok(text
-                    .split_inclusive(&['.', '!', '?'])
-                    .map(|s| s.trim().to_string())
-                    .filter(|s| !s.is_empty())
-                    .collect())
-            }
+            ChunkingStrategy::Sentence => Ok(split_sentences(text, false)),
             ChunkingStrategy::Document => Ok(vec![text.to_string()]),
             ChunkingStrategy::Semantic { threshold } => self.semantic_chunk(text, *threshold).await,
             ChunkingStrategy::Agentic => {
@@ -90,11 +81,7 @@ impl Chunker {
             .ok_or_else(|| anyhow!("Embedding backend required for Semantic Chunking"))?;
 
         // 1. Split into "Base Sentences" (using simple sentence strategy)
-        let sentences: Vec<String> = text
-            .split_inclusive(&['.', '!', '?', '\n'])
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty()) // simplistic
-            .collect();
+        let sentences = split_sentences(text, true);
 
         if sentences.is_empty() {
             return Ok(vec![]);
@@ -156,6 +143,45 @@ impl Chunker {
         chunks.push(current_chunk);
 
         Ok(chunks)
+    }
+}
+
+/// Split `text` into trimmed, non-empty sentences.
+///
+/// `!` and `?` always end a sentence. A `.` ends one only when whitespace or
+/// the end of the text follows it, so "v0.2.0" and "Obsidian 1.12.3" stay in
+/// one piece, and not when everything since the last boundary is digits, so a
+/// list marker such as "1." stays with its item. With `newline_breaks`, a
+/// newline also ends a sentence.
+fn split_sentences(text: &str, newline_breaks: bool) -> Vec<String> {
+    let mut sentences = Vec::new();
+    let mut start = 0;
+    let mut chars = text.char_indices().peekable();
+    while let Some((i, c)) = chars.next() {
+        let ends_sentence = match c {
+            '!' | '?' => true,
+            '\n' => newline_breaks,
+            '.' => {
+                let followed_by_break = chars.peek().is_none_or(|&(_, next)| next.is_whitespace());
+                let is_list_marker = text[start..i].trim().chars().all(|d| d.is_ascii_digit());
+                followed_by_break && !is_list_marker
+            }
+            _ => false,
+        };
+        if ends_sentence {
+            let end = i + c.len_utf8();
+            push_trimmed(&mut sentences, &text[start..end]);
+            start = end;
+        }
+    }
+    push_trimmed(&mut sentences, &text[start..]);
+    sentences
+}
+
+fn push_trimmed(sentences: &mut Vec<String>, piece: &str) {
+    let piece = piece.trim();
+    if !piece.is_empty() {
+        sentences.push(piece.to_string());
     }
 }
 
