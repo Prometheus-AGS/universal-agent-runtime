@@ -558,7 +558,7 @@ fn provider_id_for_config(config: &LlmConfig) -> String {
 }
 
 fn qualified_model_name(config: &LlmConfig) -> String {
-    let model_id = if config.host_supplied_connection {
+    let model_id = if config.host_supplied_connection || config.base_url.is_some() {
         config.model.clone()
     } else {
         crate::llm::registry::split_model_string_pub(&config.model)
@@ -4161,32 +4161,34 @@ impl RunManager {
             );
         }
         let register_turn_tools = async {
-            if let Some(binding) = &collaboration_binding {
-                if let Some(attempt) = binding.team_attempt.as_ref().filter(|_|crate::uar::api::capabilities::team_execution_b_enabled()) {
-                    crate::uar::runtime::native_skills::team_tools::register(&native_skills,
-                        crate::uar::runtime::native_skills::team_tools::TeamToolBinding {catalog: Arc::clone(&binding.service), attempt:attempt.clone(), yielded:Arc::clone(&binding.team_yield)}).await?;
+            if effective_policy.tools.mode != SelectionMode::None {
+                if let Some(binding) = &collaboration_binding {
+                    if let Some(attempt) = binding.team_attempt.as_ref().filter(|_|crate::uar::api::capabilities::team_execution_b_enabled()) {
+                        crate::uar::runtime::native_skills::team_tools::register(&native_skills,
+                            crate::uar::runtime::native_skills::team_tools::TeamToolBinding {catalog: Arc::clone(&binding.service), attempt:attempt.clone(), yielded:Arc::clone(&binding.team_yield)}).await?;
+                    }
                 }
-            }
-            native_skills
-                .register(
-                    crate::uar::runtime::native_skills::activate_skill::ActivateSkillTool::new(
-                        Arc::clone(&activation_context),
+                native_skills
+                    .register(
+                        crate::uar::runtime::native_skills::activate_skill::ActivateSkillTool::new(
+                            Arc::clone(&activation_context),
+                        )
+                        .with_thread_policy(
+                            inherited
+                                .as_ref()
+                                .map(|bindings| Arc::clone(&bindings.policy)),
+                        ),
                     )
-                    .with_thread_policy(
-                        inherited
-                            .as_ref()
-                            .map(|bindings| Arc::clone(&bindings.policy)),
-                    ),
-                )
-                .await?;
-            if let Some(bindings) = &inherited {
-                let controls = crate::uar::runtime::native_skills::agents::registry_for_turn(
-                    Arc::clone(&bindings.controls),
-                )
-                .await?;
-                for name in controls.names().await {
-                    if let Some(handler) = controls.get(&name).await {
-                        native_skills.register_arc(handler).await?;
+                    .await?;
+                if let Some(bindings) = &inherited {
+                    let controls = crate::uar::runtime::native_skills::agents::registry_for_turn(
+                        Arc::clone(&bindings.controls),
+                    )
+                    .await?;
+                    for name in controls.names().await {
+                        if let Some(handler) = controls.get(&name).await {
+                            native_skills.register_arc(handler).await?;
+                        }
                     }
                 }
             }
@@ -4706,12 +4708,14 @@ impl RunManager {
                     .map_err(|_| anyhow::anyhow!("Actor root already has a thread service"))?;
                 let root_controls = service.root_controls().await?;
                 graph_controls = Some(Arc::clone(&root_controls));
-                let controls =
-                    crate::uar::runtime::native_skills::agents::registry_for_turn(root_controls)
-                        .await?;
-                for name in controls.names().await {
-                    if let Some(handler) = controls.get(&name).await {
-                        native_skills.register_arc(handler).await?;
+                if effective_policy.tools.mode != SelectionMode::None {
+                    let controls =
+                        crate::uar::runtime::native_skills::agents::registry_for_turn(root_controls)
+                            .await?;
+                    for name in controls.names().await {
+                        if let Some(handler) = controls.get(&name).await {
+                            native_skills.register_arc(handler).await?;
+                        }
                     }
                 }
                 activation_context
