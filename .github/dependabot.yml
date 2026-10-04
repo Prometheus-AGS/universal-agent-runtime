@@ -11,6 +11,26 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    # Crates whose pins must move by hand. Three Dependabot merges left main
+    # unresolvable and broke the image build (run 36881586257, fixed by #324):
+    # rmcp bumped in one manifest only; wasmtime-wasi and fastembed bumped in
+    # Cargo.lock only, outside the manifest ranges. This entry also covers
+    # tools/mcp-server-fetch, which is excluded from the workspace but shares
+    # the rmcp pin.
+    #
+    # Dependabot security updates are separate from these version updates and
+    # are not blocked by `ignore`, but a security bump for any of these still
+    # needs a manual PR that edits the manifests and the lockfile together.
+    ignore:
+      # Exact pin `=3.4.1` in Cargo.toml and tools/mcp-server-fetch/Cargo.toml;
+      # both must change in the same PR.
+      - dependency-name: "rmcp"
+      # Must move together (wasmtime-wasi re-exports wasmtime types); see the
+      # note above the pins in Cargo.toml.
+      - dependency-name: "wasmtime"
+      - dependency-name: "wasmtime-wasi"
+      # Manifest range "5"; a lockfile-only bump to 6.x is out of range.
+      - dependency-name: "fastembed"
     labels:
       - "dependencies"
       - "rust"
