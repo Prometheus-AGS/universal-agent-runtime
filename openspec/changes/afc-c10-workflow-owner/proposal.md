@@ -2,6 +2,8 @@
 
 C09 executes durable team tasks but does not own the approved classify → draft → human-decision operation. C10.1 requires pinned workflow progression and an exact-artifact decision that survives restart without another model turn or external effect.
 
+This repository-scoped change implements initiative change `afc-c10-feedback-workflow-and-governed-connector-effects`, task C10.1. The approved owner decision and first-delivery contract live in the Agent Fabric Convergence initiative. The UAR source receipt for this change is in `source-receipt.md`; the completed-path integration gate remains with the initiative owner.
+
 ## What Changes
 
 - Add the closed `prometheus.workflow-execution` version 1.0.0 interpretation and supported-definition diagnostics.
