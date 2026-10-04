@@ -1,0 +1,7 @@
+# Design
+
+An observed event, including its original feedback text for restart recovery, is durably keyed by owner, workspace, source and source event ID before any model work. The owner-scoped catalog keeps that text out of connector logs. The existing C10.1 two-step workflow remains the sole classifier/drafter and its immutable run is linked to the intake. Once its classifier and draft artifacts are committed, the intake derives a classification-scoped duplicate key and records the canonical intake identity. A duplicate can retain its draft for inspection but cannot produce another issue authorization.
+
+Product, design and reviewer outputs are existing C09 task artifacts referenced into the intake only after owner/workspace/team/role validation. They are not fabricated summaries and do not create a second model executor. A configured standing policy can authorize a sanitized GitHub issue intent for one exact draft, source scope, connector binding and egress label. The host still resolves credentials and dispatches through C10.2. The issue receipt and product/design review do not admit implementation. A separate authenticated operator decision explicitly records implementation admission against a chosen artifact set.
+
+This implementation does not change the closed C10.1 interpreter or silently add a third model step. Host orchestration must call these typed operations as the existing workflow and C09 tasks complete. The full direct/BossFang and real-connector gate remains pending.

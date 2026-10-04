@@ -6,6 +6,7 @@ mod team_execution;
 mod team_scope;
 mod workflow_execution;
 mod connector_effect;
+mod feedback_intake;
 
 use std::sync::Arc;
 
@@ -51,6 +52,7 @@ pub fn build_router() -> Router<Arc<CollaborationApiState>> {
         .merge(team_scope::build_router())
         .merge(workflow_execution::build_router())
         .merge(connector_effect::build_router())
+        .merge(feedback_intake::build_router())
         .route("/capabilities", get(collaboration_capabilities))
         .route("/packages:preflight", post(preflight_package))
         .route("/packages:install", post(install_package))

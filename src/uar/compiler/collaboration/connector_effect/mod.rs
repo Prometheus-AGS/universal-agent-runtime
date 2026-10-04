@@ -212,7 +212,7 @@ impl CollaborationCatalogService {
                 ConnectorAction::Read | ConnectorAction::Draft
             ) {
                 let payload_digest = digest(&request.payload)?;
-                let authorized = current.workflow_runs.values().any(|run| {
+                let workflow_decision = current.workflow_runs.values().any(|run| {
                     run.owner_id == owner
                         && run.workspace_id == workspace
                         && run.decision.as_ref().is_some_and(|decision| {
@@ -221,8 +221,31 @@ impl CollaborationCatalogService {
                                 && decision.artifact_digest == payload_digest
                         })
                 });
-                if !authorized {
+                let standing_approval = current.feedback_intakes.values().any(|intake| {
+                    intake.owner_id == owner
+                        && intake.workspace_id == workspace
+                        && intake.duplicate_of.is_none()
+                        && request.action == ConnectorAction::Publish
+                        && intake.issue_approval.as_ref().is_some_and(|approval| {
+                            Some(approval.id.as_str()) == request.decision_ref.as_deref()
+                                && approval.sanitized_payload_digest == payload_digest
+                                && approval.connector_binding_id.as_deref()
+                                    == Some(grant.id.as_str())
+                                && approval.egress_label.as_ref().is_some_and(|label| {
+                                    request.egress_labels.len() == 1
+                                        && request.egress_labels.contains(label)
+                                })
+                        })
+                });
+                if !workflow_decision && !standing_approval {
                     return Err(conflict("CONNECTOR_ARTIFACT_DECISION_MISMATCH"));
+                }
+                if current.connector_effects.values().any(|effect| {
+                    effect.owner_id == owner
+                        && effect.workspace_id == workspace
+                        && effect.decision_ref == request.decision_ref
+                }) {
+                    return Err(conflict("CONNECTOR_DECISION_ALREADY_USED"));
                 }
             }
             adapters::plan(
