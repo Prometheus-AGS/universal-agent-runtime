@@ -211,9 +211,20 @@ impl TeamExecutionRuntime {
         Ok(attempt)
     }
 
+    pub async fn activate_workflows(self: &Arc<Self>, owner: ActorOwner) {
+        self.owners.lock().await.insert(owner.presentation_owner_key(), owner);
+        self.drain().await;
+    }
+
     async fn drain(self: &Arc<Self>) {
         if !self.available || self.cancellation.is_cancelled() {
             return;
+        }
+        let owners = self.owners.lock().await.values().cloned().collect::<Vec<_>>();
+        for owner in owners {
+            if let Err(error) = self.drive_workflows(&owner).await {
+                tracing::warn!(%error, "Workflow progression awaits reconciliation");
+            }
         }
         let queued = match self.catalog.queued_team_attempts().await {
             Ok(v) => v,

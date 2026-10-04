@@ -23,7 +23,7 @@ impl CollaborationCatalogService {
         self.execution_identity.read().map(|f| f.clone()).map_err(|_| CollaborationError::Storage("execution identity lock poisoned".into()))
     }
 
-    pub(super) fn require_execution_owner(&self, state: &CollaborationCatalogState, cleanup: bool) -> Result<TeamExecutionFence, CollaborationError> {
+    pub(in crate::uar::compiler::collaboration) fn require_execution_owner(&self, state: &CollaborationCatalogState, cleanup: bool) -> Result<TeamExecutionFence, CollaborationError> {
         let identity = self.execution_identity()?;
         let claim = state.execution_claim.as_ref().ok_or_else(|| conflict("TEAM_EXECUTION_OWNER_CONFLICT"))?;
         if identity != claim.fence || (claim.state != "held" && !(cleanup && claim.state == "draining")) {

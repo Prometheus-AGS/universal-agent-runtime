@@ -14,6 +14,7 @@ pub mod skills;
 pub mod team_mailbox;
 pub mod team_context;
 pub mod team_execution;
+pub mod workflow_execution;
 pub mod team_planning;
 pub mod tools;
 

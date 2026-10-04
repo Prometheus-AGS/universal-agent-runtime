@@ -18,6 +18,12 @@ impl CollaborationCatalogService {
         task_id: &str,
         request: AdmitTeamTaskRequest,
     ) -> Result<TeamExecutionAttempt, CollaborationError> {
+        self.admit_team_task_inner(owner, workspace, team_id, task_id, request, None).await
+    }
+    pub(crate) async fn admit_workflow_task(&self, owner: &str, workspace: &str, team_id: &str, task_id: &str, request: AdmitTeamTaskRequest, workflow: &str) -> Result<TeamExecutionAttempt, CollaborationError> {
+        self.admit_team_task_inner(owner, workspace, team_id, task_id, request, Some(workflow)).await
+    }
+    async fn admit_team_task_inner(&self, owner: &str, workspace: &str, team_id: &str, task_id: &str, request: AdmitTeamTaskRequest, workflow: Option<&str>) -> Result<TeamExecutionAttempt, CollaborationError> {
         super::super::validation::validate_id(&request.command_id)?;
         super::super::validation::validate_id(task_id)?;
         if request.reservation.tokens == 0 || request.reservation.elapsed_seconds == 0 {
@@ -25,8 +31,10 @@ impl CollaborationCatalogService {
                 "reserve positive tokens and elapsed seconds before execution".to_owned(),
             ));
         }
+        let mut digest_request = serde_json::to_value(&request)?;
+        if workflow.is_some() { digest_request["expectedTeamRevision"] = json!(0); digest_request["expectedTaskRevision"] = json!(0); }
         let digest = super::super::validation::canonical_digest(
-            &json!({"teamId":team_id,"taskId":task_id,"request":request}),
+            &json!({"teamId":team_id,"taskId":task_id,"request":digest_request}),
         )?;
         let command_key = format!("{owner}\u{1f}{workspace}\u{1f}{}", request.command_id);
         let id = Uuid::new_v4().to_string();
@@ -62,6 +70,7 @@ impl CollaborationCatalogService {
                         CollaborationError::Storage("admission receipt lost its attempt".to_owned())
                     });
             }
+            super::super::workflow_execution::admission_guard(&current, owner, workspace, team_id, task_id, workflow)?;
             if current.team_command_receipts.contains_key(&command_key)
                 || current
                     .team_mailbox_command_receipts
@@ -286,6 +295,7 @@ impl CollaborationCatalogService {
                     committed_at: now,
                 },
             );
+            super::super::workflow_execution::link_attempt(&mut next, workflow, &attempt)?;
             if self.cas(current.generation, &next).await? {
                 return Ok(attempt);
             }

@@ -4,6 +4,7 @@ mod team_mailbox;
 mod team_planning;
 mod team_execution;
 mod team_scope;
+mod workflow_execution;
 
 use std::sync::Arc;
 
@@ -47,6 +48,7 @@ pub fn build_router() -> Router<Arc<CollaborationApiState>> {
         .merge(team_mailbox::build_router())
         .merge(team_execution::build_router())
         .merge(team_scope::build_router())
+        .merge(workflow_execution::build_router())
         .route("/capabilities", get(collaboration_capabilities))
         .route("/packages:preflight", post(preflight_package))
         .route("/packages:install", post(install_package))
@@ -88,15 +90,21 @@ pub fn build_router() -> Router<Arc<CollaborationApiState>> {
 async fn collaboration_capabilities(
     State(state): State<Arc<CollaborationApiState>>,
     Extension(user): Extension<UserContext>,
+    host_authenticated: Option<Extension<crate::uar::security::sidecar_guard::HostAuthenticated>>,
 ) -> Response {
     let binding_owner_id = match owner_key(&user) {
         Ok(owner) => owner,
         Err(response) => return response,
     };
-    let mut runtime = super::capabilities::capabilities_response(&state.service_instance);
+    let mut runtime = super::capabilities::capabilities_response(
+        &state.service_instance,
+        host_authenticated.as_ref().map(|Extension(host)| host),
+    );
     if !state.service.execution_ownership_view().await.is_ok_and(|v| v.owns_execution) {
-        runtime.capabilities.retain(|c| c != "collaboration_team_execution_v1" && !super::capabilities::TEAM_EXECUTION_B_CAPABILITIES.contains(&c.as_str()));
+        runtime.capabilities.retain(|c| c != "collaboration_team_execution_v1" && c != crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY && !super::capabilities::TEAM_EXECUTION_B_CAPABILITIES.contains(&c.as_str()));
         runtime.collaboration.activation.team_execution = false;
+        runtime.collaboration.activation.workflow = false;
+        runtime.collaboration.workflow_execution.available = false;
     }
     Json(CollaborationCapabilitiesResponse {
         runtime,
