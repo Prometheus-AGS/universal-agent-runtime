@@ -258,7 +258,15 @@ impl AdmissionLifecycle {
         let mut state = cell.lock().await;
         match *state {
             LiveState::Claimed => {
-                let outcome = host.cancel(invocation, admission_id, reason).await?;
+                let outcome = if invocation.admission_owner
+                    == crate::uar::persistence::tool_admission::AdmissionOwner::UarRuntime
+                {
+                    // A claimed runtime control may already have changed team
+                    // state. Cancellation cannot certify its effects undone.
+                    AdmissionCancellationOutcome::AlreadyClaimed
+                } else {
+                    host.cancel(invocation, admission_id, reason).await?
+                };
                 let evidence_state = match outcome {
                     AdmissionCancellationOutcome::Cancelled => match reason {
                         AdmissionCancellationReason::Cancelled => {
@@ -370,6 +378,7 @@ impl ToolAdmissionEvidence {
             invocation_id: invocation.invocation_id.clone(),
             admission_id: admission_id.to_owned(),
             tool_name: invocation.provider_tool_name.clone(),
+            admission_owner: invocation.admission_owner,
             runtime_epoch: invocation.runtime_epoch.clone(),
             host_epoch: invocation.host_epoch.clone(),
             state,

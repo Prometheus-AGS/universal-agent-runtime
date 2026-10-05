@@ -35,6 +35,7 @@ pub(crate) struct PendingApprovalSnapshot {
     pub root_run_id: String,
     pub approval_id: String,
     pub admission_id: Option<String>,
+    pub admission_owner: crate::uar::persistence::tool_admission::AdmissionOwner,
     pub call_index: usize,
     pub tool_call_id: String,
     pub name: String,
@@ -178,6 +179,30 @@ impl RootApprovalChannel {
         risk_reason: String,
         caller_cancel: &CancellationToken,
     ) -> ApprovalOutcome {
+        self.request_with_admission_owner(
+            admission_id,
+            crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost,
+            call_index,
+            tool_call_id,
+            name,
+            arguments_json,
+            risk_reason,
+            caller_cancel,
+        )
+        .await
+    }
+
+    pub(crate) async fn request_with_admission_owner(
+        &self,
+        admission_id: Option<String>,
+        admission_owner: crate::uar::persistence::tool_admission::AdmissionOwner,
+        call_index: usize,
+        tool_call_id: String,
+        name: String,
+        arguments_json: String,
+        risk_reason: String,
+        caller_cancel: &CancellationToken,
+    ) -> ApprovalOutcome {
         let operation = async {
             let _serial = self.lane.serial.lock().await;
             if self.lane.cancellation.is_cancelled() || caller_cancel.is_cancelled() {
@@ -190,6 +215,7 @@ impl RootApprovalChannel {
                 root_run_id: self.lane.run_id.clone(),
                 approval_id: id.clone(),
                 admission_id: admission_id.clone(),
+                admission_owner,
                 call_index,
                 tool_call_id: tool_call_id.clone(),
                 name: name.clone(),
