@@ -318,6 +318,9 @@ async fn validate_binding(
             } else if let Ok(reference) = serde_json::from_value::<ImmutableDefinitionRef>(member["definition"].clone()) {
                 if let Some(definition) = state.definitions.get(&reference.storage_key()) {
                     let start = diagnostics.len();
+                    let (_, skill_diagnostics) =
+                        resolve_skills(skill_service, document, definition).await?;
+                    diagnostics.extend(skill_diagnostics);
                     super::runtime_semantics::resolve_legacy_team_context(definition, document, &mut diagnostics);
                     let models = resolve_models(document, definition, &mut diagnostics)?;
                     super::runtime_semantics::resolve_runtime_semantics(definition, &models, provider_registry, &mut diagnostics).await;

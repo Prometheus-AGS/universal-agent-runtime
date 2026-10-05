@@ -4082,3 +4082,13 @@ The packaged operation reproduced HTTP401 during starter setup: the operation su
 ## 2026-10-05 — C14 Teams in Work trusted host context
 
 Observed prerequisite: team execution omitted the selected workspace, run MCP resources and paired host admission, preventing the approved coding-team operation. Added a HostAuthenticated owner/workspace/binding-scoped attachment using existing run admission; immutable member selections and live host role checks restrict tools. Credentials remain ephemeral, and restart requires explicit reattachment before dispatch or recovery. Production code and OpenSpec are complete; build and packaged function evidence remain pending. No tests or verification builds were run during implementation.
+
+## 2026-10-05 — C15 trusted skill deployment catalog
+
+- Approved work-ahead: c15-reusable-teams-api-20261005-v2; isolated codex/uar-skill-deployment-catalog from c72b0003. OpenSpec plan committed first as b77f0b46.
+- Observed gap: HTTP SkillResponse omits exact stored deployment identity/location/tool metadata; team binding preflight omitted member resolve_skills despite execution requiring it.
+- Added schemaVersion 1 Admin Read catalog with separate portable SkillRef/private installedLocation, current enabled/tombstones and explicit missing metadata reasons. Existing list/read/Owner match untouched.
+- Actual trust boundary: installed paths require existing nonanonymous authenticated principal plus configured admin key even if settings mutation auth is optional; discovery grants no tool/admission authority. No secrets logged.
+- Narrow supporting ownership: registry.rs sorted read including tombstones, server.rs protected route state at both existing skill mounts, canonical bindings.rs resolver reuse. No persistence migration, service, dependency or frozen-tree edits.
+- Exact DTO sent to Boss team_authoring owner. Only scoped source formatting allowed; no Cargo/compiler/build/tests/reviews/KBD transitions or publication during implementation. Native behavior remains unverified until lead's complete delivery boundary.
+- Coordinating lead authorized source commit/push only. Commit-local core.hooksPath=/dev/null suppresses all commit hooks to honor the explicit no compiler/test/review boundary; no hook result is claimed as verification. Production and native operation remain source-only/unverified.

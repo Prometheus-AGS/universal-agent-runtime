@@ -877,6 +877,13 @@ pub fn administration_capabilities(
                 Available,
                 vec![
                     endpoint!("skills.list", "GET", "/api/uar/skills", Admin, Read),
+                    endpoint!(
+                        "skills.deployment_catalog",
+                        "GET",
+                        "/api/uar/skills/deployment-catalog",
+                        Admin,
+                        Read
+                    ),
                     endpoint!("skills.create", "POST", "/api/uar/skills", Admin, Live),
                     endpoint!("skills.read", "GET", "/api/uar/skills/{id}", Admin, Read),
                     endpoint!(
