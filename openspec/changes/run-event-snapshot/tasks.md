@@ -4,8 +4,8 @@
 
 ## 2. Source
 
-- [ ] 2.1 Implement owner-scoped snapshot and public typed projections without subscriptions.
-- [ ] 2.2 Register capability/OpenAPI contract and retention documentation.
+- [x] 2.1 Implement owner-scoped snapshot and public typed projections without subscriptions.
+- [x] 2.2 Register capability/OpenAPI contract and retention documentation.
 
 ## 3. Delivery
 

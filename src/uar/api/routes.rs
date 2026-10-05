@@ -40,6 +40,7 @@ pub fn build_router() -> Router<Arc<RunApiState>> {
         .route("/runs", get(list_runs).post(create_run))
         .route("/runs/{id}", get(read_run))
         .route("/runs/{id}/stream", get(stream_run))
+        .route("/runs/{id}/events", get(super::run_events::snapshot))
         .route("/runs/{run_id}/tool-approval", post(api_tool_approval))
         .route(
             "/runs/{run_id}/tool-approval/pending",

@@ -7,3 +7,7 @@ All retained IDs are examined in order before public projection; missing IDs aft
 Only process-local current history is exposed, presently a bounded 512-event ring plus existing retained presentation. It is not durable replay or restart recovery. Missing/foreign/unavailable runs return404 without disclosing existence. Snapshot cannot cancel, subscribe, approve, delegate or mutate. Existing SSE remains byte/behavior-compatible.
 
 The observed roster call's raw arguments remain unavailable; this repair adds inspection, not a guessed cursor fix. Completion evidence requires root's actual build and normal packaged repeat. No worker gates.
+
+## Source boundary
+
+Source implements the owner predicate and a single history snapshot without touching runtime, subscriptions or authority. Metadata labels runs.events as Owner/Read and OpenAPI references the same versioned envelope schema. Scoped rustfmt applied only to the new API module. No tests, compilation, build or review ran. Signed plan/production commits suppress repository hooks invocation-locally under the explicit parent delivery policy; native build and actual trace capture remain parent-owned.

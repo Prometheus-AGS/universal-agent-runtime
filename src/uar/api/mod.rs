@@ -50,6 +50,8 @@ pub mod providers;
 #[cfg(feature = "server")]
 pub mod routes;
 #[cfg(feature = "server")]
+pub mod run_events;
+#[cfg(feature = "server")]
 pub mod settings;
 #[cfg(feature = "server")]
 pub mod skills;

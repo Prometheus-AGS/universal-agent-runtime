@@ -155,6 +155,23 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "responses": { "200": { "description": "Normalized SSE event stream" } }
                 }
             },
+            "/api/uar/runs/{id}/events": {
+                "get": {
+                    "summary": "Read owner-scoped run event snapshot",
+                    "description": "Read existing bounded process-local public SSE projections without subscribing or cancelling. No durable replay guarantee. gapReason reports incomplete retention or a cursor ahead of this snapshot.",
+                    "tags": ["runs"],
+                    "security": [{"bearerAuth": []}],
+                    "parameters": [
+                        {"name": "id", "in": "path", "required": true, "schema": {"type": "string"}},
+                        {"name": "after", "in": "query", "schema": {"type": "integer", "minimum": 0, "default": 0}, "description": "Exclusive event cursor"}
+                    ],
+                    "responses": {
+                        "200": {"description": "Versioned bounded public event snapshot", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RunEventSnapshot"}}}},
+                        "400": {"description": "Invalid query cursor"},
+                        "404": {"description": "Run/history unavailable or outside current owner scope"}
+                    }
+                }
+            },
             "/api/uar/full-harness/v1/tasks": {
                 "post": {
                     "summary": "Admit a complete delegated run",
@@ -392,6 +409,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                 "bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
             },
             "schemas": {
+                "RunEventSnapshot": super::run_events::snapshot_schema(),
                 "FullHarnessAdmissionRequest": {
                     "type": "object",
                     "required": ["admission_id", "native_task_id", "input"],
