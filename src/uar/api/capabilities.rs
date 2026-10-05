@@ -26,7 +26,10 @@ pub const AGUI_PROFILE: &str = "uar.agui/1";
 /// AG-UI profile revision of the runs stream.
 pub const AGUI_PROFILE_REVISION: u32 = 1;
 pub const WORKFLOW_EXECUTION_QUALIFIED: bool = false;
-pub fn workflow_execution_enabled() -> bool { WORKFLOW_EXECUTION_QUALIFIED || std::env::var("UAR_WORKFLOW_EXECUTION_PROFILE_STAGE").as_deref() == Ok("operation") }
+pub fn workflow_execution_enabled() -> bool {
+    WORKFLOW_EXECUTION_QUALIFIED
+        || std::env::var("UAR_WORKFLOW_EXECUTION_PROFILE_STAGE").as_deref() == Ok("operation")
+}
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkflowExecutionCapability {
@@ -60,7 +63,8 @@ pub fn team_execution_b_enabled() -> bool {
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.
-pub const CAPABILITY_VOCABULARY: [&str; 26] = [
+pub const CAPABILITY_VOCABULARY: [&str; 27] = [
+    crate::uar::runtime::team_execution::host::CAPABILITY,
     crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY,
     "agui_stream_fidelity",
     "approval_lifecycle_v1",
@@ -91,7 +95,8 @@ pub const CAPABILITY_VOCABULARY: [&str; 26] = [
 
 /// Capabilities this binary implements. Each owning change adds its name in
 /// the same commit as the behaviour.
-pub const IMPLEMENTED_CAPABILITIES: [&str; 16] = [
+pub const IMPLEMENTED_CAPABILITIES: [&str; 17] = [
+    crate::uar::runtime::team_execution::host::CAPABILITY,
     "approval_lifecycle_v1",
     "collaboration_definition_packages_v1",
     "collaboration_definition_packages_v2",
@@ -192,7 +197,13 @@ pub fn collaboration_capabilities() -> CollaborationCapabilities {
         workflow_execution: WorkflowExecutionCapability {
             capability: crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY,
             interpretation_version: "1.0.0",
-            stage: if WORKFLOW_EXECUTION_QUALIFIED {"qualified"} else if workflow_execution_enabled() {"operation"} else {"unqualified"},
+            stage: if WORKFLOW_EXECUTION_QUALIFIED {
+                "qualified"
+            } else if workflow_execution_enabled() {
+                "operation"
+            } else {
+                "unqualified"
+            },
             available: false,
             qualified: WORKFLOW_EXECUTION_QUALIFIED,
         },
@@ -258,7 +269,8 @@ pub fn capabilities_response(
         .any(|capability| capability == "collaboration_team_execution_v1");
     collaboration.activation.team_instance = team_execution_available;
     collaboration.activation.team_execution = team_execution_available;
-    collaboration.workflow_execution.available = team_execution_available && workflow_execution_enabled();
+    collaboration.workflow_execution.available =
+        team_execution_available && workflow_execution_enabled();
     collaboration.activation.workflow = collaboration.workflow_execution.available;
     CapabilitiesResponse {
         authentication: AuthenticationCapabilities {

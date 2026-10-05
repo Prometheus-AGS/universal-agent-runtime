@@ -4078,3 +4078,7 @@ Commit tooling boundary: the mandatory pnpm hook silently started a workspace de
 ## 2026-10-03 — C10 packaged starter authentication repair
 
 The packaged operation reproduced HTTP401 during starter setup: the operation supervisor registered a launch-token sidecar as externally owned, while Boss forwarded its principal only for managed processes. The sidecar correctly consumed the bearer and the collaboration API correctly refused the resulting anonymous owner. Added request-derived `authentication.principalMode` to both capability responses: host-asserted only with the trusted HostAuthenticated extension, otherwise token-subject. This separates process lifecycle ownership from the existing host/session identity boundary and does not weaken token or owner checks. The coordinator approved the producer/consumer contract. Runtime verification remains the updated packaged operation; no new tests ran.
+
+## 2026-10-05 — C14 Teams in Work trusted host context
+
+Observed prerequisite: team execution omitted the selected workspace, run MCP resources and paired host admission, preventing the approved coding-team operation. Added a HostAuthenticated owner/workspace/binding-scoped attachment using existing run admission; immutable member selections and live host role checks restrict tools. Credentials remain ephemeral, and restart requires explicit reattachment before dispatch or recovery. Production code and OpenSpec are complete; build and packaged function evidence remain pending. No tests or verification builds were run during implementation.

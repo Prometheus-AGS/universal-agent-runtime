@@ -2,6 +2,7 @@
 mod controller;
 mod epoch;
 mod execution;
+pub mod host;
 mod recovery;
 
 pub use controller::TeamExecutionRuntime;

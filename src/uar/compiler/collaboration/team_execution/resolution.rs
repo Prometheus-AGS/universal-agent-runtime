@@ -63,23 +63,41 @@ impl CollaborationCatalogService {
         let (mut skills, mut diagnostics) =
             bindings::resolve_skills(self.skill_service.as_deref(), &binding.document, definition)
                 .await?;
-        runtime_semantics::resolve_legacy_team_context(definition, &binding.document, &mut diagnostics);
+        runtime_semantics::resolve_legacy_team_context(
+            definition,
+            &binding.document,
+            &mut diagnostics,
+        );
         let mut models = bindings::resolve_models(&binding.document, definition, &mut diagnostics)?;
-        let registry = self.provider_registry.as_deref()
+        let registry = self
+            .provider_registry
+            .as_deref()
             .ok_or_else(|| CollaborationError::Conflict("TEAM_PROFILE_UNSUPPORTED".into()))?;
         for model in &mut models {
             let provider_id = model["providerId"].as_str().unwrap_or_default().to_owned();
             let model_id = model["modelId"].as_str().unwrap_or_default().to_owned();
-            let captured = attempt.effective_models.iter().find(|captured|
-                captured.route.provider_id == provider_id && captured.route.model_id == model_id)
-                .ok_or_else(|| CollaborationError::Conflict("TEAM_ROUTE_PROFILE_MISMATCH".into()))?;
-            let current = registry.resolve_team_model_settings(&TeamModelSettingsRequest {
-                route: captured.route.clone(), profile: captured.profile.clone(),
-                expected_settings_revision: captured.settings_revision,
-                reasoning: captured.requested_reasoning.clone(),
-            }).await.map_err(|error| CollaborationError::Conflict(error.to_string()))?;
+            let captured = attempt
+                .effective_models
+                .iter()
+                .find(|captured| {
+                    captured.route.provider_id == provider_id && captured.route.model_id == model_id
+                })
+                .ok_or_else(|| {
+                    CollaborationError::Conflict("TEAM_ROUTE_PROFILE_MISMATCH".into())
+                })?;
+            let current = registry
+                .resolve_team_model_settings(&TeamModelSettingsRequest {
+                    route: captured.route.clone(),
+                    profile: captured.profile.clone(),
+                    expected_settings_revision: captured.settings_revision,
+                    reasoning: captured.requested_reasoning.clone(),
+                })
+                .await
+                .map_err(|error| CollaborationError::Conflict(error.to_string()))?;
             if serde_json::to_value(&current)? != serde_json::to_value(captured)? {
-                return Err(CollaborationError::Conflict("TEAM_ROUTE_PROFILE_MISMATCH".into()));
+                return Err(CollaborationError::Conflict(
+                    "TEAM_ROUTE_PROFILE_MISMATCH".into(),
+                ));
             }
             model["effectiveModel"] = serde_json::to_value(captured)?;
             if let Some(provider) = registry.get(&provider_id).await {
@@ -135,7 +153,9 @@ impl CollaborationCatalogService {
                 ResourceSelection::selected(ids)
             }
         };
-        if workflow.is_some() { skills.clear(); }
+        if workflow.is_some() {
+            skills.clear();
+        }
         let skill_ids = skills.iter().map(|skill| skill.skill.id.clone()).collect();
         let mut tool_ids = skills
             .iter()
@@ -147,22 +167,48 @@ impl CollaborationCatalogService {
         if tool_ids.iter().any(|tool| {
             crate::uar::runtime::thread::control::AGENT_TOOL_NAMES.contains(&tool.as_str())
         }) {
-            return Err(CollaborationError::Conflict("TEAM_CAPABILITY_UNSUPPORTED".into()));
+            return Err(CollaborationError::Conflict(
+                "TEAM_CAPABILITY_UNSUPPORTED".into(),
+            ));
         }
-        if crate::uar::api::capabilities::team_execution_b_enabled(){tool_ids.extend(["team_roster","team_send","team_delegate","team_wait"].into_iter().map(str::to_owned));}
+        if crate::uar::api::capabilities::team_execution_b_enabled() {
+            tool_ids.extend(
+                ["team_roster", "team_send", "team_delegate", "team_wait"]
+                    .into_iter()
+                    .map(str::to_owned),
+            );
+        }
         tool_ids.push("activate_skill".into());
         tool_ids.push(crate::uar::runtime::native_skills::search_tools::SEARCH_TOOLS_NAME.into());
         let installed = match self.skill_service.as_deref() {
             Some(service) => service.get_skills().await,
             None => Vec::new(),
         };
-        let server_ids = installed
+        let mut server_ids: Vec<String> = installed
             .iter()
-            .filter(|installed| skills.iter().any(|skill| skill.skill.id == installed.skill_id))
+            .filter(|installed| {
+                skills
+                    .iter()
+                    .any(|skill| skill.skill.id == installed.skill_id)
+            })
             .filter_map(|skill| skill.mcp_config.as_ref())
             .flat_map(|config| config.mcp_servers.keys().cloned())
             .collect();
-        if workflow.is_some() { tool_ids.clear(); }
+        if let Some(value) = definition.document["extensions"]
+            .get(crate::uar::runtime::team_execution::host::EXTENSION)
+        {
+            let selection: crate::uar::runtime::team_execution::host::TeamHostSelection =
+                serde_json::from_value(value.clone())?;
+            if !selection.valid() {
+                return Err(CollaborationError::Conflict("TEAM_SCOPE_DENIED".into()));
+            }
+            tool_ids.extend(selection.tools);
+            server_ids.extend(selection.servers);
+            effective["teamHostWorkspaceRequired"] = serde_json::Value::Bool(true);
+        }
+        if workflow.is_some() {
+            tool_ids.clear();
+        }
         let team_policy = RunPolicy {
             skills: selected(skill_ids),
             tools: selected(tool_ids),
@@ -195,10 +241,19 @@ impl CollaborationCatalogService {
             )
         })?;
         if let Some(workflow) = workflow {
-            let step_id = workflow.steps.iter().find(|s|s.task_id==attempt.task_id)
-                .ok_or_else(||CollaborationError::Conflict("WORKFLOW_TASK_UNAVAILABLE".into()))?.step_id.clone();
-            let step = workflow.plan.steps.iter().find(|s|s.id==step_id)
-                .ok_or_else(||CollaborationError::Conflict("WORKFLOW_PLAN_UNAVAILABLE".into()))?;
+            let step_id = workflow
+                .steps
+                .iter()
+                .find(|s| s.task_id == attempt.task_id)
+                .ok_or_else(|| CollaborationError::Conflict("WORKFLOW_TASK_UNAVAILABLE".into()))?
+                .step_id
+                .clone();
+            let step = workflow
+                .plan
+                .steps
+                .iter()
+                .find(|s| s.id == step_id)
+                .ok_or_else(|| CollaborationError::Conflict("WORKFLOW_PLAN_UNAVAILABLE".into()))?;
             artifact.prompt.instructions = vec![step.instructions.clone()];
         }
         self.revalidate_team_attempt(attempt).await?;
