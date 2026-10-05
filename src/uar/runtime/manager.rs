@@ -3743,18 +3743,41 @@ impl RunManager {
             Some(engine) => engine.policy_revision().await,
             None => "cedar:unavailable".to_string(),
         };
-        let tool_admission = match crate::uar::runtime::tool_admission::ToolAdmissionContext::new(
-            root_run_id,
-            run_id.clone(),
-            owner_id.clone(),
-            artifact.id.clone(),
-            world_state.directory().display().to_string(),
-            self.tool_runtime_epoch.clone(),
-            &artifact,
-            &effective_policy,
-            governance_policy_revision,
-            host_tool_admission.binding(),
-        )
+        let tool_admission = match (|| {
+            // Team host effects use the admitted tenant/subject partition,
+            // while ordinary session and thread ownership retain the subject.
+            let admission_owner_id = match collaboration_binding.as_ref().and_then(|binding| {
+                binding
+                    .team_attempt
+                    .as_ref()
+                    .map(|attempt| (binding, attempt))
+            }) {
+                Some((binding, attempt)) => {
+                    let owner = verified_owner.as_ref().ok_or_else(|| {
+                        anyhow::anyhow!("Team tool admission requires a verified host owner")
+                    })?;
+                    let admitted_owner = owner.presentation_owner_key();
+                    anyhow::ensure!(
+                        admitted_owner == binding.owner_id && admitted_owner == attempt.owner_id,
+                        "Team tool admission owner does not match its admitted binding and attempt"
+                    );
+                    admitted_owner
+                }
+                None => owner_id.clone(),
+            };
+            crate::uar::runtime::tool_admission::ToolAdmissionContext::new(
+                root_run_id,
+                run_id.clone(),
+                admission_owner_id,
+                artifact.id.clone(),
+                world_state.directory().display().to_string(),
+                self.tool_runtime_epoch.clone(),
+                &artifact,
+                &effective_policy,
+                governance_policy_revision,
+                host_tool_admission.binding(),
+            )
+        })()
         .and_then(|context| {
             crate::uar::runtime::tool_admission::ToolAdmissionRuntime::new(
                 context,
