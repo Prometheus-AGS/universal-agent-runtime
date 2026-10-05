@@ -35,7 +35,7 @@ impl NativeSkill for TeamTool {
     fn description(&self) -> &str {
         match self.name {
             "team_roster" => {
-                "List currently authorized teammates and current teamRevision for optimistic delegation. Identities are host-resolved; prompts and histories are private."
+                "List currently authorized teammates and current teamRevision for optimistic delegation. Identities are host-resolved; prompts and histories are private. Omit cursor or send an empty string for the first page; use nextCursor unchanged for subsequent pages."
             }
             "team_send" => {
                 "Queue an attributed message to an authorized peer. This never starts a model turn."
@@ -109,6 +109,14 @@ impl NativeSkill for TeamTool {
         let a = &self.binding.attempt;
         match self.name {
             "team_roster" => {
+                let mut args = args;
+                // The model tool accepts an empty first-page placeholder; the
+                // canonical request represents that absence by omission only.
+                if args.get("cursor").and_then(Value::as_str) == Some("") {
+                    if let Some(object) = args.as_object_mut() {
+                        object.remove("cursor");
+                    }
+                }
                 let r: crate::uar::domain::team_context::RosterRequest =
                     serde_json::from_value(args)
                         .map_err(|_| anyhow::anyhow!("TEAM_CONTEXT_REQUIRED_UNSUPPORTED"))?;
