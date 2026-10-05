@@ -1,6 +1,6 @@
 ## Implementation
-- [ ] Capture admitted private server inputs and immutable owner/environment in team host context.
-- [ ] Materialize separate request-owned MCP resources per attempt through the existing helper.
+- [x] Capture admitted private server inputs and immutable owner/environment in team host context.
+- [x] Materialize separate request-owned MCP resources per attempt through the existing helper.
 
 ## Parent-owned completed boundary
 - [ ] Build the affected native payload and packaged application.
