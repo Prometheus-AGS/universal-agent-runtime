@@ -1,0 +1,11 @@
+# Design
+
+The trusted host calls POST /api/v1/collaboration/team-instances/{id}/host-context with snake-case fields expected_binding_revision, working_directory, mcp_servers (ordinary RunMcpServerInput), and tool_admission (ordinary RunToolAdmissionInput). HostAuthenticated plus verified owner/workspace are required. Success is JSON null (unit); scope, revision and absent-resource conflicts use existing collaboration error envelopes. Existing recover remains an array of authoritative attempts.
+
+Supported required extension urn:prometheus:uar:team-host-workspace:1 has {required:true,version:1,tools:string[],servers:string[],workspacePath?:string}. Immutable AgentDefinition extensions select exact tools and servers; DeploymentBinding records canonical workspacePath plus allowed server names. Host attachment checks exact pinned binding revision and canonical directory against saved private state. It admits only saved server names through ordinary run MCP admission, and captures a paired HttpHostToolAdmissionPort. No URL, header, bearer token or credential is serialized into collaboration state.
+
+Member tools remain intersected with effective team policy and the host approval policy. Boss coding host policy allows glob/ls/grep/read, asks for edit/write only on the current worker, and denies all other effects; reviewer never receives write authority. Before prepare and claim Boss re-reads current scoped execution/member authority, rejects revoked or changed members and stale sidecar generation. Existing authority provider and claim receipt still gate actual effects. Human decisions use authoritative attempt/run and exact approval/event/cursor identity.
+
+The context is process-local and lost at restart. Missing required context produces TEAM_HOST_CONTEXT_REQUIRED before dispatch claim, preserving queued work. Boss recreates its bridge from its trusted saved workspace before recover, queue or dispatch. It does not silently omit tools. Existing uncertain effects, fences, accounting and recovery restrictions remain authoritative.
+
+Uncomfortable case: an interrupted effect cannot be certified by recreating host context. Recovery may remain uncertain and require reconciliation under existing execution rules; no automatic replay is added.
