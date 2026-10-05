@@ -4221,6 +4221,28 @@ impl RunManager {
             self.run_cancellations.write().await.remove(&run_id);
             return run_id;
         }
+        // Built-in model-control tools (`activate_skill`, team and agent
+        // controls) were registered above regardless of policy. Keep only the
+        // ones the effective policy allows, so a run that allows no skills is
+        // not offered `activate_skill`.
+        let native_skills = {
+            let allowed = native_skills
+                .descriptors()
+                .await
+                .into_iter()
+                .filter(|descriptor| {
+                    let model_control = descriptor.source
+                        == crate::uar::tools::descriptor::ToolSource::BuiltIn
+                        && descriptor.exposure
+                            == crate::uar::tools::descriptor::Exposure::ModelOnly;
+                    !model_control
+                        || effective_policy
+                            .allows_model_control_tool(&descriptor.provider_name, &descriptor.id)
+                })
+                .map(|descriptor| descriptor.provider_name.clone())
+                .collect::<HashSet<_>>();
+            Arc::new(native_skills.filtered(Some(&allowed)).await)
+        };
         activation_context
             .lock()
             .await
