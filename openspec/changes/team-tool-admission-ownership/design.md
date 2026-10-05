@@ -25,3 +25,7 @@ Local receipt ownership must remain host-created and non-deserializable. A claim
 ## Migration Plan
 
 No data migration. Older pending records without admissionOwner default paired-host. Check in this plan, finish UAR and matching Boss source, then parent pins/builds/packages and runs the affected actual delivery gate. No worker compiler/tests/review/build.
+
+### Durable provenance clarification
+
+Existing ToolAdmissionEvidence records additionally carry admission_owner, default paired-host on historical records. Every prepared/claim/terminal/cancellation/restart projection preserves that typed ownership. It is explanatory metadata, never permission to replay. Public invocation deserialization still cannot create local ownership. This additive typed field requires no storage migration or new service.
