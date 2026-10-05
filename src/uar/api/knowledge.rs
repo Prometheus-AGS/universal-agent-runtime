@@ -805,14 +805,15 @@ fn merge_kb_config(mut existing: KbConfig, req: KbConfigRequest) -> KbConfig {
 }
 
 fn parse_chunk_strategy(strategy: Option<&str>, size: Option<usize>) -> ChunkingStrategy {
-    let size = size.unwrap_or(512);
+    let size = size.unwrap_or(1024);
     match strategy {
         Some("fixed") => ChunkingStrategy::FixedSize { size },
         Some("recursive") => ChunkingStrategy::Recursive { size },
+        Some("structured") => ChunkingStrategy::Structured { size },
         Some("token") => ChunkingStrategy::Token { tokens: size },
         Some("sentence") => ChunkingStrategy::Sentence,
         Some("document") => ChunkingStrategy::Document,
         Some("semantic") => ChunkingStrategy::Semantic { threshold: 0.7 },
-        _ => ChunkingStrategy::Recursive { size },
+        _ => ChunkingStrategy::Structured { size },
     }
 }
