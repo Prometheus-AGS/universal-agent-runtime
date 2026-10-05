@@ -5893,7 +5893,7 @@ pub(crate) async fn api_chat_completion(
                             | uar::domain::events::NormalizedEvent::RunDone { run_id }
                             | uar::domain::events::NormalizedEvent::RunDoneWithUsage { run_id, .. }
                             | uar::domain::events::NormalizedEvent::Error { run_id, .. }
-                            | uar::domain::events::NormalizedEvent::Cancelled { run_id } => Some(run_id.as_str()),
+                            | uar::domain::events::NormalizedEvent::Cancelled { run_id, .. } => Some(run_id.as_str()),
                             _ => None,
                         };
                         if matches!(&normalized_event, uar::domain::events::NormalizedEvent::ChatDelta { .. })

@@ -15,6 +15,7 @@ pub mod observer;
 pub(crate) mod presentations;
 pub mod project_instructions;
 pub mod prompt;
+pub mod run_cost;
 pub mod skills;
 pub mod thread;
 pub mod team_execution;
