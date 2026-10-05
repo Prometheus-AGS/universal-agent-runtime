@@ -429,6 +429,57 @@ pub struct EffectiveRunPolicy {
     pub warnings: Vec<String>,
 }
 
+/// Provider name of the built-in tool that lets the model activate a skill.
+pub const ACTIVATE_SKILL_TOOL: &str = "activate_skill";
+
+/// Provider name of the built-in tool that searches deferred MCP tools. Kept
+/// equal to `native_skills::search_tools::SEARCH_TOOLS_NAME`; the domain layer
+/// cannot depend on the runtime layer, and a test pins the two together.
+pub const SEARCH_TOOLS_TOOL: &str = "search_tools";
+
+impl EffectiveRunPolicy {
+    /// Whether a built-in model-control tool (`Exposure::ModelOnly`, such as
+    /// `activate_skill`, the team tools or the agent controls) may be offered
+    /// to the model on this run.
+    ///
+    /// These tools used to be exempt from tool policy, so `activate_skill`
+    /// was offered even when the agent allowed no skills, and the team and
+    /// agent controls survived an allowlist that did not name them. They now
+    /// follow the restriction that covers them:
+    ///
+    /// - `activate_skill` follows the skill policy: refused for
+    ///   `skills.mode: none`, and for `selected` with nothing selected.
+    /// - `search_tools` is never refused. It only searches MCP tools the
+    ///   policy has already admitted, so refusing it removes no capability and
+    ///   would leave deferred tools undiscoverable.
+    /// - Every other model-control tool follows the tool policy: when
+    ///   `tools.mode` is `none` or `selected`, it needs its name or id in the
+    ///   allowlist.
+    ///
+    /// With no restriction (`auto`, `all`, `inherit`) nothing changes.
+    #[must_use]
+    pub fn allows_model_control_tool(&self, name: &str, id: &str) -> bool {
+        if name == SEARCH_TOOLS_TOOL {
+            return true;
+        }
+        if name == ACTIVATE_SKILL_TOOL {
+            return match self.skills.mode {
+                SelectionMode::None => false,
+                SelectionMode::Selected => !self.skills.ids.is_empty(),
+                SelectionMode::Inherit | SelectionMode::Auto | SelectionMode::All => true,
+            };
+        }
+        match self.tools.mode {
+            SelectionMode::None | SelectionMode::Selected => self
+                .tools
+                .ids
+                .iter()
+                .any(|allowed| allowed == name || allowed == id),
+            SelectionMode::Inherit | SelectionMode::Auto | SelectionMode::All => true,
+        }
+    }
+}
+
 /// Input required to resolve one immutable effective policy.
 #[derive(Debug, Clone, Default)]
 pub struct PolicyResolutionInput {
