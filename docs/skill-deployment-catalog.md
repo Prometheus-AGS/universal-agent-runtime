@@ -32,6 +32,16 @@ Ordinary agent and team member binding preflight share compiler::collaboration::
 The resolver verifies current id, version, digest, installedLocation, entrypoint, requiredTools set, enabled and tombstone state; execution-time revalidation remains authoritative. Re-read the catalog and explicitly revise/rebind after a stale diagnostic. Catalog availability does not bypass canonical schema, semantic version/digest validation or admission checks.
 
 ## Source ownership and delivery boundary
+
+Builtin manifest metadata.tags accepts both string arrays and comma-separated
+scalar strings present in shipped Boss skills. Scalar labels split on commas and
+trim surrounding whitespace; existing array values and ordering remain unchanged.
+This is tag syntax compatibility only: digest, version, location, tool requirements,
+host policy and refresh semantics are unchanged. Source inspection identified
+scalar tags in the bundled prometheus-ui-review, better-writing and better-typography
+manifests (mini source abc5a9bd6157e8b6fe602c6f889d5db1d0cb777a). Actual native skill
+registration and protected catalog availability still require the next packaged
+operation; parser source changes alone do not establish loaded skills.
 The endpoint/DTO live in src/uar/api/skills/deployment_catalog.rs, reexported through skills.rs. A crate-private registry read includes tombstones. server.rs mounts dedicated protected route state beside the unchanged skill router at both existing aliases. administration_capabilities.rs advertises skills.deployment_catalog as Admin Read; openapi.rs defines the endpoint, header security scheme and typed schemas. bindings.rs adds only the canonical team-member preflight call. No database migration, new service, dependency, cache or scheduler is introduced.
 
 Production work is isolated from the frozen C14 packaging tree. No Cargo, compiler, build, test or review runs occur during this work-ahead. The coordinating lead owns later native authenticated catalog/refusal and stale-binding operation at the complete delivery boundary.
