@@ -1758,6 +1758,99 @@ impl PersistenceLayer for SurrealDbProvider {
         Ok(Some(session))
     }
 
+    async fn delete_session(&self, owner_id: &str, id: &str) -> Result<bool> {
+        // Check existence first via the tenant-aware fetch path.
+        let existed = self
+            .fetch_tenant_record("sessions", owner_id, id)
+            .await?
+            .is_some();
+        if !existed {
+            return Ok(false);
+        }
+
+        // Delete the session record itself.
+        self.delete_tenant_record("sessions", owner_id, id).await?;
+
+        // Cascade: conversation policy keyed by the same session/conversation id.
+        self.delete_tenant_record("conversation_policies", owner_id, id)
+            .await?;
+
+        // Cascade: cost ledger entries scoped to this session.
+        let _: Vec<surrealdb::types::Value> = self
+            .db
+            .query("DELETE FROM cost_ledger WHERE scope = 'session' AND scope_id = $id")
+            .bind(("id", id.to_string()))
+            .await?
+            .take(0)
+            .unwrap_or_default();
+
+        // Cascade: tool admission evidence owned by this user.
+        // Evidence records are keyed by owner_id without a direct session
+        // reference, so we remove all evidence rows belonging to this owner.
+        let _: Vec<surrealdb::types::Value> = self
+            .db
+            .query("DELETE FROM tool_admission_evidence WHERE owner_id = $owner")
+            .bind(("owner", owner_id.to_string()))
+            .await?
+            .take(0)
+            .unwrap_or_default();
+
+        Ok(true)
+    }
+
+    async fn list_expired_sessions(
+        &self,
+        cutoff: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Vec<(String, String)>> {
+        let mut response = self
+            .db
+            .query("SELECT id, logical_id, last_activity, owner_id FROM sessions")
+            .await?;
+        let rows: Vec<surrealdb::types::Value> = response.take(0).or_else(|e| {
+            if e.to_string().contains("does not exist") {
+                Ok(vec![])
+            } else {
+                Err(anyhow::anyhow!(e))
+            }
+        })?;
+
+        let mut expired = Vec::new();
+        for row in rows {
+            let json = surreal_to_json(row)?;
+            let Some(owner_id) = json.get("owner_id").and_then(|v| v.as_str()) else {
+                continue;
+            };
+            let Some(last_activity_str) =
+                json.get("last_activity").and_then(|v| v.as_str())
+            else {
+                continue;
+            };
+            let Ok(last_activity) = chrono::DateTime::parse_from_rfc3339(last_activity_str)
+            else {
+                continue;
+            };
+            if last_activity < cutoff {
+                // Extract the logical session id from the SurrealDB record id.
+                // Records are stored with tenant_storage_key which produces
+                // "len:owner_id:session_id"; the logical_id field carries the
+                // original session id when present.
+                let session_id = json
+                    .get("logical_id")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string)
+                    .or_else(|| {
+                        json.get("id")
+                            .and_then(|v| v.as_str())
+                            .map(str::to_string)
+                    });
+                if let Some(session_id) = session_id {
+                    expired.push((owner_id.to_string(), session_id));
+                }
+            }
+        }
+        Ok(expired)
+    }
+
     async fn save_conversation_policy(
         &self,
         record: &crate::uar::domain::policy::ConversationPolicyRecord,

@@ -1891,6 +1891,10 @@ async fn run_server_with_listener(
             get(uar::api::discovery::get_effective_prompt_caching),
         )
         .route(
+            "/api/uar/sessions/{id}",
+            axum::routing::delete(uar::api::discovery::delete_session),
+        )
+        .route(
             "/api/uar/conversations/{id}/policy",
             get(uar::api::discovery::get_conversation_policy)
                 .put(uar::api::discovery::save_conversation_policy)

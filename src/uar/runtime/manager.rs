@@ -1155,6 +1155,41 @@ impl RunManager {
                 .await
                 .retain(|session_key, _| !removed.contains(session_key));
         }
+
+        // Persisted-session TTL sweep (opt-in via sessions.persisted_ttl_secs).
+        if let Some(ttl_secs) = self.session_retention.persisted_ttl_secs {
+            if ttl_secs > 0 {
+                if let Some(persistence) = &self.persistence {
+                    let cutoff = chrono::Utc::now()
+                        - chrono::Duration::seconds(i64::try_from(ttl_secs).unwrap_or(i64::MAX));
+                    match persistence.list_expired_sessions(cutoff).await {
+                        Ok(expired) => {
+                            for (owner_id, session_id) in &expired {
+                                if let Err(error) =
+                                    persistence.delete_session(owner_id, session_id).await
+                                {
+                                    tracing::warn!(
+                                        %error, %owner_id, %session_id,
+                                        "failed to delete expired persisted session"
+                                    );
+                                } else {
+                                    self.sessions.remove_for_user(session_id, owner_id);
+                                }
+                            }
+                            if !expired.is_empty() {
+                                tracing::info!(
+                                    count = expired.len(),
+                                    "persisted sessions purged by TTL sweep"
+                                );
+                            }
+                        }
+                        Err(error) => {
+                            tracing::warn!(%error, "failed to list expired sessions for TTL sweep");
+                        }
+                    }
+                }
+            }
+        }
     }
 
     #[must_use]
