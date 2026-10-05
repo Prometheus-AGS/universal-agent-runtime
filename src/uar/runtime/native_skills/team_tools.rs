@@ -25,6 +25,10 @@ struct TeamTool {
 }
 #[async_trait::async_trait]
 impl NativeSkill for TeamTool {
+    fn admission_owner(&self) -> crate::uar::persistence::tool_admission::AdmissionOwner {
+        crate::uar::persistence::tool_admission::AdmissionOwner::UarRuntime
+    }
+
     fn name(&self) -> &str {
         self.name
     }

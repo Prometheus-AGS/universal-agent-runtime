@@ -5,9 +5,9 @@
 
 ## 2. Production seam
 
-- [ ] 2.1 Correct only the v1 prepared invocation wire rename.
-- [ ] 2.2 Capture registered runtime-control ownership and route the existing full admission lifecycle without replacing runtime state or current checks.
-- [ ] 2.3 Propagate admissionOwner into authoritative pending approvals for the root-owned Boss adapter.
+- [x] 2.1 Correct only the v1 prepared invocation wire rename.
+- [x] 2.2 Capture registered runtime-control ownership and route the existing full admission lifecycle without replacing runtime state or current checks.
+- [x] 2.3 Propagate admissionOwner into authoritative pending approvals for the root-owned Boss adapter.
 
 ## 3. Delivery boundary
 

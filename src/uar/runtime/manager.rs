@@ -5528,6 +5528,7 @@ impl RunManager {
                     let host_requires_approval = invocation.host_requires_approval;
                     let action_display = invocation.action_display;
                     let invocation = invocation.invocation;
+                    let admission_owner = invocation.admission_owner;
                     let tool_call_id = invocation.model_tool_call_id.clone();
                     let tool_name = invocation.provider_tool_name.clone();
                     let approval_class = invocation.approval_class;
@@ -5615,8 +5616,9 @@ impl RunManager {
                         format!("Tool '{tool_name}' requires approval under its descriptor")
                     };
                     match channel
-                        .request(
+                        .request_with_admission_owner(
                             Some(admission_id),
+                            admission_owner,
                             call_index,
                             tool_call_id,
                             tool_name.clone(),
