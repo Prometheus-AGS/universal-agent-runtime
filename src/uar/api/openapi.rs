@@ -14,7 +14,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
     let admission_id = serde_json::json!({"name": "admission_id", "in": "path", "required": true, "schema": {"type": "string"}});
     let task_id = serde_json::json!({"name": "task_id", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^fh-"}});
     let workspace_id = serde_json::json!({"name": "x-uar-workspace-id", "in": "header", "required": true, "schema": {"type": "string", "minLength": 1}, "description": "Authenticated workspace partition for admission, reconciliation, observation, and control"});
-    serde_json::from_value(serde_json::json!({
+    let mut spec = serde_json::json!({
         "openapi": "3.1.0",
         "info": {
             "title": "Universal Agent Runtime",
@@ -491,7 +491,9 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                 }
             }
         }
-    }))
+    });
+    super::delegation_grants::extend_openapi(&mut spec);
+    serde_json::from_value(spec)
     .expect("OpenAPI spec JSON is valid")
 }
 

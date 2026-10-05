@@ -518,9 +518,7 @@ async fn run_server_with_listener(
         vec![governance_mutation.register_bound_ingress("primary-http", primary_addr)?];
     // A token-authenticated sidecar exposes exactly this one listener, with
     // every request checked by the outermost guard layer.
-    let sidecar_guard =
-        launch_token.map(|token| Arc::new(SidecarGuard::new(token, primary_addr.port())));
-    let sidecar_mode = sidecar_guard.is_some();
+    let sidecar_mode = launch_token.is_some();
     let bound_origin = format!("http://{primary_addr}");
     info!(name: "startup.step", step = 3, stage = "companion_listener", "UAR startup progress");
     let companion = if sidecar_mode {
@@ -788,6 +786,9 @@ async fn run_server_with_listener(
                 .iter()
                 .any(|scheme| config.persistence.database_url.starts_with(scheme)));
     let mut implemented_capabilities = uar::api::capabilities::IMPLEMENTED_CAPABILITIES.to_vec();
+    if sidecar_mode {
+        implemented_capabilities.push(uar::security::delegation_grants::DELEGATION_GRANTS_CAPABILITY);
+    }
     if persistence_layer.supports_durable_agent_instances() {
         implemented_capabilities.push("durable_agent_instances_v1");
     }
@@ -1415,6 +1416,19 @@ async fn run_server_with_listener(
     ));
     info!("Process-ephemeral full-harness task authority initialized");
 
+    let delegation_grants = Arc::new(
+        uar::security::delegation_grants::DelegationGrantAuthority::new(
+            service_instance.descriptor().instance.id.clone(),
+            full_harness_authority.runtime_descriptor().runtime_epoch,
+        ),
+    );
+    let sidecar_guard = launch_token.map(|token| {
+        Arc::new(
+            SidecarGuard::new(token, primary_addr.port())
+                .with_delegation_grants(Arc::clone(&delegation_grants)),
+        )
+    });
+
     // Both A2A transports share the existing mailbox/persisted-thread host.
     #[cfg(feature = "a2a-transport")]
     let a2a_state = Arc::new(uar::api::a2a::A2AState {
@@ -1591,6 +1605,13 @@ async fn run_server_with_listener(
         "/api/openapi.json",
         crate::uar::api::openapi::build_openapi_spec(),
     ));
+    let app = if sidecar_mode {
+        app.merge(uar::api::delegation_grants::build_router(Arc::clone(
+            &delegation_grants,
+        )))
+    } else {
+        app
+    };
     let app = app
         .route("/health", get(liveness_handler))
         .route("/healthz", get(liveness_handler))
