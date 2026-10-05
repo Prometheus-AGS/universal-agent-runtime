@@ -6488,6 +6488,7 @@ pub(crate) async fn api_chat_completion(
     }
 
     let mut assistant_text = String::new();
+    let mut usage: Option<serde_json::Value> = None;
     let mut replay_result: Option<Result<(), String>> = None;
     if let Some(replay) = state.run_manager.history_since(&run_id, None).await {
         for event in replay {
@@ -6495,8 +6496,9 @@ pub(crate) async fn api_chat_completion(
                 uar::domain::events::NormalizedEvent::ChatDelta { text_delta, .. } => {
                     assistant_text.push_str(&text_delta);
                 }
-                uar::domain::events::NormalizedEvent::RunDone { .. }
-                | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. } => {
+                done @ (uar::domain::events::NormalizedEvent::RunDone { .. }
+                | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. }) => {
+                    usage = uar::api::openai::usage::from_run_done(&done);
                     replay_result = Some(Ok(()));
                     break;
                 }
@@ -6525,8 +6527,11 @@ pub(crate) async fn api_chat_completion(
                             } => {
                                 assistant_text.push_str(&text_delta);
                             }
-                            uar::domain::events::NormalizedEvent::RunDone { .. }
-                            | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. } => {
+                            done @ (uar::domain::events::NormalizedEvent::RunDone { .. }
+                            | uar::domain::events::NormalizedEvent::RunDoneWithUsage {
+                                ..
+                            }) => {
+                                usage = uar::api::openai::usage::from_run_done(&done);
                                 break Ok::<(), String>(());
                             }
                             uar::domain::events::NormalizedEvent::Error { message, .. } => {
@@ -6596,7 +6601,7 @@ pub(crate) async fn api_chat_completion(
             },
             finish_reason: "stop".to_string(),
         }],
-        usage: None,
+        usage,
         session_id: session_id.clone(),
     };
 
