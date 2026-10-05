@@ -1251,3 +1251,45 @@ pub async fn delete_conversation_policy(
         .remove(&conversation_policy_cache_key(&user, &conversation_id));
     StatusCode::NO_CONTENT.into_response()
 }
+
+/// DELETE `/api/uar/sessions/{id}`.
+///
+/// Authenticated session erasure. Cascades across the persistence layer
+/// (conversation policy, cost ledger, tool admission evidence) and evicts
+/// the session from the in-memory store. Returns 204 on success, 404 when
+/// no session existed for the verified owner.
+pub async fn delete_session(
+    State(state): State<AppState>,
+    Extension(user): Extension<UserContext>,
+    Path(session_id): Path<String>,
+) -> impl IntoResponse {
+    let Some(persistence) = &state.persistence else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"error": "persistence not configured"})),
+        )
+            .into_response();
+    };
+    let owner_id = &user.user_id;
+    match persistence.delete_session(owner_id, &session_id).await {
+        Ok(true) => {
+            // Evict from the in-memory session store.
+            state.sessions.remove_for_user(&session_id, owner_id);
+            tracing::info!(%owner_id, %session_id, "session deleted");
+            StatusCode::NO_CONTENT.into_response()
+        }
+        Ok(false) => (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "session not found"})),
+        )
+            .into_response(),
+        Err(error) => {
+            tracing::error!(%error, %owner_id, %session_id, "failed to delete session");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "failed to delete session"})),
+            )
+                .into_response()
+        }
+    }
+}

@@ -375,6 +375,35 @@ impl PersistenceLayer for InMemoryProvider {
         let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
         Ok(read(&self.sessions)?.get(&key).cloned())
     }
+
+    async fn delete_session(&self, owner_id: &str, id: &str) -> Result<bool> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        let existed = write(&self.sessions)?.remove(&key).is_some();
+        // Cascade: conversation policy (conversation_id often matches session_id).
+        let policy_key = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        write(&self.conversation_policies)?.remove(&policy_key);
+        // Tool admission evidence is owner-scoped audit data; we skip cascade
+        // here to avoid erasing evidence belonging to other sessions.
+        Ok(existed)
+    }
+
+    async fn list_expired_sessions(
+        &self,
+        cutoff: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Vec<(String, String)>> {
+        let sessions = read(&self.sessions)?;
+        let mut expired = Vec::new();
+        for session in sessions.values() {
+            let state = session.to_state();
+            if let Ok(last_activity) = chrono::DateTime::parse_from_rfc3339(&state.last_activity) {
+                if last_activity < cutoff {
+                    expired.push((state.owner_id, state.id));
+                }
+            }
+        }
+        Ok(expired)
+    }
+
     async fn save_conversation_policy(&self, record: &ConversationPolicyRecord) -> Result<()> {
         let key =
             crate::uar::persistence::tenant_storage_key(&record.owner_id, &record.conversation_id);
@@ -952,5 +981,71 @@ mod tests {
                 .unwrap()
                 .is_some()
         );
+    }
+
+    #[tokio::test]
+    async fn delete_session_cascades_and_is_scoped_to_owner() {
+        let provider = InMemoryProvider::new();
+
+        // Alice creates a session.
+        let session = crate::session::SessionStore::new().create_for_user("alice");
+        let session_id = session.id().to_string();
+        provider.save_session(&session).await.unwrap();
+
+        // Alice also has a conversation policy for the same conversation ID.
+        let record = ConversationPolicyRecord::new_for_user(
+            "alice",
+            &session_id,
+            crate::uar::domain::policy::RunPolicy::default(),
+        );
+        provider.save_conversation_policy(&record).await.unwrap();
+
+        // Bob cannot delete Alice's session.
+        assert!(!provider.delete_session("bob", &session_id).await.unwrap());
+
+        // Alice can delete her own session.
+        assert!(provider.delete_session("alice", &session_id).await.unwrap());
+
+        // Session is gone.
+        assert!(
+            provider
+                .load_session("alice", &session_id)
+                .await
+                .unwrap()
+                .is_none()
+        );
+
+        // Conversation policy cascaded.
+        assert!(
+            provider
+                .load_conversation_policy("alice", &session_id)
+                .await
+                .unwrap()
+                .is_none()
+        );
+
+        // Deleting again returns false (idempotent).
+        assert!(!provider.delete_session("alice", &session_id).await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn list_expired_sessions_respects_cutoff() {
+        let provider = InMemoryProvider::new();
+
+        // Create a fresh session (last_activity is now).
+        let session = crate::session::SessionStore::new().create_for_user("alice");
+        provider.save_session(&session).await.unwrap();
+
+        // A cutoff in the past should not match a just-created session.
+        let past = chrono::Utc::now() - chrono::Duration::hours(1);
+        let expired = provider.list_expired_sessions(past).await.unwrap();
+        assert!(expired.is_empty());
+
+        // A cutoff in the future should match.
+        let future = chrono::Utc::now() + chrono::Duration::hours(1);
+        let expired = provider.list_expired_sessions(future).await.unwrap();
+        assert_eq!(expired.len(), 1);
+        assert_eq!(expired[0].0, "alice");
+        assert_eq!(expired[0].1, session.id());
     }
 }

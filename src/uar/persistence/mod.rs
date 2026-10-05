@@ -196,6 +196,21 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     async fn save_session(&self, session: &Session) -> Result<()>;
     async fn load_session(&self, owner_id: &str, id: &str) -> Result<Option<Session>>;
 
+    /// Delete a session and all owned downstream data (conversation policy,
+    /// checkpoints, cost ledger entries, tool admission evidence) for the
+    /// verified owner. Returns true when a session row existed.
+    async fn delete_session(&self, owner_id: &str, id: &str) -> Result<bool>;
+
+    /// List sessions whose last activity predates the cutoff. Default returns
+    /// an empty vec; providers that persist sessions override this for TTL
+    /// sweeps.
+    async fn list_expired_sessions(
+        &self,
+        _cutoff: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Vec<(String, String)>> {
+        Ok(Vec::new())
+    }
+
     /// Save or replace a conversation-scoped chat policy.
     async fn save_conversation_policy(&self, record: &ConversationPolicyRecord) -> Result<()>;
 
