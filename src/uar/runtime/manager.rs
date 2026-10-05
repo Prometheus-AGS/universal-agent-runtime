@@ -3255,6 +3255,20 @@ impl RunManager {
             }
         }
 
+        // Attempt-bound peer handlers are created later, but their identities
+        // must enter the universe before normal scopes can select or deny them.
+        let mut attempt_native_tools = BTreeSet::new();
+        if collaboration_binding
+            .as_ref()
+            .is_some_and(|binding| binding.team_attempt.is_some())
+            && crate::uar::api::capabilities::team_execution_b_enabled()
+        {
+            attempt_native_tools.extend(
+                crate::uar::runtime::native_skills::team_tools::TEAM_TOOL_NAMES
+                    .into_iter()
+                    .map(str::to_owned),
+            );
+        }
         let pre_resolved_policy = pre_resolved_policy_for_run(
             is_checkpoint_resume,
             inherited
@@ -3275,7 +3289,7 @@ impl RunManager {
                     mcp_resources
                         .as_ref()
                         .map(|resources| resources.catalog().as_ref()),
-                    None,
+                    Some(&attempt_native_tools),
                     verified_owner.as_ref(),
                 )
                 .await
@@ -3316,7 +3330,7 @@ impl RunManager {
                 .as_ref()
                 .filter(|resources| resources.run_scoped_names().is_some())
         {
-            let discovered = match resources.discover_tool_ids(&effective_policy).await {
+            let mut discovered = match resources.discover_tool_ids(&effective_policy).await {
                 Ok(discovered) => discovered,
                 Err(error) => {
                     emitter
@@ -3335,6 +3349,7 @@ impl RunManager {
                     return run_id;
                 }
             };
+            discovered.append(&mut attempt_native_tools);
             effective_policy = self
                 .resolve_effective_policy_with_catalog(
                     &artifact,
@@ -4206,9 +4221,21 @@ impl RunManager {
         let register_turn_tools = async {
             if effective_policy.tools.mode != SelectionMode::None {
                 if let Some(binding) = &collaboration_binding {
-                    if let Some(attempt) = binding.team_attempt.as_ref().filter(|_|crate::uar::api::capabilities::team_execution_b_enabled()) {
-                        crate::uar::runtime::native_skills::team_tools::register(&native_skills,
-                            crate::uar::runtime::native_skills::team_tools::TeamToolBinding {catalog: Arc::clone(&binding.service), attempt:attempt.clone(), yielded:Arc::clone(&binding.team_yield)}).await?;
+                    if let Some(attempt) = binding
+                        .team_attempt
+                        .as_ref()
+                        .filter(|_| crate::uar::api::capabilities::team_execution_b_enabled())
+                    {
+                        crate::uar::runtime::native_skills::team_tools::register(
+                            &native_skills,
+                            crate::uar::runtime::native_skills::team_tools::TeamToolBinding {
+                                catalog: Arc::clone(&binding.service),
+                                attempt: attempt.clone(),
+                                yielded: Arc::clone(&binding.team_yield),
+                            },
+                            &selected_tools,
+                        )
+                        .await?;
                     }
                 }
                 native_skills

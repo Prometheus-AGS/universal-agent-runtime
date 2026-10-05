@@ -7,6 +7,11 @@ use crate::uar::{
 };
 use serde_json::{Value, json};
 use std::sync::{Arc, Mutex};
+
+/// Peer controls materialized only for a qualified, bound team attempt.
+pub(crate) const TEAM_TOOL_NAMES: [&str; 4] =
+    ["team_roster", "team_send", "team_delegate", "team_wait"];
+
 #[derive(Clone)]
 pub(crate) struct TeamToolBinding {
     pub catalog: Arc<CollaborationCatalogService>,
@@ -165,8 +170,12 @@ impl NativeSkill for TeamTool {
 pub(crate) async fn register(
     registry: &NativeSkillRegistry,
     binding: TeamToolBinding,
+    allowed: &std::collections::HashSet<String>,
 ) -> Result<(), ToolAssemblyError> {
-    for name in ["team_roster", "team_send", "team_delegate", "team_wait"] {
+    for name in TEAM_TOOL_NAMES {
+        if !allowed.contains(name) {
+            continue;
+        }
         registry
             .register(TeamTool {
                 binding: binding.clone(),

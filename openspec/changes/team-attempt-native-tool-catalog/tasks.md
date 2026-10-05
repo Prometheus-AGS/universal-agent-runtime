@@ -5,8 +5,8 @@
 
 ## 2. Production wiring
 
-- [ ] 2.1 Add qualified attempt-native identities to both existing policy resolutions.
-- [ ] 2.2 Centralize peer identities and register only effective authorized names.
+- [x] 2.1 Add qualified attempt-native identities to both existing policy resolutions.
+- [x] 2.2 Centralize peer identities and register only effective authorized names.
 
 ## 3. Delivery boundary
 
