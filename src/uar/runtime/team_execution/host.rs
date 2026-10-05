@@ -18,15 +18,44 @@ pub const CAPABILITY: &str = "team_execution_host_workspace_v1";
 pub const EXTENSION: &str = "urn:prometheus:uar:team-host-workspace:1";
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[serde(from = "TeamHostExtension")]
 pub struct TeamHostSelection {
     pub required: bool,
     pub version: u32,
-    #[serde(default)]
     pub tools: Vec<String>,
-    #[serde(default)]
     pub servers: Vec<String>,
     pub workspace_path: Option<PathBuf>,
+}
+
+/// Canonical collaboration extensions keep authority separate from payload data.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TeamHostExtension {
+    required: bool,
+    value: TeamHostValue,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct TeamHostValue {
+    version: u32,
+    #[serde(default)]
+    tools: Vec<String>,
+    #[serde(default)]
+    servers: Vec<String>,
+    workspace_path: Option<PathBuf>,
+}
+
+impl From<TeamHostExtension> for TeamHostSelection {
+    fn from(extension: TeamHostExtension) -> Self {
+        Self {
+            required: extension.required,
+            version: extension.value.version,
+            tools: extension.value.tools,
+            servers: extension.value.servers,
+            workspace_path: extension.value.workspace_path,
+        }
+    }
 }
 
 impl TeamHostSelection {
