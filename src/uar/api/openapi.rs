@@ -163,7 +163,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "security": [{"bearerAuth": []}],
                     "parameters": [
                         {"name": "id", "in": "path", "required": true, "schema": {"type": "string"}},
-                        {"name": "after", "in": "query", "schema": {"type": "integer", "minimum": 0, "default": 0}, "description": "Exclusive event cursor"}
+                        {"name": "after", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 0, "default": 0}, "description": "Exclusive event cursor"}
                     ],
                     "responses": {
                         "200": {"description": "Versioned bounded public event snapshot", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RunEventSnapshot"}}}},
