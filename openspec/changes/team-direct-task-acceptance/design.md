@@ -4,7 +4,7 @@ The observed packaged operation used Boss 48cfc445 and native UAR e2fd557f. Pres
 
 ## Decisions
 
-Set the array's base minimum to zero, then condition on actual `mode` equal to `coordinator-within-binding`: its minimum stays zero; otherwise the minimum is one. Keep the enum (`operator`, `coordinator-within-binding`), required keys, immutable-reference item schema and closed object unchanged. Do not add a dummy WorkflowDefinition or relax operator mode. Leave the immutable draft.1 predecessor unchanged.
+Set the array's base minimum to zero, then express the mode-specific condition with two mutually exclusive `oneOf` branches: `coordinator-within-binding` retains minimum zero and `operator` requires minimum one. Use single-value `enum` constraints in each branch. The lead reports that full/mini profile validators support `oneOf` but silently ignore `if`/`then`/`allOf`; the canonical condition must use the supported construct without changing those validators. Keep the common enum, required keys, immutable-reference item schema and closed object unchanged. Do not add a dummy WorkflowDefinition or relax operator mode. Leave the immutable draft.1 predecessor unchanged.
 
 Document the distinction in draft.2's normative TeamDefinition section. Schema acceptance remains distinct from activation; the repaired package has no newly accepted workflow references.
 

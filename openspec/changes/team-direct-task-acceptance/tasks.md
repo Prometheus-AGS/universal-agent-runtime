@@ -4,9 +4,9 @@
 
 ## 2. Scoped production contract
 
-- [ ] 2.1 Deliver draft.2 schema conditional permitting zero workflows only for coordinator-within-binding, retaining operator minimum one and exact immutable references; native behavior remains for lead-owned operation.
-- [ ] 2.2 Deliver normative draft.2 README clarification of direct coordination, zero workflow authority and unchanged activation requirements.
-- [ ] 2.3 Commit/push only scoped source artifacts with Assisted-by and record suppressed hooks; no worker tests/compiler/build/review.
+- [x] 2.1 Deliver draft.2 schema conditional permitting zero workflows only for coordinator-within-binding, retaining operator minimum one and exact immutable references; native behavior remains for lead-owned operation.
+- [x] 2.2 Deliver normative draft.2 README clarification of direct coordination, zero workflow authority and unchanged activation requirements.
+- [x] 2.3 Commit/push only scoped source artifacts with Assisted-by and record suppressed hooks; no worker tests/compiler/build/review.
 
 ## 3. Lead-owned actual delivery boundary
 

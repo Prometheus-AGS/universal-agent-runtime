@@ -157,12 +157,38 @@
           "items": {
             "$ref": "common.schema.json#/$defs/immutableRef"
           },
-          "minItems": 1
+          "minItems": 0
         }
       },
       "required": [
         "mode",
         "allowedWorkflows"
+      ],
+      "oneOf": [
+        {
+          "properties": {
+            "mode": {
+              "enum": [
+                "coordinator-within-binding"
+              ]
+            },
+            "allowedWorkflows": {
+              "minItems": 0
+            }
+          }
+        },
+        {
+          "properties": {
+            "mode": {
+              "enum": [
+                "operator"
+              ]
+            },
+            "allowedWorkflows": {
+              "minItems": 1
+            }
+          }
+        }
       ],
       "additionalProperties": false
     },
