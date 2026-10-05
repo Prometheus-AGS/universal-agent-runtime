@@ -1169,6 +1169,13 @@ pub fn administration_capabilities(
                 vec![
                     endpoint!("runs.list", "GET", "/api/uar/runs", Owner, Read),
                     endpoint!("runs.read", "GET", "/api/uar/runs/{id}", Owner, Read),
+                    endpoint!(
+                        "runs.events",
+                        "GET",
+                        "/api/uar/runs/{id}/events",
+                        Owner,
+                        Read
+                    ),
                     endpoint!("runs.create", "POST", "/api/uar/runs", Owner, Live),
                     endpoint!(
                         "runs.stream",
