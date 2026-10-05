@@ -1,26 +1,17 @@
-import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-const metadata = JSON.parse(
-  execFileSync("cargo", ["metadata", "--locked", "--format-version", "1"], {
-    cwd: root,
-    encoding: "utf8",
-    // `cargo metadata` output has grown past Node's default 1 MB stdout cap
-    // (ENOBUFS); allow up to 128 MB so the full JSON is captured.
-    maxBuffer: 128 * 1024 * 1024,
-  }),
-);
-const liter = metadata.packages.find((pkg) => pkg.name === "liter-llm");
-if (!liter) throw new Error("liter-llm is absent from Cargo metadata");
+// This is the pinned path dependency declared in Cargo.toml. Refreshing committed
+// data must not invoke Cargo, resolve dependencies or require registry access.
+const literSchemas = resolve(root, "vendor/git/liter-llm/crates/liter-llm/schemas");
 
 const literProviders = JSON.parse(
-  readFileSync(resolve(dirname(liter.manifest_path), "schemas/providers.json"), "utf8"),
+  readFileSync(resolve(literSchemas, "providers.json"), "utf8"),
 );
 const literCatalog = JSON.parse(
-  readFileSync(resolve(dirname(liter.manifest_path), "schemas/catalog.json"), "utf8"),
+  readFileSync(resolve(literSchemas, "catalog.json"), "utf8"),
 );
 const modelsDev = literCatalog.providers;
 if (!modelsDev || typeof modelsDev !== "object" || Array.isArray(modelsDev)) {
@@ -121,6 +112,33 @@ for (const [id, provider] of Object.entries(modelsDev)) {
     param_mappings: null,
     models: providerModels(provider),
     source: "models_dev_only",
+  });
+}
+
+// Primary-source supplement for the observed TEAM_MODEL_PRICING_UNAVAILABLE
+// failure: pinned Liter catalog metadata predates this exact model identity.
+// Source: https://developers.openai.com/api/docs/models/gpt-6.1-sol
+// Accessed: 2026-10-05. USD per 1M tokens, Standard short-context only.
+// This flat format does not represent >272K context or processing-tier premiums.
+// Tool calling is documented for Responses; gateway behavior needs real operation.
+// Preserve the upstream entry when a future pinned schema contains this model.
+const openai = catalog.find((provider) => provider.id === "openai");
+if (!openai.models.some((model) => model.id === "gpt-6.1-sol")) {
+  openai.models.push({
+    id: "gpt-6.1-sol",
+    name: "GPT-6.1 Sol",
+    family: null,
+    capabilities: {
+      tool_call: true,
+      reasoning: true,
+      structured_output: true,
+      attachment: true,
+      streaming: true,
+    },
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limits: { context_window: 1_050_000, max_output: 128_000 },
+    cost: { input: 2, output: 10, cache_read: 0.1, cache_write: 2.5 },
+    release_date: null,
   });
 }
 
