@@ -239,14 +239,23 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
                 "threadId": run_id, "runId": run_id
             }),
         ),
-        NormalizedEvent::Cancelled { run_id } => (
-            "RUN_ERROR",
-            serde_json::json!({
+        NormalizedEvent::Cancelled { run_id, usage } => {
+            let mut payload = serde_json::json!({
                 "type": "RUN_ERROR", "profile": PROFILE,
                 "threadId": run_id, "runId": run_id,
                 "code": "CANCELLED", "message": "Run cancelled"
-            }),
-        ),
+            });
+            if let Some(u) = usage {
+                payload["usage"] = serde_json::json!({
+                    "input_tokens": u.input_tokens,
+                    "output_tokens": u.output_tokens,
+                    "total_tokens": u.total_tokens,
+                    "cost_usd_estimate": u.cost_usd_estimate,
+                    "model": u.model
+                });
+            }
+            ("RUN_ERROR", payload)
+        }
         NormalizedEvent::SycophancyFlagged {
             run_id,
             sycophancy_score,

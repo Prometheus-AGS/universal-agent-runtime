@@ -561,8 +561,7 @@ fn qualified_model_name(config: &LlmConfig) -> String {
     let model_id = if config.host_supplied_connection || config.base_url.is_some() {
         config.model.clone()
     } else {
-        crate::llm::registry::split_model_string_pub(&config.model)
-            .1
+        crate::llm::registry::split_model_string_pub(&config.model).1
     };
     let provider_id = provider_id_for_config(config);
     format!("{provider_id}/{model_id}")
@@ -3623,6 +3622,7 @@ impl RunManager {
             emitter
                 .emit(NormalizedEvent::Cancelled {
                     run_id: run_id.clone(),
+                    usage: None,
                 })
                 .await;
             self.run_cancellations.write().await.remove(&run_id);
@@ -4174,6 +4174,7 @@ impl RunManager {
                     emitter
                         .emit(NormalizedEvent::Cancelled {
                             run_id: run_id.clone(),
+                            usage: None,
                         })
                         .await;
                 } else {
@@ -4206,9 +4207,20 @@ impl RunManager {
         let register_turn_tools = async {
             if effective_policy.tools.mode != SelectionMode::None {
                 if let Some(binding) = &collaboration_binding {
-                    if let Some(attempt) = binding.team_attempt.as_ref().filter(|_|crate::uar::api::capabilities::team_execution_b_enabled()) {
-                        crate::uar::runtime::native_skills::team_tools::register(&native_skills,
-                            crate::uar::runtime::native_skills::team_tools::TeamToolBinding {catalog: Arc::clone(&binding.service), attempt:attempt.clone(), yielded:Arc::clone(&binding.team_yield)}).await?;
+                    if let Some(attempt) = binding
+                        .team_attempt
+                        .as_ref()
+                        .filter(|_| crate::uar::api::capabilities::team_execution_b_enabled())
+                    {
+                        crate::uar::runtime::native_skills::team_tools::register(
+                            &native_skills,
+                            crate::uar::runtime::native_skills::team_tools::TeamToolBinding {
+                                catalog: Arc::clone(&binding.service),
+                                attempt: attempt.clone(),
+                                yielded: Arc::clone(&binding.team_yield),
+                            },
+                        )
+                        .await?;
                     }
                 }
                 native_skills
@@ -4339,7 +4351,9 @@ impl RunManager {
             .into_iter()
             .map(|entry| entry.skill)
             .collect();
-        let is_team_attempt = collaboration_binding.as_ref().is_some_and(|binding| binding.team_attempt.is_some());
+        let is_team_attempt = collaboration_binding
+            .as_ref()
+            .is_some_and(|binding| binding.team_attempt.is_some());
         let policy_llm_config = if inherited.is_none()
             && let Some(ref registry) = self.provider_registry
         {
@@ -4349,8 +4363,17 @@ impl RunManager {
                 provider_policy.default.model = route.model_id.clone();
             }
             let resolved = if is_team_attempt {
-                registry.resolve_to_llm_config(&provider_policy.default.provider, &provider_policy.default.model).await
-            } else { registry.resolve_llm_config_from_policy(&provider_policy).await };
+                registry
+                    .resolve_to_llm_config(
+                        &provider_policy.default.provider,
+                        &provider_policy.default.model,
+                    )
+                    .await
+            } else {
+                registry
+                    .resolve_llm_config_from_policy(&provider_policy)
+                    .await
+            };
             match resolved {
                 Some(resolved) => {
                     tracing::info!(
@@ -4570,11 +4593,16 @@ impl RunManager {
             let team_profiles = async {
                 let mut profiles = std::collections::BTreeMap::new();
                 let mut pricing_models = std::collections::BTreeMap::new();
-                if !is_team_attempt { return Ok((profiles, pricing_models)); }
+                if !is_team_attempt {
+                    return Ok((profiles, pricing_models));
+                }
                 anyhow::ensure!(reasoning_effort.is_none(), "TEAM_REASONING_UNSUPPORTED");
-                let registry = self.provider_registry.as_deref()
+                let registry = self
+                    .provider_registry
+                    .as_deref()
                     .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
-                let binding = collaboration_binding.as_ref()
+                let binding = collaboration_binding
+                    .as_ref()
                     .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
                 for model in &binding.receipt.resolved_models {
                     let effective: crate::uar::domain::team_execution::EffectiveTeamModelReceipt =
@@ -4582,37 +4610,66 @@ impl RunManager {
                             .map_err(|_| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
                     let profile = registry.capture_team_endpoint_profile(&effective).await?;
                     if let Some(price) = effective.pricing_identity {
-                        pricing_models.insert(profile.qualified_model.clone(), format!("{}/{}", price.provider_id, price.model_id));
+                        pricing_models.insert(
+                            profile.qualified_model.clone(),
+                            format!("{}/{}", price.provider_id, price.model_id),
+                        );
                     }
                     profiles.insert(profile.qualified_model.clone(), profile);
                 }
                 anyhow::ensure!(!profiles.is_empty(), "TEAM_PROFILE_UNSUPPORTED");
                 let route = effective_policy.model.as_ref();
-                let provider = route.map_or(artifact.policy.provider.default.provider.as_str(), |route| route.provider_id.as_str());
-                let model = route.map_or(artifact.policy.provider.default.model.as_str(), |route| route.model_id.as_str());
-                let selected = profiles.get(&format!("{provider}/{model}"))
+                let provider = route.map_or(
+                    artifact.policy.provider.default.provider.as_str(),
+                    |route| route.provider_id.as_str(),
+                );
+                let model = route
+                    .map_or(artifact.policy.provider.default.model.as_str(), |route| {
+                        route.model_id.as_str()
+                    });
+                let selected = profiles
+                    .get(&format!("{provider}/{model}"))
                     .ok_or_else(|| anyhow::anyhow!("TEAM_ROUTE_PROFILE_MISMATCH"))?;
-                anyhow::ensure!(run_llm_config.resolved_provider_id.as_deref() == Some(provider), "TEAM_ROUTE_PROFILE_MISMATCH");
+                anyhow::ensure!(
+                    run_llm_config.resolved_provider_id.as_deref() == Some(provider),
+                    "TEAM_ROUTE_PROFILE_MISMATCH"
+                );
                 // Request credentials supply connection authority only. Restore
                 // the admitted complete alias and administrator-owned price.
                 run_llm_config.model.clone_from(&selected.qualified_model);
-                run_llm_config.catalog_pricing_model = pricing_models.get(&selected.qualified_model).cloned();
+                run_llm_config.catalog_pricing_model =
+                    pricing_models.get(&selected.qualified_model).cloned();
                 for fallback in &mut run_failover_config.fallback_models {
-                    let profile = profiles.get(&fallback.model)
+                    let profile = profiles
+                        .get(&fallback.model)
                         .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
-                    let (_, model_id) = crate::llm::registry::split_model_string_pub(&profile.qualified_model);
-                    let config = registry.resolve_to_llm_config(&profile.provider_id, &model_id).await
+                    let (_, model_id) =
+                        crate::llm::registry::split_model_string_pub(&profile.qualified_model);
+                    let config = registry
+                        .resolve_to_llm_config(&profile.provider_id, &model_id)
+                        .await
                         .ok_or_else(|| anyhow::anyhow!("TEAM_ROUTE_PROFILE_MISMATCH"))?;
                     let config = match &run_credentials {
-                        Some(credentials) => credentials.config_for(&profile.provider_id, Some(&model_id), config)?,
-                        None => apply_credential_layer(config, self.provider_service.as_ref(),
-                            user_id_for_creds.as_deref(), session_id_for_creds.as_deref(), artifact.id.as_str()).await,
+                        Some(credentials) => {
+                            credentials.config_for(&profile.provider_id, Some(&model_id), config)?
+                        }
+                        None => {
+                            apply_credential_layer(
+                                config,
+                                self.provider_service.as_ref(),
+                                user_id_for_creds.as_deref(),
+                                session_id_for_creds.as_deref(),
+                                artifact.id.as_str(),
+                            )
+                            .await
+                        }
                     };
                     fallback.api_key = config.api_key;
                     fallback.base_url = config.base_url;
                 }
                 Ok::<_, anyhow::Error>((profiles, pricing_models))
-            }.await;
+            }
+            .await;
 
             // This artifact's session ceiling belongs to the captured root session,
             // not the aggregate spend of every session using the same agent.
@@ -4680,16 +4737,22 @@ impl RunManager {
                 }
                 let code = if is_team_attempt {
                     match error.as_str() {
-                        "TEAM_PROFILE_UNSUPPORTED" | "TEAM_ROUTE_PROFILE_MISMATCH"
-                        | "TEAM_REVISION_CONFLICT" | "TEAM_REASONING_UNSUPPORTED" => error.as_str(),
+                        "TEAM_PROFILE_UNSUPPORTED"
+                        | "TEAM_ROUTE_PROFILE_MISMATCH"
+                        | "TEAM_REVISION_CONFLICT"
+                        | "TEAM_REASONING_UNSUPPORTED" => error.as_str(),
                         _ => "TEAM_PROVIDER_REQUEST_REJECTED",
                     }
-                } else { "orchestrator_start_failed" };
+                } else {
+                    "orchestrator_start_failed"
+                };
                 let message = if is_team_attempt {
                     let reference = uuid::Uuid::new_v4();
                     tracing::error!(code, diagnostic_reference = %reference, "Team model capture refused");
                     format!("{code}; diagnostic reference {reference}")
-                } else { "Failed to create the run orchestrator".into() };
+                } else {
+                    "Failed to create the run orchestrator".into()
+                };
                 emitter
                     .emit(NormalizedEvent::Error {
                         run_id: run_id.clone(),
@@ -4774,9 +4837,10 @@ impl RunManager {
                 let root_controls = service.root_controls().await?;
                 graph_controls = Some(Arc::clone(&root_controls));
                 if effective_policy.tools.mode != SelectionMode::None {
-                    let controls =
-                        crate::uar::runtime::native_skills::agents::registry_for_turn(root_controls)
-                            .await?;
+                    let controls = crate::uar::runtime::native_skills::agents::registry_for_turn(
+                        root_controls,
+                    )
+                    .await?;
                     for name in controls.names().await {
                         if let Some(handler) = controls.get(&name).await {
                             native_skills.register_arc(handler).await?;
@@ -5210,16 +5274,43 @@ impl RunManager {
                 );
             prompt_fragments.extend(bounded_skill_fragments);
         }
-        if let Some(binding)=collaboration_binding.as_ref().filter(|b|b.team_attempt.is_some()) {
-            let mut member_guidance=Vec::new();
+        if let Some(binding) = collaboration_binding
+            .as_ref()
+            .filter(|b| b.team_attempt.is_some())
+        {
+            let mut member_guidance = Vec::new();
             for fragment in &mut prompt_fragments {
-                if fragment.id=="agent.identity" {
-                    let mut specialization=fragment.clone();specialization.section=PromptSection::HostInstructions;specialization.id="10.member.specialization".into();member_guidance.push(specialization);
-                    *fragment=PromptFragment::new("agent.identity",PromptSection::AgentIdentity,format!("artifact:{}",artifact.id),Authority::System,PromptRole::System,Retention::Session,format!("Team member identity: {}",artifact.id));
-                } else if fragment.id.starts_with("host.instruction.") {fragment.section=PromptSection::HostInstructions;fragment.id=format!("10.member.{}",fragment.id);}
+                if fragment.id == "agent.identity" {
+                    let mut specialization = fragment.clone();
+                    specialization.section = PromptSection::HostInstructions;
+                    specialization.id = "10.member.specialization".into();
+                    member_guidance.push(specialization);
+                    *fragment = PromptFragment::new(
+                        "agent.identity",
+                        PromptSection::AgentIdentity,
+                        format!("artifact:{}", artifact.id),
+                        Authority::System,
+                        PromptRole::System,
+                        Retention::Session,
+                        format!("Team member identity: {}", artifact.id),
+                    );
+                } else if fragment.id.starts_with("host.instruction.") {
+                    fragment.section = PromptSection::HostInstructions;
+                    fragment.id = format!("10.member.{}", fragment.id);
+                }
             }
             prompt_fragments.extend(member_guidance);
-            if let Some(guidance)=&binding.team_instructions { prompt_fragments.push(PromptFragment::new("00.team.instructions",PromptSection::HostInstructions,format!("team-guidance:{}:{}",guidance.revision,guidance.digest),Authority::Host,PromptRole::System,Retention::Turn,guidance.text.clone())); }
+            if let Some(guidance) = &binding.team_instructions {
+                prompt_fragments.push(PromptFragment::new(
+                    "00.team.instructions",
+                    PromptSection::HostInstructions,
+                    format!("team-guidance:{}:{}", guidance.revision, guidance.digest),
+                    Authority::Host,
+                    PromptRole::System,
+                    Retention::Turn,
+                    guidance.text.clone(),
+                ));
+            }
         }
         let mut manifest_budgets = PromptBudgets::for_rendered(&render_with_options(
             &prompt_fragments,
@@ -5460,7 +5551,11 @@ impl RunManager {
                 .with_tool_admission(Arc::clone(&tool_admission))
                 .with_resolved_turn(Arc::clone(&resolved_turn))
                 .with_canonical_receipt_store(self.persistence.clone())
-                .with_team_model_handoff(collaboration_binding.clone().filter(|b|b.team_attempt.is_some()))
+                .with_team_model_handoff(
+                    collaboration_binding
+                        .clone()
+                        .filter(|b| b.team_attempt.is_some()),
+                )
                 .with_world_state(Arc::clone(&world_state))
                 .with_skill_activation(
                     Arc::clone(&activation_context),
@@ -5809,6 +5904,7 @@ impl RunManager {
             emitter
                 .emit(NormalizedEvent::Cancelled {
                     run_id: run_id.clone(),
+                    usage: None,
                 })
                 .await;
             self.run_cancellations.write().await.remove(&run_id);
@@ -5952,7 +6048,7 @@ impl RunManager {
                         if cleanup_failed {
                             emitter.emit(NormalizedEvent::RunDone { run_id: execute_run_id.clone() }).await;
                         } else {
-                            emitter.emit(NormalizedEvent::Cancelled { run_id: execute_run_id.clone() }).await;
+                            emitter.emit(NormalizedEvent::Cancelled { run_id: execute_run_id.clone(), usage: None }).await;
                         }
                         cancellations_for_cleanup.write().await.remove(&cleanup_run_id);
                         return;
@@ -6655,123 +6751,68 @@ impl RunManager {
                 );
             }
 
+            // Settle cost for any run that reported usage, cancelled or not, so a
+            // cancelled run's spend reaches the durable ledger and the event stream.
+            let cost_usd_estimate = if has_usage {
+                crate::uar::runtime::run_cost::settle_run_cost(
+                    crate::uar::runtime::run_cost::RunCostInputs {
+                        run_id: &execute_run_id,
+                        session_id: execution_session.id(),
+                        agent_id: &cost_scope_agent_id,
+                        model: &run_model,
+                        input_tokens: total_input_tokens,
+                        output_tokens: total_output_tokens,
+                        cache_read_tokens: total_cache_read_tokens,
+                        cost_tracking_enabled,
+                    },
+                    &cost_budget_for_run,
+                    persistence_for_run.as_ref(),
+                    &emitter,
+                )
+                .await
+            } else {
+                None
+            };
             if run_cancelled {
                 tracing::info!(run_id = %execute_run_id, "Run cancelled; emitting terminal Cancelled event");
+                // Record to cost ledger even for cancelled runs (#329).
+                if let (Some(cost), Some(db)) = (cost_usd_estimate, persistence_for_run.clone()) {
+                    crate::uar::telemetry::metrics::record_llm_cost(
+                        run_model
+                            .split_once('/')
+                            .map(|(p, _)| p)
+                            .unwrap_or("unknown"),
+                        run_model
+                            .split_once('/')
+                            .map(|(_, m)| m)
+                            .unwrap_or(&run_model),
+                        cost,
+                    );
+                    let scope_str = "run".to_string();
+                    let scope_id_owned = execute_run_id.clone();
+                    tokio::spawn(async move {
+                        if let Err(e) = db
+                            .record_cost_entry(&scope_str, &scope_id_owned, cost)
+                            .await
+                        {
+                            tracing::warn!(error = %e, "Failed to persist cancelled-run cost ledger entry");
+                        }
+                    });
+                }
+                let usage = has_usage.then(|| crate::uar::domain::events::RunUsage {
+                    input_tokens: Some(total_input_tokens),
+                    output_tokens: Some(total_output_tokens),
+                    total_tokens: Some(total_tokens),
+                    cost_usd_estimate,
+                    model: Some(run_model),
+                });
                 emitter
                     .emit(NormalizedEvent::Cancelled {
                         run_id: execute_run_id,
+                        usage,
                     })
                     .await;
             } else if has_usage {
-                // Compute estimated USD cost from the pricing catalog when cost
-                // tracking is enabled; None when disabled or the model is unpriced.
-                let cost_usd_estimate = if cost_tracking_enabled {
-                    crate::llm::catalog::estimate_cost(
-                        &run_model,
-                        u64::from(total_input_tokens),
-                        u64::from(total_output_tokens),
-                        u64::from(total_cache_read_tokens),
-                    )
-                } else {
-                    None
-                };
-                if let Some(cost) = cost_usd_estimate
-                    && let Some((provider, model_id)) = run_model.split_once('/')
-                {
-                    crate::uar::telemetry::metrics::record_llm_cost(provider, model_id, cost);
-
-                    // Driver wrappers already charged every model call. Surface a
-                    // `BudgetAlert` for the first scope (in priority order)
-                    // that crosses its configured threshold. Unconfigured
-                    // scopes have an unlimited `BudgetLimit::default()`, so
-                    // status read does not charge the final request again.
-                    // `BudgetScope::Task` is intentionally omitted — this
-                    // runtime has no task entity distinct from a run.
-                    use crate::uar::runtime::cost_budget::{BudgetScope, BudgetStatus};
-                    let scopes: [(BudgetScope, &str); 3] = [
-                        (BudgetScope::Run, execute_run_id.as_str()),
-                        (BudgetScope::Session, execution_session.id()),
-                        (BudgetScope::Agent, cost_scope_agent_id.as_str()),
-                    ];
-                    let mut alert: Option<(BudgetScope, String, f64, f64, bool)> = None;
-                    for (scope, scope_id) in scopes {
-                        let status = cost_budget_for_run.status(scope, scope_id).await;
-                        // CH-07: durable roll-up, fire-and-forget so the hot
-                        // path never blocks on a DB write — mirrors the
-                        // existing per-tool-call checkpoint persist pattern
-                        // above.
-                        if let Some(db) = persistence_for_run.clone() {
-                            let scope_str = scope.as_str().to_string();
-                            let scope_id_owned = scope_id.to_string();
-                            tokio::spawn(async move {
-                                if let Err(e) = db
-                                    .record_cost_entry(&scope_str, &scope_id_owned, cost)
-                                    .await
-                                {
-                                    tracing::warn!(error = %e, scope = %scope_str, "Failed to persist cost ledger entry");
-                                }
-                            });
-                        }
-                        if alert.is_none()
-                            && let BudgetStatus::Warning {
-                                spent_usd,
-                                limit_usd,
-                            }
-                            | BudgetStatus::Exceeded {
-                                spent_usd,
-                                limit_usd,
-                            } = status
-                        {
-                            alert = Some((
-                                scope,
-                                scope_id.to_string(),
-                                spent_usd,
-                                limit_usd,
-                                status.is_exceeded(),
-                            ));
-                        }
-                    }
-                    let global_status = cost_budget_for_run
-                        .status(BudgetScope::Global, "global")
-                        .await;
-                    if let Some(db) = persistence_for_run.clone() {
-                        tokio::spawn(async move {
-                            if let Err(e) = db.record_cost_entry("global", "global", cost).await {
-                                tracing::warn!(error = %e, "Failed to persist cost ledger entry (global)");
-                            }
-                        });
-                    }
-                    if alert.is_none()
-                        && let BudgetStatus::Warning {
-                            spent_usd,
-                            limit_usd,
-                        }
-                        | BudgetStatus::Exceeded {
-                            spent_usd,
-                            limit_usd,
-                        } = global_status
-                    {
-                        alert = Some((
-                            BudgetScope::Global,
-                            "global".to_string(),
-                            spent_usd,
-                            limit_usd,
-                            global_status.is_exceeded(),
-                        ));
-                    }
-                    if let Some((scope, scope_id, spent_usd, limit_usd, exceeded)) = alert {
-                        emitter
-                            .emit(NormalizedEvent::BudgetAlert {
-                                run_id: execute_run_id.clone(),
-                                scope: scope.as_str().to_string(),
-                                scope_id,
-                                spent_usd,
-                                limit_usd,
-                                exceeded,
-                            })
-                            .await;
-                    }
-                }
                 emitter
                     .emit(NormalizedEvent::RunDoneWithUsage {
                         run_id: execute_run_id,
