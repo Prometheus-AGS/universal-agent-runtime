@@ -45,16 +45,10 @@ impl TeamExecutionRuntime {
                 }
                 Some(AgentThreadResult::Cancelled) => "cancelled",
                 Some(AgentThreadResult::Failed { code, message }) => {
-                    reason = Some(match message.split_once("; diagnostic reference ") {
-                        Some((safe_code, reference))
-                            if matches!(
-                                safe_code,
-                                "TEAM_PROVIDER_REQUEST_REJECTED" | "TEAM_PROVIDER_STREAM_FAILED"
-                            ) && uuid::Uuid::parse_str(reference).is_ok() =>
-                        {
-                            message
-                        }
-                        _ => code,
+                    reason = Some(if crate::llm::team_failure::from_reason(&message).is_some() {
+                        message
+                    } else {
+                        code
                     });
                     "failed"
                 }
