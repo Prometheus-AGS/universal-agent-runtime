@@ -228,6 +228,7 @@ impl TeamExecutionRuntime {
         )
         .with_verified_owner(owner.clone())
         .with_team_attempt(attempt.clone())?;
+        self.apply_host_context(attempt, &mut request).await?;
         if let Some(binding) = request.collaboration_binding.as_mut() {
             binding.team_instructions = guidance;
         }

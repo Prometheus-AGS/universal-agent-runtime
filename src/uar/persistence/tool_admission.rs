@@ -1,6 +1,15 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+/// Trusted admission ownership; discovery and model input never select it.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum AdmissionOwner {
+    UarRuntime,
+    #[default]
+    PairedHost,
+}
+
 /// Append-only, content-free evidence for one exact tool invocation.
 ///
 /// Arguments, outputs, credentials, digests, and host authorization material
@@ -17,6 +26,8 @@ pub struct ToolAdmissionEvidence {
     pub invocation_id: String,
     pub admission_id: String,
     pub tool_name: String,
+    #[serde(default)]
+    pub admission_owner: AdmissionOwner,
     pub runtime_epoch: String,
     pub host_epoch: String,
     pub state: ToolAdmissionEvidenceState,

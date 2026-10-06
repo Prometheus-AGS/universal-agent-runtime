@@ -14,7 +14,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
     let admission_id = serde_json::json!({"name": "admission_id", "in": "path", "required": true, "schema": {"type": "string"}});
     let task_id = serde_json::json!({"name": "task_id", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^fh-"}});
     let workspace_id = serde_json::json!({"name": "x-uar-workspace-id", "in": "header", "required": true, "schema": {"type": "string", "minLength": 1}, "description": "Authenticated workspace partition for admission, reconciliation, observation, and control"});
-    serde_json::from_value(serde_json::json!({
+    let mut spec = serde_json::json!({
         "openapi": "3.1.0",
         "info": {
             "title": "Universal Agent Runtime",
@@ -153,6 +153,23 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "tags": ["runs"],
                     "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}],
                     "responses": { "200": { "description": "Normalized SSE event stream" } }
+                }
+            },
+            "/api/uar/runs/{id}/events": {
+                "get": {
+                    "summary": "Read owner-scoped run event snapshot",
+                    "description": "Read existing bounded process-local public SSE projections without subscribing or cancelling. No durable replay guarantee. gapReason reports incomplete retention or a cursor ahead of this snapshot.",
+                    "tags": ["runs"],
+                    "security": [{"bearerAuth": []}],
+                    "parameters": [
+                        {"name": "id", "in": "path", "required": true, "schema": {"type": "string"}},
+                        {"name": "after", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 0, "default": 0}, "description": "Exclusive event cursor"}
+                    ],
+                    "responses": {
+                        "200": {"description": "Versioned bounded public event snapshot", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RunEventSnapshot"}}}},
+                        "400": {"description": "Invalid query cursor"},
+                        "404": {"description": "Run/history unavailable or outside current owner scope"}
+                    }
                 }
             },
             "/api/uar/full-harness/v1/tasks": {
@@ -392,6 +409,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                 "bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
             },
             "schemas": {
+                "RunEventSnapshot": super::run_events::snapshot_schema(),
                 "FullHarnessAdmissionRequest": {
                     "type": "object",
                     "required": ["admission_id", "native_task_id", "input"],
@@ -473,7 +491,9 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                 }
             }
         }
-    }))
+    });
+    super::delegation_grants::extend_openapi(&mut spec);
+    serde_json::from_value(spec)
     .expect("OpenAPI spec JSON is valid")
 }
 

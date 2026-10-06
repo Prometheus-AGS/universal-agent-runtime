@@ -18,6 +18,7 @@ pub mod observers;
 pub mod auth;
 #[cfg(feature = "server")]
 pub mod capabilities;
+pub mod delegation_grants;
 pub mod collaboration;
 #[cfg(feature = "server")]
 pub mod compiler;
@@ -49,6 +50,8 @@ pub mod presentations;
 pub mod providers;
 #[cfg(feature = "server")]
 pub mod routes;
+#[cfg(feature = "server")]
+pub mod run_events;
 #[cfg(feature = "server")]
 pub mod settings;
 #[cfg(feature = "server")]

@@ -19,6 +19,7 @@ use std::sync::Arc;
 
 pub(super) fn build_router() -> Router<Arc<CollaborationApiState>> {
     Router::new()
+        .route("/team-instances/{id}/host-context", post(host_context))
         .route("/team-instances/{id}/tasks/{task}/admit", post(admit))
         .route(
             "/team-instances/{id}/tasks/{task}/admit-queued",
@@ -42,6 +43,29 @@ pub(super) fn build_router() -> Router<Arc<CollaborationApiState>> {
         .route("/execution-owner", get(ownership))
         .route("/execution-owner/reclaim", post(reclaim))
         .route("/execution-owner/quiesce", post(quiesce))
+}
+
+async fn host_context(
+    State(state): State<Arc<CollaborationApiState>>,
+    Extension(user): Extension<UserContext>,
+    host: Option<Extension<crate::uar::security::sidecar_guard::HostAuthenticated>>,
+    headers: HeaderMap,
+    Path(team): Path<String>,
+    Json(input): Json<crate::uar::runtime::team_execution::host::TeamHostContextInput>,
+) -> Response {
+    if host.is_none() {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    let (_, workspace) = match private_scope(&user, &headers) {
+        Ok(scope) => scope,
+        Err(response) => return response,
+    };
+    result_response(
+        state
+            .runtime
+            .attach_host_context(&user, &workspace, &team, input)
+            .await,
+    )
 }
 
 async fn admit_queued(

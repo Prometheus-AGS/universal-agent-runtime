@@ -26,7 +26,10 @@ pub const AGUI_PROFILE: &str = "uar.agui/1";
 /// AG-UI profile revision of the runs stream.
 pub const AGUI_PROFILE_REVISION: u32 = 1;
 pub const WORKFLOW_EXECUTION_QUALIFIED: bool = false;
-pub fn workflow_execution_enabled() -> bool { WORKFLOW_EXECUTION_QUALIFIED || std::env::var("UAR_WORKFLOW_EXECUTION_PROFILE_STAGE").as_deref() == Ok("operation") }
+pub fn workflow_execution_enabled() -> bool {
+    WORKFLOW_EXECUTION_QUALIFIED
+        || std::env::var("UAR_WORKFLOW_EXECUTION_PROFILE_STAGE").as_deref() == Ok("operation")
+}
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkflowExecutionCapability {
@@ -60,7 +63,8 @@ pub fn team_execution_b_enabled() -> bool {
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.
-pub const CAPABILITY_VOCABULARY: [&str; 26] = [
+pub const CAPABILITY_VOCABULARY: [&str; 28] = [
+    crate::uar::runtime::team_execution::host::CAPABILITY,
     crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY,
     "agui_stream_fidelity",
     "approval_lifecycle_v1",
@@ -80,6 +84,7 @@ pub const CAPABILITY_VOCABULARY: [&str; 26] = [
     "reasoning_effort",
     "run_scoped_credentials",
     "run_scoped_mcp_servers",
+    crate::uar::security::delegation_grants::DELEGATION_GRANTS_CAPABILITY,
     "secrets_at_rest",
     "session_principal",
     "service_instance_placement_v1",
@@ -91,7 +96,8 @@ pub const CAPABILITY_VOCABULARY: [&str; 26] = [
 
 /// Capabilities this binary implements. Each owning change adds its name in
 /// the same commit as the behaviour.
-pub const IMPLEMENTED_CAPABILITIES: [&str; 16] = [
+pub const IMPLEMENTED_CAPABILITIES: [&str; 17] = [
+    crate::uar::runtime::team_execution::host::CAPABILITY,
     "approval_lifecycle_v1",
     "collaboration_definition_packages_v1",
     "collaboration_definition_packages_v2",
@@ -129,6 +135,42 @@ pub struct AguiProfile {
 #[serde(rename_all = "camelCase")]
 pub struct AuthenticationCapabilities {
     pub principal_mode: PrincipalMode,
+    /// Present only on the managed-local host or scoped-grant transport.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub delegation_grants: Option<DelegationGrantCapabilities>,
+}
+
+/// Host-only issuance, finite lifetime, and the explicit delegation vocabulary.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DelegationGrantCapabilities {
+    pub capability: &'static str,
+    pub issue_path: &'static str,
+    pub revoke_path: &'static str,
+    pub expires_in: u64,
+    pub operations: [crate::uar::security::delegation_grants::DelegationOperation; 4],
+    pub host_issuance_only: bool,
+    pub persistence: &'static str,
+}
+
+fn delegation_grant_capabilities() -> DelegationGrantCapabilities {
+    use crate::uar::security::delegation_grants::{
+        DELEGATION_GRANTS_CAPABILITY, DelegationOperation, GRANT_TTL_SECONDS,
+    };
+    DelegationGrantCapabilities {
+        capability: DELEGATION_GRANTS_CAPABILITY,
+        issue_path: "/api/uar/delegation-grants",
+        revoke_path: "/api/uar/delegation-grants/{id}",
+        expires_in: GRANT_TTL_SECONDS,
+        operations: [
+            DelegationOperation::Discovery,
+            DelegationOperation::ModelRead,
+            DelegationOperation::ModelCompletion,
+            DelegationOperation::FullHarnessDelegation,
+        ],
+        host_issuance_only: true,
+        persistence: "process_ephemeral",
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -192,7 +234,13 @@ pub fn collaboration_capabilities() -> CollaborationCapabilities {
         workflow_execution: WorkflowExecutionCapability {
             capability: crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY,
             interpretation_version: "1.0.0",
-            stage: if WORKFLOW_EXECUTION_QUALIFIED {"qualified"} else if workflow_execution_enabled() {"operation"} else {"unqualified"},
+            stage: if WORKFLOW_EXECUTION_QUALIFIED {
+                "qualified"
+            } else if workflow_execution_enabled() {
+                "operation"
+            } else {
+                "unqualified"
+            },
             available: false,
             qualified: WORKFLOW_EXECUTION_QUALIFIED,
         },
@@ -258,8 +306,17 @@ pub fn capabilities_response(
         .any(|capability| capability == "collaboration_team_execution_v1");
     collaboration.activation.team_instance = team_execution_available;
     collaboration.activation.team_execution = team_execution_available;
-    collaboration.workflow_execution.available = team_execution_available && workflow_execution_enabled();
+    collaboration.workflow_execution.available =
+        team_execution_available && workflow_execution_enabled();
     collaboration.activation.workflow = collaboration.workflow_execution.available;
+    let mut capabilities = descriptor.capabilities.clone();
+    if host_authenticated.is_some() {
+        capabilities.push(
+            crate::uar::security::delegation_grants::DELEGATION_GRANTS_CAPABILITY.to_owned(),
+        );
+        capabilities.sort();
+        capabilities.dedup();
+    }
     CapabilitiesResponse {
         authentication: AuthenticationCapabilities {
             principal_mode: if host_authenticated.is_some() {
@@ -267,6 +324,7 @@ pub fn capabilities_response(
             } else {
                 PrincipalMode::TokenSubject
             },
+            delegation_grants: host_authenticated.map(|_| delegation_grant_capabilities()),
         },
         execution_profile: TEAM_EXECUTION_PROFILE,
         execution_profile_stage: team_execution_profile_stage(),
@@ -280,7 +338,7 @@ pub fn capabilities_response(
         ownership: descriptor.ownership,
         references: descriptor.references.clone(),
         placement: descriptor.placement.clone(),
-        capabilities: descriptor.capabilities.clone(),
+        capabilities,
         collaboration,
         administration: super::administration_capabilities::administration_capabilities(
             descriptor
@@ -299,11 +357,20 @@ pub fn capabilities_response(
 pub async fn capabilities_handler(
     State(state): State<Arc<CapabilitiesApiState>>,
     host_authenticated: Option<Extension<HostAuthenticated>>,
+    delegated: Option<Extension<crate::uar::security::delegation_grants::DelegationAuthenticated>>,
 ) -> Json<CapabilitiesResponse> {
     let mut response = capabilities_response(
         &state.service_instance,
         host_authenticated.as_ref().map(|Extension(host)| host),
     );
+    if delegated.is_some() {
+        response.authentication.delegation_grants = Some(delegation_grant_capabilities());
+        response.capabilities.push(
+            crate::uar::security::delegation_grants::DELEGATION_GRANTS_CAPABILITY.to_owned(),
+        );
+        response.capabilities.sort();
+        response.capabilities.dedup();
+    }
     if !state
         .collaboration_catalog
         .execution_ownership_view()

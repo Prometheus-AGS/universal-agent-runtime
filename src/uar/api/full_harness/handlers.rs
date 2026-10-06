@@ -202,7 +202,7 @@ async fn stream_task(
     let mut replay = state
         .authority
         .manager
-        .history_since(&receipt.run_id, last_id)
+        .history_since(&receipt.run_id, None)
         .await
         .ok_or_else(|| {
             ApiError::gone(
@@ -212,6 +212,8 @@ async fn stream_task(
                 None,
             )
         })?;
+    let run_terminal = replay.last().is_some_and(is_terminal_stream_event);
+    replay.retain(|event| last_id.is_none_or(|cursor| event.id > cursor));
     if let Some(cursor) = last_id
         && replay
             .first()
@@ -219,7 +221,10 @@ async fn stream_task(
     {
         replay = vec![unrecoverable_stream_gap(&receipt.run_id, cursor)];
     }
-    let replay_terminal = replay.last().is_some_and(is_terminal_stream_event);
+    let replay_terminal = run_terminal || replay.last().is_some_and(is_terminal_stream_event);
+    if replay_terminal {
+        return Ok(build_sse_response(tokio_stream::iter(replay), false, None).into_response());
+    }
     let mut last_seen = replay.last().map_or(last_id.unwrap_or(0), |event| event.id);
     let Some(mut receiver) = state.authority.manager.subscribe(&receipt.run_id).await else {
         return Err(ApiError::gone(

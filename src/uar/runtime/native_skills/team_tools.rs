@@ -7,6 +7,11 @@ use crate::uar::{
 };
 use serde_json::{Value, json};
 use std::sync::{Arc, Mutex};
+
+/// Peer controls materialized only for a qualified, bound team attempt.
+pub(crate) const TEAM_TOOL_NAMES: [&str; 4] =
+    ["team_roster", "team_send", "team_delegate", "team_wait"];
+
 #[derive(Clone)]
 pub(crate) struct TeamToolBinding {
     pub catalog: Arc<CollaborationCatalogService>,
@@ -20,13 +25,17 @@ struct TeamTool {
 }
 #[async_trait::async_trait]
 impl NativeSkill for TeamTool {
+    fn admission_owner(&self) -> crate::uar::persistence::tool_admission::AdmissionOwner {
+        crate::uar::persistence::tool_admission::AdmissionOwner::UarRuntime
+    }
+
     fn name(&self) -> &str {
         self.name
     }
     fn description(&self) -> &str {
         match self.name {
             "team_roster" => {
-                "List currently authorized teammates and current teamRevision for optimistic delegation. Identities are host-resolved; prompts and histories are private."
+                "List currently authorized teammates and current teamRevision for optimistic delegation. Identities are host-resolved; prompts and histories are private. Omit cursor or send an empty string for the first page; use nextCursor unchanged for subsequent pages."
             }
             "team_send" => {
                 "Queue an attributed message to an authorized peer. This never starts a model turn."
@@ -100,6 +109,14 @@ impl NativeSkill for TeamTool {
         let a = &self.binding.attempt;
         match self.name {
             "team_roster" => {
+                let mut args = args;
+                // The model tool accepts an empty first-page placeholder; the
+                // canonical request represents that absence by omission only.
+                if args.get("cursor").and_then(Value::as_str) == Some("") {
+                    if let Some(object) = args.as_object_mut() {
+                        object.remove("cursor");
+                    }
+                }
                 let r: crate::uar::domain::team_context::RosterRequest =
                     serde_json::from_value(args)
                         .map_err(|_| anyhow::anyhow!("TEAM_CONTEXT_REQUIRED_UNSUPPORTED"))?;
@@ -165,8 +182,12 @@ impl NativeSkill for TeamTool {
 pub(crate) async fn register(
     registry: &NativeSkillRegistry,
     binding: TeamToolBinding,
+    allowed: &std::collections::HashSet<String>,
 ) -> Result<(), ToolAssemblyError> {
-    for name in ["team_roster", "team_send", "team_delegate", "team_wait"] {
+    for name in TEAM_TOOL_NAMES {
+        if !allowed.contains(name) {
+            continue;
+        }
         registry
             .register(TeamTool {
                 binding: binding.clone(),

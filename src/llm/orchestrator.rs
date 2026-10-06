@@ -426,11 +426,20 @@ impl Orchestrator {
             HostAdmissionDisposition, LocalAdmissionDisposition, ToolApprovalRequest,
         };
 
-        let prepared = self.tool_admission.prepare(
+        let admission_owner = self
+            .native_skills
+            .get(&descriptor.provider_name)
+            .await
+            .map_or(
+                crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost,
+                |handler| handler.admission_owner(),
+            );
+        let prepared = self.tool_admission.prepare_owned(
             model_tool_call_id,
             descriptor,
             validated_arguments,
             call_index,
+            admission_owner,
         );
         let host = self
             .tool_admission

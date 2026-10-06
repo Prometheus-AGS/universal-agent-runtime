@@ -3255,6 +3255,20 @@ impl RunManager {
             }
         }
 
+        // Attempt-bound peer handlers are created later, but their identities
+        // must enter the universe before normal scopes can select or deny them.
+        let mut attempt_native_tools = BTreeSet::new();
+        if collaboration_binding
+            .as_ref()
+            .is_some_and(|binding| binding.team_attempt.is_some())
+            && crate::uar::api::capabilities::team_execution_b_enabled()
+        {
+            attempt_native_tools.extend(
+                crate::uar::runtime::native_skills::team_tools::TEAM_TOOL_NAMES
+                    .into_iter()
+                    .map(str::to_owned),
+            );
+        }
         let pre_resolved_policy = pre_resolved_policy_for_run(
             is_checkpoint_resume,
             inherited
@@ -3275,7 +3289,7 @@ impl RunManager {
                     mcp_resources
                         .as_ref()
                         .map(|resources| resources.catalog().as_ref()),
-                    None,
+                    Some(&attempt_native_tools),
                     verified_owner.as_ref(),
                 )
                 .await
@@ -3316,7 +3330,7 @@ impl RunManager {
                 .as_ref()
                 .filter(|resources| resources.run_scoped_names().is_some())
         {
-            let discovered = match resources.discover_tool_ids(&effective_policy).await {
+            let mut discovered = match resources.discover_tool_ids(&effective_policy).await {
                 Ok(discovered) => discovered,
                 Err(error) => {
                     emitter
@@ -3335,6 +3349,7 @@ impl RunManager {
                     return run_id;
                 }
             };
+            discovered.append(&mut attempt_native_tools);
             effective_policy = self
                 .resolve_effective_policy_with_catalog(
                     &artifact,
@@ -3729,18 +3744,41 @@ impl RunManager {
             Some(engine) => engine.policy_revision().await,
             None => "cedar:unavailable".to_string(),
         };
-        let tool_admission = match crate::uar::runtime::tool_admission::ToolAdmissionContext::new(
-            root_run_id,
-            run_id.clone(),
-            owner_id.clone(),
-            artifact.id.clone(),
-            world_state.directory().display().to_string(),
-            self.tool_runtime_epoch.clone(),
-            &artifact,
-            &effective_policy,
-            governance_policy_revision,
-            host_tool_admission.binding(),
-        )
+        let tool_admission = match (|| {
+            // Team host effects use the admitted tenant/subject partition,
+            // while ordinary session and thread ownership retain the subject.
+            let admission_owner_id = match collaboration_binding.as_ref().and_then(|binding| {
+                binding
+                    .team_attempt
+                    .as_ref()
+                    .map(|attempt| (binding, attempt))
+            }) {
+                Some((binding, attempt)) => {
+                    let owner = verified_owner.as_ref().ok_or_else(|| {
+                        anyhow::anyhow!("Team tool admission requires a verified host owner")
+                    })?;
+                    let admitted_owner = owner.presentation_owner_key();
+                    anyhow::ensure!(
+                        admitted_owner == binding.owner_id && admitted_owner == attempt.owner_id,
+                        "Team tool admission owner does not match its admitted binding and attempt"
+                    );
+                    admitted_owner
+                }
+                None => owner_id.clone(),
+            };
+            crate::uar::runtime::tool_admission::ToolAdmissionContext::new(
+                root_run_id,
+                run_id.clone(),
+                admission_owner_id,
+                artifact.id.clone(),
+                world_state.directory().display().to_string(),
+                self.tool_runtime_epoch.clone(),
+                &artifact,
+                &effective_policy,
+                governance_policy_revision,
+                host_tool_admission.binding(),
+            )
+        })()
         .and_then(|context| {
             crate::uar::runtime::tool_admission::ToolAdmissionRuntime::new(
                 context,
@@ -4208,9 +4246,21 @@ impl RunManager {
         let register_turn_tools = async {
             if effective_policy.tools.mode != SelectionMode::None {
                 if let Some(binding) = &collaboration_binding {
-                    if let Some(attempt) = binding.team_attempt.as_ref().filter(|_|crate::uar::api::capabilities::team_execution_b_enabled()) {
-                        crate::uar::runtime::native_skills::team_tools::register(&native_skills,
-                            crate::uar::runtime::native_skills::team_tools::TeamToolBinding {catalog: Arc::clone(&binding.service), attempt:attempt.clone(), yielded:Arc::clone(&binding.team_yield)}).await?;
+                    if let Some(attempt) = binding
+                        .team_attempt
+                        .as_ref()
+                        .filter(|_| crate::uar::api::capabilities::team_execution_b_enabled())
+                    {
+                        crate::uar::runtime::native_skills::team_tools::register(
+                            &native_skills,
+                            crate::uar::runtime::native_skills::team_tools::TeamToolBinding {
+                                catalog: Arc::clone(&binding.service),
+                                attempt: attempt.clone(),
+                                yielded: Arc::clone(&binding.team_yield),
+                            },
+                            &selected_tools,
+                        )
+                        .await?;
                     }
                 }
                 native_skills
@@ -5525,6 +5575,7 @@ impl RunManager {
                     let host_requires_approval = invocation.host_requires_approval;
                     let action_display = invocation.action_display;
                     let invocation = invocation.invocation;
+                    let admission_owner = invocation.admission_owner;
                     let tool_call_id = invocation.model_tool_call_id.clone();
                     let tool_name = invocation.provider_tool_name.clone();
                     let approval_class = invocation.approval_class;
@@ -5612,8 +5663,9 @@ impl RunManager {
                         format!("Tool '{tool_name}' requires approval under its descriptor")
                     };
                     match channel
-                        .request(
+                        .request_with_admission_owner(
                             Some(admission_id),
+                            admission_owner,
                             call_index,
                             tool_call_id,
                             tool_name.clone(),
