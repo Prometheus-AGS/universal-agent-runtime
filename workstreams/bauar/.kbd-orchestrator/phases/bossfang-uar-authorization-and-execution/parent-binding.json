@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "parentProjectId": "7041aa63-d951-4b19-a59c-b963d65b3b83",
+  "parentRoot": "/Users/gqadonis/.codex/worktrees/bossfang-uar-architecture/prometheus-skills-mini/workstreams/bossfang-uar-architecture",
+  "parentPhase": "bossfang-uar-authorization-and-execution",
+  "approvedStagesInheritedFromParent": [
+    "assess",
+    "analyze",
+    "spec",
+    "plan"
+  ],
+  "executionApproval": "Approved. Use the agent team to execute.",
+  "childProjectId": "06d6112e-346a-4417-8296-3b0ba3dba220",
+  "scope": "Repository-local task state only; source exact claims are owned by parent execution receipt.",
+  "rows": [
+    {
+      "change": "uar-bauar-identity-boundaries",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "1.1 Bind accepted source, dependency pins, exact ownership and sole in-memory key backend; verify the recorded child UUID and no database migration claim."
+        },
+        {
+          "id": "2",
+          "title": "1.2 Implement explicit local/remote verifier and trusted tenant/workspace policy after D0; author migration docs and invalid-claim/leeway scenarios, verify source covers every bound admission caller."
+        },
+        {
+          "id": "3",
+          "title": "1.3 Implement attenuated versioned API-key metadata and direct/exchanged issuer-subject-tenant authority; author reissue/unsupported-mode scenarios and verify all backend/constructor consumers are bound."
+        },
+        {
+          "id": "4",
+          "title": "1.4 Require owner/tenant or exact scoped-admin key management and bounded exchange TTL; author denial and revocation-window scenarios/docs, verify denied requests cannot disclose or mutate keys."
+        },
+        {
+          "id": "5",
+          "title": "2.1 Replace role-derived host trust with typed authenticated launch/service provenance; author legitimate-host and forged-role scenarios with real destination prerequisites, verify existing grant checks remain."
+        },
+        {
+          "id": "6",
+          "title": "2.2 Implement single-flight monotonic JWKS refresh with 60-second target, 300-second hard age and five-second limits; author removal/replacement/outage/concurrency scenarios, verify failed refresh never renews age."
+        },
+        {
+          "id": "7",
+          "title": "3.1 After complete selected production, consume the single real-router AUTH acceptance and applicable build receipts; verify every parent 01 scenario has actual revision-bound evidence and preserve C05/shipping gates."
+        }
+      ]
+    },
+    {
+      "change": "uar-bauar-execution-authorization",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "1.1 Author and execute the unchanged production-router JWT-enabled A/B POST/GET/replay/DELETE diagnostic with private stores; verify valid positive controls, sanitized trace, no effect/lifecycle crossover and actual enforcing layer, or record reproduced failure before production changes."
+        },
+        {
+          "id": "2",
+          "title": "2.1 After identity production, require exact pending approval identity through both UAR root ingresses, actor, manager and thread while preserving C05 expected revision; author denial/cancel/replay scenarios and migration docs, verify no run-only selection remains."
+        },
+        {
+          "id": "3",
+          "title": "2.2 Migrate all bound UAR positive approval helpers to their originating event identity alongside strict Boss cutover; preserve negative-test intent and author incompatibility/reconnect cases, verify no optional-ID positive fallback remains."
+        },
+        {
+          "id": "4",
+          "title": "2.3 Correct only session crossover reproduced by D0, with scenarios/docs covering all affected operations; otherwise record no-change closure with actual enforcing branch and complete valid matrix, never mark an unrun branch passed."
+        },
+        {
+          "id": "5",
+          "title": "3.1 After complete selected production, consume the shared real-path exact-approval/claim/cancel/F6 matrix; verify legitimate pending state survives denials and effects occur once, retaining separate baseline evidence."
+        },
+        {
+          "id": "6",
+          "title": "3.2 Consume the single scoped local build/check/package receipt after V1; verify exact source/dependency/payload identities and platform limitations without closing unrelated C05/shipping gates."
+        }
+      ]
+    }
+  ]
+}
