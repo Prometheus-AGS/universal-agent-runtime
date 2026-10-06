@@ -1,3 +1,6 @@
+#[path = "approval_records/surreal.rs"]
+mod approval_records;
+use crate::uar::persistence::approval_decisions::ApprovalRecord;
 use crate::session::Session;
 use crate::uar::a2ui::presentations::{Presentation, PresentationDraft};
 use crate::uar::domain::knowledge::{
@@ -150,6 +153,8 @@ impl SurrealDbProvider {
         ))
         .await?
         .check()?;
+
+        db.query(include_str!("../../../../migrations/surrealdb/approval_records.surql")).await?.check()?;
 
         db.query(include_str!(
             "../../../../migrations/surrealdb/tool_admission_evidence.surql"
@@ -627,6 +632,11 @@ impl SurrealDbProvider {
 
 #[async_trait]
 impl PersistenceLayer for SurrealDbProvider {
+    fn supports_durable_approvals(&self) -> bool { self.durable_instances }
+    async fn create_approval_record(&self, record: &ApprovalRecord) -> Result<()> { approval_records::create(self, record).await }
+    async fn transition_approval_record(&self, before: &ApprovalRecord, after: &ApprovalRecord) -> Result<bool> { approval_records::transition(self, before, after).await }
+    async fn list_approval_records(&self, owner: &str, run: &str) -> Result<Vec<ApprovalRecord>> { approval_records::list(self, owner, run).await }
+
     fn channel_observer_unavailable_reason(&self) -> &'static str {
         if self.remote_requires_durability_attestation {
             "remote_surreal_durability_not_attested"

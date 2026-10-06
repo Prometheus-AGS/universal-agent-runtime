@@ -939,6 +939,7 @@ impl RunManager {
                 &tool_runtime_epoch,
             ),
         );
+        let approvals = ApprovalBroker::new(persistence.clone(), tool_runtime_epoch.clone());
         Self {
             graph_roots: Arc::new(
                 crate::uar::runtime::thread::graph_host::GraphRootSupervisor::default(),
@@ -977,7 +978,7 @@ impl RunManager {
             a2ui_backbone: crate::uar::a2ui::realtime::InMemoryReplayBackbone::new(),
             primary_driver: None,
             destination_preparations: None,
-            approvals: ApprovalBroker::default(),
+            approvals,
             root_cancellation: CancellationToken::new(),
             run_cancellations: Arc::new(RwLock::new(HashMap::new())),
             message_context_strategy: crate::uar::context::ContextStrategy::default(),
@@ -1710,7 +1711,21 @@ impl RunManager {
         approval_id: Option<&str>,
         approved: bool,
     ) -> bool {
-        self.approvals.resolve(run_id, approval_id, approved)
+        self.approvals.resolve_record(run_id, approval_id, approved).await
+            .ok().flatten().is_some_and(|(_, delivered)| delivered)
+    }
+
+    pub(crate) async fn resolve_approval_record(
+        &self, run_id: &str, approval_id: Option<&str>, approved: bool,
+    ) -> anyhow::Result<Option<(crate::uar::persistence::approval_decisions::ApprovalRecord, bool)>> {
+        self.approvals.resolve_record(run_id, approval_id, approved).await
+    }
+
+    pub(crate) async fn approval_records_for_context(
+        &self, user: &crate::uar::security::claims::UserContext, run_id: &str, workspace: Option<&str>,
+    ) -> anyhow::Result<(bool, Vec<crate::uar::persistence::approval_decisions::ApprovalRecordView>)> {
+        let owner = crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user)?;
+        self.approvals.records(&owner.presentation_owner_key(), run_id, workspace).await
     }
 
     /// Return the existing live waiter for an owner. This snapshot is a view of
@@ -3650,9 +3665,12 @@ impl RunManager {
         let child_run = inherited.is_some();
         let approval_channel = match &inherited {
             Some(bindings) => bindings.approvals.for_child(),
-            None => match self.approvals.register(
+            None => match self.approvals.register_scoped(
                 run_id.clone(),
                 owner_id.clone(),
+                verified_owner.as_ref().map(|owner| owner.presentation_owner_key())
+                    .unwrap_or_else(|| format!("v1:s:{}:{}", owner_id.len(), owner_id)),
+                collaboration_binding.as_ref().map(|binding| binding.workspace_id.clone()),
                 Arc::new(emitter.clone()),
                 run_cancellation.clone(),
             ) {

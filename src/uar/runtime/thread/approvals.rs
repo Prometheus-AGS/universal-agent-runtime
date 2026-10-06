@@ -1,6 +1,11 @@
 //! Trusted root approval channels. A child can request a decision through a
 //! captured channel, but cannot choose its root, resolve it, or approve itself.
 
+#[path = "approvals/records.rs"]
+mod records;
+use records::ApprovalLedger;
+use crate::uar::persistence::approval_decisions::{ApprovalRecord, ApprovalState};
+use chrono::Utc;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, Weak};
 use std::time::Duration;
@@ -23,6 +28,7 @@ pub(crate) enum ApprovalOutcome {
 
 struct PendingApproval {
     snapshot: PendingApprovalSnapshot,
+    record: ApprovalRecord,
     legacy_root_request: bool,
     reply: oneshot::Sender<bool>,
 }
@@ -34,6 +40,8 @@ pub(crate) struct PendingApprovalSnapshot {
     pub version: u32,
     pub root_run_id: String,
     pub approval_id: String,
+    pub issuer_id: String,
+    pub challenge_id: String,
     pub admission_id: Option<String>,
     pub admission_owner: crate::uar::persistence::tool_admission::AdmissionOwner,
     pub call_index: usize,
@@ -49,24 +57,38 @@ struct RootLane {
     events: Arc<dyn RuntimeEventSink>,
     cancellation: CancellationToken,
     serial: AsyncMutex<()>,
+    resolution: AsyncMutex<()>,
+    owner_key: String,
+    workspace_id: Option<String>,
+    ledger: Arc<ApprovalLedger>,
     pending: Mutex<Option<PendingApproval>>,
 }
 
 /// Host-only resolver index. Weak entries do not retain completed run emitters.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub(crate) struct ApprovalBroker {
     roots: Arc<Mutex<HashMap<String, Weak<RootLane>>>>,
+    ledger: Arc<ApprovalLedger>,
 }
 
 impl ApprovalBroker {
     /// Register once for a new host-allocated root run. Descendants inherit the
     /// returned channel rather than registering another root under that ID.
+    #[cfg(test)]
     pub(crate) fn register(
         &self,
         run_id: String,
         owner_id: String,
         events: Arc<dyn RuntimeEventSink>,
         cancellation: CancellationToken,
+    ) -> anyhow::Result<RootApprovalChannel> {
+        let owner_key = format!("v1:s:{}:{}", owner_id.len(), owner_id);
+        self.register_scoped(run_id, owner_id, owner_key, None, events, cancellation)
+    }
+
+    pub(crate) fn register_scoped(
+        &self, run_id: String, owner_id: String, owner_key: String, workspace_id: Option<String>,
+        events: Arc<dyn RuntimeEventSink>, cancellation: CancellationToken,
     ) -> anyhow::Result<RootApprovalChannel> {
         let mut roots = self
             .roots
@@ -82,6 +104,8 @@ impl ApprovalBroker {
             events,
             cancellation,
             serial: AsyncMutex::new(()),
+            resolution: AsyncMutex::new(()),
+            owner_key, workspace_id, ledger: Arc::clone(&self.ledger),
             pending: Mutex::new(None),
         });
         roots.insert(run_id, Arc::downgrade(&lane));
@@ -89,38 +113,6 @@ impl ApprovalBroker {
             lane,
             legacy_root_request: true,
         })
-    }
-
-    /// Called only after the host has authorized the root run's human owner.
-    /// Child requests require their exact opaque ID; legacy run-only decisions
-    /// remain valid solely for ordinary root requests.
-    pub(crate) fn resolve(&self, run_id: &str, approval_id: Option<&str>, approved: bool) -> bool {
-        let lane = self
-            .roots
-            .lock()
-            .ok()
-            .and_then(|roots| roots.get(run_id).and_then(Weak::upgrade));
-        let Some(lane) = lane else {
-            return false;
-        };
-        if lane.cancellation.is_cancelled() {
-            return false;
-        }
-        let Ok(mut pending) = lane.pending.lock() else {
-            return false;
-        };
-        let Some(request) = pending.as_ref() else {
-            return false;
-        };
-        let matches = approval_id.map_or(request.legacy_root_request, |id| {
-            id == request.snapshot.approval_id
-        });
-        if !matches || request.reply.is_closed() {
-            return false;
-        }
-        pending
-            .take()
-            .is_some_and(|request| request.reply.send(approved).is_ok())
     }
 
     pub(crate) fn pending(
@@ -166,7 +158,8 @@ impl RootApprovalChannel {
         }
     }
 
-    /// The timeout bounds queueing, publication, and the human decision. A
+    /// The deadline bounds queueing, publication, and the human decision; an
+    /// in-flight persistence write is allowed to settle before cancellation. A
     /// dropped gate clears its own slot synchronously before another caller
     /// acquires the queue, so cancellation cannot leave an approvable orphan.
     pub(crate) async fn request(
@@ -203,17 +196,44 @@ impl RootApprovalChannel {
         risk_reason: String,
         caller_cancel: &CancellationToken,
     ) -> ApprovalOutcome {
-        let operation = async {
-            let _serial = self.lane.serial.lock().await;
-            if self.lane.cancellation.is_cancelled() || caller_cancel.is_cancelled() {
-                return ApprovalOutcome::Cancelled;
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(300);
+        let expires_at = Utc::now() + chrono::Duration::seconds(300);
+        let _serial = tokio::select! {
+            biased;
+            _ = self.lane.cancellation.cancelled() => return ApprovalOutcome::Cancelled,
+            _ = caller_cancel.cancelled() => return ApprovalOutcome::Cancelled,
+            result = tokio::time::timeout_at(deadline, self.lane.serial.lock()) => {
+                match result {
+                    Ok(serial) => serial,
+                    Err(_) => return ApprovalOutcome::TimedOut,
+                }
             }
-            let id = uuid::Uuid::new_v4().to_string();
+        };
+        let id = uuid::Uuid::new_v4().to_string();
+        let created_at = Utc::now();
+        let record = ApprovalRecord {
+            version: 1, issuer_id: self.lane.ledger.issuer_id.clone(), challenge_id: id.clone(),
+            owner_key: self.lane.owner_key.clone(), workspace_id: self.lane.workspace_id.clone(),
+            root_run_id: self.lane.run_id.clone(), admission_id: admission_id.clone(), admission_owner,
+            tool_call_id: tool_call_id.clone(), tool_name: name.clone(), created_at,
+            expires_at, state: ApprovalState::Pending,
+            decision: None, updated_at: created_at,
+        };
+        // Finish the storage write before observing cancellation: dropping a
+        // database request can leave an inserted challenge with unknown status.
+        if self.lane.ledger.create(&record).await.is_err() {
+            tracing::error!("Approval challenge could not be persisted");
+            self.lane.finish_record(&record, ApprovalState::Interrupted).await;
+            return ApprovalOutcome::ChannelClosed;
+        }
+        let operation = async {
             let (reply, receiver) = oneshot::channel();
             let snapshot = PendingApprovalSnapshot {
                 version: 1,
                 root_run_id: self.lane.run_id.clone(),
                 approval_id: id.clone(),
+                issuer_id: record.issuer_id.clone(),
+                challenge_id: record.challenge_id.clone(),
                 admission_id: admission_id.clone(),
                 admission_owner,
                 call_index,
@@ -223,6 +243,7 @@ impl RootApprovalChannel {
                 risk_reason: risk_reason.clone(),
             };
             {
+                let _publication = self.lane.resolution.lock().await;
                 let Ok(mut pending) = self.lane.pending.lock() else {
                     return ApprovalOutcome::ChannelClosed;
                 };
@@ -231,6 +252,7 @@ impl RootApprovalChannel {
                 }
                 *pending = Some(PendingApproval {
                     snapshot,
+                    record: record.clone(),
                     legacy_root_request: self.legacy_root_request,
                     reply,
                 });
@@ -239,6 +261,7 @@ impl RootApprovalChannel {
                 lane: Arc::clone(&self.lane),
                 id: id.clone(),
             };
+            self.lane.publish_record(&record).await;
             // Register before publication: an immediate human response must
             // not race a yet-to-be-inserted sender.
             self.lane
@@ -250,7 +273,7 @@ impl RootApprovalChannel {
                     name,
                     arguments_json,
                     risk_reason,
-                    approval_id: Some(id),
+                    approval_id: Some(id.clone()),
                     admission_id,
                 })
                 .await;
@@ -260,14 +283,22 @@ impl RootApprovalChannel {
                 Err(_) => ApprovalOutcome::ChannelClosed,
             }
         };
-        tokio::select! {
+        let outcome = tokio::select! {
             biased;
             _ = self.lane.cancellation.cancelled() => ApprovalOutcome::Cancelled,
             _ = caller_cancel.cancelled() => ApprovalOutcome::Cancelled,
-            result = tokio::time::timeout(Duration::from_secs(300), operation) => {
+            result = tokio::time::timeout_at(deadline, operation) => {
                 result.unwrap_or(ApprovalOutcome::TimedOut)
             }
-        }
+        };
+        let terminal = match outcome {
+            ApprovalOutcome::Cancelled => Some(ApprovalState::Cancelled),
+            ApprovalOutcome::TimedOut => Some(ApprovalState::Expired),
+            ApprovalOutcome::ChannelClosed => Some(ApprovalState::Interrupted),
+            _ => None,
+        };
+        if let Some(state) = terminal { self.lane.finish_record(&record, state).await; }
+        outcome
     }
 }
 

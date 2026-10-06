@@ -12,6 +12,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+pub mod approval_decisions;
 pub mod agent_instances;
 pub mod agent_threads;
 pub mod channel_observers;
@@ -451,6 +452,21 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
         owner_id: &str,
         run_id: &str,
     ) -> Result<Vec<CanonicalToolReceipt>>;
+
+    /// Whether approval history survives a process restart on this provider.
+    fn supports_durable_approvals(&self) -> bool { false }
+
+    async fn create_approval_record(&self, _record: &approval_decisions::ApprovalRecord) -> Result<()> {
+        anyhow::bail!("Approval persistence is unavailable")
+    }
+
+    async fn transition_approval_record(&self, _before: &approval_decisions::ApprovalRecord, _after: &approval_decisions::ApprovalRecord) -> Result<bool> {
+        anyhow::bail!("Approval persistence is unavailable")
+    }
+
+    async fn list_approval_records(&self, _owner: &str, _run: &str) -> Result<Vec<approval_decisions::ApprovalRecord>> {
+        anyhow::bail!("Approval persistence is unavailable")
+    }
 
     /// Append one sanitized lifecycle fact for an exact tool invocation.
     /// Implementations must be idempotent for an identical state and reject a

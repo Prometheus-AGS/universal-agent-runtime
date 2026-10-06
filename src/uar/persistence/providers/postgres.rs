@@ -1,3 +1,6 @@
+#[path = "approval_records/postgres.rs"]
+mod approval_records;
+use crate::uar::persistence::approval_decisions::ApprovalRecord;
 use crate::session::Session;
 use crate::uar::a2ui::presentations::{Presentation, PresentationDraft};
 use crate::uar::domain::knowledge::{
@@ -64,6 +67,11 @@ async fn insert_agent_thread(
 
 #[async_trait]
 impl PersistenceLayer for PostgresProvider {
+    fn supports_durable_approvals(&self) -> bool { true }
+    async fn create_approval_record(&self, record: &ApprovalRecord) -> Result<()> { approval_records::create(self, record).await }
+    async fn transition_approval_record(&self, before: &ApprovalRecord, after: &ApprovalRecord) -> Result<bool> { approval_records::transition(self, before, after).await }
+    async fn list_approval_records(&self, owner: &str, run: &str) -> Result<Vec<ApprovalRecord>> { approval_records::list(self, owner, run).await }
+
     async fn create_presentation(
         &self,
         owner_id: &str,
