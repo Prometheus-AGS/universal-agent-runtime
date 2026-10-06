@@ -5,6 +5,11 @@
 //! injection phrases and shaped scans for secrets/PII. It is intentionally
 //! conservative (accepts false negatives) and never echoes the matched value;
 //! findings carry only a category and a short label.
+//!
+//! The [`InputScreen`] trait allows replacing or supplementing the built-in
+//! heuristic with a classifier-based screen (e.g. an LLM judge). Callers use
+//! [`screen_input`] for the built-in heuristic or compose screens via
+//! [`ChainedScreen`].
 
 use crate::config::GuardrailsConfig;
 
@@ -34,6 +39,52 @@ pub struct GuardrailFinding {
     pub category: GuardrailCategory,
     /// Short label describing what matched — never the matched value itself.
     pub reason: String,
+}
+
+/// Pluggable input screen interface. Implement this to replace or supplement
+/// the built-in heuristic with a classifier-based screen (e.g. an LLM judge).
+///
+/// Implementations must be `Send + Sync` for use across async handlers.
+/// They should return quickly — the screen runs on every model-input entry
+/// point before the LLM call.
+pub trait InputScreen: Send + Sync {
+    /// Screen the given text. Returns the first finding, or `None` if clean.
+    fn screen(&self, text: &str, cfg: &GuardrailsConfig) -> Option<GuardrailFinding>;
+}
+
+/// The built-in heuristic screen (substring + shaped scans). This is the
+/// default screen used when no custom screen is configured.
+pub struct HeuristicScreen;
+
+impl InputScreen for HeuristicScreen {
+    fn screen(&self, text: &str, cfg: &GuardrailsConfig) -> Option<GuardrailFinding> {
+        screen_input(text, cfg)
+    }
+}
+
+/// Chains multiple screens, returning the first finding from any screen.
+/// Screens are evaluated in order; the first non-`None` result wins.
+pub struct ChainedScreen {
+    screens: Vec<Box<dyn InputScreen>>,
+}
+
+impl ChainedScreen {
+    /// Create a chained screen from a list of screen implementations.
+    #[must_use]
+    pub fn new(screens: Vec<Box<dyn InputScreen>>) -> Self {
+        Self { screens }
+    }
+}
+
+impl InputScreen for ChainedScreen {
+    fn screen(&self, text: &str, cfg: &GuardrailsConfig) -> Option<GuardrailFinding> {
+        for screen in &self.screens {
+            if let Some(finding) = screen.screen(text, cfg) {
+                return Some(finding);
+            }
+        }
+        None
+    }
 }
 
 /// Known prompt-injection / jailbreak phrases (matched case-insensitively as
