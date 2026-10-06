@@ -9,7 +9,10 @@ use crate::uar::{
     domain::team_execution::TeamExecutionAttempt,
     runtime::{
         tool_admission::{HttpHostToolAdmissionPort, RunToolAdmissionInput},
-        turn::{RunExecutionRequest, host::RunMcpServerInput},
+        turn::{
+            RunExecutionRequest,
+            host::{RunMcpServerInput, RunMcpServers},
+        },
     },
     security::claims::UserContext,
 };
@@ -80,7 +83,9 @@ pub struct TeamHostContextInput {
 pub(super) struct TeamHostContext {
     binding_revision: u64,
     directory: PathBuf,
-    resources: crate::mcp::runtime::McpRunResources,
+    owner: crate::uar::runtime::actor::messages::ActorOwner,
+    environment: Arc<crate::mcp::binding_cache::McpBindingEnvironment>,
+    mcp_servers: RunMcpServers,
     admission: Arc<HttpHostToolAdmissionPort>,
     scrubber: crate::uar::runtime::turn::host::RunSecretScrubber,
     servers: Vec<String>,
@@ -147,9 +152,11 @@ impl TeamExecutionRuntime {
             TeamHostContext {
                 binding_revision: team.binding.revision,
                 directory,
-                resources,
+                owner: resources.owner().clone(),
+                environment: Arc::clone(resources.environment()),
                 admission: Arc::new(admission),
                 scrubber: servers.scrubber(),
+                mcp_servers: servers,
                 servers: names,
             },
         );
@@ -211,8 +218,15 @@ impl TeamExecutionRuntime {
             context.binding_revision == attempt.binding_revision,
             "TEAM_REVISION_CONFLICT"
         );
+        // Each root closes its request-owned cache, including coordinator yield.
+        // Reuse captured authority, never another attempt's executable runtime.
+        let resources = context.mcp_servers.resources(
+            context.owner,
+            context.directory.clone(),
+            &context.environment,
+        )?;
         request.working_directory = Some(context.directory);
-        request.mcp_resources = Some(context.resources);
+        request.mcp_resources = Some(resources);
         request.host_tool_admission = Some(context.admission);
         request.host_secret_scrubber.extend(context.scrubber);
         request.host_resources_marker.mcp_servers = context.servers;
