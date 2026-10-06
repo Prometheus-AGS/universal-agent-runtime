@@ -105,8 +105,14 @@ pub enum NormalizedEvent {
     /// A run was cancelled — explicitly via the cancel endpoint, by the last SSE
     /// subscriber disconnecting, or by server shutdown. Terminal, distinct from
     /// `RunDone` (normal completion) and `Error` (failure).
+    ///
+    /// `usage` carries what the provider reported before the cancel. Providers
+    /// report usage when a model call finishes, so a run cancelled during its
+    /// first call has none and this is `None`.
     Cancelled {
         run_id: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        usage: Option<RunUsage>,
     },
     /// The completed assistant response was flagged by sycophancy detection.
     /// Quality signal (not an error); emitted only when the score meets the
@@ -257,6 +263,19 @@ pub enum NormalizedEvent {
         /// Model used for this run.
         model: Option<String>,
     },
+}
+
+/// Token usage and cost estimate for a run, as reported on the event that ends
+/// it. The fields mirror `NormalizedEvent::RunDoneWithUsage`.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+pub struct RunUsage {
+    pub input_tokens: Option<u32>,
+    pub output_tokens: Option<u32>,
+    pub total_tokens: Option<u32>,
+    /// Estimated cost in USD based on model pricing.
+    pub cost_usd_estimate: Option<f64>,
+    /// Model used for this run.
+    pub model: Option<String>,
 }
 
 /// Content-free lifecycle projection. This is deliberately not a serialized

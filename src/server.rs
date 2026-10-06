@@ -6579,9 +6579,6 @@ pub(crate) async fn api_chat_completion(
                     replay_result = Some(Ok(()));
                     break;
                 }
-                    replay_result = Some(Ok(()));
-                    break;
-                }
                 uar::domain::events::NormalizedEvent::Error { message, .. } => {
                     replay_result = Some(Err(message));
                     break;
@@ -6625,8 +6622,6 @@ pub(crate) async fn api_chat_completion(
                                         "total_tokens": total,
                                     }));
                                 }
-                                break Ok::<(), String>(());
-                            }
                                 break Ok::<(), String>(());
                             }
                             uar::domain::events::NormalizedEvent::Error { message, .. } => {
