@@ -5556,10 +5556,11 @@ impl RunManager {
             let approval_governance = self.governance_engine.clone();
             let approval_governance_gate = self.governance_gate.clone();
             let effective_tool_approval = effective_policy.tool_approval;
+            let approval_gate_channel = approval_channel.clone();
             let gate: crate::llm::ToolApprovalGate = Arc::new(move |invocation| {
                 let run_id = approval_run_id.clone();
                 let emitter = approval_emitter.clone();
-                let channel = approval_channel.clone();
+                let channel = approval_gate_channel.clone();
                 let cancellation = approval_cancellation.clone();
                 let agent_id = approval_agent_id.clone();
                 let governance = approval_governance.clone();
@@ -5992,6 +5993,13 @@ impl RunManager {
                             cleanup_failed = true;
                             emitter.emit(NormalizedEvent::Error {
                                 run_id: execute_run_id.clone(), code: "sandbox_cleanup_unconfirmed".into(), message: error.to_string(),
+                            }).await;
+                        }
+                        if approval_channel.finish_cancelled_root(&execute_run_id).await.is_err() {
+                            cleanup_failed = true;
+                            emitter.emit(NormalizedEvent::Error {
+                                run_id: execute_run_id.clone(), code: "approval_cleanup_unconfirmed".into(),
+                                message: "Cancelled approval state could not be persisted".into(),
                             }).await;
                         }
                         if let Some(state) = runs_for_completion.write().await.get_mut(&execute_run_id) {
@@ -6528,6 +6536,15 @@ impl RunManager {
                         message: error.to_string(),
                     })
                     .await;
+            }
+
+            if approval_channel.finish_cancelled_root(&execute_run_id).await.is_err() {
+                run_cancelled = false;
+                run_failed = true;
+                emitter.emit(NormalizedEvent::Error {
+                    run_id: execute_run_id.clone(), code: "approval_cleanup_unconfirmed".into(),
+                    message: "Cancelled approval state could not be persisted".into(),
+                }).await;
             }
 
             let mut interrupted_fragment = None;

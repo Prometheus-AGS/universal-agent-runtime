@@ -1,4 +1,4 @@
-use super::{ApprovalBroker, RootLane};
+use super::{ApprovalBroker, RootApprovalChannel, RootLane};
 use crate::uar::persistence::{PersistenceLayer, approval_decisions::{ApprovalRecord, ApprovalRecordView, ApprovalState, ApprovalDecision}};
 use crate::uar::domain::events::{NormalizedEvent, StatePatchOp};
 use std::{collections::HashMap, sync::{Arc, Mutex}};
@@ -80,6 +80,28 @@ impl ApprovalBroker {
             ApprovalRecordView { record, resolvable }
         }).collect();
         Ok((self.ledger.store.as_ref().is_some_and(|store| store.supports_durable_approvals()), records))
+    }
+}
+
+impl RootApprovalChannel {
+    pub(crate) async fn finish_cancelled_root(&self, run_id: &str) -> anyhow::Result<()> {
+        if self.lane.run_id != run_id || !self.lane.cancellation.is_cancelled() {
+            return Ok(());
+        }
+        let _resolution = self.lane.resolution.lock().await;
+        // The run owner may drop the approval future before its async cleanup.
+        // Recover its persisted record after all root-owned execution has drained.
+        let records = self.lane.ledger.list(&self.lane.owner_key, run_id).await?;
+        for record in records {
+            if record.issuer_id != self.lane.ledger.issuer_id || record.state != ApprovalState::Pending {
+                continue;
+            }
+            let next = record.finish(ApprovalState::Cancelled, None);
+            if self.lane.ledger.transition(&record, &next).await? {
+                self.lane.publish_record(&next).await;
+            }
+        }
+        Ok(())
     }
 }
 
