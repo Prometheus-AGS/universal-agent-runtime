@@ -4098,3 +4098,9 @@ Observed prerequisite: team execution omitted the selected workspace, run MCP re
 Observed source defect at b6bdcd15330a12a3b4eba5fe6ef14ca65d1acafd: a durable team_wait retained continuationInput.text, but fresh attempt sessions received only original task/team input, current authorized roster and selected latest results. The compiler context now restores the exact validated wait handoff with waitId and previousAttemptId as untrusted attributed user-level data. Existing roots, fresh sessions, authority, directed result/artifact checks and protocol enums remain unchanged. No secrets or raw operation content were recorded.
 
 Implementation is source-only; no tests, Cargo, compiler, lint, formatting, review or build commands ran. The lead owns the completed native/package build and real failed-feature operation. Causality for repeated product delegation remains to be established from actual operation evidence. No canonical task, phase, cadence or publication counter was changed.
+
+## 2026-10-07 — C15 canonical SkillRef context-selection identity
+
+Actual packaged operation c15-478b872c-3d9f-48bd-baef-f6f35823d9f0 completed product and designer work but denied reviewer preparation. Recorded required skill agents::a11y-gate is accepted by the exact immutable SkillRef/binding contract; context selection incorrectly reused the runtime profile-ID grammar and rejected its colons. Only Skill selections now call the existing canonical collaboration validate_id. Other profile-ID checks and exact skill/artifact/authority checks remain unchanged. No credential, prompt, skill content or installed location is recorded here.
+
+Source-only repair; no tests, Cargo, compiler, lint, formatting, review or builds ran. Lead owns the serialized production build and completed failed-feature operation. Existing attempts and cadence/task counters remain unchanged.
