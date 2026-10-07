@@ -208,14 +208,16 @@ pub fn validate_projection(
         }
         let model_control =
             descriptor.source == ToolSource::BuiltIn && descriptor.exposure == Exposure::ModelOnly;
-        if !model_control
-            && matches!(
+        let outside_policy = if model_control {
+            !policy.allows_model_control_tool(name, &descriptor.id)
+        } else {
+            matches!(
                 policy.tools.mode,
                 SelectionMode::None | SelectionMode::Selected
-            )
-            && !policy.tools.ids.contains(name)
-            && !policy.tools.ids.contains(&descriptor.id)
-        {
+            ) && !policy.tools.ids.contains(name)
+                && !policy.tools.ids.contains(&descriptor.id)
+        };
+        if outside_policy {
             return Err(AssemblyError::OutsidePolicy {
                 resource: "tools".into(),
                 id: name.clone(),

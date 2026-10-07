@@ -3653,6 +3653,7 @@ impl RunManager {
             emitter
                 .emit(NormalizedEvent::Cancelled {
                     run_id: run_id.clone(),
+                    usage: None,
                 })
                 .await;
             self.run_cancellations.write().await.remove(&run_id);
@@ -4230,6 +4231,7 @@ impl RunManager {
                     emitter
                         .emit(NormalizedEvent::Cancelled {
                             run_id: run_id.clone(),
+                            usage: None,
                         })
                         .await;
                 } else {
@@ -4324,6 +4326,28 @@ impl RunManager {
             self.run_cancellations.write().await.remove(&run_id);
             return run_id;
         }
+        // Built-in model-control tools (`activate_skill`, team and agent
+        // controls) were registered above regardless of policy. Keep only the
+        // ones the effective policy allows, so a run that allows no skills is
+        // not offered `activate_skill`.
+        let native_skills = {
+            let allowed = native_skills
+                .descriptors()
+                .await
+                .into_iter()
+                .filter(|descriptor| {
+                    let model_control = descriptor.source
+                        == crate::uar::tools::descriptor::ToolSource::BuiltIn
+                        && descriptor.exposure
+                            == crate::uar::tools::descriptor::Exposure::ModelOnly;
+                    !model_control
+                        || effective_policy
+                            .allows_model_control_tool(&descriptor.provider_name, &descriptor.id)
+                })
+                .map(|descriptor| descriptor.provider_name.clone())
+                .collect::<HashSet<_>>();
+            Arc::new(native_skills.filtered(Some(&allowed)).await)
+        };
         activation_context
             .lock()
             .await
@@ -5858,6 +5882,7 @@ impl RunManager {
             emitter
                 .emit(NormalizedEvent::Cancelled {
                     run_id: run_id.clone(),
+                    usage: None,
                 })
                 .await;
             self.run_cancellations.write().await.remove(&run_id);
@@ -6008,7 +6033,7 @@ impl RunManager {
                         if cleanup_failed {
                             emitter.emit(NormalizedEvent::RunDone { run_id: execute_run_id.clone() }).await;
                         } else {
-                            emitter.emit(NormalizedEvent::Cancelled { run_id: execute_run_id.clone() }).await;
+                            emitter.emit(NormalizedEvent::Cancelled { run_id: execute_run_id.clone(), usage: None }).await;
                         }
                         cancellations_for_cleanup.write().await.remove(&cleanup_run_id);
                         return;
@@ -6720,123 +6745,44 @@ impl RunManager {
                 );
             }
 
+            // Settle cost for any run that reported usage, cancelled or not, so a
+            // cancelled run's spend reaches the durable ledger and the event stream.
+            let cost_usd_estimate = if has_usage {
+                crate::uar::runtime::run_cost::settle_run_cost(
+                    crate::uar::runtime::run_cost::RunCostInputs {
+                        run_id: &execute_run_id,
+                        session_id: execution_session.id(),
+                        agent_id: &cost_scope_agent_id,
+                        model: &run_model,
+                        input_tokens: total_input_tokens,
+                        output_tokens: total_output_tokens,
+                        cache_read_tokens: total_cache_read_tokens,
+                        cost_tracking_enabled,
+                    },
+                    &cost_budget_for_run,
+                    persistence_for_run.as_ref(),
+                    &emitter,
+                )
+                .await
+            } else {
+                None
+            };
             if run_cancelled {
                 tracing::info!(run_id = %execute_run_id, "Run cancelled; emitting terminal Cancelled event");
+                let usage = has_usage.then(|| crate::uar::domain::events::RunUsage {
+                    input_tokens: Some(total_input_tokens),
+                    output_tokens: Some(total_output_tokens),
+                    total_tokens: Some(total_tokens),
+                    cost_usd_estimate,
+                    model: Some(run_model),
+                });
                 emitter
                     .emit(NormalizedEvent::Cancelled {
                         run_id: execute_run_id,
+                        usage,
                     })
                     .await;
             } else if has_usage {
-                // Compute estimated USD cost from the pricing catalog when cost
-                // tracking is enabled; None when disabled or the model is unpriced.
-                let cost_usd_estimate = if cost_tracking_enabled {
-                    crate::llm::catalog::estimate_cost(
-                        &run_model,
-                        u64::from(total_input_tokens),
-                        u64::from(total_output_tokens),
-                        u64::from(total_cache_read_tokens),
-                    )
-                } else {
-                    None
-                };
-                if let Some(cost) = cost_usd_estimate
-                    && let Some((provider, model_id)) = run_model.split_once('/')
-                {
-                    crate::uar::telemetry::metrics::record_llm_cost(provider, model_id, cost);
-
-                    // Driver wrappers already charged every model call. Surface a
-                    // `BudgetAlert` for the first scope (in priority order)
-                    // that crosses its configured threshold. Unconfigured
-                    // scopes have an unlimited `BudgetLimit::default()`, so
-                    // status read does not charge the final request again.
-                    // `BudgetScope::Task` is intentionally omitted — this
-                    // runtime has no task entity distinct from a run.
-                    use crate::uar::runtime::cost_budget::{BudgetScope, BudgetStatus};
-                    let scopes: [(BudgetScope, &str); 3] = [
-                        (BudgetScope::Run, execute_run_id.as_str()),
-                        (BudgetScope::Session, execution_session.id()),
-                        (BudgetScope::Agent, cost_scope_agent_id.as_str()),
-                    ];
-                    let mut alert: Option<(BudgetScope, String, f64, f64, bool)> = None;
-                    for (scope, scope_id) in scopes {
-                        let status = cost_budget_for_run.status(scope, scope_id).await;
-                        // CH-07: durable roll-up, fire-and-forget so the hot
-                        // path never blocks on a DB write — mirrors the
-                        // existing per-tool-call checkpoint persist pattern
-                        // above.
-                        if let Some(db) = persistence_for_run.clone() {
-                            let scope_str = scope.as_str().to_string();
-                            let scope_id_owned = scope_id.to_string();
-                            tokio::spawn(async move {
-                                if let Err(e) = db
-                                    .record_cost_entry(&scope_str, &scope_id_owned, cost)
-                                    .await
-                                {
-                                    tracing::warn!(error = %e, scope = %scope_str, "Failed to persist cost ledger entry");
-                                }
-                            });
-                        }
-                        if alert.is_none()
-                            && let BudgetStatus::Warning {
-                                spent_usd,
-                                limit_usd,
-                            }
-                            | BudgetStatus::Exceeded {
-                                spent_usd,
-                                limit_usd,
-                            } = status
-                        {
-                            alert = Some((
-                                scope,
-                                scope_id.to_string(),
-                                spent_usd,
-                                limit_usd,
-                                status.is_exceeded(),
-                            ));
-                        }
-                    }
-                    let global_status = cost_budget_for_run
-                        .status(BudgetScope::Global, "global")
-                        .await;
-                    if let Some(db) = persistence_for_run.clone() {
-                        tokio::spawn(async move {
-                            if let Err(e) = db.record_cost_entry("global", "global", cost).await {
-                                tracing::warn!(error = %e, "Failed to persist cost ledger entry (global)");
-                            }
-                        });
-                    }
-                    if alert.is_none()
-                        && let BudgetStatus::Warning {
-                            spent_usd,
-                            limit_usd,
-                        }
-                        | BudgetStatus::Exceeded {
-                            spent_usd,
-                            limit_usd,
-                        } = global_status
-                    {
-                        alert = Some((
-                            BudgetScope::Global,
-                            "global".to_string(),
-                            spent_usd,
-                            limit_usd,
-                            global_status.is_exceeded(),
-                        ));
-                    }
-                    if let Some((scope, scope_id, spent_usd, limit_usd, exceeded)) = alert {
-                        emitter
-                            .emit(NormalizedEvent::BudgetAlert {
-                                run_id: execute_run_id.clone(),
-                                scope: scope.as_str().to_string(),
-                                scope_id,
-                                spent_usd,
-                                limit_usd,
-                                exceeded,
-                            })
-                            .await;
-                    }
-                }
                 emitter
                     .emit(NormalizedEvent::RunDoneWithUsage {
                         run_id: execute_run_id,

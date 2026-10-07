@@ -28,7 +28,7 @@ use crate::{
             prompt_caching::UserPromptCachingSettings,
             skills::{Skill, SkillMatch},
         },
-        persistence::PersistenceLayer,
+        persistence::{CostEntry, PersistenceLayer},
         settings::schema::{Settings, SettingsType},
     },
 };
@@ -51,6 +51,7 @@ pub struct InMemoryProvider {
     approval_records: RwLock<HashMap<String, ApprovalRecord>>,
     tool_admission_evidence: RwLock<HashMap<String, Vec<ToolAdmissionEvidence>>>,
     memories: RwLock<Vec<Memory>>,
+    cost_ledger: RwLock<Vec<CostEntry>>,
     /// Registered settings types keyed by their slug (e.g. `run_policy`).
     settings_types: RwLock<HashMap<String, SettingsType>>,
     /// Setting values keyed by their dotted key (e.g. `run_policy.global`).
@@ -120,6 +121,24 @@ impl PersistenceLayer for InMemoryProvider {
     }
     async fn list_approval_records(&self, owner: &str, run: &str) -> Result<Vec<ApprovalRecord>> {
         Ok(read(&self.approval_records)?.values().filter(|record| record.owner_key == owner && record.root_run_id == run).cloned().collect())
+    }
+
+    async fn record_cost_entry(&self, scope: &str, scope_id: &str, cost_usd: f64) -> Result<()> {
+        write(&self.cost_ledger)?.push(CostEntry {
+            scope: scope.to_string(),
+            scope_id: scope_id.to_string(),
+            cost_usd,
+            recorded_at: chrono::Utc::now(),
+        });
+        Ok(())
+    }
+
+    async fn list_cost_history(&self, scope: &str, scope_id: &str) -> Result<Vec<CostEntry>> {
+        Ok(read(&self.cost_ledger)?
+            .iter()
+            .filter(|e| e.scope == scope && e.scope_id == scope_id)
+            .cloned()
+            .collect())
     }
 
     async fn create_presentation(

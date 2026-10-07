@@ -71,7 +71,7 @@ where
 }
 
 fn default_chunk_strategy() -> crate::uar::rag::chunking::ChunkingStrategy {
-    crate::uar::rag::chunking::ChunkingStrategy::Recursive { size: 512 }
+    crate::uar::rag::chunking::ChunkingStrategy::Structured { size: 1024 }
 }
 
 fn deserialize_chunk_strategy<'de, D>(
@@ -290,7 +290,7 @@ impl Default for KbConfig {
             embedding_model: Self::default_embedding_model(),
             vector_dimensions: None,
             file_processor: Self::default_file_processor(),
-            chunk_strategy: crate::uar::rag::chunking::ChunkingStrategy::Recursive { size: 512 },
+            chunk_strategy: crate::uar::rag::chunking::ChunkingStrategy::Structured { size: 1024 },
             retrieval_min_score: None,
             retrieval_top_k: None,
             indexed_embedding: None,

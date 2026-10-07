@@ -1435,7 +1435,8 @@ async fn run_server_with_listener(
         threads: Arc::new(
             uar::api::a2a::thread_service::A2AThreadService::new(Arc::clone(&actor_system))
                 .with_instance_id(service_instance.descriptor().instance.id.clone())
-                .with_full_harness(Arc::clone(&full_harness_authority)),
+                .with_full_harness(Arc::clone(&full_harness_authority))
+                .with_guardrails(config.guardrails.clone()),
         ),
         security: config.security.clone(),
         base_url: format!("http://{}:{}", config.server.host, config.server.port),
@@ -3591,6 +3592,32 @@ struct AnthropicToolInput {
     _extra: HashMap<String, Value>,
 }
 
+/// Extract text content from an Anthropic user message for guardrail screening.
+fn extract_anthropic_user_text(msg: &AnthropicMessageInput) -> Option<String> {
+    match &msg.content {
+        AnthropicContentInput::Text(s) if !s.trim().is_empty() => Some(s.clone()),
+        AnthropicContentInput::Blocks(blocks) => {
+            let mut text = String::new();
+            for block in blocks {
+                if block.block_type == "text" {
+                    if let Some(t) = &block.text {
+                        if !text.is_empty() {
+                            text.push('\n');
+                        }
+                        text.push_str(t);
+                    }
+                }
+            }
+            if text.trim().is_empty() {
+                None
+            } else {
+                Some(text)
+            }
+        }
+        _ => None,
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Default)]
 struct AnthropicUsage {
     input_tokens: u32,
@@ -4132,6 +4159,41 @@ async fn api_messages(
             StatusCode::BAD_REQUEST,
             "messages must contain at least one message",
         );
+    }
+
+    // Input guardrails: screen the last user message for injection/PII before
+    // the LLM call. Same config and logic as api_chat_completion (#328).
+    if let Some(last_user_text) = req
+        .messages
+        .iter()
+        .rev()
+        .find(|m| m.role == "user")
+        .and_then(extract_anthropic_user_text)
+    {
+        if let Some(finding) =
+            uar::guardrails::screen_input(&last_user_text, &state.config.guardrails)
+        {
+            uar::telemetry::metrics::record_guardrail_flagged(finding.category.as_str());
+            tracing::warn!(
+                category = %finding.category.as_str(),
+                reason = %finding.reason,
+                "Anthropic Messages input flagged by guardrail"
+            );
+            let g = &state.config.guardrails;
+            let should_block = match finding.category {
+                uar::guardrails::GuardrailCategory::Injection => g.block_on_injection,
+                uar::guardrails::GuardrailCategory::Pii => g.block_on_pii,
+            };
+            if should_block {
+                let code = match finding.category {
+                    uar::guardrails::GuardrailCategory::Injection => {
+                        "guardrail_injection_blocked"
+                    }
+                    uar::guardrails::GuardrailCategory::Pii => "guardrail_pii_blocked",
+                };
+                return anthropic_error_response(StatusCode::BAD_REQUEST, code);
+            }
+        }
     }
 
     let resolved_model = match resolve_anthropic_model(&state, &req.model).await {
@@ -5932,7 +5994,7 @@ pub(crate) async fn api_chat_completion(
                             | uar::domain::events::NormalizedEvent::RunDone { run_id }
                             | uar::domain::events::NormalizedEvent::RunDoneWithUsage { run_id, .. }
                             | uar::domain::events::NormalizedEvent::Error { run_id, .. }
-                            | uar::domain::events::NormalizedEvent::Cancelled { run_id } => Some(run_id.as_str()),
+                            | uar::domain::events::NormalizedEvent::Cancelled { run_id, .. } => Some(run_id.as_str()),
                             _ => None,
                         };
                         if matches!(&normalized_event, uar::domain::events::NormalizedEvent::ChatDelta { .. })
@@ -6527,6 +6589,7 @@ pub(crate) async fn api_chat_completion(
     }
 
     let mut assistant_text = String::new();
+    let mut usage: Option<serde_json::Value> = None;
     let mut replay_result: Option<Result<(), String>> = None;
     if let Some(replay) = state.run_manager.history_since(&run_id, None).await {
         for event in replay {
@@ -6534,8 +6597,24 @@ pub(crate) async fn api_chat_completion(
                 uar::domain::events::NormalizedEvent::ChatDelta { text_delta, .. } => {
                     assistant_text.push_str(&text_delta);
                 }
-                uar::domain::events::NormalizedEvent::RunDone { .. }
-                | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. } => {
+                done @ (uar::domain::events::NormalizedEvent::RunDone { .. }
+                | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. }) => {
+                    usage = uar::api::openai::usage::from_run_done(&done);
+                    replay_result = Some(Ok(()));
+                    break;
+                }
+                uar::domain::events::NormalizedEvent::Cancelled { usage: cancel_usage, .. } => {
+                    // Capture usage from cancelled runs too (#329).
+                    if let Some(u) = cancel_usage {
+                        let prompt = u.input_tokens.unwrap_or(0);
+                        let completion = u.output_tokens.unwrap_or(0);
+                        let total = u.total_tokens.unwrap_or_else(|| prompt.saturating_add(completion));
+                        usage = Some(serde_json::json!({
+                            "prompt_tokens": prompt,
+                            "completion_tokens": completion,
+                            "total_tokens": total,
+                        }));
+                    }
                     replay_result = Some(Ok(()));
                     break;
                 }
@@ -6564,8 +6643,24 @@ pub(crate) async fn api_chat_completion(
                             } => {
                                 assistant_text.push_str(&text_delta);
                             }
-                            uar::domain::events::NormalizedEvent::RunDone { .. }
-                            | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. } => {
+                            done @ (uar::domain::events::NormalizedEvent::RunDone { .. }
+                            | uar::domain::events::NormalizedEvent::RunDoneWithUsage {
+                                ..
+                            }) => {
+                                usage = uar::api::openai::usage::from_run_done(&done);
+                                break Ok::<(), String>(());
+                            }
+                            uar::domain::events::NormalizedEvent::Cancelled { usage: cancel_usage, .. } => {
+                                if let Some(u) = cancel_usage {
+                                    let prompt = u.input_tokens.unwrap_or(0);
+                                    let completion = u.output_tokens.unwrap_or(0);
+                                    let total = u.total_tokens.unwrap_or_else(|| prompt.saturating_add(completion));
+                                    usage = Some(serde_json::json!({
+                                        "prompt_tokens": prompt,
+                                        "completion_tokens": completion,
+                                        "total_tokens": total,
+                                    }));
+                                }
                                 break Ok::<(), String>(());
                             }
                             uar::domain::events::NormalizedEvent::Error { message, .. } => {
@@ -6635,7 +6730,7 @@ pub(crate) async fn api_chat_completion(
             },
             finish_reason: "stop".to_string(),
         }],
-        usage: None,
+        usage,
         session_id: session_id.clone(),
     };
 

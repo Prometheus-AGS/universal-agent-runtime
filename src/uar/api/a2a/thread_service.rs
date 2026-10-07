@@ -208,6 +208,7 @@ pub struct A2AThreadService {
     bindings: Mutex<Bindings>,
     instance_id: Option<String>,
     full_harness: Option<Arc<crate::uar::api::full_harness::FullHarnessTaskAuthority>>,
+    guardrails: crate::config::GuardrailsConfig,
 }
 
 impl std::fmt::Debug for A2AThreadService {
@@ -252,7 +253,14 @@ impl A2AThreadService {
             bindings: Mutex::new(Bindings::default()),
             instance_id: None,
             full_harness: None,
+            guardrails: crate::config::GuardrailsConfig::default(),
         }
+    }
+
+    #[must_use]
+    pub fn with_guardrails(mut self, guardrails: crate::config::GuardrailsConfig) -> Self {
+        self.guardrails = guardrails;
+        self
     }
 
     #[must_use]
@@ -309,6 +317,26 @@ impl A2AThreadService {
         if content.trim().is_empty() {
             return Err(TaskError::Invalid("agent input must not be empty"));
         }
+
+        // Input guardrails: screen A2A input for injection/PII (#328).
+        if let Some(finding) = crate::uar::guardrails::screen_input(&content, &self.guardrails) {
+            crate::uar::telemetry::metrics::record_guardrail_flagged(finding.category.as_str());
+            tracing::warn!(
+                category = %finding.category.as_str(),
+                reason = %finding.reason,
+                "A2A input flagged by guardrail"
+            );
+            let should_block = match finding.category {
+                crate::uar::guardrails::GuardrailCategory::Injection => {
+                    self.guardrails.block_on_injection
+                }
+                crate::uar::guardrails::GuardrailCategory::Pii => self.guardrails.block_on_pii,
+            };
+            if should_block {
+                return Err(TaskError::Invalid("Input rejected by guardrail policy"));
+            }
+        }
+
         let contract = params
             .metadata
             .get(UAR_DELEGATION_CONTRACT_METADATA)
