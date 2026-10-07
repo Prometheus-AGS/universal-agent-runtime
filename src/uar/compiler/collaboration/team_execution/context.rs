@@ -70,6 +70,15 @@ impl CollaborationCatalogService {
 
         let messages = if workflow.is_some() { Vec::new() } else { peer::authorized_inbox(&state, actual)? };
         let target_outcomes = continuation_outcomes(&state, actual)?;
+        // The continuation was validated above; its handoff survives the fresh session as data.
+        let continuation = actual.continuation_of_wait_id.as_ref()
+            .and_then(|wait_id| state.team_waits.get(wait_id))
+            .map(|wait| json!({
+                "waitId": wait.wait_id,
+                "previousAttemptId": wait.authority.attempt_id,
+                "continuationInput": wait.continuation_input,
+                "dataTrust": TeamOutcomeDataTrust::UntrustedAttributedData,
+            }));
         let mut selected_ids = BTreeSet::new();
         let mut artifacts = Vec::<TeamArtifact>::new();
         for id in actual.context_artifact_ids.iter()
@@ -144,6 +153,7 @@ impl CollaborationCatalogService {
             "skills": skills,
             "targetOutcomes": receipt.target_outcomes,
             "targetOutcomeDataTrust": receipt.target_outcome_data_trust,
+            "continuation": continuation,
         });
         let data = if let Some(workflow) = workflow { json!({
             "workflowRunId":workflow.id,"definitionDigest":workflow.definition.digest,
