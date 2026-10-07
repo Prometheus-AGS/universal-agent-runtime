@@ -1985,6 +1985,8 @@ impl Orchestrator {
                         Some(delay)
                     })
                     .notify(|error, delay| {
+                        let diagnostic = (!orchestrator.endpoint_settings_profiles.is_empty())
+                            .then(|| super::team_failure::diagnostic(error, false));
                         tracing::warn!(
                             request_id = %request_id,
                             iteration,
@@ -1992,6 +1994,14 @@ impl Orchestrator {
                             max_attempts,
                             delay_ms = delay.as_millis(),
                             error = %orchestrator.provider_log_summary(error),
+                            code = diagnostic.as_ref().map(|value| value.code.as_str()),
+                            diagnostic_reference = diagnostic.as_ref()
+                                .and_then(|value| value.protected_diagnostic_ref.as_deref()),
+                            source_stage = diagnostic.as_ref().and_then(|value| value.source_stage.as_deref()),
+                            category = diagnostic.as_ref().and_then(|value| value.category.as_deref()),
+                            http_status = diagnostic.as_ref().and_then(|value| value.http_status),
+                            collaboration_code = diagnostic.as_ref()
+                                .and_then(|value| value.collaboration_code.as_deref()),
                             "LLM stream creation failed; retrying before semantic events"
                         );
                         attempt = attempt.saturating_add(1);

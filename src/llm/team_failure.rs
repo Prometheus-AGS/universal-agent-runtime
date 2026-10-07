@@ -2,6 +2,7 @@
 use crate::uar::{
     compiler::collaboration::CollaborationError,
     domain::team_execution::TeamExecutionDiagnostic,
+    runtime::cost_budget::BudgetFailureOrigin,
 };
 
 #[derive(Debug, Clone, Copy, thiserror::Error)]
@@ -36,33 +37,43 @@ fn collaboration_code(value: &str) -> Option<String> {
     ).then(|| value.to_owned())
 }
 
-pub(crate) fn diagnostic(error: &anyhow::Error, streaming: bool) -> TeamExecutionDiagnostic {
-    let stage = error.downcast_ref::<TeamFailureStage>();
-    let source_stage = stage.map(ToString::to_string)
-        .unwrap_or_else(|| if streaming { "provider-stream" } else { "provider-opening" }.into());
-    let provider = super::ProviderError::from_anyhow(error);
-    let collaboration = error.downcast_ref::<CollaborationError>();
-    let category = if let Some(provider) = provider {
+/// Retry logs retain a safe cause without allocating a new diagnostic identity.
+pub(crate) fn safe_category(error: &anyhow::Error) -> &'static str {
+    if let Some(origin) = error.downcast_ref::<BudgetFailureOrigin>() {
+        origin.category()
+    } else if let Some(provider) = super::ProviderError::from_anyhow(error) {
         provider.code()
-    } else if let Some(collaboration) = collaboration {
+    } else if let Some(collaboration) = error.downcast_ref::<CollaborationError>() {
         match collaboration {
             CollaborationError::Invalid(_) => "collaboration_invalid",
             CollaborationError::NotFound(_) => "collaboration_not_found",
             CollaborationError::Conflict(_) => "collaboration_conflict",
             CollaborationError::Storage(_) => "collaboration_storage",
         }
-    } else if matches!(stage, Some(TeamFailureStage::Preparation)) {
+    } else if matches!(error.downcast_ref::<TeamFailureStage>(), Some(TeamFailureStage::Preparation)) {
         "request_preparation_failed"
     } else {
         "unclassified"
-    };
+    }
+}
+
+pub(crate) fn diagnostic(error: &anyhow::Error, streaming: bool) -> TeamExecutionDiagnostic {
+    let stage = error.downcast_ref::<TeamFailureStage>();
+    let source_stage = stage.map(ToString::to_string)
+        .unwrap_or_else(|| if streaming { "provider-stream" } else { "provider-opening" }.into());
+    let provider = super::ProviderError::from_anyhow(error);
+    let collaboration = error.downcast_ref::<CollaborationError>();
+    let budget_origin = error.downcast_ref::<BudgetFailureOrigin>();
+    let category = safe_category(error);
     let collaboration_code = match collaboration {
         Some(CollaborationError::Conflict(value)) => collaboration_code(value),
         _ if matches!(stage, Some(TeamFailureStage::Preparation)) =>
             collaboration_code(&error.root_cause().to_string()),
         _ => None,
     };
-    let code = if collaboration.is_some()
+    let code = if budget_origin.is_some() {
+        "TEAM_EXECUTION_BUDGET_FAILED"
+    } else if collaboration.is_some()
         || matches!(stage, Some(TeamFailureStage::Validation | TeamFailureStage::Recording))
     {
         "TEAM_COLLABORATION_HANDOFF_FAILED"
@@ -81,7 +92,7 @@ pub(crate) fn diagnostic(error: &anyhow::Error, streaming: bool) -> TeamExecutio
         protected_diagnostic_ref: Some(uuid::Uuid::new_v4().to_string()),
         source_stage: Some(source_stage),
         category: Some(category.into()),
-        http_status: provider.and_then(|error| error.status),
+        http_status: if budget_origin.is_some() { None } else { provider.and_then(|error| error.status) },
         collaboration_code,
     }
 }
@@ -113,7 +124,8 @@ struct SafeMetadata {
 pub(crate) fn from_reason(reason: &str) -> Option<TeamExecutionDiagnostic> {
     let (code, tail) = reason.split_once("; diagnostic reference ")?;
     if !matches!(code, "TEAM_PROVIDER_REQUEST_REJECTED" | "TEAM_PROVIDER_STREAM_FAILED" |
-        "TEAM_COLLABORATION_HANDOFF_FAILED" | "TEAM_REQUEST_PREPARATION_FAILED") {
+        "TEAM_COLLABORATION_HANDOFF_FAILED" | "TEAM_REQUEST_PREPARATION_FAILED" |
+        "TEAM_EXECUTION_BUDGET_FAILED") {
         return None;
     }
     let (reference, metadata) = tail.split_once("; diagnostic metadata ")
@@ -137,7 +149,9 @@ pub(crate) fn from_reason(reason: &str) -> Option<TeamExecutionDiagnostic> {
                 "provider_budget_exceeded" | "provider_external_error" |
                 "provider_internal_error" | "collaboration_invalid" |
                 "collaboration_not_found" | "collaboration_conflict" |
-                "collaboration_storage" | "request_preparation_failed" | "unclassified"))
+                "collaboration_storage" | "request_preparation_failed" | "unclassified" |
+                "budget_admission_failed" | "budget_root_cancelled" |
+                "budget_root_deadline_exceeded" | "budget_usage_accounting_failed"))
             || value.http_status.is_some_and(|status| !(100..=599).contains(&status))
             || value.collaboration_code.as_deref().is_some_and(|code| collaboration_code(code).is_none())
         {
