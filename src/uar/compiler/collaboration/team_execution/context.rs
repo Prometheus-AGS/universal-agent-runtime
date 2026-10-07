@@ -16,7 +16,7 @@ use crate::uar::domain::{
     team_wait::TargetOutcome,
 };
 
-use super::super::validation::resolve_team_instructions;
+use super::super::validation::{resolve_team_instructions, validate_id};
 use super::{CollaborationCatalogService, CollaborationError, attempt, fence, key, peer, team};
 
 /// Guidance is separate from the attributed data handed to the model.
@@ -238,7 +238,11 @@ fn selection<T: Serialize>(
     source_kind: ContextSourceKind,
     value: &T,
 ) -> Result<ContextSelection, CollaborationError> {
-    profile_id(source_id, "/selections/sourceId")?;
+    if source_kind == ContextSourceKind::Skill {
+        validate_id(source_id).map_err(|_| required_unsupported("/selections/sourceId"))?;
+    } else {
+        profile_id(source_id, "/selections/sourceId")?;
+    }
     let bytes = serde_json::to_vec(value)?.len() as u64;
     Ok(ContextSelection {
         source_id: source_id.to_owned(), source_kind,
