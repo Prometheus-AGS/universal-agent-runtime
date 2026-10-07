@@ -4092,3 +4092,9 @@ Observed prerequisite: team execution omitted the selected workspace, run MCP re
 - Narrow supporting ownership: registry.rs sorted read including tombstones, server.rs protected route state at both existing skill mounts, canonical bindings.rs resolver reuse. No persistence migration, service, dependency or frozen-tree edits.
 - Exact DTO sent to Boss team_authoring owner. Only scoped source formatting allowed; no Cargo/compiler/build/tests/reviews/KBD transitions or publication during implementation. Native behavior remains unverified until lead's complete delivery boundary.
 - Coordinating lead authorized source commit/push only. Commit-local core.hooksPath=/dev/null suppresses all commit hooks to honor the explicit no compiler/test/review boundary; no hook result is claimed as verification. Production and native operation remain source-only/unverified.
+
+## 2026-10-07 — C15 fresh coordinator continuation context
+
+Observed source defect at b6bdcd15330a12a3b4eba5fe6ef14ca65d1acafd: a durable team_wait retained continuationInput.text, but fresh attempt sessions received only original task/team input, current authorized roster and selected latest results. The compiler context now restores the exact validated wait handoff with waitId and previousAttemptId as untrusted attributed user-level data. Existing roots, fresh sessions, authority, directed result/artifact checks and protocol enums remain unchanged. No secrets or raw operation content were recorded.
+
+Implementation is source-only; no tests, Cargo, compiler, lint, formatting, review or build commands ran. The lead owns the completed native/package build and real failed-feature operation. Causality for repeated product delegation remains to be established from actual operation evidence. No canonical task, phase, cadence or publication counter was changed.
