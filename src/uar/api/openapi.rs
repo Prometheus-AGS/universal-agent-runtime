@@ -326,6 +326,19 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "responses": { "201": { "description": "Skill created" } }
                 }
             },
+            "/api/uar/skills/deployment-catalog": {
+                "get": {
+                    "summary": "Read trusted installed skill deployment metadata",
+                    "description": "Admin Read only. Requires an authenticated nonanonymous principal and the configured x-uar-admin-key. Returns current registry identities including tombstones; portable SkillRef is separate from private installedLocation. required=true/config={} are authoring defaults. Discovery grants no binding or tool authority. Also mounted under /api/skills/deployment-catalog.",
+                    "tags": ["skills"],
+                    "security": [{"bearerAuth": [], "uarAdminKey": []}],
+                    "responses": {
+                        "200": {"description": "Stored deployment catalog", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SkillDeploymentCatalog"}}}},
+                        "401": {"description": "Authenticated nonanonymous principal required"},
+                        "403": {"description": "Configured admin key required; no optional-auth bypass"}
+                    }
+                }
+            },
             "/api/uar/skills/refresh": {
                 "post": {
                     "summary": "Refresh skills",
@@ -406,9 +419,47 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
         },
         "components": {
             "securitySchemes": {
-                "bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
+                "bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"},
+                "uarAdminKey": {"type": "apiKey", "in": "header", "name": "x-uar-admin-key"}
             },
             "schemas": {
+                "SkillDeploymentCatalog": {
+                    "type": "object", "additionalProperties": false,
+                    "required": ["schemaVersion", "entries"],
+                    "properties": {
+                        "schemaVersion": {"type": "integer", "enum": [1]},
+                        "entries": {"type": "array", "items": {"$ref": "#/components/schemas/SkillDeploymentCatalogEntry"}}
+                    }
+                },
+                "SkillDeploymentCatalogEntry": {
+                    "type": "object", "additionalProperties": false,
+                    "required": ["skillId", "title", "description", "enabled", "tombstoned", "availability", "reasons", "skillRef", "privateBinding"],
+                    "properties": {
+                        "skillId": {"type": "string"}, "title": {"type": "string"}, "description": {"type": "string"},
+                        "enabled": {"type": "boolean"}, "tombstoned": {"type": "boolean"},
+                        "availability": {"type": "string", "enum": ["available", "unavailable"]},
+                        "reasons": {"type": "array", "items": {"type": "string", "enum": ["missing-skill-id", "missing-version", "missing-artifact-digest", "missing-installed-location", "disabled", "tombstoned"]}},
+                        "skillRef": {"nullable": true, "allOf": [{"$ref": "#/components/schemas/DeploymentCatalogSkillRef"}]},
+                        "privateBinding": {"nullable": true, "allOf": [{"$ref": "#/components/schemas/SkillInstallationBinding"}]}
+                    }
+                },
+                "DeploymentCatalogSkillRef": {
+                    "type": "object", "additionalProperties": false,
+                    "description": "Portable domain SkillRef. required=true/config={} are explicit authoring defaults; callers may author them. Artifact identity, entrypoint and requiredTools are stored values.",
+                    "required": ["id", "version", "digest", "required", "config", "entrypoint", "requiredTools"],
+                    "properties": {
+                        "id": {"type": "string"}, "version": {"type": "string"}, "digest": {"type": "string"},
+                        "required": {"type": "boolean"}, "config": {"type": "object"},
+                        "entrypoint": {"type": "string", "nullable": true},
+                        "requiredTools": {"type": "array", "items": {"type": "string"}}
+                    }
+                },
+                "SkillInstallationBinding": {
+                    "type": "object", "additionalProperties": false,
+                    "description": "Private deployment metadata; must never be included in portable definitions or renderer display.",
+                    "required": ["installedLocation"],
+                    "properties": {"installedLocation": {"type": "string"}}
+                },
                 "RunEventSnapshot": super::run_events::snapshot_schema(),
                 "FullHarnessAdmissionRequest": {
                     "type": "object",

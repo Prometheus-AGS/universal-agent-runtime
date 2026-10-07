@@ -318,6 +318,9 @@ async fn validate_binding(
             } else if let Ok(reference) = serde_json::from_value::<ImmutableDefinitionRef>(member["definition"].clone()) {
                 if let Some(definition) = state.definitions.get(&reference.storage_key()) {
                     let start = diagnostics.len();
+                    let (_, skill_diagnostics) =
+                        resolve_skills(skill_service, document, definition).await?;
+                    diagnostics.extend(skill_diagnostics);
                     super::runtime_semantics::resolve_legacy_team_context(definition, document, &mut diagnostics);
                     let models = resolve_models(document, definition, &mut diagnostics)?;
                     super::runtime_semantics::resolve_runtime_semantics(definition, &models, provider_registry, &mut diagnostics).await;
@@ -588,9 +591,23 @@ pub(super) async fn resolve_skills(
             CollaborationError::Invalid("definition SkillRef is invalid".to_owned())
         })?;
         let pointer = format!("/skills/{index}");
-        let Some(bound_value) = binding_skills.iter().find(|candidate| {
-            candidate.get("id").and_then(Value::as_str) == Some(requested.id.as_str())
-        }) else {
+        let Some(bound_value) = binding_skills
+            .iter()
+            .find(|candidate| {
+                if candidate.get("id").and_then(Value::as_str) != Some(requested.id.as_str()) {
+                    return false;
+                }
+                let mut value = (**candidate).clone();
+                if let Some(object) = value.as_object_mut() {
+                    object.remove("installedLocation");
+                }
+                serde_json::from_value::<SkillRef>(value).is_ok_and(|bound| bound == requested)
+            })
+            .or_else(|| {
+                binding_skills.iter().find(|candidate| {
+                    candidate.get("id").and_then(Value::as_str) == Some(requested.id.as_str())
+                })
+            }) else {
             diagnostics.push(binding_diagnostic(
                 pointer,
                 &requested,

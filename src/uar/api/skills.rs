@@ -3,6 +3,12 @@
 //! REST endpoints for skills CRUD, matching configuration,
 //! and per-agent skill bindings.
 
+mod deployment_catalog;
+
+pub use deployment_catalog::{
+    SkillDeploymentCatalogState, build_router as build_deployment_catalog_router,
+};
+
 use crate::uar::domain::skills::{
     Skill, SkillExecutionConfig, SkillOrigin, SkillScope, SkillTriggers,
 };

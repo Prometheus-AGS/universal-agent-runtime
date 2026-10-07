@@ -163,10 +163,26 @@ struct TriggersFrontmatter {
 
 #[derive(Debug, Default, Deserialize)]
 struct MetadataFrontmatter {
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_metadata_tags")]
     tags: Vec<String>,
     #[serde(default)]
     category: Option<String>,
+}
+
+fn deserialize_metadata_tags<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    // Reuse the string/list syntax shape, without allowed-tools conversion.
+    match AllowedToolsFrontmatter::deserialize(deserializer)? {
+        AllowedToolsFrontmatter::String(tags) => Ok(tags
+            .split(',')
+            .map(str::trim)
+            .filter(|tag| !tag.is_empty())
+            .map(str::to_owned)
+            .collect()),
+        AllowedToolsFrontmatter::List(tags) => Ok(tags),
+    }
 }
 
 #[derive(Debug, Default, Deserialize)]

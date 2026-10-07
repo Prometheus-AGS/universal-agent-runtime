@@ -1701,7 +1701,16 @@ async fn run_server_with_listener(
         // Skills API
         .nest(
             "/api/uar/skills",
-            uar::api::skills::build_router().with_state(Arc::clone(&state.skill_service)),
+            uar::api::skills::build_router()
+                .with_state(Arc::clone(&state.skill_service))
+                .merge(
+                    uar::api::skills::build_deployment_catalog_router().with_state(Arc::new(
+                        uar::api::skills::SkillDeploymentCatalogState {
+                            service: Arc::clone(&state.skill_service),
+                            admin_key: config.security.settings_admin_key.clone(),
+                        },
+                    )),
+                ),
         )
         // Agent-Skills Bindings API
         .nest(
@@ -1831,7 +1840,16 @@ async fn run_server_with_listener(
         // Skills: GET /api/skills, GET/DELETE /api/skills/{id}, etc.
         .nest(
             "/api/skills",
-            uar::api::skills::build_router().with_state(Arc::clone(&state.skill_service)),
+            uar::api::skills::build_router()
+                .with_state(Arc::clone(&state.skill_service))
+                .merge(
+                    uar::api::skills::build_deployment_catalog_router().with_state(Arc::new(
+                        uar::api::skills::SkillDeploymentCatalogState {
+                            service: Arc::clone(&state.skill_service),
+                            admin_key: config.security.settings_admin_key.clone(),
+                        },
+                    )),
+                ),
         )
         // Agent–skill bindings: GET/PUT /api/agents/{id}/skills, etc.
         .nest(

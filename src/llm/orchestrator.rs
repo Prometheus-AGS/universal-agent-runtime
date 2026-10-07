@@ -834,15 +834,19 @@ impl Orchestrator {
 
     fn provider_failure(&self, error: &anyhow::Error, streaming: bool) -> NormalizedEvent {
         if !self.endpoint_settings_profiles.is_empty() {
-            let code = if streaming { "TEAM_PROVIDER_STREAM_FAILED" } else { "TEAM_PROVIDER_REQUEST_REJECTED" };
-            let reference = uuid::Uuid::new_v4();
-            tracing::warn!(code, diagnostic_reference = %reference,
+            let diagnostic = super::team_failure::diagnostic(error, streaming);
+            tracing::warn!(code = diagnostic.code.as_str(),
+                diagnostic_reference = diagnostic.protected_diagnostic_ref.as_deref(),
                 provider_error_kind = super::ProviderError::from_anyhow(error)
                     .map_or("provider_error", super::ProviderError::code),
+                source_stage = diagnostic.source_stage.as_deref(),
+                category = diagnostic.category.as_deref(),
+                http_status = diagnostic.http_status,
+                collaboration_code = diagnostic.collaboration_code.as_deref(),
                 "Captured safe team provider failure");
             return NormalizedEvent::Error {
-                message: format!("{code}; diagnostic reference {reference}"),
-                code: Some(code.into()),
+                message: super::team_failure::reason(&diagnostic),
+                code: Some(diagnostic.code),
             };
         }
         NormalizedEvent::Error {
@@ -1924,22 +1928,38 @@ impl Orchestrator {
                         let fragments = retry_fragments.clone();
                         let model = retry_model.clone();
                         async move {
+                            let profiled = !orchestrator.endpoint_settings_profiles.is_empty();
                             let request = orchestrator.prepare_attempt(
                                 &model,
                                 source,
                                 &canonical,
                                 &fragments,
-                            )?;
+                            ).map_err(|error| super::team_failure::at_stage(
+                                error, super::team_failure::TeamFailureStage::Preparation, profiled,
+                            ))?;
                             let manifest = orchestrator.attempt_manifest(&model, &request);
-                            if let Some(binding)=&orchestrator.team_model_handoff { if let Some(attempt)=&binding.team_attempt { binding.service.validate_team_model_handoff(attempt).await?; } }
+                            if let Some(binding) = &orchestrator.team_model_handoff {
+                                if let Some(attempt) = &binding.team_attempt {
+                                    binding.service.validate_team_model_handoff(attempt).await
+                                        .map_err(|error| super::team_failure::at_stage(error.into(),
+                                            super::team_failure::TeamFailureStage::Validation, profiled))?;
+                                }
+                            }
                             let stream = open_driver_stream(
                                 driver.as_ref(),
                                 request,
                                 stream_start_timeout,
                                 stream_idle_timeout,
                             )
-                            .await?;
-                            if let Some(binding)=&orchestrator.team_model_handoff { if let Some(attempt)=&binding.team_attempt { binding.service.record_team_model_handoff(attempt).await?; } }
+                            .await.map_err(|error| super::team_failure::at_stage(error,
+                                super::team_failure::TeamFailureStage::Opening, profiled))?;
+                            if let Some(binding) = &orchestrator.team_model_handoff {
+                                if let Some(attempt) = &binding.team_attempt {
+                                    binding.service.record_team_model_handoff(attempt).await
+                                        .map_err(|error| super::team_failure::at_stage(error.into(),
+                                            super::team_failure::TeamFailureStage::Recording, profiled))?;
+                                }
+                            }
                             Ok(prepend_attempt_manifest(stream, manifest))
                         }
                     })
@@ -1965,6 +1985,8 @@ impl Orchestrator {
                         Some(delay)
                     })
                     .notify(|error, delay| {
+                        let diagnostic = (!orchestrator.endpoint_settings_profiles.is_empty())
+                            .then(|| super::team_failure::diagnostic(error, false));
                         tracing::warn!(
                             request_id = %request_id,
                             iteration,
@@ -1972,6 +1994,14 @@ impl Orchestrator {
                             max_attempts,
                             delay_ms = delay.as_millis(),
                             error = %orchestrator.provider_log_summary(error),
+                            code = diagnostic.as_ref().map(|value| value.code.as_str()),
+                            diagnostic_reference = diagnostic.as_ref()
+                                .and_then(|value| value.protected_diagnostic_ref.as_deref()),
+                            source_stage = diagnostic.as_ref().and_then(|value| value.source_stage.as_deref()),
+                            category = diagnostic.as_ref().and_then(|value| value.category.as_deref()),
+                            http_status = diagnostic.as_ref().and_then(|value| value.http_status),
+                            collaboration_code = diagnostic.as_ref()
+                                .and_then(|value| value.collaboration_code.as_deref()),
                             "LLM stream creation failed; retrying before semantic events"
                         );
                         attempt = attempt.saturating_add(1);

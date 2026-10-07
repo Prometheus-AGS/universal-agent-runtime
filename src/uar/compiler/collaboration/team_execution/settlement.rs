@@ -394,19 +394,5 @@ impl CollaborationCatalogService {
 }
 
 fn provider_diagnostic(reason: &str) -> Option<TeamExecutionDiagnostic> {
-    let (code, reference) = reason.split_once("; diagnostic reference ")?;
-    if !matches!(
-        code,
-        "TEAM_PROVIDER_REQUEST_REJECTED" | "TEAM_PROVIDER_STREAM_FAILED"
-    ) {
-        return None;
-    }
-    let reference = uuid::Uuid::parse_str(reference).ok()?.to_string();
-    Some(TeamExecutionDiagnostic {
-        code: code.into(),
-        field: None,
-        retryable: false,
-        action: "change-settings".into(),
-        protected_diagnostic_ref: Some(reference),
-    })
+    crate::llm::team_failure::from_reason(reason)
 }
