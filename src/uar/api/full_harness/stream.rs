@@ -20,8 +20,12 @@ where
         let authority = Arc::clone(&authority);
         let task_id = task_id.clone();
         async move {
-            if crate::uar::api::routes::is_terminal_stream_event(&event) {
-                // Settle the owning receipt before this frame can close the stream.
+            if crate::uar::api::routes::is_terminal_stream_event(&event)
+                || matches!(&event.event,
+                    crate::uar::domain::events::NormalizedEvent::ToolCallApprovalRequired { .. })
+            {
+                // Publish the broker's pending authority before its challenge,
+                // and settle terminal authority before stream closure.
                 let _ = authority.refresh_receipt(&task_id).await;
             }
             let root_run_id = authority.capture_root(&task_id).await;

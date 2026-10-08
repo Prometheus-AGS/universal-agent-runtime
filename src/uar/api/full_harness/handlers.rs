@@ -203,8 +203,11 @@ async fn get_task(
     Path(id): Path<String>,
 ) -> Result<Json<TaskReceipt>, ApiError> {
     let workspace_id = verified_workspace(&headers)?;
+    let owner = verified_owner(&user)?;
+    state.authority.owned(&owner, &workspace_id, &id)?;
+    let _ = state.authority.refresh_receipt(&id).await;
     Ok(Json(state.authority.owned(
-        &verified_owner(&user)?,
+        &owner,
         &workspace_id,
         &id,
     )?))

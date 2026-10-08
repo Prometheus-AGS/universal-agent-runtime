@@ -357,13 +357,24 @@ impl FullHarnessTaskAuthority {
     }
 
     async fn refresh_receipt(&self, task_id: &str) -> Option<bool> {
-        let run_id = self.records.lock().ok()?.tasks.get(task_id)?.receipt.run_id.clone();
-        let _ = self.capture_root(task_id).await;
+        let (run_id, owner) = {
+            let records = self.records.lock().ok()?;
+            let record = records.tasks.get(task_id)?;
+            (record.receipt.run_id.clone(), record.owner.clone())
+        };
+        let root_run_id = self.capture_root(task_id).await;
         let run = self.manager.get_run(&run_id).await?;
         let terminal = matches!(
             &run.status,
             RunStatus::Done | RunStatus::Error | RunStatus::Cancelled
         );
+        // The live root broker owns pending authority; emitting an approval
+        // frame does not change the executor's Running status.
+        let pending_approval = if !terminal && let Some(root_run_id) = root_run_id {
+            self.manager.pending_approval_for_user(owner.user_id(), &root_run_id).await.is_some()
+        } else {
+            false
+        };
         let history = self.manager.history_since(&run_id, None).await;
         let cursor = history.as_ref().and_then(|events| events.last().map(|event| event.id));
         let cleanup_uncertain = terminal && history.as_ref().is_some_and(|events| {
@@ -377,13 +388,17 @@ impl FullHarnessTaskAuthority {
                 return;
             }
             record.receipt.cursor = cursor;
-            record.receipt.state = match &run.status {
-                RunStatus::Pending => "submitted",
-                RunStatus::Running => "working",
-                RunStatus::Paused => "input_required",
-                RunStatus::Done => "completed",
-                RunStatus::Error => "failed",
-                RunStatus::Cancelled => "cancelled",
+            record.receipt.state = if pending_approval {
+                "input_required"
+            } else {
+                match &run.status {
+                    RunStatus::Pending => "submitted",
+                    RunStatus::Running => "working",
+                    RunStatus::Paused => "input_required",
+                    RunStatus::Done => "completed",
+                    RunStatus::Error => "failed",
+                    RunStatus::Cancelled => "cancelled",
+                }
             }
             .to_owned();
             if terminal {
@@ -427,7 +442,8 @@ impl FullHarnessTaskAuthority {
         if receipt.agent_id.as_deref() != Some(agent_id) {
             return Err(ApiError::not_found("task_not_found", "task was not found"));
         }
-        Ok(project_a2a(agent_id, receipt))
+        let _ = self.refresh_receipt(task_id).await;
+        Ok(project_a2a(agent_id, self.owned(owner, workspace_id, task_id)?))
     }
 }
 
