@@ -1,5 +1,6 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
+    fmt::Write as _,
     path::{Component, Path, PathBuf},
     sync::Mutex,
 };
@@ -93,7 +94,11 @@ struct Closure {
 }
 
 pub(super) fn digest(bytes: &[u8]) -> String {
-    format!("sha256:{:x}", Sha256::digest(bytes))
+    let mut encoded = String::from("sha256:");
+    for byte in Sha256::digest(bytes) {
+        write!(&mut encoded, "{byte:02x}").expect("writing to String cannot fail");
+    }
+    encoded
 }
 
 // Inventory values contain strings, integers and arrays, so sorted JSON has the
