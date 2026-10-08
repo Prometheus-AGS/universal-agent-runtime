@@ -1063,7 +1063,7 @@ async fn run_server_with_listener(
     // non-fatal.
     {
         let (builtins, pack_provenance) =
-            uar::runtime::skills::builtin_loader::discover_builtin_skills();
+            uar::runtime::skills::reviewed_coverage::discover_host_builtin_skills().await;
         info!(
             name: "skills.pack.resolved",
             source = ?pack_provenance.source,

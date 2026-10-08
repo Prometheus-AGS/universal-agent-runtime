@@ -1,6 +1,7 @@
 //! Compiler and immutable catalog for collaboration packages.
 
 mod bindings;
+mod reviewed_skills;
 mod export;
 mod grants;
 mod runtime_semantics;

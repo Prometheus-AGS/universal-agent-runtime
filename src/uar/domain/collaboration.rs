@@ -291,6 +291,8 @@ pub struct ConversionReport {
 pub struct ResolvedSkill {
     pub skill: SkillRef,
     pub installed_location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reviewed_coverage: Option<super::reviewed_skill_coverage::ReviewedSkillCoverage>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

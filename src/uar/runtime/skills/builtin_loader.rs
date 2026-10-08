@@ -304,6 +304,12 @@ pub fn detect_pack_mcp_servers(pack_root: &Path) -> Vec<String> {
 /// duplicates are dropped with a warning, unless the pair is listed in
 /// `skill-collision-allowlist.json`.
 pub fn discover_builtin_skills() -> (Vec<Skill>, PackProvenance) {
+    discover_builtin_skills_with_verified_roots(&[])
+}
+
+pub(crate) fn discover_builtin_skills_with_verified_roots(
+    verified_roots: &[PathBuf],
+) -> (Vec<Skill>, PackProvenance) {
     let provenance = pack_detection::resolve_skill_pack_root();
     let mut dirs = vec![provenance.root.clone()];
     if let Ok(extra) = std::env::var("UAR_EXTRA_BUILTIN_SKILL_DIRS") {
@@ -311,6 +317,7 @@ pub fn discover_builtin_skills() -> (Vec<Skill>, PackProvenance) {
             dirs.push(PathBuf::from(path));
         }
     }
+    dirs.extend_from_slice(verified_roots);
 
     let allowlist = load_collision_allowlist(&provenance.root);
     let allow_imported = include_imported();

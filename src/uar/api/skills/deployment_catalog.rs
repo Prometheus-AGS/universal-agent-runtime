@@ -43,6 +43,7 @@ pub struct SkillDeploymentCatalogEntry {
     pub reasons: Vec<SkillDeploymentUnavailableReason>,
     pub skill_ref: Option<SkillRef>,
     pub private_binding: Option<SkillInstallationBinding>,
+    pub reviewed_coverage: crate::uar::domain::reviewed_skill_coverage::SkillCoverageAssessment,
 }
 
 #[derive(Debug, Serialize)]
@@ -95,15 +96,25 @@ async fn get_deployment_catalog(
         )
             .into_response();
     }
-    let entries = state
+    let skills = state
         .service
         .registry()
         .read()
         .await
         .list_for_deployment()
         .into_iter()
-        .map(SkillDeploymentCatalogEntry::from)
-        .collect();
+        .collect::<Vec<_>>();
+    let mut entries = Vec::with_capacity(skills.len());
+    let mut reviews = crate::uar::runtime::skills::reviewed_coverage::ReviewSession::default();
+    for skill in skills {
+        let mut entry = SkillDeploymentCatalogEntry::from(skill);
+        if let (Some(skill), Some(binding)) = (&entry.skill_ref, &entry.private_binding) {
+            entry.reviewed_coverage = reviews.assess(
+                skill, &binding.installed_location,
+            ).await;
+        }
+        entries.push(entry);
+    }
     Json(SkillDeploymentCatalogResponse {
         schema_version: 1,
         entries,
@@ -169,6 +180,9 @@ impl From<Skill> for SkillDeploymentCatalogEntry {
             reasons,
             skill_ref,
             private_binding,
+            reviewed_coverage: crate::uar::domain::reviewed_skill_coverage::SkillCoverageAssessment {
+                status: "unreviewed", reason: "trusted-source-unavailable", coverage: None,
+            },
         }
     }
 }
