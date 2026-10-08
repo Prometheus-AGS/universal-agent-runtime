@@ -239,6 +239,7 @@ impl std::fmt::Debug for ActorToolApprovalGate {
 #[derive(Debug)]
 struct RunStreamState {
     run: Run,
+    approval_root_run_id: Option<String>,
     /// Full middleware-verified identity retained only by the host. The public
     /// Run record keeps its stable subject-only wire schema.
     verified_owner: Option<crate::uar::runtime::actor::messages::ActorOwner>,
@@ -1763,6 +1764,12 @@ impl RunManager {
         })
     }
 
+    /// Read the identity captured from the assembled root approval channel.
+    pub(crate) async fn approval_root_run_id(&self, run_id: &str) -> Option<String> {
+        self.active_runs.read().await.get(run_id)
+            .and_then(|state| state.approval_root_run_id.clone())
+    }
+
     /// Read sanitized durable lifecycle evidence for one owner/run tree.
     pub(crate) async fn tool_admission_evidence_for_user(
         &self,
@@ -2595,6 +2602,7 @@ impl RunManager {
                         }),
                     },
                     verified_owner: request.verified_owner.clone(),
+                    approval_root_run_id: None,
                     presentations: None,
                     dialogue: RunDialogue(
                         SessionStore::new().get_or_create_for_user(
@@ -3475,6 +3483,7 @@ impl RunManager {
                     run_id.clone(),
                     RunStreamState {
                         run,
+                        approval_root_run_id: None,
                         verified_owner: verified_owner.clone(),
                         presentations: Some(Arc::clone(&presentation_snapshot)),
                         dialogue,
@@ -3574,6 +3583,7 @@ impl RunManager {
                 run_id.clone(),
                 RunStreamState {
                     run,
+                    approval_root_run_id: None,
                     verified_owner: verified_owner.clone(),
                     presentations: Some(Arc::clone(&presentation_snapshot)),
                     dialogue: dialogue.clone(),
@@ -3698,6 +3708,10 @@ impl RunManager {
                 }
             },
         };
+
+        if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+            state.approval_root_run_id = Some(approval_channel.root_run_id().to_owned());
+        }
 
         let working_directory = inherited
             .as_ref()

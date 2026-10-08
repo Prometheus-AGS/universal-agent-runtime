@@ -135,6 +135,7 @@ impl FullHarnessTaskAuthority {
             task_id: task_id.clone(),
             native_task_id,
             run_id,
+            root_run_id: None,
             workspace_id: workspace_id.clone(),
             agent_id: None,
             delegated_host_context: None,
@@ -195,6 +196,18 @@ impl FullHarnessTaskAuthority {
                 record.receipt.revision = record.receipt.revision.saturating_add(1);
             }
         }
+    }
+
+    async fn capture_root(&self, task_id: &str) -> Option<String> {
+        let receipt = self.records.lock().ok()?.tasks.get(task_id)?.receipt.clone();
+        if receipt.root_run_id.is_some() {
+            return receipt.root_run_id;
+        }
+        let root_run_id = self.manager.approval_root_run_id(&receipt.run_id).await?;
+        self.update(task_id, |record| {
+            record.receipt.root_run_id = Some(root_run_id.clone());
+        });
+        Some(root_run_id)
     }
 
     fn freeze_admission_response(&self, task_id: &str) -> Result<TaskReceipt, ApiError> {
@@ -351,6 +364,7 @@ impl FullHarnessTaskAuthority {
                 let Some(run) = authority.manager.get_run(&run_id).await else {
                     continue;
                 };
+                let _ = authority.capture_root(&task_id).await;
                 let terminal = matches!(
                     &run.status,
                     RunStatus::Done | RunStatus::Error | RunStatus::Cancelled
@@ -422,6 +436,7 @@ mod error;
 mod handlers;
 pub(crate) mod host_context;
 mod mutations;
+mod stream;
 mod types;
 
 pub(crate) use error::ApiError;

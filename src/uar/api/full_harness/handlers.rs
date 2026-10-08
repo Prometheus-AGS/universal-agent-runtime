@@ -20,7 +20,6 @@ use crate::uar::{
             CreateRunRequest, RunApiState, admit_run, is_terminal_stream_event,
             unrecoverable_stream_gap,
         },
-        sse::build_sse_response,
     },
     runtime::actor::messages::ActorOwner,
     security::{claims::UserContext, sidecar_guard::HostAuthenticated},
@@ -130,6 +129,7 @@ async fn admit_task(
     }.await;
     match result {
         Ok(response) => {
+            let _ = state.authority.capture_root(&task_id).await;
             let agent_id = state
                 .authority
                 .manager
@@ -255,7 +255,7 @@ async fn stream_task(
     }
     let replay_terminal = run_terminal || replay.last().is_some_and(is_terminal_stream_event);
     if replay_terminal {
-        return Ok(build_sse_response(tokio_stream::iter(replay), false, None).into_response());
+        return Ok(super::stream::build_response(tokio_stream::iter(replay), Arc::clone(&state.authority), id).into_response());
     }
     let mut last_seen = replay.last().map_or(last_id.unwrap_or(0), |event| event.id);
     let Some(mut receiver) = state.authority.manager.subscribe(&receipt.run_id).await else {
@@ -300,7 +300,7 @@ async fn stream_task(
             }
         }
     };
-    Ok(build_sse_response(tokio_stream::iter(replay).chain(live), false, None).into_response())
+    Ok(super::stream::build_response(tokio_stream::iter(replay).chain(live), Arc::clone(&state.authority), id).into_response())
 }
 
 #[derive(Deserialize)]

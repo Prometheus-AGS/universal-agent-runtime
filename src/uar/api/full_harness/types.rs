@@ -9,6 +9,8 @@ pub struct TaskReceipt {
     pub task_id: String,
     pub native_task_id: String,
     pub run_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub root_run_id: Option<String>,
     pub workspace_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agent_id: Option<String>,
