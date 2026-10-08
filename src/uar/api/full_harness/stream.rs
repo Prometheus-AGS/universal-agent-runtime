@@ -20,6 +20,10 @@ where
         let authority = Arc::clone(&authority);
         let task_id = task_id.clone();
         async move {
+            if crate::uar::api::routes::is_terminal_stream_event(&event) {
+                // Settle the owning receipt before this frame can close the stream.
+                let _ = authority.refresh_receipt(&task_id).await;
+            }
             let root_run_id = authority.capture_root(&task_id).await;
             to_agui_event(&event.event).map(|(name, mut payload)| {
                 if let Some(root_run_id) = root_run_id {

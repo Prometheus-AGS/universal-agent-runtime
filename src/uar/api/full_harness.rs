@@ -356,56 +356,56 @@ impl FullHarnessTaskAuthority {
         }
     }
 
-    fn monitor(self: &Arc<Self>, task_id: String, run_id: String) {
+    async fn refresh_receipt(&self, task_id: &str) -> Option<bool> {
+        let run_id = self.records.lock().ok()?.tasks.get(task_id)?.receipt.run_id.clone();
+        let _ = self.capture_root(task_id).await;
+        let run = self.manager.get_run(&run_id).await?;
+        let terminal = matches!(
+            &run.status,
+            RunStatus::Done | RunStatus::Error | RunStatus::Cancelled
+        );
+        let history = self.manager.history_since(&run_id, None).await;
+        let cursor = history.as_ref().and_then(|events| events.last().map(|event| event.id));
+        let cleanup_uncertain = terminal && history.as_ref().is_some_and(|events| {
+            events.iter().any(|event| matches!(&event.event,
+                crate::uar::domain::events::NormalizedEvent::Error { code, .. }
+                    if code.ends_with("cleanup_unconfirmed")))
+        });
+        self.update(task_id, |record| {
+            // An older monitor sample must not undo terminal stream settlement.
+            if record.receipt.terminal_at.is_some() && !terminal {
+                return;
+            }
+            record.receipt.cursor = cursor;
+            record.receipt.state = match &run.status {
+                RunStatus::Pending => "submitted",
+                RunStatus::Running => "working",
+                RunStatus::Paused => "input_required",
+                RunStatus::Done => "completed",
+                RunStatus::Error => "failed",
+                RunStatus::Cancelled => "cancelled",
+            }
+            .to_owned();
+            if terminal {
+                let terminal_at = record.receipt.terminal_at.get_or_insert_with(Utc::now).to_owned();
+                record.receipt.expires_at = Some(
+                    terminal_at + chrono::Duration::seconds(
+                        record.receipt.retention.terminal_ttl_seconds as i64,
+                    ),
+                );
+                record.receipt.cancellation.terminal = matches!(&run.status, RunStatus::Cancelled);
+                record.receipt.cancellation.cleanup_uncertain |= cleanup_uncertain;
+            }
+        });
+        Some(terminal)
+    }
+
+    fn monitor(self: &Arc<Self>, task_id: String) {
         let authority = Arc::clone(self);
         tokio::spawn(async move {
             loop {
                 tokio::time::sleep(Duration::from_millis(250)).await;
-                let Some(run) = authority.manager.get_run(&run_id).await else {
-                    continue;
-                };
-                let _ = authority.capture_root(&task_id).await;
-                let terminal = matches!(
-                    &run.status,
-                    RunStatus::Done | RunStatus::Error | RunStatus::Cancelled
-                );
-                let cursor = authority
-                    .manager
-                    .history_since(&run_id, None)
-                    .await
-                    .and_then(|events| events.last().map(|event| event.id));
-                authority.update(&task_id, |record| {
-                    record.receipt.cursor = cursor;
-                    record.receipt.state = match &run.status {
-                        RunStatus::Pending => "submitted",
-                        RunStatus::Running => "working",
-                        RunStatus::Paused => "input_required",
-                        RunStatus::Done => "completed",
-                        RunStatus::Error => "failed",
-                        RunStatus::Cancelled => "cancelled",
-                    }
-                    .to_owned();
-                    if terminal {
-                        let terminal_at = record
-                            .receipt
-                            .terminal_at
-                            .get_or_insert_with(Utc::now)
-                            .to_owned();
-                        record.receipt.expires_at = Some(
-                            terminal_at
-                                + chrono::Duration::seconds(
-                                    record.receipt.retention.terminal_ttl_seconds as i64,
-                                ),
-                        );
-                        record.receipt.cancellation.terminal =
-                            matches!(&run.status, RunStatus::Cancelled);
-                    }
-                });
-                if terminal {
-                    let cleanup_uncertain = authority.manager.history_since(&run_id, None).await.unwrap_or_default().iter().any(|event| matches!(&event.event, crate::uar::domain::events::NormalizedEvent::Error { code, .. } if code.ends_with("cleanup_unconfirmed")));
-                    authority.update(&task_id, |record| {
-                        record.receipt.cancellation.cleanup_uncertain |= cleanup_uncertain
-                    });
+                if authority.refresh_receipt(&task_id).await == Some(true) {
                     authority.prune();
                     break;
                 }
