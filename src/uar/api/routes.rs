@@ -41,7 +41,7 @@ pub fn build_router() -> Router<Arc<RunApiState>> {
         .route("/runs/{id}", get(read_run))
         .route("/runs/{id}/stream", get(stream_run))
         .route("/runs/{id}/events", get(super::run_events::snapshot))
-        .route("/runs/{run_id}/tool-approval", post(api_tool_approval))
+        .route("/runs/{run_id}/tool-approval", get(api_approval_records).post(api_tool_approval))
         .route(
             "/runs/{run_id}/tool-approval/pending",
             get(api_pending_tool_approval),
@@ -943,22 +943,31 @@ async fn api_tool_approval(
             Json(serde_json::json!({ "resolved": false })),
         );
     }
-    if manager
-        .resolve_approval_request(&run_id, body.approval_id.as_deref(), body.approved)
-        .await
-    {
-        (
-            StatusCode::OK,
-            Json(serde_json::json!({
-                "resolved": true,
-                "decision": if body.approved { "allow" } else { "deny" }
-            })),
-        )
-    } else {
-        (
-            StatusCode::NOT_FOUND,
-            Json(serde_json::json!({ "resolved": false })),
-        )
+    match manager.resolve_approval_record(&run_id, body.approval_id.as_deref(), body.approved).await {
+        Ok(Some((record, delivered))) => (StatusCode::OK, Json(serde_json::json!({
+            "resolved": delivered, "decision": if body.approved { "allow" } else { "deny" },
+            "record": crate::uar::persistence::approval_decisions::ApprovalRecordView { record, resolvable: false },
+        }))),
+        Ok(None) => (StatusCode::NOT_FOUND, Json(serde_json::json!({ "resolved": false }))),
+        Err(_) => (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({
+            "resolved": false, "code": "approval_persistence_unavailable",
+        }))),
+    }
+}
+
+/// Owner-scoped history remains readable after the live run leaves memory.
+async fn api_approval_records(
+    State(RunManagerState(manager)): State<RunManagerState>,
+    Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
+    Path(run_id): Path<String>,
+) -> impl IntoResponse {
+    let workspace = headers.get("x-uar-workspace-id").and_then(|value| value.to_str().ok());
+    match manager.approval_records_for_context(&user, &run_id, workspace).await {
+        Ok((durable, records)) => {
+            (StatusCode::OK, Json(serde_json::json!({ "version": 1, "runId": run_id, "durable": durable, "records": records })))
+        }
+        Err(_) => (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({ "code": "approval_history_unavailable" }))),
     }
 }
 

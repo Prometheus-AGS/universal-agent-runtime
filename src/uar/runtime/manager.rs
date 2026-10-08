@@ -939,6 +939,7 @@ impl RunManager {
                 &tool_runtime_epoch,
             ),
         );
+        let approvals = ApprovalBroker::new(persistence.clone(), tool_runtime_epoch.clone());
         Self {
             graph_roots: Arc::new(
                 crate::uar::runtime::thread::graph_host::GraphRootSupervisor::default(),
@@ -977,7 +978,7 @@ impl RunManager {
             a2ui_backbone: crate::uar::a2ui::realtime::InMemoryReplayBackbone::new(),
             primary_driver: None,
             destination_preparations: None,
-            approvals: ApprovalBroker::default(),
+            approvals,
             root_cancellation: CancellationToken::new(),
             run_cancellations: Arc::new(RwLock::new(HashMap::new())),
             message_context_strategy: crate::uar::context::ContextStrategy::default(),
@@ -1710,7 +1711,21 @@ impl RunManager {
         approval_id: Option<&str>,
         approved: bool,
     ) -> bool {
-        self.approvals.resolve(run_id, approval_id, approved)
+        self.approvals.resolve_record(run_id, approval_id, approved).await
+            .ok().flatten().is_some_and(|(_, delivered)| delivered)
+    }
+
+    pub(crate) async fn resolve_approval_record(
+        &self, run_id: &str, approval_id: Option<&str>, approved: bool,
+    ) -> anyhow::Result<Option<(crate::uar::persistence::approval_decisions::ApprovalRecord, bool)>> {
+        self.approvals.resolve_record(run_id, approval_id, approved).await
+    }
+
+    pub(crate) async fn approval_records_for_context(
+        &self, user: &crate::uar::security::claims::UserContext, run_id: &str, workspace: Option<&str>,
+    ) -> anyhow::Result<(bool, Vec<crate::uar::persistence::approval_decisions::ApprovalRecordView>)> {
+        let owner = crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user)?;
+        self.approvals.records(&owner.presentation_owner_key(), run_id, workspace).await
     }
 
     /// Return the existing live waiter for an owner. This snapshot is a view of
@@ -3651,9 +3666,12 @@ impl RunManager {
         let child_run = inherited.is_some();
         let approval_channel = match &inherited {
             Some(bindings) => bindings.approvals.for_child(),
-            None => match self.approvals.register(
+            None => match self.approvals.register_scoped(
                 run_id.clone(),
                 owner_id.clone(),
+                verified_owner.as_ref().map(|owner| owner.presentation_owner_key())
+                    .unwrap_or_else(|| format!("v1:s:{}:{}", owner_id.len(), owner_id)),
+                collaboration_binding.as_ref().map(|binding| binding.workspace_id.clone()),
                 Arc::new(emitter.clone()),
                 run_cancellation.clone(),
             ) {
@@ -5562,10 +5580,11 @@ impl RunManager {
             let approval_governance = self.governance_engine.clone();
             let approval_governance_gate = self.governance_gate.clone();
             let effective_tool_approval = effective_policy.tool_approval;
+            let approval_gate_channel = approval_channel.clone();
             let gate: crate::llm::ToolApprovalGate = Arc::new(move |invocation| {
                 let run_id = approval_run_id.clone();
                 let emitter = approval_emitter.clone();
-                let channel = approval_channel.clone();
+                let channel = approval_gate_channel.clone();
                 let cancellation = approval_cancellation.clone();
                 let agent_id = approval_agent_id.clone();
                 let governance = approval_governance.clone();
@@ -5999,6 +6018,13 @@ impl RunManager {
                             cleanup_failed = true;
                             emitter.emit(NormalizedEvent::Error {
                                 run_id: execute_run_id.clone(), code: "sandbox_cleanup_unconfirmed".into(), message: error.to_string(),
+                            }).await;
+                        }
+                        if approval_channel.finish_cancelled_root(&execute_run_id).await.is_err() {
+                            cleanup_failed = true;
+                            emitter.emit(NormalizedEvent::Error {
+                                run_id: execute_run_id.clone(), code: "approval_cleanup_unconfirmed".into(),
+                                message: "Cancelled approval state could not be persisted".into(),
                             }).await;
                         }
                         if let Some(state) = runs_for_completion.write().await.get_mut(&execute_run_id) {
@@ -6535,6 +6561,15 @@ impl RunManager {
                         message: error.to_string(),
                     })
                     .await;
+            }
+
+            if approval_channel.finish_cancelled_root(&execute_run_id).await.is_err() {
+                run_cancelled = false;
+                run_failed = true;
+                emitter.emit(NormalizedEvent::Error {
+                    run_id: execute_run_id.clone(), code: "approval_cleanup_unconfirmed".into(),
+                    message: "Cancelled approval state could not be persisted".into(),
+                }).await;
             }
 
             let mut interrupted_fragment = None;

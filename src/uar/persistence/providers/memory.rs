@@ -12,6 +12,7 @@ use crate::uar::persistence::agent_threads::{
     self, AgentThreadStoreError, CanonicalToolReceipt, PersistedAgentThread,
 };
 use crate::uar::persistence::tool_admission::ToolAdmissionEvidence;
+use crate::uar::persistence::approval_decisions::{ApprovalRecord, ApprovalState};
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 
 use crate::{
@@ -47,6 +48,7 @@ pub struct InMemoryProvider {
     agents: RwLock<HashMap<String, AgentArtifact>>,
     agent_threads: RwLock<AgentThreadStore>,
     canonical_tool_receipts: RwLock<HashMap<String, Vec<CanonicalToolReceipt>>>,
+    approval_records: RwLock<HashMap<String, ApprovalRecord>>,
     tool_admission_evidence: RwLock<HashMap<String, Vec<ToolAdmissionEvidence>>>,
     memories: RwLock<Vec<Memory>>,
     cost_ledger: RwLock<Vec<CostEntry>>,
@@ -103,6 +105,24 @@ fn write<T>(lock: &RwLock<T>) -> Result<std::sync::RwLockWriteGuard<'_, T>> {
 
 #[async_trait]
 impl PersistenceLayer for InMemoryProvider {
+    async fn create_approval_record(&self, record: &ApprovalRecord) -> Result<()> {
+        anyhow::ensure!(record.state == ApprovalState::Pending && record.decision.is_none(), "New approval must be pending");
+        let mut records = write(&self.approval_records)?;
+        anyhow::ensure!(!records.contains_key(&record.storage_key()), "Approval already exists");
+        records.insert(record.storage_key(), record.clone());
+        Ok(())
+    }
+    async fn transition_approval_record(&self, before: &ApprovalRecord, after: &ApprovalRecord) -> Result<bool> {
+        before.validate_transition(after)?;
+        let mut records = write(&self.approval_records)?;
+        if records.get(&before.storage_key()) != Some(before) { return Ok(false); }
+        records.insert(before.storage_key(), after.clone());
+        Ok(true)
+    }
+    async fn list_approval_records(&self, owner: &str, run: &str) -> Result<Vec<ApprovalRecord>> {
+        Ok(read(&self.approval_records)?.values().filter(|record| record.owner_key == owner && record.root_run_id == run).cloned().collect())
+    }
+
     async fn record_cost_entry(&self, scope: &str, scope_id: &str, cost_usd: f64) -> Result<()> {
         write(&self.cost_ledger)?.push(CostEntry {
             scope: scope.to_string(),
