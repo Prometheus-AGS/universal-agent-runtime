@@ -240,7 +240,7 @@ async fn stream_task(
             ApiError::gone(
                 "task_unresolved",
                 "native run stream is unavailable",
-                Some(id),
+                Some(id.clone()),
                 None,
             )
         })?;
