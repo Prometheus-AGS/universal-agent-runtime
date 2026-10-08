@@ -61,11 +61,18 @@ struct GrantRecord {
     workspace_ids: Vec<String>,
     operations: Vec<DelegationOperation>,
     expires: Instant,
+    expires_at: DateTime<Utc>,
 }
 
 /// Verified request identity established by the outer sidecar guard only.
 #[derive(Clone, Debug)]
-pub struct DelegationAuthenticated(pub(crate) UserContext);
+pub struct DelegationAuthenticated(pub(crate) UserContext, pub(crate) String);
+
+/// Live authority view without its bearer credential. Never accepted from JSON.
+pub(crate) struct VerifiedDelegationGrant {
+    pub principal: UserContext,
+    pub expires_at: DateTime<Utc>,
+}
 
 /// Private native-memory authority. It deliberately has no serialization surface.
 pub struct DelegationGrantAuthority {
@@ -136,6 +143,7 @@ impl DelegationGrantAuthority {
                 workspace_ids: request.workspace_ids.clone(),
                 operations: request.operations.clone(),
                 expires: Instant::now() + Duration::from_secs(GRANT_TTL_SECONDS),
+                expires_at,
             },
         );
         Ok(IssuedGrant {
@@ -160,6 +168,29 @@ impl DelegationGrantAuthority {
             .remove(id);
     }
 
+    pub(crate) fn full_harness_grant(
+        &self,
+        id: &str,
+        workspace: &str,
+        epoch: &str,
+    ) -> Option<VerifiedDelegationGrant> {
+        if epoch != self.runtime_epoch {
+            return None;
+        }
+        let mut records = self.records.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        records.retain(|_, record| record.expires > Instant::now());
+        let record = records.get(id)?;
+        if !record.operations.contains(&DelegationOperation::FullHarnessDelegation)
+            || !record.workspace_ids.iter().any(|id| id == workspace)
+        {
+            return None;
+        }
+        Some(VerifiedDelegationGrant {
+            principal: record.principal.clone(),
+            expires_at: record.expires_at,
+        })
+    }
+
     pub(crate) fn authenticate(
         &self,
         supplied: &str,
@@ -171,12 +202,12 @@ impl DelegationGrantAuthority {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         records.retain(|_, record| record.expires > Instant::now());
         records
-            .values()
-            .find(|record| {
+            .iter()
+            .find(|(_, record)| {
                 crate::config::secret_value_matches(&record.token, Some(supplied))
                     && record.allows(request)
             })
-            .map(|record| DelegationAuthenticated(record.principal.clone()))
+            .map(|(id, record)| DelegationAuthenticated(record.principal.clone(), id.clone()))
     }
 }
 

@@ -80,6 +80,7 @@ impl FullHarnessTaskAuthority {
             recovery: "unsupported_after_restart",
             retention: self.retention.clone(),
             steer_supported: false,
+            delegated_host_context_v1: true,
         }
     }
 
@@ -136,6 +137,7 @@ impl FullHarnessTaskAuthority {
             run_id,
             workspace_id: workspace_id.clone(),
             agent_id: None,
+            delegated_host_context: None,
             runtime_epoch: self.runtime_epoch.clone(),
             revision: 1,
             cursor: None,
@@ -418,11 +420,13 @@ impl FullHarnessTaskAuthority {
 mod a2a_projection;
 mod error;
 mod handlers;
+pub(crate) mod host_context;
 mod mutations;
 mod types;
 
 pub(crate) use error::ApiError;
 pub use handlers::{FullHarnessApiState, build_router};
+pub use host_context::{DelegatedHostContexts, DelegatedHostContextReceipt};
 pub use types::{
     CancellationReceipt, RetentionReceipt, RuntimeDescriptor, TaskDiagnostic, TaskLinks,
     TaskReceipt,

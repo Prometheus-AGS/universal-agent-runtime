@@ -12,6 +12,8 @@ pub struct TaskReceipt {
     pub workspace_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agent_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub delegated_host_context: Option<super::host_context::DelegatedHostContextReceipt>,
     pub runtime_epoch: String,
     pub revision: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -48,6 +50,7 @@ pub struct RuntimeDescriptor {
     pub recovery: &'static str,
     pub retention: RetentionReceipt,
     pub steer_supported: bool,
+    pub delegated_host_context_v1: bool,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]
