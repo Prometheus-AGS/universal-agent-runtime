@@ -1675,6 +1675,9 @@ async fn run_server_with_listener(
             uar::api::full_harness::build_router().with_state::<AppState>(Arc::new(
                 uar::api::full_harness::FullHarnessApiState {
                     authority: Arc::clone(&full_harness_authority),
+                    contexts: Arc::new(uar::api::full_harness::DelegatedHostContexts::new(
+                        Arc::clone(&delegation_grants),
+                    )),
                     runs: Arc::new(uar::api::routes::RunApiState {
                         manager: Arc::clone(&state.run_manager),
                         collaboration_catalog: Arc::clone(&state.collaboration_catalog),

@@ -20,7 +20,6 @@ use crate::uar::{
             CreateRunRequest, RunApiState, admit_run, is_terminal_stream_event,
             unrecoverable_stream_gap,
         },
-        sse::build_sse_response,
     },
     runtime::actor::messages::ActorOwner,
     security::{claims::UserContext, sidecar_guard::HostAuthenticated},
@@ -30,11 +29,15 @@ use crate::uar::{
 pub struct FullHarnessApiState {
     pub authority: Arc<FullHarnessTaskAuthority>,
     pub runs: Arc<RunApiState>,
+    pub contexts: Arc<super::host_context::DelegatedHostContexts>,
 }
 
 pub fn build_router() -> Router<Arc<FullHarnessApiState>> {
     Router::new()
         .route("/capabilities", get(get_capabilities))
+        .route("/delegated-host-contexts", post(super::host_context::register))
+        .route("/delegated-host-contexts/{id}", axum::routing::delete(super::host_context::delete))
+        .route("/delegated-host-contexts/{id}/runs/{run_id}", get(super::host_context::get_run))
         .route("/tasks", post(admit_task))
         .route("/admissions/{admission_id}", get(get_admission))
         .route("/tasks/{task_id}", get(get_task))
@@ -58,6 +61,7 @@ async fn admit_task(
     Extension(user): Extension<UserContext>,
     headers: HeaderMap,
     host: Option<Extension<HostAuthenticated>>,
+    delegated: Option<Extension<crate::uar::security::delegation_grants::DelegationAuthenticated>>,
     Json(mut body): Json<Value>,
 ) -> Result<(StatusCode, Json<TaskReceipt>), ApiError> {
     let owner = verified_owner(&user)?;
@@ -68,6 +72,10 @@ async fn admit_task(
     })?;
     let admission_id = take_required_string(object, "admission_id")?;
     let native_task_id = take_required_string(object, "native_task_id")?;
+    let context_id = object.remove("delegated_host_context_id").map(|value| {
+        value.as_str().filter(|id| !id.trim().is_empty()).map(str::to_owned)
+            .ok_or_else(|| ApiError::bad_request("delegated_host_context_invalid", "context reference must be a non-empty string"))
+    }).transpose()?;
     let run_request: CreateRunRequest = serde_json::from_value(body)
         .map_err(|error| ApiError::bad_request("admission_invalid", error.to_string()))?;
     let reserved = state.authority.reserve(
@@ -87,17 +95,41 @@ async fn admit_task(
         Reservation::New(receipt) => receipt,
     };
     let task_id = receipt.task_id.clone();
-    match admit_run(
-        Arc::clone(&state.runs),
-        user,
-        headers,
-        host.is_some(),
-        run_request,
-        Some(receipt.run_id.clone()),
-    )
-    .await
-    {
+    let result = async {
+        let context = match context_id {
+            Some(id) => {
+                if run_request.artifact.is_some() || run_request.agent_id.is_some()
+                    || run_request.mcp_servers.is_some() || run_request.tool_admission.is_some()
+                    || run_request.run_credentials.is_some() || run_request.working_directory.is_some()
+                    || run_request.history.is_some()
+                {
+                    return Err(super::host_context::run_mismatch());
+                }
+                let context = state.contexts.for_admission(&id, delegated.as_ref().map(|value| &value.0),
+                    &user, &workspace_id, run_request.deployment_binding_id.as_deref())
+                    .map_err(super::host_context::run_error)?;
+                state.authority.update(&task_id, |record| {
+                    record.receipt.delegated_host_context = Some(context.receipt.clone());
+                });
+                state.contexts.bind_run(&context, &receipt);
+                Some(context)
+            }
+            None => None,
+        };
+        admit_run(
+            Arc::clone(&state.runs),
+            user,
+            headers,
+            host.is_some(),
+            run_request,
+            Some(receipt.run_id.clone()),
+            context,
+        )
+        .await
+    }.await;
+    match result {
         Ok(response) => {
+            let _ = state.authority.capture_root(&task_id).await;
             let agent_id = state
                 .authority
                 .manager
@@ -125,7 +157,7 @@ async fn admit_task(
             let admission_receipt = state.authority.freeze_admission_response(&task_id)?;
             state
                 .authority
-                .monitor(task_id.clone(), receipt.run_id.clone());
+                .monitor(task_id.clone());
             Ok((StatusCode::ACCEPTED, Json(admission_receipt)))
         }
         Err(error) => {
@@ -171,8 +203,11 @@ async fn get_task(
     Path(id): Path<String>,
 ) -> Result<Json<TaskReceipt>, ApiError> {
     let workspace_id = verified_workspace(&headers)?;
+    let owner = verified_owner(&user)?;
+    state.authority.owned(&owner, &workspace_id, &id)?;
+    let _ = state.authority.refresh_receipt(&id).await;
     Ok(Json(state.authority.owned(
-        &verified_owner(&user)?,
+        &owner,
         &workspace_id,
         &id,
     )?))
@@ -208,7 +243,7 @@ async fn stream_task(
             ApiError::gone(
                 "task_unresolved",
                 "native run stream is unavailable",
-                Some(id),
+                Some(id.clone()),
                 None,
             )
         })?;
@@ -223,7 +258,7 @@ async fn stream_task(
     }
     let replay_terminal = run_terminal || replay.last().is_some_and(is_terminal_stream_event);
     if replay_terminal {
-        return Ok(build_sse_response(tokio_stream::iter(replay), false, None).into_response());
+        return Ok(super::stream::build_response(tokio_stream::iter(replay), Arc::clone(&state.authority), id).into_response());
     }
     let mut last_seen = replay.last().map_or(last_id.unwrap_or(0), |event| event.id);
     let Some(mut receiver) = state.authority.manager.subscribe(&receipt.run_id).await else {
@@ -268,7 +303,7 @@ async fn stream_task(
             }
         }
     };
-    Ok(build_sse_response(tokio_stream::iter(replay).chain(live), false, None).into_response())
+    Ok(super::stream::build_response(tokio_stream::iter(replay).chain(live), Arc::clone(&state.authority), id).into_response())
 }
 
 #[derive(Deserialize)]
@@ -296,6 +331,7 @@ async fn tool_approval(
         state
             .authority
             .require_revision(&owner, &workspace_id, &id, body.expected_revision)?;
+    state.contexts.coordinate_approval(&state, &user, &receipt, &body.approval_id, body.approved).await?;
     let resolved = state
         .authority
         .manager
@@ -390,7 +426,7 @@ fn verified_owner(user: &UserContext) -> Result<ActorOwner, ApiError> {
         .map_err(|_| ApiError::unauthorized("principal_invalid", "verified user context required"))
 }
 
-fn verified_workspace(headers: &HeaderMap) -> Result<String, ApiError> {
+pub(super) fn verified_workspace(headers: &HeaderMap) -> Result<String, ApiError> {
     headers
         .get("x-uar-workspace-id")
         .and_then(|value| value.to_str().ok())

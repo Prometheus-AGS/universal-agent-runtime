@@ -186,6 +186,9 @@ pub(crate) struct RunApiError {
 }
 
 impl RunApiError {
+    pub(crate) fn delegated_context(status: StatusCode, code: &'static str, message: String) -> Self {
+        Self { status, code, message }
+    }
     pub(crate) fn status(&self) -> StatusCode {
         self.status
     }
@@ -448,6 +451,7 @@ async fn create_run(
         host_authenticated.is_some(),
         req,
         None,
+        None,
     )
     .await
     .map(Json)
@@ -460,6 +464,7 @@ pub(crate) async fn admit_run(
     host_authenticated: bool,
     req: CreateRunRequest,
     reserved_run_id: Option<String>,
+    delegated_host_context: Option<Arc<super::full_harness::host_context::DelegatedHostContext>>,
 ) -> Result<CreateRunResponse, RunApiError> {
     let CreateRunRequest {
         artifact,
@@ -566,6 +571,11 @@ pub(crate) async fn admit_run(
     request.session_id = session_id;
     request.skill_attachments = skill_attachments;
     request.presentation_negotiation = presentation_negotiation;
+    if let Some(context) = delegated_host_context {
+        let run_id = reserved_run_id.as_deref().ok_or_else(super::full_harness::host_context::run_mismatch)?;
+        context.attach(&state, &mut request, run_id).await
+            .map_err(super::full_harness::host_context::run_error)?;
+    }
     if let Some(input) = tool_admission {
         if !host_authenticated {
             return Err(RunApiError {
