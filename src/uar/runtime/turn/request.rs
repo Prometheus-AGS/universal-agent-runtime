@@ -26,7 +26,7 @@ impl CollaborationRunBinding {
         self.revalidate_authority().await
     }
 
-    async fn revalidate_authority(&self) -> anyhow::Result<()> {
+    pub(super) async fn revalidate_authority(&self) -> anyhow::Result<()> {
         match &self.team_attempt {
             Some(attempt) => {
                 crate::uar::runtime::team_execution::revalidate_member_binding(
@@ -49,6 +49,20 @@ impl CollaborationRunBinding {
 impl crate::uar::runtime::tool_admission::ClaimRevalidator for CollaborationRunBinding {
     async fn revalidate(&self) -> anyhow::Result<()> {
         self.revalidate_authority().await
+    }
+
+    async fn prepare_invocation(
+        &self,
+        invocation: &crate::uar::runtime::tool_admission::PreparedToolInvocation,
+    ) -> anyhow::Result<bool> {
+        self.prepare_representation_tool(invocation).await
+    }
+
+    async fn revalidate_invocation(
+        &self,
+        admitted: &crate::uar::runtime::tool_admission::AdmittedToolInvocation,
+    ) -> anyhow::Result<()> {
+        self.claim_representation_tool(admitted).await
     }
 }
 

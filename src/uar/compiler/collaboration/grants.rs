@@ -43,6 +43,11 @@ impl CollaborationCatalogService {
             ));
         }
         let grant = parse_grant(&request.grant)?;
+        if grant.issuer_principal_id != owner_id {
+            return Err(CollaborationError::Invalid(
+                "REPRESENTATION_ISSUER_PRINCIPAL_MISMATCH".into(),
+            ));
+        }
         let command_digest = request_digest(&request)?;
         let command_key = receipt_key(owner_id, &request.command_id);
         for _ in 0..MAX_CAS_ATTEMPTS {
@@ -226,6 +231,7 @@ pub(super) fn validate_binding_grants(
                 || grant.constraint_digest != reference.constraint_digest
                 || grant.grantee_agent_instance_id != runtime_instance_id
                 || grant.status != RepresentationGrantStatus::Active
+                || grant.revocation.is_some()
                 || grant.not_before > Utc::now()
                 || grant.expires_at <= Utc::now()
             {

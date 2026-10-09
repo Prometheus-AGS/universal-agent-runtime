@@ -106,7 +106,10 @@ impl HostToolAdmissionPort for OwnedToolAdmissionPort {
                 && preparation.runtime_epoch == invocation.runtime_epoch
                 && preparation.host_epoch == invocation.host_epoch
                 && preparation.authority_revision == invocation.authority_revision
-                && preparation.host_disposition == HostAdmissionDisposition::Auto
+                && matches!(
+                    preparation.host_disposition,
+                    HostAdmissionDisposition::Auto | HostAdmissionDisposition::Ask
+                )
                 && !preparation.managed_mcp_metadata,
             "Runtime-control preparation does not match the exact invocation"
         );

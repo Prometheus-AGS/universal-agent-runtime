@@ -6,6 +6,7 @@ pub mod contributors;
 pub mod host;
 pub mod plan;
 pub mod request;
+pub(crate) mod representation;
 pub mod resolved;
 pub mod shadow;
 

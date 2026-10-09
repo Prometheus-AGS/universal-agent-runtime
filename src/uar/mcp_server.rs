@@ -704,6 +704,15 @@ impl UarRuntimeMcpServer {
         Parameters(p): Parameters<CollaborationGrantParams>,
         McpExtension(parts): McpExtension<axum::http::request::Parts>,
     ) -> Result<CallToolResult, McpError> {
+        if parts
+            .extensions
+            .get::<crate::uar::security::sidecar_guard::HostAuthenticated>()
+            .is_none()
+        {
+            return Err(McpError::invalid_params(
+                "REPRESENTATION_TRUSTED_ISSUER_REQUIRED", None,
+            ));
+        }
         let owner = collaboration_owner(&parts)?;
         let workspace = collaboration_workspace(&parts)?;
         let response = self
@@ -719,6 +728,7 @@ impl UarRuntimeMcpServer {
             )
             .await
             .map_err(collaboration_mcp_error)?;
+        self.run_manager.invalidate_representation_grant(&owner, &workspace, &response.grant).await;
         Ok(ok_json(&response))
     }
 

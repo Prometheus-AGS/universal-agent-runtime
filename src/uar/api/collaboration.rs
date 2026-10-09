@@ -302,8 +302,12 @@ async fn install_representation_grant(
     State(state): State<Arc<CollaborationApiState>>,
     Extension(user): Extension<UserContext>,
     headers: HeaderMap,
+    marker: Option<Extension<crate::uar::security::sidecar_guard::HostAuthenticated>>,
     Json(request): Json<GrantCommandRequest>,
 ) -> Response {
+    if marker.is_none() {
+        return (StatusCode::FORBIDDEN, "REPRESENTATION_TRUSTED_ISSUER_REQUIRED").into_response();
+    }
     let (owner, workspace) = match private_scope(&user, &headers) {
         Ok(scope) => scope,
         Err(response) => return response,
@@ -313,7 +317,10 @@ async fn install_representation_grant(
         .install_representation_grant(&owner, &workspace, request)
         .await
     {
-        Ok(response) => (StatusCode::CREATED, Json(response)).into_response(),
+        Ok(response) => {
+            state.runtime.invalidate_representation_grant(&owner, &workspace, &response.grant).await;
+            (StatusCode::CREATED, Json(response)).into_response()
+        },
         Err(error) => error_response(error),
     }
 }

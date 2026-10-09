@@ -65,7 +65,8 @@ pub fn team_execution_b_enabled() -> bool {
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.
-pub const CAPABILITY_VOCABULARY: [&str; 28] = [
+pub const CAPABILITY_VOCABULARY: [&str; 29] = [
+    crate::uar::runtime::turn::representation::CAPABILITY,
     crate::uar::runtime::team_execution::host::CAPABILITY,
     crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY,
     "agui_stream_fidelity",
@@ -98,7 +99,8 @@ pub const CAPABILITY_VOCABULARY: [&str; 28] = [
 
 /// Capabilities this binary implements. Each owning change adds its name in
 /// the same commit as the behaviour.
-pub const IMPLEMENTED_CAPABILITIES: [&str; 17] = [
+pub const IMPLEMENTED_CAPABILITIES: [&str; 18] = [
+    crate::uar::runtime::turn::representation::CAPABILITY,
     crate::uar::runtime::team_execution::host::CAPABILITY,
     "approval_lifecycle_v1",
     "collaboration_definition_packages_v1",
@@ -290,7 +292,7 @@ pub fn collaboration_capabilities() -> CollaborationCapabilities {
             team_instance: false,
             team_execution: false,
             workflow: false,
-            human_representation: false,
+            human_representation: true,
         },
     }
 }

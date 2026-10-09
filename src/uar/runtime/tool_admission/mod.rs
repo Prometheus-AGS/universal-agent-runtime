@@ -253,6 +253,7 @@ impl ToolAdmissionContext {
         }));
         PreparedToolInvocation {
             version: TOOL_ADMISSION_PROTOCOL_VERSION,
+            representation_effect: descriptor.effect,
             admission_owner: crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost,
             invocation_id,
             model_tool_call_id,
@@ -318,6 +319,9 @@ pub struct EffectBudgetReservationFacts {
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PreparedToolInvocation {
+    /// Captured descriptor classification; deserialization cannot assert effect safety.
+    #[serde(skip, default = "unknown_representation_effect")]
+    pub(crate) representation_effect: ToolEffect,
     /// Trusted handler provenance, never accepted from the public wire.
     #[serde(skip)]
     pub(crate) admission_owner: crate::uar::persistence::tool_admission::AdmissionOwner,
@@ -351,6 +355,10 @@ pub struct PreparedToolInvocation {
     pub approval_class: ApprovalClass,
     pub call_index: usize,
     pub validated_arguments: Value,
+}
+
+fn unknown_representation_effect() -> ToolEffect {
+    ToolEffect::Unknown
 }
 
 impl std::fmt::Debug for PreparedToolInvocation {
@@ -624,6 +632,15 @@ pub trait HostToolAdmissionPort: Send + Sync + std::fmt::Debug {
 #[async_trait]
 pub trait ClaimRevalidator: Send + Sync + std::fmt::Debug {
     async fn revalidate(&self) -> anyhow::Result<()>;
+
+    async fn prepare_invocation(&self, _: &PreparedToolInvocation) -> anyhow::Result<bool> {
+        self.revalidate().await?;
+        Ok(false)
+    }
+
+    async fn revalidate_invocation(&self, _: &AdmittedToolInvocation) -> anyhow::Result<()> {
+        self.revalidate().await
+    }
 }
 
 pub struct ToolAdmissionRuntime {
@@ -760,7 +777,14 @@ impl ToolAdmissionRuntime {
     ) -> anyhow::Result<HostAdmissionPreparation> {
         invocation.validate_authority_envelope()?;
         self.lifecycle.reconcile(&self.context).await?;
-        let prepared = self.host.prepare(invocation.clone()).await?;
+        let mut requires_human = false;
+        for revalidator in &self.claim_revalidators {
+            requires_human |= revalidator.prepare_invocation(&invocation).await?;
+        }
+        let mut prepared = self.host.prepare(invocation.clone()).await?;
+        if requires_human && prepared.host_disposition == HostAdmissionDisposition::Auto {
+            prepared.host_disposition = HostAdmissionDisposition::Ask;
+        }
         anyhow::ensure!(
             prepared.version == invocation.version
                 && prepared.invocation_id == invocation.invocation_id

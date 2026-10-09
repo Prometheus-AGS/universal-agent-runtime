@@ -1826,6 +1826,33 @@ impl RunManager {
         true
     }
 
+    /// Host grant installation invalidates only runs pinned to an older grant revision.
+    pub(crate) async fn invalidate_representation_grant(
+        &self,
+        owner: &str,
+        workspace: &str,
+        grant: &crate::uar::domain::collaboration::RepresentationGrant,
+    ) {
+        let runs = self.active_runs.read().await.values().filter_map(|state| {
+            let context = &state.run.context;
+            let binding = context.get("effective_collaboration_binding")?;
+            if binding["ownerId"].as_str() != Some(owner)
+                || binding["workspaceId"].as_str() != Some(workspace) {
+                return None;
+            }
+            let invalidated = context.get("representation_grants")?.as_array()?.iter().any(|reference| {
+                reference["grantId"].as_str() == Some(grant.grant_id.as_str())
+                    && (reference["revision"].as_u64() != Some(grant.revision)
+                        || grant.status != crate::uar::domain::collaboration::RepresentationGrantStatus::Active
+                        || grant.revocation.is_some())
+            });
+            invalidated.then(|| state.run.run_id.clone())
+        }).collect::<Vec<_>>();
+        for run in runs {
+            self.cancel_run(&run).await;
+        }
+    }
+
     /// Cancel an in-flight run only when it belongs to the authenticated owner.
     pub async fn cancel_run_for_user(&self, owner_id: &str, run_id: &str) -> bool {
         if self.get_run_for_user(owner_id, run_id).await.is_none() {
@@ -2897,7 +2924,7 @@ impl RunManager {
             input,
             session_id,
             user_id,
-            memory_hits,
+            mut memory_hits,
             resolved_policy,
             presentation_negotiation,
             seed_history,
@@ -3411,6 +3438,32 @@ impl RunManager {
             }
         }
 
+        let representation_context = match async {
+            let Some(binding) = collaboration_binding.as_ref().filter(|binding| !binding.receipt.representation_grants.is_empty()) else {
+                return Ok::<_, anyhow::Error>(None);
+            };
+            anyhow::ensure!(self.governance_engine.is_some()
+                && self.governance_gate.as_ref().is_none_or(|gate| gate.effective_enabled()),
+                "REPRESENTATION_CEDAR_REQUIRED");
+            anyhow::ensure!(session.message_count() == 0 && supplied_history.is_none()
+                && !is_checkpoint_resume, "REPRESENTATION_HISTORY_SCOPE_UNSUPPORTED");
+            let context = binding.representation_context().await?;
+            context.narrow(&mut effective_policy)?;
+            memory_hits.clear();
+            Ok(Some(context))
+        }.await {
+            Ok(context) => context,
+            Err(error) => {
+                emitter.emit(NormalizedEvent::Error {
+                    run_id: run_id.clone(), code: "representation_admission_denied".into(),
+                    message: error.to_string(),
+                }).await;
+                emitter.emit(NormalizedEvent::RunDone { run_id: run_id.clone() }).await;
+                self.run_cancellations.write().await.remove(&run_id);
+                return run_id;
+            }
+        };
+
         let (presentation_snapshot, presentation_warnings) = match &inherited {
             Some(bindings) => (bindings.presentations.narrow(&effective_policy), Vec::new()),
             None => {
@@ -3568,6 +3621,8 @@ impl RunManager {
                 "host_resources": host_resources_marker,
                 "effective_service_binding": effective_service_binding.clone(),
                 "effective_collaboration_binding": effective_collaboration_binding,
+                "representation_disclosure": representation_context.as_ref().map(|context| context.disclosure()),
+                "representation_grants": collaboration_binding.as_ref().map(|binding| &binding.receipt.representation_grants),
                 "host_context": {
                     "working_directory": working_directory.as_ref().map(|path| path.display().to_string()),
                     "reasoning_effort": reasoning_effort.map(crate::config::ReasoningEffort::as_str),
@@ -5311,6 +5366,14 @@ impl RunManager {
             prompt_fragments.extend(member_guidance);
             if let Some(guidance)=&binding.team_instructions { prompt_fragments.push(PromptFragment::new("00.team.instructions",PromptSection::HostInstructions,format!("team-guidance:{}:{}",guidance.revision,guidance.digest),Authority::Host,PromptRole::System,Retention::Turn,guidance.text.clone())); }
         }
+        if let Some(context) = &representation_context {
+            let disclosure = context.disclosure();
+            prompt_fragments.push(PromptFragment::new(
+                "00.representation.disclosure", PromptSection::HostInstructions,
+                "representation-grants", Authority::Host, PromptRole::System,
+                Retention::Turn, format!("{disclosure}\nInclude this exact disclosure in any team message. Office names grant no powers; no subdelegation is permitted."),
+            ));
+        }
         let mut manifest_budgets = PromptBudgets::for_rendered(&render_with_options(
             &prompt_fragments,
             RenderOptions {
@@ -5923,10 +5986,17 @@ impl RunManager {
         if let Some(root) = &actor_root {
             root.ready.store(true, std::sync::atomic::Ordering::Release);
         }
+        let representation_disclosure = representation_context.as_ref().map(|context| context.disclosure());
+        let representation_binding = collaboration_binding.clone().filter(|binding| !binding.receipt.representation_grants.is_empty());
         let execution = async move {
             let _delegation_lifetime = delegation_lifetime;
             let _sandbox_lease = sandbox_lease;
             let _terminal_lease = terminal_lease;
+            if let Some(binding) = representation_binding {
+                if binding.representation_context().await.is_err() {
+                    run_cancellation.cancel();
+                }
+            }
             // 1. Run Start
             emitter
                 .emit(NormalizedEvent::RunStart {
@@ -5934,6 +6004,12 @@ impl RunManager {
                     agent_id: execute_agent_id,
                 })
                 .await;
+
+            if let Some(disclosure) = representation_disclosure {
+                emitter.emit(NormalizedEvent::ChatDelta {
+                    run_id: execute_run_id.clone(), text_delta: format!("{disclosure}\n\n"),
+                }).await;
+            }
 
             // Counter for skill evolution — tracks tool completions across the full run.
             let mut tool_call_count: usize = 0;
