@@ -2,7 +2,7 @@
 use super::*;
 use crate::uar::domain::connector_effect::{ConnectorAction, ConnectorProvider};
 
-fn validate_issue(value: &serde_json::Value) -> Result<(), CollaborationError> {
+pub(super) fn validate_issue(value: &serde_json::Value) -> Result<(), CollaborationError> {
     if value.as_object().is_none_or(|object| object.len() != 2)
         || ["title", "body"].iter().any(|field| {
             value[*field]

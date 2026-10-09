@@ -5,7 +5,7 @@ use crate::uar::{
         AdmitFeedbackImplementationRequest, AttachFeedbackReviewRequest,
         AuthorizeFeedbackIssueRequest, DraftFeedbackIssueRequest,
         ExplicitFeedbackIssueApprovalRequest, FeedbackControlRequest, FeedbackPolicyRequest,
-        LinkFeedbackWorkflowRequest, ObserveFeedbackRequest,
+        LinkFeedbackWorkflowRequest, ObserveFeedbackRequest, RetryFeedbackIssueApprovalRequest,
     },
     security::{claims::UserContext, sidecar_guard::HostAuthenticated},
 };
@@ -37,6 +37,10 @@ pub(super) fn build_router() -> Router<Arc<CollaborationApiState>> {
         .route(
             "/feedback-intakes/{id}/explicit-issue-approval",
             post(explicit_issue),
+        )
+        .route(
+            "/feedback-intakes/{id}/retry-issue-approval",
+            post(retry_issue),
         )
         .route("/feedback-intakes/{id}/decision", post(control))
         .route(
@@ -111,6 +115,29 @@ async fn explicit_issue(
         state
             .service
             .explicitly_approve_feedback_issue(&owner, &workspace, &id, request)
+            .await,
+    )
+}
+
+async fn retry_issue(
+    State(state): State<Arc<CollaborationApiState>>,
+    Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
+    marker: Option<Extension<HostAuthenticated>>,
+    Path(id): Path<String>,
+    Json(request): Json<RetryFeedbackIssueApprovalRequest>,
+) -> Response {
+    let (owner, workspace) = match private_scope(&user, &headers) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+    if let Err(response) = require_host(marker) {
+        return response;
+    }
+    result_response(
+        state
+            .service
+            .retry_feedback_issue_approval(&owner, &workspace, &id, request)
             .await,
     )
 }

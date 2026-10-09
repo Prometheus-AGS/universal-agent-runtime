@@ -3,6 +3,7 @@ mod control;
 mod explicit;
 mod policy;
 mod review;
+mod retry;
 use super::{CollaborationCatalogService, CollaborationError, service::MAX_CAS_ATTEMPTS};
 use crate::uar::domain::{collaboration::CollaborationCatalogState, feedback_intake::*};
 use chrono::Utc;
@@ -141,6 +142,7 @@ impl CollaborationCatalogService {
                 duplicate_of: None,
                 review_artifacts: Default::default(),
                 issue_approval: None,
+                issue_approval_history: Vec::new(),
                 issue_draft: None,
                 connector_effect_id: None,
                 external_issue_id: None,

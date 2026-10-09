@@ -144,6 +144,8 @@ pub struct FeedbackIntake {
     #[serde(default)]
     pub external_issue_id: Option<String>,
     pub issue_approval: Option<FeedbackApproval>,
+    #[serde(default)]
+    pub issue_approval_history: Vec<FeedbackApproval>,
     pub implementation: Option<FeedbackImplementationDecision>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -188,6 +190,25 @@ pub struct DraftFeedbackIssueRequest {
 pub struct ExplicitFeedbackIssueApprovalRequest {
     pub command_id: String,
     pub expected_revision: u64,
+    pub connector_binding_id: String,
+    pub expected_binding_revision: u64,
+    pub target: String,
+    pub artifact_id: String,
+    pub artifact_digest: String,
+    pub payload_digest: String,
+    pub sanitized_issue: serde_json::Value,
+    pub sanitization_ref: String,
+    pub egress_label: String,
+}
+
+/// A fresh explicit decision on the unchanged draft after a recorded rejection.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RetryFeedbackIssueApprovalRequest {
+    pub command_id: String,
+    pub expected_revision: u64,
+    pub expected_effect_id: String,
+    pub expected_dispatch_id: String,
     pub connector_binding_id: String,
     pub expected_binding_revision: u64,
     pub target: String,
