@@ -68,9 +68,11 @@ historical conversation state. A fresh durable instance with no stored history
 uses that existing empty-session path; real retained history still denies admission.
 Read-only file operation uses an actual registered `file_read` tool, explicitly
 enabled and restricted to an operator-selected disposable root by native-tool
-startup configuration. The representation grant only narrows eligible tools;
-it never enables a tool or widens the filesystem root allowlist. Persisting a
-native-tools setting alone is not evidence that a running registry applied it.
+settings. At startup, registration consumes persisted native-tool preferences
+after settings bootstrap, using configured defaults only for absent preferences.
+Changes require restarting UAR; saving alone does not hot-reconfigure a live
+registry. The representation grant only narrows eligible tools; it never enables
+a tool or widens the filesystem root allowlist.
 Existing retained grant strings such as
 `artifact.read`, `artifact:assigned`, `artifact.content` and organization-wide
 audiences remain readable authority records but return named

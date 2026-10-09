@@ -56,6 +56,14 @@ kernel, without another scheduler, public endpoint, dependency or database table
 6. Fresh represented instances may enter the existing empty-history path. Real
    stored conversation or checkpoint import still denies admission. Instance
    projection includes only `representationRevision` and `representationGrantRefs`.
+7. Normal The Boss launch rewrites its generated sidecar YAML to an empty object.
+   Existing authenticated native-tools settings were saved to the database but
+   registration consumed only startup YAML/defaults before SettingsManager
+   bootstrap. This explicit supported-configuration defect is repaired by
+   registering builtins after settings initialization, overlaying the existing
+   fourteen persisted native-tool fields on configured defaults. No category is
+   implicitly enabled. The normal settings-save/restart path now applies its
+   configured allowlist; live registry hot reload remains unsupported.
 
 ## Completed-boundary operation
 
@@ -66,8 +74,10 @@ affected customer operation. Source completion is not qualification.
 
 Use an isolated application profile, synthetic identity/evidence references,
 disposable workspace and actual configured model. Native startup configuration
-must register `file_read` and limit paths to that disposable root. Existing
-namespace persistence does not prove the running native registry refreshed.
+must register `file_read` and limit paths to that disposable root. Save the
+existing native-tools namespace through authenticated typed settings and restart
+UAR; registration now consumes those persisted values. Saving without restart
+does not prove a live registry changed.
 The exact grant scope is `tool:file_read`, `workspace:WORKSPACE_ID`, and
 `user:AUTHENTICATED_SUBJECT`, with no knowledge-base scope. Operate the real turn,
 inspect disclosure and correlated result, then expiry/revoke/offboard and denied

@@ -972,18 +972,8 @@ async fn run_server_with_listener(
         info!(name: "mcp.tool.discovered", tool = %name, "MCP tool discovered");
     }
 
-    // Initialize Native Skill Registry and register built-in skills
+    // Capture the registry now; register after persisted preferences load.
     let native_skill_registry = Arc::new(NativeSkillRegistry::new());
-    uar::runtime::native_skills::register_builtins(
-        &native_skill_registry,
-        &config.native_tools,
-        persistence.clone(),
-    )
-    .await?;
-    info!(
-        "Native skill registry initialized with {} skills",
-        native_skill_registry.len().await
-    );
 
     #[cfg(feature = "response-quality")]
     let orchestrator = if sidecar_mode {
@@ -1230,6 +1220,21 @@ async fn run_server_with_listener(
             info!("No persistence layer — settings manager disabled");
             None
         };
+    let native_tools = uar::runtime::native_skills::startup_config(
+        &config.native_tools,
+        settings_manager.as_deref(),
+    )
+    .await?;
+    uar::runtime::native_skills::register_builtins(
+        &native_skill_registry,
+        &native_tools,
+        persistence.clone(),
+    )
+    .await?;
+    info!(
+        "Native skill registry initialized with {} skills",
+        native_skill_registry.len().await
+    );
     governance_mutation.activate_admission_tokens()?;
     let governance_boot_status = governance_status.snapshot();
     info!(

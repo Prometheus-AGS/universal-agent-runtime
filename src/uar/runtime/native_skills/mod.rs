@@ -20,6 +20,9 @@ use std::sync::Arc;
 
 use super::native_skill::NativeSkillRegistry;
 use crate::config::NativeToolsConfig;
+
+mod startup;
+pub(crate) use startup::startup_config;
 use crate::uar::compiler::conversational::CompilerSessionStore;
 use crate::uar::compiler::signing::{KeyProvider, LocalKeyProvider};
 use crate::uar::persistence::PersistenceLayer;
