@@ -123,6 +123,8 @@ impl AgentInstanceController {
             workspace_id: workspace.to_owned(),
             definition: bound.binding.package,
             effective_binding: bound.effective_binding_receipt.binding_ref,
+            representation_revision: 0,
+            representation_grants: Vec::new(),
             session_id: Uuid::new_v4().to_string(),
             profile,
             lifecycle: InstanceLifecycle::Dormant,
@@ -504,6 +506,9 @@ impl AgentInstanceController {
                 record.workspace_id.clone(),
                 record.instance_id.clone(),
                 record.epoch,
+                owner.user_id().to_owned(),
+                record.representation_revision,
+                record.representation_grants.clone(),
             ),
             restored_history: history,
         };

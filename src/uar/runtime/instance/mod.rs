@@ -6,6 +6,7 @@ mod error;
 mod lifecycle;
 mod pump;
 mod reconcile;
+mod representation;
 mod view;
 
 pub use controller::AgentInstanceController;

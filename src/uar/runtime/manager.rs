@@ -3439,7 +3439,7 @@ impl RunManager {
         }
 
         let representation_context = match async {
-            let Some(binding) = collaboration_binding.as_ref().filter(|binding| !binding.receipt.representation_grants.is_empty()) else {
+            let Some(binding) = collaboration_binding.as_ref().filter(|binding| binding.has_representation()) else {
                 return Ok::<_, anyhow::Error>(None);
             };
             anyhow::ensure!(self.governance_engine.is_some()
@@ -3622,7 +3622,7 @@ impl RunManager {
                 "effective_service_binding": effective_service_binding.clone(),
                 "effective_collaboration_binding": effective_collaboration_binding,
                 "representation_disclosure": representation_context.as_ref().map(|context| context.disclosure()),
-                "representation_grants": collaboration_binding.as_ref().map(|binding| &binding.receipt.representation_grants),
+                "representation_grants": collaboration_binding.as_ref().map(|binding| binding.representation_grants()),
                 "host_context": {
                     "working_directory": working_directory.as_ref().map(|path| path.display().to_string()),
                     "reasoning_effort": reasoning_effort.map(crate::config::ReasoningEffort::as_str),
@@ -5987,7 +5987,7 @@ impl RunManager {
             root.ready.store(true, std::sync::atomic::Ordering::Release);
         }
         let representation_disclosure = representation_context.as_ref().map(|context| context.disclosure());
-        let representation_binding = collaboration_binding.clone().filter(|binding| !binding.receipt.representation_grants.is_empty());
+        let representation_binding = collaboration_binding.clone().filter(|binding| binding.has_representation());
         let execution = async move {
             let _delegation_lifetime = delegation_lifetime;
             let _sandbox_lease = sandbox_lease;

@@ -183,19 +183,52 @@ impl RepresentationContext {
 }
 
 impl CollaborationRunBinding {
+    pub(crate) fn representation_grants(
+        &self,
+    ) -> Vec<crate::uar::domain::collaboration::RepresentationGrantRef> {
+        let mut references = self.receipt.representation_grants.clone();
+        if let Some(instance) = &self.instance_authority {
+            for reference in &instance.representation_grants {
+                if !references.contains(reference) {
+                    references.push(reference.clone());
+                }
+            }
+        }
+        references
+    }
+
+    pub(crate) fn has_representation(&self) -> bool {
+        !self.receipt.representation_grants.is_empty()
+            || self.instance_authority.as_ref().is_some_and(|instance| {
+                !instance.representation_grants.is_empty()
+            })
+    }
+
     pub(crate) async fn representation_context(&self) -> anyhow::Result<RepresentationContext> {
         self.revalidate_authority().await?;
+        let references = self.representation_grants();
         let context = RepresentationContext {
             grants: self
                 .service
                 .execution_representation_grants(
                     &self.owner_id,
                     &self.workspace_id,
-                    &self.receipt.representation_grants,
+                    &references,
                 )
                 .await?,
         };
-        context.validate(&self.owner_id, &self.workspace_id)?;
+        let principal = if let Some(instance) = &self.instance_authority {
+            anyhow::ensure!(
+                context.grants.iter().all(|grant|
+                    grant.grantee_agent_instance_id == instance.instance_id()
+                        && grant.issuer_principal_id == instance.principal_id),
+                "REPRESENTATION_INSTANCE_SCOPE_DENIED"
+            );
+            instance.principal_id.as_str()
+        } else {
+            self.principal_id.as_deref().unwrap_or(&self.owner_id)
+        };
+        context.validate(principal, &self.workspace_id)?;
         Ok(context)
     }
 
@@ -219,7 +252,7 @@ impl CollaborationRunBinding {
     ) -> anyhow::Result<()> {
         let requires_human = self.prepare_representation_tool(&admitted.prepared).await?;
         anyhow::ensure!(
-            self.receipt.representation_grants.is_empty()
+            !self.has_representation()
                 || admitted.local_disposition != LocalAdmissionDisposition::GovernanceBypassed,
             "REPRESENTATION_CEDAR_REQUIRED"
         );

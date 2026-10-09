@@ -1758,6 +1758,7 @@ async fn run_server_with_listener(
                     admin_key: config.security.settings_admin_key.clone(),
                     service_instance: Arc::clone(&service_instance),
                     runtime: Arc::clone(&team_execution_runtime),
+                    instances: Arc::clone(&agent_instance_controller),
                 },
             )),
         )

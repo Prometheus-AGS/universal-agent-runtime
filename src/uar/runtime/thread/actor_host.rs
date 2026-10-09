@@ -216,7 +216,19 @@ impl ActorThreadSession {
                     Arc::clone(&instance.catalog),
                 );
                 request.instance_binding = Some(instance.epoch.for_run(&run_id));
-                request.host_history = Some(instance.restored_history.clone());
+                let represented = !instance.epoch.representation_grants.is_empty();
+                if represented {
+                    if let Some(binding) = &mut request.collaboration_binding {
+                        binding.instance_authority = request.instance_binding.clone();
+                    }
+                }
+                // Fresh represented roots admit no imported history. Real
+                // history remains supplied and is rejected by that contract.
+                request.host_history = if represented && instance.restored_history.is_empty() {
+                    None
+                } else {
+                    Some(instance.restored_history.clone())
+                };
                 request.with_verified_owner(self.owner.clone())
             }
             None => RunExecutionRequest::new(self.artifact.clone(), content)
