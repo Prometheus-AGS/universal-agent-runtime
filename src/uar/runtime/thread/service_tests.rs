@@ -95,6 +95,7 @@ impl Harness {
             serde_json::json!({"dependencies":[{"agent_id":"peer-agent","endpoint":endpoint}]}),
         );
         let user = UserContext {
+            host_authority: None, authority: None,
             user_id: "remote-budget-owner".into(),
             tenant_id: None,
             claims: UserClaims {

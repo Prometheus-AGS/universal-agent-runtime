@@ -579,57 +579,22 @@ async fn test_m6_skills_execution() {
 
 #[tokio::test]
 #[serial]
-async fn test_verify_legacy_mcp_tools() {
-    // This test attempts to load the real mcp.json and verify that a configured
-    // server exposes a namespaced tool.
+async fn test_shipped_mcp_defaults_are_empty() {
+    let mcp_config_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("mcp.json");
+    let config: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(&mcp_config_path).expect("shipped MCP config must exist"),
+    )
+    .expect("shipped MCP config must be valid JSON");
+    assert_eq!(config["mcpServers"], json!({}));
 
-    let _ = dotenv();
-
-    // 1. Load Registry from file
-    // We assume mcp.json is in the project root.
-    let mcp_config_path = "mcp.json";
-    if !std::path::Path::new(mcp_config_path).exists() {
-        println!("Skipping test_verify_legacy_mcp_tools: mcp.json not found");
-        return;
-    }
-
-    let mcp = match McpRegistry::load_from_file(mcp_config_path).await {
-        Ok(m) => Arc::new(m),
-        Err(e) => {
-            println!(
-                "Skipping test: Failed to load mcp.json (possibly missing npx or network?): {e:?}"
-            );
-            return;
-        }
-    };
-
-    // 2. Verify at least one configured server exposed a namespaced tool.
-    let tools = mcp.tools();
-    println!(
-        "Discovered Tools: {:?}",
-        tools.iter().map(|(n, _)| n).collect::<Vec<_>>()
-    );
-
-    let (name, _) = tools
-        .first()
-        .expect("mcp.json loaded but no configured server exposed tools");
-    let (server, tool) = name
-        .split_once("__")
-        .expect("configured MCP tools must use the server__tool namespace");
-    assert!(!server.is_empty() && !tool.is_empty());
-    println!("Found configured MCP tool: {name}");
-
-    // 3. Try to execute it directly via Registry. Empty arguments may produce
-    // a schema error, which still proves the call reached the discovered tool.
-    let args = json!({});
-    match mcp.call_namespaced_tool(name, args).await {
-        Ok(res) => {
-            println!("Configured MCP tool execution result: {res:?}");
-        }
-        Err(e) => {
-            println!("Reached configured MCP tool '{name}' and received an error: {e:?}");
-        }
-    }
+    let mcp = McpRegistry::load_from_file(
+        mcp_config_path
+            .to_str()
+            .expect("shipped MCP config path must be UTF-8"),
+    )
+    .await
+    .expect("shipped empty MCP config must load successfully");
+    assert!(mcp.tools().is_empty(), "shipped defaults must expose no tools");
 }
 
 #[tokio::test]

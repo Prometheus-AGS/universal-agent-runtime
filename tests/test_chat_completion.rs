@@ -303,6 +303,7 @@ async fn orchestrator_run_routes_and_streams_delegated_answer() {
     );
 
     let peer = UserContext {
+        host_authority: None, authority: None,
         user_id: "chat-integration-peer".to_string(),
         tenant_id: None,
         claims: UserClaims {

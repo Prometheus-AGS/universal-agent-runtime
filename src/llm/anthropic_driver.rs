@@ -387,7 +387,7 @@ impl LlmDriver for AnthropicDriver {
                 let chunk = match chunk_result {
                     Ok(bytes) => bytes,
                     Err(e) => {
-                        warn!("SSE stream error: {e}");
+                        warn!("SSE stream transport failed");
                         yield Err(ProviderError::from_reqwest(e).into());
                         break;
                     }

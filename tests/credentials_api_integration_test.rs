@@ -37,6 +37,7 @@ fn server_for(user: Option<&str>, service: Option<Arc<ProviderService>>) -> Test
 
     if let Some(uid) = user {
         let ctx = UserContext {
+            host_authority: None, authority: None,
             user_id: uid.to_string(),
             tenant_id: None,
             claims: UserClaims {

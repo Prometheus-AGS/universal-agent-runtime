@@ -1,3 +1,4 @@
+use crate::uar::security::credential_capture::AuthenticatedCredentialCapture;
 use crate::uar::{
     api::sse::{build_agui_replay_snapshot, build_sse_response},
     domain::artifact::AgentArtifact,
@@ -438,6 +439,7 @@ async fn create_run(
     Extension(user): Extension<UserContext>,
     headers: HeaderMap,
     host_authenticated: Option<Extension<HostAuthenticated>>,
+    credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
     Json(req): Json<CreateRunRequest>,
 ) -> Result<Json<CreateRunResponse>, RunApiError> {
     admit_run(
@@ -447,6 +449,7 @@ async fn create_run(
         host_authenticated.is_some(),
         req,
         None,
+        credential_capture.map(|Extension(capture)| capture),
     )
     .await
     .map(Json)
@@ -459,6 +462,7 @@ pub(crate) async fn admit_run(
     host_authenticated: bool,
     req: CreateRunRequest,
     reserved_run_id: Option<String>,
+    credential_capture: Option<AuthenticatedCredentialCapture>,
 ) -> Result<CreateRunResponse, RunApiError> {
     let CreateRunRequest {
         artifact,
@@ -542,6 +546,7 @@ pub(crate) async fn admit_run(
         request.host_resources_marker.artifact_inline = artifact_inline;
         request
     };
+    request = request.with_credential_capture(credential_capture);
     let response_service_binding = admitted_service_binding.clone();
     if let Some(admitted) = admitted_service_binding {
         if let Some(bound) = request.service_binding.as_ref() {
@@ -743,7 +748,7 @@ async fn resolve_run_agent(
                     message: error.to_string(),
                 }
             })?;
-            Ok((artifact, true))
+            Ok((artifact.with_catalog_metadata("inline"), true))
         }
         (Some(agent_id), None) => manager
             .resolve_registered_agent(&agent_id)
@@ -942,8 +947,14 @@ async fn api_tool_approval(
             Json(serde_json::json!({ "resolved": false })),
         );
     }
+    let Some(approval_id) = body.approval_id.as_deref().filter(|id| !id.trim().is_empty()) else {
+        return (StatusCode::BAD_REQUEST, Json(serde_json::json!({
+            "resolved": false, "error": "approval_id_required",
+            "message": "Submit the approval_id from the originating approval event or pending snapshot"
+        })));
+    };
     if manager
-        .resolve_approval_request(&run_id, body.approval_id.as_deref(), body.approved)
+        .resolve_approval_request(&run_id, Some(approval_id), body.approved)
         .await
     {
         (
@@ -1344,6 +1355,7 @@ async fn execute_resumed_request(
 async fn resume_run(
     State(state): State<Arc<RunApiState>>,
     Extension(user): Extension<UserContext>,
+    credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
     Path(run_id): Path<String>,
     Json(req): Json<ResumeRequest>,
 ) -> impl IntoResponse {
@@ -1386,6 +1398,7 @@ async fn resume_run(
             Ok(result) => result,
             Err(error) => return error.into_response(),
         };
+    request = request.with_credential_capture(credential_capture.map(|Extension(capture)| capture));
     request.session_id = req
         .session_id
         .or_else(|| source_run.conversation_id.clone());
@@ -1432,6 +1445,7 @@ async fn resume_run(
 async fn resume_run_from_checkpoint(
     State(state): State<Arc<RunApiState>>,
     Extension(user): Extension<UserContext>,
+    credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
     Path((run_id, checkpoint_id)): Path<(String, String)>,
     Json(req): Json<ResumeRequest>,
 ) -> impl IntoResponse {
@@ -1539,6 +1553,7 @@ async fn resume_run_from_checkpoint(
         Ok(result) => result,
         Err(error) => return error.into_response(),
     };
+    request = request.with_credential_capture(credential_capture.map(|Extension(capture)| capture));
     request.input = req.input;
     request.session_id = req
         .session_id

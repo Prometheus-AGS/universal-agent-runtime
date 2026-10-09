@@ -86,6 +86,7 @@ impl EmbeddingBackend for HashingBackend {
 
 fn user() -> UserContext {
     UserContext {
+        host_authority: None, authority: None,
         user_id: OWNER.to_string(),
         tenant_id: None,
         claims: UserClaims {

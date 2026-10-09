@@ -689,6 +689,25 @@ impl PersistenceLayer for PostgresProvider {
         Ok(())
     }
 
+    async fn update_skill_selection(
+        &self,
+        skill_id: &str,
+        enabled: bool,
+        scoped_config: &[crate::uar::domain::skills::ScopedSkillConfig],
+    ) -> Result<bool> {
+        let result = sqlx::query(
+            "UPDATE skills SET definition = jsonb_set(
+             jsonb_set(definition, '{enabled}', $2::jsonb, true),
+             '{scoped_config}', $3::jsonb, true) WHERE skill_id = $1",
+        )
+        .bind(skill_id)
+        .bind(serde_json::json!(enabled))
+        .bind(serde_json::to_value(scoped_config)?)
+        .execute(&self.pool)
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
     async fn search_skills(&self, query_vec: &[f32], limit: usize) -> Result<Vec<SkillMatch>> {
         let embedding_vector = Vector::from(query_vec.to_vec());
         let limit_i64 =

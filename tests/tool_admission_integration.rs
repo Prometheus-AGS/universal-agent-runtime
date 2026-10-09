@@ -12,7 +12,7 @@ use universal_agent_runtime::uar::{
         AdmittedToolInvocation, HostAdmissionBinding, HostAdmissionDisposition,
         HostAdmissionPreparation, HostAdmissionReceipt, HostToolAdmissionPort,
         LocalAdmissionDisposition, PreparedToolInvocation, ToolAdmissionContext,
-        ToolAdmissionRuntime, TOOL_ADMISSION_PROTOCOL_VERSION,
+        ToolAdmissionRuntime, ToolExecutionKind, TOOL_ADMISSION_PROTOCOL_VERSION,
     },
     tools::descriptor::{ApprovalClass, Exposure, ToolDescriptor, ToolEffect, ToolSource},
 };
@@ -49,8 +49,14 @@ impl HostToolAdmissionPort for RecordingManagedHost {
         &self,
         invocation: Arc<PreparedToolInvocation>,
     ) -> anyhow::Result<HostAdmissionPreparation> {
+        invocation.validate_authority_envelope()?;
+        anyhow::ensure!(
+            invocation.execution_kind == ToolExecutionKind::HostMcp,
+            "Recording host only supports MCP invocations"
+        );
         Ok(HostAdmissionPreparation {
             version: invocation.version,
+            execution_kind: invocation.execution_kind,
             admission_id: format!("managed-admission:{}", invocation.invocation_id),
             invocation_id: invocation.invocation_id.clone(),
             runtime_epoch: invocation.runtime_epoch.clone(),
@@ -77,6 +83,7 @@ impl HostToolAdmissionPort for RecordingManagedHost {
             local_disposition,
             host_receipt: HostAdmissionReceipt {
                 version: preparation.version,
+                execution_kind: preparation.execution_kind,
                 admission_id: preparation.admission_id,
                 invocation_id: preparation.invocation_id,
                 runtime_epoch: preparation.runtime_epoch,
@@ -92,11 +99,26 @@ impl HostToolAdmissionPort for RecordingManagedHost {
         admitted: &AdmittedToolInvocation,
     ) -> anyhow::Result<HostAdmissionReceipt> {
         self.claim_revalidations.fetch_add(1, Ordering::SeqCst);
+        admitted.prepared.validate_authority_envelope()?;
+        anyhow::ensure!(
+            admitted.prepared.execution_kind == ToolExecutionKind::HostMcp
+                && admitted.host_receipt.execution_kind == ToolExecutionKind::HostMcp
+                && admitted.host_receipt.version == admitted.prepared.version
+                && admitted.host_receipt.authority_revision == admitted.prepared.authority_revision,
+            "Recording host receipt does not match MCP authority"
+        );
         anyhow::ensure!(
             !self.deny_claim.load(Ordering::SeqCst),
             "managed authority denied the claim"
         );
         Ok(admitted.host_receipt.clone())
+    }
+
+    async fn consume_native(
+        &self,
+        _admitted: &AdmittedToolInvocation,
+    ) -> anyhow::Result<HostAdmissionReceipt> {
+        anyhow::bail!("Recording host does not provide native execution authority")
     }
 
     async fn cancel(

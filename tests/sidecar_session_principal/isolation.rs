@@ -74,12 +74,12 @@ async fn run_routes_refuse_another_principal() {
         (
             Method::POST,
             format!("{base}/tool-approval"),
-            Some(json!({ "approved": true })),
+            Some(json!({ "approved": true, "approval_id": crate::principal_host::approval_ids(&text, &run_id)[0] })),
         ),
         (
             Method::POST,
             format!("{base}/approval"),
-            Some(json!({ "approved": true })),
+            Some(json!({ "approved": true, "approval_id": crate::principal_host::approval_ids(&text, &run_id)[0] })),
         ),
         (Method::POST, format!("{base}/a2ui/actions"), Some(action_body())),
         (Method::GET, format!("{base}/a2ui/surface-replay"), None),
@@ -121,7 +121,7 @@ async fn run_routes_refuse_another_principal() {
         )
         .await;
     assert_eq!(status, 200, "owner resume: {resumed}");
-    assert_eq!(host.approve(Some(P1), &run_id).await, 200, "owner approval");
+    assert_eq!(host.approve(Some(P1), &run_id, &crate::principal_host::approval_ids(&text, &run_id)[0]).await, 200, "owner approval");
     assert!(
         Host::read_until(&mut stream, &mut text, &TERMINAL, WAIT).await,
         "run did not finish\n{text}"
@@ -153,13 +153,29 @@ async fn approval_from_another_principal_is_refused() {
         .await;
     let (mut stream, mut text) = paused_stream(&host, P1, &run_id).await;
 
+    let approval_id = crate::principal_host::approval_ids(&text, &run_id)[0].clone();
+    for route in ["tool-approval", "approval"] {
+        for (decision, expected) in [
+            (json!({"approved": true}), 400),
+            (json!({"approved": true, "approval_id": "stale-invocation"}), 404),
+        ] {
+            let (status, _) = host.call(Method::POST, &format!("/api/uar/runs/{run_id}/{route}"), Some(P1), Some(decision)).await;
+            assert_eq!(status, expected, "strict owner decision denial");
+            let (status, pending) = host.call(Method::GET, &format!("/api/uar/runs/{run_id}/tool-approval/pending"), Some(P1), None).await;
+            assert_eq!(status, 200);
+            let pending: Value = serde_json::from_str(&pending).expect("pending snapshot");
+            assert_eq!(pending["pending"]["approvalId"].as_str(), Some(approval_id.as_str()));
+            assert!(!executions.exists(), "denied decision reached effect");
+        }
+    }
+
     for route in ["tool-approval", "approval"] {
         let (status, body) = host
             .call(
                 Method::POST,
                 &format!("/api/uar/runs/{run_id}/{route}"),
                 Some(P2),
-                Some(json!({ "approved": true })),
+                Some(json!({ "approved": true, "approval_id": crate::principal_host::approval_ids(&text, &run_id)[0] })),
             )
             .await;
         assert_eq!(status, 404, "{route} from another principal: {body}");
@@ -170,11 +186,16 @@ async fn approval_from_another_principal_is_refused() {
         "the tool ran on another principal's approval"
     );
 
-    assert_eq!(host.approve(Some(P1), &run_id).await, 200, "owner approval");
+    assert_eq!(host.approve(Some(P1), &run_id, &crate::principal_host::approval_ids(&text, &run_id)[0]).await, 200, "owner approval");
     assert!(
         Host::read_until(&mut stream, &mut text, &TERMINAL, WAIT).await,
         "run did not finish\n{text}"
     );
+    for route in ["tool-approval", "approval"] {
+        let (status, _) = host.call(Method::POST, &format!("/api/uar/runs/{run_id}/{route}"), Some(P1),
+            Some(json!({"approved": true, "approval_id": approval_id}))).await;
+        assert_eq!(status, 404, "consumed decision cannot be replayed");
+    }
     let log = std::fs::read_to_string(&executions).unwrap_or_default();
     assert_eq!(log.lines().count(), 1, "tool executions: {log:?}\n{text}");
 }

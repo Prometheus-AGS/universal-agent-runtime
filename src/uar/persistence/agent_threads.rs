@@ -36,7 +36,8 @@ pub enum CanonicalReceiptCompleteness {
     LegacyUnknown,
 }
 
-/// One named byte stream retained exactly as supplied by the trusted host.
+/// One named byte stream retained exactly as represented by the trusted host.
+/// A receipt's secret_projection metadata distinguishes a projected view.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CanonicalRawSegment {
@@ -99,7 +100,19 @@ impl CanonicalRawSegment {
     }
 }
 
-/// Immutable pre-format tool result retained by the trusted host.
+/// Finite host projection applied before canonical acquisition. This describes
+/// a projected view, not a claim that arbitrary secret encodings were removed.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CanonicalSecretProjection {
+    pub version: u32,
+    pub redacted: bool,
+    pub omitted_raw_segments: u64,
+}
+
+/// Immutable pre-format tool result retained by the trusted host. Complete
+/// describes this represented view; secret_projection may report omitted raw
+/// streams, so completeness does not imply lossless original acquisition.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CanonicalToolReceipt {
@@ -116,6 +129,8 @@ pub struct CanonicalToolReceipt {
     pub raw_segments: Vec<CanonicalRawSegment>,
     pub retained_bytes: u64,
     pub completeness: CanonicalReceiptCompleteness,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub secret_projection: Option<CanonicalSecretProjection>,
 }
 
 impl CanonicalToolReceipt {
@@ -218,11 +233,13 @@ impl CanonicalToolReceipt {
                 0
             },
             completeness,
+            secret_projection: None,
         })
     }
 
     pub fn validate(&self) -> Result<(), CanonicalReceiptStoreError> {
         if self.schema_version != 1
+            || self.secret_projection.as_ref().is_some_and(|projection| projection.version != 1)
             || self.owner_id.is_empty()
             || self.run_id.is_empty()
             || self.call_id.is_empty()
@@ -366,6 +383,7 @@ fn same_canonical_payload(left: &CanonicalToolReceipt, right: &CanonicalToolRece
         && left.call_id == right.call_id
         && left.tool == right.tool
         && left.source == right.source
+        && left.secret_projection == right.secret_projection
         && left.typed_value_bytes == right.typed_value_bytes
         && left.typed_value_sha256 == right.typed_value_sha256
         && left.raw_segments.len() == right.raw_segments.len()

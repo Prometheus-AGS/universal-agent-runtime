@@ -2213,6 +2213,7 @@ async fn checkpoint_resume_reassembles_trusted_system_and_preserves_checkpoint_d
     );
 
     let user = UserContext {
+        host_authority: None, authority: None,
         user_id: "alice".to_string(),
         tenant_id: None,
         claims: UserClaims {

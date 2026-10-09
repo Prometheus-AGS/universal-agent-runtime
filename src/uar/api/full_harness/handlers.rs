@@ -1,3 +1,4 @@
+use crate::uar::security::credential_capture::AuthenticatedCredentialCapture;
 use std::sync::Arc;
 
 use axum::{
@@ -20,7 +21,7 @@ use crate::uar::{
             CreateRunRequest, RunApiState, admit_run, is_terminal_stream_event,
             unrecoverable_stream_gap,
         },
-        sse::build_sse_response,
+        sse::build_full_harness_sse_response,
     },
     runtime::actor::messages::ActorOwner,
     security::{claims::UserContext, sidecar_guard::HostAuthenticated},
@@ -58,6 +59,7 @@ async fn admit_task(
     Extension(user): Extension<UserContext>,
     headers: HeaderMap,
     host: Option<Extension<HostAuthenticated>>,
+    credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
     Json(mut body): Json<Value>,
 ) -> Result<(StatusCode, Json<TaskReceipt>), ApiError> {
     let owner = verified_owner(&user)?;
@@ -94,6 +96,7 @@ async fn admit_task(
         host.is_some(),
         run_request,
         Some(receipt.run_id.clone()),
+        credential_capture.map(|Extension(capture)| capture),
     )
     .await
     {
@@ -263,7 +266,7 @@ async fn stream_task(
             }
         }
     };
-    Ok(build_sse_response(tokio_stream::iter(replay).chain(live), false, None).into_response())
+    Ok(build_full_harness_sse_response(tokio_stream::iter(replay).chain(live), receipt.run_id).into_response())
 }
 
 #[derive(Deserialize)]

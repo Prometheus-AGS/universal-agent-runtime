@@ -1,5 +1,7 @@
 use super::{
+    authority::{AdmissionError, authorize_context},
     claims::{UserClaims, UserContext},
+    credential_capture::AuthenticatedCredentialCapture,
     verifier::{VerificationError, verify_token},
 };
 use crate::{AppState, config::SecurityConfig};
@@ -34,6 +36,7 @@ fn sidecar_principal(value: &str) -> Option<UserContext> {
                     || (index > 0 && matches!(byte, b'.' | b'_' | b':' | b'-'))
             });
     valid.then(|| UserContext {
+        host_authority: None, authority: None,
         user_id: value.to_owned(),
         tenant_id: None,
         claims: UserClaims {
@@ -49,6 +52,7 @@ fn sidecar_principal(value: &str) -> Option<UserContext> {
 
 fn anonymous_context() -> UserContext {
     UserContext {
+        host_authority: None, authority: None,
         user_id: "anonymous".to_string(),
         tenant_id: None,
         claims: UserClaims {
@@ -63,10 +67,10 @@ fn anonymous_context() -> UserContext {
     }
 }
 
-async fn resolve_user_context_with_config(
+async fn resolve_authenticated_context(
     config: &SecurityConfig,
     auth_header: Option<&str>,
-) -> Result<UserContext, StatusCode> {
+) -> Result<(UserContext, AuthenticatedCredentialCapture), StatusCode> {
     let token = match auth_header {
         Some(header_val) if header_val.starts_with("Bearer ") => {
             &header_val[7..] // Strip "Bearer "
@@ -75,7 +79,7 @@ async fn resolve_user_context_with_config(
             return if config.jwt_required {
                 Err(StatusCode::UNAUTHORIZED)
             } else {
-                Ok(anonymous_context())
+                Ok((anonymous_context(), AuthenticatedCredentialCapture::default()))
             };
         }
     };
@@ -85,21 +89,31 @@ async fn resolve_user_context_with_config(
     match verification {
         Ok(principal) => {
             let claims = principal.claims;
-            Ok(UserContext {
+            Ok((UserContext {
+                host_authority: principal.host_authority, authority: principal.authority,
                 user_id: principal.subject,
                 tenant_id: principal.tenant_id,
                 claims,
-            })
+            }, AuthenticatedCredentialCapture::bearer(token)))
         }
         Err(VerificationError::ProviderConflict) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        Err(VerificationError::IdentityPolicy(_)) => Err(StatusCode::SERVICE_UNAVAILABLE),
         Err(_) => {
             if config.jwt_required {
                 Err(StatusCode::UNAUTHORIZED)
             } else {
-                Ok(anonymous_context())
+                Ok((anonymous_context(), AuthenticatedCredentialCapture::default()))
             }
         }
     }
+}
+
+#[cfg(test)]
+async fn resolve_user_context_with_config(
+    config: &SecurityConfig,
+    auth_header: Option<&str>,
+) -> Result<UserContext, StatusCode> {
+    resolve_authenticated_context(config, auth_header).await.map(|(context, _)| context)
 }
 
 #[cfg(test)]
@@ -109,6 +123,12 @@ fn resolve_user_context(
     auth_header: Option<&str>,
 ) -> Result<UserContext, StatusCode> {
     let config = SecurityConfig {
+        deployment_profile: Default::default(),
+        jwt_algorithm: None,
+        workspace_authorities: Vec::new(),
+        api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
+        api_key_admin_principals: Vec::new(),
+        trusted_host_principals: Vec::new(),
         jwt_required,
         jwt_secret: jwt_secret.to_owned().into(),
         jwks_url: None,
@@ -130,8 +150,8 @@ pub async fn auth_middleware(
     let host_authenticated = request
         .extensions()
         .get::<super::sidecar_guard::HostAuthenticated>()
-        .is_some();
-    if asserted_principal.is_some() && !host_authenticated {
+        .copied();
+    if asserted_principal.is_some() && host_authenticated.is_none() {
         return Err(principal_error("principal_header_not_allowed"));
     }
     let asserted_principal = asserted_principal
@@ -151,55 +171,73 @@ pub async fn auth_middleware(
         return Ok(next.run(request).await);
     }
 
+    if state.config.security.validate_identity_policy().is_err() {
+        return Err(StatusCode::SERVICE_UNAVAILABLE.into_response());
+    }
+    if state.config.security.is_remote() && asserted_principal.is_some() {
+        return Err(StatusCode::UNAUTHORIZED.into_response());
+    }
+
     let auth_header = request
         .headers()
         .get(header::AUTHORIZATION)
         .and_then(|h| h.to_str().ok());
 
-    // Try JWT first
-    let mut context = resolve_user_context_with_config(&state.config.security, auth_header)
-        .await
-        .map_err(|status| status.into_response())?;
-
-    if let Some(principal) = asserted_principal {
-        context = principal;
+    // The exchange handler owns credential verification for this exact ingress,
+    // including its JSON-body key path. It never admits a run or installs context.
+    if request.method() == axum::http::Method::POST
+        && matches!(request.uri().path(), "/api/uar/auth/exchange" | "/api/auth/exchange")
+    {
+        return Ok(next.run(request).await);
     }
 
-    // If still anonymous, try X-API-Key header
-    if context.user_id == "anonymous" {
-        if let Some(api_key) = request
-            .headers()
-            .get("x-api-key")
-            .and_then(|v| v.to_str().ok())
-        {
-            if let Some(api_key_service) = &state.api_key_service {
-                match api_key_service.validate_key(api_key).await {
-                    Ok(Some(claims)) => {
-                        context = UserContext {
-                            user_id: claims.sub.clone(),
-                            tenant_id: None,
-                            claims,
-                        };
-                    }
-                    Ok(None) => {
-                        // Invalid key — if JWT is required, reject; otherwise stay anonymous
-                        if state.config.security.jwt_required {
-                            return Err(StatusCode::UNAUTHORIZED.into_response());
-                        }
-                    }
-                    Err(_) => {
-                        if state.config.security.jwt_required {
-                            return Err(StatusCode::UNAUTHORIZED.into_response());
-                        }
-                    }
-                }
-            }
-        } else if state.config.security.jwt_required {
-            // No auth at all and JWT required
-            return Err(StatusCode::UNAUTHORIZED.into_response());
+    let mut credential_capture = request.extensions()
+        .get::<AuthenticatedCredentialCapture>().cloned().unwrap_or_default();
+    let context = if let Some(mut principal) = asserted_principal {
+        // The launch guard already authenticated and consumed the bearer secret.
+        if let Some(proof) = host_authenticated { proof.bind_context(&mut principal); }
+        principal
+    } else if auth_header.is_none() {
+        if let Some(key) = request.headers().get("x-api-key") {
+            let key = key.to_str().map_err(|_| StatusCode::UNAUTHORIZED.into_response())?;
+            let service = state.api_key_service.as_ref()
+                .ok_or_else(|| StatusCode::UNAUTHORIZED.into_response())?;
+            let context = service.validate_key(key).await
+                .map_err(|error| {
+                    if matches!(error.downcast_ref::<super::api_keys::ApiKeyAuthorityError>(),
+                        Some(super::api_keys::ApiKeyAuthorityError::ReissueRequired)) {
+                        (StatusCode::UNAUTHORIZED, axum::Json(serde_json::json!({
+                            "error": {"code": "api_key_reissue_required"}
+                        }))).into_response()
+                    } else { StatusCode::UNAUTHORIZED.into_response() }
+                })?
+                .ok_or_else(|| StatusCode::UNAUTHORIZED.into_response())?;
+            credential_capture.extend(AuthenticatedCredentialCapture::api_key(key));
+            context
+        } else {
+            resolve_authenticated_context(&state.config.security, None).await
+                .map_err(|status| status.into_response())?.0
         }
-    }
+    } else {
+        // A presented invalid bearer never falls through into key authority.
+        let (context, capture) = resolve_authenticated_context(&state.config.security, auth_header).await
+            .map_err(|status| status.into_response())?;
+        credential_capture.extend(capture);
+        context
+    };
 
+    let workspace = if state.config.security.is_remote() {
+        request.headers().get("x-uar-workspace-id")
+            .map(|value| value.to_str().map(str::trim))
+            .transpose().map_err(|_| StatusCode::BAD_REQUEST.into_response())?
+    } else { None };
+    authorize_context(&state.config.security, Some(&context), workspace)
+        .map_err(|error| match error {
+            AdmissionError::Configuration => StatusCode::SERVICE_UNAVAILABLE,
+            AdmissionError::Unauthenticated => StatusCode::UNAUTHORIZED,
+            AdmissionError::Forbidden => StatusCode::FORBIDDEN,
+        }.into_response())?;
+    request.extensions_mut().insert(credential_capture);
     request.extensions_mut().insert(context);
     Ok(next.run(request).await)
 }
@@ -261,6 +299,12 @@ mod tests {
 
     fn jwks_config(url: String, issuer: &str, audience: &str) -> SecurityConfig {
         SecurityConfig {
+            deployment_profile: Default::default(),
+            jwt_algorithm: None,
+            workspace_authorities: Vec::new(),
+            api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
+            api_key_admin_principals: Vec::new(),
+            trusted_host_principals: Vec::new(),
             jwt_required: true,
             jwt_secret: "unused-for-jwks".to_owned().into(),
             jwks_url: Some(url),
@@ -274,6 +318,12 @@ mod tests {
 
     fn shared_secret_config(issuer: Option<&str>, audience: Option<&str>) -> SecurityConfig {
         SecurityConfig {
+            deployment_profile: Default::default(),
+            jwt_algorithm: None,
+            workspace_authorities: Vec::new(),
+            api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
+            api_key_admin_principals: Vec::new(),
+            trusted_host_principals: Vec::new(),
             jwt_required: true,
             jwt_secret: "claim-test-secret".to_owned().into(),
             jwks_url: None,

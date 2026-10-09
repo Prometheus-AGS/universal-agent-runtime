@@ -101,6 +101,7 @@ fn admin_ctx(user_id: Option<&str>) -> crate::uar::security::claims::UserContext
     use crate::uar::security::claims::{UserClaims, UserContext};
     let uid = user_id.unwrap_or("anonymous").to_string();
     UserContext {
+        host_authority: None, authority: None,
         user_id: uid.clone(),
         tenant_id: None,
         claims: UserClaims {

@@ -9,7 +9,7 @@ use crate::uar::persistence::tool_admission::{ToolAdmissionEvidence, ToolAdmissi
 
 use super::{
     AdmittedToolInvocation, HostAdmissionPreparation, HostToolAdmissionPort,
-    PreparedToolInvocation, ToolAdmissionContext, ToolAdmissionRuntime,
+    PreparedToolInvocation, ToolAdmissionContext, ToolAdmissionRuntime, ToolExecutionKind,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -38,6 +38,7 @@ pub enum AdmissionTerminalOutcome {
 enum LiveState {
     AwaitingApproval,
     Claimed,
+    NativeClaimed,
     ClaimedUnknown,
     Terminal,
     Cancelled,
@@ -196,7 +197,11 @@ impl AdmissionLifecycle {
         Ok(())
     }
 
-    pub(super) async fn claim(&self, admitted: &AdmittedToolInvocation) -> anyhow::Result<()> {
+    pub(super) async fn claim(
+        &self,
+        admitted: &AdmittedToolInvocation,
+        host: &dyn HostToolAdmissionPort,
+    ) -> anyhow::Result<()> {
         let invocation = admitted.prepared.as_ref();
         invocation.validate_authority_envelope()?;
         let cell = self
@@ -214,6 +219,28 @@ impl AdmissionLifecycle {
         ))
         .await?;
         *state = LiveState::Claimed;
+        if invocation.execution_kind == ToolExecutionKind::RuntimeNative {
+            let consumption = host.consume_native(admitted).await.and_then(|receipt| {
+                anyhow::ensure!(
+                    receipt == admitted.host_receipt,
+                    "Native claim acknowledgment changed the admission receipt"
+                );
+                Ok(())
+            });
+            if let Err(error) = consumption {
+                drop(state);
+                self.cancel(
+                    host,
+                    invocation,
+                    &admitted.host_receipt.admission_id,
+                    AdmissionCancellationReason::Invalidated,
+                )
+                .await
+                .map_err(|_| anyhow::anyhow!("Native claim cancellation could not be confirmed"))?;
+                return Err(error);
+            }
+            *state = LiveState::NativeClaimed;
+        }
         Ok(())
     }
 
@@ -224,11 +251,14 @@ impl AdmissionLifecycle {
     ) -> anyhow::Result<()> {
         let invocation = admitted.prepared.as_ref();
         let cell = self
-            .cell(&invocation.invocation_id, LiveState::Claimed)
+            .cell(&invocation.invocation_id, LiveState::AwaitingApproval)
             .await;
         let mut state = cell.lock().await;
         anyhow::ensure!(
-            matches!(*state, LiveState::Claimed | LiveState::ClaimedUnknown),
+            matches!(
+                *state,
+                LiveState::Claimed | LiveState::NativeClaimed | LiveState::ClaimedUnknown
+            ),
             "Tool invocation was not claimed"
         );
         self.save_evidence(&ToolAdmissionEvidence::new(
@@ -257,50 +287,26 @@ impl AdmissionLifecycle {
             .await;
         let mut state = cell.lock().await;
         match *state {
-            LiveState::Claimed => {
-                let outcome = host.cancel(invocation, admission_id, reason).await?;
-                let evidence_state = match outcome {
-                    AdmissionCancellationOutcome::Cancelled => match reason {
-                        AdmissionCancellationReason::Cancelled => {
-                            ToolAdmissionEvidenceState::Cancelled
-                        }
-                        AdmissionCancellationReason::Invalidated => {
-                            ToolAdmissionEvidenceState::Invalidated
-                        }
-                    },
-                    AdmissionCancellationOutcome::AlreadyClaimed => {
-                        ToolAdmissionEvidenceState::OutcomeUnknown
-                    }
-                    AdmissionCancellationOutcome::AlreadyTerminal => {
-                        ToolAdmissionEvidenceState::OutcomeUnknown
-                    }
-                };
-                self.save_evidence(&ToolAdmissionEvidence::new(
-                    invocation,
-                    admission_id,
-                    evidence_state,
-                ))
-                .await?;
-                *state = if matches!(
-                    outcome,
-                    AdmissionCancellationOutcome::AlreadyClaimed
-                        | AdmissionCancellationOutcome::AlreadyTerminal
-                ) {
-                    LiveState::ClaimedUnknown
-                } else {
-                    LiveState::Cancelled
-                };
-                return Ok(outcome);
-            }
             LiveState::ClaimedUnknown => {
                 return Ok(AdmissionCancellationOutcome::AlreadyClaimed);
             }
             LiveState::Terminal | LiveState::Cancelled => {
                 return Ok(AdmissionCancellationOutcome::AlreadyTerminal);
             }
-            LiveState::AwaitingApproval => {}
+            LiveState::AwaitingApproval | LiveState::Claimed | LiveState::NativeClaimed => {}
         }
-        let outcome = host.cancel(invocation, admission_id, reason).await?;
+        let acknowledged_native = *state == LiveState::NativeClaimed;
+        let cancellation = host.cancel(invocation, admission_id, reason).await;
+        // A consumed native acknowledgment cannot be rolled back. A lost cancel
+        // response likewise leaves the durable intent unresolved, never reusable.
+        let outcome = if acknowledged_native {
+            AdmissionCancellationOutcome::AlreadyClaimed
+        } else {
+            cancellation
+                .as_ref()
+                .copied()
+                .unwrap_or(AdmissionCancellationOutcome::AlreadyClaimed)
+        };
         let evidence_state = match outcome {
             AdmissionCancellationOutcome::Cancelled => match reason {
                 AdmissionCancellationReason::Cancelled => ToolAdmissionEvidenceState::Cancelled,
@@ -311,6 +317,7 @@ impl AdmissionLifecycle {
                 ToolAdmissionEvidenceState::OutcomeUnknown
             }
         };
+        *state = LiveState::ClaimedUnknown;
         self.save_evidence(&ToolAdmissionEvidence::new(
             invocation,
             admission_id,
@@ -322,7 +329,7 @@ impl AdmissionLifecycle {
         } else {
             LiveState::ClaimedUnknown
         };
-        Ok(outcome)
+        cancellation.map(|_| outcome)
     }
 
     pub(super) fn watch_cancellation(
@@ -438,7 +445,7 @@ impl ToolAdmissionRuntime {
             !self.cancellation.is_cancelled(),
             "Tool invocation was cancelled during claim revalidation"
         );
-        self.lifecycle.claim(admitted).await
+        self.lifecycle.claim(admitted, self.host.as_ref()).await
     }
 
     /// Persist the terminal receipt after execution. A missing receipt leaves a

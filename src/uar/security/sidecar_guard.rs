@@ -21,7 +21,14 @@ use secrecy::SecretString;
 /// Marker installed only after the outer launch-token guard admits a request.
 /// Inner authentication may trust host assertions only when this marker exists.
 #[derive(Debug, Clone, Copy)]
-pub struct HostAuthenticated;
+pub struct HostAuthenticated { _private: () }
+
+impl HostAuthenticated {
+    /// Attach installation proof without manufacturing a tenant/user credential.
+    pub(crate) fn bind_context(&self, context: &mut super::claims::UserContext) {
+        context.host_authority = Some(super::claims::HostAuthority::for_launch(self, context));
+    }
+}
 
 /// Length of the hex-encoded token: 256 bits.
 const TOKEN_HEX_LEN: usize = 64;
@@ -164,7 +171,16 @@ pub async fn enforce(
         };
         return reject(StatusCode::UNAUTHORIZED, reason);
     }
+    // The accepted launch bearer is consumed here, but its redaction-only
+    // contribution follows this request into any admitted run.
+    if let Some(token) = request.headers().get(header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.strip_prefix("Bearer "))
+    {
+        let capture = super::credential_capture::AuthenticatedCredentialCapture::bearer(token);
+        request.extensions_mut().insert(capture);
+    }
     request.headers_mut().remove(header::AUTHORIZATION);
-    request.extensions_mut().insert(HostAuthenticated);
+    request.extensions_mut().insert(HostAuthenticated { _private: () });
     next.run(request).await
 }

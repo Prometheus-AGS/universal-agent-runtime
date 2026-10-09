@@ -102,7 +102,7 @@ async fn session_with_a_live_run_is_not_evicted() {
         Some(1.0),
         "a session with a waiting run was evicted"
     );
-    assert_eq!(host.approve(Some(P1), &run_id).await, 200);
+    assert_eq!(host.approve(Some(P1), &run_id, &crate::principal_host::approval_ids(&text, &run_id)[0]).await, 200);
     assert!(
         Host::read_until(&mut stream, &mut text, &TERMINAL, WAIT).await,
         "run did not finish\n{text}"
@@ -175,7 +175,7 @@ async fn session_cap_evicts_least_recently_active_first() {
         "cap not applied: {:?}",
         host.gauge(SESSIONS).await
     );
-    assert_eq!(host.approve(Some(P1), &waiting).await, 200);
+    assert_eq!(host.approve(Some(P1), &waiting, &crate::principal_host::approval_ids(&text, &waiting)[0]).await, 200);
     assert!(
         Host::read_until(&mut stream, &mut text, &TERMINAL, WAIT).await,
         "run did not finish\n{text}"

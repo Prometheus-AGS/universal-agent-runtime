@@ -3,6 +3,7 @@
 //! Each method corresponds to an ACP protocol operation. Sessions are stored
 //! in an in-memory map guarded by a RwLock with TTL-based eviction.
 
+use crate::uar::security::credential_capture::AuthenticatedCredentialCapture;
 use super::types::*;
 use crate::AppState;
 use crate::uar::security::claims::UserContext;
@@ -70,6 +71,16 @@ pub async fn dispatch(
     sessions: Arc<AcpSessionStore>,
     user: &UserContext,
 ) -> JsonRpcResponse {
+    dispatch_with_capture(req, state, sessions, user, None).await
+}
+
+pub(crate) async fn dispatch_with_capture(
+    req: JsonRpcRequest,
+    state: Arc<AppState>,
+    sessions: Arc<AcpSessionStore>,
+    user: &UserContext,
+    credential_capture: Option<AuthenticatedCredentialCapture>,
+) -> JsonRpcResponse {
     let owner_id = user.user_id.as_str();
     match req.method.as_str() {
         "agents/list" => handle_agents_list(req.id, &state).await,
@@ -79,7 +90,7 @@ pub async fn dispatch(
         }
         "sessions/get" => handle_sessions_get(req.id, req.params, &sessions, owner_id).await,
         "sessions/delete" => handle_sessions_delete(req.id, req.params, &sessions, owner_id).await,
-        "runs/create" => handle_runs_create(req.id, req.params, &state, &sessions, user).await,
+        "runs/create" => handle_runs_create(req.id, req.params, &state, &sessions, user, credential_capture).await,
         "runs/get" => handle_runs_get(req.id, req.params, &state, owner_id).await,
         _ => JsonRpcResponse::err(
             req.id,
@@ -240,6 +251,7 @@ async fn handle_runs_create(
     state: &AppState,
     sessions: &AcpSessionStore,
     user: &UserContext,
+    credential_capture: Option<AuthenticatedCredentialCapture>,
 ) -> JsonRpcResponse {
     let owner_id = user.user_id.as_str();
     let params = match params {
@@ -285,6 +297,7 @@ async fn handle_runs_create(
         Ok(request) => request,
         Err(_) => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, "Invalid run principal"),
     };
+    request = request.with_credential_capture(credential_capture);
     request.session_id = Some(session_id);
     request.presentation_negotiation = presentation_negotiation;
     let run_id = state.run_manager.execute_request(request).await;

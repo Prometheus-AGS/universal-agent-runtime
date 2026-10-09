@@ -1,4 +1,7 @@
+pub mod credential_capture;
 pub mod api_keys;
+#[cfg(feature = "server")]
+pub mod authority;
 pub mod claims;
 pub mod credentials;
 pub(crate) mod jwt;

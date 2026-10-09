@@ -738,7 +738,7 @@ async fn approved_read_executes_before_the_next_approval_and_is_charged_once() {
     )
     .await;
     for count in 1..=2 {
-        wait_for_probe_events(&manager, &run_id, |events| {
+        let approval_events = wait_for_probe_events(&manager, &run_id, |events| {
             events
                 .iter()
                 .filter(|event| matches!(event.event, RunEvent::ToolCallApprovalRequired { .. }))
@@ -752,8 +752,12 @@ async fn approved_read_executes_before_the_next_approval_and_is_charged_once() {
         } else {
             assert_eq!(timeline, vec!["start:probe_first", "end:probe_first"]);
         }
+        let approval_id = approval_events.iter().filter_map(|event| match &event.event {
+            RunEvent::ToolCallApprovalRequired { approval_id, .. } => approval_id.as_deref(),
+            _ => None,
+        }).nth(count - 1).expect("originating batch approval identity");
         tokio::time::timeout(Duration::from_secs(2), async {
-            while !manager.resolve_approval(&run_id, true).await {
+            while !manager.resolve_approval_request(&run_id, Some(approval_id), true).await {
                 tokio::task::yield_now().await;
             }
         })
@@ -903,9 +907,13 @@ async fn readonly_mcp_hint_does_not_bypass_ask_approval() {
         "the run remains on its tool turn"
     );
 
+    let approval_id = parked_events.iter().find_map(|event| match &event.event {
+        RunEvent::ToolCallApprovalRequired { tool_call_id, approval_id, .. } if tool_call_id == "readonly-call" => approval_id.as_deref(),
+        _ => None,
+    }).expect("originating read-only approval identity");
     tokio::time::timeout(Duration::from_secs(2), async {
         loop {
-            if manager.resolve_approval(&run_id, true).await {
+            if manager.resolve_approval_request(&run_id, Some(approval_id), true).await {
                 break;
             }
             tokio::task::yield_now().await;

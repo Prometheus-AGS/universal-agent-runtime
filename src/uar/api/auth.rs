@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
 
-use crate::uar::security::api_keys::{ApiKeyService, CreateKeyRequest};
+use crate::uar::security::api_keys::{ApiKeyAuthorityError, ApiKeyService, CreateKeyRequest};
 use crate::uar::security::claims::UserContext;
 
 /// Shared state for the auth router.
@@ -49,17 +49,12 @@ async fn create_key(
     user: Option<axum::Extension<UserContext>>,
     Json(body): Json<CreateKeyRequest>,
 ) -> impl IntoResponse {
-    let subject = user
-        .map(|u| u.user_id.clone())
-        .unwrap_or_else(|| "anonymous".to_string());
-
-    match state.api_key_service.create_key(subject, body).await {
+    let Some(axum::Extension(user)) = user else {
+        return (StatusCode::UNAUTHORIZED, Json(json!({"error":"verified caller identity required"}))).into_response();
+    };
+    match state.api_key_service.create_key(&user, body).await {
         Ok(resp) => (StatusCode::CREATED, Json(json!(resp))).into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({ "error": e.to_string() })),
-        )
-            .into_response(),
+        Err(error) => key_authority_error(error),
     }
 }
 
@@ -68,17 +63,12 @@ async fn list_keys(
     State(state): State<Arc<AuthApiState>>,
     user: Option<axum::Extension<UserContext>>,
 ) -> impl IntoResponse {
-    let subject = user
-        .map(|u| u.user_id.clone())
-        .unwrap_or_else(|| "anonymous".to_string());
-
-    match state.api_key_service.list_keys(&subject).await {
+    let Some(axum::Extension(user)) = user else {
+        return key_authority_error(ApiKeyAuthorityError::CallerRequired.into());
+    };
+    match state.api_key_service.list_keys(&user).await {
         Ok(keys) => (StatusCode::OK, Json(json!({ "keys": keys }))).into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({ "error": e.to_string() })),
-        )
-            .into_response(),
+        Err(error) => key_authority_error(error),
     }
 }
 
@@ -86,19 +76,19 @@ async fn list_keys(
 async fn revoke_key(
     State(state): State<Arc<AuthApiState>>,
     Path(id): Path<String>,
+    user: Option<axum::Extension<UserContext>>,
 ) -> impl IntoResponse {
-    match state.api_key_service.revoke_key(&id).await {
+    let Some(axum::Extension(user)) = user else {
+        return key_authority_error(ApiKeyAuthorityError::CallerRequired.into());
+    };
+    match state.api_key_service.revoke_key(&user, &id).await {
         Ok(true) => (StatusCode::OK, Json(json!({ "revoked": true, "id": id }))).into_response(),
         Ok(false) => (
             StatusCode::NOT_FOUND,
             Json(json!({ "error": "key not found", "id": id })),
         )
             .into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({ "error": e.to_string() })),
-        )
-            .into_response(),
+        Err(error) => key_authority_error(error),
     }
 }
 
@@ -145,13 +135,13 @@ async fn exchange_key(
             .into_response();
     };
 
-    match state.api_key_service.exchange_for_jwt(&raw_key).await {
-        Ok(Some(token)) => (
+    match state.api_key_service.exchange_with_expiry(&raw_key).await {
+        Ok(Some(issued)) => (
             StatusCode::OK,
             Json(json!(ExchangeResponse {
-                token,
+                token: issued.token,
                 token_type: "Bearer".to_string(),
-                expires_in: 3600,
+                expires_in: issued.expires_in,
             })),
         )
             .into_response(),
@@ -160,10 +150,19 @@ async fn exchange_key(
             Json(json!({ "error": "invalid or expired API key" })),
         )
             .into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({ "error": e.to_string() })),
-        )
-            .into_response(),
+        Err(error) => key_authority_error(error),
     }
+}
+
+fn key_authority_error(error: anyhow::Error) -> axum::response::Response {
+    let (status, message) = match error.downcast_ref::<ApiKeyAuthorityError>() {
+        Some(ApiKeyAuthorityError::CallerRequired) => (StatusCode::UNAUTHORIZED, "verified caller identity required"),
+        Some(ApiKeyAuthorityError::DelegationDenied) => (StatusCode::FORBIDDEN, "requested API-key authority is not delegable"),
+        Some(ApiKeyAuthorityError::ReissueRequired) => (StatusCode::UNAUTHORIZED, "API key requires reissue with verified identity metadata"),
+        Some(ApiKeyAuthorityError::UnsupportedExchange) => (StatusCode::NOT_IMPLEMENTED, "API-key exchange is unsupported by the configured verifier"),
+        Some(ApiKeyAuthorityError::InvalidConfiguration) => (StatusCode::SERVICE_UNAVAILABLE, "API-key authority configuration is invalid"),
+        Some(ApiKeyAuthorityError::InvalidLifetime) => (StatusCode::BAD_REQUEST, "API key lifetime must be a positive representable duration"),
+        None => (StatusCode::INTERNAL_SERVER_ERROR, "API-key operation failed"),
+    };
+    (status, Json(json!({"error":message}))).into_response()
 }

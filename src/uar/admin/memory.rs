@@ -142,6 +142,7 @@ mod tests {
         // auth token payload, and a blanket `Default` on it would let production
         // code conjure an unauthenticated identity by accident.
         UserContext {
+            host_authority: None, authority: None,
             user_id: "u1".to_string(),
             tenant_id: None,
             claims: UserClaims {

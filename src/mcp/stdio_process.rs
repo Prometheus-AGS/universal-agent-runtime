@@ -62,7 +62,9 @@ impl StdioProcessSupervisor {
         command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::inherit())
+            // MCP children may echo granted credentials before the protocol handshake.
+            // Keep raw stderr outside ordinary host logs; lifecycle errors remain typed.
+            .stderr(Stdio::null())
             .kill_on_drop(true);
         let mut child = command.spawn()?;
         // Both handles were explicitly piped on the command immediately above.

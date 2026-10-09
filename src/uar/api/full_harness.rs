@@ -75,6 +75,7 @@ impl FullHarnessTaskAuthority {
 
     pub fn runtime_descriptor(&self) -> RuntimeDescriptor {
         RuntimeDescriptor {
+            event_cursor_profile: "contiguous_cursor_frames_v1",
             profile: "full_harness_v1",
             runtime_epoch: self.runtime_epoch.clone(),
             recovery: "unsupported_after_restart",

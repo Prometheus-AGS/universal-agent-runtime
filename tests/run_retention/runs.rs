@@ -76,7 +76,7 @@ async fn terminal_run_is_evicted_after_retention() {
         (
             Method::POST,
             format!("{base}/tool-approval"),
-            Some(json!({ "approved": true })),
+            Some(json!({ "approved": true, "approval_id": "evicted-run-has-no-pending-approval" })),
         ),
         (Method::GET, format!("{base}/a2ui/surface-replay"), None),
         (
@@ -179,7 +179,7 @@ async fn retained_state_is_bounded_under_sustained_load() {
             "run {index} did not pause\n{text}"
         );
         assert_eq!(trigger_surface(&host, &run_id).await, 200, "run {index} surface");
-        assert_eq!(host.approve(Some(P1), &run_id).await, 200, "run {index} approval");
+        assert_eq!(host.approve(Some(P1), &run_id, &crate::principal_host::approval_ids(&text, &run_id)[0]).await, 200, "run {index} approval");
         assert!(
             Host::read_until(&mut stream, &mut text, &TERMINAL, WAIT).await,
             "run {index} did not finish\n{text}"

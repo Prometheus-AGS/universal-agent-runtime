@@ -1,5 +1,6 @@
 #![deny(clippy::unwrap_used, clippy::expect_used)]
 
+use crate::uar::security::credential_capture::AuthenticatedCredentialCapture;
 use axum::{
     Json, Router,
     extract::{DefaultBodyLimit, Request, State},
@@ -486,6 +487,7 @@ async fn run_server_with_listener(
     crate::uar::telemetry::metrics::init();
 
     let config = config_manager.current();
+    config.security.validate_identity_policy().map_err(anyhow::Error::msg)?;
     let mut llm_config = config.llm.clone();
     normalize_legacy_openai_base_url(&mut llm_config);
     info!(
@@ -1350,10 +1352,7 @@ async fn run_server_with_listener(
             Arc::clone(&api_key_storage),
             config.security.jwt_secret.expose_secret(),
         )
-        .with_registered_claims(
-            config.security.jwt_issuer.clone(),
-            config.security.jwt_audience.clone(),
-        ),
+        .with_security_config(&config.security)?,
     );
     info!("API key service initialized");
 
@@ -2537,7 +2536,7 @@ fn build_permissive_cors_layer() -> CorsLayer {
 /// Human-in-the-loop gate for pending tool calls.
 ///
 /// Body: `{ "approved": true | false, "approval_id": "host-request-id" }`.
-/// The ID is optional for legacy root requests and required for child requests.
+/// The exact originating ID is required for every root and child request.
 /// Returns 200 if the run was waiting for this approval and it was resolved.
 /// Returns 404 if no run with that id has a pending approval.
 async fn handle_tool_call_approval(
@@ -2547,20 +2546,21 @@ async fn handle_tool_call_approval(
     Json(body): Json<serde_json::Value>,
 ) -> Response {
     let approval_id = match body.get("approval_id") {
-        None | Some(serde_json::Value::Null) => None,
-        Some(serde_json::Value::String(id)) => Some(id.as_str()),
-        Some(_) => {
+        Some(serde_json::Value::String(id)) if !id.trim().is_empty() => id.as_str(),
+        _ => {
             return (
                 StatusCode::BAD_REQUEST,
-                Json(serde_json::json!({"error": "approval_id must be a string"})),
+                Json(serde_json::json!({"error": "approval_id_required",
+                    "message": "Submit the approval_id from the originating approval event or pending snapshot"})),
             )
                 .into_response();
         }
     };
-    let approved = body
-        .get("approved")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false);
+    let Some(approved) = body.get("approved").and_then(|value| value.as_bool()) else {
+        return (StatusCode::BAD_REQUEST, Json(serde_json::json!({
+            "error": "approval_decision_required", "message": "approved must be a boolean"
+        }))).into_response();
+    };
     if state
         .run_manager
         .get_run_for_context(&user, &run_id)
@@ -2578,7 +2578,7 @@ async fn handle_tool_call_approval(
     }
     let resolved = state
         .run_manager
-        .resolve_approval_request(&run_id, approval_id, approved)
+        .resolve_approval_request(&run_id, Some(approval_id), approved)
         .await;
     if resolved {
         info!(
@@ -5234,6 +5234,7 @@ impl ChatStreamCursor {
 pub(crate) async fn api_chat_completion(
     State(state): State<AppState>,
     axum::Extension(user_ctx): axum::Extension<UserContext>,
+    credential_capture: Option<axum::Extension<AuthenticatedCredentialCapture>>,
     headers: HeaderMap,
     Json(req): Json<ChatCompletionRequest>,
 ) -> Response {
@@ -5635,6 +5636,7 @@ pub(crate) async fn api_chat_completion(
                     );
                 }
             };
+        run_request = run_request.with_credential_capture(credential_capture.map(|axum::Extension(capture)| capture));
         run_request.session_id = Some(session_id.clone());
         run_request.memory_hits = memory_recall_items;
         run_request.resolved_policy = Some(effective_run_policy);

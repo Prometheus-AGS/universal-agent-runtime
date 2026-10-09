@@ -23,7 +23,7 @@ pub(crate) enum ApprovalOutcome {
 
 struct PendingApproval {
     snapshot: PendingApprovalSnapshot,
-    legacy_root_request: bool,
+    caller_cancellation: CancellationToken,
     reply: oneshot::Sender<bool>,
 }
 
@@ -84,16 +84,13 @@ impl ApprovalBroker {
             pending: Mutex::new(None),
         });
         roots.insert(run_id, Arc::downgrade(&lane));
-        Ok(RootApprovalChannel {
-            lane,
-            legacy_root_request: true,
-        })
+        Ok(RootApprovalChannel { lane })
     }
 
     /// Called only after the host has authorized the root run's human owner.
-    /// Child requests require their exact opaque ID; legacy run-only decisions
-    /// remain valid solely for ordinary root requests.
+    /// Every root and descendant decision requires its exact opaque ID.
     pub(crate) fn resolve(&self, run_id: &str, approval_id: Option<&str>, approved: bool) -> bool {
+        let Some(approval_id) = approval_id.filter(|id| !id.trim().is_empty()) else { return false; };
         let lane = self
             .roots
             .lock()
@@ -111,10 +108,11 @@ impl ApprovalBroker {
         let Some(request) = pending.as_ref() else {
             return false;
         };
-        let matches = approval_id.map_or(request.legacy_root_request, |id| {
-            id == request.snapshot.approval_id
-        });
-        if !matches || request.reply.is_closed() {
+        if approval_id != request.snapshot.approval_id
+            || lane.cancellation.is_cancelled()
+            || request.caller_cancellation.is_cancelled()
+            || request.reply.is_closed()
+        {
             return false;
         }
         pending
@@ -138,7 +136,9 @@ impl ApprovalBroker {
         lane.pending
             .lock()
             .ok()
-            .and_then(|pending| pending.as_ref().map(|pending| pending.snapshot.clone()))
+            .and_then(|pending| pending.as_ref()
+                .filter(|request| !request.caller_cancellation.is_cancelled() && !request.reply.is_closed())
+                .map(|pending| pending.snapshot.clone()))
     }
 }
 
@@ -147,7 +147,6 @@ impl ApprovalBroker {
 #[derive(Clone)]
 pub(crate) struct RootApprovalChannel {
     lane: Arc<RootLane>,
-    legacy_root_request: bool,
 }
 
 impl RootApprovalChannel {
@@ -156,12 +155,10 @@ impl RootApprovalChannel {
         &self.lane.run_id
     }
 
-    /// A descendant keeps the same root queue but cannot accept a run-only
-    /// decision that might have been intended for another child.
+    /// A descendant keeps the same root queue and exact-identity contract.
     pub(crate) fn for_child(&self) -> Self {
         Self {
             lane: Arc::clone(&self.lane),
-            legacy_root_request: false,
         }
     }
 
@@ -205,7 +202,7 @@ impl RootApprovalChannel {
                 }
                 *pending = Some(PendingApproval {
                     snapshot,
-                    legacy_root_request: self.legacy_root_request,
+                    caller_cancellation: caller_cancel.clone(),
                     reply,
                 });
             }
@@ -263,76 +260,5 @@ impl Drop for PendingGuard {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[derive(Default)]
-    struct RecordingSink {
-        events: AsyncMutex<Vec<NormalizedEvent>>,
-    }
-
-    #[async_trait::async_trait]
-    impl RuntimeEventSink for RecordingSink {
-        async fn emit(&self, event: NormalizedEvent) {
-            self.events.lock().await.push(event);
-        }
-    }
-
-    #[tokio::test]
-    async fn child_request_uses_root_lane_and_requires_its_exact_approval_id() {
-        let broker = ApprovalBroker::default();
-        let sink = Arc::new(RecordingSink::default());
-        let root = broker
-            .register(
-                "root-run".to_owned(),
-                sink.clone(),
-                CancellationToken::new(),
-            )
-            .expect("root approval lane must register");
-        let child = root.for_child();
-        let caller_cancel = CancellationToken::new();
-        let request = tokio::spawn(async move {
-            child
-                .request(
-                    2,
-                    "child-call".to_owned(),
-                    "write".to_owned(),
-                    r#"{"path":"scoped"}"#.to_owned(),
-                    "write effect".to_owned(),
-                    &caller_cancel,
-                )
-                .await
-        });
-
-        let approval_id = tokio::time::timeout(Duration::from_secs(5), async {
-            loop {
-                let events = sink.events.lock().await;
-                if let Some(approval_id) = events.iter().find_map(|event| match event {
-                    NormalizedEvent::ToolCallApprovalRequired {
-                        run_id,
-                        tool_call_id,
-                        approval_id,
-                        ..
-                    } if run_id == "root-run" && tool_call_id == "child-call" => {
-                        approval_id.clone()
-                    }
-                    _ => None,
-                }) {
-                    return approval_id;
-                }
-                drop(events);
-                tokio::task::yield_now().await;
-            }
-        })
-        .await
-        .expect("child approval request must be published on the root lane");
-
-        assert!(!broker.resolve("root-run", None, true));
-        assert!(!request.is_finished());
-        assert!(broker.resolve("root-run", Some(&approval_id), true));
-        assert_eq!(
-            request.await.expect("child approval task must join"),
-            ApprovalOutcome::Approved
-        );
-    }
-}
+#[path = "approval_tests.rs"]
+mod tests;

@@ -118,6 +118,7 @@ impl Actor for AgentActor {
             AgentMessage::UserRun {
                 run_id,
                 content,
+                credential_capture,
                 artifacts,
                 reply,
             } => {
@@ -128,7 +129,7 @@ impl Actor for AgentActor {
                         .session
                         .lock()
                         .await
-                        .execute_named(content, run_id, Some(artifacts.clone()))
+                        .execute_named_with_capture(content, run_id, Some(artifacts.clone()), credential_capture)
                         .await
                         .map_err(super::messages::ActorRunError::Host)
                 };

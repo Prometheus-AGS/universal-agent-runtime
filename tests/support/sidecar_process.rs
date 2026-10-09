@@ -9,6 +9,10 @@
 
 #![allow(dead_code, reason = "each test target uses a different subset")]
 
+#[path = "approval_events.rs"]
+pub mod approval_events;
+pub use approval_events::approval_ids;
+
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, ExitStatus, Stdio};
@@ -73,6 +77,17 @@ impl Workspace {
             .expect("create workspace");
         for directory in ["home", "work", "data", "logs", "no-skills"] {
             std::fs::create_dir_all(root.path().join(directory)).expect("create workspace dir");
+        }
+        // Standalone and sidecar startup load this committed policy set from
+        // their private work cwd; keep governance enabled in every fixture.
+        let policies = root.path().join("work/policies");
+        std::fs::create_dir_all(&policies).expect("create private policy directory");
+        for (name, source) in [
+            ("default.cedar", include_str!("../../policies/default.cedar")),
+            ("tool-approval.cedar", include_str!("../../policies/tool-approval.cedar")),
+            ("skill-mutation.cedar", include_str!("../../policies/skill-mutation.cedar")),
+        ] {
+            std::fs::write(policies.join(name), source).expect("copy committed governance policy");
         }
         Self { root }
     }
@@ -737,13 +752,11 @@ pub async fn drive_run(
             break;
         };
         stream.push_str(&String::from_utf8_lossy(&chunk));
-        let requested = stream
-            .matches("event: agui.tool_call.approval_required")
-            .count();
-        while approvals < requested {
+        let requested = approval_ids(&stream, &run_id);
+        while approvals < requested.len() {
             let decision =
                 with_auth(client.post(format!("{base_url}/api/uar/runs/{run_id}/tool-approval")))
-                    .json(&serde_json::json!({ "approved": true }))
+                    .json(&serde_json::json!({ "approved": true, "approval_id": requested[approvals] }))
                     .send()
                     .await
                     .expect("approve tool call");

@@ -690,7 +690,10 @@ async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<Dy
             command, args, env, ..
         } => {
             let cmd = stdio_child_command(resolve_mcp_command(command), args, expand_env_map(env));
-            let transport = TokioChildProcess::new(cmd)
+            // The rmcp builder owns stdio and otherwise overrides Command's stderr.
+            let (transport, _) = TokioChildProcess::builder(cmd)
+                .stderr(std::process::Stdio::null())
+                .spawn()
                 .with_context(|| format!("failed to spawn stdio MCP server '{name}'"))?;
             ().serve(transport)
                 .await
@@ -1391,7 +1394,9 @@ impl McpRegistry {
                 let cmd = stdio_child_command(&command_path, args, env);
 
                 // rmcp docs show TokioChildProcess + configure pattern for adding args
-                let transport = TokioChildProcess::new(cmd)?;
+                let (transport, _) = TokioChildProcess::builder(cmd)
+                    .stderr(std::process::Stdio::null())
+                    .spawn()?;
                 ().serve(transport)
                     .await
                     .with_context(|| format!("failed to connect stdio MCP server '{name}'"))

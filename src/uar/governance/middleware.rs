@@ -298,6 +298,7 @@ mod tests {
             ))
             .layer(axum::Extension(
                 crate::uar::security::claims::UserContext {
+                    host_authority: None, authority: None,
                     user_id: "authenticated-user".to_string(),
                     tenant_id: None,
                     claims: crate::uar::security::claims::UserClaims {

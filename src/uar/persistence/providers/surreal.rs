@@ -1734,6 +1734,24 @@ impl PersistenceLayer for SurrealDbProvider {
         Ok(())
     }
 
+    async fn update_skill_selection(
+        &self,
+        skill_id: &str,
+        enabled: bool,
+        scoped_config: &[crate::uar::domain::skills::ScopedSkillConfig],
+    ) -> Result<bool> {
+        let fields = to_db_value(&serde_json::json!({
+            "enabled": enabled,
+            "scoped_config": scoped_config,
+        }))?;
+        let updated: Option<surrealdb::types::Value> = self
+            .db
+            .update(("skills", skill_id))
+            .merge(fields)
+            .await?;
+        Ok(updated.is_some())
+    }
+
     async fn search_skills(&self, query_vec: &[f32], limit: usize) -> Result<Vec<SkillMatch>> {
         // Fallback: Fetch all, compute cosine similarity in memory
         // Ideally use vector search plugin/feature if available.

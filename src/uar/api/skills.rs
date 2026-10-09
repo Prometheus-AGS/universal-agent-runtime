@@ -7,7 +7,9 @@ use crate::uar::domain::skills::{
     Skill, SkillExecutionConfig, SkillOrigin, SkillScope, SkillTriggers,
 };
 use crate::uar::runtime::skills::provenance::{PackProvenance, read_provenance};
-use crate::uar::runtime::skills::service::{SkillMatchingConfig, SkillService, SkillUpdate};
+use crate::uar::runtime::skills::service::{
+    SkillMatchingConfig, SkillSelectionError, SkillService, SkillUpdate,
+};
 use axum::{
     Json, Router,
     extract::{Path, State},
@@ -18,6 +20,21 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
+
+fn selection_failure(error: SkillSelectionError) -> axum::response::Response {
+    let (status, outcome) = match error {
+        SkillSelectionError::Denied => (StatusCode::FORBIDDEN, "rejected"),
+        SkillSelectionError::NotFound => (StatusCode::NOT_FOUND, "partial_possible"),
+        SkillSelectionError::StorageMissing => (StatusCode::CONFLICT, "partial_possible"),
+        SkillSelectionError::StoreUnavailable => (StatusCode::SERVICE_UNAVAILABLE, "unknown"),
+        SkillSelectionError::FilesystemPartial => (StatusCode::SERVICE_UNAVAILABLE, "partial"),
+    };
+    (
+        status,
+        Json(serde_json::json!({ "error": error.to_string(), "outcome": outcome })),
+    )
+        .into_response()
+}
 
 /// Build the skills API router.
 ///
@@ -59,7 +76,10 @@ async fn get_provenance(State(service): State<Arc<SkillService>>) -> impl IntoRe
     // SKILLS.md lives one level above the `skills/` directory.
     let pack_root = root.parent().unwrap_or(&root).to_path_buf();
     let pack = read_provenance(&pack_root);
-    let loaded = service.get_skills().await.len();
+    let loaded = match service.get_skills_checked().await {
+        Ok(skills) => skills.len(),
+        Err(error) => return selection_failure(error),
+    };
 
     let drift = match pack.skill_count {
         Some(n) if n != loaded => Some(format!("pack reports {n} skills, runtime loaded {loaded}")),
@@ -74,6 +94,7 @@ async fn get_provenance(State(service): State<Arc<SkillService>>) -> impl IntoRe
         loaded_skill_count: loaded,
         drift,
     })
+    .into_response()
 }
 
 /// Provenance response body.
@@ -229,9 +250,13 @@ pub struct ImportValidation {
 
 // --- Skills endpoints ---
 
-async fn list_skills(State(service): State<Arc<SkillService>>) -> Json<Vec<SkillResponse>> {
-    let skills = service.get_skills().await;
-    Json(skills.into_iter().map(SkillResponse::from).collect())
+async fn list_skills(State(service): State<Arc<SkillService>>) -> axum::response::Response {
+    match service.get_skills_checked().await {
+        Ok(skills) => {
+            Json(skills.into_iter().map(SkillResponse::from).collect::<Vec<_>>()).into_response()
+        }
+        Err(error) => selection_failure(error),
+    }
 }
 
 async fn create_skill(
@@ -271,7 +296,10 @@ async fn get_skill(
     State(service): State<Arc<SkillService>>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    let skills = service.get_skills().await;
+    let skills = match service.get_skills_checked().await {
+        Ok(skills) => skills,
+        Err(error) => return selection_failure(error),
+    };
     match skills.into_iter().find(|s| s.skill_id == id) {
         Some(skill) => Json(SkillResponse::from(skill)).into_response(),
         None => StatusCode::NOT_FOUND.into_response(),
@@ -353,21 +381,24 @@ async fn toggle_skill(
     Path(id): Path<String>,
     Json(req): Json<ToggleRequest>,
 ) -> impl IntoResponse {
-    if service
-        .set_scoped_enabled(&id, req.scope.unwrap_or(SkillScope::Global), req.enabled)
+    match service
+        .set_scoped_enabled_checked(&id, req.scope.unwrap_or(SkillScope::Global), req.enabled)
         .await
     {
-        StatusCode::OK.into_response()
-    } else {
-        StatusCode::NOT_FOUND.into_response()
+        Ok(()) => StatusCode::OK.into_response(),
+        Err(error) => selection_failure(error),
     }
 }
 
 async fn match_skills(
     State(service): State<Arc<SkillService>>,
     axum::extract::Query(params): axum::extract::Query<MatchQuery>,
-) -> Json<Vec<SkillResponse>> {
-    let matched = service
+) -> axum::response::Response {
+    let snapshot = match service.matching_snapshot().await {
+        Ok(snapshot) => snapshot,
+        Err(error) => return selection_failure(error),
+    };
+    let matched = snapshot
         .match_skills_scoped(
             &params.q,
             params.agent_id.as_deref(),
@@ -379,8 +410,9 @@ async fn match_skills(
             .accepted_skills()
             .into_iter()
             .map(SkillResponse::from)
-            .collect(),
+            .collect::<Vec<_>>(),
     )
+    .into_response()
 }
 
 async fn refresh_skills(State(service): State<Arc<SkillService>>) -> impl IntoResponse {
@@ -653,33 +685,51 @@ async fn set_config(
 async fn get_agent_skills(
     State(service): State<Arc<SkillService>>,
     Path(agent_id): Path<String>,
-) -> Json<Vec<String>> {
-    Json(service.get_agent_skill_ids(&agent_id).await)
+) -> axum::response::Response {
+    match service.get_agent_skill_ids_checked(&agent_id).await {
+        Ok(ids) => Json(ids).into_response(),
+        Err(error) => selection_failure(error),
+    }
 }
 
 async fn set_agent_skills(
     State(service): State<Arc<SkillService>>,
     Path(agent_id): Path<String>,
     Json(req): Json<AgentSkillsRequest>,
-) -> StatusCode {
-    service.set_agent_skills(&agent_id, req.skill_ids).await;
-    StatusCode::OK
+) -> axum::response::Response {
+    match service
+        .set_agent_skills_checked(&agent_id, req.skill_ids)
+        .await
+    {
+        Ok(()) => StatusCode::OK.into_response(),
+        Err(error) => selection_failure(error),
+    }
 }
 
 async fn add_agent_skill(
     State(service): State<Arc<SkillService>>,
     Path((agent_id, skill_id)): Path<(String, String)>,
-) -> StatusCode {
-    service.add_skill_to_agent(&agent_id, &skill_id).await;
-    StatusCode::CREATED
+) -> axum::response::Response {
+    match service
+        .add_skill_to_agent_checked(&agent_id, &skill_id)
+        .await
+    {
+        Ok(()) => StatusCode::CREATED.into_response(),
+        Err(error) => selection_failure(error),
+    }
 }
 
 async fn remove_agent_skill(
     State(service): State<Arc<SkillService>>,
     Path((agent_id, skill_id)): Path<(String, String)>,
-) -> StatusCode {
-    service.remove_skill_from_agent(&agent_id, &skill_id).await;
-    StatusCode::NO_CONTENT
+) -> axum::response::Response {
+    match service
+        .remove_skill_from_agent_checked(&agent_id, &skill_id)
+        .await
+    {
+        Ok(()) => StatusCode::NO_CONTENT.into_response(),
+        Err(error) => selection_failure(error),
+    }
 }
 
 // ---------------------------------------------------------------------------
