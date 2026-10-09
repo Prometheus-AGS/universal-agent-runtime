@@ -1,7 +1,9 @@
 //! Persist-before-dispatch connector authority. The host owns secret resolution and I/O.
 mod adapters;
+mod approval;
 mod control;
 mod dispatch;
+use approval::feedback_approval;
 use super::{CollaborationCatalogService, CollaborationError, service::MAX_CAS_ATTEMPTS};
 use crate::uar::domain::connector_effect::*;
 use chrono::Utc;
@@ -45,64 +47,6 @@ fn validate_scope(owner: &str, workspace: &str) -> Result<(), CollaborationError
     super::service::validate_owner(owner)?;
     super::validation::validate_id(workspace)?;
     Ok(())
-}
-fn customer_approval<'a>(
-    state: &'a crate::uar::domain::collaboration::CollaborationCatalogState,
-    owner: &str,
-    workspace: &str,
-    grant: &ConnectorBinding,
-    decision_ref: Option<&str>,
-    payload_digest: &str,
-    labels: &std::collections::BTreeSet<String>,
-) -> Result<&'a crate::uar::domain::feedback_intake::FeedbackIntake, CollaborationError> {
-    state
-        .feedback_intakes
-        .values()
-        .find(|intake| {
-            intake.owner_id == owner
-                && intake.workspace_id == workspace
-                && intake.duplicate_of.is_none()
-                && intake.status != "cancelled"
-                && intake.status != "rejected"
-                && intake.issue_approval.as_ref().is_some_and(|approval| {
-                    approval.authority == "explicit-customer"
-                        && approval.operator_id.as_deref() == Some(owner)
-                        && Some(approval.id.as_str()) == decision_ref
-                        && approval.sanitized_payload_digest == payload_digest
-                        && approval.connector_binding_id.as_deref() == Some(grant.id.as_str())
-                        && approval.connector_binding_revision == Some(grant.revision)
-                        && approval.target.as_deref() == Some(grant.target.as_str())
-                        && approval.action == Some(ConnectorAction::Publish)
-                        && approval
-                            .egress_label
-                            .as_ref()
-                            .is_some_and(|label| labels.len() == 1 && labels.contains(label))
-                        && intake.issue_draft.as_ref().is_some_and(|draft| {
-                            draft.artifact_id == approval.artifact_id
-                                && draft.artifact_digest == approval.artifact_digest
-                                && draft.payload_digest == payload_digest
-                                && intake.workflow_run_id.as_ref().is_some_and(|run_id| {
-                                    state
-                                        .workflow_runs
-                                        .get(&key(owner, workspace, run_id))
-                                        .is_some_and(|run| {
-                                            matches!(
-                                                run.status.as_str(),
-                                                "awaiting_decision" | "accepted"
-                                            ) && run
-                                                .steps
-                                                .get(1)
-                                                .and_then(|step| step.artifact.as_ref())
-                                                .is_some_and(|artifact| {
-                                                    artifact.id == draft.artifact_id
-                                                        && artifact.digest == draft.artifact_digest
-                                                })
-                                        })
-                                })
-                        })
-                })
-        })
-        .ok_or_else(|| conflict("CONNECTOR_EXPLICIT_CUSTOMER_APPROVAL_REQUIRED"))
 }
 fn validate_credential_ref(value: &str) -> Result<(), CollaborationError> {
     let Some(name) = value.strip_prefix("host://") else {
@@ -152,6 +96,11 @@ impl CollaborationCatalogService {
         super::validation::validate_id(&request.id)?;
         validate_credential_ref(&request.credential_ref)?;
         validate_site(request.provider, request.site.as_deref())?;
+        if request.approval_mode == ConnectorApprovalMode::StandingPolicy
+            && request.provider != ConnectorProvider::Github
+        {
+            return Err(bad("CONNECTOR_APPROVAL_MODE_UNSUPPORTED"));
+        }
         if !adapters::valid_target(request.provider, &request.target)
             || request.allowed_actions.is_empty()
             || request.allowed_egress_labels.is_empty()
@@ -183,6 +132,7 @@ impl CollaborationCatalogService {
                 workspace_id: workspace.into(),
                 revision: previous.map_or(1, |value| value.revision + 1),
                 provider: request.provider,
+                approval_mode: request.approval_mode,
                 target: request.target.clone(),
                 site: request.site.clone(),
                 allowed_actions: request.allowed_actions.clone(),
@@ -279,27 +229,11 @@ impl CollaborationCatalogService {
                                 && decision.artifact_digest == payload_digest
                         })
                 });
-                let standing_approval = current.feedback_intakes.values().any(|intake| {
-                    intake.owner_id == owner
-                        && intake.workspace_id == workspace
-                        && intake.duplicate_of.is_none()
-                        && request.action == ConnectorAction::Publish
-                        && intake.issue_approval.as_ref().is_some_and(|approval| {
-                            Some(approval.id.as_str()) == request.decision_ref.as_deref()
-                                && approval.sanitized_payload_digest == payload_digest
-                                && approval.connector_binding_id.as_deref()
-                                    == Some(grant.id.as_str())
-                                && approval.egress_label.as_ref().is_some_and(|label| {
-                                    request.egress_labels.len() == 1
-                                        && request.egress_labels.contains(label)
-                                })
-                        })
-                });
                 if grant.provider == ConnectorProvider::Github {
                     if request.action != ConnectorAction::Publish {
                         return Err(conflict("CONNECTOR_CUSTOMER_ACTION_UNSUPPORTED"));
                     }
-                    customer_approval(
+                    feedback_approval(
                         &current,
                         owner,
                         workspace,
@@ -308,7 +242,7 @@ impl CollaborationCatalogService {
                         &payload_digest,
                         &request.egress_labels,
                     )?;
-                } else if !workflow_decision && !standing_approval {
+                } else if !workflow_decision {
                     return Err(conflict("CONNECTOR_ARTIFACT_DECISION_MISMATCH"));
                 }
                 if current.connector_effects.values().any(|effect| {
@@ -357,7 +291,7 @@ impl CollaborationCatalogService {
             if grant.provider == ConnectorProvider::Github
                 && request.action == ConnectorAction::Publish
             {
-                let intake = customer_approval(
+                let intake = feedback_approval(
                     &current,
                     owner,
                     workspace,

@@ -23,6 +23,21 @@ pub enum ConnectorAction {
     Publish,
 }
 
+/// Publication authority chosen by the trusted host for a GitHub binding.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ConnectorApprovalMode {
+    #[default]
+    ExplicitCustomer,
+    StandingPolicy,
+}
+
+impl ConnectorApprovalMode {
+    fn is_explicit_customer(&self) -> bool {
+        *self == Self::ExplicitCustomer
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ConnectorBindingRequest {
@@ -30,6 +45,8 @@ pub struct ConnectorBindingRequest {
     pub id: String,
     pub expected_revision: Option<u64>,
     pub provider: ConnectorProvider,
+    #[serde(default, skip_serializing_if = "ConnectorApprovalMode::is_explicit_customer")]
+    pub approval_mode: ConnectorApprovalMode,
     pub target: String,
     pub site: Option<String>,
     pub allowed_actions: BTreeSet<ConnectorAction>,
@@ -46,6 +63,8 @@ pub struct ConnectorBinding {
     pub workspace_id: String,
     pub revision: u64,
     pub provider: ConnectorProvider,
+    #[serde(default)]
+    pub approval_mode: ConnectorApprovalMode,
     pub target: String,
     pub site: Option<String>,
     pub allowed_actions: BTreeSet<ConnectorAction>,
