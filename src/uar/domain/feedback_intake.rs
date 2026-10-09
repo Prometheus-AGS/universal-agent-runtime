@@ -17,6 +17,8 @@ pub struct ObserveFeedbackRequest {
     pub source: FeedbackSource,
     pub source_event_id: String,
     pub feedback: String,
+    #[serde(default)]
+    pub target: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -85,6 +87,14 @@ pub struct AdmitFeedbackImplementationRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FeedbackApproval {
+    #[serde(default)]
+    pub operator_id: Option<String>,
+    #[serde(default)]
+    pub connector_binding_revision: Option<u64>,
+    #[serde(default)]
+    pub target: Option<String>,
+    #[serde(default)]
+    pub action: Option<super::connector_effect::ConnectorAction>,
     pub id: String,
     pub authority: String,
     pub policy_id: Option<String>,
@@ -118,6 +128,8 @@ pub struct FeedbackIntake {
     pub source: FeedbackSource,
     pub source_event_id: String,
     pub feedback: String,
+    #[serde(default)]
+    pub requested_target: Option<String>,
     pub feedback_digest: String,
     pub fingerprint: String,
     pub status: String,
@@ -125,6 +137,12 @@ pub struct FeedbackIntake {
     pub classification: Option<String>,
     pub duplicate_of: Option<String>,
     pub review_artifacts: BTreeMap<String, String>,
+    #[serde(default)]
+    pub issue_draft: Option<FeedbackIssueDraft>,
+    #[serde(default)]
+    pub connector_effect_id: Option<String>,
+    #[serde(default)]
+    pub external_issue_id: Option<String>,
     pub issue_approval: Option<FeedbackApproval>,
     pub implementation: Option<FeedbackImplementationDecision>,
     pub created_at: DateTime<Utc>,
@@ -136,4 +154,55 @@ pub struct FeedbackIntake {
 pub struct FeedbackCommandReceipt {
     pub request_digest: String,
     pub subject_id: String,
+}
+
+/// Host materialization of a committed workflow draft. This does not start an executor.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FeedbackIssueDraft {
+    pub artifact_id: String,
+    pub artifact_digest: String,
+    pub payload_digest: String,
+    pub connector_binding_id: String,
+    pub connector_binding_revision: u64,
+    pub target: String,
+    pub egress_label: String,
+    pub sanitized_issue: serde_json::Value,
+    pub sanitization_ref: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DraftFeedbackIssueRequest {
+    pub command_id: String,
+    pub expected_revision: u64,
+    pub connector_binding_id: String,
+    pub expected_binding_revision: u64,
+    pub sanitized_issue: serde_json::Value,
+    pub sanitization_ref: String,
+    pub egress_label: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ExplicitFeedbackIssueApprovalRequest {
+    pub command_id: String,
+    pub expected_revision: u64,
+    pub connector_binding_id: String,
+    pub expected_binding_revision: u64,
+    pub target: String,
+    pub artifact_id: String,
+    pub artifact_digest: String,
+    pub payload_digest: String,
+    pub sanitized_issue: serde_json::Value,
+    pub sanitization_ref: String,
+    pub egress_label: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct FeedbackControlRequest {
+    pub command_id: String,
+    pub expected_revision: u64,
+    pub decision: String,
 }

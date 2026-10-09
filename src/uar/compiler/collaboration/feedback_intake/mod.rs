@@ -1,10 +1,11 @@
 //! Scoped feedback records reuse the existing workflow and C09 artifact authorities.
+mod control;
+mod explicit;
 mod policy;
 mod review;
 use super::{CollaborationCatalogService, CollaborationError, service::MAX_CAS_ATTEMPTS};
 use crate::uar::domain::{collaboration::CollaborationCatalogState, feedback_intake::*};
 use chrono::Utc;
-use serde_json::to_value;
 use uuid::Uuid;
 
 fn key(owner: &str, workspace: &str, id: &str) -> String {
@@ -20,7 +21,7 @@ fn invalid(message: &str) -> CollaborationError {
     CollaborationError::Invalid(message.into())
 }
 fn digest<T: serde::Serialize>(value: &T) -> Result<String, CollaborationError> {
-    Ok(super::validation::canonical_digest(&to_value(value)?)?)
+    Ok(super::validation::request_digest(value)?)
 }
 fn validate_scope(owner: &str, workspace: &str) -> Result<(), CollaborationError> {
     super::service::validate_owner(owner)?;
@@ -114,7 +115,9 @@ impl CollaborationCatalogService {
                     && item.source == request.source
                     && item.source_event_id == request.source_event_id
             }) {
-                return if prior.feedback_digest == feedback_digest {
+                return if prior.feedback_digest == feedback_digest
+                    && prior.requested_target == request.target
+                {
                     Ok(prior.clone())
                 } else {
                     Err(conflict("FEEDBACK_SOURCE_EVENT_CONFLICT"))
@@ -129,6 +132,7 @@ impl CollaborationCatalogService {
                 source: request.source,
                 source_event_id: request.source_event_id.clone(),
                 feedback: request.feedback.clone(),
+                requested_target: request.target.clone(),
                 feedback_digest: feedback_digest.clone(),
                 fingerprint: fingerprint.clone(),
                 status: "observed".into(),
@@ -137,6 +141,9 @@ impl CollaborationCatalogService {
                 duplicate_of: None,
                 review_artifacts: Default::default(),
                 issue_approval: None,
+                issue_draft: None,
+                connector_effect_id: None,
+                external_issue_id: None,
                 implementation: None,
                 created_at: now,
                 updated_at: now,

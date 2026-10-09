@@ -1,8 +1,9 @@
 //! Scoped connector administration and host-only effect dispatch.
-use super::{CollaborationApiState, error_response, private_scope, result_response};
+use super::{CollaborationApiState, private_scope, result_response};
 use crate::uar::{
     domain::connector_effect::{
-        ConnectorBindingRequest, ConnectorEffectRequest, ConnectorOutcomeRequest,
+        CancelConnectorEffectRequest, ConnectorBindingRequest, ConnectorEffectRequest,
+        ConnectorOutcomeRequest,
     },
     security::{claims::UserContext, sidecar_guard::HostAuthenticated},
 };
@@ -30,6 +31,30 @@ pub(super) fn build_router() -> Router<Arc<CollaborationApiState>> {
         .route("/connector-effects/{id}/dispatch", post(dispatch))
         .route("/connector-effects/{id}/outcome", post(outcome))
         .route("/connector-effects/{id}/reconcile", post(reconcile))
+        .route("/connector-effects/{id}/cancel", post(cancel))
+}
+
+async fn cancel(
+    State(state): State<Arc<CollaborationApiState>>,
+    Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
+    marker: Option<Extension<HostAuthenticated>>,
+    Path(id): Path<String>,
+    Json(request): Json<CancelConnectorEffectRequest>,
+) -> Response {
+    let (owner, workspace) = match private_scope(&user, &headers) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+    if let Err(response) = require_host(marker) {
+        return response;
+    }
+    result_response(
+        state
+            .service
+            .cancel_connector_effect(&owner, &workspace, &id, request)
+            .await,
+    )
 }
 
 fn require_host(marker: Option<Extension<HostAuthenticated>>) -> Result<(), Response> {

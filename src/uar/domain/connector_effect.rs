@@ -170,3 +170,9 @@ pub struct PreparedConnectorRequest {
     pub body: Option<Value>,
     pub headers: std::collections::BTreeMap<String, String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CancelConnectorEffectRequest {
+    pub command_id: String,
+}

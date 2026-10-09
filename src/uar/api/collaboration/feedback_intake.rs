@@ -3,8 +3,9 @@ use super::{CollaborationApiState, private_scope, result_response};
 use crate::uar::{
     domain::feedback_intake::{
         AdmitFeedbackImplementationRequest, AttachFeedbackReviewRequest,
-        AuthorizeFeedbackIssueRequest, FeedbackPolicyRequest, LinkFeedbackWorkflowRequest,
-        ObserveFeedbackRequest,
+        AuthorizeFeedbackIssueRequest, DraftFeedbackIssueRequest,
+        ExplicitFeedbackIssueApprovalRequest, FeedbackControlRequest, FeedbackPolicyRequest,
+        LinkFeedbackWorkflowRequest, ObserveFeedbackRequest,
     },
     security::{claims::UserContext, sidecar_guard::HostAuthenticated},
 };
@@ -32,11 +33,86 @@ pub(super) fn build_router() -> Router<Arc<CollaborationApiState>> {
         .route("/feedback-intakes/{id}/finalize", post(finalize))
         .route("/feedback-intakes/{id}/review", post(review))
         .route("/feedback-intakes/{id}/issue-approval", post(issue))
+        .route("/feedback-intakes/{id}/issue-draft", post(issue_draft))
+        .route(
+            "/feedback-intakes/{id}/explicit-issue-approval",
+            post(explicit_issue),
+        )
+        .route("/feedback-intakes/{id}/decision", post(control))
         .route(
             "/feedback-intakes/{id}/implementation",
             post(implementation),
         )
         .route("/feedback-policies", get(policies).post(policy))
+}
+
+async fn control(
+    State(state): State<Arc<CollaborationApiState>>,
+    Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
+    marker: Option<Extension<HostAuthenticated>>,
+    Path(id): Path<String>,
+    Json(request): Json<FeedbackControlRequest>,
+) -> Response {
+    let (owner, workspace) = match private_scope(&user, &headers) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+    if let Err(response) = require_host(marker) {
+        return response;
+    }
+    result_response(
+        state
+            .service
+            .control_feedback(&owner, &workspace, &id, request)
+            .await,
+    )
+}
+
+async fn issue_draft(
+    State(state): State<Arc<CollaborationApiState>>,
+    Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
+    marker: Option<Extension<HostAuthenticated>>,
+    Path(id): Path<String>,
+    Json(request): Json<DraftFeedbackIssueRequest>,
+) -> Response {
+    let (owner, workspace) = match private_scope(&user, &headers) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+    if let Err(response) = require_host(marker) {
+        return response;
+    }
+    result_response(
+        state
+            .service
+            .draft_feedback_issue(&owner, &workspace, &id, request)
+            .await,
+    )
+}
+
+async fn explicit_issue(
+    State(state): State<Arc<CollaborationApiState>>,
+    Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
+    marker: Option<Extension<HostAuthenticated>>,
+    Path(id): Path<String>,
+    Json(request): Json<ExplicitFeedbackIssueApprovalRequest>,
+) -> Response {
+    let (owner, workspace) = match private_scope(&user, &headers) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+    if let Err(response) = require_host(marker) {
+        return response;
+    }
+    result_response(
+        state
+            .service
+            .explicitly_approve_feedback_issue(&owner, &workspace, &id, request)
+            .await,
+    )
 }
 
 fn require_host(marker: Option<Extension<HostAuthenticated>>) -> Result<(), Response> {

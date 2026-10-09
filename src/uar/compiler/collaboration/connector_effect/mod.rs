@@ -1,10 +1,10 @@
 //! Persist-before-dispatch connector authority. The host owns secret resolution and I/O.
 mod adapters;
+mod control;
 mod dispatch;
 use super::{CollaborationCatalogService, CollaborationError, service::MAX_CAS_ATTEMPTS};
 use crate::uar::domain::connector_effect::*;
 use chrono::Utc;
-use serde_json::to_value;
 use uuid::Uuid;
 
 fn key(owner: &str, workspace: &str, id: &str) -> String {
@@ -17,7 +17,7 @@ fn conflict(message: &str) -> CollaborationError {
     CollaborationError::Conflict(message.into())
 }
 fn digest<T: serde::Serialize>(value: &T) -> Result<String, CollaborationError> {
-    Ok(super::validation::canonical_digest(&to_value(value)?)?)
+    Ok(super::validation::request_digest(value)?)
 }
 fn binding<'a>(
     state: &'a crate::uar::domain::collaboration::CollaborationCatalogState,
@@ -45,6 +45,64 @@ fn validate_scope(owner: &str, workspace: &str) -> Result<(), CollaborationError
     super::service::validate_owner(owner)?;
     super::validation::validate_id(workspace)?;
     Ok(())
+}
+fn customer_approval<'a>(
+    state: &'a crate::uar::domain::collaboration::CollaborationCatalogState,
+    owner: &str,
+    workspace: &str,
+    grant: &ConnectorBinding,
+    decision_ref: Option<&str>,
+    payload_digest: &str,
+    labels: &std::collections::BTreeSet<String>,
+) -> Result<&'a crate::uar::domain::feedback_intake::FeedbackIntake, CollaborationError> {
+    state
+        .feedback_intakes
+        .values()
+        .find(|intake| {
+            intake.owner_id == owner
+                && intake.workspace_id == workspace
+                && intake.duplicate_of.is_none()
+                && intake.status != "cancelled"
+                && intake.status != "rejected"
+                && intake.issue_approval.as_ref().is_some_and(|approval| {
+                    approval.authority == "explicit-customer"
+                        && approval.operator_id.as_deref() == Some(owner)
+                        && Some(approval.id.as_str()) == decision_ref
+                        && approval.sanitized_payload_digest == payload_digest
+                        && approval.connector_binding_id.as_deref() == Some(grant.id.as_str())
+                        && approval.connector_binding_revision == Some(grant.revision)
+                        && approval.target.as_deref() == Some(grant.target.as_str())
+                        && approval.action == Some(ConnectorAction::Publish)
+                        && approval
+                            .egress_label
+                            .as_ref()
+                            .is_some_and(|label| labels.len() == 1 && labels.contains(label))
+                        && intake.issue_draft.as_ref().is_some_and(|draft| {
+                            draft.artifact_id == approval.artifact_id
+                                && draft.artifact_digest == approval.artifact_digest
+                                && draft.payload_digest == payload_digest
+                                && intake.workflow_run_id.as_ref().is_some_and(|run_id| {
+                                    state
+                                        .workflow_runs
+                                        .get(&key(owner, workspace, run_id))
+                                        .is_some_and(|run| {
+                                            matches!(
+                                                run.status.as_str(),
+                                                "awaiting_decision" | "accepted"
+                                            ) && run
+                                                .steps
+                                                .get(1)
+                                                .and_then(|step| step.artifact.as_ref())
+                                                .is_some_and(|artifact| {
+                                                    artifact.id == draft.artifact_id
+                                                        && artifact.digest == draft.artifact_digest
+                                                })
+                                        })
+                                })
+                        })
+                })
+        })
+        .ok_or_else(|| conflict("CONNECTOR_EXPLICIT_CUSTOMER_APPROVAL_REQUIRED"))
 }
 fn validate_credential_ref(value: &str) -> Result<(), CollaborationError> {
     let Some(name) = value.strip_prefix("host://") else {
@@ -237,7 +295,20 @@ impl CollaborationCatalogService {
                                 })
                         })
                 });
-                if !workflow_decision && !standing_approval {
+                if grant.provider == ConnectorProvider::Github {
+                    if request.action != ConnectorAction::Publish {
+                        return Err(conflict("CONNECTOR_CUSTOMER_ACTION_UNSUPPORTED"));
+                    }
+                    customer_approval(
+                        &current,
+                        owner,
+                        workspace,
+                        grant,
+                        request.decision_ref.as_deref(),
+                        &payload_digest,
+                        &request.egress_labels,
+                    )?;
+                } else if !workflow_decision && !standing_approval {
                     return Err(conflict("CONNECTOR_ARTIFACT_DECISION_MISMATCH"));
                 }
                 if current.connector_effects.values().any(|effect| {
@@ -283,6 +354,26 @@ impl CollaborationCatalogService {
             next.generation += 1;
             next.connector_effects
                 .insert(key(owner, workspace, &id), record.clone());
+            if grant.provider == ConnectorProvider::Github
+                && request.action == ConnectorAction::Publish
+            {
+                let intake = customer_approval(
+                    &current,
+                    owner,
+                    workspace,
+                    grant,
+                    request.decision_ref.as_deref(),
+                    &record.payload_digest,
+                    &request.egress_labels,
+                )?;
+                let linked = next
+                    .feedback_intakes
+                    .get_mut(&key(owner, workspace, &intake.id))
+                    .ok_or_else(|| conflict("FEEDBACK_UNAVAILABLE"))?;
+                linked.connector_effect_id = Some(id.clone());
+                linked.revision += 1;
+                linked.updated_at = now;
+            }
             next.connector_commands.insert(
                 command.clone(),
                 ConnectorCommandReceipt {

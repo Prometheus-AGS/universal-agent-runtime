@@ -152,6 +152,10 @@ impl CollaborationCatalogService {
                 .and_then(|step| step.artifact.as_ref())
                 .ok_or_else(|| conflict("FEEDBACK_DRAFT_UNAVAILABLE"))?;
             let approval = FeedbackApproval {
+                operator_id: None,
+                connector_binding_revision: Some(grant.revision),
+                target: Some(grant.target.clone()),
+                action: Some(ConnectorAction::Publish),
                 id: format!("feedback-approval-{id}"),
                 authority: "standing-policy".into(),
                 policy_id: Some(policy.id.clone()),

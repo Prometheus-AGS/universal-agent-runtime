@@ -56,6 +56,19 @@ impl CollaborationCatalogService {
                 &selected.target,
                 &selected.payload,
             )?;
+            if selected.provider == ConnectorProvider::Github
+                && selected.action == ConnectorAction::Publish
+            {
+                customer_approval(
+                    &current,
+                    owner,
+                    workspace,
+                    grant,
+                    selected.decision_ref.as_deref(),
+                    &selected.payload_digest,
+                    &selected.egress_labels,
+                )?;
+            }
             let dispatch_id = Uuid::new_v4().to_string();
             let mut next = current.clone();
             let updated = next
@@ -140,6 +153,7 @@ impl CollaborationCatalogService {
             });
             updated.updated_at = Utc::now();
             let view = ConnectorEffectView::from(&*updated);
+            link_feedback_outcome(&mut next, owner, workspace, id, &request);
             next.generation += 1;
             next.connector_commands.insert(
                 command.clone(),
@@ -210,6 +224,7 @@ impl CollaborationCatalogService {
             });
             updated.updated_at = Utc::now();
             let view = ConnectorEffectView::from(&*updated);
+            link_feedback_outcome(&mut next, owner, workspace, id, &request);
             next.generation += 1;
             next.connector_commands.insert(
                 command.clone(),
@@ -223,5 +238,23 @@ impl CollaborationCatalogService {
             }
         }
         Err(conflict("CONNECTOR_CONCURRENT_CHANGE"))
+    }
+}
+
+fn link_feedback_outcome(
+    state: &mut crate::uar::domain::collaboration::CollaborationCatalogState,
+    owner: &str,
+    workspace: &str,
+    effect_id: &str,
+    request: &ConnectorOutcomeRequest,
+) {
+    for intake in state.feedback_intakes.values_mut().filter(|intake| {
+        intake.owner_id == owner
+            && intake.workspace_id == workspace
+            && intake.connector_effect_id.as_deref() == Some(effect_id)
+    }) {
+        intake.external_issue_id = request.external_id.clone();
+        intake.revision += 1;
+        intake.updated_at = Utc::now();
     }
 }
