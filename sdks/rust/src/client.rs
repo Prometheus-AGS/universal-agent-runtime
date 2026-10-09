@@ -1,3 +1,6 @@
+#[path = "federation.rs"]
+mod federation;
+pub use federation::{FederationAdmission, FederationRequirement};
 //! Async HTTP client for the UAR and its OpenAI-compatible surface.
 
 use crate::{
