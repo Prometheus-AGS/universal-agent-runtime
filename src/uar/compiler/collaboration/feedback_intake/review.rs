@@ -1,5 +1,9 @@
 use super::*;
 
+fn team_record_key(owner: &str, workspace: &str, team: &str, id: &str) -> String {
+    format!("{owner}\u{1f}{workspace}\u{1f}{team}\u{1f}{id}")
+}
+
 impl CollaborationCatalogService {
     /// Link an already committed C09 team output; this does not start another executor.
     pub async fn attach_feedback_review(
@@ -33,7 +37,12 @@ impl CollaborationCatalogService {
             let run = workflow(&current, selected)?;
             let artifact = current
                 .team_artifacts
-                .get(&key(owner, workspace, &run.team_id, &request.artifact_id))
+                .get(&team_record_key(
+                    owner,
+                    workspace,
+                    &run.team_id,
+                    &request.artifact_id,
+                ))
                 .ok_or_else(|| conflict("FEEDBACK_REVIEW_ARTIFACT_UNAVAILABLE"))?;
             let team = current
                 .team_instances
@@ -50,7 +59,12 @@ impl CollaborationCatalogService {
                 .ok_or_else(|| conflict("FEEDBACK_REVIEW_TASK_UNAVAILABLE"))?;
             current
                 .team_execution_attempts
-                .get(&key(owner, workspace, &run.team_id, &artifact.attempt_id))
+                .get(&team_record_key(
+                    owner,
+                    workspace,
+                    &run.team_id,
+                    &artifact.attempt_id,
+                ))
                 .filter(|attempt| {
                     attempt.task_id == task.id
                         && attempt.member_id == artifact.member_id
