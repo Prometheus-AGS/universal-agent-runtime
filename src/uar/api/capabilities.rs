@@ -25,7 +25,9 @@ pub const AGUI_PROFILE: &str = "uar.agui/1";
 
 /// AG-UI profile revision of the runs stream.
 pub const AGUI_PROFILE_REVISION: u32 = 1;
-pub const WORKFLOW_EXECUTION_QUALIFIED: bool = false;
+// C10 customer feedback requires the existing classify/draft interpreter in the normal profile.
+// Availability still requires team execution ownership; publication requires separate approval.
+pub const WORKFLOW_EXECUTION_QUALIFIED: bool = true;
 pub fn workflow_execution_enabled() -> bool {
     WORKFLOW_EXECUTION_QUALIFIED
         || std::env::var("UAR_WORKFLOW_EXECUTION_PROFILE_STAGE").as_deref() == Ok("operation")
