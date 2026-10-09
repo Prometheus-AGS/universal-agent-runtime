@@ -1,3 +1,6 @@
+#[path = "surreal_host.rs"]
+mod host;
+pub use host::HostSurrealBackend;
 #[path = "approval_records/surreal.rs"]
 mod approval_records;
 use crate::uar::persistence::approval_decisions::ApprovalRecord;
@@ -124,61 +127,7 @@ impl SurrealDbProvider {
         db.use_ns(ns).use_db(database).await?;
         tracing::info!("SurrealDB using ns='{}' db='{}'", ns, database);
 
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/agent_threads.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/agent_instances.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/observers.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/channel_observers.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/canonical_tool_receipts.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!("../../../../migrations/surrealdb/approval_records.surql")).await?.check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/tool_admission_evidence.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/presentations.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/principal_conversation_policies.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/collaboration_catalog.surql"
-        ))
-        .await?
-        .check()?;
+        host::migrate(&db).await?;
 
         tracing::info!("SurrealDB connected successfully");
 
