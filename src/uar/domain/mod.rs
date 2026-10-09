@@ -11,10 +11,13 @@ pub mod policy;
 pub mod prompt_caching;
 pub mod runs;
 pub mod skills;
+pub mod reviewed_skill_coverage;
 pub mod team_mailbox;
 pub mod team_context;
 pub mod team_execution;
 pub mod workflow_execution;
+pub mod connector_effect;
+pub mod feedback_intake;
 pub mod team_planning;
 pub mod tools;
 

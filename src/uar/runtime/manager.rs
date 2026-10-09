@@ -4912,7 +4912,13 @@ impl RunManager {
                 })
                 .collect::<Vec<_>>()
         };
-        let qualified_model = qualified_model_name(&run_llm_config);
+        let qualified_model = if is_team_attempt {
+            // Team profiles already capture the complete admitted provider/model.
+            // Qualifying again would hide its administrator-configured capacity.
+            run_llm_config.model.clone()
+        } else {
+            qualified_model_name(&run_llm_config)
+        };
         let (catalog_provider, catalog_model_id) =
             crate::llm::registry::split_model_string_pub(&qualified_model);
         let configured_window = if let Some(registry) = &self.provider_registry {

@@ -309,6 +309,7 @@ async fn validate_binding(
     }
     if let Some(team_definition) = bound_team_definition(state, &package)? {
         let mut diagnostics = Vec::new();
+        let mut team_skills = Vec::new();
         if state.execution_claim.as_ref().is_none_or(|claim| claim.state != "held" || claim.fence != *execution_identity) {
             diagnostics.push(FieldDiagnostic { pointer: "/runtimeInstanceId".into(), disposition: ConversionDisposition::RequiredUnsupported, reason_code: "TEAM_EXECUTION_OWNER_CONFLICT".into(), message: "The catalog executing authority belongs to another service or is draining.".into(), effective_binding_ref: None, source_kind: Some(CollaborationKind::DeploymentBinding), source_definition: None });
         }
@@ -318,8 +319,9 @@ async fn validate_binding(
             } else if let Ok(reference) = serde_json::from_value::<ImmutableDefinitionRef>(member["definition"].clone()) {
                 if let Some(definition) = state.definitions.get(&reference.storage_key()) {
                     let start = diagnostics.len();
-                    let (_, skill_diagnostics) =
+                    let (skills, skill_diagnostics) =
                         resolve_skills(skill_service, document, definition).await?;
+                    team_skills.extend(skills);
                     diagnostics.extend(skill_diagnostics);
                     super::runtime_semantics::resolve_legacy_team_context(definition, document, &mut diagnostics);
                     let models = resolve_models(document, definition, &mut diagnostics)?;
@@ -371,7 +373,7 @@ async fn validate_binding(
             document,
             package,
             team_definition,
-            Vec::new(),
+            team_skills,
             Vec::new(),
             representation_grants,
             service_binding,
@@ -586,6 +588,7 @@ pub(super) async fn resolve_skills(
     };
     let mut resolved = Vec::new();
     let mut diagnostics = Vec::new();
+    let mut reviews = crate::uar::runtime::skills::reviewed_coverage::ReviewSession::default();
     for (index, value) in declared.iter().enumerate() {
         let requested: SkillRef = serde_json::from_value(value.clone()).map_err(|_| {
             CollaborationError::Invalid("definition SkillRef is invalid".to_owned())
@@ -651,6 +654,10 @@ pub(super) async fn resolve_skills(
             ));
             continue;
         }
+        let (admitted, reviewed_coverage) = super::reviewed_skills::resolve(
+            &mut reviews, binding, &requested, &location, &pointer, &mut diagnostics,
+        ).await?;
+        if !admitted { continue; }
         diagnostics.push(FieldDiagnostic {
             pointer,
             disposition: ConversionDisposition::Exact,
@@ -662,6 +669,7 @@ pub(super) async fn resolve_skills(
         resolved.push(ResolvedSkill {
             skill: requested,
             installed_location: location,
+            reviewed_coverage,
         });
     }
     Ok((resolved, diagnostics))
@@ -680,6 +688,7 @@ pub(super) async fn revalidate_resolved_skills(
             ));
         }
     };
+    let mut reviews = crate::uar::runtime::skills::reviewed_coverage::ReviewSession::default();
     for resolved in &receipt.resolved_skills {
         let requested = &resolved.skill;
         let exact = installed.iter().any(|skill| {
@@ -698,6 +707,16 @@ pub(super) async fn revalidate_resolved_skills(
                 "resolved skill '{}' changed after binding",
                 requested.id
             )));
+        }
+        if let Some(expected) = &resolved.reviewed_coverage {
+            let current = reviews.verify(
+                requested, &resolved.installed_location,
+            ).await.map_err(|_| CollaborationError::Conflict(
+                "reviewed skill closure changed after binding".to_owned()))?;
+            if current.as_ref() != Some(expected) {
+                return Err(CollaborationError::Conflict(
+                    "reviewed skill trust source changed after binding".to_owned()));
+            }
         }
     }
     Ok(())
