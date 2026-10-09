@@ -878,17 +878,9 @@ async fn stream_run(
         }
     };
 
-    // Last-subscriber-drop guard: tied to the stream's lifetime so that when the
-    // client disconnects (stream dropped), the run is cancelled iff no other
-    // subscriber remains after a short grace period.
-    let disconnect_guard =
-        crate::uar::runtime::manager::RunDisconnectGuard::new(Arc::clone(&manager), run_id.clone());
-    let stream = tokio_stream::iter(replay)
-        .chain(live_stream)
-        .map(move |event| {
-            let _ = &disconnect_guard;
-            event
-        });
+    // GET /runs/{id}/stream is an observer of an admitted run. Dropping the
+    // subscription never owns cancellation; use the explicit cancel endpoint.
+    let stream = tokio_stream::iter(replay).chain(live_stream);
     let stream = async_stream::stream! {
         tokio::pin!(stream);
         while let Some(event) = stream.next().await {
