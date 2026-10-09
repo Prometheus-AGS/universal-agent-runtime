@@ -6,3 +6,4 @@ pub use manager::SettingsManager;
 pub mod provider_sync;
 pub use provider_sync::hydrate_provider_registry_from_settings;
 pub mod resilience_policy;
+pub(crate) mod persisted_resilience;

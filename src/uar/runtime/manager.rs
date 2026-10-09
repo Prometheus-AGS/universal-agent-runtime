@@ -3182,6 +3182,14 @@ impl RunManager {
         let artifact = inherited
             .as_ref()
             .map_or(artifact, |bindings| bindings.policy.artifact().clone());
+        // Capture committed settings once for this turn, including team members.
+        let (turn_resilience_policy, _) =
+            crate::uar::settings::persisted_resilience::resolve_persisted_resilience_policy(
+                &self.resilience_policy,
+                self.settings_manager.as_deref(),
+                &artifact.id,
+            )
+            .await;
         let sandbox = match &inherited {
             Some(bindings) => Ok(bindings.sandbox.clone()),
             None => self
@@ -5609,7 +5617,7 @@ impl RunManager {
                     actor_root.as_ref().and_then(|root| root.artifacts.clone()),
                 )
                 .with_tool_execution_mode(artifact.policy.tools.execution_mode.clone())
-                .with_resilience_policy(self.resilience_policy.clone())
+                .with_resilience_policy(turn_resilience_policy)
                 .with_tool_admission(Arc::clone(&tool_admission))
                 .with_resolved_turn(Arc::clone(&resolved_turn))
                 .with_canonical_receipt_store(self.persistence.clone())
