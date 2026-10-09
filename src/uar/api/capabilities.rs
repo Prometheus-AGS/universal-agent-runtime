@@ -65,7 +65,8 @@ pub fn team_execution_b_enabled() -> bool {
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.
-pub const CAPABILITY_VOCABULARY: [&str; 28] = [
+pub const CAPABILITY_VOCABULARY: [&str; 29] = [
+    crate::uar::runtime::turn::representation::CAPABILITY,
     crate::uar::runtime::team_execution::host::CAPABILITY,
     crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY,
     "agui_stream_fidelity",
@@ -98,7 +99,8 @@ pub const CAPABILITY_VOCABULARY: [&str; 28] = [
 
 /// Capabilities this binary implements. Each owning change adds its name in
 /// the same commit as the behaviour.
-pub const IMPLEMENTED_CAPABILITIES: [&str; 17] = [
+pub const IMPLEMENTED_CAPABILITIES: [&str; 18] = [
+    crate::uar::runtime::turn::representation::CAPABILITY,
     crate::uar::runtime::team_execution::host::CAPABILITY,
     "approval_lifecycle_v1",
     "collaboration_definition_packages_v1",
@@ -200,9 +202,24 @@ pub struct CapabilitiesResponse {
     /// Sorted, duplicate-free names from [`CAPABILITY_VOCABULARY`].
     pub capabilities: Vec<String>,
     pub collaboration: CollaborationCapabilities,
+    pub federation: FederationSupport,
     pub administration: super::administration_capabilities::AdministrationCapabilities,
 }
 
+/// Supported federation is delegation to one authenticated execution authority.
+/// An agent card is discovery data, never a resource grant or takeover proof.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FederationSupport {
+    pub profile: &'static str,
+    pub registry_discovery: bool,
+    pub selected_instance_delegation: bool,
+    pub team_endpoint: bool,
+    pub resource_side_team_fencing: bool,
+    pub distributed_team_members: bool,
+    pub automatic_takeover: bool,
+    pub registry_advertisement_grants_authority: bool,
+}
 /// Runtime collaboration contract shared by REST and MCP discovery.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -290,7 +307,7 @@ pub fn collaboration_capabilities() -> CollaborationCapabilities {
             team_instance: false,
             team_execution: false,
             workflow: false,
-            human_representation: false,
+            human_representation: true,
         },
     }
 }
@@ -341,6 +358,16 @@ pub fn capabilities_response(
         references: descriptor.references.clone(),
         placement: descriptor.placement.clone(),
         capabilities,
+        federation: FederationSupport {
+            profile: "urn:prometheus:uar:federation:1",
+            registry_discovery: true,
+            selected_instance_delegation: descriptor.capabilities.iter().any(|capability| capability == "full_harness_delegation_v1"),
+            team_endpoint: team_execution_available,
+            resource_side_team_fencing: team_execution_available,
+            distributed_team_members: false,
+            automatic_takeover: false,
+            registry_advertisement_grants_authority: false,
+        },
         collaboration,
         administration: super::administration_capabilities::administration_capabilities(
             descriptor
@@ -384,6 +411,8 @@ pub async fn capabilities_handler(
                 && c != crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY
                 && !TEAM_EXECUTION_B_CAPABILITIES.contains(&c.as_str())
         });
+        response.federation.team_endpoint = false;
+        response.federation.resource_side_team_fencing = false;
         response.collaboration.activation.team_execution = false;
         response.collaboration.activation.workflow = false;
         response.collaboration.workflow_execution.available = false;

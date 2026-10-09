@@ -6,6 +6,7 @@ mod connector_effect;
 mod export;
 mod feedback_intake;
 mod grants;
+mod representation;
 mod runtime_semantics;
 mod service;
 mod storage;

@@ -51,7 +51,7 @@ pub use types::{
 
 #[cfg(feature = "http-client")]
 #[doc(inline)]
-pub use client::{Client, EventStream};
+pub use client::{Client, EventStream, FederationAdmission, FederationRequirement};
 #[cfg(any(feature = "embedded", feature = "server"))]
 #[doc(inline)]
 pub use runtime::Runtime;

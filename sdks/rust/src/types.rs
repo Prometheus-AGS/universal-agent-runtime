@@ -180,14 +180,16 @@ pub struct CreateRunRequest {
 #[derive(Debug, Clone, Deserialize)]
 pub struct RunResponse {
     /// New run identifier.
+    #[serde(alias = "runId")]
     pub run_id: String,
     /// Relative stream URL.
+    #[serde(alias = "streamUrl")]
     pub stream_url: String,
     /// Source run when resumed.
-    #[serde(default)]
+    #[serde(default, alias = "resumedFromRunId")]
     pub resumed_from_run_id: Option<String>,
     /// Source checkpoint.
-    #[serde(default)]
+    #[serde(default, alias = "checkpointId")]
     pub checkpoint_id: Option<String>,
 }
 /// Resume request.

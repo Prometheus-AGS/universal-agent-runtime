@@ -59,7 +59,7 @@ impl CollaborationCatalogService {
             if selected.provider == ConnectorProvider::Github
                 && selected.action == ConnectorAction::Publish
             {
-                customer_approval(
+                feedback_approval(
                     &current,
                     owner,
                     workspace,

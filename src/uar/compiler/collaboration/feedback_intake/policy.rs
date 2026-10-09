@@ -1,5 +1,5 @@
 use super::*;
-use crate::uar::domain::connector_effect::{ConnectorAction, ConnectorProvider};
+use crate::uar::domain::connector_effect::{ConnectorAction, ConnectorApprovalMode, ConnectorProvider};
 
 impl CollaborationCatalogService {
     pub async fn install_feedback_policy(
@@ -33,6 +33,7 @@ impl CollaborationCatalogService {
                 .ok_or_else(|| conflict("FEEDBACK_CONNECTOR_BINDING_UNAVAILABLE"))?;
             if grant.revoked
                 || grant.provider != ConnectorProvider::Github
+                || grant.approval_mode != ConnectorApprovalMode::StandingPolicy
                 || !grant.allowed_actions.contains(&ConnectorAction::Publish)
                 || !grant.allowed_egress_labels.contains(&request.egress_label)
             {
@@ -96,17 +97,8 @@ impl CollaborationCatalogService {
         validate_scope(owner, workspace)?;
         super::super::validation::validate_id(&request.command_id)?;
         super::super::validation::validate_id(&request.sanitization_ref)?;
-        if request.sanitized_issue["title"]
-            .as_str()
-            .is_none_or(|v| v.trim().is_empty())
-            || request.sanitized_issue["body"]
-                .as_str()
-                .is_none_or(|v| v.trim().is_empty())
-            || serde_json::to_vec(&request.sanitized_issue)?.len() > 64 * 1024
-        {
-            return Err(invalid("FEEDBACK_SANITIZED_ISSUE_INVALID"));
-        }
-        let request_digest = digest(&request)?;
+        super::explicit::validate_issue(&request.sanitized_issue)?;
+        let request_digest = digest(&(id, &request))?;
         let command = command_key(owner, workspace, "issue", &request.command_id);
         for _ in 0..MAX_CAS_ATTEMPTS {
             let current = self.load_state().await?;
@@ -137,6 +129,7 @@ impl CollaborationCatalogService {
                 .ok_or_else(|| conflict("FEEDBACK_CONNECTOR_BINDING_UNAVAILABLE"))?;
             if grant.revoked
                 || grant.provider != ConnectorProvider::Github
+                || grant.approval_mode != ConnectorApprovalMode::StandingPolicy
                 || !grant.allowed_actions.contains(&ConnectorAction::Publish)
                 || !grant.allowed_egress_labels.contains(&policy.egress_label)
             {
@@ -151,6 +144,22 @@ impl CollaborationCatalogService {
                 .get(1)
                 .and_then(|step| step.artifact.as_ref())
                 .ok_or_else(|| conflict("FEEDBACK_DRAFT_UNAVAILABLE"))?;
+            let materialized = selected
+                .issue_draft
+                .as_ref()
+                .ok_or_else(|| conflict("FEEDBACK_DRAFT_UNAVAILABLE"))?;
+            if materialized.artifact_id != draft.id
+                || materialized.artifact_digest != draft.digest
+                || materialized.connector_binding_id != grant.id
+                || materialized.connector_binding_revision != grant.revision
+                || materialized.target != grant.target
+                || materialized.egress_label != policy.egress_label
+                || materialized.sanitized_issue != request.sanitized_issue
+                || materialized.payload_digest != digest(&request.sanitized_issue)?
+                || materialized.sanitization_ref != request.sanitization_ref
+            {
+                return Err(conflict("FEEDBACK_STANDING_APPROVAL_MISMATCH"));
+            }
             let approval = FeedbackApproval {
                 operator_id: None,
                 connector_binding_revision: Some(grant.revision),

@@ -10,6 +10,7 @@ use crate::uar::domain::{
 use super::schema::{required_array, required_string};
 
 const SUPPORTED_INSTALL_CAPABILITIES: &[&str] = &[
+    crate::uar::runtime::turn::representation::CAPABILITY,
     "collaboration_definition_packages_v1",
     "collaboration_definition_packages_v2",
     crate::uar::runtime::team_execution::host::CAPABILITY,

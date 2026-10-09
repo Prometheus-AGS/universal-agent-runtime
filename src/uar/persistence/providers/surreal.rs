@@ -1,3 +1,6 @@
+#[path = "surreal_host.rs"]
+mod host;
+pub use host::HostSurrealBackend;
 #[path = "approval_records/surreal.rs"]
 mod approval_records;
 use crate::uar::persistence::approval_decisions::ApprovalRecord;
@@ -124,61 +127,7 @@ impl SurrealDbProvider {
         db.use_ns(ns).use_db(database).await?;
         tracing::info!("SurrealDB using ns='{}' db='{}'", ns, database);
 
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/agent_threads.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/agent_instances.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/observers.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/channel_observers.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/canonical_tool_receipts.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!("../../../../migrations/surrealdb/approval_records.surql")).await?.check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/tool_admission_evidence.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/presentations.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/principal_conversation_policies.surql"
-        ))
-        .await?
-        .check()?;
-
-        db.query(include_str!(
-            "../../../../migrations/surrealdb/collaboration_catalog.surql"
-        ))
-        .await?
-        .check()?;
+        host::migrate(&db).await?;
 
         tracing::info!("SurrealDB connected successfully");
 
@@ -2204,34 +2153,15 @@ impl PersistenceLayer for SurrealDbProvider {
         Ok(())
     }
 
-    // Memory System — delegates to MemoryService (backed by surreal-memory library)
-    // These stubs satisfy the PersistenceLayer trait. Real memory operations should
-    // use `AppState::memory_service` (a MemoryService wrapping SurrealStorage from
-    // the surreal-memory library in its own embedded SurrealKV store).
-    async fn save_memory(&self, memory: &crate::uar::domain::memory::Memory) -> Result<()> {
-        // The surreal-memory library owns memory persistence in its own SurrealDB instance.
-        // This stub is a no-op; callers should use AppState::memory_service.
-        tracing::debug!(
-            "save_memory stub called — use AppState::memory_service for real persistence"
-        );
-        let _ = memory;
-        Ok(())
+    // A host using PersistenceLayer alone has not attached MemoryService.
+    // Report this capability honestly instead of acknowledging a lost write.
+    async fn save_memory(&self, _memory: &crate::uar::domain::memory::Memory) -> Result<()> {
+        anyhow::bail!("memory_service_required: attach the runtime MemoryService before saving memory")
     }
 
-    async fn search_memory(
-        &self,
-        agent_id: Option<&str>,
-        query_vec: &[f32],
-        limit: usize,
-        min_score: f32,
-    ) -> Result<Vec<crate::uar::domain::memory::MemoryMatch>> {
-        // The surreal-memory library owns memory persistence in its own SurrealDB instance.
-        // This stub returns empty; callers should use AppState::memory_service.
-        tracing::debug!(
-            "search_memory stub called — use AppState::memory_service for real queries"
-        );
-        let _ = (agent_id, query_vec, limit, min_score);
-        Ok(vec![])
+    async fn search_memory(&self, _agent_id: Option<&str>, _query_vec: &[f32],
+        _limit: usize, _min_score: f32) -> Result<Vec<crate::uar::domain::memory::MemoryMatch>> {
+        anyhow::bail!("memory_service_required: attach the runtime MemoryService before searching memory")
     }
 
     // =========================================================================
@@ -2473,6 +2403,7 @@ impl PersistenceLayer for SurrealDbProvider {
         st: &crate::uar::settings::schema::SettingsType,
     ) -> Result<uuid::Uuid> {
         let payload: serde_json::Value = serde_json::json!({
+            "logical_id": st.id,
             "name": st.name,
             "key": st.key,
             "schema": st.schema,
@@ -2484,7 +2415,8 @@ impl PersistenceLayer for SurrealDbProvider {
             .bind(("key", st.key.clone()))
             .bind(("data", payload))
             .await
-            .with_context(|| format!("upserting settings_type '{}'", st.key))?;
+            .with_context(|| format!("upserting settings_type '{}'", st.key))?
+            .check()?;
         // SurrealDB uses string record IDs; return st.id as the FK identifier.
         Ok(st.id)
     }
@@ -2561,6 +2493,8 @@ impl PersistenceLayer for SurrealDbProvider {
 
         let record_id = setting.key.replace('.', "_");
         let payload: serde_json::Value = serde_json::json!({
+            "logical_id": setting.id,
+            "settings_type_id": setting.settings_type_id,
             "settings_type_key": type_key,
             "name": setting.name,
             "key": setting.key,
@@ -2574,7 +2508,8 @@ impl PersistenceLayer for SurrealDbProvider {
             .bind(("rid", record_id))
             .bind(("data", payload))
             .await
-            .with_context(|| format!("upserting setting '{}'", setting.key))?;
+            .with_context(|| format!("upserting setting '{}'", setting.key))?
+            .check()?;
         Ok(())
     }
 
@@ -3042,13 +2977,23 @@ fn surreal_value_to_settings_type(
         .and_then(|v| serde_json::from_value(v.clone()).ok());
 
     Ok(crate::uar::settings::schema::SettingsType {
-        id: uuid::Uuid::new_v4(), // stable in-memory proxy; SurrealDB uses key as real ID
+        id: settings_uuid(obj.get("logical_id"), "type", &key),
         name,
         key,
         schema,
         created_at,
         updated_at,
     })
+}
+
+// Older key-addressed rows lack logical IDs. Preserve a deterministic identity
+// across reads, while new writes retain their actual UUID and foreign key.
+fn settings_uuid(value: Option<&serde_json::Value>, namespace: &str, key: &str) -> uuid::Uuid {
+    if let Some(id) = value.and_then(serde_json::Value::as_str).and_then(|id| uuid::Uuid::parse_str(id).ok()) { return id; }
+    let digest = Sha256::digest(format!("uar-settings:{namespace}:{key}").as_bytes());
+    let mut bytes = [0u8; 16]; bytes.copy_from_slice(&digest[..16]);
+    bytes[6] = (bytes[6] & 0x0f) | 0x80; bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    uuid::Uuid::from_bytes(bytes)
 }
 
 /// Convert a raw SurrealDB JSON value to `Settings`.
@@ -3084,8 +3029,8 @@ fn surreal_value_to_setting(
         .and_then(|v| serde_json::from_value(v.clone()).ok());
 
     Ok(crate::uar::settings::schema::Settings {
-        id: uuid::Uuid::new_v4(),            // in-memory proxy
-        settings_type_id: uuid::Uuid::nil(), // looked up via settings_type_key if needed
+        id: settings_uuid(obj.get("logical_id"), "setting", &key),
+        settings_type_id: settings_uuid(obj.get("settings_type_id"), "type", obj.get("settings_type_key").and_then(V::as_str).unwrap_or_else(|| key.split('.').next().unwrap_or(""))),
         name,
         key,
         data,
