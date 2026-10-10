@@ -242,7 +242,7 @@ impl GrantRecord {
         }
         if self.operations.contains(&DelegationOperation::ModelRead)
             && method == Method::GET
-            && (matches!(path, "/api/models" | "/v1/models" | "/api/providers")
+            && (matches!(path, "/api/models" | "/v1/models" | "/api/providers" | "/api/uar/providers")
                 || single_segment(path, "/v1/models/"))
         {
             return true;
