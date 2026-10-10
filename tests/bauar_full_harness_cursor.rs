@@ -9,7 +9,13 @@ use axum::{
 };
 use futures::StreamExt;
 use serde_json::{Value, json};
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    },
+    time::Duration,
+};
 use tokio::sync::RwLock;
 use tower::ServiceExt;
 use universal_agent_runtime::{
@@ -35,7 +41,11 @@ const WAIT: Duration = Duration::from_secs(45);
 const PROFILE: &str = "contiguous_cursor_frames_v1";
 
 /// The actual Liter HTTP driver consumes these provider-shaped SSE deltas.
-async fn model(Json(request): Json<Value>) -> Response {
+async fn model(
+    Extension(calls): Extension<Arc<AtomicUsize>>,
+    Json(request): Json<Value>,
+) -> Response {
+    calls.fetch_add(1, Ordering::SeqCst);
     let input = request["messages"]
         .as_array()
         .unwrap()
@@ -65,6 +75,7 @@ struct Fixture {
     app: Router,
     manager: Arc<RunManager>,
     model: tokio::task::JoinHandle<()>,
+    model_calls: Arc<AtomicUsize>,
 }
 
 impl Drop for Fixture {
@@ -77,10 +88,14 @@ impl Fixture {
     async fn new() -> Self {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let base = format!("http://{}/v1", listener.local_addr().unwrap());
+        let model_calls = Arc::new(AtomicUsize::new(0));
+        let calls = Arc::clone(&model_calls);
         let model = tokio::spawn(async move {
             axum::serve(
                 listener,
-                Router::new().route("/v1/chat/completions", post(model)),
+                Router::new()
+                    .route("/v1/chat/completions", post(model))
+                    .layer(Extension(calls)),
             )
             .await
             .unwrap();
@@ -151,6 +166,7 @@ impl Fixture {
             app,
             manager,
             model,
+            model_calls,
         }
     }
 
@@ -220,6 +236,59 @@ impl Fixture {
         .await
         .expect("real model/executor terminal deadline");
     }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn exact_admission_retry_preserves_original_run_and_rejects_changed_input() {
+    let fixture = Fixture::new().await;
+    let mut artifact = default_agent();
+    artifact.id = "cursor-exact-retry".to_owned();
+    let mut payload = json!({
+        "admission_id":uuid::Uuid::new_v4().to_string(),
+        "native_task_id":"native-exact-retry", "artifact":artifact, "input":"original",
+    });
+    let path = "/api/uar/full-harness/v1/tasks";
+    let response = fixture.request(path, Some(payload.clone()), None).await;
+    assert_eq!(response.status(), StatusCode::ACCEPTED);
+    let original: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), 1024 * 1024).await.unwrap()).unwrap();
+    let run = original["run_id"].as_str().unwrap();
+    assert!(!run.is_empty());
+    assert!(!original["task_id"].as_str().unwrap().is_empty());
+    fixture.settled(run).await;
+    let stream_path = original["links"]["stream"].as_str().unwrap();
+    let history = stream(fixture.request(stream_path, None, None).await).await;
+    assert_eq!(history.last().unwrap().name, "agui.done");
+    let original_calls = fixture.model_calls.load(Ordering::SeqCst);
+    assert!(original_calls > 0, "original admission must reach the real model");
+
+    let response = fixture.request(path, Some(payload.clone()), None).await;
+    assert_eq!(response.status(), StatusCode::ACCEPTED);
+    let identical: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), 1024 * 1024).await.unwrap()).unwrap();
+    for field in ["admission_id", "task_id", "run_id", "runtime_epoch"] {
+        assert_eq!(identical[field], original[field]);
+    }
+    assert_eq!(fixture.model_calls.load(Ordering::SeqCst), original_calls);
+    assert_eq!(
+        stream(fixture.request(stream_path, None, None).await).await,
+        history
+    );
+
+    payload["input"] = json!("changed");
+    let response = fixture.request(path, Some(payload.clone()), None).await;
+    assert_eq!(response.status(), StatusCode::CONFLICT);
+    let rejected: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), 1024 * 1024).await.unwrap()).unwrap();
+    assert_eq!(rejected["error"]["code"], "admission_digest_conflict");
+    assert_eq!(rejected["error"]["task_id"], original["task_id"]);
+    assert_eq!(rejected["error"]["admission_id"], payload["admission_id"]);
+    assert_eq!(fixture.model_calls.load(Ordering::SeqCst), original_calls);
+    assert_eq!(
+        stream(fixture.request(stream_path, None, None).await).await,
+        history
+    );
+    assert_eq!(fixture.model_calls.load(Ordering::SeqCst), original_calls);
 }
 
 #[derive(Debug, PartialEq)]
