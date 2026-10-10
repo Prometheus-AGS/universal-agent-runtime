@@ -234,6 +234,20 @@ impl AgentInstanceController {
                 },
                 Err(_) => TurnSettlement::Failed,
             };
+            if let Some((source_stage, error_code)) = failure_diagnostic
+                && let (Ok(command), Ok(attempt)) = (
+                    Uuid::parse_str(&command_id),
+                    Uuid::parse_str(&attempt_id),
+                )
+            {
+                tracing::warn!(
+                    source_stage,
+                    error_code,
+                    command_id = %command,
+                    attempt_id = %attempt,
+                    "UAR_INSTANCE_TURN_DIAGNOSTIC"
+                );
+            }
             let outcome = self
                 .settle_turn(
                     owner,
