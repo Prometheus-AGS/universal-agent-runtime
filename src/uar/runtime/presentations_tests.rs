@@ -16,6 +16,7 @@ use tokio_util::sync::CancellationToken;
 
 fn owner(tenant: &str) -> ActorOwner {
     ActorOwner::from_verified_context(&UserContext {
+        host_authority: None, authority: None,
         user_id: "presentation-operator".into(),
         tenant_id: Some(TenantId::for_test(tenant)),
         claims: UserClaims {

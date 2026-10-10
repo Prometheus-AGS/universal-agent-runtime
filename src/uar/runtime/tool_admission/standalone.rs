@@ -10,6 +10,7 @@ use super::{
     AdmittedToolInvocation, HostAdmissionBinding, HostAdmissionDisposition,
     HostAdmissionPreparation, HostAdmissionReceipt, HostToolAdmissionPort,
     LocalAdmissionDisposition, PreparedToolInvocation, TOOL_ADMISSION_PROTOCOL_VERSION,
+    ToolExecutionKind,
 };
 
 /// UAR remains fully usable without The Boss while routing every execution
@@ -61,6 +62,7 @@ impl HostToolAdmissionPort for StandaloneToolAdmissionPort {
         }
         Ok(HostAdmissionPreparation {
             version: self.binding.version,
+            execution_kind: invocation.execution_kind,
             admission_id: Uuid::new_v4().to_string(),
             invocation_id: invocation.invocation_id.clone(),
             runtime_epoch: invocation.runtime_epoch.clone(),
@@ -81,6 +83,7 @@ impl HostToolAdmissionPort for StandaloneToolAdmissionPort {
     ) -> anyhow::Result<Option<AdmittedToolInvocation>> {
         anyhow::ensure!(
             preparation.invocation_id == invocation.invocation_id
+                && preparation.execution_kind == invocation.execution_kind
                 && preparation.host_epoch == self.binding.host_epoch,
             "Standalone admission preparation does not match the invocation"
         );
@@ -89,6 +92,7 @@ impl HostToolAdmissionPort for StandaloneToolAdmissionPort {
         }
         let receipt = HostAdmissionReceipt {
             version: preparation.version,
+            execution_kind: preparation.execution_kind,
             admission_id: preparation.admission_id,
             invocation_id: preparation.invocation_id,
             runtime_epoch: preparation.runtime_epoch,
@@ -121,15 +125,34 @@ impl HostToolAdmissionPort for StandaloneToolAdmissionPort {
         admitted: &AdmittedToolInvocation,
     ) -> anyhow::Result<HostAdmissionReceipt> {
         let invocation = admitted.prepared.as_ref();
+        invocation.validate_authority_envelope()?;
         anyhow::ensure!(
             invocation.version == self.binding.version
                 && invocation.host_epoch == self.binding.host_epoch
                 && invocation.root_run_id == invocation.executing_run_id
                 && admitted.host_receipt.invocation_id == invocation.invocation_id
+                && admitted.host_receipt.version == invocation.version
+                && admitted.host_receipt.execution_kind == invocation.execution_kind
+                && admitted.host_receipt.runtime_epoch == invocation.runtime_epoch
+                && admitted.host_receipt.host_epoch == invocation.host_epoch
+                && admitted.host_receipt.authority_revision == invocation.authority_revision
                 && !admitted.host_receipt.managed_mcp_metadata,
             "Standalone claim is not a constrained local root invocation"
         );
         Ok(admitted.host_receipt.clone())
+    }
+
+    async fn consume_native(
+        &self,
+        admitted: &AdmittedToolInvocation,
+    ) -> anyhow::Result<HostAdmissionReceipt> {
+        // The runtime's existing lifecycle owns one-shot consumption and its
+        // persisted intent; standalone has no separate host authority ledger.
+        anyhow::ensure!(
+            admitted.prepared.execution_kind == ToolExecutionKind::RuntimeNative,
+            "Native claim requires runtime-native authority"
+        );
+        self.revalidate_claim(admitted).await
     }
 
     async fn finish(

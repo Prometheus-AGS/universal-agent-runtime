@@ -4,7 +4,8 @@
 //! (default: `/acp`). All requests are POST to the root path; SSE streaming
 //! is available at `<path>/stream` for clients that support it.
 
-use super::handler::{AcpSessionStore, dispatch};
+use crate::uar::security::credential_capture::AuthenticatedCredentialCapture;
+use super::handler::{AcpSessionStore, dispatch_with_capture};
 use super::types::{JsonRpcRequest, JsonRpcResponse, RPC_PARSE_ERROR};
 use crate::AppState;
 use crate::uar::security::claims::UserContext;
@@ -51,12 +52,13 @@ impl AcpRouter {
                     let sess = Arc::clone(&sessions);
                     let state = Arc::clone(&app_state);
                     move |Extension(user): Extension<UserContext>,
+                          credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
                           headers: HeaderMap,
                           Json(req): Json<serde_json::Value>| {
                         let sess = Arc::clone(&sess);
                         let state = Arc::clone(&state);
                         async move {
-                            handle_rpc(req, state, sess, user, auth_required, headers).await
+                            handle_rpc(req, state, sess, user, auth_required, headers, credential_capture.map(|Extension(capture)| capture)).await
                         }
                     }
                 }),
@@ -67,12 +69,13 @@ impl AcpRouter {
                     let sess = Arc::clone(&sessions);
                     let state = Arc::clone(&app_state);
                     move |Extension(user): Extension<UserContext>,
+                          credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
                           headers: HeaderMap,
                           Json(req): Json<serde_json::Value>| {
                         let sess = Arc::clone(&sess);
                         let state = Arc::clone(&state);
                         async move {
-                            handle_rpc_stream(req, state, sess, user, auth_required, headers).await
+                            handle_rpc_stream(req, state, sess, user, auth_required, headers, credential_capture.map(|Extension(capture)| capture)).await
                         }
                     }
                 }),
@@ -91,6 +94,7 @@ async fn handle_rpc(
     user: UserContext,
     auth_required: bool,
     _headers: HeaderMap,
+    credential_capture: Option<AuthenticatedCredentialCapture>,
 ) -> Response {
     if auth_required && user.user_id == crate::session::ANONYMOUS_SESSION_OWNER {
         return StatusCode::UNAUTHORIZED.into_response();
@@ -102,7 +106,7 @@ async fn handle_rpc(
             return (StatusCode::OK, Json(resp)).into_response();
         }
     };
-    let resp = dispatch(req, state, sessions, &user).await;
+    let resp = dispatch_with_capture(req, state, sessions, &user, credential_capture).await;
     (StatusCode::OK, Json(resp)).into_response()
 }
 
@@ -114,11 +118,12 @@ async fn handle_rpc_stream(
     user: UserContext,
     auth_required: bool,
     headers: HeaderMap,
+    credential_capture: Option<AuthenticatedCredentialCapture>,
 ) -> Response {
     // For non-runs/create methods, fall back to regular JSON response.
     let method = req_val.get("method").and_then(Value::as_str).unwrap_or("");
     if method != "runs/create" {
-        return handle_rpc(req_val, state, sessions, user, auth_required, headers).await;
+        return handle_rpc(req_val, state, sessions, user, auth_required, headers, credential_capture).await;
     }
 
     if auth_required && user.user_id == crate::session::ANONYMOUS_SESSION_OWNER {
@@ -134,7 +139,7 @@ async fn handle_rpc_stream(
     };
 
     // Start the run and subscribe to its event stream.
-    let resp = dispatch(req, Arc::clone(&state), Arc::clone(&sessions), &user).await;
+    let resp = dispatch_with_capture(req, Arc::clone(&state), Arc::clone(&sessions), &user, credential_capture).await;
     if resp.error.is_some() {
         return (StatusCode::OK, Json(resp)).into_response();
     }

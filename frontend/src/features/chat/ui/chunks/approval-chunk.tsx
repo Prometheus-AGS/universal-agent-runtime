@@ -17,10 +17,10 @@ export function ToolApprovalChunkView({ chunk }: { chunk: ToolApprovalChunk }) {
       </div>
       {chunk.reason ? <p className="mt-2 text-sm text-fg-sub">{chunk.reason}</p> : null}
       <div className="mt-2"><JsonSource value={chunk.args} label="Proposed tool arguments" /></div>
-      {!resolved && chunk.runId ? (
+      {!resolved && chunk.runId && chunk.approvalId ? (
         <Button type="button" size="sm" className="mt-3 min-h-11" onClick={() => setOpen(true)}>Review approval</Button>
       ) : null}
-      {chunk.runId ? <ToolApprovalDialog open={open} onOpenChange={setOpen} runId={chunk.runId} toolName={chunk.toolName} args={chunk.args} riskReason={chunk.reason} /> : null}
+      {chunk.runId && chunk.approvalId ? <ToolApprovalDialog open={open} onOpenChange={setOpen} runId={chunk.runId} approvalId={chunk.approvalId} toolName={chunk.toolName} args={chunk.args} riskReason={chunk.reason} /> : null}
     </ChunkSurface>
   );
 }

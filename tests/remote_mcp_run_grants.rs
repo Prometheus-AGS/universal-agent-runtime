@@ -344,13 +344,14 @@ impl GateHost {
         let mut text = String::new();
         let mut approvals = 0;
         loop {
-            if text.matches("event: agui.tool_call.approval_required").count() > approvals {
+            let identities = sidecar_process::approval_ids(&text, run_id);
+            if let Some(approval_id) = identities.get(approvals) {
                 let (status, body) = self
                     .call(
                         Method::POST,
                         &format!("/api/uar/runs/{run_id}/tool-approval"),
                         Some(principal),
-                        Some(json!({ "approved": true })),
+                        Some(json!({ "approved": true, "approval_id": approval_id })),
                     )
                     .await;
                 assert_eq!(status, 200, "approve remote tool call: {body}");

@@ -146,6 +146,17 @@ pub struct RunExecutionRequest {
 }
 
 impl RunExecutionRequest {
+    /// Merge redaction-only ingress data without changing run authority.
+    pub(crate) fn with_credential_capture(
+        mut self,
+        capture: Option<crate::uar::security::credential_capture::AuthenticatedCredentialCapture>,
+    ) -> Self {
+        if let Some(capture) = capture {
+            self.host_secret_scrubber.extend(capture.into_scrubber());
+        }
+        self
+    }
+
     pub fn new(artifact: AgentArtifact, input: String) -> Self {
         Self {
             artifact,

@@ -1,6 +1,7 @@
 //! A2A JSON-RPC adapter over the shared persisted-thread service.
 //! Compiler and named-agent endpoints preserve the existing JSON-RPC wire types.
 
+use crate::uar::security::credential_capture::AuthenticatedCredentialCapture;
 use std::sync::Arc;
 
 use axum::{
@@ -19,7 +20,7 @@ use super::{
 };
 use crate::{
     config::SecurityConfig,
-    uar::{runtime::actor::messages::ActorOwner, security::claims::UserContext},
+    uar::{runtime::actor::messages::ActorOwner, security::{authority::authorize_context, claims::UserContext}},
 };
 
 /// Shared task execution adapter for both JSON-RPC and gRPC.
@@ -35,9 +36,10 @@ pub struct A2AState {
 pub async fn handle_rpc(
     State(state): State<Arc<A2AState>>,
     user_context: Option<Extension<UserContext>>,
+    credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
     Json(req): Json<JsonRpcRequest>,
 ) -> impl IntoResponse {
-    Json(dispatch(&state, "compiler-agent", user_context, req).await)
+    Json(dispatch(&state, "compiler-agent", user_context, credential_capture, req).await)
 }
 
 /// Named artifacts use the same task/owner checks as the compiler endpoint.
@@ -45,15 +47,17 @@ pub async fn handle_agent_rpc(
     State(state): State<Arc<A2AState>>,
     Path(agent_id): Path<String>,
     user_context: Option<Extension<UserContext>>,
+    credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
     Json(req): Json<JsonRpcRequest>,
 ) -> impl IntoResponse {
-    Json(dispatch(&state, &agent_id, user_context, req).await)
+    Json(dispatch(&state, &agent_id, user_context, credential_capture, req).await)
 }
 
 async fn dispatch(
     state: &A2AState,
     agent_id: &str,
     user_context: Option<Extension<UserContext>>,
+    credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
     req: JsonRpcRequest,
 ) -> JsonRpcResponse {
     if req.jsonrpc != "2.0" {
@@ -70,6 +74,9 @@ async fn dispatch(
             rpc_error::INVALID_REQUEST,
             "verified tenant claim required",
         );
+    }
+    if let Err(error) = authorize_context(&state.security, user.as_ref(), None) {
+        return JsonRpcResponse::err(req.id, rpc_error::INVALID_REQUEST, error.to_string());
     }
     let authenticated_instance_id = user
         .as_ref()
@@ -92,13 +99,18 @@ async fn dispatch(
             Ok(params) => {
                 state
                     .threads
-                    .send(&owner, authenticated_instance_id, agent_id, params)
+                    .send_with_capture(&owner, authenticated_instance_id, agent_id, params,
+                        credential_capture.map(|Extension(capture)| capture).unwrap_or_default())
                     .await
             }
             Err(error) => return JsonRpcResponse::err(req.id, rpc_error::INVALID_PARAMS, error),
         },
         "tasks/get" => match parse_params::<TaskGetParams>(req.params) {
             Ok(params) => {
+                if let Err(error) = authorize_context(&state.security, user.as_ref(),
+                    params.workspace_id.as_deref().map(str::trim)) {
+                    return JsonRpcResponse::err(req.id, rpc_error::INVALID_PARAMS, error.to_string());
+                }
                 if let Some(authority) = state.threads.full_harness()
                     && authority.is_task_id(&params.id)
                 {
@@ -124,6 +136,10 @@ async fn dispatch(
         },
         "tasks/cancel" => match parse_params::<TaskCancelParams>(req.params) {
             Ok(params) => {
+                if let Err(error) = authorize_context(&state.security, user.as_ref(),
+                    params.workspace_id.as_deref().map(str::trim)) {
+                    return JsonRpcResponse::err(req.id, rpc_error::INVALID_PARAMS, error.to_string());
+                }
                 if let Some(authority) = state.threads.full_harness()
                     && authority.is_task_id(&params.id)
                 {
@@ -239,6 +255,12 @@ mod tests {
 
     fn security(jwt_required: bool) -> SecurityConfig {
         SecurityConfig {
+            deployment_profile: Default::default(),
+            jwt_algorithm: None,
+            workspace_authorities: Vec::new(),
+            api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
+            api_key_admin_principals: Vec::new(),
+            trusted_host_principals: Vec::new(),
             jwt_required,
             jwt_secret: "tenant-test-secret".to_owned().into(),
             jwks_url: None,
@@ -252,6 +274,7 @@ mod tests {
 
     fn context(tenant: &str) -> UserContext {
         UserContext {
+            host_authority: None, authority: None,
             user_id: "verified-user".to_owned(),
             tenant_id: Some(TenantId::for_test(tenant)),
             claims: UserClaims {

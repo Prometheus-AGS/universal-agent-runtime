@@ -1,3 +1,4 @@
+use crate::uar::security::credential_capture::AuthenticatedCredentialCapture;
 use super::types::{
     ChatCompletionChunk, ChatCompletionChunkChoice, ChatCompletionChunkDelta,
     ChatCompletionRequest, ModelCard, ModelList,
@@ -83,6 +84,7 @@ fn json_event<T: Serialize>(value: T) -> Event {
 pub async fn chat_completions(
     State(state): State<AppState>,
     Extension(user_context): axum::Extension<UserContext>,
+    credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
     Json(req): Json<ChatCompletionRequest>,
 ) -> impl IntoResponse {
     let run_manager = &state.run_manager;
@@ -120,6 +122,7 @@ pub async fn chat_completions(
                 return (StatusCode::UNAUTHORIZED, "Invalid run principal").into_response();
             }
         };
+    run_request = run_request.with_credential_capture(credential_capture.map(|Extension(capture)| capture));
     run_request.session_id = Some(conversation_id.clone());
     run_request.presentation_negotiation = req.presentation_negotiation.clone();
     let run_id = run_manager.execute_request(run_request).await;

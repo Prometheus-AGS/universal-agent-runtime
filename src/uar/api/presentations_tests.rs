@@ -6,6 +6,7 @@ use axum_test::TestServer;
 
 fn user(tenant: &str) -> UserContext {
     UserContext {
+        host_authority: None, authority: None,
         user_id: "catalog-operator".into(),
         tenant_id: Some(TenantId::for_test(tenant)),
         claims: UserClaims {

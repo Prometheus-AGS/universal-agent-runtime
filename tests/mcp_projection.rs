@@ -167,6 +167,7 @@ fn catalog_with_requirement(configuration: McpServerEntry, required: bool) -> Ar
 
 fn user() -> UserContext {
     UserContext {
+        host_authority: None, authority: None,
         user_id: "peer-test-user".to_string(),
         tenant_id: None,
         claims: UserClaims {

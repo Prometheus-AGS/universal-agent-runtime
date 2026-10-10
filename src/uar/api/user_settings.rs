@@ -235,6 +235,7 @@ mod tests {
 
     fn user_context(subject: &str, tenant: Option<&str>) -> UserContext {
         UserContext {
+            host_authority: None, authority: None,
             user_id: subject.to_owned(),
             tenant_id: tenant.map(TenantId::for_test),
             claims: UserClaims {

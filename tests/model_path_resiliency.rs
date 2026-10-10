@@ -1963,6 +1963,7 @@ async fn last_event_id_replays_only_subsequent_chat_events() {
         .expect("second chat delta supplies the replayed event id");
 
     let user = UserContext {
+        host_authority: None, authority: None,
         user_id: "anonymous".to_string(),
         tenant_id: None,
         claims: UserClaims {

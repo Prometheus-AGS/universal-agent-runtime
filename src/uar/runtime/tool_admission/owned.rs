@@ -71,6 +71,7 @@ impl HostToolAdmissionPort for OwnedToolAdmissionPort {
         invocation.validate_authority_envelope()?;
         Ok(HostAdmissionPreparation {
             version: invocation.version,
+            execution_kind: invocation.execution_kind,
             admission_id: Uuid::new_v4().to_string(),
             invocation_id: invocation.invocation_id.clone(),
             runtime_epoch: invocation.runtime_epoch.clone(),
@@ -102,6 +103,7 @@ impl HostToolAdmissionPort for OwnedToolAdmissionPort {
         invocation.validate_authority_envelope()?;
         anyhow::ensure!(
             preparation.version == invocation.version
+                && preparation.execution_kind == invocation.execution_kind
                 && preparation.invocation_id == invocation.invocation_id
                 && preparation.runtime_epoch == invocation.runtime_epoch
                 && preparation.host_epoch == invocation.host_epoch
@@ -121,6 +123,7 @@ impl HostToolAdmissionPort for OwnedToolAdmissionPort {
             local_disposition,
             host_receipt: HostAdmissionReceipt {
                 version: preparation.version,
+                execution_kind: preparation.execution_kind,
                 admission_id: preparation.admission_id,
                 invocation_id: preparation.invocation_id,
                 runtime_epoch: preparation.runtime_epoch,
@@ -142,6 +145,7 @@ impl HostToolAdmissionPort for OwnedToolAdmissionPort {
         admitted.prepared.validate_authority_envelope()?;
         anyhow::ensure!(
             admitted.host_receipt.version == admitted.prepared.version
+                && admitted.host_receipt.execution_kind == admitted.prepared.execution_kind
                 && admitted.host_receipt.invocation_id == admitted.prepared.invocation_id
                 && admitted.host_receipt.runtime_epoch == admitted.prepared.runtime_epoch
                 && admitted.host_receipt.host_epoch == admitted.prepared.host_epoch
@@ -150,6 +154,21 @@ impl HostToolAdmissionPort for OwnedToolAdmissionPort {
             "Runtime-control claim does not match the exact invocation"
         );
         Ok(admitted.host_receipt.clone())
+    }
+
+    async fn consume_native(
+        &self,
+        admitted: &AdmittedToolInvocation,
+    ) -> anyhow::Result<HostAdmissionReceipt> {
+        if admitted.prepared.admission_owner != AdmissionOwner::UarRuntime {
+            return self.paired_host.consume_native(admitted).await;
+        }
+        anyhow::ensure!(
+            admitted.prepared.execution_kind == super::ToolExecutionKind::RuntimeNative,
+            "Runtime-control claim requires native execution authority"
+        );
+        // AdmissionLifecycle persists and consumes this runtime-owned claim once.
+        self.revalidate_claim(admitted).await
     }
 
     async fn cancel(

@@ -6,6 +6,9 @@
 //! - Per-agent skill bindings
 //! - Script execution (sandboxed)
 
+mod selection;
+pub use selection::SkillSelectionError;
+
 use super::registry::SkillRegistry;
 use super::storage::{SkillStorageProvider, StorageProviderKind};
 use crate::uar::domain::skills::{Skill, SkillCandidate, SkillMatchResult, SkillScope};
@@ -471,26 +474,7 @@ impl SkillService {
 
     /// Set a durable enabled-state override at one scope.
     pub async fn set_scoped_enabled(&self, id: &str, scope: SkillScope, enabled: bool) -> bool {
-        if let Err(error) = self.ensure_mutation_allowed(id).await {
-            warn!("Failed to configure skill '{}': {:?}", id, error);
-            return false;
-        }
-
-        let updated = {
-            let mut registry = self.registry.write().await;
-            let Some(mut skill) = registry.get(id).cloned() else {
-                return false;
-            };
-            skill.set_enabled_for(scope, enabled);
-            registry.register(skill.clone()).await;
-            skill
-        };
-
-        if updated.provider_id == "api" {
-            self.persist_to_filesystem(&updated).await;
-        }
-        info!(skill_id = id, enabled, "updated scoped skill configuration");
-        true
+        self.set_scoped_enabled_checked(id, scope, enabled).await.is_ok()
     }
 
     /// Create a new skill dynamically via API.
@@ -632,6 +616,7 @@ impl SkillService {
         agent_id: Option<&str>,
         conversation_id: Option<&str>,
     ) -> SkillMatchResult {
+        let registry = self.registry.read().await;
         let legacy_bindings = if let Some(agent_id) = agent_id {
             self.agent_skills
                 .read()
@@ -642,7 +627,6 @@ impl SkillService {
         } else {
             None
         };
-        let registry = self.registry.read().await;
         let config = self.matching_config.read().await.clone();
         Self::match_in_registry(
             query,
@@ -653,20 +637,6 @@ impl SkillService {
             &config,
         )
         .await
-    }
-
-    /// Capture bodies, scoped enablement, bindings, and matching configuration
-    /// before run assembly. Vector retrieval may supply scores, but never
-    /// replace a captured skill body or introduce an uncaptured skill ID.
-    pub(crate) async fn matching_snapshot(&self) -> SkillMatchingSnapshot {
-        let agent_skills = self.agent_skills.read().await.clone();
-        let registry = self.registry.read().await;
-        let config = self.matching_config.read().await.clone();
-        SkillMatchingSnapshot {
-            registry: Arc::new(RwLock::new(registry.clone())),
-            config,
-            agent_skills,
-        }
     }
 
     async fn match_in_registry(
@@ -756,80 +726,51 @@ impl SkillService {
 
     // --- Per-agent skill configuration ---
 
-    /// Get skill IDs explicitly enabled for an agent.
+    /// Get explicit loaded overrides plus deferred IDs from the legacy binding view.
     pub async fn get_agent_skill_ids(&self, agent_id: &str) -> Vec<String> {
-        let mut skill_ids = self
+        let registry = self.registry.read().await;
+        let mut ids = self
             .agent_skills
             .read()
             .await
             .get(agent_id)
             .cloned()
             .unwrap_or_default();
-        for skill_id in self
-            .registry
-            .read()
-            .await
-            .list()
-            .into_iter()
-            .filter(|skill| {
-                skill.scoped_config.iter().any(|config| {
-                    config.enabled
-                        && matches!(&config.scope, SkillScope::Agent(id) if id == agent_id)
-                })
-            })
-            .map(|skill| skill.skill_id)
-        {
-            if !skill_ids.contains(&skill_id) {
-                skill_ids.push(skill_id);
+        for skill in registry.list() {
+            if let Some(config) = skill.scoped_config.iter().find(|config| {
+                matches!(&config.scope, SkillScope::Agent(id) if id == agent_id)
+            }) {
+                ids.retain(|id| id != &skill.skill_id);
+                if config.enabled {
+                    ids.push(skill.skill_id);
+                }
             }
         }
-        skill_ids
+        ids
     }
 
-    /// Replace an agent's durable skill overrides using allowlist semantics.
+    /// Compatibility wrapper; API callers use the checked result.
     pub async fn set_agent_skills(&self, agent_id: &str, skill_ids: Vec<String>) {
-        let selected = skill_ids.iter().cloned().collect::<HashSet<_>>();
-        self.agent_skills
-            .write()
-            .await
-            .insert(agent_id.to_string(), skill_ids);
-        let all_ids = self
-            .registry
-            .read()
-            .await
-            .list()
-            .into_iter()
-            .map(|skill| skill.skill_id)
-            .collect::<Vec<_>>();
-        for skill_id in all_ids {
-            self.set_scoped_enabled(
-                &skill_id,
-                SkillScope::Agent(agent_id.to_string()),
-                selected.contains(&skill_id),
-            )
-            .await;
+        if let Err(error) = self.set_agent_skills_checked(agent_id, skill_ids).await {
+            warn!(%error, "skill selection did not complete");
         }
     }
 
-    /// Enable one skill for an agent.
+    /// Compatibility wrapper; API callers use the checked result.
     pub async fn add_skill_to_agent(&self, agent_id: &str, skill_id: &str) {
-        let mut bindings = self.agent_skills.write().await;
-        let entry = bindings.entry(agent_id.to_string()).or_default();
-        if !entry.iter().any(|id| id == skill_id) {
-            entry.push(skill_id.to_string());
+        if let Err(error) = self.add_skill_to_agent_checked(agent_id, skill_id).await {
+            warn!(%error, "skill selection did not complete");
         }
-        drop(bindings);
-        self.set_scoped_enabled(skill_id, SkillScope::Agent(agent_id.to_string()), true)
-            .await;
     }
 
-    /// Disable one skill for an agent.
+    /// Compatibility wrapper; API callers use the checked result.
     pub async fn remove_skill_from_agent(&self, agent_id: &str, skill_id: &str) {
-        if let Some(bindings) = self.agent_skills.write().await.get_mut(agent_id) {
-            bindings.retain(|id| id != skill_id);
+        if let Err(error) = self
+            .remove_skill_from_agent_checked(agent_id, skill_id)
+            .await
+        {
+            warn!(%error, "skill selection did not complete");
         }
-        self.set_scoped_enabled(skill_id, SkillScope::Agent(agent_id.to_string()), false)
-            .await;
     }
 
     /// Get skills enabled after resolving agent state over global state.

@@ -18,6 +18,29 @@ server:
   host: "0.0.0.0"
 
 security:
+  # Explicit identity profile: trusted_local preserves local launch semantics.
+  # Remote admission requires JWT, issuer, audience, allowed algorithm,
+  # not-before validation and exact operator-owned workspace mappings.
+  deployment_profile: trusted_local
+  # jwt_algorithm: HS256  # RS256 when jwks_url is configured
+  workspace_authorities: []
+  # Issuance also requires each requested role in the verified caller roles.
+  # host-session and admin are reserved and cannot be configured here.
+  api_key_delegable_roles: [user]
+  # Exact verified issuer/subject/tenant triples; admin role alone grants nothing.
+  # Each administrator is limited to records in that issuer and tenant.
+  api_key_admin_principals: []
+  # Privileged mappings also require signed uar_credential_kind: issuer.
+  # Direct/exchanged keys and legacy unclassified JWTs cannot activate them.
+  trusted_host_principals: []
+  # Entries: issuer, subject, tenant_id, host_id (all exact nonempty strings).
+  # host_id must also be allowed by the registered destination trusted_hosts.
+  # Remote mapping example (no external IdP is selected by this example):
+  # workspace_authorities:
+  #   - issuer: "application-issuer"
+  #     subject: "application-user"
+  #     tenant_id: "application-tenant"
+  #     workspace_id: "application-workspace"
   # Whether to require JWT authentication for requests.
   # Default: true
   # Env: UAR_SECURITY__JWT_REQUIRED

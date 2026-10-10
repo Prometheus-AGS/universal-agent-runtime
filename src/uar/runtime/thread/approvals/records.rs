@@ -27,6 +27,8 @@ impl ApprovalBroker {
     }
 
     pub(crate) async fn resolve_record(&self, run_id: &str, approval_id: Option<&str>, approved: bool) -> anyhow::Result<Option<(ApprovalRecord, bool)>> {
+        // Legacy root provenance cannot authorize a run-only decision.
+        if approval_id.is_none_or(|id| id.trim().is_empty()) { return Ok(None); }
         let lane = self.roots.lock().map_err(|_| anyhow::anyhow!("Approval index unavailable"))?
             .get(run_id).and_then(std::sync::Weak::upgrade);
         let Some(lane) = lane else { return Ok(None); };
@@ -34,7 +36,7 @@ impl ApprovalBroker {
         let record = {
             let pending = lane.pending.lock().map_err(|_| anyhow::anyhow!("Approval request unavailable"))?;
             let Some(request) = pending.as_ref() else { return Ok(None); };
-            if lane.cancellation.is_cancelled() || request.reply.is_closed() || request.record.expires_at <= Utc::now() ||
+            if lane.cancellation.is_cancelled() || request.caller_cancellation.is_cancelled() || request.reply.is_closed() || request.record.expires_at <= Utc::now() ||
                 !approval_id.map_or(request.legacy_root_request, |id| id == request.snapshot.approval_id) {
                 return Ok(None);
             }
@@ -47,7 +49,7 @@ impl ApprovalBroker {
         let delivered = {
             let mut pending = lane.pending.lock().map_err(|_| anyhow::anyhow!("Approval request unavailable"))?;
             if pending.as_ref().is_some_and(|request| request.snapshot.approval_id == record.challenge_id) {
-                pending.take().is_some_and(|request| !lane.cancellation.is_cancelled() && request.record.expires_at > Utc::now() && request.reply.send(approved).is_ok())
+                pending.take().is_some_and(|request| !lane.cancellation.is_cancelled() && !request.caller_cancellation.is_cancelled() && request.record.expires_at > Utc::now() && request.reply.send(approved).is_ok())
             } else { false }
         };
         lane.publish_record(&next).await;
@@ -73,7 +75,7 @@ impl ApprovalBroker {
                     lane.owner_key == owner && !lane.cancellation.is_cancelled()
                         && lane.pending.lock().ok().is_some_and(|pending| {
                             pending.as_ref().is_some_and(|request| {
-                                request.record == record && !request.reply.is_closed()
+                                request.record == record && !request.caller_cancellation.is_cancelled() && !request.reply.is_closed()
                             })
                         })
                 });

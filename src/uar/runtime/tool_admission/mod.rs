@@ -28,9 +28,26 @@ pub use lifecycle::{
 };
 pub use standalone::StandaloneToolAdmissionPort;
 
-pub const TOOL_ADMISSION_PROTOCOL_VERSION: u32 = 1;
+pub const TOOL_ADMISSION_PROTOCOL_VERSION: u32 = 2;
 pub const TOOL_ADMISSION_META_KEY: &str = "tools.know-me.the-boss/admission";
 pub const DEFAULT_EFFECT_AUTHORITY_TTL_SECONDS: u64 = 300;
+
+/// Executor ownership derived from the resolved tool source, never model input.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ToolExecutionKind {
+    RuntimeNative,
+    HostMcp,
+}
+
+impl ToolExecutionKind {
+    pub const fn from_source(source: ToolSource) -> Self {
+        match source {
+            ToolSource::NativeSkill | ToolSource::BuiltIn => Self::RuntimeNative,
+            ToolSource::Mcp => Self::HostMcp,
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -184,6 +201,7 @@ impl ToolAdmissionContext {
         call_index: usize,
     ) -> PreparedToolInvocation {
         let invocation_id = Uuid::new_v4().to_string();
+        let execution_kind = ToolExecutionKind::from_source(descriptor.source);
         let mounted_server_id = descriptor
             .server
             .clone()
@@ -233,6 +251,7 @@ impl ToolAdmissionContext {
             active: true,
         };
         let authority_revision = digest_json(&serde_json::json!({
+            "executionKind": execution_kind,
             "principalId": &self.principal_id,
             "ownerId": &self.owner_id,
             "rootRunId": &self.root_run_id,
@@ -253,6 +272,7 @@ impl ToolAdmissionContext {
         }));
         PreparedToolInvocation {
             version: TOOL_ADMISSION_PROTOCOL_VERSION,
+            execution_kind,
             representation_effect: descriptor.effect,
             admission_owner: crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost,
             invocation_id,
@@ -326,6 +346,7 @@ pub struct PreparedToolInvocation {
     #[serde(skip)]
     pub(crate) admission_owner: crate::uar::persistence::tool_admission::AdmissionOwner,
     pub version: u32,
+    pub execution_kind: ToolExecutionKind,
     pub invocation_id: String,
     pub model_tool_call_id: String,
     pub attempt: u32,
@@ -365,6 +386,7 @@ impl std::fmt::Debug for PreparedToolInvocation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PreparedToolInvocation")
             .field("version", &self.version)
+            .field("execution_kind", &self.execution_kind)
             .field("invocation_id", &self.invocation_id)
             .field("model_tool_call_id", &self.model_tool_call_id)
             .field("root_run_id", &self.root_run_id)
@@ -462,6 +484,7 @@ impl PreparedToolInvocation {
             "Tool lease or budget reservation expired before claim"
         );
         let expected_authority = digest_json(&serde_json::json!({
+            "executionKind": self.execution_kind,
             "principalId": &self.principal_id,
             "ownerId": &self.owner_id,
             "rootRunId": &self.root_run_id,
@@ -512,6 +535,7 @@ pub enum HostAdmissionDisposition {
 #[serde(rename_all = "camelCase")]
 pub struct HostAdmissionPreparation {
     pub version: u32,
+    pub execution_kind: ToolExecutionKind,
     pub admission_id: String,
     pub invocation_id: String,
     pub runtime_epoch: String,
@@ -540,6 +564,7 @@ pub struct ToolApprovalRequest {
 #[serde(rename_all = "camelCase")]
 pub struct HostAdmissionReceipt {
     pub version: u32,
+    pub execution_kind: ToolExecutionKind,
     pub admission_id: String,
     pub invocation_id: String,
     pub runtime_epoch: String,
@@ -560,6 +585,7 @@ impl HostAdmissionReceipt {
                 TOOL_ADMISSION_META_KEY.to_string(),
                 serde_json::json!({
                     "version": self.version,
+                    "executionKind": self.execution_kind,
                     "admissionId": self.admission_id,
                     "invocationId": self.invocation_id,
                     "runtimeEpoch": self.runtime_epoch,
@@ -614,6 +640,13 @@ pub trait HostToolAdmissionPort: Send + Sync + std::fmt::Debug {
         admitted: &AdmittedToolInvocation,
     ) -> anyhow::Result<HostAdmissionReceipt>;
 
+    /// Consume native authority after UAR persists claim intent. A repeated
+    /// claim cannot acknowledge another execution of the same invocation.
+    async fn consume_native(
+        &self,
+        admitted: &AdmittedToolInvocation,
+    ) -> anyhow::Result<HostAdmissionReceipt>;
+
     async fn cancel(
         &self,
         invocation: &PreparedToolInvocation,
@@ -663,6 +696,11 @@ impl std::fmt::Debug for ToolAdmissionRuntime {
 }
 
 impl ToolAdmissionRuntime {
+    /// Observe the existing run cancellation at the final executor boundary.
+    pub fn is_cancelled(&self) -> bool {
+        self.cancellation.is_cancelled()
+    }
+
     #[must_use]
     pub fn standalone_ephemeral() -> Self {
         let runtime_epoch = Uuid::new_v4().to_string();
@@ -713,7 +751,8 @@ impl ToolAdmissionRuntime {
         governance_gate: Option<crate::uar::governance::runtime_control::GovernanceGateHandle>,
     ) -> anyhow::Result<Self> {
         anyhow::ensure!(
-            context.host == host.binding(),
+            context.host.version == TOOL_ADMISSION_PROTOCOL_VERSION
+                && context.host == host.binding(),
             "Tool admission context belongs to another host binding"
         );
         let context = Arc::new(context);
@@ -787,6 +826,7 @@ impl ToolAdmissionRuntime {
         }
         anyhow::ensure!(
             prepared.version == invocation.version
+                && prepared.execution_kind == invocation.execution_kind
                 && prepared.invocation_id == invocation.invocation_id
                 && prepared.runtime_epoch == invocation.runtime_epoch
                 && prepared.host_epoch == invocation.host_epoch
@@ -845,6 +885,8 @@ impl ToolAdmissionRuntime {
         anyhow::ensure!(
             Arc::ptr_eq(&admitted.prepared, &invocation)
                 && receipt.version == invocation.version
+                && receipt.execution_kind == invocation.execution_kind
+                && receipt.admission_id == admission_id
                 && receipt.invocation_id == invocation.invocation_id
                 && receipt.runtime_epoch == invocation.runtime_epoch
                 && receipt.host_epoch == invocation.host_epoch

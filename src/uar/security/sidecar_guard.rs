@@ -22,7 +22,14 @@ use secrecy::SecretString;
 /// Marker installed only after the outer launch-token guard admits a request.
 /// Inner authentication may trust host assertions only when this marker exists.
 #[derive(Debug, Clone, Copy)]
-pub struct HostAuthenticated;
+pub struct HostAuthenticated { _private: () }
+
+impl HostAuthenticated {
+    /// Attach installation proof without manufacturing a tenant/user credential.
+    pub(crate) fn bind_context(&self, context: &mut super::claims::UserContext) {
+        context.host_authority = Some(super::claims::HostAuthority::for_launch(self, context));
+    }
+}
 
 /// Length of the hex-encoded token: 256 bits.
 const TOKEN_HEX_LEN: usize = 64;
@@ -173,13 +180,23 @@ pub async fn enforce(
         return reject(StatusCode::FORBIDDEN, "origin_present");
     }
     if guard.token_matches(&request) {
+        // Consume launch authority here; only its redaction contribution
+        // follows the authenticated request into an admitted run.
+        if let Some(token) = bearer_token(&request) {
+            let capture = super::credential_capture::AuthenticatedCredentialCapture::bearer(token);
+            request.extensions_mut().insert(capture);
+        }
         request.headers_mut().remove(header::AUTHORIZATION);
-        request.extensions_mut().insert(HostAuthenticated);
+        request.extensions_mut().insert(HostAuthenticated { _private: () });
         return next.run(request).await;
     }
     let delegated = bearer_token(&request)
         .and_then(|token| guard.delegation_grants.as_ref()?.authenticate(token, &request));
     if let Some(delegated) = delegated {
+        if let Some(token) = bearer_token(&request) {
+            let capture = super::credential_capture::AuthenticatedCredentialCapture::bearer(token);
+            request.extensions_mut().insert(capture);
+        }
         request.headers_mut().remove(header::AUTHORIZATION);
         request.extensions_mut().insert(delegated);
         return next.run(request).await;

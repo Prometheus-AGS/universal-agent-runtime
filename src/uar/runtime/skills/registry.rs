@@ -109,6 +109,60 @@ impl SkillRegistry {
         Ok(())
     }
 
+    /// Re-read selection metadata without replacing registered document content.
+    pub(crate) async fn reconcile_selection(
+        &mut self,
+    ) -> Result<(), super::service::SkillSelectionError> {
+        use super::service::SkillSelectionError;
+        let Some(db) = &self.persistence else {
+            return Ok(());
+        };
+        let stored = db
+            .list_skills()
+            .await
+            .map_err(|_| SkillSelectionError::StoreUnavailable)?
+            .into_iter()
+            .map(|skill| (skill.skill_id.clone(), skill))
+            .collect::<HashMap<_, _>>();
+        if self.skills.keys().any(|id| !stored.contains_key(id)) {
+            return Err(SkillSelectionError::StorageMissing);
+        }
+        for (id, skill) in &mut self.skills {
+            if let Some(persisted) = stored.get(id) {
+                skill.enabled = persisted.enabled;
+                skill.scoped_config.clone_from(&persisted.scoped_config);
+            }
+        }
+        Ok(())
+    }
+
+    /// Persist a selection patch before publishing the confirmed in-memory state.
+    pub(crate) async fn update_selection(
+        &mut self,
+        id: &str,
+        scope: crate::uar::domain::skills::SkillScope,
+        enabled: bool,
+    ) -> Result<Skill, super::service::SkillSelectionError> {
+        use super::service::SkillSelectionError;
+        let mut next = self
+            .skills
+            .get(id)
+            .cloned()
+            .ok_or(SkillSelectionError::NotFound)?;
+        next.set_enabled_for(scope, enabled);
+        if let Some(db) = &self.persistence {
+            let matched = db
+                .update_skill_selection(id, next.enabled, &next.scoped_config)
+                .await
+                .map_err(|_| SkillSelectionError::StoreUnavailable)?;
+            if !matched {
+                return Err(SkillSelectionError::StorageMissing);
+            }
+        }
+        self.skills.insert(id.to_string(), next.clone());
+        Ok(next)
+    }
+
     /// Read every durable skill, including tombstoned records.
     pub(crate) async fn list_persisted(&self) -> anyhow::Result<Vec<Skill>> {
         match &self.persistence {

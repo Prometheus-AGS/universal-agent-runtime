@@ -84,6 +84,7 @@ fn probe_entry(output: &Path) -> McpServerEntry {
 
 fn verified_user() -> UserContext {
     UserContext {
+        host_authority: None, authority: None,
         user_id: "child-environment-user".to_owned(),
         tenant_id: None,
         claims: UserClaims {

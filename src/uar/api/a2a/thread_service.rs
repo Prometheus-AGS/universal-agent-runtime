@@ -1,6 +1,7 @@
 //! A2A task projection over the existing persisted-thread mailbox host.
 //! Task IDs/context IDs are transport correlation, never kernel authority.
 
+use crate::uar::security::credential_capture::AuthenticatedCredentialCapture;
 use std::{collections::HashMap, sync::Arc};
 
 use tokio::sync::{Mutex, oneshot::error::TryRecvError};
@@ -292,6 +293,18 @@ impl A2AThreadService {
         agent_id: &str,
         params: MessageSendParams,
     ) -> Result<Task, TaskError> {
+        self.send_with_capture(owner, authenticated_instance_id, agent_id, params,
+            AuthenticatedCredentialCapture::default()).await
+    }
+
+    pub(crate) async fn send_with_capture(
+        &self,
+        owner: &ActorOwner,
+        authenticated_instance_id: Option<&str>,
+        agent_id: &str,
+        params: MessageSendParams,
+        credential_capture: AuthenticatedCredentialCapture,
+    ) -> Result<Task, TaskError> {
         if params.message.role != Role::User
             || params.message.parts.is_empty()
             || params
@@ -457,7 +470,7 @@ impl A2AThreadService {
         }
         let turn = entry
             .actor
-            .submit_prompt(content)
+            .submit_prompt_with_capture(content, credential_capture)
             .map_err(TaskError::Host)?;
         // Publication is synchronous after enqueue: request cancellation cannot
         // abandon the completion receiver between dispatch and registration.

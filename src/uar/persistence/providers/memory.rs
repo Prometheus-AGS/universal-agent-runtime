@@ -510,6 +510,21 @@ impl PersistenceLayer for InMemoryProvider {
         write(&self.skills)?.insert(skill.skill_id.clone(), skill.clone());
         Ok(())
     }
+    async fn update_skill_selection(
+        &self,
+        skill_id: &str,
+        enabled: bool,
+        scoped_config: &[crate::uar::domain::skills::ScopedSkillConfig],
+    ) -> Result<bool> {
+        let mut skills = write(&self.skills)?;
+        let Some(skill) = skills.get_mut(skill_id) else {
+            return Ok(false);
+        };
+        skill.enabled = enabled;
+        skill.scoped_config = scoped_config.to_vec();
+        Ok(true)
+    }
+
     async fn search_skills(&self, _query_vec: &[f32], _limit: usize) -> Result<Vec<SkillMatch>> {
         Ok(Vec::new())
     }

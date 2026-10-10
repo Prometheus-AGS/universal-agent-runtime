@@ -31,7 +31,7 @@ use universal_agent_runtime::uar::runtime::{
     skills::SkillRegistry,
 };
 use universal_agent_runtime::uar::security::api_keys::{
-    ApiKeyService, CreateKeyRequest, InMemoryApiKeyStorage,
+    ApiKeyRecord, ApiKeyStorage, ApiKeyService, CreateKeyRequest, InMemoryApiKeyStorage,
 };
 
 fn find_free_port() -> u16 {
@@ -92,6 +92,12 @@ async fn start_grpc_server() -> (String, tempfile::TempDir, String) {
             manager,
         )))),
         security: SecurityConfig {
+            deployment_profile: Default::default(),
+            jwt_algorithm: None,
+            workspace_authorities: Vec::new(),
+            api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
+            api_key_admin_principals: Vec::new(),
+            trusted_host_principals: Vec::new(),
             jwt_required: false,
             jwt_secret: "test-secret".to_owned().into(),
             jwks_url: None,
@@ -104,10 +110,22 @@ async fn start_grpc_server() -> (String, tempfile::TempDir, String) {
         base_url: format!("http://127.0.0.1:{port}"),
     });
     let service = GrpcAgentService::new(state);
-    let api_keys = ApiKeyService::new(Arc::new(InMemoryApiKeyStorage::new()), "test-secret");
+    // Seed only the isolated test store, then obtain proof through real key validation.
+    use argon2::{Argon2, password_hash::{PasswordHasher, SaltString, rand_core::OsRng}};
+    let storage = Arc::new(InMemoryApiKeyStorage::new());
+    let seed = "synthetic-grpc-fixture-bootstrap";
+    let salt = SaltString::generate(&mut OsRng);
+    let hash = Argon2::default().hash_password(seed.as_bytes(), &salt).unwrap().to_string();
+    storage.insert(ApiKeyRecord {
+        id: "fixture-bootstrap".to_owned(), key_hash: hash, name: "fixture".to_owned(),
+        subject: "a2a-grpc-user".to_owned(), authority_version: 1, issuer: None,
+        tenant_id: None, roles: vec!["user".to_owned()], created_at: 0, expires_at: None, revoked: false,
+    }).await.unwrap();
+    let api_keys = ApiKeyService::new(storage, "test-secret");
+    let caller = api_keys.validate_key(seed).await.unwrap().unwrap();
     let key = api_keys
         .create_key(
-            "a2a-grpc-user",
+            &caller,
             CreateKeyRequest {
                 name: "A2A gRPC integration".to_owned(),
                 roles: Some(vec!["user".to_owned()]),

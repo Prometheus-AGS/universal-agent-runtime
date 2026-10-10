@@ -18,6 +18,8 @@ use crate::stub_llm::{
     FixtureResponse, FixtureSet, RequestFingerprint, StubLlmServer, start_stub_llm,
 };
 
+pub use crate::sidecar_process::approval_ids;
+
 /// The request header the host uses to name the session principal.
 pub const PRINCIPAL_HEADER: &str = "X-UAR-Principal";
 /// First the-boss session principal.
@@ -245,7 +247,9 @@ impl Host {
     ) -> bool {
         let deadline = tokio::time::Instant::now() + timeout;
         loop {
-            if markers.iter().any(|marker| text.contains(marker)) {
+            if markers.iter().any(|marker| if *marker == APPROVAL_MARKER {
+                !crate::sidecar_process::approval_events::approvals(text).is_empty()
+            } else { text.contains(marker) }) {
                 return true;
             }
             let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
@@ -254,18 +258,20 @@ impl Host {
             }
             match tokio::time::timeout(remaining, response.chunk()).await {
                 Ok(Ok(Some(chunk))) => text.push_str(&String::from_utf8_lossy(&chunk)),
-                _ => return markers.iter().any(|marker| text.contains(marker)),
+                _ => return markers.iter().any(|marker| if *marker == APPROVAL_MARKER {
+                    !crate::sidecar_process::approval_events::approvals(text).is_empty()
+                } else { text.contains(marker) }),
             }
         }
     }
 
-    /// Approve the pending tool call of `run_id` as `principal`.
-    pub async fn approve(&self, principal: Option<&str>, run_id: &str) -> u16 {
+    /// Submit the originating event identity for `run_id` as `principal`.
+    pub async fn approve(&self, principal: Option<&str>, run_id: &str, approval_id: &str) -> u16 {
         self.call(
             Method::POST,
             &format!("/api/uar/runs/{run_id}/tool-approval"),
             principal,
-            Some(json!({ "approved": true })),
+            Some(json!({ "approved": true, "approval_id": approval_id })),
         )
         .await
         .0
@@ -282,8 +288,9 @@ impl Host {
         let mut approvals = 0;
         let deadline = tokio::time::Instant::now() + timeout;
         loop {
-            if text.matches(APPROVAL_MARKER).count() > approvals {
-                assert_eq!(self.approve(principal, run_id).await, 200, "approval");
+            let identities = approval_ids(&text, run_id);
+            if let Some(approval_id) = identities.get(approvals) {
+                assert_eq!(self.approve(principal, run_id, approval_id).await, 200, "approval");
                 approvals += 1;
                 continue;
             }

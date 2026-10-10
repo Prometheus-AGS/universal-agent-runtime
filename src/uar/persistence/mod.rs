@@ -295,6 +295,14 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
 
     // Skill Management
     async fn save_skill(&self, skill: &Skill, embedding: &[f32]) -> Result<()>;
+    /// Change only existing skill selection fields; preserve every other stored field.
+    /// Returns false when no durable skill row exists.
+    async fn update_skill_selection(
+        &self,
+        skill_id: &str,
+        enabled: bool,
+        scoped_config: &[crate::uar::domain::skills::ScopedSkillConfig],
+    ) -> Result<bool>;
     async fn search_skills(&self, query_vec: &[f32], limit: usize) -> Result<Vec<SkillMatch>>;
 
     /// List all persisted skills.

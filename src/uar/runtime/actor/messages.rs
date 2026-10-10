@@ -3,6 +3,7 @@
 //! Defines the typed message envelope that agent actors exchange,
 //! plus reply types for request-response patterns.
 
+use crate::uar::security::credential_capture::AuthenticatedCredentialCapture;
 use serde::{Deserialize, Serialize};
 
 /// Host-created actor namespace. Never deserialize identity from actor payloads.
@@ -90,6 +91,7 @@ pub enum AgentMessage {
     UserRun {
         run_id: String,
         content: String,
+        credential_capture: AuthenticatedCredentialCapture,
         artifacts: crate::uar::runtime::thread::artifacts::RunArtifactCollector,
         reply: tokio::sync::oneshot::Sender<
             Result<crate::uar::persistence::agent_threads::PersistedAgentThread, ActorRunError>,

@@ -67,6 +67,7 @@ pub(crate) struct InheritedRunBindings {
 /// Executable resources retained by one live root, not recipes for rebuilding
 /// clients. The run index holds only a weak reference to this capture.
 pub(crate) struct RunDelegationBindings {
+    pub(crate) secret_scrubber: super::host::RunSecretScrubber,
     pub(crate) collaboration_binding: Option<super::CollaborationRunBinding>,
     pub(crate) instance_binding: Option<crate::uar::runtime::instance::InstanceEpochBinding>,
     pub(crate) owner: crate::uar::runtime::actor::messages::ActorOwner,
@@ -135,10 +136,10 @@ impl RunSkillBindings {
     pub(crate) async fn capture(
         legacy_registry: &Arc<RwLock<SkillRegistry>>,
         service: Option<&SkillService>,
-    ) -> Self {
-        match service {
+    ) -> anyhow::Result<Self> {
+        Ok(match service {
             Some(service) => {
-                let matching = service.matching_snapshot().await;
+                let matching = service.matching_snapshot().await?;
                 Self {
                     registry: Arc::clone(&matching.registry),
                     matching: Some(matching),
@@ -148,7 +149,7 @@ impl RunSkillBindings {
                 registry: Arc::new(RwLock::new(legacy_registry.read().await.clone())),
                 matching: None,
             },
-        }
+        })
     }
 }
 
@@ -206,6 +207,7 @@ impl RunModelBindings {
         run_credentials: Option<&super::host::RunCredentials>,
         endpoint_profiles: std::collections::BTreeMap<String, crate::llm::EndpointRequestProfile>,
         pricing_models: std::collections::BTreeMap<String, String>,
+        secret_scrubber: &mut super::host::RunSecretScrubber,
     ) -> anyhow::Result<Self> {
         budget.admit()?;
         let settings_only = !endpoint_profiles.is_empty();
@@ -223,10 +225,14 @@ impl RunModelBindings {
             Some(_) if settings_only => anyhow::bail!("TEAM_ROUTE_PROFILE_MISMATCH"),
             Some(driver) => driver,
             None => match &selected_profile {
-                Some(profile) => Arc::new(crate::llm::LiterLlmDriver::from_endpoint_profile(
-                    crate::config::build_client_config(&config), config.parallel_tool_calls, profile.clone(),
-                )?) as Arc<dyn LlmDriver>,
-                None => crate::llm::orchestrator::build_driver(&config)?,
+                Some(profile) => {
+                    let mut client_config = crate::config::build_client_config(&config);
+                    crate::llm::orchestrator::capture_client_config(&mut client_config, secret_scrubber);
+                    Arc::new(crate::llm::LiterLlmDriver::from_endpoint_profile(
+                        client_config, config.parallel_tool_calls, profile.clone(),
+                    ).map_err(|_| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?) as Arc<dyn LlmDriver>
+                }
+                None => crate::llm::orchestrator::build_driver_captured(&config, secret_scrubber)?,
             },
         };
         let (model_provider, model) = crate::llm::registry::split_model_string_pub(&config.model);
@@ -265,18 +271,23 @@ impl RunModelBindings {
                         fallback_config.model.clone_from(&fallback.model);
                         fallback_config.api_key.clone_from(&fallback.api_key);
                         fallback_config.base_url.clone_from(&fallback.base_url);
+                        let mut client_config = crate::config::build_client_config(&fallback_config);
+                        crate::llm::orchestrator::capture_client_config(&mut client_config, secret_scrubber);
                         crate::llm::LiterLlmDriver::from_endpoint_profile(
-                            crate::config::build_client_config(&fallback_config),
-                            fallback_config.parallel_tool_calls, profile.clone(),
+                            client_config, fallback_config.parallel_tool_calls, profile.clone(),
                         ).map(|driver| Arc::new(driver) as Arc<dyn LlmDriver>)
+                            .map_err(|_| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))
                     }
                     (None, Some(credentials)) => credentials
                         .config_for(&provider, Some(&fallback.model), config.clone())
                         .map_err(anyhow::Error::from)
                         .and_then(|fallback_config| {
-                            crate::llm::orchestrator::build_driver(&fallback_config)
+                            crate::llm::orchestrator::build_driver_captured(&fallback_config, secret_scrubber)
                         }),
-                    (None, None) => Orchestrator::build_fallback_driver(&config, fallback),
+                    (None, None) => {
+                        let fallback_config = Orchestrator::fallback_llm_config(&config, fallback);
+                        crate::llm::orchestrator::build_driver_captured(&fallback_config, secret_scrubber)
+                    },
                 };
                 match driver {
                     Ok(driver) => {
@@ -288,7 +299,7 @@ impl RunModelBindings {
                         fallbacks.push(bound)
                     }
                     Err(error) if run_credentials.is_some() || settings_only => return Err(error),
-                    Err(error) => tracing::warn!(model = %fallback.model, %error,
+                    Err(_) => tracing::warn!(model = %fallback.model,
                         "Failed to capture fallback driver; continuing with remaining candidates"),
                 }
             }

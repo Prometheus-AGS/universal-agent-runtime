@@ -16,6 +16,7 @@ use super::sections::{Clock, WorldStateConfig, WorldStateSnapshot};
 /// Per-run host state. Neither contributors nor models receive this write handle.
 pub struct WorldStateRuntime {
     session: Session,
+    secret_scrubber: crate::uar::runtime::turn::host::RunSecretScrubber,
     pub instructions: Arc<Mutex<ProjectInstructions>>,
     baseline: Mutex<WorldStateBaseline>,
     cwd: PathBuf,
@@ -59,6 +60,7 @@ impl WorldStateRuntime {
         Ok(Self {
             baseline: Mutex::new(session.world_state_baseline()),
             session,
+            secret_scrubber: Default::default(),
             instructions: Arc::new(Mutex::new(instructions)),
             cwd,
             workspace_roots: instructions_config.trusted_workspaces,
@@ -66,6 +68,17 @@ impl WorldStateRuntime {
             clock,
             config,
         })
+    }
+
+    /// Bind the original append authority after private admission captures the
+    /// selected corpus. Baseline and instruction state stay host-owned.
+    pub(crate) fn bind_retained_session(
+        &mut self,
+        session: Session,
+        capture: crate::uar::runtime::turn::host::RunSecretScrubber,
+    ) {
+        self.session = session;
+        self.secret_scrubber = capture;
     }
 
     /// Build an owned, side-effect-free contributor from the current host state.
@@ -104,7 +117,11 @@ impl WorldStateRuntime {
     pub async fn commit(&self, update: &WorldStateUpdate) {
         let instructions = self.instructions.lock().await.clone();
         let mut baseline = self.baseline.lock().await;
-        self.session.record_world_state(update, instructions);
+        let mut projected = update.clone();
+        for message in &mut projected.messages {
+            self.secret_scrubber.project_message(message);
+        }
+        self.session.record_world_state(&projected, instructions);
         *baseline = update.baseline.clone();
     }
 }

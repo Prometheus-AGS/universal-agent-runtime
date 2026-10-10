@@ -1,6 +1,7 @@
 //! Trusted-host adapter for a user-addressed actor session. Root records are
 //! committed before kernel entry; terminal records before mailbox replies.
 
+use crate::uar::security::credential_capture::AuthenticatedCredentialCapture;
 use std::sync::Arc;
 
 use anyhow::Context;
@@ -207,6 +208,17 @@ impl ActorThreadSession {
         run_id: String,
         artifacts: Option<super::artifacts::RunArtifactCollector>,
     ) -> anyhow::Result<PersistedAgentThread> {
+        self.execute_named_with_capture(content, run_id, artifacts,
+            AuthenticatedCredentialCapture::default()).await
+    }
+
+    pub(crate) async fn execute_named_with_capture(
+        &mut self,
+        content: String,
+        run_id: String,
+        artifacts: Option<super::artifacts::RunArtifactCollector>,
+        credential_capture: AuthenticatedCredentialCapture,
+    ) -> anyhow::Result<PersistedAgentThread> {
         let mut request = match &self.instance {
             Some(instance) => {
                 let mut request = RunExecutionRequest::from_bound_agent(
@@ -235,6 +247,7 @@ impl ActorThreadSession {
             None => RunExecutionRequest::new(self.artifact.clone(), content)
                 .with_verified_owner(self.owner.clone()),
         };
+        request = request.with_credential_capture(Some(credential_capture));
         if let Some(constraints) = &self.remote_constraints {
             request.presentation_negotiation = constraints
                 .presentation_negotiation

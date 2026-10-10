@@ -223,11 +223,11 @@ fn direct_loopback_server(
             "MCP server URL must be loopback HTTP without userinfo",
         ));
     }
-    RunHttpHeaders::parse(&headers).map_err(|_| {
+    let parsed_headers = RunHttpHeaders::parse(&headers).map_err(|_| {
         HostInputError::new("run_mcp_server_invalid", "MCP server headers are invalid")
     })?;
     let mut secret_values = vec![url.clone()];
-    secret_values.extend(headers.values().cloned());
+    secret_values.extend(parsed_headers.secret_values());
     Ok(RunMcpServer {
         name: name.to_owned(),
         configuration: McpServerEntry::RemoteHttp {
@@ -303,7 +303,7 @@ fn trusted_destination_server(
             )
         })?;
     validate_remote_destination(&expanded_url, policy)?;
-    RunHttpHeaders::from_configuration(
+    let parsed_headers = RunHttpHeaders::from_configuration(
         definition.configuration(),
         &resolved_environment,
         Some(&grant.headers),
@@ -315,7 +315,7 @@ fn trusted_destination_server(
         )
     })?;
     let mut secret_values = vec![SecretString::from(expanded_url)];
-    secret_values.extend(grant.headers.values().cloned());
+    secret_values.extend(parsed_headers.secret_values());
     let owner = ActorOwner::from_verified_context(user).map_err(|_| {
         HostInputError::new(
             "run_mcp_grant_forbidden",
@@ -349,15 +349,7 @@ fn trusted_destination_server(
 }
 
 fn trusted_host_id(user: &crate::uar::security::claims::UserContext) -> Option<&str> {
-    let roles = user.claims.roles.as_deref().unwrap_or_default();
-    if roles.iter().any(|role| role == "host-session") {
-        return Some("sidecar-launch-host");
-    }
-    roles
-        .iter()
-        .any(|role| role == "uar:mcp:delegate")
-        .then(|| user.claims.uar_instance_id.as_deref())
-        .flatten()
+    user.trusted_host_id()
 }
 
 fn validate_grant_policy(
@@ -438,3 +430,7 @@ pub(super) fn is_loopback_host(url: &Url) -> bool {
         None => false,
     }
 }
+
+#[cfg(all(test, feature = "server"))]
+#[path = "mcp_tests.rs"]
+mod tests;

@@ -24,7 +24,18 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::uar::security::{claims::UserClaims, jwt};
+use crate::uar::security::{claims::{TenantId, UserClaims, UserContext, VerifiedIdentity}, jwt};
+use secrecy::ExposeSecret;
+
+mod policy;
+pub use policy::ApiKeyAuthorityError;
+use policy::{AUTHORITY_VERSION, KeyPolicy};
+
+/// Proof created only after a stored API key hash and its authority are validated.
+pub(in crate::uar::security) struct VerifiedKeyTenantClaim<'a>(&'a str);
+impl VerifiedKeyTenantClaim<'_> {
+    pub(in crate::uar::security) fn value(&self) -> &str { self.0 }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -41,6 +52,12 @@ pub struct ApiKeyRecord {
     pub name: String,
     /// Subject (user ID) this key belongs to.
     pub subject: String,
+    #[serde(default)]
+    pub authority_version: u32,
+    #[serde(default)]
+    pub issuer: Option<String>,
+    #[serde(default)]
+    pub tenant_id: Option<String>,
     /// Roles granted by this key.
     pub roles: Vec<String>,
     /// Creation timestamp (Unix seconds).
@@ -57,6 +74,9 @@ pub struct ApiKeyMetadata {
     pub id: String,
     pub name: String,
     pub subject: String,
+    pub authority_version: u32,
+    pub issuer: Option<String>,
+    pub tenant_id: Option<String>,
     pub roles: Vec<String>,
     pub created_at: i64,
     pub expires_at: Option<i64>,
@@ -69,6 +89,9 @@ impl From<&ApiKeyRecord> for ApiKeyMetadata {
             id: r.id.clone(),
             name: r.name.clone(),
             subject: r.subject.clone(),
+            authority_version: r.authority_version,
+            issuer: r.issuer.clone(),
+            tenant_id: r.tenant_id.clone(),
             roles: r.roles.clone(),
             created_at: r.created_at,
             expires_at: r.expires_at,
@@ -110,6 +133,7 @@ pub trait ApiKeyStorage: Send + Sync + std::fmt::Debug {
     async fn revoke(&self, id: &str) -> anyhow::Result<bool>;
     /// Return all non-revoked records (for key-scanning during exchange).
     async fn all_active(&self) -> anyhow::Result<Vec<ApiKeyRecord>>;
+    async fn all(&self) -> anyhow::Result<Vec<ApiKeyRecord>>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -160,6 +184,10 @@ impl ApiKeyStorage for InMemoryApiKeyStorage {
         }
     }
 
+    async fn all(&self) -> anyhow::Result<Vec<ApiKeyRecord>> {
+        Ok(self.records.read().await.values().cloned().collect())
+    }
+
     async fn all_active(&self) -> anyhow::Result<Vec<ApiKeyRecord>> {
         Ok(self
             .records
@@ -182,15 +210,15 @@ impl ApiKeyStorage for InMemoryApiKeyStorage {
 #[derive(Debug, Clone)]
 pub struct ApiKeyService {
     db: Arc<dyn ApiKeyStorage>,
-    jwt_secret: String,
-    jwt_issuer: Option<String>,
-    jwt_audience: Option<String>,
+    jwt_secret: secrecy::SecretString,
+    policy: KeyPolicy,
     /// JWT TTL in seconds for exchanged tokens.
     jwt_ttl_secs: i64,
 }
 
 #[derive(Serialize)]
 struct IssuedJwtClaims<'a> {
+    uar_credential_kind: &'static str,
     #[serde(flatten)]
     user: &'a UserClaims,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -199,26 +227,37 @@ struct IssuedJwtClaims<'a> {
     aud: Option<&'a str>,
 }
 
+pub struct ExchangedJwt {
+    pub token: String,
+    pub expires_in: u64,
+}
+
 impl ApiKeyService {
     /// Create a new service with the given storage and JWT secret.
     pub fn new(db: Arc<dyn ApiKeyStorage>, jwt_secret: impl Into<String>) -> Self {
+        let jwt_secret: String = jwt_secret.into();
         Self {
             db,
             jwt_secret: jwt_secret.into(),
-            jwt_issuer: None,
-            jwt_audience: None,
+            policy: KeyPolicy::default(),
             jwt_ttl_secs: 3600, // 1 hour default
         }
     }
 
+    #[cfg(all(test, feature = "server"))]
     pub(crate) fn with_registered_claims(
         mut self,
         issuer: Option<String>,
         audience: Option<String>,
     ) -> Self {
-        self.jwt_issuer = issuer;
-        self.jwt_audience = audience;
+        self.policy.issuer = issuer;
+        self.policy.audience = audience;
         self
+    }
+
+    pub fn with_security_config(mut self, config: &crate::config::SecurityConfig) -> anyhow::Result<Self> {
+        self.policy = KeyPolicy::from_config(config)?;
+        Ok(self)
     }
 
     /// Create a new service with a custom JWT TTL.
@@ -230,23 +269,29 @@ impl ApiKeyService {
     /// Create a new API key. Returns the raw key (shown once) + metadata.
     pub async fn create_key(
         &self,
-        subject: impl Into<String>,
+        caller: &UserContext,
         request: CreateKeyRequest,
     ) -> anyhow::Result<ApiKeyResponse> {
-        let subject = subject.into();
+        let roles = self.policy.attenuate(caller, request.roles)?;
+        let subject = caller.user_id.clone();
         let raw_key = generate_raw_key();
         let key_hash = hash_key(&raw_key)?;
         let now = now_unix();
 
         let id = format!("uar_{}", &Uuid::new_v4().to_string().replace('-', "")[..16]);
-        let roles = request.roles.unwrap_or_else(|| vec!["user".to_string()]);
-        let expires_at = request.expires_in_secs.map(|secs| now + secs);
+        let expires_at = request.expires_in_secs.map(|seconds| {
+            if seconds <= 0 { return Err(ApiKeyAuthorityError::InvalidLifetime); }
+            now.checked_add(seconds).ok_or(ApiKeyAuthorityError::InvalidLifetime)
+        }).transpose()?;
 
         let record = ApiKeyRecord {
             id: id.clone(),
             key_hash,
             name: request.name,
             subject: subject.clone(),
+            authority_version: AUTHORITY_VERSION,
+            issuer: self.policy.issuer.clone(),
+            tenant_id: caller.tenant_id.as_ref().map(|tenant| tenant.as_str().to_owned()),
             roles,
             created_at: now,
             expires_at,
@@ -263,40 +308,47 @@ impl ApiKeyService {
     ///
     /// Returns `None` if the key is invalid, expired, or revoked.
     pub async fn exchange_for_jwt(&self, raw_key: &str) -> anyhow::Result<Option<String>> {
+        Ok(self.exchange_with_expiry(raw_key).await?.map(|issued| issued.token))
+    }
+
+    pub async fn exchange_with_expiry(&self, raw_key: &str) -> anyhow::Result<Option<ExchangedJwt>> {
+        if !self.policy.exchange_supported { return Err(ApiKeyAuthorityError::UnsupportedExchange.into()); }
         let active = self.db.all_active().await?;
         let now = now_unix();
 
         for record in active {
             // Check expiry
             if let Some(exp) = record.expires_at {
-                if now > exp {
+                if now >= exp {
                     continue;
                 }
             }
 
             // Verify hash
             if verify_key(raw_key, &record.key_hash)? {
-                let exp = (now + self.jwt_ttl_secs) as usize;
+                self.policy.validate_record(&record)?;
+                let Some(exp) = self.token_expiry(&record, now) else { return Ok(None); };
                 let claims = UserClaims {
                     sub: record.subject.clone(),
                     name: Some(record.name.clone()),
                     roles: Some(record.roles.clone()),
-                    tenant_id: None,
+                    tenant_id: record.tenant_id.clone(),
                     uar_instance_id: None,
                     exp,
                 };
                 let issued_claims = IssuedJwtClaims {
+                    uar_credential_kind: "api_key",
                     user: &claims,
-                    iss: self.jwt_issuer.as_deref(),
-                    aud: self.jwt_audience.as_deref(),
+                    iss: record.issuer.as_deref(),
+                    aud: self.policy.audience.as_deref(),
                 };
                 let token = jwt::encode(
                     &Header::default(),
                     &issued_claims,
-                    &EncodingKey::from_secret(self.jwt_secret.as_bytes()),
+                    &EncodingKey::from_secret(self.jwt_secret.expose_secret().as_bytes()),
                 )
                 .map_err(|error| anyhow::anyhow!("issuing API-key exchange JWT: {error}"))?;
-                return Ok(Some(token));
+                return Ok(Some(ExchangedJwt { token, expires_in: (exp as i64 - now) as u64 }));
             }
         }
 
@@ -304,38 +356,61 @@ impl ApiKeyService {
     }
 
     /// Revoke an API key by ID.
-    pub async fn revoke_key(&self, id: &str) -> anyhow::Result<bool> {
+    pub async fn revoke_key(&self, caller: &UserContext, id: &str) -> anyhow::Result<bool> {
+        self.policy.identity(caller)?;
+        let Some(record) = self.db.get_by_id(id).await? else { return Ok(false); };
+        if !self.policy.can_manage(caller, &record)? { return Ok(false); }
         self.db.revoke(id).await
     }
 
     /// List all keys for a subject (metadata only, no raw keys).
-    pub async fn list_keys(&self, subject: &str) -> anyhow::Result<Vec<ApiKeyMetadata>> {
-        let records = self.db.list_by_subject(subject).await?;
-        Ok(records.iter().map(ApiKeyMetadata::from).collect())
+    pub async fn list_keys(&self, caller: &UserContext) -> anyhow::Result<Vec<ApiKeyMetadata>> {
+        self.policy.identity(caller)?;
+        let records = self.db.all().await?;
+        let mut visible = Vec::new();
+        for record in records {
+            if self.policy.can_manage(caller, &record)? { visible.push(ApiKeyMetadata::from(&record)); }
+        }
+        Ok(visible)
+    }
+
+    fn token_expiry(&self, record: &ApiKeyRecord, now: i64) -> Option<usize> {
+        let ttl = self.jwt_ttl_secs.min(3600);
+        if ttl <= 0 { return None; }
+        let expiry = now.checked_add(ttl)?.min(record.expires_at.unwrap_or(i64::MAX));
+        (expiry > now).then(|| usize::try_from(expiry).ok()).flatten()
     }
 
     /// Validate a raw API key directly (for middleware use).
     ///
-    /// Returns the `UserClaims` if valid, or `None` if invalid/expired/revoked.
-    pub async fn validate_key(&self, raw_key: &str) -> anyhow::Result<Option<UserClaims>> {
+    /// Returns verified user context if valid, or `None` if invalid/expired/revoked.
+    pub async fn validate_key(&self, raw_key: &str) -> anyhow::Result<Option<UserContext>> {
         let active = self.db.all_active().await?;
         let now = now_unix();
 
         for record in active {
             if let Some(exp) = record.expires_at {
-                if now > exp {
+                if now >= exp {
                     continue;
                 }
             }
             if verify_key(raw_key, &record.key_hash)? {
-                let exp = (now + self.jwt_ttl_secs) as usize;
-                return Ok(Some(UserClaims {
+                self.policy.validate_record(&record)?;
+                let Some(exp) = self.token_expiry(&record, now) else { return Ok(None); };
+                let claims = UserClaims {
                     sub: record.subject.clone(),
                     name: Some(record.name.clone()),
                     roles: Some(record.roles.clone()),
-                    tenant_id: None,
+                    tenant_id: record.tenant_id.clone(),
                     uar_instance_id: None,
                     exp,
+                };
+                let tenant_id = record.tenant_id.as_deref().map(|tenant| TenantId::from_verified_key(VerifiedKeyTenantClaim(tenant)));
+                let authority = Some(VerifiedIdentity::new(record.issuer.as_deref(), &claims, tenant_id.clone(), super::claims::CredentialKind::ApiKey));
+                return Ok(Some(UserContext {
+                    host_authority: None, authority, user_id: record.subject.clone(),
+                    tenant_id,
+                    claims,
                 }));
             }
         }
@@ -385,156 +460,5 @@ fn now_unix() -> i64 {
 // Tests
 // ─────────────────────────────────────────────────────────────────────────────
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use jsonwebtoken::{Algorithm, DecodingKey, Validation};
-
-    fn make_service() -> ApiKeyService {
-        let storage: Arc<dyn ApiKeyStorage> = Arc::new(InMemoryApiKeyStorage::new());
-        ApiKeyService::new(storage, "test-secret")
-    }
-
-    #[tokio::test]
-    async fn test_create_and_exchange() {
-        let svc = make_service();
-        let resp = svc
-            .create_key(
-                "user-1",
-                CreateKeyRequest {
-                    name: "my-key".to_string(),
-                    roles: None,
-                    expires_in_secs: None,
-                },
-            )
-            .await
-            .unwrap();
-
-        assert!(!resp.raw_key.is_empty());
-        assert_eq!(resp.metadata.subject, "user-1");
-
-        // Exchange for JWT
-        let jwt = svc.exchange_for_jwt(&resp.raw_key).await.unwrap();
-        assert!(jwt.is_some(), "should produce a JWT");
-    }
-
-    #[tokio::test]
-    async fn exchanged_jwt_contains_configured_issuer_and_audience() {
-        #[derive(Deserialize)]
-        struct RegisteredClaims {
-            iss: String,
-            aud: String,
-        }
-
-        let storage: Arc<dyn ApiKeyStorage> = Arc::new(InMemoryApiKeyStorage::new());
-        let svc = ApiKeyService::new(storage, "test-secret").with_registered_claims(
-            Some("uar-issuer".to_owned()),
-            Some("uar-clients".to_owned()),
-        );
-        let created = svc
-            .create_key(
-                "user-claims",
-                CreateKeyRequest {
-                    name: "registered-claims".to_owned(),
-                    roles: None,
-                    expires_in_secs: None,
-                },
-            )
-            .await
-            .expect("API key must be created");
-        let token = svc
-            .exchange_for_jwt(&created.raw_key)
-            .await
-            .expect("API key exchange must run")
-            .expect("API key exchange must mint a JWT");
-
-        let mut validation = Validation::new(Algorithm::HS256);
-        validation.set_issuer(&["uar-issuer"]);
-        validation.set_audience(&["uar-clients"]);
-        let decoded = jwt::decode::<RegisteredClaims>(
-            token,
-            &DecodingKey::from_secret(b"test-secret"),
-            &validation,
-        )
-        .expect("the exchanged JWT must satisfy configured registered claims");
-        assert_eq!(decoded.claims.iss, "uar-issuer");
-        assert_eq!(decoded.claims.aud, "uar-clients");
-    }
-
-    #[tokio::test]
-    async fn test_invalid_key_rejected() {
-        let svc = make_service();
-        let jwt = svc.exchange_for_jwt("not-a-real-key").await.unwrap();
-        assert!(jwt.is_none());
-    }
-
-    #[tokio::test]
-    async fn test_revoked_key_rejected() {
-        let svc = make_service();
-        let resp = svc
-            .create_key(
-                "user-2",
-                CreateKeyRequest {
-                    name: "revoke-me".to_string(),
-                    roles: None,
-                    expires_in_secs: None,
-                },
-            )
-            .await
-            .unwrap();
-
-        svc.revoke_key(&resp.metadata.id).await.unwrap();
-        let jwt = svc.exchange_for_jwt(&resp.raw_key).await.unwrap();
-        assert!(jwt.is_none(), "revoked key should not produce JWT");
-    }
-
-    #[tokio::test]
-    async fn test_list_keys() {
-        let svc = make_service();
-        svc.create_key(
-            "user-3",
-            CreateKeyRequest {
-                name: "k1".to_string(),
-                roles: None,
-                expires_in_secs: None,
-            },
-        )
-        .await
-        .unwrap();
-        svc.create_key(
-            "user-3",
-            CreateKeyRequest {
-                name: "k2".to_string(),
-                roles: None,
-                expires_in_secs: None,
-            },
-        )
-        .await
-        .unwrap();
-
-        let keys = svc.list_keys("user-3").await.unwrap();
-        assert_eq!(keys.len(), 2);
-    }
-
-    #[tokio::test]
-    async fn test_validate_key_directly() {
-        let svc = make_service();
-        let resp = svc
-            .create_key(
-                "user-4",
-                CreateKeyRequest {
-                    name: "direct-validate".to_string(),
-                    roles: Some(vec!["admin".to_string()]),
-                    expires_in_secs: None,
-                },
-            )
-            .await
-            .unwrap();
-
-        let claims = svc.validate_key(&resp.raw_key).await.unwrap();
-        assert!(claims.is_some());
-        let claims = claims.unwrap();
-        assert_eq!(claims.sub, "user-4");
-        assert_eq!(claims.roles.unwrap(), vec!["admin"]);
-    }
-}
+#[cfg(all(test, feature = "server"))]
+mod tests;

@@ -496,6 +496,7 @@ async fn model_activation_updates_the_next_step_and_missing_is_a_typed_result() 
             .expect("test MCP environment is valid"),
     );
     let user = UserContext {
+        host_authority: None, authority: None,
         user_id: "skill-test-user".to_string(),
         tenant_id: None,
         claims: UserClaims {

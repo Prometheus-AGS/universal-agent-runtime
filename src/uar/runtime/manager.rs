@@ -273,13 +273,13 @@ struct RunEventEmitter {
         Option<Arc<std::sync::Mutex<crate::uar::runtime::thread::execution::RunCompletionCapture>>>,
     runs: std::sync::Weak<RwLock<ActiveRunMap>>,
     secret_scrubber: crate::uar::runtime::turn::host::RunSecretScrubber,
+    admission_projection: Arc<Mutex<crate::uar::runtime::turn::host::AdmissionProjection>>,
 }
 
 impl RunEventEmitter {
     async fn emit(&self, mut event: NormalizedEvent) {
-        if let NormalizedEvent::Error { message, .. } = &mut event {
-            *message = self.secret_scrubber.scrub(message);
-        }
+        let Some(projected) = self.admission_projection.lock().await.project_or_stage(event) else { return; };
+        event = projected;
         if matches!(
             &event,
             NormalizedEvent::RunDone { .. }
@@ -539,11 +539,10 @@ async fn apply_credential_layer(
                 "No per-tenant credential; using env/config key"
             );
         }
-        Err(e) => {
-            // Do not leak the key; surface provider/scope only.
+        Err(_) => {
+            // Resolver failures have no complete captured credential corpus.
             tracing::warn!(
                 provider = %provider_id,
-                error = %e,
                 "Credential resolution failed; falling back to env/config key"
             );
         }
@@ -672,16 +671,6 @@ async fn await_approval(
         Ok(Err(_)) => ApprovalWaitOutcome::ChannelClosed,
         Err(_) => ApprovalWaitOutcome::TimedOut,
     }
-}
-
-#[cfg(test)]
-async fn resolve_pending_approval(
-    approvals: &Mutex<HashMap<String, oneshot::Sender<bool>>>,
-    run_id: &str,
-    approved: bool,
-) -> bool {
-    let sender = approvals.lock().await.remove(run_id);
-    sender.is_some_and(|sender| sender.send(approved).is_ok())
 }
 
 /// RAII guard tied to the lifetime of an SSE subscription.
@@ -1697,15 +1686,8 @@ impl RunManager {
         self
     }
 
-    /// Resolve a pending tool-call approval for the given run.
-    /// Returns `true` if an approval was pending and the decision was delivered,
-    /// `false` if no pending approval was found for that run_id.
-    pub async fn resolve_approval(&self, run_id: &str, approved: bool) -> bool {
-        self.resolve_approval_request(run_id, None, approved).await
-    }
-
     /// Resolve an exact approval request after authenticating the root owner.
-    /// Child requests require an ID; run-only decisions serve legacy roots.
+    /// Missing identity fails closed for both root and descendant requests.
     pub async fn resolve_approval_request(
         &self,
         run_id: &str,
@@ -2554,7 +2536,9 @@ impl RunManager {
             }
             return run_id;
         }
-        self.execute_request_inner(request, run_id, None, None, None, None)
+        // Keep the large kernel future out of the HTTP admission future's
+        // inline state, as the captured child-run entry point already does.
+        Box::pin(self.execute_request_inner(request, run_id, None, None, None, None))
             .await
     }
 
@@ -2618,15 +2602,7 @@ impl RunManager {
                         conversation_id: request.session_id.clone(),
                         user_id: request.user_id.clone(),
                         status: RunStatus::Error,
-                        context: serde_json::json!({
-                            "agent_snapshot": request.artifact.snapshot(
-                                if request.host_resources_marker.artifact_inline {
-                                    "inline"
-                                } else {
-                                    "embedded"
-                                }
-                            ),
-                        }),
+                        context: serde_json::json!({ "agent_snapshot": null }),
                     },
                     verified_owner: request.verified_owner.clone(),
                     approval_root_run_id: None,
@@ -2673,6 +2649,7 @@ impl RunManager {
                 completion: None,
                 runs: Arc::downgrade(&self.active_runs),
                 secret_scrubber: request.host_secret_scrubber.clone(),
+                admission_projection: Default::default(),
             }
         };
         emitter
@@ -2989,6 +2966,7 @@ impl RunManager {
             completion: completion.map(|capture| Arc::new(std::sync::Mutex::new(capture))),
             runs: Arc::downgrade(&self.active_runs),
             secret_scrubber: host_secret_scrubber,
+            admission_projection: Default::default(),
         };
         let completion_guard = crate::uar::runtime::thread::execution::RunCompletionGuard::new(
             emitter.completion.clone(),
@@ -3107,6 +3085,7 @@ impl RunManager {
         // or descendant. Policy resolution below uses this exact frozen catalog
         // when the ingress did not already supply an effective policy.
         if let Some(resources) = &mcp_resources {
+            emitter.secret_scrubber.extend(resources.secret_scrubber());
             let invalid_capture = verified_owner.as_ref() != Some(resources.owner())
                 || inherited.is_some()
                 || working_directory
@@ -3267,11 +3246,28 @@ impl RunManager {
         let owner_id = user_id
             .clone()
             .unwrap_or_else(|| crate::session::ANONYMOUS_SESSION_OWNER.to_string());
-        let session = if let Some(id) = session_id {
+        let retained_session = if let Some(id) = session_id {
             self.sessions.get_or_create_for_user(&id, &owner_id)
         } else {
             self.sessions.create_for_user(&owner_id)
         };
+        // Routing reads a private staged view. Admission has not yet captured
+        // the selected provider corpus, so shared history must remain untouched.
+        let session = crate::session::Session::from_state(retained_session.to_state());
+        // SessionState excludes host-only world-state records. Restore those
+        // records on the detached view without publishing shared history.
+        if let Some(instructions) = retained_session.project_instructions() {
+            session.record_world_state(
+                &crate::uar::runtime::world_state::contributor::WorldStateUpdate {
+                    fragments: Vec::new(),
+                    messages: Vec::new(),
+                    baseline: retained_session.world_state_baseline(),
+                },
+                instructions,
+            );
+        }
+        let staged_replaces_history = supplied_history.is_some();
+        let mut staged_seed: Option<Vec<Message>> = None;
 
         // 1b. Seed prior turns atomically. A checkpoint or inherited child
         // history is applied later after its authorization check and always
@@ -3300,6 +3296,7 @@ impl RunManager {
             });
             let candidate = host_history.as_ref().or(embedded_history.as_ref());
             if let Some(candidate) = candidate {
+                staged_seed = Some(candidate.clone());
                 match session.seed_if_empty(candidate) {
                     crate::session::SeedOutcome::Seeded { messages } => {
                         history_status = crate::uar::runtime::turn::host::HistorySeedStatus::Seeded;
@@ -3533,9 +3530,7 @@ impl RunManager {
                 status: RunStatus::Error,
                 context: serde_json::json!({
                     "error_code": "checkpoint_authorization_revoked",
-                    "agent_snapshot": artifact.snapshot(
-                        if host_resources_marker.artifact_inline { "inline" } else { "embedded" }
-                    ),
+                    "agent_snapshot": null,
                 }),
             };
             {
@@ -3598,7 +3593,7 @@ impl RunManager {
         let user_id_for_creds = user_id.clone();
         let session_id_for_creds = Some(session.id().to_string());
 
-        let dialogue = RunDialogue(crate::session::Session::from_state(session.to_state()));
+        let dialogue = redacted_checkpoint_dialogue(&session);
         let effective_service_binding = service_binding.clone();
         let effective_collaboration_binding = collaboration_binding.as_ref().map(|binding| {
             serde_json::json!({
@@ -3613,6 +3608,8 @@ impl RunManager {
         } else {
             "embedded"
         });
+        let mut retained_policy = effective_policy.clone();
+        retained_policy.warnings.clear();
         let run = Run {
             run_id: run_id.clone(),
             agent_id: artifact.id.clone(),
@@ -3620,12 +3617,12 @@ impl RunManager {
             user_id,
             status: RunStatus::Running,
             context: serde_json::json!({
-                "input": input,
-                "effective_run_policy": effective_policy,
+                "input": null,
+                "effective_run_policy": retained_policy,
                 "presentation_negotiation": presentation_snapshot.negotiation(),
                 "presentation_selection": presentation_snapshot.selection(),
                 "presentation_templates": presentation_snapshot.identities(),
-                "agent_snapshot": agent_snapshot,
+                "agent_snapshot": null,
                 "host_resources": host_resources_marker,
                 "effective_service_binding": effective_service_binding.clone(),
                 "effective_collaboration_binding": effective_collaboration_binding,
@@ -3795,7 +3792,7 @@ impl RunManager {
         } else {
             self.project_instructions_config.clone()
         };
-        let world_state = match working_directory
+        let mut world_state = match working_directory
             .map(Ok)
             .unwrap_or_else(std::env::current_dir)
             .and_then(|cwd| {
@@ -3808,7 +3805,7 @@ impl RunManager {
                     Arc::clone(&self.world_state_clock),
                 )
             }) {
-            Ok(world_state) => Arc::new(world_state),
+            Ok(world_state) => world_state,
             Err(error) => {
                 if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
                     state.run.status = RunStatus::Error;
@@ -3952,6 +3949,9 @@ impl RunManager {
         ));
 
         // RAG Retrieval - scoped to agent's configured knowledge bases
+        // Routing precedes generation-client resolution. Project with only the
+        // auth/host/MCP corpus captured now; later keys cannot protect this call.
+        let routing_input = emitter.secret_scrubber.scrub(&input);
         if !effective_policy.knowledge_bases.ids.is_empty()
             && let Some(db) = &self.persistence
         {
@@ -4025,7 +4025,7 @@ impl RunManager {
                 let (top_k, min_score) =
                     crate::uar::domain::knowledge::retrieval_params(&kb_config_refs);
                 RagRetrievalPipeline::new()
-                    .retrieve(&backend, &kb_ids.join(","), &input, top_k, min_score)
+                    .retrieve(&backend, &kb_ids.join(","), &routing_input, top_k, min_score)
                     .await
             };
 
@@ -4068,27 +4068,47 @@ impl RunManager {
                         }
                     }
                 }
-                Err(e) => tracing::error!("RAG retrieval pipeline failed: {:?}", e),
+                Err(_) => tracing::error!("RAG retrieval pipeline failed during private admission"),
             }
         }
 
         use crate::uar::domain::skills::{SkillCandidate, SkillMatchResult};
         let skill_bindings = match &inherited {
             Some(bindings) => Arc::clone(&bindings.skills),
-            None => Arc::new(
-                crate::uar::runtime::turn::bindings::RunSkillBindings::capture(
-                    &self.skills,
-                    self.skill_service.as_deref(),
-                )
-                .await,
-            ),
+            None => match crate::uar::runtime::turn::bindings::RunSkillBindings::capture(
+                &self.skills,
+                self.skill_service.as_deref(),
+            )
+            .await
+            {
+                Ok(bindings) => Arc::new(bindings),
+                Err(_) => {
+                    if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                        state.run.status = RunStatus::Error;
+                    }
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: run_id.clone(),
+                            code: "skill_selection_unavailable".into(),
+                            message: "Skill selection could not be reconciled; read selection state before retrying".into(),
+                        })
+                        .await;
+                    emitter
+                        .emit(NormalizedEvent::RunDone {
+                            run_id: run_id.clone(),
+                        })
+                        .await;
+                    self.run_cancellations.write().await.remove(&run_id);
+                    return run_id;
+                }
+            },
         };
         let (candidates, skill_selection_method, threshold, margin, top_k) = if let Some(matching) =
             &skill_bindings.matching
         {
             let config = &matching.config;
             let result = matching
-                .match_skills_scoped(&input, Some(&artifact.id), Some(session.id()))
+                .match_skills_scoped(&routing_input, Some(&artifact.id), Some(session.id()))
                 .await;
             (
                 result.candidates,
@@ -4101,7 +4121,7 @@ impl RunManager {
             let registry = skill_bindings.registry.read().await;
             let (candidates, method) = match self
                 .intent_classifier
-                .classify(&input, &[], &registry)
+                .classify(&routing_input, &[], &registry)
                 .await
             {
                 Ok(result) => (
@@ -4118,8 +4138,8 @@ impl RunManager {
                     format!("legacy_classifier.{:?}", self.classifier_config.backend)
                         .to_lowercase(),
                 ),
-                Err(error) => {
-                    tracing::warn!(%error, "Intent classification failed; scoring fallback candidates");
+                Err(_) => {
+                    tracing::warn!("Intent classification failed; scoring fallback candidates");
                     let mut candidates = HashMap::<String, SkillCandidate>::new();
                     for matcher in [
                         self.tag_matcher.as_ref()
@@ -4127,7 +4147,7 @@ impl RunManager {
                         self.vector_matcher.as_ref()
                             as &dyn crate::uar::domain::matching::SkillMatcher,
                     ] {
-                        if let Ok(matches) = matcher.match_skills(&input, &registry).await {
+                        if let Ok(matches) = matcher.match_skills(&routing_input, &registry).await {
                             for candidate in matches {
                                 let entry = candidates.entry(candidate.skill_id).or_insert(
                                     SkillCandidate {
@@ -4458,7 +4478,7 @@ impl RunManager {
             );
             context.insert(
                 "activation_failures".to_string(),
-                serde_json::json!(&attachment_failures),
+                serde_json::Value::Null,
             );
         }
         for skill in &matched_skills {
@@ -4474,8 +4494,8 @@ impl RunManager {
             .await
             {
                 Ok(_) => {}
-                Err(error) => {
-                    tracing::warn!(%error, failure = ?error, "Implicit skill activation refused")
+                Err(_) => {
+                    tracing::warn!("Implicit skill activation refused during private admission")
                 }
             }
         }
@@ -4805,6 +4825,7 @@ impl RunManager {
                         run_credentials.as_ref(),
                         profiles,
                         pricing_models,
+                        &mut emitter.secret_scrubber,
                     )
                     .await
                 }
@@ -4814,10 +4835,15 @@ impl RunManager {
         let model_bindings = match model_bindings_result {
             Ok(bindings) => bindings,
             Err(error) => {
-                let error = run_credentials.as_ref().map_or_else(
-                    || error.to_string(),
-                    |credentials| credentials.scrub(&error.to_string()),
-                );
+                // Constructor-owned/opaque credentials may not be captured.
+                // Preserve only public contract codes at this early failure seam.
+                let error = match error.to_string().as_str() {
+                    "TEAM_PROFILE_UNSUPPORTED" => "TEAM_PROFILE_UNSUPPORTED",
+                    "TEAM_ROUTE_PROFILE_MISMATCH" => "TEAM_ROUTE_PROFILE_MISMATCH",
+                    "TEAM_REVISION_CONFLICT" => "TEAM_REVISION_CONFLICT",
+                    "TEAM_REASONING_UNSUPPORTED" => "TEAM_REASONING_UNSUPPORTED",
+                    _ => "Run model binding failed",
+                }.to_owned();
                 if !is_team_attempt {
                     tracing::error!(%error, "Failed to capture run model bindings");
                 }
@@ -4856,12 +4882,72 @@ impl RunManager {
 
         let run_llm_config = model_bindings.config().clone();
 
+        // The retained artifact is execution authority, not a display copy.
+        // Refuse this unsupported case instead of changing its revision/content.
+        let executable_snapshot = serde_json::to_value(&agent_snapshot);
+        let admission_error = match &executable_snapshot {
+            Ok(snapshot) if emitter.secret_scrubber.contains_captured(snapshot) => Some("SECRET_IN_EXECUTABLE_ARTIFACT"),
+            Err(_) => Some("EXECUTABLE_ARTIFACT_UNAVAILABLE"),
+            _ => None,
+        };
+        let staged_events = if let Some(code) = admission_error {
+            Err(code)
+        } else {
+            emitter.admission_projection.lock().await.complete(emitter.secret_scrubber.clone())
+        };
+        let staged_events = match staged_events {
+            Ok(events) => events,
+            Err(code) => {
+                if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                    state.run.status = RunStatus::Error;
+                }
+                emitter.emit(NormalizedEvent::Error { run_id: run_id.clone(), code: code.into(),
+                    message: "Protected admission content cannot be published".into() }).await;
+                emitter.emit(NormalizedEvent::RunDone { run_id: run_id.clone() }).await;
+                self.run_cancellations.write().await.remove(&run_id);
+                return run_id;
+            }
+        };
+        world_state.bind_retained_session(retained_session.clone(), emitter.secret_scrubber.clone());
+        let world_state = Arc::new(world_state);
+        let mut projected_history = session.messages();
+        for message in &mut projected_history { emitter.secret_scrubber.project_message(message); }
+        let projected_system = session.system_prompt().map(|text| emitter.secret_scrubber.scrub(&text));
+        session.clear();
+        for message in &projected_history { session.add_message(message.clone()); dialogue.0.add_message(message.clone()); }
+        if let Some(prompt) = projected_system { session.set_system_prompt(prompt.clone()); dialogue.0.set_system_prompt(prompt); }
+        // Preserve shared session identity and concurrent append authority. A
+        // normal admission publishes only its seed-if-empty and new input;
+        // authorized checkpoint history retains its existing replace semantics.
+        if staged_replaces_history {
+            retained_session.clear();
+            for message in &projected_history { retained_session.add_message(message.clone()); }
+        } else {
+            if let Some(mut seed) = staged_seed {
+                for message in &mut seed { emitter.secret_scrubber.project_message(message); }
+                retained_session.seed_if_empty(&seed);
+            }
+            if append_input { retained_session.add_user_message(emitter.secret_scrubber.scrub(&input)); }
+        }
+        emitter.secret_scrubber.project_fragments(&mut prompt_fragments);
+        if let Some(state) = self.active_runs.write().await.get_mut(&run_id)
+            && let Some(context) = state.run.context.as_object_mut() {
+            context.insert("input".into(), emitter.secret_scrubber.scrub(&input).into());
+            context.insert("agent_snapshot".into(), executable_snapshot.expect("validated executable snapshot"));
+            if let Some(policy) = context.get_mut("effective_run_policy").and_then(|policy| policy.as_object_mut()) {
+                policy.insert("warnings".into(), emitter.secret_scrubber.project_value(serde_json::json!(&effective_policy.warnings)));
+            }
+            context.insert("activation_failures".into(), emitter.secret_scrubber.project_value(serde_json::json!(&attachment_failures)));
+        }
+        for event in staged_events { emitter.emit(event).await; }
+
         // Capture before adding root-local handlers: retaining those handlers
         // here would form service -> kernel -> registry -> service ownership.
         let captured_native = Arc::new(native_skills.filtered(None).await);
         let delegation_lifetime = crate::uar::runtime::turn::bindings::RunDelegationLifetime(
             verified_owner.clone().filter(|_| !child_run).map(|owner| {
                 Arc::new(crate::uar::runtime::turn::bindings::RunDelegationBindings {
+                    secret_scrubber: emitter.secret_scrubber.clone(),
                     collaboration_binding: collaboration_binding.clone(),
                     instance_binding: instance_binding.clone(),
                     owner,
@@ -5065,6 +5151,8 @@ impl RunManager {
         } else {
             messages.extend(session.messages());
         }
+        for message in &mut messages { emitter.secret_scrubber.project_message(message); }
+        emitter.secret_scrubber.project_fragments(&mut prompt_fragments);
         let unrendered_history = messages.clone();
         if harness_config.mode != crate::config::HarnessMode::Typed {
             messages.insert(
@@ -5295,7 +5383,7 @@ impl RunManager {
         } else {
             None
         };
-        let (messages, reduce_report, world_update) =
+        let (mut messages, reduce_report, world_update) =
             if let Some((mut history, report)) = legacy_reduction {
                 let update = match world_contributor.baseline.prepare(
                     &world_contributor.snapshot,
@@ -5341,6 +5429,7 @@ impl RunManager {
         if let Some(update) = &world_update {
             world_state.commit(update).await;
         }
+        for message in &mut messages { emitter.secret_scrubber.project_message(message); }
         if let Some(act) = reduce_report.context_action {
             emitter.emit(NormalizedEvent::ContextAction(act)).await;
         }
@@ -5392,6 +5481,7 @@ impl RunManager {
                 Retention::Turn, format!("{disclosure}\nInclude this exact disclosure in any team message. Office names grant no powers; no subdelegation is permitted."),
             ));
         }
+        emitter.secret_scrubber.project_fragments(&mut prompt_fragments);
         let mut manifest_budgets = PromptBudgets::for_rendered(&render_with_options(
             &prompt_fragments,
             RenderOptions {
@@ -5420,7 +5510,7 @@ impl RunManager {
             manifest_budgets,
             matched_skills.iter().map(|skill| skill.skill_id.clone()),
             selected_tool_names,
-            effective_policy.warnings.clone(),
+            effective_policy.warnings.iter().map(|warning| emitter.secret_scrubber.scrub(warning)),
         );
         let turn_manifest_value = serde_json::json!(&turn_manifest);
         if let Some(state) = self.active_runs.write().await.get_mut(&run_id)
@@ -5631,6 +5721,7 @@ impl RunManager {
                 .with_tool_admission(Arc::clone(&tool_admission))
                 .with_resolved_turn(Arc::clone(&resolved_turn))
                 .with_canonical_receipt_store(self.persistence.clone())
+                .with_secret_scrubber(emitter.secret_scrubber.clone())
                 .with_team_model_handoff(collaboration_binding.clone().filter(|b|b.team_attempt.is_some()))
                 .with_world_state(Arc::clone(&world_state))
                 .with_skill_activation(
@@ -5895,7 +5986,7 @@ impl RunManager {
         let execute_run_id = run_id.clone();
         let execute_agent_id = artifact.id.clone();
         let emitter = emitter.clone();
-        let execution_session = session.clone();
+        let execution_session = retained_session.clone();
         let skill_service_for_evolution = self.skill_service.clone();
         let skill_evolution_cfg = self.skill_evolution_config.clone();
         let cost_budget_for_run = self.cost_budget.clone();
@@ -6191,7 +6282,7 @@ impl RunManager {
                     let output_key = format!("_agent_output_{route}");
                     match final_state.get::<String>(&output_key) {
                         Some(output) => {
-                            let attributed_output = format!("[{route}]\n\n{output}");
+                            let attributed_output = emitter.secret_scrubber.scrub(&format!("[{route}]\n\n{output}"));
                             dialogue.record(&execution_session, |history| {
                                 history.add_assistant_message(attributed_output.clone());
                             });
@@ -6288,6 +6379,8 @@ impl RunManager {
             let mut total_cache_read_tokens: u32 = 0;
 
             // 2. Execute Orchestrator
+            #[cfg(feature = "bauar-native-admission-gate")]
+            let native_admission_gate = orchestrator.native_admission_gate();
             match orchestrator.chat_with_history(messages).await {
                 Ok(stream) => {
                     futures::pin_mut!(stream);
@@ -6870,6 +6963,15 @@ impl RunManager {
                 );
             }
 
+            // The dispatch future has been dropped and ordinary cleanup has completed.
+            #[cfg(feature = "bauar-native-admission-gate")]
+            if native_admission_gate.finalize(run_cancelled, run_failed).await.is_err() {
+                emitter.emit(NormalizedEvent::Error {
+                    run_id: execute_run_id.clone(),
+                    code: "NATIVE_ADMISSION_GATE_FINALIZATION_FAILED".into(),
+                    message: "Native acceptance observer could not finalize".into(),
+                }).await;
+            }
             // Settle cost for any run that reported usage, cancelled or not, so a
             // cancelled run's spend reaches the durable ledger and the event stream.
             let cost_usd_estimate = if has_usage {
@@ -7364,7 +7466,7 @@ pub struct EffectiveConfig {
 mod approval_gate_tests {
     #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::{
-        ApprovalWaitOutcome, await_approval, governance_bypass_decision, resolve_pending_approval,
+        ApprovalWaitOutcome, await_approval, governance_bypass_decision,
     };
     use crate::llm::ToolApprovalResult;
     use crate::uar::governance::runtime_control::governance_runtime_handles;
@@ -7417,17 +7519,6 @@ mod approval_gate_tests {
             await_approval(timeout_rx, Duration::from_millis(1)).await,
             ApprovalWaitOutcome::TimedOut
         );
-    }
-
-    #[tokio::test]
-    async fn approval_resolution_is_single_use() {
-        let approvals = Mutex::new(HashMap::new());
-        let (sender, receiver) = oneshot::channel();
-        approvals.lock().await.insert("run-1".to_string(), sender);
-
-        assert!(resolve_pending_approval(&approvals, "run-1", true).await);
-        assert!(!resolve_pending_approval(&approvals, "run-1", false).await);
-        assert_eq!(receiver.await, Ok(true));
     }
 
     #[test]

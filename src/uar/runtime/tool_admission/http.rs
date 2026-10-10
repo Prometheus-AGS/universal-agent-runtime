@@ -13,7 +13,7 @@ use super::{
     AdmissionCancellationOutcome, AdmissionCancellationReason, AdmissionTerminalOutcome,
     AdmittedToolInvocation, HostAdmissionBinding, HostAdmissionPreparation, HostAdmissionReceipt,
     HostToolAdmissionPort, LocalAdmissionDisposition, PreparedToolInvocation,
-    TOOL_ADMISSION_PROTOCOL_VERSION,
+    TOOL_ADMISSION_PROTOCOL_VERSION, ToolExecutionKind,
 };
 
 /// Request-owned paired-host admission endpoint. Secret fields never implement
@@ -46,6 +46,7 @@ pub struct HttpHostToolAdmissionPort {
     prepare_url: Url,
     resolve_url: Url,
     claim_url: Url,
+    native_claim_url: Url,
     cancel_url: Url,
     finish_url: Url,
     headers: HeaderMap,
@@ -68,7 +69,7 @@ impl HttpHostToolAdmissionPort {
     pub fn from_input(input: RunToolAdmissionInput) -> anyhow::Result<Self> {
         anyhow::ensure!(
             input.version == TOOL_ADMISSION_PROTOCOL_VERSION,
-            "Paired host does not support tool admission protocol v1"
+            "Paired host does not support tool admission protocol v2"
         );
         anyhow::ensure!(
             !input.host_epoch.trim().is_empty() && input.host_epoch.len() <= 128,
@@ -82,8 +83,8 @@ impl HttpHostToolAdmissionPort {
                 && base.query().is_none()
                 && base.fragment().is_none()
                 && is_loopback(&base)
-                && base.path().trim_end_matches('/') == "/uar/admission/v1",
-            "Paired host admission URL must be the private loopback v1 route"
+                && base.path().trim_end_matches('/') == "/uar/admission/v2",
+            "Paired host admission URL must be the private loopback v2 route"
         );
         let mut headers = HeaderMap::new();
         for (name, value) in input.headers {
@@ -99,15 +100,17 @@ impl HttpHostToolAdmissionPort {
             "Paired host admission requires authorization"
         );
         let mut prepare_url = base.clone();
-        prepare_url.set_path("/uar/admission/v1/prepare");
+        prepare_url.set_path("/uar/admission/v2/prepare");
         let mut resolve_url = base.clone();
-        resolve_url.set_path("/uar/admission/v1/resolve");
+        resolve_url.set_path("/uar/admission/v2/resolve");
         let mut cancel_url = base;
-        cancel_url.set_path("/uar/admission/v1/cancel");
+        cancel_url.set_path("/uar/admission/v2/cancel");
         let mut claim_url = cancel_url.clone();
-        claim_url.set_path("/uar/admission/v1/claim");
+        claim_url.set_path("/uar/admission/v2/claim");
+        let mut native_claim_url = cancel_url.clone();
+        native_claim_url.set_path("/uar/admission/v2/claim-native");
         let mut finish_url = cancel_url.clone();
-        finish_url.set_path("/uar/admission/v1/finish");
+        finish_url.set_path("/uar/admission/v2/finish");
         let client = reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
             .build()?;
@@ -119,6 +122,7 @@ impl HttpHostToolAdmissionPort {
             prepare_url,
             resolve_url,
             claim_url,
+            native_claim_url,
             cancel_url,
             finish_url,
             headers,
@@ -190,7 +194,10 @@ impl HostToolAdmissionPort for HttpHostToolAdmissionPort {
             "Paired host rejected tool admission (HTTP {})",
             response.status().as_u16()
         );
-        let preparation = response.json::<HostAdmissionPreparation>().await?;
+        let preparation = response
+            .json::<HostAdmissionPreparation>()
+            .await
+            .map_err(|_| anyhow::anyhow!("Paired host admission preparation is invalid"))?;
         anyhow::ensure!(
             preparation.managed_mcp_metadata,
             "Paired host returned an unmanaged admission preparation"
@@ -225,7 +232,10 @@ impl HostToolAdmissionPort for HttpHostToolAdmissionPort {
         if !approved {
             return Ok(None);
         }
-        let receipt = response.json::<HostAdmissionReceipt>().await?;
+        let receipt = response
+            .json::<HostAdmissionReceipt>()
+            .await
+            .map_err(|_| anyhow::anyhow!("Paired host admission receipt is invalid"))?;
         anyhow::ensure!(
             receipt.managed_mcp_metadata,
             "Paired host returned an unmanaged admission receipt"
@@ -282,10 +292,50 @@ impl HostToolAdmissionPort for HttpHostToolAdmissionPort {
             "Paired host rejected tool admission claim (HTTP {})",
             response.status().as_u16()
         );
-        let receipt = response.json::<HostAdmissionReceipt>().await?;
+        let receipt = response
+            .json::<HostAdmissionReceipt>()
+            .await
+            .map_err(|_| anyhow::anyhow!("Paired host claim receipt is invalid"))?;
         anyhow::ensure!(
             receipt.managed_mcp_metadata,
             "Paired host returned an unmanaged claim receipt"
+        );
+        Ok(receipt)
+    }
+
+    async fn consume_native(
+        &self,
+        admitted: &AdmittedToolInvocation,
+    ) -> anyhow::Result<HostAdmissionReceipt> {
+        anyhow::ensure!(
+            admitted.prepared.execution_kind == ToolExecutionKind::RuntimeNative
+                && admitted.host_receipt.execution_kind == ToolExecutionKind::RuntimeNative,
+            "Native claim requires runtime-native authority"
+        );
+        let response = self
+            .client
+            .post(self.native_claim_url.clone())
+            .headers(self.headers.clone())
+            .json(&ClaimRequest {
+                admission_id: &admitted.host_receipt.admission_id,
+                invocation: admitted.prepared.as_ref(),
+                receipt: &admitted.host_receipt,
+            })
+            .send()
+            .await
+            .map_err(|_| anyhow::anyhow!("Native claim acknowledgment was not received"))?;
+        anyhow::ensure!(
+            response.status().is_success(),
+            "Paired host rejected native admission claim (HTTP {})",
+            response.status().as_u16()
+        );
+        let receipt = response
+            .json::<HostAdmissionReceipt>()
+            .await
+            .map_err(|_| anyhow::anyhow!("Native claim acknowledgment is invalid"))?;
+        anyhow::ensure!(
+            receipt == admitted.host_receipt && receipt.managed_mcp_metadata,
+            "Native claim acknowledgment changed the admission receipt"
         );
         Ok(receipt)
     }

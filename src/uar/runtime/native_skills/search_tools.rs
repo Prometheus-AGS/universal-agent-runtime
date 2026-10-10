@@ -13,6 +13,8 @@ pub const SEARCH_TOOLS_NAME: &str = "search_tools";
 #[derive(Debug)]
 pub struct SearchToolsTool {
     exposure: McpToolExposure,
+    #[cfg(feature = "bauar-native-admission-gate")]
+    gate_observer: Option<std::sync::Arc<super::search_tools_gate::NativeAdmissionGateObserver>>,
     thread_policy:
         Option<std::sync::Arc<crate::uar::runtime::thread::policy_intersection::ThreadPolicy>>,
 }
@@ -22,8 +24,20 @@ impl SearchToolsTool {
     pub fn new(exposure: McpToolExposure) -> Self {
         Self {
             exposure,
+            #[cfg(feature = "bauar-native-admission-gate")]
+            gate_observer: None,
             thread_policy: None,
         }
+    }
+
+    /// Attach the explicit observer only in the separate acceptance artifact.
+    #[cfg(feature = "bauar-native-admission-gate")]
+    pub(crate) fn with_gate_observer(
+        mut self,
+        observer: std::sync::Arc<super::search_tools_gate::NativeAdmissionGateObserver>,
+    ) -> Self {
+        self.gate_observer = Some(observer);
+        self
     }
 
     /// Capture this stream's host policy along with its discovery state.
@@ -81,6 +95,10 @@ impl NativeSkill for SearchToolsTool {
     }
 
     async fn execute(&self, args: Value) -> anyhow::Result<Value> {
+        #[cfg(feature = "bauar-native-admission-gate")]
+        if let Some(observer) = &self.gate_observer {
+            observer.record_native_body_entry().map_err(|code| anyhow::anyhow!(code))?;
+        }
         let query = args
             .get("query")
             .and_then(Value::as_str)

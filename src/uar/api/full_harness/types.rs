@@ -47,6 +47,7 @@ pub struct RetentionReceipt {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct RuntimeDescriptor {
+    pub event_cursor_profile: &'static str,
     pub profile: &'static str,
     pub runtime_epoch: String,
     pub recovery: &'static str,

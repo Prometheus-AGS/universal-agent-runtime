@@ -619,8 +619,67 @@ pub(crate) fn secret_value_matches(
     difference == 0
 }
 
+/// Identity admission policy is independent of network bind addresses.
+#[derive(Debug, Default, Deserialize, Clone, Copy, PartialEq, Eq, schemars::JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum DeploymentProfile {
+    #[default]
+    TrustedLocal,
+    Remote,
+}
+
+/// Supported verifier algorithms; tokens cannot choose a different policy.
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, schemars::JsonSchema)]
+pub enum JwtAlgorithm {
+    HS256,
+    RS256,
+}
+
+/// Operator-owned authorization for an exact verified identity and workspace.
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct WorkspaceAuthority {
+    pub issuer: String,
+    pub subject: String,
+    pub tenant_id: String,
+    pub workspace_id: String,
+}
+
+/// Explicit scoped key administrator; a role label alone never grants this power.
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ApiKeyAdminPrincipal {
+    pub issuer: String,
+    pub subject: String,
+    pub tenant_id: String,
+}
+
+/// Exact issuer-controlled service identity allowed to present host grants.
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct TrustedHostPrincipal {
+    pub issuer: String,
+    pub subject: String,
+    pub tenant_id: String,
+    pub host_id: String,
+}
+
 #[derive(Deserialize, Clone, schemars::JsonSchema)]
 pub struct SecurityConfig {
+    #[serde(default)]
+    pub deployment_profile: DeploymentProfile,
+    /// Required explicitly in remote mode; must agree with the selected verifier.
+    #[serde(default)]
+    pub jwt_algorithm: Option<JwtAlgorithm>,
+    #[serde(default)]
+    pub workspace_authorities: Vec<WorkspaceAuthority>,
+    /// Exact roles an authenticated caller may attenuate into a key.
+    #[serde(default = "SecurityConfig::default_api_key_delegable_roles")]
+    pub api_key_delegable_roles: Vec<String>,
+    #[serde(default)]
+    pub api_key_admin_principals: Vec<ApiKeyAdminPrincipal>,
+    #[serde(default)]
+    pub trusted_host_principals: Vec<TrustedHostPrincipal>,
     pub jwt_required: bool,
     /// The JWT signing secret. Wrapped in `SecretString` (rather than a
     /// plain `String`) so the value cannot be accidentally logged or
@@ -656,6 +715,9 @@ pub struct SecurityConfig {
 impl std::fmt::Debug for SecurityConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SecurityConfig")
+            .field("deployment_profile", &self.deployment_profile)
+            .field("jwt_algorithm", &self.jwt_algorithm)
+            .field("workspace_authority_count", &self.workspace_authorities.len())
             .field("jwt_required", &self.jwt_required)
             .field("jwt_secret", &REDACTED)
             .field("jwks_url", &self.jwks_url)
@@ -680,7 +742,58 @@ impl SecurityConfig {
         true
     }
 
+    pub fn default_api_key_delegable_roles() -> Vec<String> {
+        vec!["user".to_owned()]
+    }
+
+    pub fn is_remote(&self) -> bool {
+        self.deployment_profile == DeploymentProfile::Remote
+    }
+
+    /// Validate identity policy without reading or exposing credentials.
+    pub(crate) fn validate_identity_policy(&self) -> Result<(), &'static str> {
+        if self.api_key_delegable_roles.iter().any(|role| matches!(role.as_str(), "host-session" | "admin")) {
+            return Err("security.api_key_delegable_roles cannot contain reserved host-session or admin roles");
+        }
+        if self.api_key_admin_principals.iter().any(|entry| {
+            Some(entry.issuer.as_str()) != self.jwt_issuer.as_deref()
+                || [&entry.issuer, &entry.subject, &entry.tenant_id].iter()
+                    .any(|value| value.trim().is_empty() || value.as_str() != value.trim())
+        }) { return Err("security.api_key_admin_principals requires exact configured issuer/subject/tenant triples"); }
+        if self.trusted_host_principals.iter().any(|entry| {
+            Some(entry.issuer.as_str()) != self.jwt_issuer.as_deref()
+                || [&entry.issuer, &entry.subject, &entry.tenant_id, &entry.host_id].iter()
+                    .any(|value| value.trim().is_empty() || value.as_str() != value.trim())
+        }) { return Err("security.trusted_host_principals requires exact configured issuer/subject/tenant and host identifiers"); }
+        let expected = if self.jwks_url.is_some() { JwtAlgorithm::RS256 } else { JwtAlgorithm::HS256 };
+        if self.jwt_algorithm.is_some_and(|algorithm| algorithm != expected) {
+            return Err("security.jwt_algorithm does not match the configured verifier");
+        }
+        if !self.is_remote() { return Ok(()); }
+        if !self.jwt_required || !self.jwt_validate_nbf || self.jwt_algorithm.is_none()
+            || self.jwt_issuer.as_deref().is_none_or(|value| value.trim().is_empty())
+            || self.jwt_audience.as_deref().is_none_or(|value| value.trim().is_empty())
+            || self.jwks_url.as_deref().is_some_and(|value| value.trim().is_empty())
+        {
+            return Err("remote identity policy requires JWT, issuer, audience, algorithm and not-before validation");
+        }
+        if self.jwks_url.is_none() && (secrecy::ExposeSecret::expose_secret(&self.jwt_secret).is_empty()
+            || secrecy::ExposeSecret::expose_secret(&self.jwt_secret) == FALLBACK_JWT_SECRET)
+        {
+            return Err("remote shared-secret verification requires a deliberate signing secret");
+        }
+        if self.workspace_authorities.is_empty() || self.workspace_authorities.iter().any(|entry| {
+            Some(entry.issuer.as_str()) != self.jwt_issuer.as_deref()
+                || [&entry.issuer, &entry.subject, &entry.tenant_id, &entry.workspace_id]
+                    .iter().any(|value| value.trim().is_empty() || value.as_str() != value.trim())
+        }) {
+            return Err("remote identity policy requires exact issuer/subject/tenant/workspace mappings");
+        }
+        Ok(())
+    }
+
     pub(crate) fn validate(&self) -> Result<(), config::ConfigError> {
+        self.validate_identity_policy().map_err(|message| config::ConfigError::Message(message.to_owned()))?;
         if self.jwt_required
             && secrecy::ExposeSecret::expose_secret(&self.jwt_secret) == FALLBACK_JWT_SECRET
         {
@@ -2360,6 +2473,12 @@ persistence:
     #[test]
     fn protected_settings_require_a_configured_admin_key() {
         let config = SecurityConfig {
+            deployment_profile: Default::default(),
+            jwt_algorithm: None,
+            workspace_authorities: Vec::new(),
+            api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
+            api_key_admin_principals: Vec::new(),
+            trusted_host_principals: Vec::new(),
             jwt_required: false,
             jwt_secret: FALLBACK_JWT_SECRET.to_owned().into(),
             jwks_url: None,
@@ -2379,6 +2498,12 @@ persistence:
     #[test]
     fn protected_settings_accept_a_configured_admin_key() {
         let config = SecurityConfig {
+            deployment_profile: Default::default(),
+            jwt_algorithm: None,
+            workspace_authorities: Vec::new(),
+            api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
+            api_key_admin_principals: Vec::new(),
+            trusted_host_principals: Vec::new(),
             jwt_required: false,
             jwt_secret: FALLBACK_JWT_SECRET.to_owned().into(),
             jwks_url: None,

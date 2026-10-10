@@ -599,6 +599,7 @@ impl CapturedThreadKernel {
         let mut request = RunExecutionRequest::new(turn.original_artifact, input)
             .with_verified_owner(self.resources.owner.clone());
         request.session_id = Some(thread.thread_id.clone());
+        request.host_secret_scrubber = self.resources.secret_scrubber.clone();
         request.inherited_history = Some(turn.messages);
         request.service_binding = self.resources.service_binding.clone();
         let run_id = thread

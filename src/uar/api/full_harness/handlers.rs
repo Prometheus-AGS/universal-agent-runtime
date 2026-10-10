@@ -1,3 +1,4 @@
+use crate::uar::security::credential_capture::AuthenticatedCredentialCapture;
 use std::sync::Arc;
 
 use axum::{
@@ -61,6 +62,7 @@ async fn admit_task(
     Extension(user): Extension<UserContext>,
     headers: HeaderMap,
     host: Option<Extension<HostAuthenticated>>,
+    credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
     delegated: Option<Extension<crate::uar::security::delegation_grants::DelegationAuthenticated>>,
     Json(mut body): Json<Value>,
 ) -> Result<(StatusCode, Json<TaskReceipt>), ApiError> {
@@ -124,6 +126,7 @@ async fn admit_task(
             run_request,
             Some(receipt.run_id.clone()),
             context,
+            credential_capture.map(|Extension(capture)| capture),
         )
         .await
     }.await;
@@ -258,7 +261,7 @@ async fn stream_task(
     }
     let replay_terminal = run_terminal || replay.last().is_some_and(is_terminal_stream_event);
     if replay_terminal {
-        return Ok(super::stream::build_response(tokio_stream::iter(replay), Arc::clone(&state.authority), id).into_response());
+        return Ok(super::stream::build_response(tokio_stream::iter(replay), Arc::clone(&state.authority), id, receipt.run_id).into_response());
     }
     let mut last_seen = replay.last().map_or(last_id.unwrap_or(0), |event| event.id);
     let Some(mut receiver) = state.authority.manager.subscribe(&receipt.run_id).await else {
@@ -303,7 +306,7 @@ async fn stream_task(
             }
         }
     };
-    Ok(super::stream::build_response(tokio_stream::iter(replay).chain(live), Arc::clone(&state.authority), id).into_response())
+    Ok(super::stream::build_response(tokio_stream::iter(replay).chain(live), Arc::clone(&state.authority), id, receipt.run_id).into_response())
 }
 
 #[derive(Deserialize)]

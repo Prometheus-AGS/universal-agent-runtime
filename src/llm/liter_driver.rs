@@ -635,6 +635,15 @@ impl LlmDriver for LiterLlmDriver {
                 chunk_count += 1;
 
                 for choice in &chunk.choices {
+                    if let Some(ref reasoning) = choice.delta.reasoning_content {
+                        if !reasoning.is_empty() {
+                            event_count += 1;
+                            yield Ok(NormalizedEvent::ReasoningDelta {
+                                text: reasoning.clone(),
+                            });
+                        }
+                    }
+
                     if let Some(ref text) = choice.delta.content {
                         if !text.is_empty() {
                             event_count += 1;

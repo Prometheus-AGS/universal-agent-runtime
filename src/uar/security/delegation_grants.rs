@@ -130,6 +130,9 @@ impl DelegationGrantAuthority {
             .collect::<String>();
         let id = Uuid::new_v4().to_string();
         let expires_at = Utc::now() + chrono::Duration::seconds(GRANT_TTL_SECONDS as i64);
+        // Delegate the captured principal without its launch/service host proof.
+        let mut delegated_principal = principal.clone();
+        delegated_principal.host_authority = None;
         let mut records = self
             .records
             .lock()
@@ -139,7 +142,7 @@ impl DelegationGrantAuthority {
             id.clone(),
             GrantRecord {
                 token: Some(SecretString::from(token.clone())),
-                principal: principal.clone(),
+                principal: delegated_principal,
                 workspace_ids: request.workspace_ids.clone(),
                 operations: request.operations.clone(),
                 expires: Instant::now() + Duration::from_secs(GRANT_TTL_SECONDS),

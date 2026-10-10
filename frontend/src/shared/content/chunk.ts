@@ -42,6 +42,7 @@ export interface ToolCallChunk extends ChunkBase {
 }
 export interface ToolApprovalChunk extends ChunkBase {
   kind: "tool-approval";
+  approvalId?: string;
   toolCallId: string;
   toolName: string;
   args: Record<string, unknown>;

@@ -301,6 +301,8 @@ wasm-runtime = ["dep:wasmtime", "dep:wasmtime-wasi"]
 vault = ["dep:vaultrs"]
 ## Test-only probe binaries (`uar-env-probe`). Never enable in a release build.
 test-probes = []
+# Separate full-feature acceptance artifact only; never included by a product profile.
+bauar-native-admission-gate = []
 
 
 [dependencies]

@@ -72,6 +72,7 @@ mod tests {
 
     fn make_anon() -> UserContext {
         UserContext {
+            host_authority: None, authority: None,
             user_id: "anonymous".to_string(),
             tenant_id: None,
             claims: UserClaims {
@@ -87,6 +88,7 @@ mod tests {
 
     fn make_user(id: &str) -> UserContext {
         UserContext {
+            host_authority: None, authority: None,
             user_id: id.to_string(),
             tenant_id: None,
             claims: UserClaims {

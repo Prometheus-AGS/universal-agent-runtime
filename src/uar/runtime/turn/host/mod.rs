@@ -3,10 +3,17 @@
 mod credentials;
 mod history;
 mod mcp;
+mod secret_projection;
+mod secret_stream;
+mod receipt_projection;
+mod event_projection;
 
 pub use credentials::{RunCredentialInput, RunCredentials, RunProviderKind};
 pub use history::{HistorySeedStatus, HostHistoryInput};
 pub use mcp::{RunMcpServerInput, RunMcpServers};
+pub use secret_stream::{SecretStream, ProjectedEventStream};
+pub use receipt_projection::ProjectedCanonicalResult;
+pub use event_projection::AdmissionProjection;
 
 /// Secret-free identity of one administrator-registered run grant. Persisted
 /// run markers use this to admit a same-owner renewal without retaining URLs,
@@ -38,7 +45,7 @@ impl HostMcpGrantMarker {
 /// Exact in-memory values removed from errors before they reach events or logs.
 /// This type has no Serialize implementation and its Debug output is redacted.
 #[derive(Clone, Default)]
-pub struct RunSecretScrubber(Vec<secrecy::SecretString>);
+pub struct RunSecretScrubber(secret_projection::SecretProjection);
 
 impl std::fmt::Debug for RunSecretScrubber {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -52,23 +59,22 @@ impl RunSecretScrubber {
     }
 
     pub(crate) fn from_values(values: Vec<secrecy::SecretString>) -> Self {
-        Self(values)
+        Self(secret_projection::SecretProjection::new(values))
     }
 
     #[must_use]
     pub fn scrub(&self, text: &str) -> String {
-        use base64::{Engine as _, engine::general_purpose::STANDARD};
-        use secrecy::ExposeSecret;
-        let mut scrubbed = text.to_owned();
-        for value in &self.0 {
-            let value = value.expose_secret();
-            if value.is_empty() {
-                continue;
-            }
-            scrubbed = scrubbed.replace(value, "[REDACTED]");
-            scrubbed = scrubbed.replace(&STANDARD.encode(value), "[REDACTED]");
-        }
-        scrubbed
+        self.0.text(text).0
+    }
+
+    /// Project a copied content value; never use this on live execution inputs.
+    pub fn project_value(&self, value: serde_json::Value) -> serde_json::Value {
+        self.0.value(value).0
+    }
+
+    /// Independent carry for one copied text/reasoning/argument stream.
+    pub fn stream(&self) -> SecretStream {
+        SecretStream::new(self.0.clone())
     }
 }
 

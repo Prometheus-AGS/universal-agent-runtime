@@ -35,6 +35,7 @@ use crate::config::{FailoverConfig, FallbackModel, LlmConfig};
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::{NormalizedEvent, RuntimeStepKind};
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
+use crate::uar::runtime::tool_admission::ToolExecutionKind;
 use crate::uar::tools::descriptor::{
     ApprovalClass, Exposure, ToolCollision, ToolDescriptor, ToolEffect,
 };
@@ -50,10 +51,50 @@ use super::{
 /// Anthropic models use the native Messages API when its runtime gate is on;
 /// all other configurations retain liter-llm's compatible provider routing.
 pub fn build_driver(llm_config: &LlmConfig) -> anyhow::Result<Arc<dyn LlmDriver>> {
+    build_driver_inner(llm_config, &mut Default::default())
+}
+
+/// Capture actual construction inputs once, retaining them even on failure.
+/// Empty-key constructor-owned credentials remain outside this finite corpus.
+pub(crate) fn build_driver_captured(
+    llm_config: &LlmConfig,
+    capture: &mut crate::uar::runtime::turn::host::RunSecretScrubber,
+) -> anyhow::Result<Arc<dyn LlmDriver>> {
+    build_driver_inner(llm_config, capture)
+        .map_err(|_| anyhow::anyhow!("Provider client construction failed"))
+}
+
+pub(crate) fn capture_client_config(
+    config: &mut liter_llm::ClientConfig,
+    capture: &mut crate::uar::runtime::turn::host::RunSecretScrubber,
+) {
+    use secrecy::ExposeSecret;
+    let key = config.api_key.expose_secret();
+    let mut values = vec![key.to_owned().into()];
+    if let Some(url) = &config.base_url {
+        values.push(url.clone().into());
+    }
+    capture.extend(crate::uar::runtime::turn::host::RunSecretScrubber::from_values(values));
+    // Liter fills a missing key only. Do not disable that legacy path for an
+    // empty key, and do not independently rediscover provider environment.
+    if !key.is_empty() {
+        config.load_env = false;
+    }
+}
+
+fn build_driver_inner(
+    llm_config: &LlmConfig,
+    capture: &mut crate::uar::runtime::turn::host::RunSecretScrubber,
+) -> anyhow::Result<Arc<dyn LlmDriver>> {
     // ADR-010 §1a (b)+(c). Every inference path -- primary, failover, server,
     // turn bindings -- constructs its driver here, so this is the one place
     // that can make "local-only" a guarantee rather than a configuration
     // preference. Fails closed: no driver is returned, so no request is sent.
+    if let Some(url) = &llm_config.base_url {
+        capture.extend(crate::uar::runtime::turn::host::RunSecretScrubber::from_values(
+            vec![url.clone().into()],
+        ));
+    }
     super::local_only::check_base_url(llm_config.base_url.as_deref())?;
 
     let (model_provider_id, model_id) = super::registry::split_model_string_pub(&llm_config.model);
@@ -68,6 +109,9 @@ pub fn build_driver(llm_config: &LlmConfig) -> anyhow::Result<Arc<dyn LlmDriver>
             .clone()
             .or_else(|| llm_config.provider_keys.get("anthropic").cloned())
             .unwrap_or_default();
+        capture.extend(crate::uar::runtime::turn::host::RunSecretScrubber::from_values(
+            vec![api_key.clone().into()],
+        ));
         return Ok(Arc::new(super::anthropic_driver::AnthropicDriver::new(
             api_key,
             model_id,
@@ -78,7 +122,8 @@ pub fn build_driver(llm_config: &LlmConfig) -> anyhow::Result<Arc<dyn LlmDriver>
         )));
     }
 
-    let client_config = crate::config::build_client_config(llm_config);
+    let mut client_config = crate::config::build_client_config(llm_config);
+    capture_client_config(&mut client_config, capture);
     Ok(Arc::new(super::LiterLlmDriver::new(
         client_config,
         llm_config.model.clone(),
@@ -87,6 +132,18 @@ pub fn build_driver(llm_config: &LlmConfig) -> anyhow::Result<Arc<dyn LlmDriver>
 }
 
 type DriverEventStream = Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>;
+
+/// An admitted invocation whose executor body was never entered.
+#[derive(Debug)]
+struct ToolDispatchBlocked(&'static str);
+
+impl std::fmt::Display for ToolDispatchBlocked {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.0)
+    }
+}
+
+impl std::error::Error for ToolDispatchBlocked {}
 
 async fn open_driver_stream(
     driver: &dyn LlmDriver,
@@ -222,6 +279,8 @@ pub struct Orchestrator {
     tool_approval_gate: Option<ToolApprovalGate>,
     /// Exact prepared-invocation authority used by standalone and paired hosts.
     tool_admission: Arc<crate::uar::runtime::tool_admission::ToolAdmissionRuntime>,
+    #[cfg(feature = "bauar-native-admission-gate")]
+    native_admission_gate: Arc<crate::uar::runtime::native_skills::search_tools_gate::NativeAdmissionGateObserver>,
     /// Optional sandbox runner for isolated code execution.
     sandbox_runner: Option<Arc<dyn crate::sandbox::SandboxRunner>>,
     sandbox_scope: Option<crate::sandbox::execution::SandboxRun>,
@@ -254,6 +313,7 @@ pub struct Orchestrator {
     shadow_turn: Option<(Arc<crate::uar::runtime::turn::ResolvedTurn>, Vec<Message>)>,
     world_state: Option<Arc<crate::uar::runtime::world_state::runtime::WorldStateRuntime>>,
     canonical_receipt_store: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
+    secret_scrubber: crate::uar::runtime::turn::host::RunSecretScrubber,
     team_model_handoff: Option<crate::uar::runtime::turn::CollaborationRunBinding>,
 }
 
@@ -508,7 +568,7 @@ impl Orchestrator {
             .await
             .map_err(|error| format!("Host admission failed: {error}"))?
             .ok_or_else(|| "Host did not authorize the tool invocation".to_string())?;
-        if let Err(error) = self.tool_admission.claim(&admitted).await {
+        if self.tool_admission.claim(&admitted).await.is_err() {
             let cancellation = self
                 .tool_admission
                 .cancel(
@@ -518,13 +578,77 @@ impl Orchestrator {
                 )
                 .await;
             return Err(match cancellation {
-                Ok(_) => format!("Tool claim intent was not persisted: {error}"),
-                Err(cancel_error) => format!(
-                    "Tool claim intent was not persisted and host invalidation failed: {error}; {cancel_error}"
-                ),
+                Ok(_) => "Tool admission claim was refused or unconfirmed".to_string(),
+                Err(_) => "Tool admission claim and cancellation are unconfirmed".to_string(),
             });
         }
         Ok(admitted)
+    }
+
+    async fn ensure_tool_dispatch(
+        &self,
+        admitted: &crate::uar::runtime::tool_admission::AdmittedToolInvocation,
+        execution_kind: ToolExecutionKind,
+    ) -> anyhow::Result<()> {
+        use crate::uar::runtime::tool_admission::AdmissionCancellationReason;
+        #[cfg(feature = "bauar-native-admission-gate")]
+        if self.native_admission_gate.checkpoint(admitted, execution_kind).await.is_err() {
+            let cancellation = self.tool_admission.cancel(
+                admitted.prepared.as_ref(), &admitted.host_receipt.admission_id,
+                AdmissionCancellationReason::Invalidated,
+            ).await;
+            return Err(ToolDispatchBlocked(if cancellation.is_err() {
+                "Native acceptance checkpoint failed; cancellation is unconfirmed"
+            } else {
+                "Native acceptance checkpoint failed"
+            }).into());
+        }
+        let (message, reason) = if admitted.prepared.execution_kind != execution_kind
+            || admitted.host_receipt.execution_kind != execution_kind
+        {
+            (
+                "Tool admission executor kind mismatch",
+                AdmissionCancellationReason::Invalidated,
+            )
+        } else if self.tool_admission.is_cancelled() {
+            #[cfg(feature = "bauar-native-admission-gate")]
+            self.native_admission_gate.observe_guard(admitted, true);
+            (
+                "Tool cancelled before dispatch",
+                AdmissionCancellationReason::Cancelled,
+            )
+        } else {
+            #[cfg(feature = "bauar-native-admission-gate")]
+            self.native_admission_gate.observe_guard(admitted, false);
+            return Ok(());
+        };
+        let cancellation = self.tool_admission
+            .cancel(admitted.prepared.as_ref(), &admitted.host_receipt.admission_id, reason)
+            .await;
+        Err(ToolDispatchBlocked(if cancellation.is_err() {
+            "Tool dispatch blocked; cancellation is unconfirmed"
+        } else {
+            message
+        })
+        .into())
+    }
+
+    async fn finish_tool_execution(
+        &self,
+        admitted: &crate::uar::runtime::tool_admission::AdmittedToolInvocation,
+        outcome: anyhow::Result<(String, String, bool)>,
+    ) -> anyhow::Result<(String, String, bool)> {
+        if outcome.as_ref().err().is_some_and(|error| error.is::<ToolDispatchBlocked>()) {
+            // Preserve the cancelled/unknown lifecycle; no body produced a
+            // terminal execution result to acknowledge to the host.
+            return outcome;
+        }
+        let succeeded = outcome.as_ref()
+            .map(|(_, _, succeeded)| *succeeded)
+            .unwrap_or(false);
+        self.tool_admission.finish(admitted, succeeded).await
+            .map_err(|_| anyhow::anyhow!("Tool terminal receipt was not persisted"))?;
+        outcome
     }
 
     async fn execute_direct_tool(
@@ -537,6 +661,7 @@ impl Orchestrator {
         let provider_name = admitted.prepared.provider_tool_name.as_str();
         let arguments = &admitted.prepared.validated_arguments;
         if let Some(native) = self.native_skills.get(provider_name).await {
+            self.ensure_tool_dispatch(admitted, ToolExecutionKind::RuntimeNative).await?;
             let execution = match crate::uar::runtime::native_skill::execute_native(
                 native.as_ref(),
                 arguments.clone(),
@@ -589,6 +714,7 @@ impl Orchestrator {
                 .await
             {
                 Ok(value) => value,
+                Err(error) if error.is::<ToolDispatchBlocked>() => return Err(error),
                 Err(error) => {
                     let content = self
                         .preserve_terminal_tool_failure(
@@ -637,9 +763,9 @@ impl Orchestrator {
         mcp: Arc<McpRegistry>,
         native_skills: Arc<NativeSkillRegistry>,
     ) -> anyhow::Result<Self> {
-        let driver = build_driver(&llm_config)?;
-
-        Ok(Self::from_driver(llm_config, mcp, native_skills, driver))
+        let mut capture = crate::uar::runtime::turn::host::RunSecretScrubber::default();
+        let driver = build_driver_captured(&llm_config, &mut capture)?;
+        Ok(Self::from_driver(llm_config, mcp, native_skills, driver).with_secret_scrubber(capture))
     }
 
     /// Create a new orchestrator with a host-supplied LLM driver.
@@ -667,6 +793,8 @@ impl Orchestrator {
             tool_admission: Arc::new(
                 crate::uar::runtime::tool_admission::ToolAdmissionRuntime::standalone_ephemeral(),
             ),
+            #[cfg(feature = "bauar-native-admission-gate")]
+            native_admission_gate: Arc::new(Default::default()),
             sandbox_runner: None,
             sandbox_scope: None,
             terminal_scope: None,
@@ -688,6 +816,7 @@ impl Orchestrator {
             shadow_turn: None,
             world_state: None,
             canonical_receipt_store: None,
+            secret_scrubber: Default::default(),
             team_model_handoff: None,
         }
     }
@@ -766,6 +895,11 @@ impl Orchestrator {
         canonical_messages: &[serde_json::Value],
         fragments: &[crate::uar::runtime::prompt::PromptFragment],
     ) -> anyhow::Result<LlmRequest> {
+        for message in &mut request.messages { self.secret_scrubber.project_message_json(message); }
+        let mut canonical_messages = canonical_messages.to_vec();
+        for message in &mut canonical_messages { self.secret_scrubber.project_message_json(message); }
+        let mut fragments = fragments.to_vec();
+        self.secret_scrubber.project_fragments(&mut fragments);
         if !self.endpoint_settings_profiles.is_empty() {
             let profile = self.endpoint_settings_profiles.get(model)
                 .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?;
@@ -781,8 +915,8 @@ impl Orchestrator {
             Some(preparations) => preparations.prepare(
                 model,
                 request,
-                canonical_messages,
-                fragments,
+                &canonical_messages,
+                &fragments,
                 self.protected_continuity.as_ref(),
             ),
             None => Ok(request),
@@ -850,14 +984,14 @@ impl Orchestrator {
             };
         }
         NormalizedEvent::Error {
-            message: error.to_string(),
+            message: self.secret_scrubber.scrub(&error.to_string()),
             code: Some(super::ProviderError::from_anyhow(error)
                 .map_or("provider_error", super::ProviderError::code).to_owned()),
         }
     }
 
     fn provider_log_summary(&self, error: &anyhow::Error) -> String {
-        if self.endpoint_settings_profiles.is_empty() { error.to_string() }
+        if self.endpoint_settings_profiles.is_empty() { self.secret_scrubber.scrub(&error.to_string()) }
         else { super::ProviderError::from_anyhow(error)
             .map_or("provider_error", super::ProviderError::code).to_owned() }
     }
@@ -881,6 +1015,12 @@ impl Orchestrator {
         self
     }
 
+    #[must_use]
+    pub fn with_secret_scrubber(mut self, capture: crate::uar::runtime::turn::host::RunSecretScrubber) -> Self {
+        self.secret_scrubber.extend(capture);
+        self
+    }
+
     async fn preserve_canonical_tool_result(
         &self,
         sequence: u64,
@@ -892,14 +1032,15 @@ impl Orchestrator {
         acquisition_complete: bool,
         observed_bytes: u64,
     ) -> anyhow::Result<serde_json::Value> {
+        let projected = self.secret_scrubber.project_receipt(value, raw_segments)?;
         let Some(store) = &self.canonical_receipt_store else {
-            return Ok(value);
+            return Ok(projected.value);
         };
         let turn = self
             .resolved_turn
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("Canonical receipt store has no resolved turn"))?;
-        let receipt =
+        let mut receipt =
             crate::uar::persistence::agent_threads::CanonicalToolReceipt::acquire_with_segments(
                 turn.environment().owner_id.clone(),
                 turn.environment().run_id.clone(),
@@ -907,11 +1048,12 @@ impl Orchestrator {
                 call_id,
                 tool,
                 source,
-                value,
-                raw_segments,
+                projected.value,
+                projected.raw_segments,
                 acquisition_complete,
                 observed_bytes,
             )?;
+        receipt.secret_projection = Some(projected.secret_projection);
         let stored = store.save_canonical_tool_receipt(&receipt).await?;
         stored.typed_value.ok_or_else(|| {
             anyhow::anyhow!(
@@ -987,11 +1129,13 @@ impl Orchestrator {
         let name = admitted.prepared.provider_tool_name.as_str();
         let arguments = admitted.prepared.validated_arguments.clone();
         if self.mcp.is_native_tool(name) {
+            self.ensure_tool_dispatch(admitted, ToolExecutionKind::RuntimeNative).await?;
             return self
                 .mcp
                 .call_native_with_context(name, arguments, &self.native_execution_context(call_id))
                 .await;
         }
+        self.ensure_tool_dispatch(admitted, ToolExecutionKind::HostMcp).await?;
         if let Some(preflight) = &self.mcp_preflight
             && !self.mcp.is_native_tool(name)
         {
@@ -1091,10 +1235,18 @@ impl Orchestrator {
         // ToolStart publication awaits the event sink. Revocation during that
         // await must not turn shutdown's drain into a new external operation.
         let result = if cancellation.is_cancelled() {
-            Err(anyhow::anyhow!("Graph tool cancelled before dispatch"))
+            host.tool_admission.cancel(
+                admitted.prepared.as_ref(),
+                &admitted.host_receipt.admission_id,
+                crate::uar::runtime::tool_admission::AdmissionCancellationReason::Cancelled,
+            ).await?;
+            Err(ToolDispatchBlocked("Graph tool cancelled before dispatch").into())
         } else {
             host.call_mcp_tool(&admitted).await
         };
+        if result.as_ref().err().is_some_and(|error| error.is::<ToolDispatchBlocked>()) {
+            return Err(anyhow::anyhow!("Graph tool dispatch was blocked before execution"));
+        }
         let (canonical_content, success) = match result {
             Ok(result) => match host
                 .preserve_canonical_tool_result(
@@ -1287,7 +1439,7 @@ impl Orchestrator {
         build_driver(&fallback_llm_config)
     }
 
-    fn fallback_llm_config(base: &LlmConfig, fallback: &FallbackModel) -> LlmConfig {
+    pub(crate) fn fallback_llm_config(base: &LlmConfig, fallback: &FallbackModel) -> LlmConfig {
         let mut config = base.clone();
         config.model.clone_from(&fallback.model);
         config.resolved_provider_id = None;
@@ -1325,6 +1477,12 @@ impl Orchestrator {
     ) -> Self {
         self.tool_admission = admission;
         self
+    }
+
+    /// Observer for the separately compiled acceptance sidecar's finalizer.
+    #[cfg(feature = "bauar-native-admission-gate")]
+    pub(crate) fn native_admission_gate(&self) -> Arc<crate::uar::runtime::native_skills::search_tools_gate::NativeAdmissionGateObserver> {
+        Arc::clone(&self.native_admission_gate)
     }
 
     /// Attach a sandbox runner and execution mode for tool isolation.
@@ -1550,7 +1708,15 @@ impl Orchestrator {
         // Discovery controls and selections belong to this stream, never the
         // shared host registry or another child using the same native handlers.
         orchestrator.native_skills = Arc::new(self.native_skills.filtered(None).await);
-        let messages = messages.clone();
+        let mut messages = messages.clone();
+        for message in &mut messages { orchestrator.secret_scrubber.project_message(message); }
+        if let Some(history) = &mut orchestrator.canonical_history {
+            for message in history { orchestrator.secret_scrubber.project_message(message); }
+        }
+        if let Some(fragments) = &mut orchestrator.canonical_fragments {
+            orchestrator.secret_scrubber.project_fragments(fragments);
+        }
+        let output_capture = orchestrator.secret_scrubber.clone();
 
         let stream = async_stream::stream! {
             // Emit stream start
@@ -1708,8 +1874,11 @@ impl Orchestrator {
                             if current.contains_key(SEARCH_TOOLS_NAME) {
                                 return Err(ToolCollision { provider_name: SEARCH_TOOLS_NAME.to_owned() }.into());
                             }
-                            orchestrator.native_skills.register(SearchToolsTool::new(exposure.clone())
-                                .with_thread_policy(orchestrator.thread_policy.clone())).await?;
+                            let search = SearchToolsTool::new(exposure.clone())
+                                .with_thread_policy(orchestrator.thread_policy.clone());
+                            #[cfg(feature = "bauar-native-admission-gate")]
+                            let search = search.with_gate_observer(Arc::clone(&orchestrator.native_admission_gate));
+                            orchestrator.native_skills.register(search).await?;
                             search_registered = true;
                         }
                         let descriptor = orchestrator.native_skills.descriptor(SEARCH_TOOLS_NAME).await
@@ -1814,6 +1983,7 @@ impl Orchestrator {
                     }
                 };
 
+                orchestrator.secret_scrubber.project_fragments(&mut step_fragments);
                 let resolved_step = if let Some(turn) = &orchestrator.resolved_turn {
                     let rendered = req.messages.iter().filter_map(|message| message["content"].as_str())
                         .collect::<Vec<_>>().join("\n");
@@ -1863,6 +2033,13 @@ impl Orchestrator {
                     descriptors = Arc::new(snapshot.tools().clone());
                     orchestrator.mcp = Arc::clone(snapshot.mcp());
                     orchestrator.mcp_preflight = snapshot.mcp_preflight().cloned();
+                    let original_manifest = snapshot.manifest();
+                    let mut manifest = crate::uar::runtime::prompt::TurnManifest::from_fragments(
+                        snapshot.fragments(), original_manifest.budgets,
+                        original_manifest.selected_skills, original_manifest.selected_tools,
+                        original_manifest.warnings.iter().map(|warning| orchestrator.secret_scrubber.scrub(warning)),
+                    );
+                    if let Some(shadow) = original_manifest.shadow { manifest = manifest.with_shadow(shadow); }
                     yield NormalizedEvent::Custom {
                         source: "uar.turn".into(),
                         event_name: "resolved_step".into(),
@@ -1870,7 +2047,7 @@ impl Orchestrator {
                             "step": snapshot.index(),
                             "model": snapshot.turn().credentials().model,
                             "mcp_catalog": snapshot.mcp_catalog(),
-                            "manifest": snapshot.manifest(),
+                            "manifest": manifest,
                         }),
                     };
                     snapshot.request().clone()
@@ -2311,7 +2488,7 @@ impl Orchestrator {
                     tracing::debug!(
                         request_id = %request_id,
                         tool_id = %tc.id,
-                        arguments = %tc.function.arguments,
+                        arguments = %orchestrator.secret_scrubber.project_json_text(&tc.function.arguments),
                         "Tool call arguments"
                     );
                 }
@@ -2319,14 +2496,14 @@ impl Orchestrator {
                 // Add assistant message with tool calls to history
                 message_json.push(serde_json::json!({
                     "role": "assistant",
-                    "content": assistant_text,
+                    "content": orchestrator.secret_scrubber.scrub(&assistant_text),
                     "tool_calls": tool_calls.iter().map(|tc| {
                         serde_json::json!({
                             "id": tc.id,
                             "type": tc.call_type,
                             "function": {
                                 "name": tc.function.name,
-                                "arguments": tc.function.arguments
+                                "arguments": orchestrator.secret_scrubber.project_json_text(&tc.function.arguments)
                             }
                         })
                     }).collect::<Vec<_>>()
@@ -2486,20 +2663,7 @@ impl Orchestrator {
                                     )
                                     .await
                             };
-                            let succeeded = outcome
-                                .as_ref()
-                                .map(|(_, _, succeeded)| *succeeded)
-                                .unwrap_or(false);
-                            let outcome = match orchestrator
-                                .tool_admission
-                                .finish(&admitted, succeeded)
-                                .await
-                            {
-                                Ok(()) => outcome,
-                                Err(error) => Err(anyhow::anyhow!(
-                                    "Tool terminal receipt was not persisted: {error}"
-                                )),
-                            };
+                            let outcome = orchestrator.finish_tool_execution(&admitted, outcome).await;
                             (call, outcome)
                         }
                     }))
@@ -2513,7 +2677,11 @@ impl Orchestrator {
                             Err(error) => {
                                 yield NormalizedEvent::Error {
                                     message: error.to_string(),
-                                    code: Some("TERMINAL_RESULT_PERSISTENCE_FAILED".to_string()),
+                                    code: Some(if error.is::<ToolDispatchBlocked>() {
+                                        "TOOL_DISPATCH_REFUSED"
+                                    } else {
+                                        "TERMINAL_RESULT_PERSISTENCE_FAILED"
+                                    }.to_string()),
                                 };
                                 return;
                             }
@@ -2667,56 +2835,62 @@ impl Orchestrator {
                                 language = ?lang,
                                 "Executing tool in the bound sandbox"
                             );
-                            let outcome = match &orchestrator.sandbox_scope {
-                                Some(scope) => scope.execute(runner, exec_req).await,
-                                None => Err(crate::sandbox::execution::SandboxExecutionError::Unavailable),
-                            };
-                            match outcome {
-                                Ok(result) => {
-                                    let value = serde_json::json!({
-                                        "exit_code": result.exit_code,
-                                        "stdout": result.stdout.clone(),
-                                        "stderr": result.stderr.clone(),
-                                    });
-                                    orchestrator.preserve_canonical_tool_result(
-                                        sequence,
-                                        &tool_call.id,
-                                        tool_name,
-                                        crate::uar::persistence::agent_threads::CanonicalReceiptSource::Sandbox,
-                                        value,
-                                        Vec::new(),
-                                        true,
-                                        0,
-                                    ).await.and_then(|stored| {
-                                        let canonical = serde_json::to_string(&stored)?;
-                                        if result.exit_code == 0 {
-                                            Ok((canonical, format!("exit_code: {}\nstdout:\n{}\nstderr:\n{}",
-                                                result.exit_code, result.stdout, result.stderr), true))
-                                        } else {
-                                            Ok((canonical, serde_json::json!({
-                                                "status": "error",
-                                                "tool_call_id": tool_call.id,
-                                                "tool": tool_name,
-                                                "provenance": {
-                                                    "source": "sandbox",
-                                                    "terminal_state": "failed",
-                                                    "observed_by": "trusted_host"
-                                                },
-                                                "result": stored,
-                                            }).to_string(), false))
-                                        }
-                                    })
+                            if let Err(error) = orchestrator
+                                .ensure_tool_dispatch(&admitted, ToolExecutionKind::RuntimeNative).await
+                            {
+                                Err(error)
+                            } else {
+                                let outcome = match &orchestrator.sandbox_scope {
+                                    Some(scope) => scope.execute(runner, exec_req).await,
+                                    None => Err(crate::sandbox::execution::SandboxExecutionError::Unavailable),
+                                };
+                                match outcome {
+                                    Ok(result) => {
+                                        let value = serde_json::json!({
+                                            "exit_code": result.exit_code,
+                                            "stdout": result.stdout.clone(),
+                                            "stderr": result.stderr.clone(),
+                                        });
+                                        orchestrator.preserve_canonical_tool_result(
+                                            sequence,
+                                            &tool_call.id,
+                                            tool_name,
+                                            crate::uar::persistence::agent_threads::CanonicalReceiptSource::Sandbox,
+                                            value,
+                                            Vec::new(),
+                                            true,
+                                            0,
+                                        ).await.and_then(|stored| {
+                                            let canonical = serde_json::to_string(&stored)?;
+                                            if result.exit_code == 0 {
+                                                Ok((canonical, format!("exit_code: {}\nstdout:\n{}\nstderr:\n{}",
+                                                    result.exit_code, result.stdout, result.stderr), true))
+                                            } else {
+                                                Ok((canonical, serde_json::json!({
+                                                    "status": "error",
+                                                    "tool_call_id": tool_call.id,
+                                                    "tool": tool_name,
+                                                    "provenance": {
+                                                        "source": "sandbox",
+                                                        "terminal_state": "failed",
+                                                        "observed_by": "trusted_host"
+                                                    },
+                                                    "result": stored,
+                                                }).to_string(), false))
+                                            }
+                                        })
+                                    }
+                                    Err(error) => orchestrator
+                                        .preserve_terminal_tool_failure(
+                                            sequence,
+                                            &tool_call.id,
+                                            tool_name,
+                                            crate::uar::persistence::agent_threads::CanonicalReceiptSource::Sandbox,
+                                            error.to_string(),
+                                        )
+                                        .await
+                                        .map(|content| (content.clone(), content, false)),
                                 }
-                                Err(error) => orchestrator
-                                    .preserve_terminal_tool_failure(
-                                        sequence,
-                                        &tool_call.id,
-                                        tool_name,
-                                        crate::uar::persistence::agent_threads::CanonicalReceiptSource::Sandbox,
-                                        error.to_string(),
-                                    )
-                                    .await
-                                    .map(|content| (content.clone(), content, false)),
                             }
                         } else {
                             let error = "Tool execution rejected: no sandbox adapter for this tool call";
@@ -2740,26 +2914,17 @@ impl Orchestrator {
                             )
                             .await
                     };
-                    let succeeded = outcome
-                        .as_ref()
-                        .map(|(_, _, succeeded)| *succeeded)
-                        .unwrap_or(false);
-                    let outcome = match orchestrator
-                        .tool_admission
-                        .finish(&admitted, succeeded)
-                        .await
-                    {
-                        Ok(()) => outcome,
-                        Err(error) => Err(anyhow::anyhow!(
-                            "Tool terminal receipt was not persisted: {error}"
-                        )),
-                    };
+                    let outcome = orchestrator.finish_tool_execution(&admitted, outcome).await;
                     let (canonical_content, content, success) = match outcome {
                         Ok(outcome) => outcome,
                         Err(error) => {
                             yield NormalizedEvent::Error {
                                 message: error.to_string(),
-                                code: Some("TERMINAL_RESULT_PERSISTENCE_FAILED".to_string()),
+                                code: Some(if error.is::<ToolDispatchBlocked>() {
+                                    "TOOL_DISPATCH_REFUSED"
+                                } else {
+                                    "TERMINAL_RESULT_PERSISTENCE_FAILED"
+                                }.to_string()),
                             };
                             return;
                         }
@@ -2826,13 +2991,23 @@ impl Orchestrator {
             }
         };
 
-        Ok(stream)
+        // Keep raw producer accumulators private for admission/execution. The
+        // returned stream is a content copy with independent bounded tails.
+        Ok(async_stream::stream! {
+            let mut projection = crate::uar::runtime::turn::host::ProjectedEventStream::new(output_capture);
+            futures::pin_mut!(stream);
+            while let Some(event) = stream.next().await {
+                for event in projection.push(event) { yield event; }
+            }
+            for event in projection.finish() { yield event; }
+        })
     }
 
     /// Non-streaming chat for simple requests (e.g., title generation).
     ///
     /// This collects all message deltas into a single string response.
-    pub async fn chat_non_streaming(&self, messages: Vec<Message>) -> anyhow::Result<String> {
+    pub async fn chat_non_streaming(&self, mut messages: Vec<Message>) -> anyhow::Result<String> {
+        for message in &mut messages { self.secret_scrubber.project_message(message); }
         let request_id = Uuid::new_v4().to_string();
         let tools = Vec::new(); // No tools for simple requests
 
@@ -2868,8 +3043,9 @@ impl Orchestrator {
                     content.push_str(&text);
                 }
                 Err(e) => {
-                    tracing::error!(request_id = %request_id, error = %e, "Error in stream");
-                    return Err(e);
+                    let message = self.secret_scrubber.scrub(&e.to_string());
+                    tracing::error!(request_id = %request_id, error = %message, "Error in stream");
+                    return Err(anyhow::anyhow!(message));
                 }
                 _ => {} // Ignore other events
             }
@@ -2881,7 +3057,7 @@ impl Orchestrator {
             "Non-streaming chat completed"
         );
 
-        Ok(content)
+        Ok(self.secret_scrubber.scrub(&content))
     }
 }
 

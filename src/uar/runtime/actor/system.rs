@@ -4,6 +4,7 @@
 //! lists, and tears down [`AgentActor`](super::agent_actor::AgentActor)
 //! instances.
 
+use crate::uar::security::credential_capture::AuthenticatedCredentialCapture;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -128,11 +129,28 @@ impl ActorSession {
         self.submit_reserved_prompt(uuid::Uuid::new_v4().to_string(), content)
     }
 
+    pub(crate) fn submit_prompt_with_capture(
+        &self,
+        content: String,
+        credential_capture: AuthenticatedCredentialCapture,
+    ) -> anyhow::Result<ActorTurn> {
+        self.submit_captured_prompt(uuid::Uuid::new_v4().to_string(), content, credential_capture)
+    }
+
     /// Submit a turn whose identity was already committed to a logical-instance inbox.
     pub(crate) fn submit_reserved_prompt(
         &self,
         run_id: String,
         content: String,
+    ) -> anyhow::Result<ActorTurn> {
+        self.submit_captured_prompt(run_id, content, AuthenticatedCredentialCapture::default())
+    }
+
+    fn submit_captured_prompt(
+        &self,
+        run_id: String,
+        content: String,
+        credential_capture: AuthenticatedCredentialCapture,
     ) -> anyhow::Result<ActorTurn> {
         let handle = &self.handle;
         anyhow::ensure!(
@@ -149,6 +167,7 @@ impl ActorSession {
             .send_message(AgentMessage::UserRun {
                 run_id: run_id.clone(),
                 content,
+                credential_capture,
                 artifacts: artifacts.clone(),
                 reply,
             })

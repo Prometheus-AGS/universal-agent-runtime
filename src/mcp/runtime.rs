@@ -79,6 +79,21 @@ impl fmt::Debug for RunHttpHeaders {
 }
 
 impl RunHttpHeaders {
+    /// Exactly the parsed values used by apply(), including the bare bearer.
+    /// This contributes only to finite output projection, never authority.
+    pub(crate) fn secret_values(&self) -> Vec<secrecy::SecretString> {
+        use secrecy::ExposeSecret;
+        let mut values = Vec::new();
+        if let Some(bearer) = &self.bearer {
+            values.push(bearer.clone());
+            values.push(format!("Bearer {}", bearer.expose_secret()).into());
+        }
+        for value in self.custom.values() {
+            if let Ok(value) = std::str::from_utf8(value.as_bytes()) { values.push(value.to_owned().into()); }
+        }
+        values
+    }
+
     pub(crate) fn parse(
         values: &std::collections::BTreeMap<String, secrecy::SecretString>,
     ) -> anyhow::Result<Self> {
@@ -516,6 +531,37 @@ impl McpRunResources {
     /// Exact launch inputs. Never serialize this into a turn or event.
     pub fn environment(&self) -> &Arc<McpBindingEnvironment> {
         &self.environment
+    }
+
+    /// Capture finite projection values from the immutable launch snapshot.
+    /// Invalid declarations cannot yield a transport; their existing required/
+    /// optional preflight handling remains authoritative. No ambient lookup.
+    pub(crate) fn secret_scrubber(&self) -> crate::uar::runtime::turn::host::RunSecretScrubber {
+        let mut values = Vec::new();
+        for definition in self.catalog.definitions() {
+            let configuration = definition.configuration();
+            let Ok(environment) = McpBindingEnvironment::resolve(
+                self.environment.directory().to_path_buf(),
+                self.environment.variables().clone(), configuration,
+            ) else { continue; };
+            match configuration {
+                McpServerEntry::RemoteHttp { url, .. } => {
+                    if let Ok(url) = expand_from_environment(url, environment.variables()) {
+                        values.push(url.into());
+                    }
+                    if let Ok(headers) = RunHttpHeaders::from_configuration(configuration, &environment, None) {
+                        values.extend(headers.secret_values());
+                    }
+                }
+                McpServerEntry::Stdio { env, .. } => for key in env.keys() {
+                    if let Some(value) = environment.variables().get(std::ffi::OsStr::new(key))
+                        .and_then(|value| value.to_str()) {
+                        values.push(value.to_owned().into());
+                    }
+                },
+            }
+        }
+        crate::uar::runtime::turn::host::RunSecretScrubber::from_values(values)
     }
 
     /// Exact request-owned server names, or `None` for the host's shared

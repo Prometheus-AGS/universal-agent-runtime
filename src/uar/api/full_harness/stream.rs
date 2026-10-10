@@ -12,6 +12,7 @@ pub(super) fn build_response<S>(
     stream: S,
     authority: Arc<FullHarnessTaskAuthority>,
     task_id: String,
+    run_id: String,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>> + Send>
 where
     S: Stream<Item = StreamEvent> + Send + 'static,
@@ -19,6 +20,7 @@ where
     let frames = stream.then(move |event| {
         let authority = Arc::clone(&authority);
         let task_id = task_id.clone();
+        let run_id = run_id.clone();
         async move {
             if crate::uar::api::routes::is_terminal_stream_event(&event)
                 || matches!(&event.event,
@@ -29,7 +31,9 @@ where
                 let _ = authority.refresh_receipt(&task_id).await;
             }
             let root_run_id = authority.capture_root(&task_id).await;
-            to_agui_event(&event.event).map(|(name, mut payload)| {
+            to_agui_event(&event.event)
+                .or_else(|| Some(("uar.cursor", serde_json::json!({"request_id": run_id}))))
+                .map(|(name, mut payload)| {
                 if let Some(root_run_id) = root_run_id {
                     payload["root_run_id"] = serde_json::json!(root_run_id);
                 }

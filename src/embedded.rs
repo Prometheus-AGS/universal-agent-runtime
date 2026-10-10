@@ -1047,12 +1047,16 @@ mod tests {
             .start_run(agent, "delete note one".to_string(), None, None, Vec::new())
             .await;
 
-        wait_for_event(&runtime, &run_id, |event| {
+        let approval_events = wait_for_event(&runtime, &run_id, |event| {
             matches!(event, NormalizedEvent::ToolCallApprovalRequired { .. })
         })
         .await;
         assert!(!executed.load(Ordering::SeqCst));
-        assert!(runtime.run_manager().resolve_approval(&run_id, true).await);
+        let approval_id = approval_events.iter().find_map(|event| match &event.event {
+            NormalizedEvent::ToolCallApprovalRequired { approval_id, .. } => approval_id.as_deref(),
+            _ => None,
+        }).expect("originating approval identity");
+        assert!(runtime.run_manager().resolve_approval_request(&run_id, Some(approval_id), true).await);
         let history = wait_for_event(&runtime, &run_id, |event| {
             matches!(event, NormalizedEvent::RunDone { .. })
         })

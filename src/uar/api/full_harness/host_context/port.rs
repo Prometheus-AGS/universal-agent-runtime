@@ -59,6 +59,13 @@ impl HostToolAdmissionPort for DelegatedAdmissionPort {
         self.require_authority(&admitted.prepared)?;
         Ok(receipt)
     }
+    async fn consume_native(&self, admitted: &AdmittedToolInvocation) -> anyhow::Result<HostAdmissionReceipt> {
+        self.require_authority(&admitted.prepared)?;
+        let receipt = self.context.admission.consume_native(admitted).await
+            .map_err(|error| safe_failure("consume-native", error))?;
+        self.require_authority(&admitted.prepared)?;
+        Ok(receipt)
+    }
     async fn cancel(&self, invocation: &PreparedToolInvocation, admission_id: &str,
         reason: AdmissionCancellationReason) -> anyhow::Result<AdmissionCancellationOutcome> {
         // Revocation forbids effects, not truthful cleanup of original admissions.

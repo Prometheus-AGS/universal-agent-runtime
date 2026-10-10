@@ -158,7 +158,7 @@ function customChunk(
     case "uar.context.updated":
       return { ...base, kind: "context-update", strategy: text(value.strategy, "unknown"), messagesRemoved: number(value.messages_removed, number(value.messagesRemoved)), tokensSaved: number(value.tokens_saved, number(value.tokensSaved)), wasApplied: value.was_applied === true || value.wasApplied === true, summaryGenerated: value.summary_generated === true || value.summaryGenerated === true };
     case "uar.tool.approval_required":
-      return { ...base, kind: "tool-approval", toolCallId: text(value.tool_call_id, text(value.toolCallId, event.eventId)), toolName: text(value.tool_name, text(value.toolName, text(value.name, "Tool"))), args: argumentsRecord(value.args ?? value.arguments), reason: text(value.reason, text(value.riskReason)) || undefined };
+      return { ...base, kind: "tool-approval", approvalId: text(value.approval_id, text(value.approvalId)) || undefined, toolCallId: text(value.tool_call_id, text(value.toolCallId, event.eventId)), toolName: text(value.tool_name, text(value.toolName, text(value.name, "Tool"))), args: argumentsRecord(value.args ?? value.arguments), reason: text(value.reason, text(value.riskReason)) || undefined };
     case "uar.tool.denied":
       return { ...base, kind: "tool-denied", toolCallId: text(value.tool_call_id, text(value.toolCallId, event.eventId)), toolName: text(value.tool_name, text(value.toolName, text(value.name, "Tool"))), reason: text(value.reason, "Denied by policy"), policy: text(value.policy) || undefined };
     case "uar.artifact.available": {

@@ -139,6 +139,12 @@ fn minimal_config() -> AppConfig {
             grpc_port: 50051,
         },
         security: SecurityConfig {
+            deployment_profile: Default::default(),
+            jwt_algorithm: None,
+            workspace_authorities: Vec::new(),
+            api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
+            api_key_admin_principals: Vec::new(),
+            trusted_host_principals: Vec::new(),
             jwt_required: false,
             jwt_secret: "test-secret".to_string().into(),
             jwks_url: None,

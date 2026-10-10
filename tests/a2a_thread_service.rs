@@ -62,6 +62,12 @@ fn integration_runtime() -> tokio::runtime::Runtime {
 
 fn security() -> SecurityConfig {
     SecurityConfig {
+        deployment_profile: Default::default(),
+        jwt_algorithm: None,
+        workspace_authorities: Vec::new(),
+        api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
+        api_key_admin_principals: Vec::new(),
+        trusted_host_principals: Vec::new(),
         jwt_required: false,
         jwt_secret: "a2a-thread-test-secret".to_owned().into(),
         jwks_url: None,
@@ -75,6 +81,7 @@ fn security() -> SecurityConfig {
 
 fn user() -> UserContext {
     UserContext {
+        host_authority: None, authority: None,
         user_id: "a2a-thread-user".to_owned(),
         tenant_id: None,
         claims: UserClaims {
@@ -388,10 +395,13 @@ fn actor_collaboration_rejection_prevents_child_dispatch() {
         });
         let mut rejected = false;
         for _ in 0..200 {
-            if harness
-                .manager
-                .resolve_approval(&source_turn.run_id, false)
-                .await
+            let history = harness.manager.history_since(&source_turn.run_id, None).await.unwrap_or_default();
+            let approval_id = history.iter().find_map(|event| match &event.event {
+                universal_agent_runtime::uar::domain::events::NormalizedEvent::ToolCallApprovalRequired { approval_id, .. } => approval_id.as_deref(),
+                _ => None,
+            });
+            if let Some(approval_id) = approval_id
+                && harness.manager.resolve_approval_request(&source_turn.run_id, Some(approval_id), false).await
             {
                 rejected = true;
                 break;
