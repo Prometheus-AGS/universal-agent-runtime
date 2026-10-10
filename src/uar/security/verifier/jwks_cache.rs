@@ -7,6 +7,7 @@ use std::{
 };
 
 use jsonwebtoken::{DecodingKey, jwk::JwkSet};
+use super::{JwksKey, jwk_algorithm};
 use tokio::{
     sync::{Mutex, RwLock},
     time::{Instant, timeout_at},
@@ -33,7 +34,7 @@ pub(crate) enum CacheError {
 }
 
 struct Snapshot {
-    keys: HashMap<String, DecodingKey>,
+    keys: HashMap<String, JwksKey>,
     refreshed_at: Instant,
 }
 
@@ -54,7 +55,7 @@ impl Default for CacheState {
 }
 
 impl CacheState {
-    fn key(&self, kid: &str, unavailable: CacheError) -> Result<DecodingKey, CacheError> {
+    fn key(&self, kid: &str, unavailable: CacheError) -> Result<JwksKey, CacheError> {
         let snapshot = self.snapshot.as_ref().ok_or(unavailable)?;
         if snapshot.refreshed_at.elapsed() >= HARD_AGE {
             return Err(CacheError::Stale);
@@ -116,7 +117,7 @@ impl JwksCache {
     /// A failed refresh can reuse a known key only while its snapshot is younger.
     /// # Panics
     /// Requires a Tokio runtime with time enabled.
-    pub(super) async fn key(&self, kid: &str) -> Result<DecodingKey, CacheError> {
+    pub(super) async fn key(&self, kid: &str) -> Result<JwksKey, CacheError> {
         let deadline = Instant::now() + FETCH_TIMEOUT;
         match timeout_at(deadline, self.key_before(kid, deadline)).await {
             Ok(result) if Instant::now() < deadline => result,
@@ -131,7 +132,7 @@ impl JwksCache {
         }
     }
 
-    async fn key_before(&self, kid: &str, deadline: Instant) -> Result<DecodingKey, CacheError> {
+    async fn key_before(&self, kid: &str, deadline: Instant) -> Result<JwksKey, CacheError> {
         let observed_attempt = {
             let state = self.state.read().await;
             if !state.refresh_due(kid) {
@@ -191,7 +192,7 @@ impl JwksCache {
         state.key(kid, state.last_error)
     }
 
-    async fn fetch(&self, deadline: Instant) -> Result<HashMap<String, DecodingKey>, CacheError> {
+    async fn fetch(&self, deadline: Instant) -> Result<HashMap<String, JwksKey>, CacheError> {
         let response = self
             .client
             .get(&self.url)
@@ -212,8 +213,11 @@ impl JwksCache {
             let Some(kid) = jwk.common.key_id.as_ref() else {
                 continue;
             };
+            let Some(algorithm) = jwk_algorithm(&jwk) else {
+                continue;
+            };
             let key = DecodingKey::from_jwk(&jwk).map_err(|_| CacheError::InvalidKeySet)?;
-            keys.insert(kid.clone(), key);
+            keys.insert(kid.clone(), JwksKey { key, algorithm });
         }
         Ok(keys)
     }

@@ -296,7 +296,15 @@ impl AdmissionLifecycle {
             LiveState::AwaitingApproval | LiveState::Claimed | LiveState::NativeClaimed => {}
         }
         let acknowledged_native = *state == LiveState::NativeClaimed;
-        let cancellation = host.cancel(invocation, admission_id, reason).await;
+        let cancellation = if matches!(*state, LiveState::Claimed | LiveState::NativeClaimed)
+            && invocation.admission_owner
+                == crate::uar::persistence::tool_admission::AdmissionOwner::UarRuntime
+        {
+            // A claimed runtime control may already have changed team state.
+            Ok(AdmissionCancellationOutcome::AlreadyClaimed)
+        } else {
+            host.cancel(invocation, admission_id, reason).await
+        };
         // A consumed native acknowledgment cannot be rolled back. A lost cancel
         // response likewise leaves the durable intent unresolved, never reusable.
         let outcome = if acknowledged_native {
@@ -377,6 +385,7 @@ impl ToolAdmissionEvidence {
             invocation_id: invocation.invocation_id.clone(),
             admission_id: admission_id.to_owned(),
             tool_name: invocation.provider_tool_name.clone(),
+            admission_owner: invocation.admission_owner,
             runtime_epoch: invocation.runtime_epoch.clone(),
             host_epoch: invocation.host_epoch.clone(),
             state,
@@ -404,7 +413,7 @@ impl ToolAdmissionRuntime {
             "Tool invocation was cancelled before claim"
         );
         for revalidator in &self.claim_revalidators {
-            revalidator.revalidate().await?;
+            revalidator.revalidate_invocation(admitted).await?;
         }
         let refreshed = self.host.revalidate_claim(admitted).await?;
         anyhow::ensure!(

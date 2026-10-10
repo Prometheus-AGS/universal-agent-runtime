@@ -164,6 +164,17 @@ pub async fn auth_middleware(
         })
         .transpose()?;
 
+    // The outer grant guard captured this identity at issuance. A grant never
+    // becomes a host assertion, nor may another caller header replace its owner.
+    if let Some(delegated) = request
+        .extensions()
+        .get::<super::delegation_grants::DelegationAuthenticated>()
+        .cloned()
+    {
+        request.extensions_mut().insert(delegated.0);
+        return Ok(next.run(request).await);
+    }
+
     // Health probe endpoints must always be reachable without credentials
     // so that Kubernetes liveness and readiness probes pass.
     let path = request.uri().path();

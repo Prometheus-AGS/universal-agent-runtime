@@ -14,7 +14,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
     let admission_id = serde_json::json!({"name": "admission_id", "in": "path", "required": true, "schema": {"type": "string"}});
     let task_id = serde_json::json!({"name": "task_id", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^fh-"}});
     let workspace_id = serde_json::json!({"name": "x-uar-workspace-id", "in": "header", "required": true, "schema": {"type": "string", "minLength": 1}, "description": "Authenticated workspace partition for admission, reconciliation, observation, and control"});
-    serde_json::from_value(serde_json::json!({
+    let mut spec = serde_json::json!({
         "openapi": "3.1.0",
         "info": {
             "title": "Universal Agent Runtime",
@@ -153,6 +153,23 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "tags": ["runs"],
                     "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}],
                     "responses": { "200": { "description": "Normalized SSE event stream" } }
+                }
+            },
+            "/api/uar/runs/{id}/events": {
+                "get": {
+                    "summary": "Read owner-scoped run event snapshot",
+                    "description": "Read existing bounded process-local public SSE projections without subscribing or cancelling. No durable replay guarantee. gapReason reports incomplete retention or a cursor ahead of this snapshot.",
+                    "tags": ["runs"],
+                    "security": [{"bearerAuth": []}],
+                    "parameters": [
+                        {"name": "id", "in": "path", "required": true, "schema": {"type": "string"}},
+                        {"name": "after", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 0, "default": 0}, "description": "Exclusive event cursor"}
+                    ],
+                    "responses": {
+                        "200": {"description": "Versioned bounded public event snapshot", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RunEventSnapshot"}}}},
+                        "400": {"description": "Invalid query cursor"},
+                        "404": {"description": "Run/history unavailable or outside current owner scope"}
+                    }
                 }
             },
             "/api/uar/full-harness/v1/tasks": {
@@ -309,6 +326,19 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "responses": { "201": { "description": "Skill created" } }
                 }
             },
+            "/api/uar/skills/deployment-catalog": {
+                "get": {
+                    "summary": "Read trusted installed skill deployment metadata",
+                    "description": "Admin Read only. Requires an authenticated nonanonymous principal and the configured x-uar-admin-key. Returns current registry identities including tombstones; portable SkillRef is separate from private installedLocation. required=true/config={} are authoring defaults. Discovery grants no binding or tool authority. Also mounted under /api/skills/deployment-catalog.",
+                    "tags": ["skills"],
+                    "security": [{"bearerAuth": [], "uarAdminKey": []}],
+                    "responses": {
+                        "200": {"description": "Stored deployment catalog", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SkillDeploymentCatalog"}}}},
+                        "401": {"description": "Authenticated nonanonymous principal required"},
+                        "403": {"description": "Configured admin key required; no optional-auth bypass"}
+                    }
+                }
+            },
             "/api/uar/skills/refresh": {
                 "post": {
                     "summary": "Refresh skills",
@@ -389,9 +419,48 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
         },
         "components": {
             "securitySchemes": {
-                "bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
+                "bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"},
+                "uarAdminKey": {"type": "apiKey", "in": "header", "name": "x-uar-admin-key"}
             },
             "schemas": {
+                "SkillDeploymentCatalog": {
+                    "type": "object", "additionalProperties": false,
+                    "required": ["schemaVersion", "entries"],
+                    "properties": {
+                        "schemaVersion": {"type": "integer", "enum": [1]},
+                        "entries": {"type": "array", "items": {"$ref": "#/components/schemas/SkillDeploymentCatalogEntry"}}
+                    }
+                },
+                "SkillDeploymentCatalogEntry": {
+                    "type": "object", "additionalProperties": false,
+                    "required": ["skillId", "title", "description", "enabled", "tombstoned", "availability", "reasons", "skillRef", "privateBinding"],
+                    "properties": {
+                        "skillId": {"type": "string"}, "title": {"type": "string"}, "description": {"type": "string"},
+                        "enabled": {"type": "boolean"}, "tombstoned": {"type": "boolean"},
+                        "availability": {"type": "string", "enum": ["available", "unavailable"]},
+                        "reasons": {"type": "array", "items": {"type": "string", "enum": ["missing-skill-id", "missing-version", "missing-artifact-digest", "missing-installed-location", "disabled", "tombstoned"]}},
+                        "skillRef": {"nullable": true, "allOf": [{"$ref": "#/components/schemas/DeploymentCatalogSkillRef"}]},
+                        "privateBinding": {"nullable": true, "allOf": [{"$ref": "#/components/schemas/SkillInstallationBinding"}]}
+                    }
+                },
+                "DeploymentCatalogSkillRef": {
+                    "type": "object", "additionalProperties": false,
+                    "description": "Portable domain SkillRef. required=true/config={} are explicit authoring defaults; callers may author them. Artifact identity, entrypoint and requiredTools are stored values.",
+                    "required": ["id", "version", "digest", "required", "config", "entrypoint", "requiredTools"],
+                    "properties": {
+                        "id": {"type": "string"}, "version": {"type": "string"}, "digest": {"type": "string"},
+                        "required": {"type": "boolean"}, "config": {"type": "object"},
+                        "entrypoint": {"type": "string", "nullable": true},
+                        "requiredTools": {"type": "array", "items": {"type": "string"}}
+                    }
+                },
+                "SkillInstallationBinding": {
+                    "type": "object", "additionalProperties": false,
+                    "description": "Private deployment metadata; must never be included in portable definitions or renderer display.",
+                    "required": ["installedLocation"],
+                    "properties": {"installedLocation": {"type": "string"}}
+                },
+                "RunEventSnapshot": super::run_events::snapshot_schema(),
                 "FullHarnessAdmissionRequest": {
                     "type": "object",
                     "required": ["admission_id", "native_task_id", "input"],
@@ -473,7 +542,9 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                 }
             }
         }
-    }))
+    });
+    super::delegation_grants::extend_openapi(&mut spec);
+    serde_json::from_value(spec)
     .expect("OpenAPI spec JSON is valid")
 }
 

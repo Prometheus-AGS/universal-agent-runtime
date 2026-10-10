@@ -1,14 +1,19 @@
 //! Compiler and immutable catalog for collaboration packages.
 
 mod bindings;
+mod reviewed_skills;
+mod connector_effect;
 mod export;
+mod feedback_intake;
 mod grants;
+mod representation;
 mod runtime_semantics;
 mod service;
 mod storage;
 mod team_mailbox;
 mod team_planning;
 mod team_execution;
+pub(crate) mod workflow_execution;
 mod validation;
 
 pub use export::{

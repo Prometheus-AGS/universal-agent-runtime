@@ -273,6 +273,13 @@ impl SkillRegistry {
         skills
     }
 
+    /// Current deployment metadata, including tombstones, for trusted admin reads.
+    pub(crate) fn list_for_deployment(&self) -> Vec<Skill> {
+        let mut skills = self.skills.values().cloned().collect::<Vec<_>>();
+        skills.sort_by(|left, right| left.skill_id.cmp(&right.skill_id));
+        skills
+    }
+
     /// List only enabled skills.
     pub fn list_enabled(&self) -> Vec<Skill> {
         self.skills

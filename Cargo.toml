@@ -108,6 +108,12 @@ name = "test_a2a_grpc"
 path = "tests/test_a2a_grpc.rs"
 required-features = ["a2a-transport"]
 
+# JWKS ES256/RS256 verification is observed through the A2A gRPC auth path.
+[[test]]
+name = "jwks_es256_verification"
+path = "tests/jwks_es256_verification.rs"
+required-features = ["a2a-transport"]
+
 # The embedding integration suite initializes the optional on-device model.
 # Profiles without local inference must not execute it; `server-full` does.
 [[test]]
@@ -368,7 +374,7 @@ reqwest_mcp = { package = "reqwest", version = "=0.13.4", default-features = fal
 # fixes GHSA-89vp-x53w-74fx, a DNS-rebinding vuln in the Streamable HTTP
 # server transport (patched >=1.4.0) -- this project enables
 # transport-streamable-http-server below, so it was directly exposed.
-rmcp = { version = "=3.1.2", features = [
+rmcp = { version = "=3.4.1", features = [
   "client",
   "server",
   "macros",
@@ -479,7 +485,7 @@ sqlx = { version = "0.8.6", default-features = false, optional = true, features 
 # our sqlx 0.8.6 pin. pgvector 0.4.2 widened to `>=0.8, <0.10`, causing cargo to
 # resolve a second sqlx 0.9.0 whose Encode/Type impls don't match sqlx 0.8.6.
 pgvector = { version = "=0.4.2", optional = true, features = ["sqlx"] }
-text-splitter = "0.32.0"
+text-splitter = { version = "0.32.0", features = ["markdown"] }
 chrono = { version = "0.4.44", features = ["serde"] }
 walkdir = "2.5.0"
 serde_yaml = "0.9"

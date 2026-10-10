@@ -82,26 +82,26 @@ async fn roots_and_children_require_exact_ids_without_consuming_other_pending_re
         let first_id = originating_id(&sink, "call-one").await;
         assert!(broker.pending("other-owner", "root").is_none());
         for id in [None, Some(""), Some(" "), Some("stale-invocation")] {
-            assert!(!broker.resolve("root", id, true));
+            assert!(!broker.resolve("root", id, true).await);
             assert_eq!(
                 broker.pending("owner", "root").unwrap().approval_id,
                 first_id
             );
             assert!(!first.is_finished());
         }
-        assert!(!broker.resolve("other-run", Some(&first_id), true));
-        assert!(broker.resolve("root", Some(&first_id), true));
-        assert!(!broker.resolve("root", Some(&first_id), true));
+        assert!(!broker.resolve("other-run", Some(&first_id), true).await);
+        assert!(broker.resolve("root", Some(&first_id), true).await);
+        assert!(!broker.resolve("root", Some(&first_id), true).await);
         assert_eq!(first.await.unwrap(), ApprovalOutcome::Approved);
         let second = request(channel, "call-two", CancellationToken::new());
         let second_id = originating_id(&sink, "call-two").await;
         assert_ne!(first_id, second_id);
-        assert!(!broker.resolve("root", Some(&first_id), true));
+        assert!(!broker.resolve("root", Some(&first_id), true).await);
         assert_eq!(
             broker.pending("owner", "root").unwrap().approval_id,
             second_id
         );
-        assert!(broker.resolve("root", Some(&second_id), false));
+        assert!(broker.resolve("root", Some(&second_id), false).await);
         assert_eq!(second.await.unwrap(), ApprovalOutcome::Rejected);
     }
 }
@@ -124,18 +124,18 @@ async fn cancellation_and_dropped_waiters_cannot_be_revived() {
     let child_id = originating_id(&sink, "cancelled-child").await;
     child_cancel.cancel();
     // Resolve immediately, before the request future necessarily polls cancellation.
-    assert!(!broker.resolve("root", Some(&child_id), true));
+    assert!(!broker.resolve("root", Some(&child_id), true).await);
     assert!(broker.pending("owner", "root").is_none());
     assert_eq!(child.await.unwrap(), ApprovalOutcome::Cancelled);
     let dropped = request(root.clone(), "dropped", CancellationToken::new());
     let dropped_id = originating_id(&sink, "dropped").await;
     dropped.abort();
     let _ = dropped.await;
-    assert!(!broker.resolve("root", Some(&dropped_id), true));
+    assert!(!broker.resolve("root", Some(&dropped_id), true).await);
     let last = request(root, "cancelled-root", CancellationToken::new());
     let last_id = originating_id(&sink, "cancelled-root").await;
     root_cancel.cancel();
-    assert!(!broker.resolve("root", Some(&last_id), true));
+    assert!(!broker.resolve("root", Some(&last_id), true).await);
     assert_eq!(last.await.unwrap(), ApprovalOutcome::Cancelled);
 }
 
@@ -155,8 +155,8 @@ async fn concurrent_decisions_deliver_at_most_one_exact_resolution() {
     let id = originating_id(&sink, "one-effect").await;
     let other = broker.clone();
     let duplicate = id.clone();
-    let first = tokio::spawn(async move { other.resolve("root", Some(&duplicate), true) });
-    let second = broker.resolve("root", Some(&id), true);
+    let first = tokio::spawn(async move { other.resolve("root", Some(&duplicate), true).await });
+    let second = broker.resolve("root", Some(&id), true).await;
     assert_ne!(first.await.unwrap(), second);
     assert_eq!(waiter.await.unwrap(), ApprovalOutcome::Approved);
 }

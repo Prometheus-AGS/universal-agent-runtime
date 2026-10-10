@@ -29,7 +29,7 @@ use crate::{
             matching::VectorMatcher,
             native_skill::NativeSkillRegistry,
             skills::{
-                builtin_loader::discover_builtin_skills, service::SkillService,
+                reviewed_coverage::discover_host_builtin_skills, service::SkillService,
                 storage::DatabaseStorageProvider,
             },
         },
@@ -398,7 +398,7 @@ impl EmbeddedRuntimeBuilder {
         )));
         let skill_service = Arc::new(skill_service);
         if self.seed_defaults {
-            let (builtins, _) = discover_builtin_skills();
+            let (builtins, _) = discover_host_builtin_skills().await;
             skill_service.register_builtins(builtins).await;
         }
         skill_service.initialize().await?;

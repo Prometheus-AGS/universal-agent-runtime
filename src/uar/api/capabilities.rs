@@ -8,9 +8,13 @@
 
 use std::sync::Arc;
 
-use axum::{Json, extract::State};
+use axum::{
+    Json,
+    extract::{Extension, State},
+};
 use serde::Serialize;
 
+use crate::uar::security::sidecar_guard::HostAuthenticated;
 use crate::uar::service_instance::{
     CompatibilityResponse, PlacementSupport, ServiceEndpointRoles, ServiceInstanceAuthority,
     ServiceInstanceIdentity, ServiceInstanceReferences, ServicePlacementExpectation,
@@ -21,6 +25,22 @@ pub const AGUI_PROFILE: &str = "uar.agui/1";
 
 /// AG-UI profile revision of the runs stream.
 pub const AGUI_PROFILE_REVISION: u32 = 1;
+// C10 customer feedback requires the existing classify/draft interpreter in the normal profile.
+// Availability still requires team execution ownership; publication requires separate approval.
+pub const WORKFLOW_EXECUTION_QUALIFIED: bool = true;
+pub fn workflow_execution_enabled() -> bool {
+    WORKFLOW_EXECUTION_QUALIFIED
+        || std::env::var("UAR_WORKFLOW_EXECUTION_PROFILE_STAGE").as_deref() == Ok("operation")
+}
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkflowExecutionCapability {
+    pub capability: &'static str,
+    pub interpretation_version: &'static str,
+    pub stage: &'static str,
+    pub available: bool,
+    pub qualified: bool,
+}
 pub const TEAM_EXECUTION_PROFILE: &str = "urn:prometheus:uar:team-execution:0.1.0";
 pub const TEAM_EXECUTION_B_CAPABILITIES: [&str; 3] = [
     "team_execution_peer_tools_v1",
@@ -45,7 +65,10 @@ pub fn team_execution_b_enabled() -> bool {
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.
-pub const CAPABILITY_VOCABULARY: [&str; 25] = [
+pub const CAPABILITY_VOCABULARY: [&str; 29] = [
+    crate::uar::runtime::turn::representation::CAPABILITY,
+    crate::uar::runtime::team_execution::host::CAPABILITY,
+    crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY,
     "agui_stream_fidelity",
     "approval_lifecycle_v1",
     "collaboration_definition_packages_v1",
@@ -64,6 +87,7 @@ pub const CAPABILITY_VOCABULARY: [&str; 25] = [
     "reasoning_effort",
     "run_scoped_credentials",
     "run_scoped_mcp_servers",
+    crate::uar::security::delegation_grants::DELEGATION_GRANTS_CAPABILITY,
     "secrets_at_rest",
     "session_principal",
     "service_instance_placement_v1",
@@ -75,7 +99,9 @@ pub const CAPABILITY_VOCABULARY: [&str; 25] = [
 
 /// Capabilities this binary implements. Each owning change adds its name in
 /// the same commit as the behaviour.
-pub const IMPLEMENTED_CAPABILITIES: [&str; 16] = [
+pub const IMPLEMENTED_CAPABILITIES: [&str; 18] = [
+    crate::uar::runtime::turn::representation::CAPABILITY,
+    crate::uar::runtime::team_execution::host::CAPABILITY,
     "approval_lifecycle_v1",
     "collaboration_definition_packages_v1",
     "collaboration_definition_packages_v2",
@@ -108,9 +134,60 @@ pub struct AguiProfile {
     pub profile_revision: u32,
 }
 
+/// Principal contract of the authenticated transport serving this request.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthenticationCapabilities {
+    pub principal_mode: PrincipalMode,
+    /// Present only on the managed-local host or scoped-grant transport.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub delegation_grants: Option<DelegationGrantCapabilities>,
+}
+
+/// Host-only issuance, finite lifetime, and the explicit delegation vocabulary.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DelegationGrantCapabilities {
+    pub capability: &'static str,
+    pub issue_path: &'static str,
+    pub revoke_path: &'static str,
+    pub expires_in: u64,
+    pub operations: [crate::uar::security::delegation_grants::DelegationOperation; 4],
+    pub host_issuance_only: bool,
+    pub persistence: &'static str,
+}
+
+fn delegation_grant_capabilities() -> DelegationGrantCapabilities {
+    use crate::uar::security::delegation_grants::{
+        DELEGATION_GRANTS_CAPABILITY, DelegationOperation, GRANT_TTL_SECONDS,
+    };
+    DelegationGrantCapabilities {
+        capability: DELEGATION_GRANTS_CAPABILITY,
+        issue_path: "/api/uar/delegation-grants",
+        revoke_path: "/api/uar/delegation-grants/{id}",
+        expires_in: GRANT_TTL_SECONDS,
+        operations: [
+            DelegationOperation::Discovery,
+            DelegationOperation::ModelRead,
+            DelegationOperation::ModelCompletion,
+            DelegationOperation::FullHarnessDelegation,
+        ],
+        host_issuance_only: true,
+        persistence: "process_ephemeral",
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PrincipalMode {
+    HostAsserted,
+    TokenSubject,
+}
+
 /// Body of `GET /api/uar/capabilities`.
 #[derive(Debug, Serialize)]
 pub struct CapabilitiesResponse {
+    pub authentication: AuthenticationCapabilities,
     #[serde(rename = "executionProfile")]
     pub execution_profile: &'static str,
     #[serde(rename = "executionProfileStage")]
@@ -125,16 +202,32 @@ pub struct CapabilitiesResponse {
     /// Sorted, duplicate-free names from [`CAPABILITY_VOCABULARY`].
     pub capabilities: Vec<String>,
     pub collaboration: CollaborationCapabilities,
+    pub federation: FederationSupport,
     pub administration: super::administration_capabilities::AdministrationCapabilities,
 }
 
+/// Supported federation is delegation to one authenticated execution authority.
+/// An agent card is discovery data, never a resource grant or takeover proof.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FederationSupport {
+    pub profile: &'static str,
+    pub registry_discovery: bool,
+    pub selected_instance_delegation: bool,
+    pub team_endpoint: bool,
+    pub resource_side_team_fencing: bool,
+    pub distributed_team_members: bool,
+    pub automatic_takeover: bool,
+    pub registry_advertisement_grants_authority: bool,
+}
 /// Runtime collaboration contract shared by REST and MCP discovery.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CollaborationCapabilities {
+    pub workflow_execution: WorkflowExecutionCapability,
     pub accepted_profiles: [&'static str; 2],
     pub document_kinds: [&'static str; 9],
-    pub schema_ids: [&'static str; 11],
+    pub schema_ids: [&'static str; 12],
     pub export_classes: [&'static str; 5],
     pub activation: CollaborationActivationLimits,
 }
@@ -157,6 +250,19 @@ pub struct CollaborationActivationLimits {
 /// Return the exact collaboration profiles and schema family implemented here.
 pub fn collaboration_capabilities() -> CollaborationCapabilities {
     CollaborationCapabilities {
+        workflow_execution: WorkflowExecutionCapability {
+            capability: crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY,
+            interpretation_version: "1.0.0",
+            stage: if WORKFLOW_EXECUTION_QUALIFIED {
+                "qualified"
+            } else if workflow_execution_enabled() {
+                "operation"
+            } else {
+                "unqualified"
+            },
+            available: false,
+            qualified: WORKFLOW_EXECUTION_QUALIFIED,
+        },
         accepted_profiles: [
             crate::uar::domain::collaboration::COLLABORATION_PROFILE_DRAFT_1,
             crate::uar::domain::collaboration::COLLABORATION_PROFILE_DRAFT_2,
@@ -173,6 +279,7 @@ pub fn collaboration_capabilities() -> CollaborationCapabilities {
             "DeploymentBindingTemplate",
         ],
         schema_ids: [
+            "https://schemas.prometheus-ags.dev/uar/collaboration/workflow-execution/1.0.0/extension.schema.json",
             "https://schemas.prometheus-ags.dev/uar/collaboration/0.1.0-draft.2/common.schema.json",
             "https://schemas.prometheus-ags.dev/uar/collaboration/0.1.0-draft.2/collaboration-document.schema.json",
             "https://schemas.prometheus-ags.dev/uar/collaboration/0.1.0-draft.2/agent-definition.schema.json",
@@ -200,13 +307,16 @@ pub fn collaboration_capabilities() -> CollaborationCapabilities {
             team_instance: false,
             team_execution: false,
             workflow: false,
-            human_representation: false,
+            human_representation: true,
         },
     }
 }
 
 /// `GET /api/uar/capabilities`
-pub fn capabilities_response(service_instance: &ServiceInstanceAuthority) -> CapabilitiesResponse {
+pub fn capabilities_response(
+    service_instance: &ServiceInstanceAuthority,
+    host_authenticated: Option<&HostAuthenticated>,
+) -> CapabilitiesResponse {
     let descriptor = service_instance.descriptor();
     let mut collaboration = collaboration_capabilities();
     let team_execution_available = descriptor
@@ -215,7 +325,26 @@ pub fn capabilities_response(service_instance: &ServiceInstanceAuthority) -> Cap
         .any(|capability| capability == "collaboration_team_execution_v1");
     collaboration.activation.team_instance = team_execution_available;
     collaboration.activation.team_execution = team_execution_available;
+    collaboration.workflow_execution.available =
+        team_execution_available && workflow_execution_enabled();
+    collaboration.activation.workflow = collaboration.workflow_execution.available;
+    let mut capabilities = descriptor.capabilities.clone();
+    if host_authenticated.is_some() {
+        capabilities.push(
+            crate::uar::security::delegation_grants::DELEGATION_GRANTS_CAPABILITY.to_owned(),
+        );
+        capabilities.sort();
+        capabilities.dedup();
+    }
     CapabilitiesResponse {
+        authentication: AuthenticationCapabilities {
+            principal_mode: if host_authenticated.is_some() {
+                PrincipalMode::HostAsserted
+            } else {
+                PrincipalMode::TokenSubject
+            },
+            delegation_grants: host_authenticated.map(|_| delegation_grant_capabilities()),
+        },
         execution_profile: TEAM_EXECUTION_PROFILE,
         execution_profile_stage: team_execution_profile_stage(),
         uar_version: env!("CARGO_PKG_VERSION"),
@@ -228,7 +357,17 @@ pub fn capabilities_response(service_instance: &ServiceInstanceAuthority) -> Cap
         ownership: descriptor.ownership,
         references: descriptor.references.clone(),
         placement: descriptor.placement.clone(),
-        capabilities: descriptor.capabilities.clone(),
+        capabilities,
+        federation: FederationSupport {
+            profile: "urn:prometheus:uar:federation:1",
+            registry_discovery: true,
+            selected_instance_delegation: descriptor.capabilities.iter().any(|capability| capability == "full_harness_delegation_v1"),
+            team_endpoint: team_execution_available,
+            resource_side_team_fencing: team_execution_available,
+            distributed_team_members: false,
+            automatic_takeover: false,
+            registry_advertisement_grants_authority: false,
+        },
         collaboration,
         administration: super::administration_capabilities::administration_capabilities(
             descriptor
@@ -246,8 +385,21 @@ pub fn capabilities_response(service_instance: &ServiceInstanceAuthority) -> Cap
 /// `GET /api/uar/capabilities`
 pub async fn capabilities_handler(
     State(state): State<Arc<CapabilitiesApiState>>,
+    host_authenticated: Option<Extension<HostAuthenticated>>,
+    delegated: Option<Extension<crate::uar::security::delegation_grants::DelegationAuthenticated>>,
 ) -> Json<CapabilitiesResponse> {
-    let mut response = capabilities_response(&state.service_instance);
+    let mut response = capabilities_response(
+        &state.service_instance,
+        host_authenticated.as_ref().map(|Extension(host)| host),
+    );
+    if delegated.is_some() {
+        response.authentication.delegation_grants = Some(delegation_grant_capabilities());
+        response.capabilities.push(
+            crate::uar::security::delegation_grants::DELEGATION_GRANTS_CAPABILITY.to_owned(),
+        );
+        response.capabilities.sort();
+        response.capabilities.dedup();
+    }
     if !state
         .collaboration_catalog
         .execution_ownership_view()
@@ -256,9 +408,14 @@ pub async fn capabilities_handler(
     {
         response.capabilities.retain(|c| {
             c != "collaboration_team_execution_v1"
+                && c != crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY
                 && !TEAM_EXECUTION_B_CAPABILITIES.contains(&c.as_str())
         });
+        response.federation.team_endpoint = false;
+        response.federation.resource_side_team_fencing = false;
         response.collaboration.activation.team_execution = false;
+        response.collaboration.activation.workflow = false;
+        response.collaboration.workflow_execution.available = false;
     }
     Json(response)
 }
@@ -270,6 +427,7 @@ pub async fn compatibility_handler(
 ) -> Json<CompatibilityResponse> {
     if expectation.required_capabilities.iter().any(|c| {
         c == "collaboration_team_execution_v1"
+            || c == crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY
             || TEAM_EXECUTION_B_CAPABILITIES.contains(&c.as_str())
     }) && !state
         .collaboration_catalog

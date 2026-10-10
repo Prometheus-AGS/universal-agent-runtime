@@ -239,6 +239,7 @@ impl std::fmt::Debug for ActorToolApprovalGate {
 #[derive(Debug)]
 struct RunStreamState {
     run: Run,
+    approval_root_run_id: Option<String>,
     /// Full middleware-verified identity retained only by the host. The public
     /// Run record keeps its stable subject-only wire schema.
     verified_owner: Option<crate::uar::runtime::actor::messages::ActorOwner>,
@@ -557,7 +558,7 @@ fn provider_id_for_config(config: &LlmConfig) -> String {
 }
 
 fn qualified_model_name(config: &LlmConfig) -> String {
-    let model_id = if config.host_supplied_connection {
+    let model_id = if config.host_supplied_connection || config.base_url.is_some() {
         config.model.clone()
     } else {
         crate::llm::registry::split_model_string_pub(&config.model)
@@ -928,6 +929,7 @@ impl RunManager {
                 &tool_runtime_epoch,
             ),
         );
+        let approvals = ApprovalBroker::new(persistence.clone(), tool_runtime_epoch.clone());
         Self {
             graph_roots: Arc::new(
                 crate::uar::runtime::thread::graph_host::GraphRootSupervisor::default(),
@@ -966,7 +968,7 @@ impl RunManager {
             a2ui_backbone: crate::uar::a2ui::realtime::InMemoryReplayBackbone::new(),
             primary_driver: None,
             destination_preparations: None,
-            approvals: ApprovalBroker::default(),
+            approvals,
             root_cancellation: CancellationToken::new(),
             run_cancellations: Arc::new(RwLock::new(HashMap::new())),
             message_context_strategy: crate::uar::context::ContextStrategy::default(),
@@ -1143,6 +1145,41 @@ impl RunManager {
                 .write()
                 .await
                 .retain(|session_key, _| !removed.contains(session_key));
+        }
+
+        // Persisted-session TTL sweep (opt-in via sessions.persisted_ttl_secs).
+        if let Some(ttl_secs) = self.session_retention.persisted_ttl_secs {
+            if ttl_secs > 0 {
+                if let Some(persistence) = &self.persistence {
+                    let cutoff = chrono::Utc::now()
+                        - chrono::Duration::seconds(i64::try_from(ttl_secs).unwrap_or(i64::MAX));
+                    match persistence.list_expired_sessions(cutoff).await {
+                        Ok(expired) => {
+                            for (owner_id, session_id) in &expired {
+                                if let Err(error) =
+                                    persistence.delete_session(owner_id, session_id).await
+                                {
+                                    tracing::warn!(
+                                        %error, %owner_id, %session_id,
+                                        "failed to delete expired persisted session"
+                                    );
+                                } else {
+                                    self.sessions.remove_for_user(session_id, owner_id);
+                                }
+                            }
+                            if !expired.is_empty() {
+                                tracing::info!(
+                                    count = expired.len(),
+                                    "persisted sessions purged by TTL sweep"
+                                );
+                            }
+                        }
+                        Err(error) => {
+                            tracing::warn!(%error, "failed to list expired sessions for TTL sweep");
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -1657,7 +1694,21 @@ impl RunManager {
         approval_id: Option<&str>,
         approved: bool,
     ) -> bool {
-        self.approvals.resolve(run_id, approval_id, approved)
+        self.approvals.resolve_record(run_id, approval_id, approved).await
+            .ok().flatten().is_some_and(|(_, delivered)| delivered)
+    }
+
+    pub(crate) async fn resolve_approval_record(
+        &self, run_id: &str, approval_id: Option<&str>, approved: bool,
+    ) -> anyhow::Result<Option<(crate::uar::persistence::approval_decisions::ApprovalRecord, bool)>> {
+        self.approvals.resolve_record(run_id, approval_id, approved).await
+    }
+
+    pub(crate) async fn approval_records_for_context(
+        &self, user: &crate::uar::security::claims::UserContext, run_id: &str, workspace: Option<&str>,
+    ) -> anyhow::Result<(bool, Vec<crate::uar::persistence::approval_decisions::ApprovalRecordView>)> {
+        let owner = crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user)?;
+        self.approvals.records(&owner.presentation_owner_key(), run_id, workspace).await
     }
 
     /// Return the existing live waiter for an owner. This snapshot is a view of
@@ -1693,6 +1744,12 @@ impl RunManager {
             cursor,
             approval,
         })
+    }
+
+    /// Read the identity captured from the assembled root approval channel.
+    pub(crate) async fn approval_root_run_id(&self, run_id: &str) -> Option<String> {
+        self.active_runs.read().await.get(run_id)
+            .and_then(|state| state.approval_root_run_id.clone())
     }
 
     /// Read sanitized durable lifecycle evidence for one owner/run tree.
@@ -1749,6 +1806,33 @@ impl RunManager {
         token.cancel();
         tracing::info!(run_id = %run_id, "Run cancellation requested");
         true
+    }
+
+    /// Host grant installation invalidates only runs pinned to an older grant revision.
+    pub(crate) async fn invalidate_representation_grant(
+        &self,
+        owner: &str,
+        workspace: &str,
+        grant: &crate::uar::domain::collaboration::RepresentationGrant,
+    ) {
+        let runs = self.active_runs.read().await.values().filter_map(|state| {
+            let context = &state.run.context;
+            let binding = context.get("effective_collaboration_binding")?;
+            if binding["ownerId"].as_str() != Some(owner)
+                || binding["workspaceId"].as_str() != Some(workspace) {
+                return None;
+            }
+            let invalidated = context.get("representation_grants")?.as_array()?.iter().any(|reference| {
+                reference["grantId"].as_str() == Some(grant.grant_id.as_str())
+                    && (reference["revision"].as_u64() != Some(grant.revision)
+                        || grant.status != crate::uar::domain::collaboration::RepresentationGrantStatus::Active
+                        || grant.revocation.is_some())
+            });
+            invalidated.then(|| state.run.run_id.clone())
+        }).collect::<Vec<_>>();
+        for run in runs {
+            self.cancel_run(&run).await;
+        }
     }
 
     /// Cancel an in-flight run only when it belongs to the authenticated owner.
@@ -2521,6 +2605,7 @@ impl RunManager {
                         context: serde_json::json!({ "agent_snapshot": null }),
                     },
                     verified_owner: request.verified_owner.clone(),
+                    approval_root_run_id: None,
                     presentations: None,
                     dialogue: RunDialogue(
                         SessionStore::new().get_or_create_for_user(
@@ -2816,7 +2901,7 @@ impl RunManager {
             input,
             session_id,
             user_id,
-            memory_hits,
+            mut memory_hits,
             resolved_policy,
             presentation_negotiation,
             seed_history,
@@ -3076,6 +3161,14 @@ impl RunManager {
         let artifact = inherited
             .as_ref()
             .map_or(artifact, |bindings| bindings.policy.artifact().clone());
+        // Capture committed settings once for this turn, including team members.
+        let (turn_resilience_policy, _) =
+            crate::uar::settings::persisted_resilience::resolve_persisted_resilience_policy(
+                &self.resilience_policy,
+                self.settings_manager.as_deref(),
+                &artifact.id,
+            )
+            .await;
         let sandbox = match &inherited {
             Some(bindings) => Ok(bindings.sandbox.clone()),
             None => self
@@ -3217,6 +3310,20 @@ impl RunManager {
             }
         }
 
+        // Attempt-bound peer handlers are created later, but their identities
+        // must enter the universe before normal scopes can select or deny them.
+        let mut attempt_native_tools = BTreeSet::new();
+        if collaboration_binding
+            .as_ref()
+            .is_some_and(|binding| binding.team_attempt.is_some())
+            && crate::uar::api::capabilities::team_execution_b_enabled()
+        {
+            attempt_native_tools.extend(
+                crate::uar::runtime::native_skills::team_tools::TEAM_TOOL_NAMES
+                    .into_iter()
+                    .map(str::to_owned),
+            );
+        }
         let pre_resolved_policy = pre_resolved_policy_for_run(
             is_checkpoint_resume,
             inherited
@@ -3237,7 +3344,7 @@ impl RunManager {
                     mcp_resources
                         .as_ref()
                         .map(|resources| resources.catalog().as_ref()),
-                    None,
+                    Some(&attempt_native_tools),
                     verified_owner.as_ref(),
                 )
                 .await
@@ -3278,7 +3385,7 @@ impl RunManager {
                 .as_ref()
                 .filter(|resources| resources.run_scoped_names().is_some())
         {
-            let discovered = match resources.discover_tool_ids(&effective_policy).await {
+            let mut discovered = match resources.discover_tool_ids(&effective_policy).await {
                 Ok(discovered) => discovered,
                 Err(error) => {
                     emitter
@@ -3297,6 +3404,7 @@ impl RunManager {
                     return run_id;
                 }
             };
+            discovered.append(&mut attempt_native_tools);
             effective_policy = self
                 .resolve_effective_policy_with_catalog(
                     &artifact,
@@ -3334,6 +3442,32 @@ impl RunManager {
                 return run_id;
             }
         }
+
+        let representation_context = match async {
+            let Some(binding) = collaboration_binding.as_ref().filter(|binding| binding.has_representation()) else {
+                return Ok::<_, anyhow::Error>(None);
+            };
+            anyhow::ensure!(self.governance_engine.is_some()
+                && self.governance_gate.as_ref().is_none_or(|gate| gate.effective_enabled()),
+                "REPRESENTATION_CEDAR_REQUIRED");
+            anyhow::ensure!(session.message_count() == 0 && supplied_history.is_none()
+                && !is_checkpoint_resume, "REPRESENTATION_HISTORY_SCOPE_UNSUPPORTED");
+            let context = binding.representation_context().await?;
+            context.narrow(&mut effective_policy)?;
+            memory_hits.clear();
+            Ok(Some(context))
+        }.await {
+            Ok(context) => context,
+            Err(error) => {
+                emitter.emit(NormalizedEvent::Error {
+                    run_id: run_id.clone(), code: "representation_admission_denied".into(),
+                    message: error.to_string(),
+                }).await;
+                emitter.emit(NormalizedEvent::RunDone { run_id: run_id.clone() }).await;
+                self.run_cancellations.write().await.remove(&run_id);
+                return run_id;
+            }
+        };
 
         let (presentation_snapshot, presentation_warnings) = match &inherited {
             Some(bindings) => (bindings.presentations.narrow(&effective_policy), Vec::new()),
@@ -3405,6 +3539,7 @@ impl RunManager {
                     run_id.clone(),
                     RunStreamState {
                         run,
+                        approval_root_run_id: None,
                         verified_owner: verified_owner.clone(),
                         presentations: Some(Arc::clone(&presentation_snapshot)),
                         dialogue,
@@ -3491,6 +3626,8 @@ impl RunManager {
                 "host_resources": host_resources_marker,
                 "effective_service_binding": effective_service_binding.clone(),
                 "effective_collaboration_binding": effective_collaboration_binding,
+                "representation_disclosure": representation_context.as_ref().map(|context| context.disclosure()),
+                "representation_grants": collaboration_binding.as_ref().map(|binding| binding.representation_grants()),
                 "host_context": {
                     "working_directory": working_directory.as_ref().map(|path| path.display().to_string()),
                     "reasoning_effort": reasoning_effort.map(crate::config::ReasoningEffort::as_str),
@@ -3506,6 +3643,7 @@ impl RunManager {
                 run_id.clone(),
                 RunStreamState {
                     run,
+                    approval_root_run_id: None,
                     verified_owner: verified_owner.clone(),
                     presentations: Some(Arc::clone(&presentation_snapshot)),
                     dialogue: dialogue.clone(),
@@ -3585,6 +3723,7 @@ impl RunManager {
             emitter
                 .emit(NormalizedEvent::Cancelled {
                     run_id: run_id.clone(),
+                    usage: None,
                 })
                 .await;
             self.run_cancellations.write().await.remove(&run_id);
@@ -3597,9 +3736,12 @@ impl RunManager {
         let child_run = inherited.is_some();
         let approval_channel = match &inherited {
             Some(bindings) => bindings.approvals.for_child(),
-            None => match self.approvals.register(
+            None => match self.approvals.register_scoped(
                 run_id.clone(),
                 owner_id.clone(),
+                verified_owner.as_ref().map(|owner| owner.presentation_owner_key())
+                    .unwrap_or_else(|| format!("v1:s:{}:{}", owner_id.len(), owner_id)),
+                collaboration_binding.as_ref().map(|binding| binding.workspace_id.clone()),
                 Arc::new(emitter.clone()),
                 run_cancellation.clone(),
             ) {
@@ -3626,6 +3768,10 @@ impl RunManager {
                 }
             },
         };
+
+        if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+            state.approval_root_run_id = Some(approval_channel.root_run_id().to_owned());
+        }
 
         let working_directory = inherited
             .as_ref()
@@ -3690,18 +3836,41 @@ impl RunManager {
             Some(engine) => engine.policy_revision().await,
             None => "cedar:unavailable".to_string(),
         };
-        let tool_admission = match crate::uar::runtime::tool_admission::ToolAdmissionContext::new(
-            root_run_id,
-            run_id.clone(),
-            owner_id.clone(),
-            artifact.id.clone(),
-            world_state.directory().display().to_string(),
-            self.tool_runtime_epoch.clone(),
-            &artifact,
-            &effective_policy,
-            governance_policy_revision,
-            host_tool_admission.binding(),
-        )
+        let tool_admission = match (|| {
+            // Team host effects use the admitted tenant/subject partition,
+            // while ordinary session and thread ownership retain the subject.
+            let admission_owner_id = match collaboration_binding.as_ref().and_then(|binding| {
+                binding
+                    .team_attempt
+                    .as_ref()
+                    .map(|attempt| (binding, attempt))
+            }) {
+                Some((binding, attempt)) => {
+                    let owner = verified_owner.as_ref().ok_or_else(|| {
+                        anyhow::anyhow!("Team tool admission requires a verified host owner")
+                    })?;
+                    let admitted_owner = owner.presentation_owner_key();
+                    anyhow::ensure!(
+                        admitted_owner == binding.owner_id && admitted_owner == attempt.owner_id,
+                        "Team tool admission owner does not match its admitted binding and attempt"
+                    );
+                    admitted_owner
+                }
+                None => owner_id.clone(),
+            };
+            crate::uar::runtime::tool_admission::ToolAdmissionContext::new(
+                root_run_id,
+                run_id.clone(),
+                admission_owner_id,
+                artifact.id.clone(),
+                world_state.directory().display().to_string(),
+                self.tool_runtime_epoch.clone(),
+                &artifact,
+                &effective_policy,
+                governance_policy_revision,
+                host_tool_admission.binding(),
+            )
+        })()
         .and_then(|context| {
             crate::uar::runtime::tool_admission::ToolAdmissionRuntime::new(
                 context,
@@ -3787,6 +3956,7 @@ impl RunManager {
             && let Some(db) = &self.persistence
         {
             let mut kb_ids = Vec::new();
+            let mut kb_configs: Vec<crate::uar::domain::knowledge::KbConfig> = Vec::new();
             let active_space = self.vector_matcher.embedding_fingerprint();
             let mut space_mismatches: Vec<crate::uar::domain::knowledge::EmbeddingSpaceMismatch> =
                 Vec::new();
@@ -3808,7 +3978,10 @@ impl RunManager {
                     && !kb_ids.contains(&kb.id)
                 {
                     match kb.ensure_embedding_space(&active_space) {
-                        Ok(()) => kb_ids.push(kb.id),
+                        Ok(()) => {
+                            kb_configs.push(kb.config.clone());
+                            kb_ids.push(kb.id);
+                        }
                         Err(mismatch) => {
                             if !space_mismatches.iter().any(|m| m.kb_id == mismatch.kb_id) {
                                 space_mismatches.push(mismatch);
@@ -3847,8 +4020,12 @@ impl RunManager {
                     owner_id: &owner_id,
                     kb_ids: &kb_ids,
                 };
+                let kb_config_refs: Vec<&crate::uar::domain::knowledge::KbConfig> =
+                    kb_configs.iter().collect();
+                let (top_k, min_score) =
+                    crate::uar::domain::knowledge::retrieval_params(&kb_config_refs);
                 RagRetrievalPipeline::new()
-                    .retrieve(&backend, &kb_ids.join(","), &routing_input, 3, 0.7)
+                    .retrieve(&backend, &kb_ids.join(","), &routing_input, top_k, min_score)
                     .await
             };
 
@@ -4151,6 +4328,7 @@ impl RunManager {
                     emitter
                         .emit(NormalizedEvent::Cancelled {
                             run_id: run_id.clone(),
+                            usage: None,
                         })
                         .await;
                 } else {
@@ -4181,32 +4359,46 @@ impl RunManager {
             );
         }
         let register_turn_tools = async {
-            if let Some(binding) = &collaboration_binding {
-                if let Some(attempt) = binding.team_attempt.as_ref().filter(|_|crate::uar::api::capabilities::team_execution_b_enabled()) {
-                    crate::uar::runtime::native_skills::team_tools::register(&native_skills,
-                        crate::uar::runtime::native_skills::team_tools::TeamToolBinding {catalog: Arc::clone(&binding.service), attempt:attempt.clone(), yielded:Arc::clone(&binding.team_yield)}).await?;
+            if effective_policy.tools.mode != SelectionMode::None {
+                if let Some(binding) = &collaboration_binding {
+                    if let Some(attempt) = binding
+                        .team_attempt
+                        .as_ref()
+                        .filter(|_| crate::uar::api::capabilities::team_execution_b_enabled())
+                    {
+                        crate::uar::runtime::native_skills::team_tools::register(
+                            &native_skills,
+                            crate::uar::runtime::native_skills::team_tools::TeamToolBinding {
+                                catalog: Arc::clone(&binding.service),
+                                attempt: attempt.clone(),
+                                yielded: Arc::clone(&binding.team_yield),
+                            },
+                            &selected_tools,
+                        )
+                        .await?;
+                    }
                 }
-            }
-            native_skills
-                .register(
-                    crate::uar::runtime::native_skills::activate_skill::ActivateSkillTool::new(
-                        Arc::clone(&activation_context),
+                native_skills
+                    .register(
+                        crate::uar::runtime::native_skills::activate_skill::ActivateSkillTool::new(
+                            Arc::clone(&activation_context),
+                        )
+                        .with_thread_policy(
+                            inherited
+                                .as_ref()
+                                .map(|bindings| Arc::clone(&bindings.policy)),
+                        ),
                     )
-                    .with_thread_policy(
-                        inherited
-                            .as_ref()
-                            .map(|bindings| Arc::clone(&bindings.policy)),
-                    ),
-                )
-                .await?;
-            if let Some(bindings) = &inherited {
-                let controls = crate::uar::runtime::native_skills::agents::registry_for_turn(
-                    Arc::clone(&bindings.controls),
-                )
-                .await?;
-                for name in controls.names().await {
-                    if let Some(handler) = controls.get(&name).await {
-                        native_skills.register_arc(handler).await?;
+                    .await?;
+                if let Some(bindings) = &inherited {
+                    let controls = crate::uar::runtime::native_skills::agents::registry_for_turn(
+                        Arc::clone(&bindings.controls),
+                    )
+                    .await?;
+                    for name in controls.names().await {
+                        if let Some(handler) = controls.get(&name).await {
+                            native_skills.register_arc(handler).await?;
+                        }
                     }
                 }
             }
@@ -4231,6 +4423,28 @@ impl RunManager {
             self.run_cancellations.write().await.remove(&run_id);
             return run_id;
         }
+        // Built-in model-control tools (`activate_skill`, team and agent
+        // controls) were registered above regardless of policy. Keep only the
+        // ones the effective policy allows, so a run that allows no skills is
+        // not offered `activate_skill`.
+        let native_skills = {
+            let allowed = native_skills
+                .descriptors()
+                .await
+                .into_iter()
+                .filter(|descriptor| {
+                    let model_control = descriptor.source
+                        == crate::uar::tools::descriptor::ToolSource::BuiltIn
+                        && descriptor.exposure
+                            == crate::uar::tools::descriptor::Exposure::ModelOnly;
+                    !model_control
+                        || effective_policy
+                            .allows_model_control_tool(&descriptor.provider_name, &descriptor.id)
+                })
+                .map(|descriptor| descriptor.provider_name.clone())
+                .collect::<HashSet<_>>();
+            Arc::new(native_skills.filtered(Some(&allowed)).await)
+        };
         activation_context
             .lock()
             .await
@@ -4792,12 +5006,14 @@ impl RunManager {
                     .map_err(|_| anyhow::anyhow!("Actor root already has a thread service"))?;
                 let root_controls = service.root_controls().await?;
                 graph_controls = Some(Arc::clone(&root_controls));
-                let controls =
-                    crate::uar::runtime::native_skills::agents::registry_for_turn(root_controls)
-                        .await?;
-                for name in controls.names().await {
-                    if let Some(handler) = controls.get(&name).await {
-                        native_skills.register_arc(handler).await?;
+                if effective_policy.tools.mode != SelectionMode::None {
+                    let controls =
+                        crate::uar::runtime::native_skills::agents::registry_for_turn(root_controls)
+                            .await?;
+                    for name in controls.names().await {
+                        if let Some(handler) = controls.get(&name).await {
+                            native_skills.register_arc(handler).await?;
+                        }
                     }
                 }
                 activation_context
@@ -4845,7 +5061,13 @@ impl RunManager {
                 })
                 .collect::<Vec<_>>()
         };
-        let qualified_model = qualified_model_name(&run_llm_config);
+        let qualified_model = if is_team_attempt {
+            // Team profiles already capture the complete admitted provider/model.
+            // Qualifying again would hide its administrator-configured capacity.
+            run_llm_config.model.clone()
+        } else {
+            qualified_model_name(&run_llm_config)
+        };
         let (catalog_provider, catalog_model_id) =
             crate::llm::registry::split_model_string_pub(&qualified_model);
         let configured_window = if let Some(registry) = &self.provider_registry {
@@ -4865,6 +5087,16 @@ impl RunManager {
         let model_context_window = host_window.or(configured_window).or_else(|| {
             crate::llm::catalog::ModelCatalog::global()
                 .model(&catalog_provider, &catalog_model_id)
+                .map(|model| model.limits.context_window as usize)
+                .filter(|window| *window > 0)
+        }).or_else(|| {
+            // Gateway aliases retain their admitted catalog identity separately
+            // from the endpoint route. Explicit endpoint limits above still win;
+            // catalog metadata does not certify the gateway's actual capacity.
+            let identity = run_llm_config.catalog_pricing_model.as_deref()?;
+            let (provider, model) = identity.split_once('/')?;
+            crate::llm::catalog::ModelCatalog::global()
+                .model(provider, model)
                 .map(|model| model.limits.context_window as usize)
                 .filter(|window| *window > 0)
         });
@@ -5241,6 +5473,14 @@ impl RunManager {
             prompt_fragments.extend(member_guidance);
             if let Some(guidance)=&binding.team_instructions { prompt_fragments.push(PromptFragment::new("00.team.instructions",PromptSection::HostInstructions,format!("team-guidance:{}:{}",guidance.revision,guidance.digest),Authority::Host,PromptRole::System,Retention::Turn,guidance.text.clone())); }
         }
+        if let Some(context) = &representation_context {
+            let disclosure = context.disclosure();
+            prompt_fragments.push(PromptFragment::new(
+                "00.representation.disclosure", PromptSection::HostInstructions,
+                "representation-grants", Authority::Host, PromptRole::System,
+                Retention::Turn, format!("{disclosure}\nInclude this exact disclosure in any team message. Office names grant no powers; no subdelegation is permitted."),
+            ));
+        }
         emitter.secret_scrubber.project_fragments(&mut prompt_fragments);
         let mut manifest_budgets = PromptBudgets::for_rendered(&render_with_options(
             &prompt_fragments,
@@ -5477,7 +5717,7 @@ impl RunManager {
                     actor_root.as_ref().and_then(|root| root.artifacts.clone()),
                 )
                 .with_tool_execution_mode(artifact.policy.tools.execution_mode.clone())
-                .with_resilience_policy(self.resilience_policy.clone())
+                .with_resilience_policy(turn_resilience_policy)
                 .with_tool_admission(Arc::clone(&tool_admission))
                 .with_resolved_turn(Arc::clone(&resolved_turn))
                 .with_canonical_receipt_store(self.persistence.clone())
@@ -5532,10 +5772,11 @@ impl RunManager {
             let approval_governance = self.governance_engine.clone();
             let approval_governance_gate = self.governance_gate.clone();
             let effective_tool_approval = effective_policy.tool_approval;
+            let approval_gate_channel = approval_channel.clone();
             let gate: crate::llm::ToolApprovalGate = Arc::new(move |invocation| {
                 let run_id = approval_run_id.clone();
                 let emitter = approval_emitter.clone();
-                let channel = approval_channel.clone();
+                let channel = approval_gate_channel.clone();
                 let cancellation = approval_cancellation.clone();
                 let agent_id = approval_agent_id.clone();
                 let governance = approval_governance.clone();
@@ -5545,6 +5786,17 @@ impl RunManager {
                     let host_requires_approval = invocation.host_requires_approval;
                     let action_display = invocation.action_display;
                     let invocation = invocation.invocation;
+                    let admission_owner = invocation.admission_owner;
+                    // Native effects retain their admission owner; a captured
+                    // standalone binding resolves human decisions inside UAR.
+                    let decision_owner = if admission_owner
+                        == crate::uar::persistence::tool_admission::AdmissionOwner::UarRuntime
+                        || invocation.host_epoch == format!("standalone:{}", invocation.runtime_epoch)
+                    {
+                        crate::uar::persistence::tool_admission::AdmissionOwner::UarRuntime
+                    } else {
+                        crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost
+                    };
                     let tool_call_id = invocation.model_tool_call_id.clone();
                     let tool_name = invocation.provider_tool_name.clone();
                     let approval_class = invocation.approval_class;
@@ -5632,8 +5884,10 @@ impl RunManager {
                         format!("Tool '{tool_name}' requires approval under its descriptor")
                     };
                     match channel
-                        .request(
+                        .request_with_admission_owner(
                             Some(admission_id),
+                            admission_owner,
+                            decision_owner,
                             call_index,
                             tool_call_id,
                             tool_name.clone(),
@@ -5831,6 +6085,7 @@ impl RunManager {
             emitter
                 .emit(NormalizedEvent::Cancelled {
                     run_id: run_id.clone(),
+                    usage: None,
                 })
                 .await;
             self.run_cancellations.write().await.remove(&run_id);
@@ -5851,10 +6106,17 @@ impl RunManager {
         if let Some(root) = &actor_root {
             root.ready.store(true, std::sync::atomic::Ordering::Release);
         }
+        let representation_disclosure = representation_context.as_ref().map(|context| context.disclosure());
+        let representation_binding = collaboration_binding.clone().filter(|binding| binding.has_representation());
         let execution = async move {
             let _delegation_lifetime = delegation_lifetime;
             let _sandbox_lease = sandbox_lease;
             let _terminal_lease = terminal_lease;
+            if let Some(binding) = representation_binding {
+                if binding.representation_context().await.is_err() {
+                    run_cancellation.cancel();
+                }
+            }
             // 1. Run Start
             emitter
                 .emit(NormalizedEvent::RunStart {
@@ -5862,6 +6124,12 @@ impl RunManager {
                     agent_id: execute_agent_id,
                 })
                 .await;
+
+            if let Some(disclosure) = representation_disclosure {
+                emitter.emit(NormalizedEvent::ChatDelta {
+                    run_id: execute_run_id.clone(), text_delta: format!("{disclosure}\n\n"),
+                }).await;
+            }
 
             // Counter for skill evolution — tracks tool completions across the full run.
             let mut tool_call_count: usize = 0;
@@ -5968,13 +6236,20 @@ impl RunManager {
                                 run_id: execute_run_id.clone(), code: "sandbox_cleanup_unconfirmed".into(), message: error.to_string(),
                             }).await;
                         }
+                        if approval_channel.finish_cancelled_root(&execute_run_id).await.is_err() {
+                            cleanup_failed = true;
+                            emitter.emit(NormalizedEvent::Error {
+                                run_id: execute_run_id.clone(), code: "approval_cleanup_unconfirmed".into(),
+                                message: "Cancelled approval state could not be persisted".into(),
+                            }).await;
+                        }
                         if let Some(state) = runs_for_completion.write().await.get_mut(&execute_run_id) {
                             state.run.status = if cleanup_failed { RunStatus::Error } else { RunStatus::Cancelled };
                         }
                         if cleanup_failed {
                             emitter.emit(NormalizedEvent::RunDone { run_id: execute_run_id.clone() }).await;
                         } else {
-                            emitter.emit(NormalizedEvent::Cancelled { run_id: execute_run_id.clone() }).await;
+                            emitter.emit(NormalizedEvent::Cancelled { run_id: execute_run_id.clone(), usage: None }).await;
                         }
                         cancellations_for_cleanup.write().await.remove(&cleanup_run_id);
                         return;
@@ -6506,6 +6781,15 @@ impl RunManager {
                     .await;
             }
 
+            if approval_channel.finish_cancelled_root(&execute_run_id).await.is_err() {
+                run_cancelled = false;
+                run_failed = true;
+                emitter.emit(NormalizedEvent::Error {
+                    run_id: execute_run_id.clone(), code: "approval_cleanup_unconfirmed".into(),
+                    message: "Cancelled approval state could not be persisted".into(),
+                }).await;
+            }
+
             let mut interrupted_fragment = None;
             for (_call_index, (id, name, arguments)) in partial_tool_calls {
                 let (Some(id), Some(name)) = (id, name) else {
@@ -6688,123 +6972,44 @@ impl RunManager {
                     message: "Native acceptance observer could not finalize".into(),
                 }).await;
             }
+            // Settle cost for any run that reported usage, cancelled or not, so a
+            // cancelled run's spend reaches the durable ledger and the event stream.
+            let cost_usd_estimate = if has_usage {
+                crate::uar::runtime::run_cost::settle_run_cost(
+                    crate::uar::runtime::run_cost::RunCostInputs {
+                        run_id: &execute_run_id,
+                        session_id: execution_session.id(),
+                        agent_id: &cost_scope_agent_id,
+                        model: &run_model,
+                        input_tokens: total_input_tokens,
+                        output_tokens: total_output_tokens,
+                        cache_read_tokens: total_cache_read_tokens,
+                        cost_tracking_enabled,
+                    },
+                    &cost_budget_for_run,
+                    persistence_for_run.as_ref(),
+                    &emitter,
+                )
+                .await
+            } else {
+                None
+            };
             if run_cancelled {
                 tracing::info!(run_id = %execute_run_id, "Run cancelled; emitting terminal Cancelled event");
+                let usage = has_usage.then(|| crate::uar::domain::events::RunUsage {
+                    input_tokens: Some(total_input_tokens),
+                    output_tokens: Some(total_output_tokens),
+                    total_tokens: Some(total_tokens),
+                    cost_usd_estimate,
+                    model: Some(run_model),
+                });
                 emitter
                     .emit(NormalizedEvent::Cancelled {
                         run_id: execute_run_id,
+                        usage,
                     })
                     .await;
             } else if has_usage {
-                // Compute estimated USD cost from the pricing catalog when cost
-                // tracking is enabled; None when disabled or the model is unpriced.
-                let cost_usd_estimate = if cost_tracking_enabled {
-                    crate::llm::catalog::estimate_cost(
-                        &run_model,
-                        u64::from(total_input_tokens),
-                        u64::from(total_output_tokens),
-                        u64::from(total_cache_read_tokens),
-                    )
-                } else {
-                    None
-                };
-                if let Some(cost) = cost_usd_estimate
-                    && let Some((provider, model_id)) = run_model.split_once('/')
-                {
-                    crate::uar::telemetry::metrics::record_llm_cost(provider, model_id, cost);
-
-                    // Driver wrappers already charged every model call. Surface a
-                    // `BudgetAlert` for the first scope (in priority order)
-                    // that crosses its configured threshold. Unconfigured
-                    // scopes have an unlimited `BudgetLimit::default()`, so
-                    // status read does not charge the final request again.
-                    // `BudgetScope::Task` is intentionally omitted — this
-                    // runtime has no task entity distinct from a run.
-                    use crate::uar::runtime::cost_budget::{BudgetScope, BudgetStatus};
-                    let scopes: [(BudgetScope, &str); 3] = [
-                        (BudgetScope::Run, execute_run_id.as_str()),
-                        (BudgetScope::Session, execution_session.id()),
-                        (BudgetScope::Agent, cost_scope_agent_id.as_str()),
-                    ];
-                    let mut alert: Option<(BudgetScope, String, f64, f64, bool)> = None;
-                    for (scope, scope_id) in scopes {
-                        let status = cost_budget_for_run.status(scope, scope_id).await;
-                        // CH-07: durable roll-up, fire-and-forget so the hot
-                        // path never blocks on a DB write — mirrors the
-                        // existing per-tool-call checkpoint persist pattern
-                        // above.
-                        if let Some(db) = persistence_for_run.clone() {
-                            let scope_str = scope.as_str().to_string();
-                            let scope_id_owned = scope_id.to_string();
-                            tokio::spawn(async move {
-                                if let Err(e) = db
-                                    .record_cost_entry(&scope_str, &scope_id_owned, cost)
-                                    .await
-                                {
-                                    tracing::warn!(error = %e, scope = %scope_str, "Failed to persist cost ledger entry");
-                                }
-                            });
-                        }
-                        if alert.is_none()
-                            && let BudgetStatus::Warning {
-                                spent_usd,
-                                limit_usd,
-                            }
-                            | BudgetStatus::Exceeded {
-                                spent_usd,
-                                limit_usd,
-                            } = status
-                        {
-                            alert = Some((
-                                scope,
-                                scope_id.to_string(),
-                                spent_usd,
-                                limit_usd,
-                                status.is_exceeded(),
-                            ));
-                        }
-                    }
-                    let global_status = cost_budget_for_run
-                        .status(BudgetScope::Global, "global")
-                        .await;
-                    if let Some(db) = persistence_for_run.clone() {
-                        tokio::spawn(async move {
-                            if let Err(e) = db.record_cost_entry("global", "global", cost).await {
-                                tracing::warn!(error = %e, "Failed to persist cost ledger entry (global)");
-                            }
-                        });
-                    }
-                    if alert.is_none()
-                        && let BudgetStatus::Warning {
-                            spent_usd,
-                            limit_usd,
-                        }
-                        | BudgetStatus::Exceeded {
-                            spent_usd,
-                            limit_usd,
-                        } = global_status
-                    {
-                        alert = Some((
-                            BudgetScope::Global,
-                            "global".to_string(),
-                            spent_usd,
-                            limit_usd,
-                            global_status.is_exceeded(),
-                        ));
-                    }
-                    if let Some((scope, scope_id, spent_usd, limit_usd, exceeded)) = alert {
-                        emitter
-                            .emit(NormalizedEvent::BudgetAlert {
-                                run_id: execute_run_id.clone(),
-                                scope: scope.as_str().to_string(),
-                                scope_id,
-                                spent_usd,
-                                limit_usd,
-                                exceeded,
-                            })
-                            .await;
-                    }
-                }
                 emitter
                     .emit(NormalizedEvent::RunDoneWithUsage {
                         run_id: execute_run_id,

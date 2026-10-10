@@ -41,7 +41,8 @@ pub fn build_router() -> Router<Arc<RunApiState>> {
         .route("/runs", get(list_runs).post(create_run))
         .route("/runs/{id}", get(read_run))
         .route("/runs/{id}/stream", get(stream_run))
-        .route("/runs/{run_id}/tool-approval", post(api_tool_approval))
+        .route("/runs/{id}/events", get(super::run_events::snapshot))
+        .route("/runs/{run_id}/tool-approval", get(api_approval_records).post(api_tool_approval))
         .route(
             "/runs/{run_id}/tool-approval/pending",
             get(api_pending_tool_approval),
@@ -186,6 +187,9 @@ pub(crate) struct RunApiError {
 }
 
 impl RunApiError {
+    pub(crate) fn delegated_context(status: StatusCode, code: &'static str, message: String) -> Self {
+        Self { status, code, message }
+    }
     pub(crate) fn status(&self) -> StatusCode {
         self.status
     }
@@ -449,6 +453,7 @@ async fn create_run(
         host_authenticated.is_some(),
         req,
         None,
+        None,
         credential_capture.map(|Extension(capture)| capture),
     )
     .await
@@ -462,6 +467,7 @@ pub(crate) async fn admit_run(
     host_authenticated: bool,
     req: CreateRunRequest,
     reserved_run_id: Option<String>,
+    delegated_host_context: Option<Arc<super::full_harness::host_context::DelegatedHostContext>>,
     credential_capture: Option<AuthenticatedCredentialCapture>,
 ) -> Result<CreateRunResponse, RunApiError> {
     let CreateRunRequest {
@@ -570,6 +576,11 @@ pub(crate) async fn admit_run(
     request.session_id = session_id;
     request.skill_attachments = skill_attachments;
     request.presentation_negotiation = presentation_negotiation;
+    if let Some(context) = delegated_host_context {
+        let run_id = reserved_run_id.as_deref().ok_or_else(super::full_harness::host_context::run_mismatch)?;
+        context.attach(&state, &mut request, run_id).await
+            .map_err(super::full_harness::host_context::run_error)?;
+    }
     if let Some(input) = tool_admission {
         if !host_authenticated {
             return Err(RunApiError {
@@ -872,17 +883,9 @@ async fn stream_run(
         }
     };
 
-    // Last-subscriber-drop guard: tied to the stream's lifetime so that when the
-    // client disconnects (stream dropped), the run is cancelled iff no other
-    // subscriber remains after a short grace period.
-    let disconnect_guard =
-        crate::uar::runtime::manager::RunDisconnectGuard::new(Arc::clone(&manager), run_id.clone());
-    let stream = tokio_stream::iter(replay)
-        .chain(live_stream)
-        .map(move |event| {
-            let _ = &disconnect_guard;
-            event
-        });
+    // GET /runs/{id}/stream is an observer of an admitted run. Dropping the
+    // subscription never owns cancellation; use the explicit cancel endpoint.
+    let stream = tokio_stream::iter(replay).chain(live_stream);
     let stream = async_stream::stream! {
         tokio::pin!(stream);
         while let Some(event) = stream.next().await {
@@ -953,22 +956,31 @@ async fn api_tool_approval(
             "message": "Submit the approval_id from the originating approval event or pending snapshot"
         })));
     };
-    if manager
-        .resolve_approval_request(&run_id, Some(approval_id), body.approved)
-        .await
-    {
-        (
-            StatusCode::OK,
-            Json(serde_json::json!({
-                "resolved": true,
-                "decision": if body.approved { "allow" } else { "deny" }
-            })),
-        )
-    } else {
-        (
-            StatusCode::NOT_FOUND,
-            Json(serde_json::json!({ "resolved": false })),
-        )
+    match manager.resolve_approval_record(&run_id, Some(approval_id), body.approved).await {
+        Ok(Some((record, delivered))) => (StatusCode::OK, Json(serde_json::json!({
+            "resolved": delivered, "decision": if body.approved { "allow" } else { "deny" },
+            "record": crate::uar::persistence::approval_decisions::ApprovalRecordView { record, resolvable: false },
+        }))),
+        Ok(None) => (StatusCode::NOT_FOUND, Json(serde_json::json!({ "resolved": false }))),
+        Err(_) => (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({
+            "resolved": false, "code": "approval_persistence_unavailable",
+        }))),
+    }
+}
+
+/// Owner-scoped history remains readable after the live run leaves memory.
+async fn api_approval_records(
+    State(RunManagerState(manager)): State<RunManagerState>,
+    Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
+    Path(run_id): Path<String>,
+) -> impl IntoResponse {
+    let workspace = headers.get("x-uar-workspace-id").and_then(|value| value.to_str().ok());
+    match manager.approval_records_for_context(&user, &run_id, workspace).await {
+        Ok((durable, records)) => {
+            (StatusCode::OK, Json(serde_json::json!({ "version": 1, "runId": run_id, "durable": durable, "records": records })))
+        }
+        Err(_) => (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({ "code": "approval_history_unavailable" }))),
     }
 }
 

@@ -54,6 +54,12 @@ use crate::uar::tools::validate::ValidatorCompiler;
 /// lookups, or internal state queries.
 #[async_trait::async_trait]
 pub trait NativeSkill: Send + Sync {
+    /// Only runtime-control handlers explicitly own local admission. Native
+    /// effect tools retain the paired host's effect admission boundary.
+    fn admission_owner(&self) -> crate::uar::persistence::tool_admission::AdmissionOwner {
+        crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost
+    }
+
     /// Unique tool name. Must be globally unique across both native and MCP tools.
     fn name(&self) -> &str;
 

@@ -18,6 +18,30 @@ use std::time::{Duration, Instant};
 use crate::uar::api::a2a::contract::{UarUsageGrant, UarUsageReceipt};
 use crate::uar::runtime::thread::policy_intersection::ThreadBudgets;
 
+/// Budget-owned failure provenance, independent of provider response content.
+#[derive(Debug, Clone, Copy, thiserror::Error)]
+pub(crate) enum BudgetFailureOrigin {
+    #[error("budget_admission_failed")]
+    Admission,
+    #[error("Model call cancelled with its root run")]
+    RootCancellation,
+    #[error("Root budget timeout exceeded")]
+    RootDeadline,
+    #[error("budget_usage_accounting_failed")]
+    UsageAccounting,
+}
+
+impl BudgetFailureOrigin {
+    pub(crate) const fn category(self) -> &'static str {
+        match self {
+            Self::Admission => "budget_admission_failed",
+            Self::RootCancellation => "budget_root_cancelled",
+            Self::RootDeadline => "budget_root_deadline_exceeded",
+            Self::UsageAccounting => "budget_usage_accounting_failed",
+        }
+    }
+}
+
 /// The dimension a budget / spend record is keyed on.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BudgetScope {
@@ -866,13 +890,13 @@ impl ModelCallBudget {
 
     pub(crate) fn admit(&self) -> anyhow::Result<()> {
         if self.cancellation.is_cancelled() {
-            anyhow::bail!("Model call cancelled with its root run");
+            return Err(BudgetFailureOrigin::RootCancellation.into());
         }
         if self
             .deadline
             .is_some_and(|deadline| Instant::now() >= deadline)
         {
-            anyhow::bail!("Root budget timeout exceeded");
+            return Err(BudgetFailureOrigin::RootDeadline.into());
         }
         self.tracker.admit(
             &self.scopes,
@@ -880,7 +904,7 @@ impl ModelCallBudget {
             &self.limits,
             None,
             self.remote.as_ref(),
-        )
+        ).map_err(|error| error.context(BudgetFailureOrigin::Admission))
     }
 
     pub(crate) fn admit_tool(&self) -> anyhow::Result<()> {
@@ -1123,11 +1147,11 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
             &self.budget.limits,
             Some(&self.model),
             self.budget.remote.as_ref(),
-        )?;
+        ).map_err(|error| error.context(BudgetFailureOrigin::Admission))?;
         let mut stream = tokio::select! {
             biased;
-            _ = self.budget.cancellation.cancelled() => anyhow::bail!("Model call cancelled with its root run"),
-            () = self.budget.expired() => anyhow::bail!("Root budget timeout exceeded"),
+            _ = self.budget.cancellation.cancelled() => return Err(BudgetFailureOrigin::RootCancellation.into()),
+            () = self.budget.expired() => return Err(BudgetFailureOrigin::RootDeadline.into()),
             result = self.inner.stream(request) => result?,
         };
         let budget = self.budget.clone();
@@ -1142,18 +1166,18 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
                 let next = tokio::select! {
                     biased;
                     _ = budget.cancellation.cancelled() => {
-                        yield Err(anyhow::anyhow!("Model stream cancelled with its root run"));
+                        yield Err(BudgetFailureOrigin::RootCancellation.into());
                         break;
                     }
                     () = budget.expired() => {
-                        yield Err(anyhow::anyhow!("Root budget timeout exceeded"));
+                        yield Err(BudgetFailureOrigin::RootDeadline.into());
                         break;
                     }
                     next = stream.next() => next,
                 };
                 let Some(event) = next else {
                     if reported_usage && !confirmed_usage && !stream_failed {
-                        if let Err(error) = budget.tracker.record_usage_report(&budget.usage_id, budget.remote.as_ref(), true, true) { yield Err(error); }
+                        if let Err(error) = budget.tracker.record_usage_report(&budget.usage_id, budget.remote.as_ref(), true, true) { yield Err(error.context(BudgetFailureOrigin::UsageAccounting)); }
                     }
                     break;
                 };
@@ -1168,7 +1192,7 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
                     );
                     if !reported_usage {
                         if let Err(error) = budget.tracker.record_usage_report(&budget.usage_id, budget.remote.as_ref(), price.is_some(), false) {
-                            yield Err(error);
+                            yield Err(error.context(BudgetFailureOrigin::UsageAccounting));
                             break;
                         }
                         reported_usage = true;
@@ -1186,7 +1210,7 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
                         if let Err(error) = budget.tracker.record_call(
                             &budget.scopes, &budget.usage_id, budget.remote.as_ref(), delta, new_tokens,
                         ) {
-                            yield Err(error);
+                            yield Err(error.context(BudgetFailureOrigin::UsageAccounting));
                             break;
                         }
                     }
@@ -1196,7 +1220,7 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
                 // A partial cumulative report followed by cancellation is not
                 // a terminal provider counter and cannot release a reservation.
                 if matches!(&event, Ok(crate::normalized::NormalizedEvent::Done)) && reported_usage && !confirmed_usage && !stream_failed {
-                    if let Err(error) = budget.tracker.record_usage_report(&budget.usage_id, budget.remote.as_ref(), true, true) { yield Err(error); break; }
+                    if let Err(error) = budget.tracker.record_usage_report(&budget.usage_id, budget.remote.as_ref(), true, true) { yield Err(error.context(BudgetFailureOrigin::UsageAccounting)); break; }
                     confirmed_usage = true;
                 }
                 yield event;

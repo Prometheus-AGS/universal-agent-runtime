@@ -252,6 +252,9 @@ pub async fn ensure_default_knowledge_base(
             "recursive" => ChunkingStrategy::Recursive {
                 size: cfg.chunking.chunk_size,
             },
+            "structured" => ChunkingStrategy::Structured {
+                size: cfg.chunking.chunk_size,
+            },
             "token" => ChunkingStrategy::Token {
                 tokens: cfg.chunking.chunk_size,
             },
@@ -260,7 +263,7 @@ pub async fn ensure_default_knowledge_base(
             "semantic" => ChunkingStrategy::Semantic {
                 threshold: cfg.chunking.semantic_threshold.unwrap_or(0.7),
             },
-            _ => ChunkingStrategy::Recursive { size: 512 },
+            _ => ChunkingStrategy::Structured { size: 1024 },
         };
 
         KbConfig {
@@ -269,6 +272,8 @@ pub async fn ensure_default_knowledge_base(
             vector_dimensions: cfg.vector_dimensions,
             file_processor: cfg.file_processor.clone(),
             chunk_strategy,
+            retrieval_min_score: None,
+            retrieval_top_k: None,
             indexed_embedding: None,
         }
     } else {

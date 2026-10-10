@@ -877,6 +877,13 @@ pub fn administration_capabilities(
                 Available,
                 vec![
                     endpoint!("skills.list", "GET", "/api/uar/skills", Admin, Read),
+                    endpoint!(
+                        "skills.deployment_catalog",
+                        "GET",
+                        "/api/uar/skills/deployment-catalog",
+                        Admin,
+                        Read
+                    ),
                     endpoint!("skills.create", "POST", "/api/uar/skills", Admin, Live),
                     endpoint!("skills.read", "GET", "/api/uar/skills/{id}", Admin, Read),
                     endpoint!(
@@ -1162,6 +1169,13 @@ pub fn administration_capabilities(
                 vec![
                     endpoint!("runs.list", "GET", "/api/uar/runs", Owner, Read),
                     endpoint!("runs.read", "GET", "/api/uar/runs/{id}", Owner, Read),
+                    endpoint!(
+                        "runs.events",
+                        "GET",
+                        "/api/uar/runs/{id}/events",
+                        Owner,
+                        Read
+                    ),
                     endpoint!("runs.create", "POST", "/api/uar/runs", Owner, Live),
                     endpoint!(
                         "runs.stream",
@@ -1804,6 +1818,23 @@ pub fn administration_capabilities(
             endpoint!("observers.resume", "POST", "/api/uar/observers/v1/{id}/resume", Owner, observer_mutation),
             endpoint!("observers.revoke", "DELETE", "/api/uar/observers/v1/{id}", Owner, observer_mutation),
             endpoint!("observers.gap.acknowledge", "POST", "/api/uar/observers/v1/{id}/gaps/acknowledge", Admin, observer_mutation),
+        ],
+    ));
+    administration.surfaces.push(surface(
+        "channel-source-observers",
+        Agents,
+        HostSurface,
+        vec![
+            endpoint!("channel-observers.capabilities", "GET", "/api/uar/channel-observers/v1/capabilities", Host, Read),
+            endpoint!("channel-observers.list", "GET", "/api/uar/channel-observers/v1/subscriptions", Owner, Read),
+            endpoint!("channel-observers.create", "POST", "/api/uar/channel-observers/v1/subscriptions", Owner, HostControlled),
+            endpoint!("channel-observers.pause", "POST", "/api/uar/channel-observers/v1/subscriptions/{id}/pause", Owner, HostControlled),
+            endpoint!("channel-observers.resume", "POST", "/api/uar/channel-observers/v1/subscriptions/{id}/resume", Owner, HostControlled),
+            endpoint!("channel-observers.revoke", "POST", "/api/uar/channel-observers/v1/subscriptions/{id}/revoke", Owner, HostControlled),
+            endpoint!("channel-observers.deliveries.list", "GET", "/api/uar/channel-observers/v1/subscriptions/{id}/deliveries", Owner, Read),
+            endpoint!("channel-observers.deliver", "POST", "/api/uar/channel-observers/v1/subscriptions/{id}/deliveries", Host, HostControlled),
+            endpoint!("channel-observers.acknowledge", "POST", "/api/uar/channel-observers/v1/subscriptions/{id}/deliveries/{delivery}/acknowledge", Owner, HostControlled),
+            endpoint!("channel-observers.handler-turn", "POST", "/api/uar/channel-observers/v1/handler-turns", Host, HostControlled),
         ],
     ));
     administration

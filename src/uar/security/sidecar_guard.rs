@@ -2,8 +2,9 @@
 //!
 //! The host that launches the sidecar writes a per-launch 256-bit token as the
 //! first line of the sidecar's stdin. [`SidecarGuard`] then admits a request
-//! only when it carries that token, names the sidecar's own loopback authority,
-//! and carries no `Origin` header. A loopback port is not an authentication
+//! only when it carries that token or an explicitly scoped host-issued grant,
+//! names the sidecar's own loopback authority, and carries no `Origin` header.
+//! A loopback port is not an authentication
 //! boundary: any local process, and a web page through DNS rebinding or a
 //! cross-origin request, can reach it. See the OpenSpec change
 //! `sidecar-launch-security`.
@@ -89,6 +90,7 @@ impl SidecarLaunchToken {
 pub struct SidecarGuard {
     token: Option<SecretString>,
     allowed_authorities: [String; 2],
+    delegation_grants: Option<Arc<super::delegation_grants::DelegationGrantAuthority>>,
 }
 
 impl SidecarGuard {
@@ -98,7 +100,18 @@ impl SidecarGuard {
         Self {
             token: Some(token.0),
             allowed_authorities: [format!("127.0.0.1:{port}"), format!("localhost:{port}")],
+            delegation_grants: None,
         }
+    }
+
+    /// Attach the process-local authority shared with the host-only grant API.
+    #[must_use]
+    pub fn with_delegation_grants(
+        mut self,
+        grants: Arc<super::delegation_grants::DelegationGrantAuthority>,
+    ) -> Self {
+        self.delegation_grants = Some(grants);
+        self
     }
 
     /// The `Host` header, or for HTTP/2 the request-target authority. More
@@ -122,19 +135,22 @@ impl SidecarGuard {
 
     /// Exactly one `Authorization: Bearer <token>` matching in constant time.
     fn token_matches(&self, request: &Request) -> bool {
-        let mut values = request.headers().get_all(header::AUTHORIZATION).iter();
-        let (Some(value), None) = (values.next(), values.next()) else {
-            return false;
-        };
-        let Some(supplied) = value
-            .to_str()
-            .ok()
-            .and_then(|value| value.strip_prefix("Bearer "))
-        else {
+        let Some(supplied) = bearer_token(request) else {
             return false;
         };
         crate::config::secret_value_matches(&self.token, Some(supplied))
     }
+}
+
+fn bearer_token(request: &Request) -> Option<&str> {
+    let mut values = request.headers().get_all(header::AUTHORIZATION).iter();
+    let (Some(value), None) = (values.next(), values.next()) else {
+        return None;
+    };
+    value
+        .to_str()
+        .ok()
+        .and_then(|value| value.strip_prefix("Bearer "))
 }
 
 fn reject(status: StatusCode, reason: &'static str) -> Response {
@@ -163,24 +179,32 @@ pub async fn enforce(
     if request.headers().contains_key(header::ORIGIN) {
         return reject(StatusCode::FORBIDDEN, "origin_present");
     }
-    if !guard.token_matches(&request) {
-        let reason = if request.headers().contains_key(header::AUTHORIZATION) {
-            "bad_token"
-        } else {
-            "missing_token"
-        };
-        return reject(StatusCode::UNAUTHORIZED, reason);
+    if guard.token_matches(&request) {
+        // Consume launch authority here; only its redaction contribution
+        // follows the authenticated request into an admitted run.
+        if let Some(token) = bearer_token(&request) {
+            let capture = super::credential_capture::AuthenticatedCredentialCapture::bearer(token);
+            request.extensions_mut().insert(capture);
+        }
+        request.headers_mut().remove(header::AUTHORIZATION);
+        request.extensions_mut().insert(HostAuthenticated { _private: () });
+        return next.run(request).await;
     }
-    // The accepted launch bearer is consumed here, but its redaction-only
-    // contribution follows this request into any admitted run.
-    if let Some(token) = request.headers().get(header::AUTHORIZATION)
-        .and_then(|value| value.to_str().ok())
-        .and_then(|value| value.strip_prefix("Bearer "))
-    {
-        let capture = super::credential_capture::AuthenticatedCredentialCapture::bearer(token);
-        request.extensions_mut().insert(capture);
+    let delegated = bearer_token(&request)
+        .and_then(|token| guard.delegation_grants.as_ref()?.authenticate(token, &request));
+    if let Some(delegated) = delegated {
+        if let Some(token) = bearer_token(&request) {
+            let capture = super::credential_capture::AuthenticatedCredentialCapture::bearer(token);
+            request.extensions_mut().insert(capture);
+        }
+        request.headers_mut().remove(header::AUTHORIZATION);
+        request.extensions_mut().insert(delegated);
+        return next.run(request).await;
     }
-    request.headers_mut().remove(header::AUTHORIZATION);
-    request.extensions_mut().insert(HostAuthenticated { _private: () });
-    next.run(request).await
+    let reason = if request.headers().contains_key(header::AUTHORIZATION) {
+        "bad_token"
+    } else {
+        "missing_token"
+    };
+    reject(StatusCode::UNAUTHORIZED, reason)
 }

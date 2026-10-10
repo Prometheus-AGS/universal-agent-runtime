@@ -17,6 +17,7 @@ interface ToolApprovalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   runId: string;
+  approvalId: string;
   toolName: string;
   args: Record<string, unknown>;
   riskReason?: string;
@@ -28,6 +29,7 @@ export const ToolApprovalDialog: FC<ToolApprovalDialogProps> = ({
   open,
   onOpenChange,
   runId,
+  approvalId,
   toolName,
   args,
   riskReason,
@@ -40,7 +42,7 @@ export const ToolApprovalDialog: FC<ToolApprovalDialogProps> = ({
     async (approved: boolean) => {
       setSubmitting(true);
       try {
-        await submitApproval(runId, approved);
+        await submitApproval(runId, approvalId, approved);
       } catch {
         // best-effort
       } finally {
@@ -48,7 +50,7 @@ export const ToolApprovalDialog: FC<ToolApprovalDialogProps> = ({
         onOpenChange(false);
       }
     },
-    [runId, onOpenChange, submitApproval],
+    [runId, approvalId, onOpenChange, submitApproval],
   );
 
   const respondRef = useRef(respond);

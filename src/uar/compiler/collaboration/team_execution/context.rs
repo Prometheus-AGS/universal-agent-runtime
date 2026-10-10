@@ -16,7 +16,7 @@ use crate::uar::domain::{
     team_wait::TargetOutcome,
 };
 
-use super::super::validation::resolve_team_instructions;
+use super::super::validation::{resolve_team_instructions, validate_id};
 use super::{CollaborationCatalogService, CollaborationError, attempt, fence, key, peer, team};
 
 /// Guidance is separate from the attributed data handed to the model.
@@ -31,6 +31,7 @@ impl CollaborationCatalogService {
         expected: &TeamExecutionAttempt,
         resolved_skills: &[ResolvedSkill],
     ) -> Result<SelectedTeamContext, CollaborationError> {
+        let workflow = self.workflow_attempt(expected).await?;
         let state = self.load_state().await?;
         fence(&state, expected)?;
         let actual = attempt(&state, expected)?;
@@ -38,7 +39,7 @@ impl CollaborationCatalogService {
         let task = current_team.tasks.iter().find(|task| task.id == actual.task_id)
             .ok_or_else(|| CollaborationError::NotFound(actual.task_id.clone()))?;
         let document = peer::team_document(&state, actual)?;
-        let team_instructions = resolve_team_instructions(document)
+        let mut team_instructions = resolve_team_instructions(document)
             .map_err(|error| CollaborationError::Conflict(error.to_string()))?;
         let (roster, coordinator_member_id, authorization_revision) =
             peer::authorized_roster(&state, actual)?;
@@ -67,8 +68,17 @@ impl CollaborationCatalogService {
             return Err(required_unsupported("/rootId"));
         }
 
-        let messages = peer::authorized_inbox(&state, actual)?;
+        let messages = if workflow.is_some() { Vec::new() } else { peer::authorized_inbox(&state, actual)? };
         let target_outcomes = continuation_outcomes(&state, actual)?;
+        // The continuation was validated above; its handoff survives the fresh session as data.
+        let continuation = actual.continuation_of_wait_id.as_ref()
+            .and_then(|wait_id| state.team_waits.get(wait_id))
+            .map(|wait| json!({
+                "waitId": wait.wait_id,
+                "previousAttemptId": wait.authority.attempt_id,
+                "continuationInput": wait.continuation_input,
+                "dataTrust": TeamOutcomeDataTrust::UntrustedAttributedData,
+            }));
         let mut selected_ids = BTreeSet::new();
         let mut artifacts = Vec::<TeamArtifact>::new();
         for id in actual.context_artifact_ids.iter()
@@ -88,10 +98,13 @@ impl CollaborationCatalogService {
             peer::require_artifact_edge(&state, actual, &artifact.member_id)?;
             artifacts.push(artifact);
         }
-        let mut selections = vec![
-            selection(&current_team.id, ContextSourceKind::TeamInput, &current_team.input)?,
-            selection(&task.id, ContextSourceKind::TaskInput, &task.input)?,
-        ];
+        let mut selections = vec![selection(&task.id, ContextSourceKind::TaskInput, &task.input)?];
+        if workflow.is_none() { selections.push(selection(&current_team.id, ContextSourceKind::TeamInput, &current_team.input)?); }
+        if let Some(workflow) = &workflow {
+            let step = workflow.plan.steps.iter().find(|s|workflow.steps.iter().any(|r|r.task_id==task.id && r.step_id==s.id))
+                .ok_or_else(||peer::denied("WORKFLOW_PLAN_UNAVAILABLE"))?;
+            team_instructions = Some(crate::uar::domain::team_context::TeamInstructions { revision:1, digest:workflow.plan.digest.clone(), text:step.instructions.clone() });
+        }
         for artifact in &artifacts {
             selections.push(selection(&artifact.id, ContextSourceKind::Artifact, artifact)?);
         }
@@ -140,7 +153,13 @@ impl CollaborationCatalogService {
             "skills": skills,
             "targetOutcomes": receipt.target_outcomes,
             "targetOutcomeDataTrust": receipt.target_outcome_data_trust,
+            "continuation": continuation,
         });
+        let data = if let Some(workflow) = workflow { json!({
+            "workflowRunId":workflow.id,"definitionDigest":workflow.definition.digest,
+            "taskInput":task.input,"taskOutputContract":task.output_contract,"artifacts":artifacts,
+            "dataTrust":"untrusted-attributed-data"
+        }) } else {data};
         Ok(SelectedTeamContext { receipt, data })
     }
 }
@@ -219,7 +238,11 @@ fn selection<T: Serialize>(
     source_kind: ContextSourceKind,
     value: &T,
 ) -> Result<ContextSelection, CollaborationError> {
-    profile_id(source_id, "/selections/sourceId")?;
+    if source_kind == ContextSourceKind::Skill {
+        validate_id(source_id).map_err(|_| required_unsupported("/selections/sourceId"))?;
+    } else {
+        profile_id(source_id, "/selections/sourceId")?;
+    }
     let bytes = serde_json::to_vec(value)?.len() as u64;
     Ok(ContextSelection {
         source_id: source_id.to_owned(), source_kind,

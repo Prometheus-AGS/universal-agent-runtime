@@ -4,6 +4,9 @@ mod team_mailbox;
 mod team_planning;
 mod team_execution;
 mod team_scope;
+mod workflow_execution;
+mod connector_effect;
+mod feedback_intake;
 
 use std::sync::Arc;
 
@@ -15,7 +18,7 @@ use axum::{
     routing::{get, post},
 };
 use serde::Serialize;
-use serde_json::json;
+use serde_json::{Value, json};
 
 use crate::uar::compiler::collaboration::{
     CollaborationCatalogService, CollaborationError, GrantCommandRequest, PackageExportRequest,
@@ -29,6 +32,7 @@ pub struct CollaborationApiState {
     pub admin_key: Option<secrecy::SecretString>,
     pub service_instance: Arc<crate::uar::service_instance::ServiceInstanceAuthority>,
     pub runtime: Arc<crate::uar::runtime::team_execution::TeamExecutionRuntime>,
+    pub instances: Arc<crate::uar::runtime::instance::AgentInstanceController>,
 }
 
 #[derive(Serialize)]
@@ -47,6 +51,9 @@ pub fn build_router() -> Router<Arc<CollaborationApiState>> {
         .merge(team_mailbox::build_router())
         .merge(team_execution::build_router())
         .merge(team_scope::build_router())
+        .merge(workflow_execution::build_router())
+        .merge(connector_effect::build_router())
+        .merge(feedback_intake::build_router())
         .route("/capabilities", get(collaboration_capabilities))
         .route("/packages:preflight", post(preflight_package))
         .route("/packages:install", post(install_package))
@@ -88,15 +95,21 @@ pub fn build_router() -> Router<Arc<CollaborationApiState>> {
 async fn collaboration_capabilities(
     State(state): State<Arc<CollaborationApiState>>,
     Extension(user): Extension<UserContext>,
+    host_authenticated: Option<Extension<crate::uar::security::sidecar_guard::HostAuthenticated>>,
 ) -> Response {
     let binding_owner_id = match owner_key(&user) {
         Ok(owner) => owner,
         Err(response) => return response,
     };
-    let mut runtime = super::capabilities::capabilities_response(&state.service_instance);
+    let mut runtime = super::capabilities::capabilities_response(
+        &state.service_instance,
+        host_authenticated.as_ref().map(|Extension(host)| host),
+    );
     if !state.service.execution_ownership_view().await.is_ok_and(|v| v.owns_execution) {
-        runtime.capabilities.retain(|c| c != "collaboration_team_execution_v1" && !super::capabilities::TEAM_EXECUTION_B_CAPABILITIES.contains(&c.as_str()));
+        runtime.capabilities.retain(|c| c != "collaboration_team_execution_v1" && c != crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY && !super::capabilities::TEAM_EXECUTION_B_CAPABILITIES.contains(&c.as_str()));
         runtime.collaboration.activation.team_execution = false;
+        runtime.collaboration.activation.workflow = false;
+        runtime.collaboration.workflow_execution.available = false;
     }
     Json(CollaborationCapabilitiesResponse {
         runtime,
@@ -290,18 +303,50 @@ async fn install_representation_grant(
     State(state): State<Arc<CollaborationApiState>>,
     Extension(user): Extension<UserContext>,
     headers: HeaderMap,
+    marker: Option<Extension<crate::uar::security::sidecar_guard::HostAuthenticated>>,
     Json(request): Json<GrantCommandRequest>,
 ) -> Response {
+    if marker.is_none() {
+        return (StatusCode::FORBIDDEN, "REPRESENTATION_TRUSTED_ISSUER_REQUIRED").into_response();
+    }
     let (owner, workspace) = match private_scope(&user, &headers) {
         Ok(scope) => scope,
         Err(response) => return response,
     };
+    let actor_owner = match crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(&user) {
+        Ok(owner) => owner,
+        Err(_) => return unauthorized(),
+    };
+    let grantee = match request.grant.get("granteeAgentInstanceId").and_then(Value::as_str) {
+        Some(id) => id,
+        None => return error_response(CollaborationError::Invalid("representation grantee is missing".into())),
+    };
+    // Existing team/service-bound grants remain catalog records. Attach only
+    // the exact durable instance in this authenticated owner/workspace scope.
+    let durable_grantee = match state.instances.get(&actor_owner, &workspace, grantee).await {
+        Ok(_) => true,
+        Err(crate::uar::runtime::instance::AgentInstanceError::NotFound
+            | crate::uar::runtime::instance::AgentInstanceError::Unavailable) => false,
+        Err(error) => {
+            let status = StatusCode::from_u16(error.status_code()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+            return (status, Json(json!({"error": {"code": error.code()}}))).into_response();
+        }
+    };
     match state
         .service
-        .install_representation_grant(&owner, &workspace, request)
+        .install_representation_grant_for_principal(&owner, actor_owner.user_id(), &workspace, request)
         .await
     {
-        Ok(response) => (StatusCode::CREATED, Json(response)).into_response(),
+        Ok(response) => {
+            state.runtime.invalidate_representation_grant(&owner, &workspace, &response.grant).await;
+            if durable_grantee {
+                if let Err(error) = state.instances.attach_representation_grant(&actor_owner, &workspace, &response.grant).await {
+                    let status = StatusCode::from_u16(error.status_code()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+                    return (status, Json(json!({"error": {"code": "representation_attachment_incomplete", "instanceCode": error.code(), "grantCommitted": true}}))).into_response();
+                }
+            }
+            (StatusCode::CREATED, Json(response)).into_response()
+        },
         Err(error) => error_response(error),
     }
 }

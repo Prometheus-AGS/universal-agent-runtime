@@ -48,6 +48,7 @@ pub struct TeamExecutionRuntime {
     active: Arc<Semaphore>,
     owners: Mutex<BTreeMap<String, ActorOwner>>,
     last_team: Mutex<Option<String>>,
+    pub(super) host_contexts: super::host::TeamHostContexts,
 }
 
 impl std::fmt::Debug for TeamExecutionRuntime {
@@ -82,6 +83,7 @@ impl TeamExecutionRuntime {
             )),
             owners: Mutex::new(BTreeMap::new()),
             last_team: Mutex::new(None),
+            host_contexts: Mutex::new(BTreeMap::new()),
         });
         let weak = Arc::downgrade(&runtime);
         let notify = Arc::clone(&runtime.catalog.team_execution_notify);
@@ -162,6 +164,8 @@ impl TeamExecutionRuntime {
         // Resolve before claiming dispatch; unavailable resources cannot start a turn.
         let prepared = async {
             let bound = self.catalog.resolve_team_member_run(&attempt).await?;
+            self.require_host_context(&attempt, &bound.effective_binding_receipt.effective)
+                .await?;
             self.catalog
                 .selected_team_context(&attempt, &bound.effective_binding_receipt.resolved_skills)
                 .await?;
@@ -169,6 +173,10 @@ impl TeamExecutionRuntime {
         }
         .await;
         if let Err(error) = prepared {
+            if matches!(&error, CollaborationError::Conflict(code) if code == "TEAM_HOST_CONTEXT_REQUIRED")
+            {
+                return Err(error);
+            }
             self.catalog
                 .settle_team_attempt(
                     &attempt,
@@ -211,9 +219,29 @@ impl TeamExecutionRuntime {
         Ok(attempt)
     }
 
+    pub async fn activate_workflows(self: &Arc<Self>, owner: ActorOwner) {
+        self.owners
+            .lock()
+            .await
+            .insert(owner.presentation_owner_key(), owner);
+        self.drain().await;
+    }
+
     async fn drain(self: &Arc<Self>) {
         if !self.available || self.cancellation.is_cancelled() {
             return;
+        }
+        let owners = self
+            .owners
+            .lock()
+            .await
+            .values()
+            .cloned()
+            .collect::<Vec<_>>();
+        for owner in owners {
+            if let Err(error) = self.drive_workflows(&owner).await {
+                tracing::warn!(%error, "Workflow progression awaits reconciliation");
+            }
         }
         let queued = match self.catalog.queued_team_attempts().await {
             Ok(v) => v,

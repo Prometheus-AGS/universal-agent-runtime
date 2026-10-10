@@ -480,6 +480,7 @@ async fn generation_failure_fallback_does_not_replace_failed_or_cancelled_outcom
         (
             NormalizedEvent::Cancelled {
                 run_id: "run".into(),
+                usage: None,
             },
             "cancelled",
             None,

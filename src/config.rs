@@ -329,6 +329,10 @@ pub struct SessionsConfig {
     pub idle_timeout_secs: u64,
     /// Zero disables the retained-session cap.
     pub max_retained: usize,
+    /// Optional persisted-session TTL in seconds. When set, the retention
+    /// sweeper deletes sessions whose last activity predates this value from
+    /// the persistence layer. Zero or unset disables persisted TTL enforcement.
+    pub persisted_ttl_secs: Option<u64>,
 }
 
 /// Host-owned A2A peer trust. Graphs and agent artifacts can select only an

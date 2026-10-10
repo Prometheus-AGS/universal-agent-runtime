@@ -12,6 +12,7 @@ pub mod catalog;
 pub mod pack_detection;
 pub mod provenance;
 pub mod registry;
+pub(crate) mod reviewed_coverage;
 pub mod retention;
 pub mod service;
 pub mod storage;

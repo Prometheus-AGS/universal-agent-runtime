@@ -1,3 +1,6 @@
+#[path = "approval_records/postgres.rs"]
+mod approval_records;
+use crate::uar::persistence::approval_decisions::ApprovalRecord;
 use crate::session::Session;
 use crate::uar::a2ui::presentations::{Presentation, PresentationDraft};
 use crate::uar::domain::knowledge::{
@@ -64,6 +67,11 @@ async fn insert_agent_thread(
 
 #[async_trait]
 impl PersistenceLayer for PostgresProvider {
+    fn supports_durable_approvals(&self) -> bool { true }
+    async fn create_approval_record(&self, record: &ApprovalRecord) -> Result<()> { approval_records::create(self, record).await }
+    async fn transition_approval_record(&self, before: &ApprovalRecord, after: &ApprovalRecord) -> Result<bool> { approval_records::transition(self, before, after).await }
+    async fn list_approval_records(&self, owner: &str, run: &str) -> Result<Vec<ApprovalRecord>> { approval_records::list(self, owner, run).await }
+
     async fn create_presentation(
         &self,
         owner_id: &str,
@@ -493,6 +501,71 @@ impl PersistenceLayer for PostgresProvider {
         } else {
             Ok(None)
         }
+    }
+
+    async fn delete_session(&self, owner_id: &str, id: &str) -> Result<bool> {
+        let storage_id = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        let mut tx = self.pool.begin().await?;
+
+        // Delete the session itself
+        let result = sqlx::query("DELETE FROM sessions WHERE id = $1")
+            .bind(&storage_id)
+            .execute(&mut *tx)
+            .await?;
+        let existed = result.rows_affected() > 0;
+
+        // Cascade: conversation policy (conversation_id often matches session_id)
+        sqlx::query("DELETE FROM conversation_policies WHERE owner_id = $1 AND conversation_id = $2")
+            .bind(owner_id)
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+
+        // Cascade: cost ledger entries scoped to this session
+        sqlx::query("DELETE FROM cost_ledger WHERE scope = 'session' AND scope_id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+
+        // Cascade: tool admission evidence for this owner
+        // We cannot easily filter by session since the table uses run_id, not session_id.
+        // However, we can safely leave orphaned evidence — it is inert without a session.
+        // For full erasure, delete all evidence for this owner that references runs
+        // belonging to this session. Since we don't have a run→session mapping in SQL,
+        // we skip this cascade for Postgres (evidence is owner-scoped audit data).
+
+        tx.commit().await?;
+        Ok(existed)
+    }
+
+    async fn list_expired_sessions(
+        &self,
+        cutoff: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Vec<(String, String)>> {
+        let rows = sqlx::query(
+            "SELECT id, data FROM sessions",
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        let mut expired = Vec::new();
+        for row in rows {
+            let storage_id: String = row.try_get("id")?;
+            let data: serde_json::Value = row.try_get("data")?;
+            let Some(last_activity_str) = data.get("last_activity").and_then(|v| v.as_str()) else {
+                continue;
+            };
+            let Ok(last_activity) = chrono::DateTime::parse_from_rfc3339(last_activity_str) else {
+                continue;
+            };
+            if last_activity.with_timezone(&chrono::Utc) < cutoff {
+                // Parse owner_id and session_id from the storage key format "owner::session"
+                if let Some((owner_id, session_id)) = storage_id.split_once("::") {
+                    expired.push((owner_id.to_string(), session_id.to_string()));
+                }
+            }
+        }
+        Ok(expired)
     }
 
     async fn save_conversation_policy(&self, record: &ConversationPolicyRecord) -> Result<()> {

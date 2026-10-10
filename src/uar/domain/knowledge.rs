@@ -5,6 +5,15 @@ use uuid::Uuid;
 
 pub(crate) const ANONYMOUS_KNOWLEDGE_OWNER: &str = "anonymous";
 
+/// Minimum similarity a chunk needs to be retrieved into an agent's prompt
+/// when a knowledge base sets no `retrieval_min_score`.
+pub const DEFAULT_RETRIEVAL_MIN_SCORE: f32 = 0.7;
+/// Chunks retrieved per agent turn when no knowledge base sets
+/// `retrieval_top_k`.
+pub const DEFAULT_RETRIEVAL_TOP_K: usize = 3;
+/// Upper bound the API accepts for `retrieval_top_k`.
+pub const MAX_RETRIEVAL_TOP_K: usize = 20;
+
 fn default_knowledge_owner() -> String {
     ANONYMOUS_KNOWLEDGE_OWNER.to_string()
 }
@@ -62,7 +71,7 @@ where
 }
 
 fn default_chunk_strategy() -> crate::uar::rag::chunking::ChunkingStrategy {
-    crate::uar::rag::chunking::ChunkingStrategy::Recursive { size: 512 }
+    crate::uar::rag::chunking::ChunkingStrategy::Structured { size: 1024 }
 }
 
 fn deserialize_chunk_strategy<'de, D>(
@@ -182,6 +191,15 @@ pub struct KbConfig {
         deserialize_with = "deserialize_chunk_strategy"
     )]
     pub chunk_strategy: crate::uar::rag::chunking::ChunkingStrategy,
+    /// Minimum similarity for a chunk to enter an agent's prompt. `None` uses
+    /// [`DEFAULT_RETRIEVAL_MIN_SCORE`]. How high real answers score depends on
+    /// the embedding model, so the right value is a property of the KB.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retrieval_min_score: Option<f32>,
+    /// Chunks retrieved per agent turn. `None` uses
+    /// [`DEFAULT_RETRIEVAL_TOP_K`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retrieval_top_k: Option<usize>,
     /// Embedding space the stored chunks were written in, recorded by the
     /// first successful ingest. `None` means nothing has been indexed since
     /// this field existed, so the space is unknown and not enforced.
@@ -272,10 +290,34 @@ impl Default for KbConfig {
             embedding_model: Self::default_embedding_model(),
             vector_dimensions: None,
             file_processor: Self::default_file_processor(),
-            chunk_strategy: crate::uar::rag::chunking::ChunkingStrategy::Recursive { size: 512 },
+            chunk_strategy: crate::uar::rag::chunking::ChunkingStrategy::Structured { size: 1024 },
+            retrieval_min_score: None,
+            retrieval_top_k: None,
             indexed_embedding: None,
         }
     }
+}
+
+/// How many chunks to retrieve and how similar they must be, for an agent that
+/// searches `configs` together. Each KB falls back to the defaults for what it
+/// leaves unset. Across KBs the most permissive setting wins (lowest
+/// `min_score`, highest `top_k`), so a KB tuned for a lower-scoring embedding
+/// space is not filtered out by another KB's stricter setting.
+#[must_use]
+pub fn retrieval_params(configs: &[&KbConfig]) -> (usize, f32) {
+    if configs.is_empty() {
+        return (DEFAULT_RETRIEVAL_TOP_K, DEFAULT_RETRIEVAL_MIN_SCORE);
+    }
+    let top_k = configs
+        .iter()
+        .map(|c| c.retrieval_top_k.unwrap_or(DEFAULT_RETRIEVAL_TOP_K))
+        .max()
+        .unwrap_or(DEFAULT_RETRIEVAL_TOP_K);
+    let min_score = configs
+        .iter()
+        .map(|c| c.retrieval_min_score.unwrap_or(DEFAULT_RETRIEVAL_MIN_SCORE))
+        .fold(f32::INFINITY, f32::min);
+    (top_k, min_score)
 }
 
 /// A chunk of knowledge from a processed document.

@@ -163,10 +163,26 @@ struct TriggersFrontmatter {
 
 #[derive(Debug, Default, Deserialize)]
 struct MetadataFrontmatter {
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_metadata_tags")]
     tags: Vec<String>,
     #[serde(default)]
     category: Option<String>,
+}
+
+fn deserialize_metadata_tags<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    // Reuse the string/list syntax shape, without allowed-tools conversion.
+    match AllowedToolsFrontmatter::deserialize(deserializer)? {
+        AllowedToolsFrontmatter::String(tags) => Ok(tags
+            .split(',')
+            .map(str::trim)
+            .filter(|tag| !tag.is_empty())
+            .map(str::to_owned)
+            .collect()),
+        AllowedToolsFrontmatter::List(tags) => Ok(tags),
+    }
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -288,6 +304,12 @@ pub fn detect_pack_mcp_servers(pack_root: &Path) -> Vec<String> {
 /// duplicates are dropped with a warning, unless the pair is listed in
 /// `skill-collision-allowlist.json`.
 pub fn discover_builtin_skills() -> (Vec<Skill>, PackProvenance) {
+    discover_builtin_skills_with_verified_roots(&[])
+}
+
+pub(crate) fn discover_builtin_skills_with_verified_roots(
+    verified_roots: &[PathBuf],
+) -> (Vec<Skill>, PackProvenance) {
     let provenance = pack_detection::resolve_skill_pack_root();
     let mut dirs = vec![provenance.root.clone()];
     if let Ok(extra) = std::env::var("UAR_EXTRA_BUILTIN_SKILL_DIRS") {
@@ -295,6 +317,7 @@ pub fn discover_builtin_skills() -> (Vec<Skill>, PackProvenance) {
             dirs.push(PathBuf::from(path));
         }
     }
+    dirs.extend_from_slice(verified_roots);
 
     let allowlist = load_collision_allowlist(&provenance.root);
     let allow_imported = include_imported();

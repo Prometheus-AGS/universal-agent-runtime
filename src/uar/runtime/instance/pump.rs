@@ -181,6 +181,7 @@ impl AgentInstanceController {
                     &attempt_id,
                     &run_id,
                     TurnSettlement::Cancelled,
+                    None,
                 )
                 .await?;
                 continue;
@@ -194,10 +195,12 @@ impl AgentInstanceController {
                     &attempt_id,
                     &run_id,
                     TurnSettlement::BindingUnavailable,
+                    None,
                 )
                 .await?;
                 continue;
             }
+            let mut failure_diagnostic = None;
             let outcome = match self.actor(owner, &claimed).await {
                 Ok(actor) => match actor.submit_reserved_prompt(run_id.clone(), prompt) {
                     Ok(turn) => match turn.completion.await {
@@ -209,17 +212,42 @@ impl AgentInstanceController {
                             {
                                 TurnSettlement::Failed
                             }
-                            Some(AgentThreadResult::Failed { .. }) | Some(AgentThreadResult::Yielded { .. }) | None => {
+                            Some(AgentThreadResult::Failed { code, message }) => {
+                                failure_diagnostic = Some((
+                                    "run_kernel",
+                                    kernel_failure_code(&code, &message),
+                                ));
+                                TurnSettlement::Uncertain
+                            }
+                            Some(AgentThreadResult::Yielded { .. }) | None => {
                                 TurnSettlement::Uncertain
                             }
                         },
                         Ok(Err(ActorRunError::Stopped)) => TurnSettlement::Cancelled,
-                        Ok(Err(ActorRunError::Host(_))) | Err(_) => TurnSettlement::Uncertain,
+                        Ok(Err(ActorRunError::Host(error))) => {
+                            failure_diagnostic = Some(("actor_host", actor_host_failure_code(&error)));
+                            TurnSettlement::Uncertain
+                        }
+                        Err(_) => TurnSettlement::Uncertain,
                     },
                     Err(_) => TurnSettlement::Failed,
                 },
                 Err(_) => TurnSettlement::Failed,
             };
+            if let Some((source_stage, error_code)) = failure_diagnostic
+                && let (Ok(command), Ok(attempt)) = (
+                    Uuid::parse_str(&command_id),
+                    Uuid::parse_str(&attempt_id),
+                )
+            {
+                tracing::warn!(
+                    source_stage,
+                    error_code,
+                    command_id = %command,
+                    attempt_id = %attempt,
+                    "UAR_INSTANCE_TURN_DIAGNOSTIC"
+                );
+            }
             let outcome = self
                 .settle_turn(
                     owner,
@@ -229,6 +257,7 @@ impl AgentInstanceController {
                     &attempt_id,
                     &run_id,
                     outcome,
+                    failure_diagnostic,
                 )
                 .await?;
             if outcome == TurnSettlement::Uncertain {
@@ -246,6 +275,7 @@ impl AgentInstanceController {
         attempt_id: &str,
         run_id: &str,
         outcome: TurnSettlement,
+        failure_diagnostic: Option<(&'static str, &'static str)>,
     ) -> Result<TurnSettlement, AgentInstanceError> {
         let evidence = if outcome == TurnSettlement::Uncertain {
             None
@@ -286,6 +316,14 @@ impl AgentInstanceController {
                 ))?;
             command.status = status;
             command.updated_at = Utc::now();
+            if let Some((stage, code)) = failure_diagnostic {
+                // Persist only trusted static stages, never the host's raw
+                // error chain, which may contain paths or credentials.
+                command.outcome = Some(serde_json::json!({
+                    "sourceStage": stage,
+                    "errorCode": code,
+                }));
+            }
             next.active_attempt = None;
             if outcome == TurnSettlement::Uncertain {
                 next.recovery = InstanceRecovery::EffectUncertain;
@@ -416,4 +454,51 @@ enum TurnSettlement {
     Failed,
     BindingUnavailable,
     Uncertain,
+}
+
+fn actor_host_failure_code(error: &anyhow::Error) -> &'static str {
+    const CODES: &[&str] = &[
+        "actor_root_request_scope_mismatch",
+        "actor_root_artifact_scope_failed",
+        "actor_root_catalog_binding_failed",
+        "actor_root_instance_epoch_failed",
+        "actor_root_previous_recovery_failed",
+        "actor_root_identity_failed",
+        "actor_root_registration_failed",
+        "actor_root_terminal_epoch_failed",
+        "actor_root_terminal_persistence_failed",
+    ];
+    error
+        .chain()
+        .find_map(|cause| {
+            let message = cause.to_string();
+            CODES.iter().copied().find(|code| message == *code)
+        })
+        .unwrap_or("actor_host_failed")
+}
+
+fn kernel_failure_code(code: &str, message: &str) -> &'static str {
+    if code == "representation_admission_denied" {
+        return match message {
+            "REPRESENTATION_CEDAR_REQUIRED" => "representation_cedar_required",
+            "REPRESENTATION_HISTORY_SCOPE_UNSUPPORTED" => "representation_history_scope_unsupported",
+            "REPRESENTATION_INSTANCE_SCOPE_DENIED" => "representation_instance_scope_denied",
+            _ => "representation_admission_denied",
+        };
+    }
+    const CODES: &[&str] = &[
+        "actor_root_mismatch", "run_owner_mismatch", "mcp_catalog_unavailable",
+        "mcp_capture_mismatch", "child_bindings_unavailable", "sandbox_binding_unavailable",
+        "mcp_server_not_run_scoped", "mcp_preflight_failed", "approval_channel_unavailable",
+        "world_state_load_failed", "tool_admission_context_failed", "provider_model_unavailable",
+        "thread_attachment_failed", "turn_assembly_rejected", "root_resource_binding_conflict",
+        "kernel_completion_closed", "kernel_panicked", "thread_cleanup_unconfirmed",
+        "session_persistence_unconfirmed",
+        "world_state_budget_exceeded",
+    ];
+    CODES
+        .iter()
+        .copied()
+        .find(|known| code == *known)
+        .unwrap_or("actor_kernel_failed")
 }

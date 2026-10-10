@@ -222,6 +222,14 @@ pub struct TeamExecutionDiagnostic {
     pub action: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub protected_diagnostic_ref: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_stage: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub http_status: Option<u16>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub collaboration_code: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

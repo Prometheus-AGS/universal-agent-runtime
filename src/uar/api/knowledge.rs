@@ -15,7 +15,7 @@ use std::sync::Arc;
 use crate::uar::{
     domain::knowledge::{
         DocumentStatus, EmbeddingSpaceMismatch, KbConfig, KnowledgeBase, KnowledgeDocument,
-        KnowledgeMatch,
+        KnowledgeMatch, MAX_RETRIEVAL_TOP_K,
     },
     persistence::PersistenceLayer,
     rag::{
@@ -66,6 +66,10 @@ pub struct KbConfigRequest {
     pub file_processor: Option<String>,
     pub chunk_strategy: Option<String>,
     pub chunk_size: Option<usize>,
+    /// Minimum similarity for a chunk to enter an agent's prompt (0.0 to 1.0).
+    pub retrieval_min_score: Option<f32>,
+    /// Chunks retrieved per agent turn (1 to `MAX_RETRIEVAL_TOP_K`).
+    pub retrieval_top_k: Option<usize>,
 }
 
 #[derive(Debug, Serialize)]
@@ -87,6 +91,8 @@ pub struct KbConfigResponse {
     pub vector_dimensions: Option<usize>,
     pub file_processor: String,
     pub chunk_strategy: String,
+    pub retrieval_min_score: Option<f32>,
+    pub retrieval_top_k: Option<usize>,
 }
 
 #[derive(Debug, Serialize)]
@@ -220,6 +226,9 @@ async fn create_knowledge_base(
         ));
     }
 
+    if let Some(cfg) = &req.config {
+        validate_retrieval_settings(cfg)?;
+    }
     let now = chrono::Utc::now().to_rfc3339();
     let config = build_kb_config(req.config);
 
@@ -304,6 +313,7 @@ async fn update_knowledge_base(
         kb.description = Some(desc);
     }
     if let Some(cfg_req) = req.config {
+        validate_retrieval_settings(&cfg_req)?;
         kb.config = merge_kb_config(kb.config, cfg_req);
     }
     kb.updated_at = chrono::Utc::now().to_rfc3339();
@@ -674,6 +684,8 @@ fn kb_to_response(kb: KnowledgeBase, document_count: usize) -> KnowledgeBaseResp
             vector_dimensions: kb.config.vector_dimensions,
             file_processor: kb.config.file_processor,
             chunk_strategy: format!("{:?}", kb.config.chunk_strategy),
+            retrieval_min_score: kb.config.retrieval_min_score,
+            retrieval_top_k: kb.config.retrieval_top_k,
         },
         created_at: kb.created_at,
         updated_at: kb.updated_at,
@@ -734,10 +746,35 @@ fn build_kb_config(req: Option<KbConfigRequest>) -> KbConfig {
                 .file_processor
                 .unwrap_or_else(KbConfig::default_file_processor),
             chunk_strategy: parse_chunk_strategy(cfg.chunk_strategy.as_deref(), cfg.chunk_size),
+            retrieval_min_score: cfg.retrieval_min_score,
+            retrieval_top_k: cfg.retrieval_top_k,
             indexed_embedding: None,
         },
         None => KbConfig::default(),
     }
+}
+
+/// Reject retrieval settings that would silently break retrieval: a NaN or
+/// out-of-range `min_score` filters out every chunk (or none), and a zero or
+/// huge `top_k` returns nothing or floods the prompt.
+fn validate_retrieval_settings(cfg: &KbConfigRequest) -> Result<(), (StatusCode, String)> {
+    if let Some(min_score) = cfg.retrieval_min_score
+        && !(0.0..=1.0).contains(&min_score)
+    {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("retrieval_min_score must be between 0.0 and 1.0, got {min_score}"),
+        ));
+    }
+    if let Some(top_k) = cfg.retrieval_top_k
+        && !(1..=MAX_RETRIEVAL_TOP_K).contains(&top_k)
+    {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("retrieval_top_k must be between 1 and {MAX_RETRIEVAL_TOP_K}, got {top_k}"),
+        ));
+    }
+    Ok(())
 }
 
 fn merge_kb_config(mut existing: KbConfig, req: KbConfigRequest) -> KbConfig {
@@ -758,18 +795,25 @@ fn merge_kb_config(mut existing: KbConfig, req: KbConfigRequest) -> KbConfig {
         existing.chunk_strategy =
             parse_chunk_strategy(req.chunk_strategy.as_deref(), req.chunk_size);
     }
+    if req.retrieval_min_score.is_some() {
+        existing.retrieval_min_score = req.retrieval_min_score;
+    }
+    if req.retrieval_top_k.is_some() {
+        existing.retrieval_top_k = req.retrieval_top_k;
+    }
     existing
 }
 
 fn parse_chunk_strategy(strategy: Option<&str>, size: Option<usize>) -> ChunkingStrategy {
-    let size = size.unwrap_or(512);
+    let size = size.unwrap_or(1024);
     match strategy {
         Some("fixed") => ChunkingStrategy::FixedSize { size },
         Some("recursive") => ChunkingStrategy::Recursive { size },
+        Some("structured") => ChunkingStrategy::Structured { size },
         Some("token") => ChunkingStrategy::Token { tokens: size },
         Some("sentence") => ChunkingStrategy::Sentence,
         Some("document") => ChunkingStrategy::Document,
         Some("semantic") => ChunkingStrategy::Semantic { threshold: 0.7 },
-        _ => ChunkingStrategy::Recursive { size },
+        _ => ChunkingStrategy::Structured { size },
     }
 }

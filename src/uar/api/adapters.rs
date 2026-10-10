@@ -239,7 +239,7 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
                 "threadId": run_id, "runId": run_id
             }),
         ),
-        NormalizedEvent::Cancelled { run_id } => (
+        NormalizedEvent::Cancelled { run_id, .. } => (
             "RUN_ERROR",
             serde_json::json!({
                 "type": "RUN_ERROR", "profile": PROFILE,

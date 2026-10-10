@@ -12,8 +12,10 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+pub mod approval_decisions;
 pub mod agent_instances;
 pub mod agent_threads;
+pub mod channel_observers;
 pub mod observers;
 pub mod presentations;
 pub mod providers;
@@ -22,6 +24,7 @@ pub mod tool_admission;
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use agent_instances::{AgentInstanceRecord, AgentInstanceStoreError};
 use agent_threads::{CanonicalToolReceipt, PersistedAgentThread};
+use channel_observers::{ChannelInboxEntry, ChannelSubscription, ChannelObserverStoreError};
 use observers::{
     ObserverOccurrence, ObserverOccurrenceBounds, ObserverStoreError, ObserverSubscription,
 };
@@ -53,6 +56,44 @@ pub struct PostgresProvider;
 
 #[async_trait]
 pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
+    /// Channel-source observations are a separate, explicitly negotiated profile.
+    fn supports_channel_observers(&self) -> bool { false }
+
+    fn channel_observer_unavailable_reason(&self) -> &'static str { "durable_channel_store_unavailable" }
+
+    async fn create_channel_subscription(&self, _record: &ChannelSubscription) -> Result<ChannelSubscription> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
+    async fn load_channel_subscription(&self, _owner: &str, _workspace: &str, _id: &str) -> Result<Option<ChannelSubscription>> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
+    async fn list_channel_subscriptions(&self, _owner: &str, _workspace: &str) -> Result<Vec<ChannelSubscription>> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
+    async fn compare_and_swap_channel_subscription(&self, _before: &ChannelSubscription, _after: &ChannelSubscription) -> Result<bool> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
+    async fn create_channel_inbox_entry(&self, _record: &ChannelInboxEntry) -> Result<ChannelInboxEntry> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
+    async fn load_channel_inbox_entry(&self, _owner: &str, _workspace: &str, _subscription: &str, _delivery: &str) -> Result<Option<ChannelInboxEntry>> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
+    /// Read the exact owner's subscription inbox without changing its cursor or state.
+    async fn list_channel_inbox_entries(&self, _owner: &str, _workspace: &str, _subscription: &str) -> Result<Vec<ChannelInboxEntry>> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
+    async fn compare_and_swap_channel_inbox_entry(&self, _before: &ChannelInboxEntry, _after: &ChannelInboxEntry) -> Result<bool> {
+        Err(ChannelObserverStoreError::Unsupported.into())
+    }
+
     /// True only for a provider with a transactional instance outbox and durable observer inbox.
     fn supports_durable_observers(&self) -> bool {
         false
@@ -195,6 +236,21 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     // Session Management
     async fn save_session(&self, session: &Session) -> Result<()>;
     async fn load_session(&self, owner_id: &str, id: &str) -> Result<Option<Session>>;
+
+    /// Delete a session and all owned downstream data (conversation policy,
+    /// checkpoints, cost ledger entries, tool admission evidence) for the
+    /// verified owner. Returns true when a session row existed.
+    async fn delete_session(&self, owner_id: &str, id: &str) -> Result<bool>;
+
+    /// List sessions whose last activity predates the cutoff. Default returns
+    /// an empty vec; providers that persist sessions override this for TTL
+    /// sweeps.
+    async fn list_expired_sessions(
+        &self,
+        _cutoff: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Vec<(String, String)>> {
+        Ok(Vec::new())
+    }
 
     /// Save or replace a conversation-scoped chat policy.
     async fn save_conversation_policy(&self, record: &ConversationPolicyRecord) -> Result<()>;
@@ -404,6 +460,21 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
         owner_id: &str,
         run_id: &str,
     ) -> Result<Vec<CanonicalToolReceipt>>;
+
+    /// Whether approval history survives a process restart on this provider.
+    fn supports_durable_approvals(&self) -> bool { false }
+
+    async fn create_approval_record(&self, _record: &approval_decisions::ApprovalRecord) -> Result<()> {
+        anyhow::bail!("Approval persistence is unavailable")
+    }
+
+    async fn transition_approval_record(&self, _before: &approval_decisions::ApprovalRecord, _after: &approval_decisions::ApprovalRecord) -> Result<bool> {
+        anyhow::bail!("Approval persistence is unavailable")
+    }
+
+    async fn list_approval_records(&self, _owner: &str, _run: &str) -> Result<Vec<approval_decisions::ApprovalRecord>> {
+        anyhow::bail!("Approval persistence is unavailable")
+    }
 
     /// Append one sanitized lifecycle fact for an exact tool invocation.
     /// Implementations must be idempotent for an identical state and reject a

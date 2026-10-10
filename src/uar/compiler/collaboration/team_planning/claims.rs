@@ -297,6 +297,9 @@ impl CollaborationCatalogService {
                 }
                 return scoped_team(&current, owner_id, workspace_id, team_id);
             }
+            if current.workflow_runs.values().any(|r|r.owner_id==owner_id && r.workspace_id==workspace_id && r.team_id==team_id && r.steps.iter().any(|s|s.task_id==task_id)) {
+                return Err(CollaborationError::Conflict("WORKFLOW_OWNED_TASK".into()));
+            }
             let mut team = scoped_team(&current, owner_id, workspace_id, team_id)?;
             if team.revision != expected_team_revision {
                 return Err(CollaborationError::Conflict(format!(

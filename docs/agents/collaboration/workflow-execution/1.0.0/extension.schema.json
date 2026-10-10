@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.prometheus-ags.dev/uar/collaboration/workflow-execution/1.0.0/extension.schema.json",
+  "type": "object",
+  "required": ["required", "value"],
+  "additionalProperties": false,
+  "properties": {
+    "required": {"const": true},
+    "value": {
+      "type": "object",
+      "required": ["version", "mode", "mappingVersion", "completionGate"],
+      "additionalProperties": false,
+      "properties": {
+        "version": {"const": "1.0.0"},
+        "mode": {"const": "sequential-feedback-draft"},
+        "mappingVersion": {"const": "1.0.0"},
+        "completionGate": {
+          "type": "object",
+          "required": ["kind", "presentedStep", "decisions"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {"const": "operator-decision"},
+            "presentedStep": {"const": "draft"},
+            "decisions": {"const": ["accept", "reject", "cancel"]}
+          }
+        }
+      }
+    }
+  }
+}

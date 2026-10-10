@@ -61,6 +61,7 @@ async fn manager_with_run(captured: bool) -> RunManager {
                 context: json!({}),
             },
             verified_owner: Some(owner),
+            approval_root_run_id: None,
             presentations: captured.then(|| Arc::new(snapshot)),
             dialogue,
             sender,

@@ -664,13 +664,24 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 "request_id": run_id
             }),
         )),
-        NormalizedEvent::Cancelled { run_id } => Some((
-            "agui.cancelled",
-            serde_json::json!({
+        NormalizedEvent::Cancelled { run_id, usage } => {
+            let mut payload = serde_json::json!({
                 "kind": "cancelled",
                 "request_id": run_id
-            }),
-        )),
+            });
+            // Same shape as `agui.done`, present only when the provider
+            // reported usage before the cancel.
+            if let Some(usage) = usage {
+                payload["usage"] = serde_json::json!({
+                    "input_tokens": usage.input_tokens,
+                    "output_tokens": usage.output_tokens,
+                    "total_tokens": usage.total_tokens,
+                    "cost_usd_estimate": usage.cost_usd_estimate,
+                    "model": usage.model
+                });
+            }
+            Some(("agui.cancelled", payload))
+        }
         NormalizedEvent::SycophancyFlagged {
             run_id,
             sycophancy_score,

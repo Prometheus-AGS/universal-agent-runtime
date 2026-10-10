@@ -19,6 +19,7 @@ use crate::uar::tools::descriptor::{ApprovalClass, ToolDescriptor, ToolEffect, T
 mod approval_class_wire;
 mod http;
 mod lifecycle;
+mod owned;
 mod standalone;
 
 pub use http::{HttpHostToolAdmissionPort, RunToolAdmissionInput};
@@ -272,6 +273,8 @@ impl ToolAdmissionContext {
         PreparedToolInvocation {
             version: TOOL_ADMISSION_PROTOCOL_VERSION,
             execution_kind,
+            representation_effect: descriptor.effect,
+            admission_owner: crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost,
             invocation_id,
             model_tool_call_id,
             attempt: 1,
@@ -336,6 +339,12 @@ pub struct EffectBudgetReservationFacts {
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PreparedToolInvocation {
+    /// Captured descriptor classification; deserialization cannot assert effect safety.
+    #[serde(skip, default = "unknown_representation_effect")]
+    pub(crate) representation_effect: ToolEffect,
+    /// Trusted handler provenance, never accepted from the public wire.
+    #[serde(skip)]
+    pub(crate) admission_owner: crate::uar::persistence::tool_admission::AdmissionOwner,
     pub version: u32,
     pub execution_kind: ToolExecutionKind,
     pub invocation_id: String,
@@ -353,7 +362,6 @@ pub struct PreparedToolInvocation {
     pub native_tool_name: String,
     pub provider_tool_name: String,
     pub run_policy_revision: String,
-    #[serde(rename = "expectedGovernancePolicyRevision")]
     pub governance_policy_revision: String,
     pub tool_policy_revision: String,
     pub resource_revision: String,
@@ -368,6 +376,10 @@ pub struct PreparedToolInvocation {
     pub approval_class: ApprovalClass,
     pub call_index: usize,
     pub validated_arguments: Value,
+}
+
+fn unknown_representation_effect() -> ToolEffect {
+    ToolEffect::Unknown
 }
 
 impl std::fmt::Debug for PreparedToolInvocation {
@@ -653,6 +665,15 @@ pub trait HostToolAdmissionPort: Send + Sync + std::fmt::Debug {
 #[async_trait]
 pub trait ClaimRevalidator: Send + Sync + std::fmt::Debug {
     async fn revalidate(&self) -> anyhow::Result<()>;
+
+    async fn prepare_invocation(&self, _: &PreparedToolInvocation) -> anyhow::Result<bool> {
+        self.revalidate().await?;
+        Ok(false)
+    }
+
+    async fn revalidate_invocation(&self, _: &AdmittedToolInvocation) -> anyhow::Result<()> {
+        self.revalidate().await
+    }
 }
 
 pub struct ToolAdmissionRuntime {
@@ -734,8 +755,10 @@ impl ToolAdmissionRuntime {
                 && context.host == host.binding(),
             "Tool admission context belongs to another host binding"
         );
+        let context = Arc::new(context);
+        let host = Arc::new(owned::OwnedToolAdmissionPort::new(Arc::clone(&context), host));
         Ok(Self {
-            context: Arc::new(context),
+            context,
             host,
             lifecycle: Arc::new(lifecycle::AdmissionLifecycle::new(persistence)),
             cancellation,
@@ -767,14 +790,40 @@ impl ToolAdmissionRuntime {
         ))
     }
 
-    /// Allocate host correlation before local governance may publish a prompt.
+    /// Freeze ownership captured from the trusted registered runtime handler.
+    pub(crate) fn prepare_owned(
+        &self,
+        model_tool_call_id: String,
+        descriptor: &ToolDescriptor,
+        validated_arguments: Value,
+        call_index: usize,
+        admission_owner: crate::uar::persistence::tool_admission::AdmissionOwner,
+    ) -> Arc<PreparedToolInvocation> {
+        let mut invocation = self.context.prepare(
+            model_tool_call_id,
+            descriptor,
+            validated_arguments,
+            call_index,
+        );
+        invocation.admission_owner = admission_owner;
+        Arc::new(invocation)
+    }
+
+    /// Allocate correlation under the invocation's trusted admission owner.
     pub async fn prepare_host(
         &self,
         invocation: Arc<PreparedToolInvocation>,
     ) -> anyhow::Result<HostAdmissionPreparation> {
         invocation.validate_authority_envelope()?;
         self.lifecycle.reconcile(&self.context).await?;
-        let prepared = self.host.prepare(invocation.clone()).await?;
+        let mut requires_human = false;
+        for revalidator in &self.claim_revalidators {
+            requires_human |= revalidator.prepare_invocation(&invocation).await?;
+        }
+        let mut prepared = self.host.prepare(invocation.clone()).await?;
+        if requires_human && prepared.host_disposition == HostAdmissionDisposition::Auto {
+            prepared.host_disposition = HostAdmissionDisposition::Ask;
+        }
         anyhow::ensure!(
             prepared.version == invocation.version
                 && prepared.execution_kind == invocation.execution_kind

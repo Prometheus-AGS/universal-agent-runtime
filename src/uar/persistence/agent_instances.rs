@@ -7,7 +7,9 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::uar::domain::collaboration::{ImmutableDefinitionRef, PrivateRevisionRef};
+use crate::uar::domain::collaboration::{
+    ImmutableDefinitionRef, PrivateRevisionRef, RepresentationGrantRef,
+};
 
 pub const AGENT_INSTANCE_SCHEMA_VERSION: u32 = 1;
 pub const MAX_INSTANCE_COMMAND_BYTES: usize = 256 * 1024;
@@ -152,6 +154,12 @@ pub struct AgentInstanceRecord {
     pub workspace_id: String,
     pub definition: ImmutableDefinitionRef,
     pub effective_binding: PrivateRevisionRef,
+    /// Private authority is mutable without rewriting the pinned deployment.
+    #[serde(default)]
+    pub representation_revision: u64,
+    /// References remain attached after revocation; empty cannot grant fallback.
+    #[serde(default)]
+    pub representation_grants: Vec<RepresentationGrantRef>,
     /// Stable conversation identity shared by distinct fresh-root turns.
     pub session_id: String,
     pub profile: InstanceActivationProfile,
@@ -236,6 +244,12 @@ impl AgentInstanceRecord {
             || self.effective_binding.digest.is_empty()
             || self.revision > i64::MAX as u64
             || self.epoch > i64::MAX as u64
+            || self.representation_revision > i64::MAX as u64
+            || self.representation_grants.len() > 128
+            || self.representation_grants.iter().any(|reference| {
+                reference.grant_id.is_empty() || reference.revision == 0
+                    || reference.constraint_digest.is_empty()
+            })
             || self.limits.max_inbox == 0
             || self.limits.max_inbox > MAX_INSTANCE_INBOX
             // A full turn queue can have one pending lifecycle receipt and
@@ -360,6 +374,10 @@ impl AgentInstanceRecord {
                         .ok_or(AgentInstanceStoreError::RevisionExhausted)?)
             || next.next_event_sequence < self.next_event_sequence
             || next.updated_at < self.updated_at
+            || next.representation_revision < self.representation_revision
+            || (next.representation_grants != self.representation_grants
+                && next.representation_revision != self.representation_revision.checked_add(1)
+                    .ok_or(AgentInstanceStoreError::RevisionExhausted)?)
         {
             return Err(AgentInstanceStoreError::InvalidRecord);
         }

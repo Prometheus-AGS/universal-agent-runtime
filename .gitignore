@@ -157,3 +157,6 @@ frontend/packages/*/dist/
 .prometheus/.writer.lock
 .prometheus/.review-pending
 .claude/settings.json.bak.*
+
+# Native Boss sidecar packages are generated from the pinned committed source.
+/dist/boss-sidecar/

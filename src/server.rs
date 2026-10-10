@@ -41,9 +41,7 @@ use crate::session::SessionStore;
 use crate::uar::api::sse::{
     enrich_agui_spec_payload, to_agui_event, to_agui_spec_event, to_runtime_entity_event,
 };
-use crate::uar::settings::resilience_policy::{
-    PolicySource, ResiliencePolicy, resolve_effective_policy,
-};
+use crate::uar::settings::resilience_policy::{PolicySource, ResiliencePolicy};
 use crate::uar::telemetry::metrics as telemetry_metrics;
 use crate::uar::{
     self,
@@ -520,9 +518,7 @@ async fn run_server_with_listener(
         vec![governance_mutation.register_bound_ingress("primary-http", primary_addr)?];
     // A token-authenticated sidecar exposes exactly this one listener, with
     // every request checked by the outermost guard layer.
-    let sidecar_guard =
-        launch_token.map(|token| Arc::new(SidecarGuard::new(token, primary_addr.port())));
-    let sidecar_mode = sidecar_guard.is_some();
+    let sidecar_mode = launch_token.is_some();
     let bound_origin = format!("http://{primary_addr}");
     info!(name: "startup.step", step = 3, stage = "companion_listener", "UAR startup progress");
     let companion = if sidecar_mode {
@@ -790,6 +786,9 @@ async fn run_server_with_listener(
                 .iter()
                 .any(|scheme| config.persistence.database_url.starts_with(scheme)));
     let mut implemented_capabilities = uar::api::capabilities::IMPLEMENTED_CAPABILITIES.to_vec();
+    if sidecar_mode {
+        implemented_capabilities.push(uar::security::delegation_grants::DELEGATION_GRANTS_CAPABILITY);
+    }
     if persistence_layer.supports_durable_agent_instances() {
         implemented_capabilities.push("durable_agent_instances_v1");
     }
@@ -798,6 +797,7 @@ async fn run_server_with_listener(
     }
     if team_execution_available {
         implemented_capabilities.push("collaboration_team_execution_v1");
+        if uar::api::capabilities::workflow_execution_enabled() { implemented_capabilities.push(uar::domain::workflow_execution::WORKFLOW_CAPABILITY); }
         if uar::api::capabilities::team_execution_b_enabled(){implemented_capabilities.extend(uar::api::capabilities::TEAM_EXECUTION_B_CAPABILITIES); }
     }
     let service_instance = Arc::new(uar::service_instance::ServiceInstanceAuthority::new(
@@ -972,18 +972,8 @@ async fn run_server_with_listener(
         info!(name: "mcp.tool.discovered", tool = %name, "MCP tool discovered");
     }
 
-    // Initialize Native Skill Registry and register built-in skills
+    // Capture the registry now; register after persisted preferences load.
     let native_skill_registry = Arc::new(NativeSkillRegistry::new());
-    uar::runtime::native_skills::register_builtins(
-        &native_skill_registry,
-        &config.native_tools,
-        persistence.clone(),
-    )
-    .await?;
-    info!(
-        "Native skill registry initialized with {} skills",
-        native_skill_registry.len().await
-    );
 
     #[cfg(feature = "response-quality")]
     let orchestrator = if sidecar_mode {
@@ -1063,7 +1053,7 @@ async fn run_server_with_listener(
     // non-fatal.
     {
         let (builtins, pack_provenance) =
-            uar::runtime::skills::builtin_loader::discover_builtin_skills();
+            uar::runtime::skills::reviewed_coverage::discover_host_builtin_skills().await;
         info!(
             name: "skills.pack.resolved",
             source = ?pack_provenance.source,
@@ -1230,6 +1220,21 @@ async fn run_server_with_listener(
             info!("No persistence layer — settings manager disabled");
             None
         };
+    let native_tools = uar::runtime::native_skills::startup_config(
+        &config.native_tools,
+        settings_manager.as_deref(),
+    )
+    .await?;
+    uar::runtime::native_skills::register_builtins(
+        &native_skill_registry,
+        &native_tools,
+        persistence.clone(),
+    )
+    .await?;
+    info!(
+        "Native skill registry initialized with {} skills",
+        native_skill_registry.len().await
+    );
     governance_mutation.activate_admission_tokens()?;
     let governance_boot_status = governance_status.snapshot();
     info!(
@@ -1307,6 +1312,9 @@ async fn run_server_with_listener(
         ))
         .with_global_cost_budget(config.llm.budget.as_ref())
         .await;
+        if let Some(ref manager) = settings_manager {
+            rm = rm.with_settings_manager(Arc::clone(manager));
+        }
         if let Some(runner) = crate::sandbox::platform::configured_isolated_runner()? {
             rm = rm.with_sandbox_runner(runner);
         }
@@ -1399,6 +1407,10 @@ async fn run_server_with_listener(
         Arc::clone(&agent_instance_controller),
         Arc::clone(&persistence_layer),
     );
+    let channel_observer_controller = uar::runtime::observer::ChannelObserverController::new(
+        Arc::clone(&agent_instance_controller),
+        Arc::clone(&persistence_layer),
+    );
     if persistence_layer.supports_durable_observers() {
         observer_controller.start();
     }
@@ -1409,13 +1421,27 @@ async fn run_server_with_listener(
     ));
     info!("Process-ephemeral full-harness task authority initialized");
 
+    let delegation_grants = Arc::new(
+        uar::security::delegation_grants::DelegationGrantAuthority::new(
+            service_instance.descriptor().instance.id.clone(),
+            full_harness_authority.runtime_descriptor().runtime_epoch,
+        ),
+    );
+    let sidecar_guard = launch_token.map(|token| {
+        Arc::new(
+            SidecarGuard::new(token, primary_addr.port())
+                .with_delegation_grants(Arc::clone(&delegation_grants)),
+        )
+    });
+
     // Both A2A transports share the existing mailbox/persisted-thread host.
     #[cfg(feature = "a2a-transport")]
     let a2a_state = Arc::new(uar::api::a2a::A2AState {
         threads: Arc::new(
             uar::api::a2a::thread_service::A2AThreadService::new(Arc::clone(&actor_system))
                 .with_instance_id(service_instance.descriptor().instance.id.clone())
-                .with_full_harness(Arc::clone(&full_harness_authority)),
+                .with_full_harness(Arc::clone(&full_harness_authority))
+                .with_guardrails(config.guardrails.clone()),
         ),
         security: config.security.clone(),
         base_url: format!("http://{}:{}", config.server.host, config.server.port),
@@ -1585,6 +1611,13 @@ async fn run_server_with_listener(
         "/api/openapi.json",
         crate::uar::api::openapi::build_openapi_spec(),
     ));
+    let app = if sidecar_mode {
+        app.merge(uar::api::delegation_grants::build_router(Arc::clone(
+            &delegation_grants,
+        )))
+    } else {
+        app
+    };
     let app = app
         .route("/health", get(liveness_handler))
         .route("/healthz", get(liveness_handler))
@@ -1647,6 +1680,9 @@ async fn run_server_with_listener(
             uar::api::full_harness::build_router().with_state::<AppState>(Arc::new(
                 uar::api::full_harness::FullHarnessApiState {
                     authority: Arc::clone(&full_harness_authority),
+                    contexts: Arc::new(uar::api::full_harness::DelegatedHostContexts::new(
+                        Arc::clone(&delegation_grants),
+                    )),
                     runs: Arc::new(uar::api::routes::RunApiState {
                         manager: Arc::clone(&state.run_manager),
                         collaboration_catalog: Arc::clone(&state.collaboration_catalog),
@@ -1665,10 +1701,24 @@ async fn run_server_with_listener(
             uar::api::observers::build_router()
                 .with_state::<AppState>(Arc::clone(&observer_controller)),
         )
+        .nest(
+            "/api/uar/channel-observers/v1",
+            uar::api::channel_observers::build_router()
+                .with_state::<AppState>(Arc::clone(&channel_observer_controller)),
+        )
         // Skills API
         .nest(
             "/api/uar/skills",
-            uar::api::skills::build_router().with_state(Arc::clone(&state.skill_service)),
+            uar::api::skills::build_router()
+                .with_state(Arc::clone(&state.skill_service))
+                .merge(
+                    uar::api::skills::build_deployment_catalog_router().with_state(Arc::new(
+                        uar::api::skills::SkillDeploymentCatalogState {
+                            service: Arc::clone(&state.skill_service),
+                            admin_key: config.security.settings_admin_key.clone(),
+                        },
+                    )),
+                ),
         )
         // Agent-Skills Bindings API
         .nest(
@@ -1713,6 +1763,7 @@ async fn run_server_with_listener(
                     admin_key: config.security.settings_admin_key.clone(),
                     service_instance: Arc::clone(&service_instance),
                     runtime: Arc::clone(&team_execution_runtime),
+                    instances: Arc::clone(&agent_instance_controller),
                 },
             )),
         )
@@ -1798,7 +1849,16 @@ async fn run_server_with_listener(
         // Skills: GET /api/skills, GET/DELETE /api/skills/{id}, etc.
         .nest(
             "/api/skills",
-            uar::api::skills::build_router().with_state(Arc::clone(&state.skill_service)),
+            uar::api::skills::build_router()
+                .with_state(Arc::clone(&state.skill_service))
+                .merge(
+                    uar::api::skills::build_deployment_catalog_router().with_state(Arc::new(
+                        uar::api::skills::SkillDeploymentCatalogState {
+                            service: Arc::clone(&state.skill_service),
+                            admin_key: config.security.settings_admin_key.clone(),
+                        },
+                    )),
+                ),
         )
         // Agent–skill bindings: GET/PUT /api/agents/{id}/skills, etc.
         .nest(
@@ -1878,6 +1938,10 @@ async fn run_server_with_listener(
         .route(
             "/api/uar/sessions/{id}/prompt-caching",
             get(uar::api::discovery::get_effective_prompt_caching),
+        )
+        .route(
+            "/api/uar/sessions/{id}",
+            axum::routing::delete(uar::api::discovery::delete_session),
         )
         .route(
             "/api/uar/conversations/{id}/policy",
@@ -2606,103 +2670,16 @@ async fn handle_tool_call_approval(
     }
 }
 
-async fn load_global_resilience_policy(state: &AppState) -> ResiliencePolicy {
-    let mut policy = ResiliencePolicy::from(&state.config.resilience);
-
-    let Some(mgr) = &state.settings_manager else {
-        return policy;
-    };
-
-    macro_rules! apply_typed {
-        ($key:literal, $ty:ty, $field:ident) => {
-            if let Ok(Some(v)) = mgr.get_typed::<$ty>($key).await {
-                policy.$field = v;
-            }
-        };
-    }
-
-    apply_typed!("resilience.rate_limit_enabled", bool, rate_limit_enabled);
-    apply_typed!("resilience.requests_per_second", f32, requests_per_second);
-    apply_typed!("resilience.burst_size", f32, burst_size);
-    apply_typed!("resilience.request_timeout_ms", u64, request_timeout_ms);
-    apply_typed!(
-        "resilience.stream_start_timeout_ms",
-        u64,
-        stream_start_timeout_ms
-    );
-    apply_typed!(
-        "resilience.stream_idle_timeout_ms",
-        u64,
-        stream_idle_timeout_ms
-    );
-    apply_typed!("resilience.retries_enabled", bool, retries_enabled);
-    apply_typed!("resilience.retry_max_attempts", u32, retry_max_attempts);
-    apply_typed!("resilience.retry_base_delay_ms", u64, retry_base_delay_ms);
-    apply_typed!(
-        "resilience.retry_backoff_multiplier",
-        f32,
-        retry_backoff_multiplier
-    );
-    apply_typed!("resilience.retry_max_delay_ms", u64, retry_max_delay_ms);
-    apply_typed!("resilience.retry_jitter_mode", String, retry_jitter_mode);
-    apply_typed!(
-        "resilience.retry_respect_retry_after",
-        bool,
-        retry_respect_retry_after
-    );
-    apply_typed!(
-        "resilience.retryable_http_statuses",
-        Vec<u16>,
-        retryable_http_statuses
-    );
-    apply_typed!(
-        "resilience.retryable_transport_errors",
-        bool,
-        retryable_transport_errors
-    );
-    apply_typed!("resilience.retry_budget_ms", u64, retry_budget_ms);
-
-    if let Err(err) = policy.validate() {
-        tracing::warn!(
-            error = %err,
-            "Invalid global resilience settings detected; falling back to config defaults"
-        );
-        return ResiliencePolicy::from(&state.config.resilience);
-    }
-
-    policy
-}
-
 async fn resolve_effective_resilience_policy(
     state: &AppState,
     agent_id: &str,
 ) -> (ResiliencePolicy, PolicySource) {
-    let global = load_global_resilience_policy(state).await;
-    let Some(mgr) = &state.settings_manager else {
-        return (global, PolicySource::Global);
-    };
-
-    let mut lookup_keys = vec![format!("agent_config.{agent_id}")];
-    if agent_id == "default-agent" {
-        lookup_keys.push("agent_config.orchestrated".to_string());
-    }
-
-    for key in lookup_keys {
-        if let Some(agent_cfg) = mgr.get_value(&key).await {
-            match resolve_effective_policy(&global, Some(&agent_cfg)) {
-                Ok(resolved) => return resolved,
-                Err(err) => {
-                    tracing::warn!(
-                        setting_key = %key,
-                        error = %err,
-                        "Invalid per-agent resilience override; using global policy"
-                    );
-                }
-            }
-        }
-    }
-
-    (global, PolicySource::Global)
+    crate::uar::settings::persisted_resilience::resolve_persisted_resilience_policy(
+        &ResiliencePolicy::from(&state.config.resilience),
+        state.settings_manager.as_deref(),
+        agent_id,
+    )
+    .await
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3538,6 +3515,32 @@ struct AnthropicToolInput {
     _extra: HashMap<String, Value>,
 }
 
+/// Extract text content from an Anthropic user message for guardrail screening.
+fn extract_anthropic_user_text(msg: &AnthropicMessageInput) -> Option<String> {
+    match &msg.content {
+        AnthropicContentInput::Text(s) if !s.trim().is_empty() => Some(s.clone()),
+        AnthropicContentInput::Blocks(blocks) => {
+            let mut text = String::new();
+            for block in blocks {
+                if block.block_type == "text" {
+                    if let Some(t) = &block.text {
+                        if !text.is_empty() {
+                            text.push('\n');
+                        }
+                        text.push_str(t);
+                    }
+                }
+            }
+            if text.trim().is_empty() {
+                None
+            } else {
+                Some(text)
+            }
+        }
+        _ => None,
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Default)]
 struct AnthropicUsage {
     input_tokens: u32,
@@ -4079,6 +4082,41 @@ async fn api_messages(
             StatusCode::BAD_REQUEST,
             "messages must contain at least one message",
         );
+    }
+
+    // Input guardrails: screen the last user message for injection/PII before
+    // the LLM call. Same config and logic as api_chat_completion (#328).
+    if let Some(last_user_text) = req
+        .messages
+        .iter()
+        .rev()
+        .find(|m| m.role == "user")
+        .and_then(extract_anthropic_user_text)
+    {
+        if let Some(finding) =
+            uar::guardrails::screen_input(&last_user_text, &state.config.guardrails)
+        {
+            uar::telemetry::metrics::record_guardrail_flagged(finding.category.as_str());
+            tracing::warn!(
+                category = %finding.category.as_str(),
+                reason = %finding.reason,
+                "Anthropic Messages input flagged by guardrail"
+            );
+            let g = &state.config.guardrails;
+            let should_block = match finding.category {
+                uar::guardrails::GuardrailCategory::Injection => g.block_on_injection,
+                uar::guardrails::GuardrailCategory::Pii => g.block_on_pii,
+            };
+            if should_block {
+                let code = match finding.category {
+                    uar::guardrails::GuardrailCategory::Injection => {
+                        "guardrail_injection_blocked"
+                    }
+                    uar::guardrails::GuardrailCategory::Pii => "guardrail_pii_blocked",
+                };
+                return anthropic_error_response(StatusCode::BAD_REQUEST, code);
+            }
+        }
     }
 
     let resolved_model = match resolve_anthropic_model(&state, &req.model).await {
@@ -5881,7 +5919,7 @@ pub(crate) async fn api_chat_completion(
                             | uar::domain::events::NormalizedEvent::RunDone { run_id }
                             | uar::domain::events::NormalizedEvent::RunDoneWithUsage { run_id, .. }
                             | uar::domain::events::NormalizedEvent::Error { run_id, .. }
-                            | uar::domain::events::NormalizedEvent::Cancelled { run_id } => Some(run_id.as_str()),
+                            | uar::domain::events::NormalizedEvent::Cancelled { run_id, .. } => Some(run_id.as_str()),
                             _ => None,
                         };
                         if matches!(&normalized_event, uar::domain::events::NormalizedEvent::ChatDelta { .. })
@@ -6476,6 +6514,7 @@ pub(crate) async fn api_chat_completion(
     }
 
     let mut assistant_text = String::new();
+    let mut usage: Option<serde_json::Value> = None;
     let mut replay_result: Option<Result<(), String>> = None;
     if let Some(replay) = state.run_manager.history_since(&run_id, None).await {
         for event in replay {
@@ -6483,8 +6522,24 @@ pub(crate) async fn api_chat_completion(
                 uar::domain::events::NormalizedEvent::ChatDelta { text_delta, .. } => {
                     assistant_text.push_str(&text_delta);
                 }
-                uar::domain::events::NormalizedEvent::RunDone { .. }
-                | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. } => {
+                done @ (uar::domain::events::NormalizedEvent::RunDone { .. }
+                | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. }) => {
+                    usage = uar::api::openai::usage::from_run_done(&done);
+                    replay_result = Some(Ok(()));
+                    break;
+                }
+                uar::domain::events::NormalizedEvent::Cancelled { usage: cancel_usage, .. } => {
+                    // Capture usage from cancelled runs too (#329).
+                    if let Some(u) = cancel_usage {
+                        let prompt = u.input_tokens.unwrap_or(0);
+                        let completion = u.output_tokens.unwrap_or(0);
+                        let total = u.total_tokens.unwrap_or_else(|| prompt.saturating_add(completion));
+                        usage = Some(serde_json::json!({
+                            "prompt_tokens": prompt,
+                            "completion_tokens": completion,
+                            "total_tokens": total,
+                        }));
+                    }
                     replay_result = Some(Ok(()));
                     break;
                 }
@@ -6513,8 +6568,24 @@ pub(crate) async fn api_chat_completion(
                             } => {
                                 assistant_text.push_str(&text_delta);
                             }
-                            uar::domain::events::NormalizedEvent::RunDone { .. }
-                            | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. } => {
+                            done @ (uar::domain::events::NormalizedEvent::RunDone { .. }
+                            | uar::domain::events::NormalizedEvent::RunDoneWithUsage {
+                                ..
+                            }) => {
+                                usage = uar::api::openai::usage::from_run_done(&done);
+                                break Ok::<(), String>(());
+                            }
+                            uar::domain::events::NormalizedEvent::Cancelled { usage: cancel_usage, .. } => {
+                                if let Some(u) = cancel_usage {
+                                    let prompt = u.input_tokens.unwrap_or(0);
+                                    let completion = u.output_tokens.unwrap_or(0);
+                                    let total = u.total_tokens.unwrap_or_else(|| prompt.saturating_add(completion));
+                                    usage = Some(serde_json::json!({
+                                        "prompt_tokens": prompt,
+                                        "completion_tokens": completion,
+                                        "total_tokens": total,
+                                    }));
+                                }
                                 break Ok::<(), String>(());
                             }
                             uar::domain::events::NormalizedEvent::Error { message, .. } => {
@@ -6584,7 +6655,7 @@ pub(crate) async fn api_chat_completion(
             },
             finish_reason: "stop".to_string(),
         }],
-        usage: None,
+        usage,
         session_id: session_id.clone(),
     };
 

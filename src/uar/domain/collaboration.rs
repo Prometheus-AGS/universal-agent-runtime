@@ -291,6 +291,8 @@ pub struct ConversionReport {
 pub struct ResolvedSkill {
     pub skill: SkillRef,
     pub installed_location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reviewed_coverage: Option<super::reviewed_skill_coverage::ReviewedSkillCoverage>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -430,6 +432,14 @@ pub struct CollaborationCommandReceipt {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CollaborationCatalogState {
+    #[serde(default)] pub feedback_intakes: BTreeMap<String, super::feedback_intake::FeedbackIntake>,
+    #[serde(default)] pub feedback_policies: BTreeMap<String, super::feedback_intake::FeedbackStandingPolicy>,
+    #[serde(default)] pub feedback_commands: BTreeMap<String, super::feedback_intake::FeedbackCommandReceipt>,
+    #[serde(default)] pub connector_bindings: BTreeMap<String, super::connector_effect::ConnectorBinding>,
+    #[serde(default)] pub connector_effects: BTreeMap<String, super::connector_effect::ConnectorEffect>,
+    #[serde(default)] pub connector_commands: BTreeMap<String, super::connector_effect::ConnectorCommandReceipt>,
+    #[serde(default)] pub workflow_runs: BTreeMap<String, super::workflow_execution::WorkflowRun>,
+    #[serde(default)] pub workflow_commands: BTreeMap<String, super::workflow_execution::WorkflowCommandReceipt>,
     pub generation: u64,
     #[serde(default)] pub team_waits: BTreeMap<String, super::team_wait::TeamWait>,
     #[serde(default)] pub team_continuations: BTreeMap<String, super::team_wait::ContinuationReceipt>,

@@ -56,8 +56,25 @@ Private profiles, environment values, credentials, raw logs, compiler caches, an
 
 Publication omits local Lefthook validation using the hook's existing `LEFTHOOK=0` switch, honoring the operator's stop-tests instruction. Hook configuration is unchanged. The omitted pre-commit policy validation and other deferred checks must not be reported as passing.
 
-## Observed merge block
+## Earlier observed merge block (historical)
 
 The normal merge of origin/main stopped with eight content conflicts in eligible paths: `src/uar/api/full_harness/handlers.rs`, `src/uar/api/routes.rs`, `src/uar/runtime/manager.rs`, `src/uar/runtime/thread/approvals.rs`, `src/uar/runtime/tool_admission/lifecycle.rs`, `src/uar/runtime/tool_admission/mod.rs`, `src/uar/security/sidecar_guard.rs`, and `src/uar/security/verifier/mod.rs`. No cancelled F6 conflict was reported. No conflict resolution or new product change was attempted, and `git merge --abort` restored the committed candidate.
 
 The newer main introduces durable approval records/resolution, delegated host-context run admission, representation/admission-owner cancellation semantics, and algorithm-bound JWKS keys. The candidate cache returns a `DecodingKey`; newer main verification expects a key carrying its allowed algorithm. Choosing either conflict side would lose material behavior. Combining these contracts requires a separately authorized forward-port and fresh local verification after the operator resumes testing. The publication preserves the completed source rather than treating the aborted integration as successful.
+
+## Authorized forward-port to current main
+
+The operator subsequently authorized resolution of all UAR integration conflicts. The earlier aborted merge is retained above as history; its merge-block disposition is superseded by this forward-port. The merge incorporates main `f43b6b1d1498faf1969e52518b5f7e9c9a673d04`, preserving the prior candidate commits.
+
+The bounded adaptations preserve these contracts:
+
+- `api/full_harness/handlers.rs` and `api/routes.rs` carry both delegated host contexts and authenticated redaction capture into run admission. The newer delegated-context mismatch/ownership checks remain. API approvals require the originating opaque ID and retain durable decision responses/history.
+- `runtime/thread/approvals.rs` and `approvals/records.rs` retain persisted challenges, serialized/CAS decisions, expiry and terminal history while carrying caller cancellation into resolution. `legacy_root_request` remains provenance; it cannot authorize an ID-less root or descendant decision. Owned broker scenarios were adapted to the async durable resolver without executing them.
+- The owned frontend approval chain carries the event's `approval_id` through chunk projection, dialog, store, and HTTP submission. Historical chunks without that identity remain readable and cannot issue an approval decision. No visual redesign is included.
+- `api/full_harness/stream.rs` retains newer root identity capture/receipt refresh and emits the BAUAR cursor frame for otherwise unrepresented source events, so every source cursor remains replayable.
+- `runtime/tool_admission/mod.rs` retains both trusted representation/admission ownership and the wire-bound execution kind. `lifecycle.rs` does not claim cancellation undoes an already claimed runtime control or consumed native acknowledgment. `owned.rs` and delegated `host_context/port.rs` carry execution kind and implement the required native consumption seam; existing grant checks remain before and after delegated operations.
+- `security/verifier/mod.rs` and `jwks_cache.rs` bind each cached key to its supported algorithm while preserving issuer/URL isolation, bounded refresh, stale-key policy, and sanitized failures. Verified credential identity policies remain in place.
+- `security/sidecar_guard.rs` captures only accepted launch or delegated credentials for redaction, strips their bearer, and grants the private host marker only to launch authentication. `delegation_grants.rs` removes copied host authority from stored delegated identity while retaining grant scope, expiry and receiver checks.
+- `runtime/manager.rs` retains newer configurable retrieval limits, representation disclosure and cancelled-run cost settlement, alongside BAUAR's scrubbed routing input/prompt fragments and native-gate finalization.
+
+Only source inspection and finite interface tracing were performed for this forward-port. No Cargo compilation, tests, frontend typecheck/lint, formatter, package build, or release review ran. The earlier 31 tests/15 negatives and 18 harness cases do not certify these adaptations or the merged tree. The next testing session must exercise the changed API, approval caller, delegated admission, cancellation and signing-key paths locally before making a release claim.

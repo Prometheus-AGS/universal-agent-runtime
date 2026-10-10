@@ -250,14 +250,16 @@ pub fn compare_step(
         .filter(|tool| {
             use crate::uar::domain::policy::SelectionMode;
             use crate::uar::tools::descriptor::{Exposure, ToolSource};
-            let eligible_tool = (tool.source == ToolSource::BuiltIn
-                && tool.exposure == Exposure::ModelOnly)
-                || !matches!(
-                    policy.tools.mode,
-                    SelectionMode::None | SelectionMode::Selected
-                )
-                || policy.tools.ids.contains(&tool.provider_name)
-                || policy.tools.ids.contains(&tool.id);
+            let eligible_tool =
+                if tool.source == ToolSource::BuiltIn && tool.exposure == Exposure::ModelOnly {
+                    policy.allows_model_control_tool(&tool.provider_name, &tool.id)
+                } else {
+                    !matches!(
+                        policy.tools.mode,
+                        SelectionMode::None | SelectionMode::Selected
+                    ) || policy.tools.ids.contains(&tool.provider_name)
+                        || policy.tools.ids.contains(&tool.id)
+                };
             let eligible_server = tool.server.as_ref().is_none_or(|server| {
                 !matches!(
                     policy.mcp_servers.mode,

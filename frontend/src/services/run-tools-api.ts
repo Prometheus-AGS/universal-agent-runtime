@@ -1,8 +1,8 @@
-export async function postToolApproval(runId: string, approved: boolean): Promise<void> {
+export async function postToolApproval(runId: string, approvalId: string, approved: boolean): Promise<void> {
   await fetch(`/api/uar/runs/${runId}/tool-approval`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ approved }),
+    body: JSON.stringify({ approval_id: approvalId, approved }),
   });
 }
 
