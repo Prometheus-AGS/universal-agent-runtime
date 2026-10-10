@@ -494,6 +494,7 @@ fn kernel_failure_code(code: &str, message: &str) -> &'static str {
         "thread_attachment_failed", "turn_assembly_rejected", "root_resource_binding_conflict",
         "kernel_completion_closed", "kernel_panicked", "thread_cleanup_unconfirmed",
         "session_persistence_unconfirmed",
+        "world_state_budget_exceeded",
     ];
     CODES
         .iter()

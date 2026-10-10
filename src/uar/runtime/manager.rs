@@ -5003,6 +5003,16 @@ impl RunManager {
                 .model(&catalog_provider, &catalog_model_id)
                 .map(|model| model.limits.context_window as usize)
                 .filter(|window| *window > 0)
+        }).or_else(|| {
+            // Gateway aliases retain their admitted catalog identity separately
+            // from the endpoint route. Explicit endpoint limits above still win;
+            // catalog metadata does not certify the gateway's actual capacity.
+            let identity = run_llm_config.catalog_pricing_model.as_deref()?;
+            let (provider, model) = identity.split_once('/')?;
+            crate::llm::catalog::ModelCatalog::global()
+                .model(provider, model)
+                .map(|model| model.limits.context_window as usize)
+                .filter(|window| *window > 0)
         });
         let catalog_entries = eligible_skills
             .iter()

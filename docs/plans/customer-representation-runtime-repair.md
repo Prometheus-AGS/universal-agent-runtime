@@ -87,3 +87,54 @@ Legacy authority records remain readable. Catalog-only MCP installation does
 not assert durable attachment. Historical sessions cannot be represented by
 silently importing their prior contents. Person-specific fidelity, real
 organizational authority and broad C17 qualification remain outside this repair.
+
+## 2026-10-10 — Actual actor context-capacity failure
+
+The packaged Boss `ff98af813c59e7c2733db74306ebfe087fec069a` with UAR
+`f55e6cf1dd0f2864b4426a614a2e8bc4dea42400` passed native model preparation,
+role installation and exact scoped grant attachment. Its first represented turn
+became uncertain with the generic diagnostic `actor_kernel_failed` before any
+reported approval or completed read. The evidence remains in the initiative at
+`.prometheus/cadence/artifacts/customer-corrected-mac-2.2.27/synthetic-representation-2-2-27-15d559d1-b512-44dd-8ca1-06d7608be1bc/`.
+
+The retained owned profile's persisted `AgentThreadResult::Failed` identifies the
+actual first kernel error: `world_state_budget_exceeded`. Its bounded technical
+message reports 11,553 reserved world-state tokens versus an 8,192-token context
+limit. Offline inspection correlated the exact run
+`38ba8275-c35f-404c-b918-9a76ca77e092`, attempt
+`352792e0-2c9e-41a6-a684-01338cf92ab5`, and command
+`6b0df277-b45b-4f36-8062-1a36ed536e7b`. No raw database content, prompts,
+credentials or grant bodies are included here. The uncertain turn was not replayed.
+The inspected retained SST (`00000000000000000002.sst`) has SHA256
+`c98a257ea94ea55b3b9451a6ab088ae4b2d9f5e39cf244ed3177f6912549d6df`;
+its raw bytes remain outside version control in the isolated profile.
+
+The ordinary actor looked up capacity under its synthetic gateway provider. Its
+explicit registry limit was absent, and that provider has no embedded catalog
+entry, so it used the existing 8,192 fallback. The captured, administrator-bound
+`catalog_pricing_model` already retains the alias's underlying catalog identity;
+the context lookup failed to consult it. The existing source-backed catalog has
+`openai/gpt-6.1-sol` with 1,050,000 context tokens; its provenance is recorded in
+`openspec/changes/provider-catalog-gpt61-sol/evidence.md`.
+
+The surgical repair adds that captured identity as the final catalog lookup
+after explicit host capacity, explicit registry capacity and the endpoint's own
+catalog identity. It neither changes the selected route nor raises the generic
+fallback, removes world-state reservation, expands authority, or promises gateway
+fit. A narrower operator-configured gateway capacity remains authoritative.
+The known static `world_state_budget_exceeded` code is also retained by the
+durable pump rather than being collapsed into `actor_kernel_failed`.
+
+The actual local Codex model cache separately advertises 272,000 context tokens
+for `gpt-6.1-sol`: client `0.162.0`, fetched `2026-10-10T02:09:17.941282Z`,
+SHA256 `e4a459b1d0b550d89a41a26863f33265116f5fd971e90a63355e241fd449a1a5`.
+Only those non-secret metadata fields were projected. The local Codex source at
+`986ff1cc7ced0081ec5014b700a376333d87f869` does not yet include this exact model
+in `codex-rs/models-manager/models.json`; the live cache is the evidence for the
+smaller subscription-route limit. Apply that narrower value through the existing
+native provider model `context_window` configuration for the selected route;
+it must not be replaced by the API catalog's larger window.
+
+No compiler, suite, build, application launch, or uncertain-turn replay ran during
+this diagnosis or repair. The parent owns the completed corrective candidate and
+the failed-only represented operation. Source repair does not qualify C17.
