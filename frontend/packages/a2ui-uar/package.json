@@ -29,7 +29,7 @@
     "clsx": "^2.1.1",
     "i18next": "26.4.2",
     "lucide-react": "^0.575.0",
-    "motion": "13.5.0",
+    "motion": "14.0.0",
     "react-aria-components": "^1.21.1",
     "tailwind-merge": "^2.6.0",
     "zod": "4.6.5"
