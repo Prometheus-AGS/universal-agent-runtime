@@ -32,7 +32,9 @@ pub(super) async fn coordinate(context: &DelegatedHostContext, state: &FullHarne
     // The base and authorization were validated by the existing private adapter
     // at host registration. No URL, headers or transport errors are disclosed.
     let mut url = url::Url::parse(context.admission_input.url.expose_secret()).map_err(|_| failed("private callback unavailable"))?;
-    url.set_path("/uar/admission/v1/delegated-approval");
+    // The callback envelope remains v1 on the registered admission transport.
+    let callback_path = format!("{}/delegated-approval", url.path().trim_end_matches('/'));
+    url.set_path(&callback_path);
     let mut headers = HeaderMap::new();
     for (name, value) in &context.admission_input.headers {
         headers.insert(HeaderName::from_bytes(name.as_bytes()).map_err(|_| failed("private callback unavailable"))?,
