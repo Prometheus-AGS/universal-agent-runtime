@@ -5696,6 +5696,16 @@ impl RunManager {
                     let action_display = invocation.action_display;
                     let invocation = invocation.invocation;
                     let admission_owner = invocation.admission_owner;
+                    // Native effects retain their admission owner; a captured
+                    // standalone binding resolves human decisions inside UAR.
+                    let decision_owner = if admission_owner
+                        == crate::uar::persistence::tool_admission::AdmissionOwner::UarRuntime
+                        || invocation.host_epoch == format!("standalone:{}", invocation.runtime_epoch)
+                    {
+                        crate::uar::persistence::tool_admission::AdmissionOwner::UarRuntime
+                    } else {
+                        crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost
+                    };
                     let tool_call_id = invocation.model_tool_call_id.clone();
                     let tool_name = invocation.provider_tool_name.clone();
                     let approval_class = invocation.approval_class;
@@ -5786,6 +5796,7 @@ impl RunManager {
                         .request_with_admission_owner(
                             Some(admission_id),
                             admission_owner,
+                            decision_owner,
                             call_index,
                             tool_call_id,
                             tool_name.clone(),
