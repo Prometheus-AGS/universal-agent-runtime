@@ -81,7 +81,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
-    "@chromatic-com/playwright": "^0.14.12",
+    "@chromatic-com/playwright": "^1.0.0",
     "@chromatic-com/storybook": "^5.4.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",
