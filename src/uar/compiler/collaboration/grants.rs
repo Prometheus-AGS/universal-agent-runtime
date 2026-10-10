@@ -35,6 +35,18 @@ impl CollaborationCatalogService {
         workspace_id: &str,
         request: GrantCommandRequest,
     ) -> Result<GrantInstallResponse, CollaborationError> {
+        self.install_representation_grant_for_principal(owner_id, owner_id, workspace_id, request)
+            .await
+    }
+
+    /// Keep the authenticated issuer distinct from its tenant-scoped storage key.
+    pub(crate) async fn install_representation_grant_for_principal(
+        &self,
+        owner_id: &str,
+        issuer_principal_id: &str,
+        workspace_id: &str,
+        request: GrantCommandRequest,
+    ) -> Result<GrantInstallResponse, CollaborationError> {
         validate_owner(owner_id)?;
         validate_id(workspace_id)?;
         if request.command_id.trim().is_empty() {
@@ -43,7 +55,7 @@ impl CollaborationCatalogService {
             ));
         }
         let grant = parse_grant(&request.grant)?;
-        if grant.issuer_principal_id != owner_id {
+        if grant.issuer_principal_id != issuer_principal_id {
             return Err(CollaborationError::Invalid(
                 "REPRESENTATION_ISSUER_PRINCIPAL_MISMATCH".into(),
             ));

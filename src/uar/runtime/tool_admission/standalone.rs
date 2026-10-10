@@ -46,6 +46,19 @@ impl HostToolAdmissionPort for StandaloneToolAdmissionPort {
                 && invocation.host_epoch == self.binding.host_epoch,
             "Tool invocation belongs to another host admission binding"
         );
+        let mut action_display = serde_json::json!({
+            "operation": invocation.provider_tool_name,
+            "detailsAvailable": false,
+        });
+        if invocation.provider_tool_name == "file_read"
+            && let Some(target) = invocation
+                .validated_arguments
+                .get("path")
+                .and_then(serde_json::Value::as_str)
+        {
+            action_display["target"] = serde_json::Value::String(target.to_string());
+            action_display["detailsAvailable"] = serde_json::Value::Bool(true);
+        }
         Ok(HostAdmissionPreparation {
             version: self.binding.version,
             admission_id: Uuid::new_v4().to_string(),
@@ -54,10 +67,7 @@ impl HostToolAdmissionPort for StandaloneToolAdmissionPort {
             host_epoch: self.binding.host_epoch.clone(),
             authority_revision: invocation.authority_revision.clone(),
             host_disposition: HostAdmissionDisposition::Auto,
-            action_display: serde_json::json!({
-                "operation": invocation.provider_tool_name,
-                "detailsAvailable": false,
-            }),
+            action_display,
             managed_mcp_metadata: false,
         })
     }

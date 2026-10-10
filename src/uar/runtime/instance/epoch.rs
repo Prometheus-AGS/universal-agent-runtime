@@ -15,6 +15,9 @@ pub struct InstanceEpochBinding {
     workspace_id: String,
     instance_id: String,
     epoch: u64,
+    pub(crate) principal_id: String,
+    pub(crate) representation_revision: u64,
+    pub(crate) representation_grants: Vec<crate::uar::domain::collaboration::RepresentationGrantRef>,
     root_run_id: Option<String>,
 }
 
@@ -36,6 +39,9 @@ impl InstanceEpochBinding {
         workspace_id: String,
         instance_id: String,
         epoch: u64,
+        principal_id: String,
+        representation_revision: u64,
+        representation_grants: Vec<crate::uar::domain::collaboration::RepresentationGrantRef>,
     ) -> Self {
         Self {
             store,
@@ -43,6 +49,9 @@ impl InstanceEpochBinding {
             workspace_id,
             instance_id,
             epoch,
+            principal_id,
+            representation_revision,
+            representation_grants,
             root_run_id: None,
         }
     }
@@ -51,6 +60,10 @@ impl InstanceEpochBinding {
         let mut bound = self.clone();
         bound.root_run_id = Some(root_run_id.to_owned());
         bound
+    }
+
+    pub(crate) fn instance_id(&self) -> &str {
+        &self.instance_id
     }
 
     /// Reject a replaced activation or turn before it commits another effect.
@@ -63,6 +76,8 @@ impl InstanceEpochBinding {
         current.validate(&self.owner_id, &self.workspace_id)?;
         anyhow::ensure!(
             current.epoch == self.epoch
+                && current.representation_revision == self.representation_revision
+                && current.representation_grants == self.representation_grants
                 && matches!(
                     current.lifecycle,
                     InstanceLifecycle::Active | InstanceLifecycle::Draining

@@ -18,7 +18,7 @@ use axum::{
     routing::{get, post},
 };
 use serde::Serialize;
-use serde_json::json;
+use serde_json::{Value, json};
 
 use crate::uar::compiler::collaboration::{
     CollaborationCatalogService, CollaborationError, GrantCommandRequest, PackageExportRequest,
@@ -32,6 +32,7 @@ pub struct CollaborationApiState {
     pub admin_key: Option<secrecy::SecretString>,
     pub service_instance: Arc<crate::uar::service_instance::ServiceInstanceAuthority>,
     pub runtime: Arc<crate::uar::runtime::team_execution::TeamExecutionRuntime>,
+    pub instances: Arc<crate::uar::runtime::instance::AgentInstanceController>,
 }
 
 #[derive(Serialize)]
@@ -312,13 +313,38 @@ async fn install_representation_grant(
         Ok(scope) => scope,
         Err(response) => return response,
     };
+    let actor_owner = match crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(&user) {
+        Ok(owner) => owner,
+        Err(_) => return unauthorized(),
+    };
+    let grantee = match request.grant.get("granteeAgentInstanceId").and_then(Value::as_str) {
+        Some(id) => id,
+        None => return error_response(CollaborationError::Invalid("representation grantee is missing".into())),
+    };
+    // Existing team/service-bound grants remain catalog records. Attach only
+    // the exact durable instance in this authenticated owner/workspace scope.
+    let durable_grantee = match state.instances.get(&actor_owner, &workspace, grantee).await {
+        Ok(_) => true,
+        Err(crate::uar::runtime::instance::AgentInstanceError::NotFound
+            | crate::uar::runtime::instance::AgentInstanceError::Unavailable) => false,
+        Err(error) => {
+            let status = StatusCode::from_u16(error.status_code()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+            return (status, Json(json!({"error": {"code": error.code()}}))).into_response();
+        }
+    };
     match state
         .service
-        .install_representation_grant(&owner, &workspace, request)
+        .install_representation_grant_for_principal(&owner, actor_owner.user_id(), &workspace, request)
         .await
     {
         Ok(response) => {
             state.runtime.invalidate_representation_grant(&owner, &workspace, &response.grant).await;
+            if durable_grantee {
+                if let Err(error) = state.instances.attach_representation_grant(&actor_owner, &workspace, &response.grant).await {
+                    let status = StatusCode::from_u16(error.status_code()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+                    return (status, Json(json!({"error": {"code": "representation_attachment_incomplete", "instanceCode": error.code(), "grantCommitted": true}}))).into_response();
+                }
+            }
             (StatusCode::CREATED, Json(response)).into_response()
         },
         Err(error) => error_response(error),

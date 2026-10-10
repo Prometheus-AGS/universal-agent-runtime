@@ -44,6 +44,8 @@ pub(crate) struct PendingApprovalSnapshot {
     pub challenge_id: String,
     pub admission_id: Option<String>,
     pub admission_owner: crate::uar::persistence::tool_admission::AdmissionOwner,
+    /// Decision routing is distinct from the tool's effect admission ownership.
+    pub decision_owner: crate::uar::persistence::tool_admission::AdmissionOwner,
     pub call_index: usize,
     pub tool_call_id: String,
     pub name: String,
@@ -175,6 +177,7 @@ impl RootApprovalChannel {
         self.request_with_admission_owner(
             admission_id,
             crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost,
+            crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost,
             call_index,
             tool_call_id,
             name,
@@ -189,6 +192,7 @@ impl RootApprovalChannel {
         &self,
         admission_id: Option<String>,
         admission_owner: crate::uar::persistence::tool_admission::AdmissionOwner,
+        decision_owner: crate::uar::persistence::tool_admission::AdmissionOwner,
         call_index: usize,
         tool_call_id: String,
         name: String,
@@ -236,6 +240,7 @@ impl RootApprovalChannel {
                 challenge_id: record.challenge_id.clone(),
                 admission_id: admission_id.clone(),
                 admission_owner,
+                decision_owner,
                 call_index,
                 tool_call_id: tool_call_id.clone(),
                 name: name.clone(),

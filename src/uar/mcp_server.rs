@@ -715,10 +715,12 @@ impl UarRuntimeMcpServer {
         }
         let owner = collaboration_owner(&parts)?;
         let workspace = collaboration_workspace(&parts)?;
+        let issuer = verified_owner(&parts)?;
         let response = self
             .collaboration_catalog
-            .install_representation_grant(
+            .install_representation_grant_for_principal(
                 &owner,
+                issuer.user_id(),
                 &workspace,
                 GrantCommandRequest {
                     command_id: p.command_id,

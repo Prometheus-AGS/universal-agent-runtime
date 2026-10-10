@@ -3182,6 +3182,14 @@ impl RunManager {
         let artifact = inherited
             .as_ref()
             .map_or(artifact, |bindings| bindings.policy.artifact().clone());
+        // Capture committed settings once for this turn, including team members.
+        let (turn_resilience_policy, _) =
+            crate::uar::settings::persisted_resilience::resolve_persisted_resilience_policy(
+                &self.resilience_policy,
+                self.settings_manager.as_deref(),
+                &artifact.id,
+            )
+            .await;
         let sandbox = match &inherited {
             Some(bindings) => Ok(bindings.sandbox.clone()),
             None => self
@@ -3439,7 +3447,7 @@ impl RunManager {
         }
 
         let representation_context = match async {
-            let Some(binding) = collaboration_binding.as_ref().filter(|binding| !binding.receipt.representation_grants.is_empty()) else {
+            let Some(binding) = collaboration_binding.as_ref().filter(|binding| binding.has_representation()) else {
                 return Ok::<_, anyhow::Error>(None);
             };
             anyhow::ensure!(self.governance_engine.is_some()
@@ -3622,7 +3630,7 @@ impl RunManager {
                 "effective_service_binding": effective_service_binding.clone(),
                 "effective_collaboration_binding": effective_collaboration_binding,
                 "representation_disclosure": representation_context.as_ref().map(|context| context.disclosure()),
-                "representation_grants": collaboration_binding.as_ref().map(|binding| &binding.receipt.representation_grants),
+                "representation_grants": collaboration_binding.as_ref().map(|binding| binding.representation_grants()),
                 "host_context": {
                     "working_directory": working_directory.as_ref().map(|path| path.display().to_string()),
                     "reasoning_effort": reasoning_effort.map(crate::config::ReasoningEffort::as_str),
@@ -4995,6 +5003,16 @@ impl RunManager {
                 .model(&catalog_provider, &catalog_model_id)
                 .map(|model| model.limits.context_window as usize)
                 .filter(|window| *window > 0)
+        }).or_else(|| {
+            // Gateway aliases retain their admitted catalog identity separately
+            // from the endpoint route. Explicit endpoint limits above still win;
+            // catalog metadata does not certify the gateway's actual capacity.
+            let identity = run_llm_config.catalog_pricing_model.as_deref()?;
+            let (provider, model) = identity.split_once('/')?;
+            crate::llm::catalog::ModelCatalog::global()
+                .model(provider, model)
+                .map(|model| model.limits.context_window as usize)
+                .filter(|window| *window > 0)
         });
         let catalog_entries = eligible_skills
             .iter()
@@ -5609,7 +5627,7 @@ impl RunManager {
                     actor_root.as_ref().and_then(|root| root.artifacts.clone()),
                 )
                 .with_tool_execution_mode(artifact.policy.tools.execution_mode.clone())
-                .with_resilience_policy(self.resilience_policy.clone())
+                .with_resilience_policy(turn_resilience_policy)
                 .with_tool_admission(Arc::clone(&tool_admission))
                 .with_resolved_turn(Arc::clone(&resolved_turn))
                 .with_canonical_receipt_store(self.persistence.clone())
@@ -5678,6 +5696,16 @@ impl RunManager {
                     let action_display = invocation.action_display;
                     let invocation = invocation.invocation;
                     let admission_owner = invocation.admission_owner;
+                    // Native effects retain their admission owner; a captured
+                    // standalone binding resolves human decisions inside UAR.
+                    let decision_owner = if admission_owner
+                        == crate::uar::persistence::tool_admission::AdmissionOwner::UarRuntime
+                        || invocation.host_epoch == format!("standalone:{}", invocation.runtime_epoch)
+                    {
+                        crate::uar::persistence::tool_admission::AdmissionOwner::UarRuntime
+                    } else {
+                        crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost
+                    };
                     let tool_call_id = invocation.model_tool_call_id.clone();
                     let tool_name = invocation.provider_tool_name.clone();
                     let approval_class = invocation.approval_class;
@@ -5768,6 +5796,7 @@ impl RunManager {
                         .request_with_admission_owner(
                             Some(admission_id),
                             admission_owner,
+                            decision_owner,
                             call_index,
                             tool_call_id,
                             tool_name.clone(),
@@ -5987,7 +6016,7 @@ impl RunManager {
             root.ready.store(true, std::sync::atomic::Ordering::Release);
         }
         let representation_disclosure = representation_context.as_ref().map(|context| context.disclosure());
-        let representation_binding = collaboration_binding.clone().filter(|binding| !binding.receipt.representation_grants.is_empty());
+        let representation_binding = collaboration_binding.clone().filter(|binding| binding.has_representation());
         let execution = async move {
             let _delegation_lifetime = delegation_lifetime;
             let _sandbox_lease = sandbox_lease;

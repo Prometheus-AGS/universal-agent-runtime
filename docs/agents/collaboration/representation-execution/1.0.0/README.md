@@ -12,20 +12,32 @@ references. No new scheduler, policy engine or agent loop is introduced.
 ## Issuance and current authority
 
 REST and MCP installation require the middleware-established trusted-host marker.
-`issuerPrincipalId` must equal the authenticated owner partition. The trusted
+`issuerPrincipalId` must equal the authenticated subject. The owner partition
+remains the separately encoded tenant/subject storage key. The trusted
 host must establish the human consent and organizational authority referenced by
 the two protected evidence references before installing a grant. UAR stores those
 references as owner-asserted provenance; it does not independently certify
 external organizational evidence.
 
-Binding admission already binds the grantee instance, grant revision and
-constraint digest. Execution additionally rejects inactive, revoked, suspended,
+Binding admission already binds legacy service/team grantees, grant revision and
+constraint digest. For a durable logical instance, trusted REST issuance attaches
+the exact grant reference to a private, revisioned instance authority record;
+it does not rewrite the immutable definition or deployment binding. The instance
+view exposes only the authority revision and exact grant references. Existing
+records deserialize with an empty authority set and revision zero.
+
+The existing instance turn endpoint consumes the attached authority. Admission
+checks the durable grantee identity and authenticated issuer. Execution additionally rejects inactive, revoked, suspended,
 expired or not-yet-valid grants, including a non-null revocation record on an
 otherwise active grant. Current authority is reloaded at run admission and before
 each tool preparation and claim. A new grant revision or offboarding revocation
-invalidates the existing pinned binding for new access/effects. REST/MCP installation
+invalidates the existing pinned binding or instance authority for new access/effects. REST/MCP installation
 also cancels affected in-flight runs through the existing cancellation boundary. Previously
-dispatched effects are not undone by revocation.
+dispatched effects are not undone by revocation. Grant references remain attached
+after revocation or expiry, so a denied represented turn cannot fall back to an
+ordinary unrestricted turn. REST attachment failure reports the committed grant
+and leaves its existing command identity available for reconciliation. MCP
+issuance remains catalog-only; it does not certify durable-instance attachment.
 
 ## Supported execution vocabulary
 
@@ -52,7 +64,16 @@ team membership, task ownership, current-policy and mailbox checks still apply.
 Opaque MCP effect classifications remain Unknown and are rejected.
 
 Execution starts with an empty session and cannot import checkpoint or supplied
-historical conversation state. Existing retained grant strings such as
+historical conversation state. A fresh durable instance with no stored history
+uses that existing empty-session path; real retained history still denies admission.
+Read-only file operation uses an actual registered `file_read` tool, explicitly
+enabled and restricted to an operator-selected disposable root by native-tool
+settings. At startup, registration consumes persisted native-tool preferences
+after settings bootstrap, using configured defaults only for absent preferences.
+Changes require restarting UAR; saving alone does not hot-reconfigure a live
+registry. The representation grant only narrows eligible tools; it never enables
+a tool or widens the filesystem root allowlist.
+Existing retained grant strings such as
 `artifact.read`, `artifact:assigned`, `artifact.content` and organization-wide
 audiences remain readable authority records but return named
 `REPRESENTATION_*_UNSUPPORTED` or scope-denial diagnostics during execution.

@@ -12,6 +12,10 @@ pub struct CollaborationRunBinding {
     pub owner_id: String,
     pub workspace_id: String,
     pub receipt: EffectiveBindingReceipt,
+    /// Subject verified by ingress, distinct from the private storage key.
+    pub(crate) principal_id: Option<String>,
+    /// Host-captured private instance authority; never changes the receipt.
+    pub(crate) instance_authority: Option<crate::uar::runtime::instance::InstanceEpochBinding>,
     pub(crate) team_attempt: Option<crate::uar::domain::team_execution::TeamExecutionAttempt>,
     pub(crate) team_instructions: Option<crate::uar::domain::team_context::TeamInstructions>,
     pub(crate) team_yield:
@@ -27,6 +31,9 @@ impl CollaborationRunBinding {
     }
 
     pub(super) async fn revalidate_authority(&self) -> anyhow::Result<()> {
+        if let Some(instance) = &self.instance_authority {
+            instance.revalidate().await?;
+        }
         match &self.team_attempt {
             Some(attempt) => {
                 crate::uar::runtime::team_execution::revalidate_member_binding(
@@ -224,6 +231,8 @@ impl RunExecutionRequest {
             owner_id,
             workspace_id,
             receipt: bound.effective_binding_receipt,
+            principal_id: None,
+            instance_authority: None,
             team_attempt: None,
             team_yield: Default::default(),
             team_instructions: None,
@@ -270,6 +279,9 @@ impl RunExecutionRequest {
         mut self,
         owner: crate::uar::runtime::actor::messages::ActorOwner,
     ) -> Self {
+        if let Some(binding) = &mut self.collaboration_binding {
+            binding.principal_id = Some(owner.user_id().to_owned());
+        }
         self.user_id = Some(owner.user_id().to_owned());
         self.verified_owner = Some(owner);
         self
