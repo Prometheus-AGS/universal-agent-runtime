@@ -3,6 +3,7 @@
 
 use std::sync::Arc;
 
+use anyhow::Context;
 use tokio::sync::watch;
 use tokio_util::sync::CancellationToken;
 
@@ -263,20 +264,30 @@ impl ActorThreadSession {
                 && request.user_id.as_deref() == Some(self.owner.user_id())
                 && request.artifact.id == self.artifact.id
                 && request.session_id.as_deref() == Some(self.session_id.as_str()),
-            "Root request does not match its host session"
+            "actor_root_request_scope_mismatch"
         );
         if let Some(artifacts) = &artifacts {
-            artifacts.check_binding(&self.owner, &run_id)?;
+            artifacts
+                .check_binding(&self.owner, &run_id)
+                .context("actor_root_artifact_scope_failed")?;
         }
         if let Some(binding) = &request.collaboration_binding {
-            binding.revalidate(&request.artifact).await?;
+            binding
+                .revalidate(&request.artifact)
+                .await
+                .context("actor_root_catalog_binding_failed")?;
         }
         if let Some(binding) = &request.instance_binding {
-            binding.revalidate().await?;
+            binding
+                .revalidate()
+                .await
+                .context("actor_root_instance_epoch_failed")?;
         }
         let instance_binding = request.instance_binding.clone();
         let team_binding = request.collaboration_binding.clone();
-        self.settle_uncertain().await?;
+        self.settle_uncertain()
+            .await
+            .context("actor_root_previous_recovery_failed")?;
         if self.cancellation.is_cancelled() {
             anyhow::bail!("Actor has been stopped");
         }
@@ -295,12 +306,16 @@ impl ActorThreadSession {
             self.owner.user_id().to_owned(),
             self.artifact.id.clone(),
             run_id.clone(),
-        )?;
+        )
+        .context("actor_root_identity_failed")?;
         if let Some(attempt)=team_binding.as_ref().and_then(|b|b.team_attempt.as_ref()) {
             anyhow::ensure!(!attempt.root_id.is_empty()&&attempt.approval_scope_id==attempt.root_id,"TEAM_SCOPE_DENIED");
             next.thread_id=attempt.root_id.clone();next.root_thread_id=attempt.root_id.clone();
         }
-        let record = self.persist(next).await?;
+        let record = self
+            .persist(next)
+            .await
+            .context("actor_root_registration_failed")?;
         let root = ActorRootBinding {
             record,
             artifacts,
@@ -366,9 +381,14 @@ impl ActorThreadSession {
             .clone();
         next.finish_turn(result)?;
         if let Some(binding) = &instance_binding {
-            binding.revalidate().await?;
+            binding
+                .revalidate()
+                .await
+                .context("actor_root_terminal_epoch_failed")?;
         }
-        self.persist(next).await
+        self.persist(next)
+            .await
+            .context("actor_root_terminal_persistence_failed")
     }
 
     /// After the owning worker has ended, settle its exact receipts and close
