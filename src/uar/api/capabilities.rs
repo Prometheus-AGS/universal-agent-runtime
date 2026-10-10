@@ -65,7 +65,7 @@ pub fn team_execution_b_enabled() -> bool {
 /// Closed capability vocabulary (design Decision 12 of
 /// `sidecar-launch-security`). A name may be advertised only once the owning
 /// change lands its behaviour.
-pub const CAPABILITY_VOCABULARY: [&str; 29] = [
+pub const CAPABILITY_VOCABULARY: [&str; 30] = [
     crate::uar::runtime::turn::representation::CAPABILITY,
     crate::uar::runtime::team_execution::host::CAPABILITY,
     crate::uar::domain::workflow_execution::WORKFLOW_CAPABILITY,
@@ -91,6 +91,7 @@ pub const CAPABILITY_VOCABULARY: [&str; 29] = [
     "secrets_at_rest",
     "session_principal",
     "service_instance_placement_v1",
+    "tool_admission_v2",
     "working_directory",
     "team_execution_peer_tools_v1",
     "team_execution_shared_instructions_v1",
@@ -99,7 +100,7 @@ pub const CAPABILITY_VOCABULARY: [&str; 29] = [
 
 /// Capabilities this binary implements. Each owning change adds its name in
 /// the same commit as the behaviour.
-pub const IMPLEMENTED_CAPABILITIES: [&str; 18] = [
+pub const IMPLEMENTED_CAPABILITIES: [&str; 19] = [
     crate::uar::runtime::turn::representation::CAPABILITY,
     crate::uar::runtime::team_execution::host::CAPABILITY,
     "approval_lifecycle_v1",
@@ -117,6 +118,7 @@ pub const IMPLEMENTED_CAPABILITIES: [&str; 18] = [
     "run_scoped_mcp_servers",
     "session_principal",
     "service_instance_placement_v1",
+    "tool_admission_v2",
     "working_directory",
 ];
 
