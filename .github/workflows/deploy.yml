@@ -194,7 +194,7 @@ jobs:
       - name: Checkout Rust workspace submodules
         shell: bash
         run: |
-          git submodule update --init --depth=1 -- \
+          git -c core.longpaths=true submodule update --init --depth=1 -- \
             crates/prometheus-skill-system \
             vendor/git/liter-llm \
             vendor/git/rust-mcp-filesystem
