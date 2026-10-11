@@ -207,6 +207,7 @@ RUN cd frontend \
     && (cd packages/prometheus-entity-management \
         && pnpm install --frozen-lockfile \
         && pnpm --filter @prometheus-ags/entity-graph-core build \
+        && pnpm --filter @prometheus-ags/entity-graph-react build \
         && pnpm --filter @prometheus-ags/prometheus-entity-management build) \
     && pnpm build
 
