@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Staging MCP timeouts · Universal Agent Runtime</title>
+<link rel="icon" href="assets/brand/uar-mark-dark.svg" />
+<link rel="stylesheet" href="assets/shell.css" />
+<style>
+  /* ─── thread ──────────────────────────────────────────────────────── */
+  .thread { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 24px 24px; }
+  .thread-inner { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+  .msg { display: grid; grid-template-columns: 28px 1fr; gap: 14px; }
+  .msg .who { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--raised); }
+  .msg .who img { width: 18px; height: 18px; }
+  .msg .body { min-width: 0; font-size: var(--thread-fs, 15px); line-height: 1.6; }
+  .msg .body p + p { margin-top: 10px; }
+  .msg .meta-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+  .msg .meta-row b { font-weight: 600; font-size: 13.5px; }
+  .msg .meta-row span { font-size: 12px; color: var(--faint); }
+  .msg-user { grid-template-columns: 1fr; justify-items: end; }
+  .msg-user .bubble { background: var(--raised); border-radius: 16px 16px 4px 16px; padding: 12px 16px; max-width: 78%; font-size: var(--thread-fs, 15px); line-height: 1.55; }
+  .msg code { font-family: var(--font-mono); font-size: 13px; background: var(--raised); padding: 1px 6px; border-radius: 5px; }
+  .msg ul { margin: 8px 0 0; padding-left: 20px; } .msg li + li { margin-top: 4px; }
+  .msg-actions { display: flex; gap: 2px; margin-top: 10px; opacity: 0; transition: opacity var(--fast) var(--ease); }
+  .msg:hover .msg-actions, .msg:focus-within .msg-actions { opacity: 1; }
+
+  /* execution record: one collapsible block per turn */
+  .exec { background: var(--step-2); border-radius: var(--r-card); margin: 6px 0 14px; overflow: hidden; }
+  .exec summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; font-size: 13px; color: var(--muted); }
+  .exec summary::-webkit-details-marker { display: none; }
+  .exec summary:hover { background: var(--raised); }
+  .exec summary .chev { transition: transform var(--base) var(--ease-out); }
+  .exec[open] summary .chev { transform: rotate(90deg); }
+  .exec summary .phases { display: inline-flex; gap: 3px; margin-left: 4px; }
+  .exec summary .phases i { width: 14px; height: 4px; border-radius: 2px; display: block; }
+  .exec summary .num { margin-left: auto; color: var(--faint); }
+  .exec-body { padding: 4px 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+  .step { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px; font-size: 13px; width: 100%; text-align: left; }
+  .step:hover { background: var(--raised); }
+  .step .ph { width: 8px; height: 8px; border-radius: 2px; justify-self: center; }
+  .step .what { min-width: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .step .what .mono { color: var(--muted); font-size: 12px; }
+  .step .t { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .ph-context { background: oklch(75% 0.02 256); } .ph-retrieval { background: oklch(72% 0.14 255); } .ph-reasoning { background: oklch(55% 0.2 262); }
+  .ph-tool { background: var(--ok); } .ph-generate { background: var(--accent); } .ph-skill { background: var(--warn); } .ph-memory { background: oklch(60% 0.2 295); }
+
+  /* inline artifact & diff chips */
+  .artifacts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .afile { display: inline-flex; align-items: center; gap: 10px; padding: 8px 12px 8px 10px; background: var(--step-2); border-radius: 10px; font-size: 13px; text-align: left; transition: background var(--fast) var(--ease); }
+  .afile:hover { background: var(--raised); }
+  .afile .icon { color: var(--muted); }
+  .afile b { font-weight: 500; display: block; }
+  .afile span { font-size: 11.5px; color: var(--faint); display: block; }
+  .diffstat { font-family: var(--font-mono); font-size: 12px; }
+  .diffstat .add { color: var(--ok); } .diffstat .del { color: var(--err); }
+  .cite { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 5px; background: var(--live-soft); color: var(--live); font-family: var(--font-mono); font-size: 11px; vertical-align: 2px; margin-left: 2px; }
+  .cite:hover { background: color-mix(in oklch, var(--live) 26%, transparent); }
+
+  /* approval card (inline permission request) */
+  .approval { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; background: var(--step-2); border-radius: var(--r-card); padding: 14px 16px; margin-top: 14px; }
+  .approval .k { font-size: 12px; color: var(--faint); }
+  .approval .v { font-family: var(--font-mono); font-size: 13px; margin-top: 2px; }
+  .approval .acts { display: flex; gap: 6px; }
+  .approval.done { grid-template-columns: 1fr; }
+  .approval.done .k { display: flex; align-items: center; gap: 8px; }
+
+  /* ─── composer ────────────────────────────────────────────────────── */
+  .composer-wrap { flex: none; padding: 0 24px 18px; }
+  .composer { max-width: 760px; margin: 0 auto; background: var(--step-2); border-radius: 18px; padding: 10px 10px 8px; transition: background var(--fast) var(--ease), box-shadow var(--fast) var(--ease); }
+  .composer:focus-within { background: var(--raised); box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 55%, transparent); }
+  .composer textarea { width: 100%; min-height: 48px; max-height: 240px; resize: none; background: transparent; border: 0; outline: none; padding: 8px 8px 4px; font-size: 15px; line-height: 1.5; color: var(--fg); font-family: var(--font-body); }
+  .composer textarea::placeholder { color: var(--faint); }
+  .composer-row { display: flex; align-items: center; gap: 6px; padding-top: 4px; }
+  .composer-row .spacer { flex: 1; }
+  .composer .send { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; transition: background var(--fast) var(--ease), transform 60ms var(--ease); }
+  .composer .send:hover { background: var(--accent-strong); }
+  .composer .send:active { transform: translateY(1px); }
+  .composer .send:disabled { background: var(--input); color: var(--faint); }
+  .modelchip { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px 0 8px; border-radius: 10px; color: var(--fg); font-size: 13px; font-weight: 500; white-space: nowrap; transition: background var(--fast) var(--ease); }
+  @container main (max-width: 860px) { .modelchip .addr, .composer-row .chip span.lbl, .modelchip .lbl { display: none; } }
+  @container main (max-width: 640px) { .composer-row .chip, .composer-row .icon-btn[aria-label="Dictate"] { display: none; } }
+  .modelchip:hover, .modelchip[aria-expanded="true"] { background: var(--hover); }
+  .modelchip .addr { font-family: var(--font-mono); font-size: 11px; color: var(--faint); font-weight: 400; }
+  .modelchip .stack { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
+  .pmark { width: 18px; height: 18px; border-radius: 5px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 11px; color: var(--fg); background: var(--input); flex: none; }
+  .composer-foot { max-width: 760px; margin: 8px auto 0; display: flex; justify-content: space-between; font-size: 11.5px; color: var(--faint); padding: 0 12px; }
+  .menu.model-menu { min-width: 340px; bottom: 100%; margin-bottom: 8px; right: 0; }
+  .menu.model-menu .menu-item { align-items: flex-start; }
+  .menu.model-menu .menu-item .pmark { margin-top: 2px; }
+  .menu .right { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--faint); align-self: center; }
+  .seg { display: inline-flex; background: var(--step-2); padding: 3px; border-radius: 8px; gap: 2px; margin: 4px 10px 8px; }
+  .seg button { height: 26px; padding: 0 10px; border-radius: 6px; font-size: 12px; color: var(--muted); }
+  .seg button[aria-checked="true"] { background: var(--raised); color: var(--fg); }
+  .seg button:hover { color: var(--fg); }
+  .composer-anchor { position: relative; }
+
+  /* ─── conversation target: orchestrator (routing on/off) or a pinned agent ─── */
+  .topbar .title { white-space: nowrap; overflow: hidden; }
+  .topbar .title > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+  #target-chip { flex: none; }
+  @container main (max-width: 900px) { #target-chip-lbl { display: none; } }
+  .route { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); margin: 0 0 8px; }
+  .route .icon { width: 14px; height: 14px; color: var(--faint); }
+  .route b { color: var(--fg); font-weight: 600; }
+  .route .mono { font-size: 11.5px; color: var(--faint); }
+  .route button { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; font-size: 12.5px; border-radius: 4px; }
+  .route button:hover { color: var(--fg); }
+  .menu.target-menu { min-width: 340px; right: 0; bottom: 100%; margin-bottom: 8px; }
+  .menu.target-menu .menu-item { align-items: flex-start; }
+  .menu.target-menu .menu-item .icon { margin-top: 2px; }
+  .route-toggle { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; margin: 2px 4px 6px; padding: 10px; border-radius: 8px; background: var(--step-2); font-size: 13px; }
+  .route-toggle .sub { display: block; font-size: 12px; color: var(--faint); margin-top: 1px; }
+  .route-toggle[aria-disabled="true"] { opacity: 0.5; }
+  .start { display: none; padding: 8vh 0 0; }
+  .start.active { display: block; animation: fade-up var(--base) var(--ease-out); }
+  .start h1 { font-size: 26px; text-align: center; }
+  .start > p { text-align: center; color: var(--muted); margin: 6px auto 22px; max-width: 52ch; }
+  .targets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tcard { text-align: left; padding: 14px; border-radius: 12px; background: var(--step-2); display: flex; flex-direction: column; gap: 6px; transition: background var(--fast) var(--ease); min-height: 120px; }
+  .tcard:hover { background: var(--hover); }
+  .tcard[aria-checked="true"] { background: var(--accent-soft); }
+  .tcard[aria-checked="true"] b { color: var(--accent); }
+  .tcard b { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .tcard span { font-size: 12.5px; color: var(--muted); }
+  .tcard .mono { font-size: 11.5px; color: var(--faint); margin-top: auto; }
+  .start .route-toggle { margin: 12px 0 0; }
+  .start-foot { margin-top: 12px; font-size: 12px; color: var(--faint); text-align: center; }
+  .start-foot a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+  @media (max-width: 760px) { .targets { grid-template-columns: 1fr; } .tcard { min-height: 0; } }
+
+  /* ─── panel panes ─────────────────────────────────────────────────── */
+  .pane-section { margin-top: 14px; }
+  .pane-section h4 { font-family: var(--font-body); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin: 0 0 8px 2px; }
+  .kv { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .kv .card { padding: 12px 14px; }
+  .kv .card .k { font-size: 11.5px; color: var(--faint); }
+  .kv .card .v { font-family: var(--font-mono); font-size: 15px; font-weight: 500; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .timeline { display: flex; flex-direction: column; }
+  .tl { display: grid; grid-template-columns: 14px 1fr auto; gap: 12px; padding: 8px 6px; border-radius: 8px; align-items: start; position: relative; font-size: 13px; }
+  .tl:hover { background: var(--raised); }
+  .tl .ph { width: 10px; height: 10px; border-radius: 3px; margin-top: 4px; }
+  .tl .d { font-weight: 500; }
+  .tl .s { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .tl .s .mono { font-size: 12px; }
+  .tl .t { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); margin-top: 3px; }
+  .bar { height: 6px; border-radius: 3px; display: flex; overflow: hidden; gap: 2px; margin: 6px 0 4px; }
+  .bar i { display: block; height: 100%; }
+  .files { display: flex; flex-direction: column; gap: 2px; }
+  .frow { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; font-size: 13px; width: 100%; text-align: left; }
+  .frow:hover { background: var(--raised); }
+  .frow[aria-current="true"] { background: var(--accent-soft); color: var(--accent); }
+  .frow .mono { margin-left: auto; font-size: 11.5px; color: var(--faint); }
+  .frow .icon { color: var(--muted); } .frow[aria-current="true"] .icon { color: inherit; }
+  .preview { background: var(--bg); border-radius: var(--r-card); padding: 18px 20px; margin-top: 10px; font-size: 13.5px; line-height: 1.6; }
+  .preview h3 { font-size: 16px; margin-bottom: 8px; }
+  .preview h4 { font-family: var(--font-body); font-size: 13px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--fg); margin: 14px 0 4px; }
+  .preview ul { margin: 6px 0; padding-left: 18px; }
+  .preview-head { display: flex; align-items: center; gap: 6px; margin-top: 12px; }
+  .preview-head .spacer { flex: 1; }
+  .diff { font-family: var(--font-mono); font-size: 12px; line-height: 1.6; background: var(--bg); border-radius: var(--r-card); padding: 12px 0; margin-top: 10px; overflow-x: auto; }
+  .diff div { padding: 0 14px; white-space: pre; }
+  .diff .hunk { color: var(--live); }
+  .diff .add { background: color-mix(in oklch, var(--ok) 14%, transparent); color: var(--fg); }
+  .diff .del { background: color-mix(in oklch, var(--err) 14%, transparent); color: var(--fg); }
+  .diff .ln { display: inline-block; width: 28px; color: var(--faint); user-select: none; }
+  .urlbar { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; background: var(--input); border-radius: 9px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .urlbar .status-dot { width: 6px; height: 6px; }
+  .webframe { background: var(--bg); border-radius: var(--r-card); margin-top: 10px; min-height: 320px; padding: 20px 22px; font-size: 13px; line-height: 1.6; }
+  .webframe .fake-nav { display: flex; gap: 14px; font-size: 12px; color: var(--faint); margin-bottom: 18px; }
+  .webframe h3 { font-size: 20px; margin-bottom: 8px; }
+  .webframe pre { background: var(--step-2); border-radius: 8px; padding: 10px 12px; font-size: 12px; overflow-x: auto; }
+  .plan { display: flex; flex-direction: column; gap: 2px; }
+  .plan-item { display: grid; grid-template-columns: 20px 1fr; gap: 10px; padding: 8px 8px; border-radius: 8px; font-size: 13.5px; align-items: start; }
+  .plan-item .box { width: 16px; height: 16px; border-radius: 5px; background: var(--input); display: grid; place-items: center; margin-top: 2px; }
+  .plan-item.done .box { background: var(--ok); color: var(--accent-fg); }
+  .plan-item.active .box { background: var(--live); }
+  .plan-item.done .txt { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--faint); }
+  .plan-item.active .txt { font-weight: 500; }
+  .plan-item .sub { display: block; font-size: 12px; color: var(--faint); margin-top: 2px; }
+
+  @media (max-width: 760px) {
+    .thread { padding: 8px 14px 16px; }
+    .composer-wrap { padding: 0 10px 10px; }
+    .msg-user .bubble { max-width: 92%; }
+    .topbar .title .crumb { display: none; }
+    .kv { grid-template-columns: 1fr; }
+    .composer-foot { display: none; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 1 2-2h13"/></symbol>
+  <symbol id="i-bot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 14h.01M15 14h.01"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5zM3 13l9 5 9-5M3 17.5l9 5 9-5"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/></symbol>
+  <symbol id="i-runs" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16"/><circle cx="18" cy="12" r="2"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M15 4v16"/></symbol>
+  <symbol id="i-sidebar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-chevd" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="i-diff" viewBox="0 0 24 24"><path d="M12 3v18M5 9h6M5 15h6M13 12h6"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></symbol>
+  <symbol id="i-tool" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L22 9l-3-3-1.7 1.7zM3 21l8.5-8.5"/><path d="m10 7-4-4-3 3 4 4"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5M8 7l1-4h6l1 4M6 11l2-4h8l2 4-3 2v4H9v-4z"/></symbol>
+  <symbol id="i-open" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></symbol>
+</svg>
+
+<div class="app" data-od-id="app-shell">
+  <div class="titlebar" data-tauri-drag-region><span class="mono">universal-agent-runtime</span>&nbsp;· Staging MCP timeouts</div>
+
+  <!-- ───────────────────────── sidebar ───────────────────────── -->
+  <aside class="sidebar" aria-label="Workspace navigation" data-od-id="sidebar">
+    <div class="sidebar-top">
+      <a class="brand" href="index.html" aria-label="Universal Agent Runtime home">
+        <img src="assets/brand/uar-mark-dark.svg" alt="" />
+        <span class="brand-name">Universal Agent Runtime<small>// UAR RUNTIME</small></span>
+      </a>
+      <button class="icon-btn" data-action="sidebar" aria-expanded="true" aria-label="Collapse sidebar" title="Toggle sidebar (⌘B)"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+    </div>
+    <button class="nav-item rail-only icon-btn" data-action="sidebar" aria-label="Expand sidebar" title="Expand sidebar (⌘B)"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+
+    <div class="sidebar-section" data-od-id="sidebar-primary">
+      <button class="nav-item primary" data-action="new-chat" title="New chat (⌘⇧O)"><svg class="icon"><use href="#i-plus"/></svg><span class="grow">New chat</span><kbd data-kbd="⌘⇧O">⌘⇧O</kbd></button>
+      <button class="nav-item" data-action="cmdk" title="Search (⌘K)"><svg class="icon"><use href="#i-search"/></svg><span class="grow">Search</span><kbd data-kbd="⌘K">⌘K</kbd></button>
+    </div>
+
+    <div class="sidebar-section" data-od-id="sidebar-workspace">
+      <p class="sidebar-label">Workspace</p>
+      <a class="nav-item" href="knowledge.html" title="Knowledge"><svg class="icon"><use href="#i-book"/></svg><span class="grow">Knowledge</span></a>
+      <a class="nav-item" href="agents.html" title="Agents"><svg class="icon"><use href="#i-bot"/></svg><span class="grow">Agents</span></a>
+      <a class="nav-item" href="a2ui-registries.html" title="A2UI registries"><svg class="icon"><use href="#i-layers"/></svg><span class="grow">A2UI registries</span></a>
+      <a class="nav-item" href="runs.html" title="Runs"><svg class="icon"><use href="#i-runs"/></svg><span class="grow">Runs</span><span class="chip live" style="height:20px;padding:0 7px;font-size:11px">2</span></a>
+    </div>
+
+    <div class="sidebar-scroll" data-od-id="sidebar-recents">
+      <p class="sidebar-label">Projects <a class="icon-btn" href="projects.html?new=1" style="width:22px;height:22px" aria-label="New project"><svg class="icon icon-sm"><use href="#i-plus"/></svg></a></p>
+      <a class="nav-item" href="projects.html?p=staging-ops"><svg class="icon"><use href="#i-folder"/></svg><span class="grow">Staging ops</span></a>
+      <a class="nav-item" href="projects.html?p=policy-review-q4"><svg class="icon"><use href="#i-folder"/></svg><span class="grow">Policy review Q4</span></a>
+
+      <p class="sidebar-label">Today</p>
+      <a class="nav-item thread-item" href="#" aria-current="page"><span class="dot" aria-label="Run in progress"></span><span class="grow">Staging MCP timeouts</span><button class="icon-btn more" aria-label="Thread options"><svg class="icon icon-sm"><use href="#i-more"/></svg></button></a>
+      <a class="nav-item thread-item" href="#"><span class="grow">Rotate the Groq key</span><button class="icon-btn more" aria-label="Thread options"><svg class="icon icon-sm"><use href="#i-more"/></svg></button></a>
+      <a class="nav-item thread-item" href="#"><span class="grow">Summarize the Cedar policy diff</span><button class="icon-btn more" aria-label="Thread options"><svg class="icon icon-sm"><use href="#i-more"/></svg></button></a>
+      <p class="sidebar-label">Yesterday</p>
+      <a class="nav-item thread-item" href="#"><span class="grow">Knowledge base re-embed plan</span><button class="icon-btn more" aria-label="Thread options"><svg class="icon icon-sm"><use href="#i-more"/></svg></button></a>
+      <a class="nav-item thread-item" href="#"><span class="grow">Why did run 7f3a stall?</span><button class="icon-btn more" aria-label="Thread options"><svg class="icon icon-sm"><use href="#i-more"/></svg></button></a>
+      <a class="nav-item thread-item" href="#"><span class="grow">Draft release notes 1.0.1</span><button class="icon-btn more" aria-label="Thread options"><svg class="icon icon-sm"><use href="#i-more"/></svg></button></a>
+      <p class="sidebar-label">Previous 7 days</p>
+      <a class="nav-item thread-item" href="#"><span class="grow">Compare Sonnet 5 vs GPT-6 Sol on tool loops</span><button class="icon-btn more" aria-label="Thread options"><svg class="icon icon-sm"><use href="#i-more"/></svg></button></a>
+      <a class="nav-item thread-item" href="#"><span class="grow">Approval tiers for file writes</span><button class="icon-btn more" aria-label="Thread options"><svg class="icon icon-sm"><use href="#i-more"/></svg></button></a>
+      <a class="nav-item thread-item" href="#"><span class="grow">Ollama on the build box</span><button class="icon-btn more" aria-label="Thread options"><svg class="icon icon-sm"><use href="#i-more"/></svg></button></a>
+      <a class="nav-item thread-item" href="#"><span class="grow">Skill compiler warnings</span><button class="icon-btn more" aria-label="Thread options"><svg class="icon icon-sm"><use href="#i-more"/></svg></button></a>
+    </div>
+
+    <div class="sidebar-bottom" data-od-id="sidebar-account">
+      <a class="nav-item" href="models-and-providers.html" title="Settings (⌘,)"><svg class="icon"><use href="#i-gear"/></svg><span class="grow">Settings</span><kbd data-kbd="⌘,">⌘,</kbd></a>
+      <div style="position:relative">
+      <button class="account" data-action="menu" aria-controls="account-menu" aria-expanded="false" aria-haspopup="menu">
+        <span class="avatar">TJ</span>
+        <span class="who"><b>Travis James</b><span><i class="status-dot"></i>Runtime healthy · 1.0.0</span></span>
+      </button>
+        <div class="menu" id="account-menu" role="menu" style="left:0;bottom:100%;margin-bottom:6px;min-width:240px">
+          <p class="menu-label">Workspace</p>
+          <a class="menu-item" role="menuitem" href="models-and-providers.html"><svg class="icon"><use href="#i-gear"/></svg>Settings<span class="right">⌘,</span></a>
+          <button class="menu-item" role="menuitem" data-action="cmdk"><svg class="icon"><use href="#i-search"/></svg>Command palette<span class="right">⌘K</span></button>
+          <button class="menu-item" role="menuitem" data-action="theme" data-keep-menu="1"><svg class="icon"><use href="#i-sun"/></svg>Switch theme</button>
+          <div class="menu-sep"></div>
+          <button class="menu-item" role="menuitem" data-action="toast" data-msg="Keyboard shortcuts sheet — see tauri-integration-notes.md"><svg class="icon"><use href="#i-list"/></svg>Keyboard shortcuts<span class="right">⌘/</span></button>
+          <button class="menu-item" role="menuitem"><svg class="icon"><use href="#i-shield"/></svg>Sign out</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ───────────────────────── main ──────────────────────────── -->
+  <main class="main" id="content" data-od-id="main">
+    <header class="topbar" data-od-id="topbar">
+      <button class="icon-btn" data-action="sidebar-mobile" aria-label="Open navigation" style="display:none" id="mobile-nav-btn"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+      <div class="title"><span class="crumb">Staging ops</span><span>Staging MCP timeouts</span></div>
+      <button class="chip quiet" aria-label="Rename thread" title="Rename"><svg class="icon"><use href="#i-chevd"/></svg></button>
+      <button class="chip" id="target-chip" data-action="open-target" title="Who handles this conversation" data-od-id="target-chip"><svg class="icon"><use href="#i-route"/></svg><span id="target-chip-lbl">Orchestrator · routing on</span></button>
+      <span class="spacer"></span>
+      <button class="chip live" data-action="panel" data-tab="run" aria-pressed="false" title="Open run details (⌘⇧D)"><span class="status-dot" style="background:var(--live)"></span>Run · step 6 of 7</button>
+      <button class="icon-btn" data-action="panel" data-tab="files" aria-pressed="false" aria-label="Files (⌘⇧E)" title="Files (⌘⇧E)"><svg class="icon"><use href="#i-file"/></svg></button>
+      <button class="icon-btn" data-action="panel" data-tab="browser" aria-pressed="false" aria-label="Browser (⌘⇧B)" title="Browser (⌘⇧B)"><svg class="icon"><use href="#i-globe"/></svg></button>
+      <button class="icon-btn" data-action="panel" aria-pressed="false" aria-label="Toggle inspector (⌘\)" title="Toggle inspector (⌘\)"><svg class="icon"><use href="#i-panel"/></svg></button>
+    </header>
+
+    <section class="thread" aria-label="Conversation" data-od-id="thread">
+      <div class="thread-inner" id="thread-inner">
+        <section class="start" id="start" aria-labelledby="start-h" data-od-id="new-chat-start">
+          <h1 id="start-h">Who should handle this conversation?</h1>
+          <p>The orchestrator picks a matching agent for each message. Pin an agent when every request should go through it. You can change this later from the composer.</p>
+          <div class="targets" role="radiogroup" aria-label="Conversation target" data-od-id="target-cards">
+            <button class="tcard" role="radio" aria-checked="true" data-target="orchestrator" data-od-id="target-orchestrator"><b><svg class="icon"><use href="#i-route"/></svg>Orchestrator</b><span>Routes each message to the best-matching agent, or to the default assistant if none matches.</span><span class="mono">orchestrator-agent</span></button>
+            <button class="tcard" role="radio" aria-checked="false" data-target="ops-agent" data-od-id="target-ops-agent"><b><svg class="icon"><use href="#i-bot"/></svg>Ops agent</b><span>Staging runbooks, MCP and config. Uses runbooks and mcp-runbook.</span><span class="mono">anthropic/claude-sonnet-5</span></button>
+            <button class="tcard" role="radio" aria-checked="false" data-target="policy-reviewer" data-od-id="target-policy-reviewer"><b><svg class="icon"><use href="#i-bot"/></svg>Policy reviewer</b><span>Cedar policies, approvals and audit questions.</span><span class="mono">openai/gpt-6-sol</span></button>
+          </div>
+          <div class="route-toggle" id="start-routing" data-od-id="start-routing-toggle"><span>Route to matching agents<span class="sub" id="start-routing-sub">On · each message can go to a different agent</span></span><button type="button" class="switch" role="switch" aria-checked="true" aria-label="Route to matching agents" data-route-switch></button></div>
+          <p class="start-foot">Other agents are in <a href="agents.html">Agents</a>. Conversation settings below — model, tools, permission mode — apply on top of the agent you choose.</p>
+        </section>
+        <article class="msg msg-user" data-od-id="msg-user-1">
+          <div class="bubble">The staging MCP filesystem server keeps timing out on long runs. Find out why and propose a fix I can review before anything changes.</div>
+        </article>
+
+        <article class="msg" data-od-id="msg-assistant-1">
+          <div class="who"><img src="assets/brand/uar-mark-dark.svg" alt="" /></div>
+          <div class="body">
+            <div class="route" id="route-line" data-od-id="route-decision"></div>
+            <div class="meta-row"><b>Ops agent</b><span class="mono">anthropic/claude-sonnet-5</span><span>· 42 s</span></div>
+
+            <details class="exec" open data-od-id="execution-record">
+              <summary>
+                <svg class="icon icon-sm chev"><use href="#i-chev"/></svg>
+                Worked through 6 steps
+                <span class="phases" aria-hidden="true"><i class="ph-context"></i><i class="ph-retrieval"></i><i class="ph-tool"></i><i class="ph-tool"></i><i class="ph-tool"></i><i class="ph-generate"></i></span>
+                <span class="num mono">3 tool calls · 18.4k tokens</span>
+              </summary>
+              <div class="exec-body">
+                <button class="step" data-action="panel-open" data-tab="run"><span class="ph ph-context"></span><span class="what">Loaded project context <span class="mono">staging-ops · 4 files</span></span><span class="t">0.3s</span></button>
+                <button class="step" data-action="panel-open" data-tab="run"><span class="ph ph-retrieval"></span><span class="what">Retrieved from knowledge base <span class="mono">mcp-runbook · 3 passages</span></span><span class="t">1.1s</span></button>
+                <button class="step" data-action="panel-open" data-tab="run"><span class="ph ph-tool"></span><span class="what">Called <span class="mono">mcp.health</span> <span class="chip ok" style="height:20px;font-size:11px">ok</span></span><span class="t">0.8s</span></button>
+                <button class="step" data-action="panel-open" data-tab="run"><span class="ph ph-tool"></span><span class="what">Called <span class="mono">logs.tail</span> <span class="mono">staging/mcp-filesystem · 500 lines</span></span><span class="t">2.4s</span></button>
+                <button class="step" data-action="panel-open" data-tab="run"><span class="ph ph-tool"></span><span class="what">Called <span class="mono">config.read</span> <span class="mono">staging/config.yaml</span></span><span class="t">0.4s</span></button>
+                <button class="step" data-action="panel-open" data-tab="run"><span class="ph ph-generate"></span><span class="what">Wrote report and proposed a change</span><span class="t">6.9s</span></button>
+              </div>
+            </details>
+
+            <p>The timeouts are not the filesystem server itself. Each failing run opens the MCP session with the runtime default of <code>timeout_secs: 60</code>, but the two long runs in the log were streaming directory listings over 2,400 files, and the server only answered after 71 and 84 seconds.<button class="cite" data-action="panel-open" data-tab="files" aria-label="Source: mcp-filesystem log lines 212–260">1</button> The health probe passes because it reads a single file.<button class="cite" data-action="panel-open" data-tab="run" aria-label="Source: mcp.health result">2</button></p>
+            <p>Two things worth fixing, in order:</p>
+            <ul>
+              <li>Raise the per-tool timeout for this server to 120 s and set <code>max_listing_depth: 2</code> so listings stay bounded. That is the change below.</li>
+              <li>Have the agent skill request <code>fs.list</code> with a path filter instead of the repository root. I have left that as a follow-up because it touches the skill, not the runtime.</li>
+            </ul>
+
+            <div class="artifacts">
+              <button class="afile" data-action="panel-open" data-tab="files"><svg class="icon"><use href="#i-file"/></svg><span><b>mcp-timeout-report.md</b><span>Report · 1.2 KB</span></span></button>
+              <button class="afile" data-action="panel-open" data-tab="files" data-file="diff"><svg class="icon"><use href="#i-diff"/></svg><span><b>staging/config.yaml</b><span class="diffstat"><span class="add">+4</span> <span class="del">−1</span> · proposed</span></span></button>
+            </div>
+
+            <div class="approval" data-od-id="approval-card" id="approval">
+              <div>
+                <div class="k">Permission request · config.write</div>
+                <div class="v">staging/config.yaml · policy: ops-staging allows with approval</div>
+              </div>
+              <div class="acts">
+                <button class="btn btn-sm btn-ghost" data-action="deny">Deny</button>
+                <button class="btn btn-sm btn-secondary" data-action="approve-once">Allow once</button>
+                <button class="btn btn-sm btn-primary" data-action="approve-always">Always for this server</button>
+              </div>
+            </div>
+
+            <div class="msg-actions">
+              <button class="icon-btn" aria-label="Copy response"><svg class="icon icon-sm"><use href="#i-copy"/></svg></button>
+              <button class="icon-btn" aria-label="Regenerate"><svg class="icon icon-sm"><use href="#i-refresh"/></svg></button>
+              <button class="icon-btn" data-action="panel-open" data-tab="run" aria-label="Open run details"><svg class="icon icon-sm"><use href="#i-runs"/></svg></button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <div class="composer-wrap" data-od-id="composer">
+      <form class="composer composer-anchor" onsubmit="return false">
+        <label class="sr-only" for="prompt">Message Ops agent</label>
+        <textarea id="prompt" placeholder="Reply, or type / for commands and @ to reference a file…" rows="1"></textarea>
+        <div class="composer-row">
+          <button type="button" class="icon-btn" data-action="menu" aria-controls="plus-menu" aria-expanded="false" aria-haspopup="menu" aria-label="Add attachment, connector or skill"><svg class="icon"><use href="#i-plus"/></svg></button>
+          <div class="menu" id="plus-menu" role="menu" style="left:0;bottom:100%;margin-bottom:8px">
+            <button type="button" class="menu-item" role="menuitem"><svg class="icon"><use href="#i-file"/></svg>Attach file<span class="right">⌘U</span></button>
+            <button type="button" class="menu-item" role="menuitem"><svg class="icon"><use href="#i-book"/></svg>Add knowledge base</button>
+            <a class="menu-item" role="menuitem" href="tools-and-mcp.html"><svg class="icon"><use href="#i-tool"/></svg>MCP servers &amp; tools<span class="right">4 on</span></a>
+            <button type="button" class="menu-item" role="menuitem"><svg class="icon"><use href="#i-list"/></svg>Skills<span class="right">2 on</span></button>
+          </div>
+          <button type="button" class="chip" aria-label="Tools enabled for this thread"><svg class="icon"><use href="#i-tool"/></svg><span class="lbl">4 tools</span></button>
+          <span class="spacer"></span>
+          <button type="button" class="modelchip" id="target-btn" data-action="menu" aria-controls="agent-menu" aria-expanded="false" aria-haspopup="menu" title="Who handles this conversation" data-od-id="target-picker"><svg class="icon icon-sm" style="color:var(--muted)"><use href="#i-route" id="target-icon"/></svg><span class="lbl" id="target-lbl">Orchestrator</span></button>
+          <div class="menu target-menu" id="agent-menu" role="menu" data-od-id="target-menu">
+            <p class="menu-label">Send messages to</p>
+            <button type="button" class="menu-item" role="menuitemradio" aria-checked="true" data-action="pick-target" data-target="orchestrator" data-keep-menu="1"><svg class="icon"><use href="#i-route"/></svg><span>Orchestrator<span class="sub">Picks a matching agent per message, else Default Assistant</span></span></button>
+            <div class="route-toggle" id="menu-routing" data-od-id="routing-toggle"><span>Route to matching agents<span class="sub" id="menu-routing-sub">Off sends everything to Default Assistant with this conversation's settings</span></span><button type="button" class="switch" role="switch" aria-checked="true" aria-label="Route to matching agents" data-route-switch></button></div>
+            <p class="menu-label">Pin an agent</p>
+            <button type="button" class="menu-item" role="menuitemradio" aria-checked="false" data-action="pick-target" data-target="ops-agent"><svg class="icon"><use href="#i-bot"/></svg><span>Ops agent<span class="sub">Staging runbooks, MCP, config</span></span></button>
+            <button type="button" class="menu-item" role="menuitemradio" aria-checked="false" data-action="pick-target" data-target="policy-reviewer"><svg class="icon"><use href="#i-bot"/></svg><span>Policy reviewer<span class="sub">Cedar, approvals, audit</span></span></button>
+            <button type="button" class="menu-item" role="menuitemradio" aria-checked="false" data-action="pick-target" data-target="default-agent"><svg class="icon"><use href="#i-bot"/></svg><span>Default Assistant<span class="sub">Built in · workspace defaults</span></span></button>
+            <div class="menu-sep"></div>
+            <a class="menu-item" role="menuitem" href="agents.html"><svg class="icon"><use href="#i-gear"/></svg>Manage agents…</a>
+          </div>
+
+          <button type="button" class="modelchip" id="model-chip" data-action="menu" aria-controls="model-menu" aria-expanded="false" aria-haspopup="menu" title="Model (⌃⇧M)">
+            <span class="pmark" aria-hidden="true">A</span>
+            <span class="stack"><span id="model-name">Claude Sonnet 5</span><span class="addr" id="model-addr">anthropic/claude-sonnet-5</span></span>
+            <svg class="icon icon-sm" style="color:var(--muted)"><use href="#i-chevd"/></svg>
+          </button>
+          <div class="menu model-menu" id="model-menu" role="menu" data-od-id="model-picker">
+            <p class="menu-label">Enabled models</p>
+            <button type="button" class="menu-item" role="menuitemradio" aria-checked="true" data-action="pick-model" data-name="Claude Sonnet 5" data-addr="anthropic/claude-sonnet-5" data-mark="A"><span class="pmark">A</span><span>Claude Sonnet 5<span class="sub">Everyday agent work · tools, vision, 1M context</span></span><span class="right">$2 / $10</span></button>
+            <button type="button" class="menu-item" role="menuitemradio" aria-checked="false" data-action="pick-model" data-name="GPT-6 Sol" data-addr="openai/gpt-6-sol" data-mark="O"><span class="pmark">O</span><span>GPT-6 Sol<span class="sub">Long tool chains, Responses protocol</span></span><span class="right">$2 / $10</span></button>
+            <button type="button" class="menu-item" role="menuitemradio" aria-checked="false" data-action="pick-model" data-name="Claude Opus 5.5" data-addr="anthropic/claude-opus-5-5" data-mark="A"><span class="pmark">A</span><span>Claude Opus 5.5<span class="sub">Hardest reasoning and review</span></span><span class="right">$4 / $20</span></button>
+            <button type="button" class="menu-item" role="menuitemradio" aria-checked="false" data-action="pick-model" data-name="Llama 3.3 70B" data-addr="groq/llama-3.3-70b-versatile" data-mark="G"><span class="pmark">G</span><span>Llama 3.3 70B on Groq<span class="sub">Fast and cheap, no vision</span></span><span class="right">$0.59 / $0.79</span></button>
+            <div class="menu-sep"></div>
+            <button type="button" class="menu-item" role="menuitemradio" aria-checked="false" data-action="pick-model" data-name="Auto" data-addr="policy: ops-staging · cheapest capable" data-mark="⟲"><span class="pmark">⟲</span><span>Auto<span class="sub">Route by capability, health and cost · fallback to Groq</span></span></button>
+            <p class="menu-label">Effort</p>
+            <div class="seg" role="radiogroup" aria-label="Reasoning effort">
+              <button type="button" role="radio" aria-checked="false" data-action="effort" data-keep-menu="1">Low</button>
+              <button type="button" role="radio" aria-checked="true" data-action="effort" data-keep-menu="1">Medium</button>
+              <button type="button" role="radio" aria-checked="false" data-action="effort" data-keep-menu="1">High</button>
+            </div>
+            <div class="menu-sep"></div>
+            <a class="menu-item" role="menuitem" href="models-and-providers.html"><svg class="icon"><use href="#i-gear"/></svg>More models &amp; providers…<span class="right">Settings</span></a>
+          </div>
+
+          <button type="button" class="modelchip" data-action="menu" aria-controls="mode-menu" aria-expanded="false" aria-haspopup="menu" title="Permission mode (⌘⇧M)"><svg class="icon icon-sm" style="color:var(--muted)"><use href="#i-shield"/></svg><span id="mode-name" class="lbl">Ask before writes</span></button>
+          <div class="menu" id="mode-menu" role="menu" style="right:0;bottom:100%;margin-bottom:8px;min-width:280px">
+            <p class="menu-label">Permission mode</p>
+            <button type="button" class="menu-item" role="menuitemradio" aria-checked="false" data-action="pick-mode" data-name="Ask for every tool"><span>Ask for every tool<span class="sub">Approve each call inline</span></span></button>
+            <button type="button" class="menu-item" role="menuitemradio" aria-checked="true" data-action="pick-mode" data-name="Ask before writes"><span>Ask before writes<span class="sub">Reads run; writes and shell need approval</span></span></button>
+            <button type="button" class="menu-item" role="menuitemradio" aria-checked="false" data-action="pick-mode" data-name="Plan only"><span>Plan only<span class="sub">No tool execution, propose steps</span></span></button>
+            <button type="button" class="menu-item" role="menuitemradio" aria-checked="false" disabled style="opacity:.5;cursor:default"><span>Auto<span class="sub">Denied by Cedar policy for staging</span></span></button>
+          </div>
+
+          <button type="button" class="icon-btn" aria-label="Dictate"><svg class="icon"><use href="#i-mic"/></svg></button>
+          <button type="submit" class="send" id="send" aria-label="Send" disabled><svg class="icon"><use href="#i-send"/></svg></button>
+        </div>
+      </form>
+      <div class="composer-foot"><span>Enter to send · Shift+Enter for a new line</span><span class="mono">context 18.4k / 1M</span></div>
+    </div>
+  </main>
+
+  <!-- ───────────────────────── right inspector ───────────────── -->
+  <aside class="panel" aria-label="Inspector" aria-hidden="true" data-od-id="inspector">
+    <div class="panel-handle"></div>
+    <div class="panel-head">
+      <div class="tabs" role="tablist" aria-label="Inspector sections">
+        <button class="tab" role="tab" data-tab="run" aria-selected="false" id="tab-run"><svg class="icon icon-sm"><use href="#i-runs"/></svg>Run</button>
+        <button class="tab" role="tab" data-tab="files" aria-selected="false" id="tab-files"><svg class="icon icon-sm"><use href="#i-file"/></svg>Files <span class="count">2</span></button>
+        <button class="tab" role="tab" data-tab="browser" aria-selected="false" id="tab-browser"><svg class="icon icon-sm"><use href="#i-globe"/></svg>Browser</button>
+        <button class="tab" role="tab" data-tab="plan" aria-selected="false" id="tab-plan"><svg class="icon icon-sm"><use href="#i-list"/></svg>Plan <span class="count">4/6</span></button>
+      </div>
+      <span style="flex:1"></span>
+      <button class="icon-btn" aria-label="Pop out inspector" title="Open in its own window"><svg class="icon"><use href="#i-open"/></svg></button>
+      <button class="icon-btn" data-action="panel-close" aria-label="Close inspector (⌘\)"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="panel-body">
+      <!-- Run -->
+      <div role="tabpanel" data-tabpanel="run" aria-labelledby="tab-run">
+        <div class="kv">
+          <div class="card"><div class="k">Run</div><div class="v">run_8c2f…41</div></div>
+          <div class="card"><div class="k">Status</div><div class="v" style="color:var(--live)">awaiting approval</div></div>
+          <div class="card"><div class="k">Tokens in / out</div><div class="v">18,420 / 2,113</div></div>
+          <div class="card"><div class="k">Cost so far</div><div class="v">$0.058</div></div>
+        </div>
+        <div class="pane-section">
+          <h4>Phases · 42.1 s</h4>
+          <div class="bar" aria-hidden="true"><i class="ph-context" style="width:2%"></i><i class="ph-retrieval" style="width:5%"></i><i class="ph-reasoning" style="width:30%"></i><i class="ph-tool" style="width:9%"></i><i class="ph-tool" style="width:12%"></i><i class="ph-tool" style="width:3%"></i><i class="ph-generate" style="width:39%"></i></div>
+          <div class="timeline">
+            <div class="tl"><span class="ph ph-context"></span><div><div class="d">Context assembled</div><div class="s">System prompt, 4 project files, thread history</div></div><span class="t">0.3 s</span></div>
+            <div class="tl"><span class="ph ph-retrieval"></span><div><div class="d">Knowledge retrieval</div><div class="s">mcp-runbook · 3 passages · hybrid RRF, lexical verified</div></div><span class="t">1.1 s</span></div>
+            <div class="tl"><span class="ph ph-reasoning"></span><div><div class="d">Reasoning</div><div class="s">Effort medium · 6,902 thinking tokens</div></div><span class="t">12.6 s</span></div>
+            <div class="tl"><span class="ph ph-tool"></span><div><div class="d">mcp.health <span class="chip ok" style="height:18px;font-size:10.5px;margin-left:4px">200</span></div><div class="s"><span class="mono">staging/mcp-filesystem</span> · healthy · probe read 1 file</div></div><span class="t">0.8 s</span></div>
+            <div class="tl"><span class="ph ph-tool"></span><div><div class="d">logs.tail</div><div class="s"><span class="mono">staging/mcp-filesystem</span> · 500 lines · 2 timeouts at 71 s and 84 s</div></div><span class="t">2.4 s</span></div>
+            <div class="tl"><span class="ph ph-tool"></span><div><div class="d">config.read</div><div class="s"><span class="mono">staging/config.yaml</span> · timeout_secs 60 (runtime default)</div></div><span class="t">0.4 s</span></div>
+            <div class="tl"><span class="ph ph-generate"></span><div><div class="d">Response and artifacts</div><div class="s">mcp-timeout-report.md · config.yaml proposal · 1 permission request</div></div><span class="t">6.9 s</span></div>
+          </div>
+        </div>
+        <div class="pane-section">
+          <h4>Governance</h4>
+          <div class="card" style="font-size:13px">
+            <div class="row" style="display:flex;justify-content:space-between;gap:10px"><span class="muted">Policy</span><span class="mono">ops-staging</span></div>
+            <div class="row" style="display:flex;justify-content:space-between;gap:10px;margin-top:6px"><span class="muted">Decision</span><span>config.write → <b style="color:var(--warn)">needs approval</b></span></div>
+            <div class="row" style="display:flex;justify-content:space-between;gap:10px;margin-top:6px"><span class="muted">Audit</span><span class="mono">aud_19d4 · 7 events</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Files -->
+      <div role="tabpanel" data-tabpanel="files" aria-labelledby="tab-files">
+        <div class="files" style="margin-top:8px">
+          <button class="frow" aria-current="true" data-action="show-file" data-file="report"><svg class="icon icon-sm"><use href="#i-file"/></svg>mcp-timeout-report.md<span class="mono">1.2 KB</span></button>
+          <button class="frow" aria-current="false" data-action="show-file" data-file="diff"><svg class="icon icon-sm"><use href="#i-diff"/></svg>staging/config.yaml<span class="mono diffstat"><span class="add">+4</span> <span class="del">−1</span></span></button>
+        </div>
+        <div id="file-report">
+          <div class="preview-head"><span class="chip quiet mono">v1</span><span class="spacer"></span><button class="btn btn-sm btn-ghost">Copy</button><button class="btn btn-sm btn-ghost">Download</button><button class="btn btn-sm btn-secondary">Expand</button></div>
+          <div class="preview" data-od-id="file-preview">
+            <h3>MCP filesystem timeouts on staging</h3>
+            <p><span class="muted">Window:</span> last 500 log lines · <span class="muted">Runs affected:</span> 2 of 14</p>
+            <h4>Finding</h4>
+            <p>Both failures occurred during <code>fs.list</code> over the repository root with 2,400+ entries. The server responded after 71 s and 84 s; the runtime abandoned the call at 60 s.</p>
+            <h4>Evidence</h4>
+            <ul><li>Log lines 212–260: <code>listing … depth=∞ entries=2412 elapsed=71.3s</code></li><li><code>mcp.health</code> passes because the probe reads one file.</li><li><code>staging/config.yaml</code> inherits the runtime default <code>timeout_secs: 60</code>.</li></ul>
+            <h4>Proposal</h4>
+            <ul><li>Set a 120 s per-tool timeout for this server only.</li><li>Bound listings with <code>max_listing_depth: 2</code>.</li><li>Follow-up: teach the ops skill to pass a path filter.</li></ul>
+          </div>
+        </div>
+        <div id="file-diff" style="display:none">
+          <div class="preview-head"><span class="chip warn">proposed · not applied</span><span class="spacer"></span><button class="btn btn-sm btn-ghost">Copy patch</button><button class="btn btn-sm btn-secondary" data-action="approve-once">Allow once</button></div>
+          <div class="diff" data-od-id="file-diff">
+<div class="hunk">@@ staging/config.yaml · mcp.servers[filesystem] @@</div>
+<div><span class="ln">41</span>  - id: filesystem</div>
+<div><span class="ln">42</span>    command: mcp-server-filesystem</div>
+<div class="del"><span class="ln">43</span>-   timeout_secs: 60</div>
+<div class="add"><span class="ln">43</span>+   timeout_secs: 120</div>
+<div class="add"><span class="ln">44</span>+   limits:</div>
+<div class="add"><span class="ln">45</span>+     max_listing_depth: 2</div>
+<div class="add"><span class="ln">46</span>+     max_entries: 1000</div>
+<div><span class="ln">47</span>    roots: ["/srv/staging"]</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Browser -->
+      <div role="tabpanel" data-tabpanel="browser" aria-labelledby="tab-browser">
+        <div class="urlbar"><span class="status-dot"></span>localhost:1906/docs/mcp/filesystem#limits<span style="flex:1"></span><svg class="icon icon-sm"><use href="#i-refresh"/></svg></div>
+        <div class="webframe" data-od-id="browser-frame">
+          <div class="fake-nav"><span>Docs</span><span>MCP servers</span><span style="color:var(--fg)">Filesystem</span></div>
+          <h3>Filesystem server limits</h3>
+          <p>Per-server limits override the runtime defaults. Unbounded listings are the most common cause of tool timeouts; set a depth and an entry cap for large roots.</p>
+          <pre>limits:
+  max_listing_depth: 2
+  max_entries: 1000
+timeout_secs: 120</pre>
+          <p class="muted" style="margin-top:12px;font-size:12px">The agent opened this page while reasoning. The real inspector hosts a sandboxed webview with the same URL bar.</p>
+        </div>
+      </div>
+
+      <!-- Plan -->
+      <div role="tabpanel" data-tabpanel="plan" aria-labelledby="tab-plan">
+        <div class="plan" style="margin-top:8px" data-od-id="plan-list">
+          <div class="plan-item done"><span class="box"><svg class="icon icon-sm" style="width:11px;height:11px;stroke-width:2.5"><use href="#i-check"/></svg></span><span class="txt">Confirm the server is reachable</span></div>
+          <div class="plan-item done"><span class="box"><svg class="icon icon-sm" style="width:11px;height:11px;stroke-width:2.5"><use href="#i-check"/></svg></span><span class="txt">Read the last 500 log lines</span></div>
+          <div class="plan-item done"><span class="box"><svg class="icon icon-sm" style="width:11px;height:11px;stroke-width:2.5"><use href="#i-check"/></svg></span><span class="txt">Compare against the effective config</span></div>
+          <div class="plan-item done"><span class="box"><svg class="icon icon-sm" style="width:11px;height:11px;stroke-width:2.5"><use href="#i-check"/></svg></span><span class="txt">Write the report</span></div>
+          <div class="plan-item active"><span class="box"></span><span class="txt">Apply the config change<span class="sub">Waiting for approval · config.write</span></span></div>
+          <div class="plan-item"><span class="box"></span><span class="txt">Re-run the two failing listings and confirm</span></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-overlay" aria-hidden="true"></div>
+</div>
+
+<!-- command palette -->
+<div class="cmdk-backdrop"></div>
+<div class="cmdk" role="dialog" aria-label="Command palette" data-od-id="command-palette">
+  <input class="input" type="search" placeholder="Search chats, runs, settings… or type a command" aria-label="Search" />
+  <div class="cmdk-list">
+    <p class="menu-label">Actions</p>
+    <button class="menu-item" data-action="new-chat"><svg class="icon"><use href="#i-plus"/></svg>New chat<kbd>⌘⇧O</kbd></button>
+    <button class="menu-item" data-action="panel" data-tab="run"><svg class="icon"><use href="#i-runs"/></svg>Toggle run details<kbd>⌘⇧D</kbd></button>
+    <button class="menu-item" data-action="panel" data-tab="files"><svg class="icon"><use href="#i-file"/></svg>Toggle files<kbd>⌘⇧E</kbd></button>
+    <button class="menu-item" data-action="theme"><svg class="icon"><use href="#i-sun"/></svg>Switch theme</button>
+    <a class="menu-item" href="models-and-providers.html"><svg class="icon"><use href="#i-gear"/></svg>Models &amp; providers<kbd>⌘,</kbd></a>
+    <a class="menu-item" href="tools-and-mcp.html"><svg class="icon"><use href="#i-tool"/></svg>Tools &amp; MCP</a>
+    <p class="menu-label">Recent chats</p>
+    <button class="menu-item"><svg class="icon"><use href="#i-folder"/></svg>Staging MCP timeouts<span class="sub" style="margin-left:auto;color:var(--faint)">Today</span></button>
+    <button class="menu-item"><svg class="icon"><use href="#i-folder"/></svg>Rotate the Groq key</button>
+    <button class="menu-item"><svg class="icon"><use href="#i-folder"/></svg>Why did run 7f3a stall?</button>
+    <p class="menu-label">Runs</p>
+    <button class="menu-item"><svg class="icon"><use href="#i-runs"/></svg>run_8c2f…41 · awaiting approval</button>
+    <button class="menu-item"><svg class="icon"><use href="#i-runs"/></svg>run_7f3a…09 · stalled</button>
+  </div>
+</div>
+
+<script src="assets/shell.js"></script>
+<script>
+  (function () {
+    const S = window.UARShell; const app = document.querySelector(".app");
+    // first visit: show the inspector on the Files tab so the three-column shell is visible
+    let fresh = true; try { fresh = !localStorage.getItem("uar.shell.v1"); } catch (e) {}
+    if (fresh && window.matchMedia("(min-width: 1181px)").matches) S.openPanel("files");
+    // composer: enable send when there is text, autosize
+    const ta = document.getElementById("prompt"), send = document.getElementById("send");
+    ta.addEventListener("input", () => { send.disabled = !ta.value.trim(); ta.style.height = "auto"; ta.style.height = Math.min(240, ta.scrollHeight) + "px"; });
+    // file switching inside the Files tab
+    function showFile(id) { document.getElementById("file-report").style.display = id === "diff" ? "none" : ""; document.getElementById("file-diff").style.display = id === "diff" ? "" : "none"; document.querySelectorAll(".frow").forEach((r) => r.setAttribute("aria-current", String(r.dataset.file === id))); }
+    document.querySelectorAll("[data-file]").forEach((el) => el.addEventListener("click", () => showFile(el.dataset.file)));
+    app.addEventListener("uar:action", (e) => {
+      const { action, el } = e.detail;
+      if (action === "pick-model") { document.getElementById("model-name").textContent = el.dataset.name; document.getElementById("model-addr").textContent = el.dataset.addr; document.querySelector("#model-chip .pmark").textContent = el.dataset.mark; document.querySelectorAll("#model-menu [role=menuitemradio]").forEach((m) => m.setAttribute("aria-checked", String(m === el))); S.toast("Model for this thread: " + el.dataset.name); }
+      if (action === "effort") { el.parentElement.querySelectorAll("[role=radio]").forEach((r) => r.setAttribute("aria-checked", String(r === el))); }
+      if (action === "pick-mode") { document.getElementById("mode-name").textContent = el.dataset.name; document.querySelectorAll("#mode-menu [role=menuitemradio]").forEach((m) => m.setAttribute("aria-checked", String(m === el))); }
+      if (action === "approve-once" || action === "approve-always" || action === "deny") {
+        const a = document.getElementById("approval"); a.classList.add("done");
+        const ok = action !== "deny";
+        a.innerHTML = ok ? '<div class="k"><span class="status-dot"></span>Allowed ' + (action === "approve-always" ? "for staging/mcp-filesystem" : "once") + ' · config.write applied · run resumed</div>' : '<div class="k"><span class="status-dot err"></span>Denied · the agent will propose an alternative</div>';
+        document.querySelector(".topbar .chip.live").outerHTML = ok ? '<button class="chip ok" data-action="panel" data-tab="run" aria-pressed="false"><span class="status-dot"></span>Run · step 7 of 7</button>' : '<button class="chip warn" data-action="panel" data-tab="run" aria-pressed="false"><span class="status-dot warn"></span>Run · denied</button>';
+        const pi = document.querySelectorAll(".plan-item"); if (ok) { pi[4].className = "plan-item done"; pi[4].querySelector(".box").innerHTML = '<svg class="icon icon-sm" style="width:11px;height:11px;stroke-width:2.5"><use href="#i-check"/></svg>'; pi[4].querySelector(".sub") && pi[4].querySelector(".sub").remove(); pi[5].className = "plan-item active"; document.querySelector("#tab-plan .count").textContent = "5/6"; }
+        S.toast(ok ? "Approved · config.write" : "Denied · config.write", ok ? "ok" : "warn");
+      }
+      if (action === "new-chat") location.href = "chat-workspace.html?new=1";
+      if (action === "pick-target") { T.target = el.dataset.target; saveT(); syncTarget(); if (el.dataset.target !== "orchestrator") S.closeMenus(); S.toast(el.dataset.target === "orchestrator" ? "Orchestrator handles this conversation" : "Pinned to " + AGENTS[el.dataset.target].name + " · all messages go through it"); }
+      if (action === "open-target") { setTimeout(() => document.getElementById("target-btn").click(), 0); }
+      if (action === "settings") location.href = "models-and-providers.html";
+    });
+    /* ─── conversation target ─────────────────────────────────────────────
+       Orchestrator (default): each message is matched against agent descriptions/tags; above the
+       accept threshold it goes to that agent, otherwise to Default Assistant. Routing off: every
+       message goes to Default Assistant with workspace defaults + this conversation's settings.
+       Pinned agent: every message goes through that agent (RunPolicy.agent_id at conversation scope). */
+    const AGENTS = {
+      "ops-agent": { name: "Ops agent", model: "anthropic/claude-sonnet-5", kw: ["staging", "mcp", "config", "runbook", "timeout", "server", "deploy", "logs"] },
+      "policy-reviewer": { name: "Policy reviewer", model: "openai/gpt-6-sol", kw: ["cedar", "policy", "approval", "audit", "governance", "permit", "forbid"] },
+      "default-agent": { name: "Default Assistant", model: "workspace default", kw: [] },
+    };
+    const THRESHOLD = 0.5;
+    const params = new URLSearchParams(location.search);
+    const KEY = "uar.chat.target";
+    let T = { target: "orchestrator", routing: true };
+    try { Object.assign(T, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
+    if (params.get("agent") && AGENTS[params.get("agent")]) T.target = params.get("agent");
+    const isNew = params.has("new");
+    const ic = (n) => '<svg class="icon"><use href="#i-' + n + '"/></svg>';
+    function saveT() { try { localStorage.setItem(KEY, JSON.stringify(T)); } catch (e) {} }
+    function label() { return T.target === "orchestrator" ? "Orchestrator · routing " + (T.routing ? "on" : "off") : AGENTS[T.target].name + " · pinned"; }
+    function match(text) {
+      const t = text.toLowerCase(); let best = null;
+      Object.entries(AGENTS).forEach(([id, a]) => { const hits = a.kw.filter((k) => t.includes(k)); if (!hits.length) return; const score = Math.min(0.94, 0.48 + hits.length * 0.13); if (!best || score > best.score) best = { id, score, hits }; });
+      return best && best.score >= THRESHOLD ? best : null;
+    }
+    function routeHTML(text) {
+      if (T.target !== "orchestrator") return ic("bot") + '<span>Pinned to <b>' + AGENTS[T.target].name + '</b> · every message goes through this agent</span><button type="button" data-action="open-target">Change</button>';
+      if (!T.routing) return ic("route") + '<span>Routing off · <b>Default Assistant</b> with this conversation’s settings</span><button type="button" data-action="open-target">Change</button>';
+      const m = match(text);
+      if (!m) return ic("route") + '<span>Orchestrator found no agent above <span class="mono">' + THRESHOLD.toFixed(2) + '</span> · answered by <b>Default Assistant</b></span><button type="button" data-action="open-target">Pin an agent</button>';
+      return ic("route") + '<span>Orchestrator routed this message to <b>' + AGENTS[m.id].name + '</b></span><span class="mono">matched ' + m.hits.join(", ") + ' · ' + m.score.toFixed(2) + '</span><button type="button" data-action="open-target">Change</button>';
+    }
+    function syncTarget() {
+      document.getElementById("target-chip-lbl").textContent = label();
+      document.getElementById("target-lbl").textContent = T.target === "orchestrator" ? "Orchestrator" : AGENTS[T.target].name;
+      document.getElementById("target-icon").setAttribute("href", T.target === "orchestrator" ? "#i-route" : "#i-bot");
+      document.querySelectorAll("[data-action=pick-target]").forEach((m) => m.setAttribute("aria-checked", String(m.dataset.target === T.target)));
+      document.querySelectorAll(".tcard").forEach((c) => c.setAttribute("aria-checked", String(c.dataset.target === T.target)));
+      const orch = T.target === "orchestrator";
+      document.querySelectorAll("[data-route-switch]").forEach((sw) => { sw.setAttribute("aria-checked", String(T.routing)); sw.disabled = !orch; sw.closest(".route-toggle").setAttribute("aria-disabled", String(!orch)); });
+      const sub = orch ? (T.routing ? "On · each message can go to a different agent" : "Off · everything goes to Default Assistant with this conversation’s settings") : "Only applies to the orchestrator · this conversation is pinned";
+      document.getElementById("start-routing-sub").textContent = sub; document.getElementById("menu-routing-sub").textContent = sub;
+      document.querySelector("label[for=prompt]").textContent = "Message " + (orch ? "the orchestrator" : AGENTS[T.target].name);
+      ta.placeholder = orch ? (T.routing ? "Message the orchestrator — it picks the agent…" : "Message Default Assistant…") : "Message " + AGENTS[T.target].name + "…";
+    }
+    // existing turn in this thread: the first message was routed by the orchestrator to Ops agent
+    const firstUser = document.querySelector("[data-od-id=msg-user-1] .bubble").textContent;
+    { const keep = T; T = { target: "orchestrator", routing: true }; document.getElementById("route-line").innerHTML = routeHTML(firstUser); T = keep; } // historical turn: how it was routed when sent
+    document.addEventListener("click", (e) => {
+      const sw = e.target.closest("[data-route-switch]"); if (!sw) return;
+      e.stopPropagation(); if (sw.disabled) return;
+      T.routing = !T.routing; saveT(); syncTarget(); S.toast(T.routing ? "Routing on · the orchestrator picks an agent per message" : "Routing off · Default Assistant handles every message", T.routing ? "ok" : "warn");
+    }, true);
+    document.querySelectorAll(".tcard").forEach((c) => c.addEventListener("click", () => { T.target = c.dataset.target; saveT(); syncTarget(); }));
+    document.querySelector(".targets").addEventListener("keydown", (e) => { if (e.key !== "ArrowRight" && e.key !== "ArrowLeft" && e.key !== "ArrowDown" && e.key !== "ArrowUp") return; e.preventDefault(); const cs = [...document.querySelectorAll(".tcard")]; const i = cs.findIndex((c) => c.getAttribute("aria-checked") === "true"); const n = cs[(i + (e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : cs.length - 1)) % cs.length]; n.focus(); n.click(); });
+    function appendTurn(text) {
+      const inner = document.getElementById("thread-inner"); document.getElementById("start").classList.remove("active");
+      const u = document.createElement("article"); u.className = "msg msg-user"; u.innerHTML = '<div class="bubble"></div>'; u.querySelector(".bubble").textContent = text; inner.appendChild(u);
+      const a = document.createElement("article"); a.className = "msg"; const routed = T.target !== "orchestrator" ? T.target : T.routing ? (match(text) || { id: "default-agent" }).id : "default-agent";
+      a.innerHTML = '<div class="who"><img src="assets/brand/uar-mark-dark.svg" alt="" /></div><div class="body"><div class="route">' + (T.target === "orchestrator" && T.routing ? ic("route") + "<span>Orchestrator is matching agents…</span>" : routeHTML(text)) + '</div><div class="meta-row"><b>' + AGENTS[routed].name + '</b><span class="mono">' + AGENTS[routed].model + '</span></div><p class="muted">Prototype: the routing decision is simulated; the reply would stream here over the run’s AG-UI stream.</p></div>';
+      inner.appendChild(a); const th = document.querySelector(".thread"); th.scrollTop = th.scrollHeight;
+      if (T.target === "orchestrator" && T.routing) setTimeout(() => { a.querySelector(".route").innerHTML = routeHTML(text); }, 700);
+    }
+    function sendNow() { const v = ta.value.trim(); if (!v) return; appendTurn(v); ta.value = ""; ta.style.height = "auto"; send.disabled = true; }
+    ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.stopImmediatePropagation(); sendNow(); } }, true);
+    send.addEventListener("click", (e) => { e.preventDefault(); sendNow(); });
+    if (isNew) {
+      document.querySelectorAll("#thread-inner > article").forEach((n) => n.remove());
+      document.getElementById("start").classList.add("active");
+      const PROJ = { "staging-ops": "Staging ops", "policy-review-q4": "Policy review Q4" }; const pj = PROJ[params.get("project")];
+      document.querySelector(".topbar .title").innerHTML = (pj ? '<span class="crumb">' + pj + '</span>' : '') + '<span>New chat</span>'; document.title = "New chat · Universal Agent Runtime";
+      const live = document.querySelector(".topbar .chip.live"); if (live) live.remove();
+      document.querySelectorAll('.sidebar .thread-item[aria-current="page"]').forEach((n) => n.removeAttribute("aria-current"));
+      ta.focus();
+    }
+    syncTarget();
+    // mobile nav button visibility
+    const mq = window.matchMedia("(max-width: 760px)"); const btn = document.getElementById("mobile-nav-btn");
+    const sync = () => { btn.style.display = mq.matches ? "" : "none"; }; sync(); mq.addEventListener("change", sync);
+  })();
+</script>
+</body>
+</html>

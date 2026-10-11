@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Desktop · Settings · Universal Agent Runtime</title>
+<link rel="icon" href="assets/brand/uar-mark-dark.svg" />
+<link rel="stylesheet" href="assets/shell.css" />
+<link rel="stylesheet" href="assets/settings.css" />
+<style>
+  .banner > .icon { width: 18px; height: 18px; color: var(--muted); flex: none; }
+  .tl { display: flex; justify-content: space-between; font-size: 12px; color: var(--faint); margin: 12px 0 6px; }
+  .tl .mono { font-size: 12px; }
+  .na { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--faint); }
+  .na .mono { font-size: 11.5px; color: var(--muted); }
+  .keys { display: inline-flex; gap: 4px; }
+  .path { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; background: var(--step-2); border-radius: 10px; font-size: 13.5px; }
+  .path .sub { display: block; font-size: 12.5px; color: var(--faint); margin-top: 2px; }
+  .chk { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 9px; background: var(--step-2); font-size: 13px; }
+  .chk input { accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
+  .chk .sub { display: block; font-size: 11.5px; color: var(--faint); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips .chip { height: 24px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="app" data-od-id="settings-shell" data-panel-persist="false">
+  <div class="titlebar" data-tauri-drag-region><span class="mono">universal-agent-runtime</span>&nbsp;· Settings</div>
+
+  <aside data-settings-nav data-current="desktop" data-od-id="settings-sidebar"></aside>
+
+  <main class="main" id="content" data-od-id="settings-main">
+    <header class="topbar">
+      <button class="icon-btn" data-action="sidebar-mobile" aria-label="Open navigation" id="mobile-nav-btn" style="display:none"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+      <div class="title"><span class="crumb">Settings</span><span>Desktop</span></div>
+      <span class="spacer"></span>
+      <button class="chip" data-action="cmdk"><svg class="icon"><use href="#i-search"/></svg>Search settings <kbd style="margin-left:4px" data-kbd="⌘K">⌘K</kbd></button>
+      <button class="icon-btn" data-action="theme" aria-pressed="false" aria-label="Switch theme" title="Switch theme"><svg class="icon"><use href="#i-sun"/></svg></button>
+    </header>
+
+    <section class="page">
+      <div class="page-inner">
+        <div class="page-head" data-od-id="page-head">
+          <div>
+            <h1>Desktop</h1>
+            <p>Settings that only exist in the Tauri build: the in-process runtime and its port, the bundled MCP sidecars, the window, logs and local data. Capabilities this build does not ship are shown with the plugin they need.</p>
+          </div>
+          <div class="acts">
+            <button class="btn btn-primary" data-action="restart" id="restart-cta" data-od-id="restart-runtime-cta"><svg class="icon"><use href="#i-refresh"/></svg>Restart runtime</button>
+          </div>
+        </div>
+
+        <div class="banner" id="host-banner" data-od-id="host-banner">
+          <svg class="icon"><use href="#i-desktop"/></svg>
+          <div class="grow"><b id="host-title">You're viewing desktop settings in a browser — these apply to the desktop app</b><span class="sub" id="host-sub">Reveal, restart and log actions are simulated here; they run for real inside the desktop window.</span></div>
+        </div>
+
+        <div class="summary" data-od-id="summary-strip">
+          <div class="card sum" data-od-id="sum-runtime"><div class="k">Local runtime</div><div class="v"><span class="status-dot" id="sum-dot"></span><span id="sum-state">Running</span><small class="mono" id="sum-addr">127.0.0.1:1906</small></div></div>
+          <div class="card sum" data-od-id="sum-sidecars"><div class="k">Bundled MCP servers</div><div class="v">2<small>sidecars · from <span class="mono">mcp.json</span></small></div></div>
+          <div class="card sum" data-od-id="sum-boot"><div class="k">Last cold boot</div><div class="v"><span class="mono" id="sum-boot">27.4 s</span><small>limit <span class="mono">120 s</span></small></div></div>
+          <div class="card sum" data-od-id="sum-build"><div class="k">This build</div><div class="v"><span class="mono">0.1.0</span><small><span class="status-dot warn" style="display:inline-block;margin-right:4px"></span>2 release blockers</small></div></div>
+        </div>
+
+        <div class="md">
+          <nav class="sources" aria-label="Desktop sections" data-od-id="desktop-sections">
+            <input class="input" type="search" placeholder="Filter sections" aria-label="Filter desktop sections" data-filter=".sources .srow" />
+            <p class="group-label">Runtime</p>
+            <button class="srow" aria-current="true" data-src="runtime" data-od-id="src-runtime"><span class="smark"><svg class="icon"><use href="#i-cpu"/></svg></span><span><span class="nm">Local runtime</span><span class="st" id="row-runtime-st"><i class="status-dot"></i>Running · in-process</span></span><span class="side" id="row-runtime-port">1906</span></button>
+            <button class="srow" aria-current="false" data-src="servers" data-od-id="src-servers"><span class="smark"><svg class="icon"><use href="#i-box"/></svg></span><span><span class="nm">Bundled servers</span><span class="st"><i class="status-dot"></i>2 sidecars running</span></span><span class="side">2</span></button>
+            <p class="group-label">Window &amp; OS</p>
+            <button class="srow" aria-current="false" data-src="window" data-od-id="src-window"><span class="smark"><svg class="icon"><use href="#i-layout"/></svg></span><span><span class="nm">Window</span><span class="st">Custom titlebar · 800×600</span></span><span class="side"></span></button>
+            <button class="srow" aria-current="false" data-src="startup" data-od-id="src-startup"><span class="smark"><svg class="icon"><use href="#i-pin"/></svg></span><span><span class="nm">Startup &amp; tray</span><span class="st"><i class="status-dot off"></i>Not in this build</span></span><span class="side">n/a</span></button>
+            <button class="srow" aria-current="false" data-src="shortcuts" data-od-id="src-shortcuts"><span class="smark"><svg class="icon"><use href="#i-keyboard"/></svg></span><span><span class="nm">Shortcuts</span><span class="st">In-app only · global n/a</span></span><span class="side">4</span></button>
+            <button class="srow" aria-current="false" data-src="updates" data-od-id="src-updates"><span class="smark"><svg class="icon"><use href="#i-download"/></svg></span><span><span class="nm">Updates</span><span class="st"><i class="status-dot off"></i>Not in this build</span></span><span class="side">n/a</span></button>
+            <p class="group-label">Diagnostics</p>
+            <button class="srow" aria-current="false" data-src="logs" data-od-id="src-logs"><span class="smark"><svg class="icon"><use href="#i-list"/></svg></span><span><span class="nm">Logs &amp; data</span><span class="st" id="row-logs-st">Level info · tauri-plugin-log</span></span><span class="side"></span></button>
+            <button class="srow" aria-current="false" data-src="build" data-od-id="src-build"><span class="smark"><svg class="icon"><use href="#i-info"/></svg></span><span><span class="nm">This build</span><span class="st"><i class="status-dot warn"></i>2 release blockers</span></span><span class="side">0.1.0</span></button>
+          </nav>
+
+          <div>
+            <!-- Local runtime -->
+            <section class="view active detail" data-view="runtime" aria-label="Local runtime" data-od-id="view-runtime">
+              <div class="detail-head">
+                <span class="smark lg"><svg class="icon"><use href="#i-cpu"/></svg></span>
+                <div><h2>Local runtime</h2><div class="sub"><span class="chip ok" style="height:22px" id="rt-chip"><span class="status-dot"></span>Running</span><span class="mono" id="rt-addr">127.0.0.1:1906</span><span>·</span><span>in-process with the window</span></div></div>
+              </div>
+              <div class="tabs" role="tablist" aria-label="Runtime sections">
+                <button class="tab" role="tab" data-dtab="status" aria-selected="true">Status</button>
+                <button class="tab" role="tab" data-dtab="ports" aria-selected="false">Ports &amp; environment</button>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="status" class="active" data-od-id="runtime-status-tab">
+                <div class="card" data-od-id="runtime-status-card">
+                  <div class="card-head"><div><h3 id="rt-headline">Running · 127.0.0.1:1906</h3><p id="rt-line">Ready in <span class="mono">27.4 s</span> · uptime <span class="mono">2 h 14 m</span> · listening on loopback only</p></div><span class="status-dot" id="rt-dot"></span></div>
+                  <dl class="kv">
+                    <dt>HTTP</dt><dd class="mono" id="kv-http">127.0.0.1:1906</dd>
+                    <dt>gRPC</dt><dd class="mono">127.0.0.1:50051</dd>
+                    <dt>Process</dt><dd>Same process as the window — no separate daemon to manage</dd>
+                    <dt>Port source</dt><dd id="kv-portsrc"><span class="mono">server.port</span> (default <span class="mono">1906</span>)</dd>
+                  </dl>
+                  <div class="tl"><span>Readiness on last boot</span><span><span class="mono" id="tl-v">27.4 s</span> of <span class="mono">120 s</span></span></div>
+                  <div class="meter ok" id="tl-meter" role="meter" aria-label="Readiness time against 120 second limit" aria-valuemin="0" aria-valuemax="120" aria-valuenow="27.4"><i style="width:23%"></i></div>
+                </div>
+                <div class="section-title"><h3>Restart rehearsal</h3><p>Choose what the next restart runs into. Prototype only.</p></div>
+                <div class="rules">
+                  <div class="rule" data-od-id="restart-outcome"><div>Next restart outcome<span class="sub">Healthy boot, port <span class="mono">1906</span> already taken, or no readiness within <span class="mono">120 s</span>.</span></div>
+                    <div class="choice sm" role="radiogroup" aria-label="Next restart outcome" id="outcome"><button role="radio" aria-checked="true" data-value="ok">Healthy</button><button role="radio" aria-checked="false" data-value="busy">Port busy</button><button role="radio" aria-checked="false" data-value="timeout">Timeout</button></div></div>
+                </div>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="ports" data-od-id="runtime-ports-tab">
+                <div class="card">
+                  <div class="card-head"><div><h3>Ports</h3><p>Loopback only. If <span class="mono">1906</span> is taken at boot, the runtime picks a free port and writes it to <span class="mono">desktop-port.txt</span>.</p></div></div>
+                  <div class="form-grid">
+                    <div class="field"><label for="port">HTTP port · <span class="mono">server.port</span></label><input class="input mono" id="port" value="1906" inputmode="numeric" /><span class="hint" id="port-hint">Takes effect on the next restart.</span></div>
+                    <div class="field"><label for="grpc">gRPC port</label><input class="input mono" id="grpc" value="50051" inputmode="numeric" readonly /><span class="hint">Fixed in this build.</span></div>
+                    <div class="field"><label for="ready">Readiness timeout (s)</label><input class="input mono" id="ready" value="120" readonly /><span class="hint">The window waits this long before showing a boot error.</span></div>
+                    <div class="field"><label for="fallback">Fallback port in use</label><input class="input mono" id="fallback" value="none" readonly /><span class="hint">Read from <span class="mono">App config dir / desktop-port.txt</span>.</span></div>
+                  </div>
+                  <div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-secondary btn-sm" data-action="save-port" data-od-id="save-port"><svg class="icon"><use href="#i-check"/></svg>Save port</button><button class="btn btn-ghost btn-sm" data-action="reveal" data-what="App config dir" data-reveal><svg class="icon"><use href="#i-folder"/></svg><span>Reveal in Finder</span></button></div>
+                  <p class="gap-note"><i></i>Readiness timeout and gRPC port are constants in <span class="mono">src-tauri/src/lib.rs</span>; making them editable needs a config field.</p>
+                </div>
+                <div class="section-title"><h3>Environment passed to the runtime</h3></div>
+                <div class="card"><dl class="kv">
+                  <dt class="mono">MCP_CONFIG_DIR</dt><dd>App config dir</dd>
+                  <dt class="mono">MCP_CONFIG_PATH</dt><dd>App config dir / <span class="mono">mcp.json</span> (seeded from the bundled resource)</dd>
+                  <dt class="mono">MCP_SERVER_DIR</dt><dd><span class="mono">resource_dir/mcp-servers</span></dd>
+                </dl></div>
+              </div>
+            </section>
+
+            <!-- Bundled servers -->
+            <section class="view detail" data-view="servers" aria-label="Bundled servers" data-od-id="view-servers">
+              <div class="detail-head">
+                <span class="smark lg"><svg class="icon"><use href="#i-box"/></svg></span>
+                <div><h2>Bundled servers</h2><div class="sub"><span><span class="mono">externalBin</span> sidecars shipped inside the app</span></div></div>
+                <div class="acts"><a class="btn btn-secondary btn-sm" href="tools-and-mcp.html" data-od-id="manage-approvals-link"><svg class="icon"><use href="#i-shield"/></svg>Manage approvals in Tools &amp; MCP</a></div>
+              </div>
+              <table class="table" data-od-id="sidecar-table">
+                <thead><tr><th>Server</th><th class="hide-sm">Version</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                  <tr data-od-id="sidecar-filesystem"><td class="nm"><b>filesystem</b><span class="mono">binaries/mcp-server-filesystem</span></td><td class="hide-sm"><span class="chip quiet">bundled</span></td><td><span class="chip ok" style="height:22px" id="sc-filesystem"><span class="status-dot"></span>Running</span></td><td class="ctl"><button class="btn btn-ghost btn-sm" data-action="restart-sidecar" data-name="filesystem"><svg class="icon"><use href="#i-refresh"/></svg>Restart</button></td></tr>
+                  <tr data-od-id="sidecar-fetch"><td class="nm"><b>fetch</b><span class="mono">binaries/mcp-server-fetch</span></td><td class="hide-sm"><span class="chip quiet">bundled</span></td><td><span class="chip ok" style="height:22px" id="sc-fetch"><span class="status-dot"></span>Running</span></td><td class="ctl"><button class="btn btn-ghost btn-sm" data-action="restart-sidecar" data-name="fetch"><svg class="icon"><use href="#i-refresh"/></svg>Restart</button></td></tr>
+                </tbody>
+              </table>
+              <div class="section-title"><h3>Where they come from</h3></div>
+              <div class="card" data-od-id="sidecar-sources"><dl class="kv">
+                <dt>Server binaries</dt><dd><span class="mono">MCP_SERVER_DIR</span> = <span class="mono">resource_dir/mcp-servers</span></dd>
+                <dt>Server config</dt><dd>Bundled resource <span class="mono">../mcp.json</span>, read through <span class="mono">MCP_CONFIG_PATH</span></dd>
+                <dt>Tool approvals</dt><dd>Tiers and Cedar policy live in Tools &amp; MCP, same as any other server</dd>
+              </dl></div>
+              <p class="gap-note"><i></i>Sidecars carry no version metadata, so the UI can only say "bundled" until the build embeds one.</p>
+            </section>
+
+            <!-- Window -->
+            <section class="view detail" data-view="window" aria-label="Window" data-od-id="view-window">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-layout"/></svg></span><div><h2>Window</h2><div class="sub"><span>Title</span><span class="mono">KnowMe — Universal Agent Runtime</span></div></div></div>
+              <div class="rules">
+                <div class="rule" data-od-id="rule-titlebar"><div>Custom titlebar<span class="sub">Native decorations are off (<span class="mono">decorations: false</span>); the app draws its own drag region.</span></div><span class="chip quiet">set at build</span></div>
+                <div class="rule off" data-od-id="rule-window-state"><div>Remember size and position<span class="sub">Reopen where you left the window.</span></div><span class="switch" role="switch" aria-checked="false" aria-disabled="true" aria-label="Remember size and position" tabindex="0"></span></div>
+                <div class="rule" data-od-id="rule-size"><div>Default size<span class="sub"><span class="mono">800×600</span>, resizable. The three-pane shell needs about <span class="mono">1280×800</span> before the inspector stops overlaying chat.</span></div><span class="chip warn" style="height:24px">below shell minimum</span></div>
+                <div class="rule" data-od-id="rule-popout"><div>Open inspector in a separate window<span class="sub">Pop the right panel out so chat keeps the full width.</span></div><span class="switch" role="switch" aria-checked="false" data-id="popout" aria-label="Open inspector in a separate window" tabindex="0"></span></div>
+                <div class="rule" data-od-id="rule-zoom"><div>Zoom<span class="sub">Scales the whole interface, including the titlebar.</span></div><div class="range"><input type="range" id="zoom" min="80" max="150" step="10" value="100" aria-label="Zoom" /><output for="zoom" id="zoom-out">100%</output></div></div>
+              </div>
+              <p class="gap-note"><i></i>Remembering size and position needs <span class="mono">tauri-plugin-window-state</span>, which this build does not include.</p>
+              <p class="gap-note"><i></i>Default size is <span class="mono">800×600</span> in <span class="mono">tauri.conf.json</span>; raise it and set <span class="mono">minWidth/minHeight</span> to <span class="mono">1280×800</span>.</p>
+              <p class="gap-note"><i></i>Pop-out inspector needs a second webview window and state sync between windows; zoom is not persisted across launches.</p>
+            </section>
+
+            <!-- Startup & tray -->
+            <section class="view detail" data-view="startup" aria-label="Startup and tray" data-od-id="view-startup">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-pin"/></svg></span><div><h2>Startup &amp; tray</h2><div class="sub"><span class="chip" style="height:22px">Not in this build</span></div></div></div>
+              <div class="rules">
+                <div class="rule off" data-od-id="rule-autostart"><div>Launch at login<span class="sub">Start the runtime when you sign in, window hidden.</span><span class="na"><svg class="icon icon-sm"><use href="#i-plug"/></svg>needs <span class="mono">tauri-plugin-autostart</span></span></div><span class="switch" role="switch" aria-checked="false" aria-disabled="true" aria-label="Launch at login" tabindex="0"></span></div>
+                <div class="rule off" data-od-id="rule-keep-running"><div>Keep runtime running when the window closes<span class="sub">Scheduled runs and MCP servers stay up; reopen from the tray.</span><span class="na"><svg class="icon icon-sm"><use href="#i-plug"/></svg>needs the <span class="mono">tray-icon</span> feature</span></div><span class="switch" role="switch" aria-checked="false" aria-disabled="true" aria-label="Keep runtime running when the window closes" tabindex="0"></span></div>
+                <div class="rule off" data-od-id="rule-tray"><div>Tray icon with runtime status<span class="sub">Running, restarting or failed, plus Quit and Restart runtime.</span><span class="na"><svg class="icon icon-sm"><use href="#i-plug"/></svg>needs the <span class="mono">tray-icon</span> feature</span></div><span class="switch" role="switch" aria-checked="false" aria-disabled="true" aria-label="Tray icon" tabindex="0"></span></div>
+                <div class="rule off" data-od-id="rule-deeplink"><div>Open app links from the browser<span class="sub">Hand links to a chat or run straight to the desktop app.</span><span class="na"><svg class="icon icon-sm"><use href="#i-plug"/></svg>needs <span class="mono">tauri-plugin-deep-link</span></span></div><span class="switch" role="switch" aria-checked="false" aria-disabled="true" aria-label="Open app links" tabindex="0"></span></div>
+              </div>
+              <p class="gap-note"><i></i>Closing the window today stops the in-process runtime; there is no background mode without the tray.</p>
+            </section>
+
+            <!-- Shortcuts -->
+            <section class="view detail" data-view="shortcuts" aria-label="Shortcuts" data-od-id="view-shortcuts">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-keyboard"/></svg></span><div><h2>Shortcuts</h2><div class="sub"><span>In-app shortcuts work everywhere; system-wide ones need a plugin.</span></div></div></div>
+              <div class="section-title"><h3>System-wide</h3><p class="na">needs <span class="mono">tauri-plugin-global-shortcut</span></p></div>
+              <div class="rules">
+                <div class="rule off" data-od-id="rule-quick-ask"><div>Quick ask<span class="sub">Summon a one-line prompt over any app.</span></div><div class="ctl"><span class="keys"><kbd>⌥</kbd><kbd>Space</kbd></span><span class="switch" role="switch" aria-checked="false" aria-disabled="true" aria-label="Quick ask shortcut" tabindex="0"></span></div></div>
+              </div>
+              <div class="section-title"><h3>In the app</h3></div>
+              <div class="rules" data-od-id="inapp-shortcuts">
+                <div class="rule"><div>Search settings and commands</div><span class="keys"><kbd>⌘</kbd><kbd>K</kbd></span></div>
+                <div class="rule"><div>Toggle sidebar</div><span class="keys"><kbd>⌘</kbd><kbd>B</kbd></span></div>
+                <div class="rule"><div>Open settings</div><span class="keys"><kbd>⌘</kbd><kbd>,</kbd></span></div>
+                <div class="rule"><div>Back to chat / close inspector</div><span class="keys"><kbd>Esc</kbd></span></div>
+              </div>
+              <p class="gap-note"><i></i>In-app shortcuts are fixed; there is no rebinding store yet.</p>
+            </section>
+
+            <!-- Updates -->
+            <section class="view detail" data-view="updates" aria-label="Updates" data-od-id="view-updates">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-download"/></svg></span><div><h2>Updates</h2><div class="sub"><span>Installed</span><span class="mono">0.1.0</span><span class="chip" style="height:22px">Not in this build</span></div></div>
+                <div class="acts"><button class="btn btn-secondary btn-sm" disabled><svg class="icon"><use href="#i-refresh"/></svg>Check for updates</button></div></div>
+              <div class="rules">
+                <div class="rule off" data-od-id="rule-channel"><div>Channel<span class="sub">Stable gets tested releases; beta gets builds earlier.</span></div><div class="choice sm" role="radiogroup" aria-label="Update channel"><button role="radio" aria-checked="true" data-value="stable" disabled>Stable</button><button role="radio" aria-checked="false" data-value="beta" disabled>Beta</button></div></div>
+                <div class="rule off" data-od-id="rule-auto-install"><div>Install updates automatically<span class="sub">Download in the background, apply on next launch.</span></div><span class="switch" role="switch" aria-checked="false" aria-disabled="true" aria-label="Install updates automatically" tabindex="0"></span></div>
+              </div>
+              <p class="gap-note"><i></i>Needs <span class="mono">tauri-plugin-updater</span>, an update endpoint and a signing public key in <span class="mono">tauri.conf.json</span>; none exist yet.</p>
+            </section>
+
+            <!-- Logs & data -->
+            <section class="view detail" data-view="logs" aria-label="Logs and data" data-od-id="view-logs">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-list"/></svg></span><div><h2>Logs &amp; data</h2><div class="sub"><span class="mono">tauri-plugin-log</span></div></div>
+                <div class="acts"><button class="btn btn-secondary btn-sm" data-action="panel-open" data-tab="diag" data-od-id="export-diag-open"><svg class="icon"><use href="#i-download"/></svg>Export diagnostics</button></div></div>
+              <div class="rules">
+                <div class="rule" data-od-id="rule-log-level"><div>Log level<span class="sub">Debug includes MCP traffic and can grow quickly.</span></div><div class="choice sm" role="radiogroup" aria-label="Log level" id="loglevel"><button role="radio" aria-checked="false" data-value="error">error</button><button role="radio" aria-checked="false" data-value="warn">warn</button><button role="radio" aria-checked="true" data-value="info">info</button><button role="radio" aria-checked="false" data-value="debug">debug</button></div></div>
+              </div>
+              <div class="section-title"><h3>Locations</h3></div>
+              <div class="stack" data-od-id="data-locations">
+                <div class="path"><div>App log dir<span class="sub">Rotated files written by <span class="mono">tauri-plugin-log</span></span></div><button class="btn btn-ghost btn-sm" data-action="reveal" data-what="App log dir" data-od-id="open-log-folder"><svg class="icon"><use href="#i-folder"/></svg>Open log folder</button></div>
+                <div class="path"><div>App data dir<span class="sub">Conversations, memory and runtime state</span></div><button class="btn btn-ghost btn-sm" data-action="reveal" data-what="App data dir" data-reveal><svg class="icon"><use href="#i-folder"/></svg><span>Reveal in Finder</span></button></div>
+                <div class="path"><div>App config dir / <span class="mono">desktop-port.txt</span><span class="sub">Fallback port, written only when <span class="mono">1906</span> was taken</span></div><button class="btn btn-ghost btn-sm" data-action="reveal" data-what="App config dir" data-reveal><svg class="icon"><use href="#i-folder"/></svg><span>Reveal in Finder</span></button></div>
+              </div>
+              <div class="section-title"><h3>Danger zone</h3></div>
+              <div class="rule" data-od-id="reset-row"><div>Reset local data<span class="sub">Deletes the app data dir and <span class="mono">desktop-port.txt</span>, then restarts. Bundled servers and <span class="mono">mcp.json</span> are restored from the app.</span></div><button class="btn btn-danger btn-sm" data-action="panel-open" data-tab="reset" data-od-id="reset-open"><svg class="icon"><use href="#i-trash"/></svg>Reset…</button></div>
+              <p class="gap-note"><i></i>Runtime log level is not exposed as a setting; changing it needs a command that rebuilds the log plugin's filter.</p>
+            </section>
+
+            <!-- This build -->
+            <section class="view detail" data-view="build" aria-label="This build" data-od-id="view-build">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-info"/></svg></span><div><h2>This build</h2><div class="sub"><span>From</span><span class="mono">src-tauri/tauri.conf.json</span></div></div>
+                <div class="acts"><button class="btn btn-ghost btn-sm" data-action="copy-build"><svg class="icon"><use href="#i-copy"/></svg>Copy</button></div></div>
+              <div class="banner warn" data-od-id="build-warning"><svg class="icon"><use href="#i-alert"/></svg><div class="grow"><b>Not release-ready</b><span class="sub">The bundle identifier is a placeholder and no Content Security Policy is set.</span></div></div>
+              <div class="card" data-od-id="build-kv"><dl class="kv">
+                <dt>productName</dt><dd class="mono">universal-agent-runtime</dd>
+                <dt>identifier</dt><dd><span class="mono">com.tauri.dev</span> <span class="chip warn" style="height:22px;margin-left:6px">placeholder — set a reverse-DNS id before release</span></dd>
+                <dt>version</dt><dd class="mono">0.1.0</dd>
+                <dt>Window</dt><dd><span class="mono">KnowMe — Universal Agent Runtime</span> · <span class="mono">800×600</span> · resizable · <span class="mono">decorations: false</span></dd>
+                <dt>CSP</dt><dd><span class="mono">null</span> <span class="chip err" style="height:22px;margin-left:6px">no policy — any script origin allowed</span></dd>
+                <dt>Bundle targets</dt><dd class="mono">all</dd>
+                <dt>externalBin</dt><dd class="mono">binaries/mcp-server-filesystem, binaries/mcp-server-fetch</dd>
+                <dt>Resources</dt><dd class="mono">../mcp.json</dd>
+                <dt>Plugins</dt><dd><div class="chips"><span class="chip ok">tauri-plugin-log</span><span class="chip quiet">autostart</span><span class="chip quiet">global-shortcut</span><span class="chip quiet">updater</span><span class="chip quiet">deep-link</span><span class="chip quiet">window-state</span><span class="chip quiet">tray-icon</span></div></dd>
+              </dl></div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="panel" aria-label="Desktop data tools" aria-hidden="true" data-od-id="desktop-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-head">
+      <div class="tabs" role="tablist" aria-label="Inspector sections">
+        <button class="tab" role="tab" data-tab="diag" aria-selected="true" id="tab-diag"><svg class="icon icon-sm"><use href="#i-download"/></svg>Diagnostics</button>
+        <button class="tab" role="tab" data-tab="reset" aria-selected="false" id="tab-reset"><svg class="icon icon-sm"><use href="#i-trash"/></svg>Reset</button>
+      </div>
+      <span style="flex:1"></span>
+      <button class="icon-btn" data-action="panel-close" aria-label="Close (Esc)"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="panel-body">
+      <div role="tabpanel" data-tabpanel="diag" class="active" aria-labelledby="tab-diag" data-od-id="diag-flow">
+        <h3 style="font-size:16px">Export diagnostics bundle</h3>
+        <p class="muted" style="font-size:13px;margin:4px 0 12px">One zip to attach to a bug report. Secrets in <span class="mono">mcp.json</span> are env-var references and stay unresolved.</p>
+        <div class="stack" style="gap:6px" id="diag-items">
+          <label class="chk"><input type="checkbox" checked data-size="1.9" /><span>Runtime and webview logs<span class="sub">App log dir · last 3 files</span></span></label>
+          <label class="chk"><input type="checkbox" checked data-size="0.1" /><span>Build info<span class="sub">productName, identifier, version, plugins</span></span></label>
+          <label class="chk"><input type="checkbox" checked data-size="0.1" /><span><span class="mono">mcp.json</span> and sidecar status<span class="sub">env references only</span></span></label>
+          <label class="chk"><input type="checkbox" checked data-size="0.3" /><span>Port and boot timing<span class="sub"><span class="mono">desktop-port.txt</span>, readiness, last 5 boots</span></span></label>
+        </div>
+        <div class="card health-row" style="margin-top:12px;display:flex;align-items:center;gap:10px" data-od-id="diag-result"><span class="status-dot off" id="diag-dot"></span><div class="grow" id="diag-res" style="flex:1;font-size:13px"><b>Ready to export</b><span class="sub mono" style="display:block;font-size:11.5px;color:var(--faint)" id="diag-size">≈ 2.4 MB</span></div></div>
+        <div class="wizard-foot"><button class="btn btn-ghost" data-action="panel-close">Cancel</button><button class="btn btn-secondary" data-action="export" id="export-btn" data-od-id="export-diag"><svg class="icon"><use href="#i-download"/></svg>Export zip</button></div>
+      </div>
+      <div role="tabpanel" data-tabpanel="reset" aria-labelledby="tab-reset" data-od-id="reset-flow">
+        <h3 style="font-size:16px">Reset local data</h3>
+        <p class="muted" style="font-size:13px;margin:4px 0 12px">This cannot be undone. Export diagnostics first if you are resetting to work around a bug.</p>
+        <div class="card" style="margin-bottom:12px"><dl class="kv" style="grid-template-columns:110px 1fr">
+          <dt>Deleted</dt><dd>App data dir, <span class="mono">desktop-port.txt</span></dd>
+          <dt>Kept</dt><dd>App log dir, bundled sidecars</dd>
+          <dt>Then</dt><dd>Runtime restarts on <span class="mono">1906</span></dd>
+        </dl></div>
+        <div class="field"><label for="reset-confirm">Type <span class="mono">reset</span> to confirm</label><input class="input mono" id="reset-confirm" autocomplete="off" /></div>
+        <div class="wizard-foot"><button class="btn btn-ghost" data-action="panel-close">Cancel</button><button class="btn btn-danger" data-action="reset" id="reset-btn" disabled data-od-id="reset-confirm-btn"><svg class="icon"><use href="#i-trash"/></svg>Reset and restart</button></div>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-overlay" aria-hidden="true"></div>
+</div>
+
+<div class="cmdk-backdrop"></div>
+<div class="cmdk" role="dialog" aria-label="Search settings">
+  <input class="input" type="search" placeholder="Search settings…" aria-label="Search settings" />
+  <div class="cmdk-list">
+    <p class="menu-label">Desktop</p>
+    <button class="menu-item" data-action="restart"><svg class="icon"><use href="#i-refresh"/></svg>Restart runtime</button>
+    <button class="menu-item" data-action="panel-open" data-tab="diag"><svg class="icon"><use href="#i-download"/></svg>Export diagnostics bundle</button>
+    <button class="menu-item" data-action="reveal" data-what="App log dir"><svg class="icon"><use href="#i-folder"/></svg>Open log folder</button>
+    <button class="menu-item" data-action="goto" data-src="build"><svg class="icon"><use href="#i-info"/></svg>This build</button>
+    <p class="menu-label">Other settings</p>
+    <a class="menu-item" href="models-and-providers.html"><svg class="icon"><use href="#i-cpu"/></svg>Models &amp; providers</a>
+    <a class="menu-item" href="tools-and-mcp.html"><svg class="icon"><use href="#i-tool"/></svg>Tools &amp; MCP</a>
+    <a class="menu-item" href="skills.html"><svg class="icon"><use href="#i-spark"/></svg>Skills</a>
+    <a class="menu-item" href="knowledge-and-memory.html"><svg class="icon"><use href="#i-book"/></svg>Knowledge &amp; memory</a>
+    <a class="menu-item" href="governance.html"><svg class="icon"><use href="#i-shield"/></svg>Governance</a>
+    <a class="menu-item" href="appearance.html"><svg class="icon"><use href="#i-sun"/></svg>Appearance</a>
+    <a class="menu-item" href="desktop.html"><svg class="icon"><use href="#i-desktop"/></svg>Desktop</a>
+    <a class="menu-item" href="chat-workspace.html"><svg class="icon"><use href="#i-back"/></svg>Back to chat<kbd>Esc</kbd></a>
+  </div>
+</div>
+
+<script src="assets/settings.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+  (function () {
+    const S = window.UARShell; const app = document.querySelector(".app"); const $ = (id) => document.getElementById(id);
+    const tauri = document.documentElement.classList.contains("is-tauri");
+    const mac = /Mac/i.test(navigator.platform || navigator.userAgent);
+
+    /* host banner + reveal labels */
+    const banner = $("host-banner");
+    if (tauri) { banner.classList.add("ok"); banner.querySelector("use").setAttribute("href", "#i-check"); $("host-title").textContent = "Running in the desktop app"; $("host-sub").textContent = "Changes here apply to this window's runtime immediately or on the next restart."; }
+    if (!mac) document.querySelectorAll("[data-reveal] span").forEach((s) => { s.textContent = "Show in folder"; });
+
+    /* runtime restart: success, port-busy fallback, readiness timeout */
+    let restarting = false;
+    function setRuntime(kind, port, secs) {
+      const ok = kind !== "err"; const dot = kind === "ok" ? "status-dot" : "status-dot " + kind;
+      const label = kind === "err" ? "Failed" : kind === "warn" ? "Running on fallback" : "Running";
+      const addr = "127.0.0.1:" + port;
+      $("rt-chip").className = "chip " + (kind === "ok" ? "ok" : kind); $("rt-chip").innerHTML = '<span class="' + dot + '"></span>' + label;
+      $("rt-addr").textContent = ok ? addr : "not listening"; $("rt-dot").className = dot; $("sum-dot").className = dot;
+      $("sum-state").textContent = kind === "err" ? "Failed" : "Running"; $("sum-addr").textContent = ok ? addr : "—";
+      $("kv-http").textContent = ok ? addr : "—"; $("row-runtime-port").textContent = ok ? String(port) : "—";
+      $("row-runtime-st").innerHTML = '<i class="' + dot + '"></i>' + (kind === "err" ? "Not ready after 120 s" : kind === "warn" ? "Fallback port " + port : "Running · in-process");
+      $("tl-v").textContent = secs.toFixed(1) + " s"; $("sum-boot").textContent = secs.toFixed(1) + " s";
+      const m = $("tl-meter"); m.className = "meter " + (kind === "ok" ? "ok" : kind); m.setAttribute("aria-valuenow", String(secs)); m.firstElementChild.style.width = Math.min(100, secs / 120 * 100) + "%";
+      $("fallback").value = kind === "warn" ? String(port) : "none";
+      $("kv-portsrc").innerHTML = kind === "warn" ? '<span class="mono">desktop-port.txt</span> (1906 was taken)' : '<span class="mono">server.port</span> (default <span class="mono">1906</span>)';
+      $("rt-headline").textContent = kind === "err" ? "Failed to become ready" : label + " · " + addr;
+      $("rt-line").innerHTML = kind === "err" ? "No readiness signal within <span class='mono'>120 s</span>. Check the log, then restart." : "Ready in <span class='mono'>" + secs.toFixed(1) + " s</span> · uptime <span class='mono'>just now</span> · listening on loopback only";
+    }
+    function restart() {
+      if (restarting) return; restarting = true;
+      const b = $("restart-cta"); b.classList.add("is-loading"); b.disabled = true; b.querySelector(".icon").classList.add("spin");
+      const busy = "status-dot warn";
+      $("rt-chip").className = "chip warn"; $("rt-chip").innerHTML = '<span class="' + busy + '"></span>Restarting'; $("rt-dot").className = busy; $("sum-dot").className = busy; $("sum-state").textContent = "Restarting";
+      $("rt-headline").textContent = "Restarting…"; $("rt-line").innerHTML = "Stopping servers, binding <span class='mono'>127.0.0.1:" + ($("port").value || "1906") + "</span>, waiting for readiness";
+      const outcome = document.querySelector("#outcome [aria-checked=true]").dataset.value;
+      setTimeout(() => {
+        restarting = false; b.classList.remove("is-loading"); b.disabled = false; b.querySelector(".icon").classList.remove("spin");
+        if (outcome === "ok") { setRuntime("ok", Number($("port").value) || 1906, 26.8); S.toast("Runtime ready on 127.0.0.1:" + ($("port").value || "1906") + " in 26.8 s"); }
+        else if (outcome === "busy") { setRuntime("warn", 1907, 28.1); S.toast("Port 1906 in use · fell back to 1907, saved to desktop-port.txt", "warn"); }
+        else { setRuntime("err", 1906, 120); S.toast("Runtime not ready after 120 s · see App log dir", "err"); }
+      }, 1800);
+    }
+
+    /* diagnostics export */
+    function diagSize() { let s = 0; document.querySelectorAll("#diag-items input:checked").forEach((c) => { s += Number(c.dataset.size); }); return s; }
+    document.querySelectorAll("#diag-items input").forEach((c) => c.addEventListener("change", () => { const s = diagSize(); $("diag-size").textContent = s ? "≈ " + s.toFixed(1) + " MB" : "Nothing selected"; }));
+    function exportDiag() {
+      const b = $("export-btn"), dot = $("diag-dot"), res = $("diag-res");
+      if (!diagSize()) { dot.className = "status-dot err"; res.innerHTML = "<b>Nothing to export</b><span class='sub mono' style='display:block;font-size:11.5px;color:var(--faint)' id='diag-size'>Select at least one item</span>"; S.toast("Select at least one item to export", "err"); return; }
+      b.classList.add("is-loading"); b.disabled = true; b.querySelector(".icon").setAttribute("class", "icon spin"); b.querySelector("use").setAttribute("href", "#i-refresh");
+      dot.className = "status-dot warn"; res.innerHTML = "<b>Collecting…</b><span class='sub mono' style='display:block;font-size:11.5px;color:var(--faint)' id='diag-size'>logs · build info · mcp.json · boot timing</span>";
+      setTimeout(() => {
+        b.classList.remove("is-loading"); b.disabled = false; b.querySelector(".icon").setAttribute("class", "icon"); b.querySelector("use").setAttribute("href", "#i-download");
+        dot.className = "status-dot"; res.innerHTML = "<b>Saved uar-diagnostics-2026-10-05.zip</b><span class='sub mono' style='display:block;font-size:11.5px;color:var(--faint)' id='diag-size'>" + diagSize().toFixed(1) + " MB · Downloads</span>";
+        S.toast("Diagnostics bundle saved · uar-diagnostics-2026-10-05.zip");
+      }, 1400);
+    }
+
+    /* reset */
+    $("reset-confirm").addEventListener("input", (e) => { $("reset-btn").disabled = e.target.value.trim() !== "reset"; });
+    function reset() {
+      const b = $("reset-btn"); b.classList.add("is-loading"); b.disabled = true;
+      setTimeout(() => { b.classList.remove("is-loading"); $("reset-confirm").value = ""; S.closePanel(); setRuntime("ok", 1906, 27.9); S.toast("Local data reset · runtime ready on 127.0.0.1:1906"); }, 1500);
+    }
+
+    function select(id) { const row = document.querySelector('.srow[data-src="' + id + '"]'); if (row) { row.click(); row.focus({ preventScroll: true }); } }
+
+    app.addEventListener("uar:action", (e) => {
+      const { action, el } = e.detail;
+      if (action === "restart") restart();
+      if (action === "export") exportDiag();
+      if (action === "reset") reset();
+      if (action === "goto") select(el.dataset.src);
+      if (action === "reveal") S.toast(tauri ? "Opened " + el.dataset.what : el.dataset.what + " opens in the desktop app");
+      if (action === "copy-build") S.toast("Build info copied");
+      if (action === "restart-sidecar") {
+        const nm = el.dataset.name, chip = $("sc-" + nm); el.disabled = true; chip.className = "chip warn"; chip.innerHTML = '<span class="status-dot warn"></span>Restarting';
+        setTimeout(() => { el.disabled = false; chip.className = "chip ok"; chip.innerHTML = '<span class="status-dot"></span>Running'; S.toast("mcp-server-" + nm + " restarted · tools re-discovered"); }, 1100);
+      }
+      if (action === "save-port") {
+        const v = Number($("port").value); const bad = !Number.isInteger(v) || v < 1024 || v > 65535 || v === 50051;
+        $("port").setAttribute("aria-invalid", String(bad)); $("port-hint").className = "hint" + (bad ? " err" : "");
+        $("port-hint").textContent = bad ? (v === 50051 ? "50051 is the gRPC port." : "Use a port between 1024 and 65535.") : "Saved · takes effect on the next restart.";
+        S.toast(bad ? "Port not saved" : "server.port = " + v + " · restart to apply", bad ? "err" : undefined);
+      }
+    });
+    document.addEventListener("uar:switch", (e) => { if (e.detail.id === "popout") S.toast(e.detail.on ? "Inspector opens in its own window" : "Inspector docked to the right"); });
+    document.addEventListener("uar:choice", (e) => {
+      if (e.detail.id === "loglevel") { $("row-logs-st").textContent = "Level " + e.detail.value + " · tauri-plugin-log"; S.toast("Log level: " + e.detail.value + (e.detail.value === "debug" ? " · includes MCP traffic" : ""), e.detail.value === "debug" ? "warn" : undefined); }
+      if (e.detail.id === "outcome") S.toast("Next restart rehearses: " + e.detail.label);
+    });
+    window.addEventListener("click", (e) => { const sw = e.target.closest('.switch[aria-disabled="true"]'); if (sw) S.toast(sw.getAttribute("aria-label") + " is not in this build", "warn"); }, true);
+    $("zoom").addEventListener("input", (e) => { $("zoom-out").textContent = e.target.value + "%"; });
+    $("zoom").addEventListener("change", (e) => S.toast("Zoom " + e.target.value + "%"));
+    document.addEventListener("uar:source", (e) => { history.replaceState(null, "", "#" + e.detail.id); });
+    if (location.hash) select(location.hash.slice(1));
+  })();
+</script>
+</body>
+</html>

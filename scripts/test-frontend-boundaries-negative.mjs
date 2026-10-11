@@ -37,14 +37,30 @@ const forbiddenCases = [
   ["facade-core-root", "entity-facade-bypass"],
   ["facade-core-subpath", "entity-facade-bypass"],
   ["duplicate-entity-cache", "duplicate-graph-owned-cache"],
+  // Presentational library (frontend/packages/uar-ui) may not reach app, state, graph, Tauri or I/O.
+  ["library-direct-fetch", "library-direct-fetch"],
+  ["library-app-import", "library-app-import"],
+  ["library-relative-escape", "library-app-import"],
+  ["library-state-import", "library-state-import"],
+  ["library-entity-import", "library-entity-import"],
+  ["library-tauri-import", "library-tauri-import"],
+  ["library-service-import", "library-service-import"],
+  // scripts/frontend-boundary-allowlist.txt may only shrink and may not go stale.
+  ["allowlist-growth", "boundary-allowlist-growth", true],
+  ["allowlist-stale", "boundary-allowlist-stale", true],
+  ["allowlist-malformed", "boundary-allowlist-malformed", true],
 ];
-for (const [fixture, rule] of forbiddenCases) {
+for (const [fixture, rule, withAllowlist] of forbiddenCases) {
+  const fixtureDir = `scripts/fixtures/frontend-boundary-cases/${fixture}`;
   const rejected = spawnSync(
     process.execPath,
     [
       "scripts/check-frontend-boundaries.mjs",
       "--fixture-dir",
-      `scripts/fixtures/frontend-boundary-cases/${fixture}`,
+      fixtureDir,
+      ...(withAllowlist
+        ? ["--allowlist", `${fixtureDir}/allowlist.txt`, "--allowlist-base", `${fixtureDir}/base.txt`]
+        : []),
     ],
     { cwd: root, encoding: "utf8" },
   );

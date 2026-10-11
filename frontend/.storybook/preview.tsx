@@ -1,4 +1,7 @@
 import type { Preview } from '@storybook/react-vite'
+import '@fontsource-variable/inter'
+import '@fontsource-variable/space-grotesk'
+import '@fontsource-variable/jetbrains-mono'
 import '../src/index.css'
 
 const preview: Preview = {

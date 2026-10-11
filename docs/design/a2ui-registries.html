@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>A2UI registries · Universal Agent Runtime</title>
+<link rel="icon" href="assets/brand/uar-mark-dark.svg" />
+<link rel="stylesheet" href="assets/shell.css" />
+<link rel="stylesheet" href="assets/settings.css" />
+<style>
+  .muted-p { color: var(--muted); font-size: 13.5px; }
+  .cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .citem { background: var(--step-2); border-radius: 10px; padding: 12px 14px; font-size: 13px; min-width: 0; }
+  .citem .top { display: flex; align-items: center; gap: 8px; }
+  .citem .top b { font-weight: 500; font-size: 13.5px; }
+  .citem .top .grow { flex: 1; min-width: 0; }
+  .citem .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .citem .meta .chip { height: 22px; font-size: 11.5px; }
+  .citem .meta span.chip { cursor: default; }
+  .citem .meta span.chip:hover { background: var(--raised); color: var(--muted); }
+  .citem .sub { display: block; font-size: 12px; color: var(--faint); margin-top: 2px; overflow-wrap: anywhere; }
+  .citem .code { margin-top: 10px; max-height: 180px; font-size: 12px; }
+  .citem .confirm { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: var(--err-soft); font-size: 12.5px; }
+  .citem.off { opacity: 0.6; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+  .surf { background: var(--raised); border-radius: var(--r-card); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .surf h4 { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+  .surf .kv { grid-template-columns: 120px 1fr; font-size: 12.5px; }
+  .bars { display: flex; align-items: flex-end; gap: 6px; height: 72px; padding: 0 2px; }
+  .bars i { flex: 1; background: var(--input); border-radius: 4px 4px 0 0; }
+  .bars i.on { background: var(--muted); } .bars i.cur { background: var(--fg); }
+  .bar-x { display: flex; gap: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--faint); } .bar-x span { flex: 1; text-align: center; }
+  .surf .acts { display: flex; gap: 8px; }
+  .surf.text { background: var(--step-2); font-size: 13.5px; color: var(--muted); line-height: 1.55; }
+  .tlabel { font-size: 11.5px; color: var(--faint); font-family: var(--font-mono); }
+  .evts { display: flex; flex-direction: column; gap: 4px; }
+  .evts .mrow { grid-template-columns: 200px 1fr; }
+  .evts .mono { font-size: 12px; }
+  .recipe { display: flex; flex-direction: column; gap: 8px; }
+  .recipe .rs { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: start; }
+  .recipe .n { font-family: var(--font-mono); font-size: 12px; color: var(--faint); padding-top: 12px; }
+  .recipe .code { max-height: none; }
+  .checks { display: flex; flex-direction: column; gap: 2px; }
+  .checks label { display: grid; grid-template-columns: 18px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 9px; font-size: 13px; cursor: pointer; }
+  .checks label:hover { background: var(--raised); }
+  .checks input { accent-color: var(--accent); width: 15px; height: 15px; }
+  .checks .mono { font-size: 11.5px; color: var(--faint); }
+  .input.ta { height: auto; min-height: 96px; padding: 10px 12px; line-height: 1.5; resize: vertical; font-family: var(--font-mono); font-size: 12.5px; }
+  .live { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .live .blk { background: var(--input); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; display: flex; justify-content: space-between; gap: 8px; }
+  .verdict { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--step-2); font-size: 13px; margin-top: 12px; }
+  .verdict .status-dot { margin-top: 5px; flex: none; }
+  .agent-eff { font-size: 12px; color: var(--muted); }
+  @media (max-width: 920px) { .cgrid, .two { grid-template-columns: 1fr; } .evts .mrow { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app" data-od-id="workspace-shell" data-panel-persist="false">
+  <div class="titlebar" data-tauri-drag-region><span class="mono">universal-agent-runtime</span>&nbsp;· A2UI registries</div>
+  <aside data-workspace-nav data-current="registries" data-od-id="workspace-sidebar"></aside>
+
+  <main class="main" id="content" data-od-id="workspace-main">
+    <header class="topbar">
+      <button class="icon-btn" data-action="sidebar-mobile" aria-label="Open navigation" id="mobile-nav-btn" style="display:none"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+      <div class="title"><span class="crumb">Workspace</span><span>A2UI registries</span></div>
+      <span class="spacer"></span>
+      <button class="chip" data-action="cmdk" data-od-id="topbar-search"><svg class="icon"><use href="#i-search"/></svg>Search <kbd style="margin-left:4px" data-kbd="⌘K">⌘K</kbd></button>
+      <button class="icon-btn" data-action="theme" aria-pressed="false" aria-label="Switch theme" title="Switch theme" data-od-id="topbar-theme"><svg class="icon"><use href="#i-sun"/></svg></button>
+    </header>
+
+    <section class="page">
+      <div class="page-inner">
+        <div class="page-head" data-od-id="page-head">
+          <div>
+            <h1 data-od-id="page-title">A2UI registries</h1>
+            <p>Registries are what an agent may render; the AG-UI stream is how clients receive it. Each registry groups component catalogs, promoted components or reusable presentation templates speaking A2UI <span class="mono">v0.9.1</span> (compat <span class="mono">v0.9</span>).</p>
+          </div>
+          <div class="acts"><button class="btn btn-primary" data-action="panel-open" data-tab="new" data-od-id="new-presentation-cta"><svg class="icon"><use href="#i-plus"/></svg>New presentation</button></div>
+        </div>
+
+        <div class="summary" data-od-id="summary-strip">
+          <div class="card sum" data-od-id="sum-catalogs"><div class="k">Catalogs</div><div class="v"><span>2</span><small>UAR · basic <span class="mono">v0.9</span></small></div></div>
+          <div class="card sum" data-od-id="sum-components"><div class="k">Components</div><div class="v"><span id="sum-comp">10</span><small>7 built-in · <span id="sum-custom">3</span> custom</small></div></div>
+          <div class="card sum" data-od-id="sum-presentations"><div class="k">Presentations</div><div class="v"><span id="sum-pres">4</span><small><span id="sum-pres-on">3</span> enabled</small></div></div>
+          <div class="card sum" data-od-id="sum-agents"><div class="k">Agents bound</div><div class="v"><span class="status-dot"></span><span id="sum-agents">5</span><small>of 7 · default <span id="sum-mode" class="mono">auto</span></small></div></div>
+        </div>
+
+        <div class="md">
+          <nav class="sources" aria-label="Registries" data-od-id="registry-list">
+            <button class="srow" aria-current="false" data-src="policy" data-view="policy" data-od-id="row-policy"><span class="smark"><svg class="icon"><use href="#i-route"/></svg></span><span><span class="nm">Presentation policy</span><span class="st" id="row-policy-st"><i class="status-dot"></i>mode auto · global auto</span></span><span class="side">global</span></button>
+            <input class="input" type="search" placeholder="Filter registries" aria-label="Filter registries" data-filter=".sources .srow.rg" data-od-id="registry-filter" />
+            <p class="group-label">Catalogs <span>2</span></p>
+            <button class="srow rg" aria-current="true" data-src="builtin" data-view="registry" data-od-id="row-builtin"><span class="smark"><svg class="icon"><use href="#i-layers"/></svg></span><span><span class="nm">UAR catalog</span><span class="st"><i class="status-dot"></i>7 built-in types</span></span><span class="side">built-in</span></button>
+            <button class="srow rg" aria-current="false" data-src="basic" data-view="registry" data-od-id="row-basic"><span class="smark"><svg class="icon"><use href="#i-box"/></svg></span><span><span class="nm">Basic A2UI catalog</span><span class="st"><i class="status-dot"></i>16 components · v0.9</span></span><span class="side">spec</span></button>
+            <p class="group-label">Workspace <span>3</span></p>
+            <button class="srow rg" aria-current="false" data-src="custom" data-view="registry" data-od-id="row-custom"><span class="smark"><svg class="icon"><use href="#i-wand"/></svg></span><span><span class="nm">Custom components</span><span class="st" id="st-custom"><i class="status-dot"></i>2 promoted · 1 schema</span></span><span class="side">custom</span></button>
+            <button class="srow rg" aria-current="false" data-src="presentations" data-view="registry" data-od-id="row-presentations"><span class="smark"><svg class="icon"><use href="#i-layout"/></svg></span><span><span class="nm">Presentation templates</span><span class="st" id="st-pres"><i class="status-dot"></i>4 templates · 3 enabled</span></span><span class="side">templates</span></button>
+            <button class="srow rg" aria-current="false" data-src="design" data-view="registry" data-od-id="row-design"><span class="smark"><svg class="icon"><use href="#i-type"/></svg></span><span><span class="nm">Design systems</span><span class="st"><i class="status-dot warn"></i>UAR operator · no route</span></span><span class="side">source</span></button>
+          </nav>
+
+          <div>
+            <section class="view detail active" data-view="registry" aria-label="Registry detail" data-od-id="registry-detail">
+              <div class="detail-head">
+                <span class="smark lg"><svg class="icon"><use href="#i-layers" id="d-icon"/></svg></span>
+                <div><h2 id="d-name" data-od-id="registry-name">UAR catalog</h2><div class="sub" id="d-sub"></div></div>
+                <div class="acts"><button class="btn btn-ghost btn-sm" data-action="refresh" id="refresh-btn" data-od-id="registry-refresh"><svg class="icon"><use href="#i-refresh"/></svg>Refresh</button></div>
+              </div>
+              <div class="tabs" role="tablist" aria-label="Registry sections" data-od-id="registry-tabs">
+                <button class="tab" role="tab" data-dtab="components" aria-selected="true" id="dt-components">Components <span class="count" id="d-count"></span></button>
+                <button class="tab" role="tab" data-dtab="agents" aria-selected="false" id="dt-agents">Agents</button>
+                <button class="tab" role="tab" data-dtab="preview" aria-selected="false" id="dt-preview">Preview</button>
+                <button class="tab" role="tab" data-dtab="clients" aria-selected="false" id="dt-clients">Clients &amp; AG-UI</button>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="components" class="active" data-od-id="components-tab">
+                <div class="toolbar"><input class="input" type="search" placeholder="Filter components" aria-label="Filter components" data-filter="#d-items .citem" data-od-id="component-filter" /><span class="spacer"></span><span class="mono faint" style="font-size:12px" id="d-endpoint"></span></div>
+                <div class="cgrid" id="d-items" data-od-id="component-grid"></div>
+                <p class="gap-note" id="d-gap" style="display:none"><i></i><span id="d-gap-t"></span></p>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="agents" data-od-id="agents-tab">
+                <p class="muted-p" style="margin:0 2px 12px">Agents reach templates only through <span class="mono">RunPolicy.presentations</span> / <span class="mono">AgentSessionConfig.presentations</span>, a <span class="mono">ResourceSelection</span> of <span class="mono">{mode, ids[], denied_ids[]}</span>. The switch adds this registry's templates to <span class="mono">ids[]</span> when the mode is <span class="mono">selected</span>, otherwise it removes them from <span class="mono">denied_ids[]</span>.</p>
+                <div class="rules" id="agent-rules" data-od-id="agent-bindings"></div>
+                <p class="gap-note"><i></i>Backend gap: a registry is a UI grouping over presentations and components. <span class="mono">ResourceSelection</span> holds presentation ids only, so catalog and design-system rows resolve to the templates built on them; there is no registry id to bind.</p>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="preview" data-od-id="preview-tab">
+                <div class="toolbar">
+                  <div class="select-wrap"><label class="sr-only" for="pv-run">Target run</label><select class="input select mono" id="pv-run" style="width:300px" data-od-id="preview-run"><option value="run_8c2f…41">run_8c2f…41 · ops-agent · step 6 of 7</option><option value="run_4d10…c2">run_4d10…c2 · waiting on approval</option></select></div>
+                  <span class="spacer"></span>
+                  <span class="faint" style="font-size:12.5px">Web shell declares UAR profile</span><span class="switch" role="switch" aria-checked="true" aria-label="Web shell declares the UAR catalog profile" data-id="profile-web" tabindex="0" data-od-id="preview-profile-switch"></span>
+                  <button class="btn btn-secondary" data-action="send-test" id="send-btn" data-od-id="send-test-surface"><svg class="icon"><use href="#i-play"/></svg>Send test surface</button>
+                </div>
+                <div class="two">
+                  <div data-od-id="preview-render">
+                    <p class="tlabel" style="margin:0 2px 6px">Rendered · Approval summary · rev 3</p>
+                    <div class="surf" id="pv-surface">
+                      <h4>Approve config write on staging</h4>
+                      <dl class="kv"><dt>Agent</dt><dd>Ops agent <span class="mono faint">ops-agent</span></dd><dt>Tool</dt><dd class="mono">filesystem__write_file</dd><dt>Path</dt><dd class="mono">staging/config.yaml</dd><dt>Run cost so far</dt><dd class="mono">$0.42 · 18.6k tok</dd></dl>
+                      <div><p class="tlabel" style="margin-bottom:6px">Tokens per step · Chart</p><div class="bars" aria-hidden="true"><i class="on" style="height:30%"></i><i class="on" style="height:46%"></i><i class="on" style="height:22%"></i><i class="on" style="height:64%"></i><i class="on" style="height:52%"></i><i class="cur" style="height:88%"></i><i style="height:8%"></i></div><div class="bar-x"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div></div>
+                      <div class="acts" data-od-id="preview-confirm"><button class="btn btn-secondary btn-sm" data-action="a2ui-act" data-v="approve"><svg class="icon"><use href="#i-check"/></svg>Approve</button><button class="btn btn-ghost btn-sm" data-action="a2ui-act" data-v="reject">Reject</button></div>
+                    </div>
+                  </div>
+                  <div data-od-id="preview-wire">
+                    <p class="tlabel" style="margin:0 2px 6px">Wire · keyed by <span>surface_id</span></p>
+                    <div class="code" id="pv-json"></div>
+                  </div>
+                </div>
+                <div class="verdict" id="pv-res" data-od-id="preview-result"><span class="status-dot off"></span><span>Sends this surface into the selected run with <span class="mono">POST /api/uar/runs/{id}/a2ui/surface-test-trigger</span>; replay with <span class="mono">GET /a2ui/surface-replay</span>.</span></div>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="clients" data-od-id="clients-tab">
+                <div class="section-title"><h3 data-od-id="clients-heading">Declared client profiles</h3><p><span class="mono">client_rendering.a2ui_profiles[]</span></p></div>
+                <table class="table" data-od-id="client-table"><thead><tr><th>Client</th><th>a2ui_profiles</th><th class="hide-sm">Result for UAR templates</th><th></th></tr></thead><tbody id="client-rows"></tbody></table>
+                <div class="section-title"><h3 data-od-id="agui-heading">Consume an agent over AG-UI</h3><p>Profile <span class="mono">uar.agui/1</span></p></div>
+                <div class="card recipe" data-od-id="agui-recipe">
+                  <div class="rs"><span class="n">1</span><div class="code" id="rc-1">POST /api/uar/runs
+{"agent_id": "ops-agent", "input": "Why are staging MCP calls timing out?"}
+<span class="c">→ {"run_id": "run_8c2f…41", "stream_url": "/api/uar/runs/run_8c2f…41/stream"}</span></div><button class="icon-btn" data-action="copy" data-target="rc-1" aria-label="Copy start-run request" data-od-id="copy-1"><svg class="icon"><use href="#i-copy"/></svg></button></div>
+                  <div class="rs"><span class="n">2</span><div class="code" id="rc-2">GET /api/uar/runs/run_8c2f…41/stream?stream_mode=agui_spec</div><button class="icon-btn" data-action="copy" data-target="rc-2" aria-label="Copy stream request" data-od-id="copy-2"><svg class="icon"><use href="#i-copy"/></svg></button></div>
+                  <div class="rs"><span class="n">3</span><div class="code" id="rc-3">POST /api/uar/runs/run_8c2f…41/a2ui/actions
+<span class="c">user input on a rendered surface goes back to the run</span></div><button class="icon-btn" data-action="copy" data-target="rc-3" aria-label="Copy action request" data-od-id="copy-3"><svg class="icon"><use href="#i-copy"/></svg></button></div>
+                </div>
+                <div class="section-title"><h3 data-od-id="events-heading">A2UI messages on the stream</h3><p>Applied in order per <span class="mono">surface_id</span></p></div>
+                <div class="evts" data-od-id="agui-events">
+                  <div class="mrow"><span class="mono">CreateSurface</span><span class="sub">Opens a surface bound to a <span class="mono">catalog_id</span>.</span></div>
+                  <div class="mrow"><span class="mono">UpdateComponents</span><span class="sub">Replaces or adds components in the surface tree.</span></div>
+                  <div class="mrow"><span class="mono">UpdateDataModel</span><span class="sub">Patches bound data; components re-render without a new tree.</span></div>
+                  <div class="mrow"><span class="mono">DeleteSurface</span><span class="sub">Closes the surface; clients drop its state.</span></div>
+                </div>
+                <p class="gap-note"><i></i>Backend gap: there is no per-agent AG-UI endpoint. Clients start a run with <span class="mono">POST /api/uar/runs</span> and read <span class="mono">/runs/{id}/stream</span>; an agent-addressable URL would need a new route.</p>
+              </div>
+            </section>
+
+            <section class="view detail" data-view="policy" aria-label="Presentation policy" data-od-id="policy-view">
+              <div class="detail-head">
+                <span class="smark lg"><svg class="icon"><use href="#i-route"/></svg></span>
+                <div><h2 data-od-id="policy-title">Presentation policy</h2><div class="sub"><span class="mono">run_policy.global</span><span>·</span><span class="mono">GET|PUT /api/uar/settings/presentation-policy</span></div></div>
+                <div class="acts"><button class="btn btn-secondary btn-sm" data-action="save-policy" id="save-policy" data-od-id="policy-save"><svg class="icon"><use href="#i-check"/></svg>Save policy</button></div>
+              </div>
+              <div class="rules" data-od-id="policy-rules">
+                <div class="rule"><div>Default presentation mode<span class="sub">How a run answers when nothing narrower applies. <span class="mono">legacy</span> keeps pre-A2UI behaviour.</span></div><div class="choice sm" role="radiogroup" aria-label="Default presentation mode" id="pmode" data-od-id="pmode-choice"><button role="radio" data-value="auto" aria-checked="true">auto</button><button role="radio" data-value="text" aria-checked="false">text</button><button role="radio" data-value="a2ui" aria-checked="false">a2ui</button><button role="radio" data-value="hybrid" aria-checked="false">hybrid</button><button role="radio" data-value="legacy" aria-checked="false">legacy</button></div></div>
+                <div class="rule"><div>Global template selection<span class="sub">What <span class="mono">inherit</span> resolves to for every agent.</span></div><div class="choice sm" role="radiogroup" aria-label="Global template selection" id="gsel" data-od-id="gsel-choice"><button role="radio" data-value="auto" aria-checked="true">auto</button><button role="radio" data-value="all" aria-checked="false">all</button><button role="radio" data-value="none" aria-checked="false">none</button><button role="radio" data-value="selected" aria-checked="false">selected</button></div></div>
+              </div>
+              <div class="section-title"><h3 data-od-id="fallback-heading">When a run falls back to text</h3><p>Reported as the fallback reason on the run</p></div>
+              <div class="rules" data-od-id="fallback-reasons">
+                <div class="rule"><div><span class="mono">client_rendering_not_declared</span><span class="sub">The client sent no <span class="mono">client_rendering</span> block.</span></div><span class="chip quiet">client</span></div>
+                <div class="rule"><div><span class="mono">incompatible_profile</span><span class="sub">Declared profiles do not include the template's catalog.</span></div><span class="chip quiet">client</span></div>
+                <div class="rule"><div><span class="mono">no_eligible_templates</span><span class="sub">Selection left no enabled template for this agent.</span></div><span class="chip quiet">policy</span></div>
+                <div class="rule"><div><span class="mono">parent_text_ceiling</span><span class="sub">A parent run capped the child at text.</span></div><span class="chip quiet">policy</span></div>
+                <div class="rule"><div><span class="mono">no_surface_published</span><span class="sub">The model answered without publishing a surface.</span></div><span class="chip quiet">run</span></div>
+                <div class="rule"><div><span class="mono">surface_generation_failed</span><span class="sub">The surface failed validation against its catalog.</span></div><span class="chip quiet">run</span></div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="panel" aria-label="New presentation" aria-hidden="true" data-od-id="new-presentation-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-head">
+      <div class="tabs" role="tablist" aria-label="Inspector sections"><button class="tab" role="tab" data-tab="new" aria-selected="true" id="tab-new"><svg class="icon icon-sm"><use href="#i-layout"/></svg>New presentation</button></div>
+      <span style="flex:1"></span>
+      <button class="icon-btn" data-action="panel-close" aria-label="Close (Esc)" data-od-id="new-close"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="panel-body">
+      <div role="tabpanel" data-tabpanel="new" class="active" aria-labelledby="tab-new">
+        <div class="steps" aria-hidden="true"><span class="on" id="s1"></span><span id="s2"></span><span id="s3"></span></div>
+        <div class="wstep active" id="w1" data-od-id="new-step-catalog">
+          <h3 style="font-size:16px">1 · Which catalog?</h3>
+          <p class="muted" style="font-size:13px;margin:4px 0 10px">Stored as <span class="mono">template.catalog_id</span>. Every component must exist in it.</p>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <button class="preset" data-cat="builtin" data-od-id="pick-builtin"><span class="smark"><svg class="icon"><use href="#i-layers"/></svg></span><span><span class="nm">UAR catalog</span><span class="sub mono">urn:uar:a2ui:catalog:1</span></span><span class="cnt">7</span></button>
+            <button class="preset" data-cat="basic" data-od-id="pick-basic"><span class="smark"><svg class="icon"><use href="#i-box"/></svg></span><span><span class="nm">Basic A2UI catalog</span><span class="sub mono">…/v0_9/catalogs/basic/catalog.json</span></span><span class="cnt">16</span></button>
+          </div>
+        </div>
+        <div class="wstep" id="w2" data-od-id="new-step-components">
+          <h3 style="font-size:16px">2 · Components</h3>
+          <p class="muted" style="font-size:13px;margin:4px 0 10px" id="w2-sub"></p>
+          <div class="checks" id="w2-list" data-od-id="new-component-checklist"></div>
+        </div>
+        <div class="wstep" id="w3" data-od-id="new-step-data">
+          <h3 style="font-size:16px">3 · Content &amp; default data</h3>
+          <div class="field" style="margin-top:10px"><label for="n-title">Title</label><input class="input" id="n-title" value="Deploy gate" data-od-id="new-title" /></div>
+          <div class="field" style="margin-top:10px"><label for="n-desc">Description</label><input class="input" id="n-desc" value="Ask an operator to approve a staging deploy" data-od-id="new-desc" /></div>
+          <div class="field" style="margin-top:10px"><label for="n-data">default_data</label><textarea class="input ta" id="n-data" data-od-id="new-default-data">{"env": "staging", "approver": "Travis James"}</textarea></div>
+          <p class="tlabel" style="margin-top:12px">Live preview</p>
+          <div class="live" id="n-live" data-od-id="new-live-preview"></div>
+          <div class="verdict" id="n-res" style="display:none" data-od-id="new-result"></div>
+        </div>
+        <div class="wizard-foot">
+          <button class="btn btn-ghost" data-action="wiz-back" id="w-back" style="visibility:hidden" data-od-id="new-back">Back</button>
+          <button class="btn btn-secondary" data-action="wiz-next" id="w-next" disabled data-od-id="new-next">Continue</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-overlay" aria-hidden="true"></div>
+</div>
+
+<div class="cmdk-backdrop"></div>
+<div class="cmdk" role="dialog" aria-label="Search" data-od-id="cmdk">
+  <input class="input" type="search" placeholder="Search registries and pages…" aria-label="Search" />
+  <div class="cmdk-list">
+    <p class="menu-label">A2UI registries</p>
+    <button class="menu-item" data-action="panel-open" data-tab="new"><svg class="icon"><use href="#i-plus"/></svg>New presentation</button>
+    <button class="menu-item" data-action="goto-policy"><svg class="icon"><use href="#i-route"/></svg>Presentation policy</button>
+    <button class="menu-item" data-action="goto-preview"><svg class="icon"><use href="#i-play"/></svg>Send test surface</button>
+    <p class="menu-label">Workspace</p>
+    <a class="menu-item" href="chat-workspace.html"><svg class="icon"><use href="#i-chat"/></svg>Chat</a>
+    <a class="menu-item" href="knowledge.html"><svg class="icon"><use href="#i-book"/></svg>Knowledge</a>
+    <a class="menu-item" href="agents.html"><svg class="icon"><use href="#i-bot"/></svg>Agents</a>
+    <a class="menu-item" href="a2ui-registries.html"><svg class="icon"><use href="#i-layers"/></svg>A2UI registries</a>
+    <a class="menu-item" href="runs.html"><svg class="icon"><use href="#i-runs"/></svg>Runs</a>
+    <p class="menu-label">Settings</p>
+    <a class="menu-item" href="models-and-providers.html"><svg class="icon"><use href="#i-cpu"/></svg>Models &amp; providers</a>
+    <a class="menu-item" href="skills.html"><svg class="icon"><use href="#i-spark"/></svg>Skills</a>
+    <a class="menu-item" href="tools-and-mcp.html"><svg class="icon"><use href="#i-tool"/></svg>Tools &amp; MCP</a>
+  </div>
+</div>
+
+<script src="assets/settings.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+(function () {
+  "use strict";
+  const S = window.UARShell, app = document.querySelector(".app"), $ = (s) => document.querySelector(s);
+  const UAR = "urn:uar:a2ui:catalog:1", BASIC = "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json";
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const sch = (o) => esc(JSON.stringify(o, null, 2)).replace(/&quot;|"([^"]+)":/g, (m, k) => k ? `<span class="k">"${k}"</span>:` : m);
+  const BUILTIN = [["Form", "form", "input", { fields: "Field[]", submit_label: "string" }], ["Confirm", "confirm", "decision", { title: "string", confirm_label: "string", cancel_label: "string" }], ["Select", "select", "input", { options: "Option[]", multiple: "boolean" }], ["TextInput", "text_input", "input", { label: "string", placeholder: "string", multiline: "boolean" }], ["Display", "display", "content", { markdown: "string" }], ["Chart", "chart", "data", { kind: "bar | line", series: "Series[]" }], ["Media", "media", "content", { src: "string", alt: "string", kind: "image | video | audio" }]];
+  const BASICS = ["Text", "Image", "Icon", "Row", "Column", "List", "Card", "Tabs", "Divider", "Modal", "Button", "CheckBox", "TextField", "DateTimeInput", "ChoicePicker", "Slider"];
+  const REG = {
+    builtin: { name: "UAR catalog", icon: "layers", id: UAR, chip: ["ok", "built-in"], ep: "GET /api/uar/a2ui/components/builtins", items: BUILTIN.map(([n, pt, cat, s]) => ({ id: pt, n, pt, cat, s })) },
+    basic: { name: "Basic A2UI catalog", icon: "box", id: BASIC, chip: ["", "spec v0.9"], ep: "GET /api/uar/a2ui/schemas", items: BASICS.map((n) => ({ id: n.toLowerCase(), n, pt: n, cat: /Row|Column|List|Card|Tabs|Divider|Modal/.test(n) ? "layout" : /Button|CheckBox|TextField|DateTimeInput|ChoicePicker|Slider/.test(n) ? "input" : "content", s: { component: n, catalog: "basic" } })) },
+    custom: { name: "Custom components", icon: "wand", id: "/api/uar/a2ui/components", chip: ["", "workspace"], ep: "GET|POST /api/uar/a2ui/components · /custom-schemas", del: true, items: [
+      { id: "run-cost-card", n: "Run cost card", pt: "Display", cat: "promoted", sub: "Promoted from a run_8c2f…41 surface", s: { title: "Run cost card", source: "surface sfc_cost_8c2f", description: "Spend and tokens for one run" } },
+      { id: "kb-hit-list", n: "KB hit list", pt: "Display", cat: "promoted", sub: "Promoted from a Workspace docs search", s: { title: "KB hit list", source: "surface sfc_kb_41aa" } },
+      { id: "incident-severity", n: "incident-severity", pt: "Select", cat: "custom schema", sub: "Custom schema for SEV1–SEV4", s: { type: "string", enum: ["SEV1", "SEV2", "SEV3", "SEV4"] } }] },
+    presentations: { name: "Presentation templates", icon: "layout", id: "/api/uar/presentations", chip: ["", "templates"], ep: "GET|POST /api/uar/presentations[/{id}]", del: true, pres: true, items: [
+      { id: "approval-summary", n: "Approval summary", rev: 3, on: true, comps: ["Display", "Chart", "Confirm"], d: "Summarise a pending tool approval with run cost" },
+      { id: "run-cost", n: "Run cost card", rev: 2, on: true, comps: ["run-cost-card", "Chart"], d: "Spend and tokens per step for one run" },
+      { id: "incident-triage", n: "Incident triage form", rev: 1, on: true, comps: ["Form", "incident-severity", "TextInput"], d: "Collect severity, scope and owner" },
+      { id: "kb-search-results", n: "KB search results", rev: 4, on: false, comps: ["kb-hit-list", "Select"], d: "Ranked hits from a knowledge base" }] },
+    design: { name: "Design systems", icon: "type", id: "src/uar/a2ui/design_systems", chip: ["warn", "no HTTP route"], ep: "DesignSystem{id, name, tokens, source_format}", gap: "Backend gap: design systems live in src/uar/a2ui/design_systems with no HTTP route; this list cannot be read or edited from a client until one exists.", items: [
+      { id: "button", n: "button", pt: "action", cat: "controls", sub: "UAR operator · renderers react, flutter, htmx", s: { slug: "button", primitive_type: "action", category: "controls" } },
+      { id: "card", n: "card", pt: "container", cat: "layout", sub: "UAR operator · renderers react, flutter, htmx", s: { slug: "card", primitive_type: "container", category: "layout" } },
+      { id: "chip", n: "chip", pt: "display", cat: "status", sub: "UAR operator · renderers react, flutter", s: { slug: "chip", primitive_type: "display", category: "status" } }] },
+  };
+  REG.presentations.items.forEach((p) => { p.s = { id: p.id, owner_id: "tjames", revision: p.rev, content: { title: p.n, description: p.d, enabled: p.on, template: { version: "0.9.1", catalog_id: UAR, components: p.comps, default_data: {} } }, updated_at: "2026-10-04T09:12:00Z" }; p.pt = "rev " + p.rev; p.cat = p.comps.length + " components"; });
+  const AGENTS = [
+    { id: "default-agent", n: "Default Assistant", m: "anthropic/claude-sonnet-5", mode: "inherit" },
+    { id: "orchestrator-agent", n: "Orchestrator", m: "anthropic/claude-opus-5-5", mode: "inherit" },
+    { id: "compiler-agent", n: "UAR Compiler Agent", m: "anthropic/claude-sonnet-5", mode: "none" },
+    { id: "general-purpose", n: "general-purpose", m: "groq/llama-3.3-70b-versatile", mode: "inherit" },
+    { id: "rust-reviewer", n: "rust-reviewer", m: "anthropic/claude-sonnet-5", mode: "none" },
+    { id: "ops-agent", n: "Ops agent", m: "anthropic/claude-sonnet-5", mode: "selected", ids: ["builtin", "custom", "presentations"] },
+    { id: "policy-reviewer", n: "Policy reviewer", m: "openai/gpt-6-sol", mode: "auto", denied: ["basic"] },
+  ];
+  AGENTS.forEach((a) => { a.ids = new Set(a.ids || []); a.denied = new Set(a.denied || []); });
+  const CLIENTS = [{ id: "web", n: "Web shell", p: [UAR, BASIC] }, { id: "tauri", n: "Tauri desktop", p: [UAR] }, { id: "flutter", n: "Flutter mobile", p: [BASIC] }, { id: "cli", n: "od CLI / curl", p: null }];
+  let cur = "builtin", globalMode = "auto", pmode = "auto", pendingDel = null;
+
+  const resolved = (a) => a.mode === "inherit" ? globalMode : a.mode;
+  const allowed = (a, r) => { const m = resolved(a); return m === "none" ? false : m === "selected" ? a.ids.has(r) : !a.denied.has(r); };
+  function syncSummary() {
+    const bound = AGENTS.filter((a) => resolved(a) !== "none").length; $("#sum-agents").textContent = bound; $("#sum-mode").textContent = pmode;
+    const p = REG.presentations.items, c = REG.custom.items.length;
+    $("#sum-pres").textContent = p.length; $("#sum-pres-on").textContent = p.filter((x) => x.on).length; $("#sum-custom").textContent = c; $("#sum-comp").textContent = 7 + c;
+    $("#st-pres").innerHTML = `<i class="status-dot"></i>${p.length} templates · ${p.filter((x) => x.on).length} enabled`;
+    $("#st-custom").innerHTML = `<i class="status-dot"></i>${REG.custom.items.filter((x) => x.cat === "promoted").length} promoted · ${REG.custom.items.filter((x) => x.cat !== "promoted").length} schema`;
+    $("#row-policy-st").innerHTML = `<i class="status-dot ${pmode === "text" ? "off" : ""}"></i>mode ${pmode} · global ${globalMode}`;
+  }
+  function itemCard(it, r) {
+    const R = REG[r];
+    const ctl = R.pres ? `<span class="switch" role="switch" aria-checked="${it.on}" aria-label="${esc(it.n)} enabled" data-id="pres:${it.id}" tabindex="0"></span>` : "";
+    const del = R.del ? `<button class="icon-btn" data-action="ask-delete" data-id="${it.id}" aria-label="Delete ${esc(it.n)}"><svg class="icon"><use href="#i-trash"/></svg></button>` : "";
+    const confirm = pendingDel === it.id ? `<div class="confirm" data-od-id="confirm-${it.id}"><span style="flex:1">Delete <b>${esc(it.n)}</b>? ${R.pres ? "Agents selecting it fall back to text." : "Templates using it fail validation."}</span><button class="btn btn-danger btn-sm" data-action="do-delete" data-id="${it.id}">Delete</button><button class="btn btn-ghost btn-sm" data-action="cancel-delete">Cancel</button></div>` : "";
+    return `<div class="citem${R.pres && !it.on ? " off" : ""}" data-od-id="item-${r}-${it.id}"><div class="top"><span class="grow"><b>${esc(it.n)}</b><span class="sub mono">${esc(it.id)}${it.sub ? " · " + esc(it.sub) : it.d ? " · " + esc(it.d) : ""}</span></span>${ctl}${del}</div>
+      <div class="meta"><span class="chip mono">${esc(it.pt)}</span><span class="chip">${esc(it.cat)}</span><button class="chip" data-action="peek" data-id="${it.id}" aria-expanded="false">Schema</button></div><div class="code" id="peek-${it.id}" hidden>${sch(it.s)}</div>${confirm}</div>`;
+  }
+  function renderItems() { const R = REG[cur]; $("#d-items").innerHTML = R.items.map((it) => itemCard(it, cur)).join("") || `<div class="empty" style="grid-column:1/-1"><b>Nothing here yet</b><span>Promote a component or create a presentation.</span></div>`; $("#d-count").textContent = R.items.length; }
+  function renderAgents() {
+    $("#agent-rules").innerHTML = AGENTS.map((a) => { const m = resolved(a), on = allowed(a, cur);
+      return `<div class="rule" data-od-id="bind-${a.id}"><div>${esc(a.n)} <span class="mono faint">${a.id}</span><span class="sub"><span class="mono">${a.m}</span> · <span class="agent-eff">${a.mode === "inherit" ? "inherit → " + m : a.mode}${on ? " · may render this registry" : " · blocked here"}</span></span></div>
+      <div class="ctl"><div class="choice sm" role="radiogroup" aria-label="${esc(a.n)} presentation selection" id="mode-${a.id}">${["inherit", "auto", "all", "none", "selected"].map((v) => `<button role="radio" data-value="${v}" aria-checked="${a.mode === v}">${v}</button>`).join("")}</div>
+      <span class="switch" role="switch" aria-checked="${on}" aria-label="${esc(a.n)} may use ${esc(REG[cur].name)}" data-id="bind:${a.id}" tabindex="0"${m === "none" ? ' aria-disabled="true"' : ""}></span></div></div>`; }).join("");
+  }
+  function renderClients() {
+    $("#client-rows").innerHTML = CLIENTS.map((c) => { const ok = c.p && c.p.includes(UAR), reason = !c.p ? "client_rendering_not_declared" : ok ? "" : "incompatible_profile";
+      return `<tr data-od-id="client-${c.id}"><td class="nm"><b>${c.n}</b></td><td>${c.p ? c.p.map((x) => `<span class="mono" style="display:block;font-size:12px">${x === BASIC ? "…/v0_9/catalogs/basic/catalog.json" : x}</span>`).join("") : '<span class="faint">none declared</span>'}</td><td class="hide-sm">${ok ? '<span class="chip ok" style="height:22px">renders A2UI</span>' : `<span class="chip warn" style="height:22px">text · <span class="mono">${reason}</span></span>`}</td><td class="ctl">${c.id === "web" ? `<span class="switch" role="switch" aria-checked="${ok}" aria-label="Web shell declares the UAR catalog profile" data-id="profile-web" tabindex="0"></span>` : ""}</td></tr>`; }).join("");
+  }
+  function render(id) {
+    cur = id; pendingDel = null; const R = REG[id];
+    $("#d-name").textContent = R.name; $("#d-icon").setAttribute("href", "#i-" + R.icon);
+    $("#d-sub").innerHTML = `<span class="chip ${R.chip[0]}" style="height:22px">${R.chip[1]}</span><span class="mono">${esc(R.id)}</span>`;
+    $("#d-endpoint").textContent = R.ep;
+    $("#d-gap").style.display = R.gap ? "" : "none"; $("#d-gap-t").textContent = R.gap || "";
+    renderItems(); renderAgents();
+  }
+  function webOk() { return CLIENTS[0].p.includes(UAR); }
+  function setWebProfile(on) {
+    CLIENTS[0].p = on ? [UAR, BASIC] : [BASIC]; renderClients();
+    document.querySelectorAll('[data-id="profile-web"]').forEach((s) => s.setAttribute("aria-checked", String(on)));
+    S.toast(on ? "Web shell declares urn:uar:a2ui:catalog:1" : "Web shell profile dropped the UAR catalog", on ? "ok" : "warn");
+  }
+  function pvJson(sid) {
+    $("#pv-json").innerHTML = `<span class="c">// CreateSurface</span>\n{"surface_id": "${sid}", "catalog_id": "<span class="s">${UAR}</span>"}\n<span class="c">// UpdateComponents</span>\n{"surface_id": "${sid}", "components": [\n  {"id": "summary", "component": "<span class="t">Display</span>"},\n  {"id": "cost", "component": "<span class="t">Chart</span>", "kind": "bar"},\n  {"id": "decide", "component": "<span class="t">Confirm</span>"}\n]}\n<span class="c">// UpdateDataModel</span>\n{"surface_id": "${sid}", "path": "/run", "value": {"step": 6, "of": 7}}`;
+  }
+  function loading(b, on) { b.classList.toggle("is-loading", on); b.disabled = on; const i = b.querySelector(".icon"); if (i) i.classList.toggle("spin", on); }
+  function sendTest() {
+    const b = $("#send-btn"), run = $("#pv-run").value, r = $("#pv-res"); loading(b, true); b.querySelector("use").setAttribute("href", "#i-refresh");
+    r.innerHTML = `<span class="status-dot off"></span><span>POST /api/uar/runs/<span class="mono">${run}</span>/a2ui/surface-test-trigger…</span>`;
+    setTimeout(() => {
+      loading(b, false); b.querySelector("use").setAttribute("href", "#i-play");
+      if (webOk()) {
+        const sid = "sfc_appr_" + run.slice(4, 8); pvJson(sid); $("#pv-surface").className = "surf";
+        r.innerHTML = `<span class="status-dot"></span><span><b>Surface published</b> · <span class="mono">${sid}</span> on <span class="mono">${run}</span> · 3 components validated against <span class="mono">${UAR}</span>. Replay with <span class="mono">GET /a2ui/surface-replay</span>.</span>`;
+        S.toast("Test surface published · " + sid);
+      } else {
+        $("#pv-surface").className = "surf text";
+        $("#pv-surface").dataset.fallback = "1";
+        $("#pv-surface").innerHTML = `<p class="tlabel">Text fallback</p><p>Ops agent wants to write <span class="mono">staging/config.yaml</span> with <span class="mono">filesystem__write_file</span>. Run cost so far <span class="mono">$0.42</span>. Reply approve or reject.</p>`;
+        r.innerHTML = `<span class="status-dot err"></span><span><b>Fell back to text</b> · reason <span class="mono">incompatible_profile</span>: the web shell's <span class="mono">a2ui_profiles</span> no longer include <span class="mono">${UAR}</span>. Turn the profile back on and send again.</span>`;
+        S.toast("Fallback: incompatible_profile", "err");
+      }
+    }, 1000);
+  }
+  const SURF = $("#pv-surface").innerHTML;
+
+  app.addEventListener("uar:source", (e) => { if (e.detail.view === "registry") render(e.detail.id); });
+  app.addEventListener("uar:switch", (e) => {
+    const id = String(e.detail.id), on = e.detail.on;
+    if (id === "profile-web") { setWebProfile(on); if (on && $("#pv-surface").dataset.fallback) { $("#pv-surface").innerHTML = SURF; $("#pv-surface").className = "surf"; delete $("#pv-surface").dataset.fallback; } return; }
+    if (id.startsWith("pres:")) { const p = REG.presentations.items.find((x) => x.id === id.slice(5)); p.on = on; p.s.content.enabled = on; renderItems(); syncSummary(); S.toast(`${p.n} ${on ? "enabled" : "disabled"} · PUT /api/uar/presentations/${p.id}`, on ? "ok" : "warn"); return; }
+    if (id.startsWith("bind:")) {
+      const a = AGENTS.find((x) => x.id === id.slice(5)); if (resolved(a) === "selected") { on ? a.ids.add(cur) : a.ids.delete(cur); } else { on ? a.denied.delete(cur) : a.denied.add(cur); }
+      renderAgents(); S.toast(`${a.n} ${on ? "may use" : "blocked from"} ${REG[cur].name} · ${resolved(a) === "selected" ? "ids[]" : "denied_ids[]"}`, on ? "ok" : "warn");
+    }
+  });
+  app.addEventListener("uar:choice", (e) => {
+    const g = e.target.id || "", v = e.detail.value;
+    if (g.startsWith("mode-")) { const a = AGENTS.find((x) => x.id === g.slice(5)); a.mode = v; renderAgents(); syncSummary(); S.toast(`${a.n}: presentations.mode = ${v}${v === "inherit" ? " → " + globalMode : ""}`); }
+    if (g === "gsel") { globalMode = v; renderAgents(); syncSummary(); S.toast(`run_policy.global presentations: ${v} · unsaved`, "warn"); }
+    if (g === "pmode") { pmode = v; syncSummary(); S.toast(`Default presentation mode: ${v} · unsaved`, "warn"); }
+  });
+  $("#pv-run").addEventListener("change", (e) => S.toast("Target run " + e.target.value));
+
+  /* new presentation wizard */
+  let step = 1, cat = null;
+  const pick = () => [...document.querySelectorAll("#w2-list input:checked")].map((i) => i.value);
+  function list2() {
+    const base = cat === "builtin" ? BUILTIN.map((b) => b[0]) : BASICS;
+    const cust = REG.custom.items.map((c) => c.id);
+    $("#w2-sub").innerHTML = `Catalog <span class="mono">${cat === "builtin" ? UAR : "basic v0.9"}</span>. Custom components are registered against the UAR catalog.`;
+    $("#w2-list").innerHTML = base.map((n, i) => `<label><input type="checkbox" value="${n}"${cat === "builtin" ? (i === 4 || i === 1 ? " checked" : "") : (n === "Text" || n === "Button" ? " checked" : "")} /><span>${n}</span><span class="mono">${cat === "builtin" ? "built-in" : "basic"}</span></label>`).join("") + `<p class="group-label">Custom</p>` + cust.map((n) => `<label><input type="checkbox" value="${n}" /><span class="mono" style="color:var(--fg);font-size:13px">${n}</span><span class="mono">custom</span></label>`).join("");
+  }
+  function live() {
+    let data = null; try { data = JSON.parse($("#n-data").value); } catch (_) { /* shown below */ }
+    $("#n-live").innerHTML = `<div class="blk"><b>${esc($("#n-title").value || "Untitled")}</b><span class="faint">${esc($("#n-desc").value)}</span></div>` + pick().map((c) => `<div class="blk"><span class="mono">${esc(c)}</span><span class="faint">${data ? Object.keys(data).map(esc).join(", ") : "default_data invalid"}</span></div>`).join("");
+  }
+  function setStep(n) {
+    step = Math.max(1, Math.min(3, n));
+    for (let i = 1; i <= 3; i++) { $("#w" + i).classList.toggle("active", i === step); $("#s" + i).className = i < step ? "done" : i === step ? "on" : ""; }
+    $("#w-back").style.visibility = step === 1 ? "hidden" : "visible"; const nx = $("#w-next");
+    nx.innerHTML = step === 3 ? '<svg class="icon"><use href="#i-bolt"/></svg>Validate &amp; create' : "Continue";
+    nx.disabled = step === 1 || (step === 2 && !pick().length);
+    if (step === 3) { $("#n-res").style.display = "none"; live(); }
+  }
+  document.querySelectorAll(".preset").forEach((p) => p.addEventListener("click", () => { cat = p.dataset.cat; list2(); setStep(2); }));
+  $("#w2-list").addEventListener("change", () => { $("#w-next").disabled = !pick().length; });
+  ["#n-title", "#n-desc", "#n-data"].forEach((s) => $(s).addEventListener("input", live));
+  function create() {
+    const b = $("#w-next"), r = $("#n-res"), comps = pick(), title = $("#n-title").value.trim(); loading(b, true);
+    r.style.display = ""; r.innerHTML = `<span class="status-dot off"></span><span>Validating ${comps.length} components against <span class="mono">${cat === "builtin" ? UAR : "basic v0.9"}</span>…</span>`;
+    setTimeout(() => {
+      loading(b, false);
+      let data = null, err = null; try { data = JSON.parse($("#n-data").value); } catch (_) { err = "<span class=\"mono\">default_data</span> is not valid JSON"; }
+      const stray = cat === "basic" ? comps.find((c) => REG.custom.items.some((x) => x.id === c)) : null;
+      if (!title) err = "Title is required";
+      if (stray) err = `component <span class="mono">${stray}</span> is not in catalog <span class="mono">${BASIC}</span>`;
+      if (err) { r.innerHTML = `<span class="status-dot err"></span><span><b>Not created</b> · ${err}. Go back and fix it.</span>`; S.toast("Validation failed", "err"); return; }
+      const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "presentation";
+      if (REG.presentations.items.some((x) => x.id === id)) { r.innerHTML = `<span class="status-dot err"></span><span><b>Not created</b> · <span class="mono">${id}</span> already exists.</span>`; S.toast("Duplicate id", "err"); return; }
+      const p = { id, n: title, rev: 1, on: true, comps, d: $("#n-desc").value.trim() }; p.pt = "rev 1"; p.cat = comps.length + " components";
+      p.s = { id, owner_id: "tjames", revision: 1, content: { title, description: p.d, enabled: true, template: { version: "0.9.1", catalog_id: cat === "builtin" ? UAR : BASIC, components: comps, default_data: data } }, created_at: "2026-10-05T10:00:00Z" };
+      REG.presentations.items.unshift(p); syncSummary(); S.closePanel(); document.querySelector('.srow[data-src="presentations"]').click(); document.querySelector('[data-dtab="components"]').click();
+      S.toast(`${title} created · revision 1 · POST /api/uar/presentations`);
+    }, 1000);
+  }
+  app.addEventListener("uar:panel", (e) => { if (e.detail.open) { cat = null; setStep(1); } });
+
+  app.addEventListener("uar:action", (e) => {
+    const { action, el } = e.detail;
+    if (action === "peek") { const c = document.getElementById("peek-" + el.dataset.id); c.hidden = !c.hidden; el.setAttribute("aria-expanded", String(!c.hidden)); }
+    if (action === "ask-delete") { pendingDel = el.dataset.id; renderItems(); }
+    if (action === "cancel-delete") { pendingDel = null; renderItems(); }
+    if (action === "do-delete") { const R = REG[cur], it = R.items.find((x) => x.id === el.dataset.id); R.items = R.items.filter((x) => x !== it); pendingDel = null; renderItems(); syncSummary(); S.toast(`${it.n} deleted · DELETE ${R.pres ? "/api/uar/presentations/" : "/api/uar/a2ui/components/"}${it.id}`, "warn"); }
+    if (action === "refresh") { const b = $("#refresh-btn"); loading(b, true); setTimeout(() => { loading(b, false); S.toast(`${REG[cur].name} refreshed · ${REG[cur].items.length} items`); }, 700); }
+    if (action === "send-test") sendTest();
+    if (action === "a2ui-act") S.toast(`${el.dataset.v} → POST /api/uar/runs/${$("#pv-run").value}/a2ui/actions`);
+    if (action === "copy") { const t = document.getElementById(el.dataset.target).textContent; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => S.toast("Copied"), () => S.toast("Clipboard unavailable · select the text instead", "warn")); }
+    if (action === "save-policy") { const b = $("#save-policy"); loading(b, true); setTimeout(() => { loading(b, false); S.toast(`Saved · mode ${pmode} · global ${globalMode} · PUT /api/uar/settings/presentation-policy`); }, 800); }
+    if (action === "goto-policy") document.querySelector('.srow[data-src="policy"]').click();
+    if (action === "goto-preview") { document.querySelector('.srow[data-src="builtin"]').click(); document.querySelector('[data-dtab="preview"]').click(); }
+    if (action === "wiz-back") setStep(step - 1);
+    if (action === "wiz-next") { if (step === 3) create(); else setStep(step + 1); }
+  });
+
+  render(cur); renderClients(); pvJson("sfc_appr_8c2f"); syncSummary();
+})();
+</script>
+</body>
+</html>

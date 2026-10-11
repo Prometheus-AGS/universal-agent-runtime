@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Runs · Universal Agent Runtime</title>
+<link rel="icon" href="assets/brand/uar-mark-dark.svg" />
+<link rel="stylesheet" href="assets/shell.css" />
+<link rel="stylesheet" href="assets/settings.css" />
+<style>
+  /* phase colours: copied from chat-workspace.html (reserved for run-phase indicators) */
+  .ph-context { background: oklch(75% 0.02 256); } .ph-retrieval { background: oklch(72% 0.14 255); } .ph-reasoning { background: oklch(55% 0.2 262); }
+  .ph-tool { background: var(--ok); } .ph-generate { background: var(--accent); } .ph-skill { background: var(--warn); } .ph-memory { background: oklch(60% 0.2 295); }
+  .ph-lifecycle { background: var(--faint); }
+
+  .status-dot.live { background: var(--live); box-shadow: 0 0 0 3px var(--live-soft); animation: pulse 1.6s var(--ease) infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 5px var(--live-soft); } }
+  .tablewrap { overflow-x: auto; margin: 0 -4px; padding: 0 4px 4px; }
+  .runs { font-size: 13px; }
+  .runs th { padding: 8px 10px; white-space: nowrap; }
+  .runs td { padding: 9px 10px; }
+  .runs tbody tr { cursor: pointer; }
+  .runs tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .runs tbody tr.sel td { background: var(--accent-soft); }
+  .runs tbody tr.sel .rid { color: var(--accent); }
+  .runs tr.child td { background: transparent; }
+  .runs tr.child .rcell { padding-left: 14px; }
+  .runs .sub { display: block; font-size: 11.5px; color: var(--faint); margin-top: 1px; white-space: nowrap; }
+  .stl { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; font-weight: 500; }
+  .rcell { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .rid { font-size: 12.5px; }
+  .kid-t, .kid-pad { width: 22px; height: 22px; display: inline-grid; place-items: center; border-radius: 6px; color: var(--muted); flex: none; font-size: 12px; }
+  .kid-t:hover { background: var(--hover); color: var(--fg); }
+  .kid-t .icon { transition: transform var(--base) var(--ease-out); }
+  .kid-t[aria-expanded="true"] .icon { transform: rotate(90deg); }
+  .clink { font-weight: 500; text-underline-offset: 3px; }
+  .clink:hover { text-decoration: underline; color: var(--fg); }
+  .why { display: block; font-size: 12px; color: var(--err); margin-top: 2px; }
+  .note { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .mdl { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .pstrip { display: flex; gap: 2px; width: 104px; height: 6px; border-radius: 3px; overflow: hidden; background: var(--input); }
+  .pstrip i { display: block; height: 100%; }
+  .runs td.acts { white-space: nowrap; text-align: right; }
+  .runs td.acts > * { vertical-align: middle; }
+  .confirm { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg); }
+  .count-line { font-size: 12.5px; color: var(--faint); margin: 10px 4px 0; }
+  .sel-lbl { font-size: 12.5px; color: var(--muted); }
+  .toolbar .select { width: 190px; height: 34px; font-size: 13px; }
+
+  /* inspector */
+  .runhead { padding: 2px 2px 14px; }
+  .runhead h2 { font-size: 17px; display: flex; align-items: center; gap: 8px; }
+  .runhead .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 6px; font-size: 12.5px; color: var(--muted); }
+  .runhead .meta .mono { font-size: 12px; }
+  .pane-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 4px 2px 8px; }
+  .pane-h h4 { font-family: var(--font-display); font-size: 14px; font-weight: 600; margin: 0; white-space: nowrap; }
+  .runs td:nth-child(3) { min-width: 190px; }
+  .panel-head .tabs { min-width: 0; overflow-x: auto; }
+  .panel-head .tab { padding: 0 8px; font-size: 12.5px; }
+  .pane-h .mono { font-size: 11.5px; color: var(--faint); text-align: right; }
+  .bar { height: 6px; border-radius: 3px; display: flex; overflow: hidden; gap: 2px; margin: 0 0 8px; background: var(--input); }
+  .bar i { display: block; height: 100%; }
+  .timeline { display: flex; flex-direction: column; }
+  .tl { display: grid; grid-template-columns: 14px 1fr auto; gap: 12px; padding: 8px 6px; border-radius: 8px; align-items: start; font-size: 13px; }
+  .tl:hover { background: var(--raised); }
+  .tl .ph { width: 10px; height: 10px; border-radius: 3px; margin-top: 4px; }
+  .tl .d { font-weight: 500; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .tl .s { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .tl .s .mono { font-size: 11.5px; color: var(--faint); }
+  .tl .t { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .tl.live { background: var(--live-soft); } .tl.live .t { color: var(--live); }
+  .tl.err .d { color: var(--err); }
+  .tl.pend .ph { background: var(--input); } .tl.pend .d { color: var(--muted); }
+  .apcard { background: var(--step-2); border-radius: var(--r-card); padding: 14px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+  .apcard .k { font-size: 12.5px; color: var(--muted); }
+  .apcard .v { font-size: 14.5px; }
+  .apcard .acts { display: flex; gap: 6px; align-items: center; }
+  .apcard .res { font-size: 12.5px; color: var(--muted); }
+  .dl { display: grid; grid-template-columns: 104px 1fr; gap: 4px 12px; font-size: 12.5px; margin: 0; }
+  .dl dt { color: var(--faint); } .dl dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+  .ugrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 16px; }
+  .ugrid .card { padding: 10px 12px; }
+  .ugrid .k { font-size: 11.5px; color: var(--faint); }
+  .ugrid .v { font-family: var(--font-mono); font-size: 14px; margin-top: 2px; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  .hrow { display: grid; grid-template-columns: 76px 1fr 60px; gap: 10px; align-items: center; font-size: 12.5px; padding: 4px 2px; }
+  .hrow .hb { height: 8px; border-radius: 4px; background: var(--input); overflow: hidden; }
+  .hrow .hb i { display: block; height: 100%; border-radius: 4px; }
+  .hrow .mono { text-align: right; font-size: 12px; }
+  .evt { font-size: 12.5px; } .evt td { padding: 7px 8px; } .evt th { padding: 6px 8px; }
+  .evt .mono { font-size: 11.5px; }
+  .ck { grid-template-columns: 1fr auto; margin-bottom: 4px; }
+  .ck .errline { display: block; color: var(--err); font-size: 12px; margin-top: 3px; }
+  .empty-p { font-size: 12.5px; color: var(--muted); padding: 8px 2px; }
+  @media (max-width: 920px) { .toolbar .input, .toolbar .select { width: 100%; } }
+</style>
+</head>
+<body>
+<div class="app" data-od-id="workspace-shell" data-panel-persist="false">
+  <div class="titlebar" data-tauri-drag-region><span class="mono">universal-agent-runtime</span>&nbsp;· Runs</div>
+  <aside data-workspace-nav data-current="runs" data-od-id="workspace-sidebar"></aside>
+
+  <main class="main" id="content" data-od-id="workspace-main">
+    <header class="topbar">
+      <button class="icon-btn" data-action="sidebar-mobile" aria-label="Open navigation" id="mobile-nav-btn" style="display:none"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+      <div class="title"><span class="crumb">Workspace</span><span>Runs</span></div>
+      <span class="spacer"></span>
+      <button class="chip" data-action="cmdk" data-od-id="topbar-search"><svg class="icon"><use href="#i-search"/></svg>Search <kbd style="margin-left:4px" data-kbd="⌘K">⌘K</kbd></button>
+      <button class="icon-btn" data-action="theme" aria-pressed="false" aria-label="Switch theme" title="Switch theme" data-od-id="topbar-theme"><svg class="icon"><use href="#i-sun"/></svg></button>
+    </header>
+
+    <section class="page">
+      <div class="page-inner">
+        <div class="page-head" data-od-id="page-head">
+          <div>
+            <h1 data-od-id="page-title">Runs</h1>
+            <p>Every run across conversations: what is live, what is waiting on you, what failed and why, and what it cost. Open a row to read its trace, answer a tool approval, or resume from a checkpoint.</p>
+          </div>
+          <div class="acts"><button class="btn btn-secondary" data-action="refresh" id="refresh-btn" data-od-id="refresh-runs"><svg class="icon"><use href="#i-refresh"/></svg>Refresh</button></div>
+        </div>
+
+        <div class="summary" data-od-id="summary-strip">
+          <div class="card sum" data-od-id="sum-live"><div class="k">Live</div><div class="v"><span class="status-dot live"></span><span id="sum-live">2</span><small id="sum-live-sub">1 running · 1 waiting</small></div></div>
+          <div class="card sum" data-od-id="sum-waiting"><div class="k">Waiting on you</div><div class="v"><span class="status-dot warn" id="sum-wait-dot"></span><span id="sum-wait">1</span><small id="sum-wait-sub">tool approval</small></div></div>
+          <div class="card sum" data-od-id="sum-failed"><div class="k">Failed · 24h</div><div class="v"><span class="status-dot err"></span><span id="sum-failed">2</span><small id="sum-failed-sub">tool_timeout · rate limit</small></div></div>
+          <div class="card sum" data-od-id="sum-spend"><div class="k">Spend · 24h (sample)</div><div class="v"><span class="mono" id="sum-spend">$0.39</span><small id="sum-spend-sub">cost_usd_estimate</small></div></div>
+        </div>
+        <p class="gap-note" style="margin:-12px 4px 18px" data-od-id="gap-aggregate"><i></i><span>Backend gap: Failed and Spend are summed client-side from each run's <span class="mono">status</span> and <span class="mono">cost_usd_estimate</span>. No endpoint returns aggregated spend for a time window.</span></p>
+
+        <div class="toolbar" data-od-id="runs-toolbar">
+          <div class="choice sm" role="radiogroup" aria-label="Status" id="status-filter" data-od-id="status-filter">
+            <button role="radio" data-value="all" aria-checked="true">All</button>
+            <button role="radio" data-value="live" aria-checked="false">Live</button>
+            <button role="radio" data-value="waiting" aria-checked="false">Waiting</button>
+            <button role="radio" data-value="failed" aria-checked="false">Failed</button>
+            <button role="radio" data-value="done" aria-checked="false">Done</button>
+          </div>
+          <label class="sr-only" for="agent-filter">Agent</label>
+          <div class="select-wrap"><select class="input select" id="agent-filter" data-od-id="agent-filter"><option value="">All agents</option></select></div>
+          <label class="sr-only" for="run-search">Search by run id or conversation</label>
+          <input class="input" type="search" id="run-search" placeholder="Run id or conversation" data-od-id="run-search" />
+          <span class="spacer"></span>
+          <span class="sel-lbl" id="range-lbl">Started in</span>
+          <div class="choice sm" role="radiogroup" aria-labelledby="range-lbl" id="range-filter" data-od-id="range-filter">
+            <button role="radio" data-value="60" aria-checked="false">1h</button>
+            <button role="radio" data-value="1440" aria-checked="true">24h</button>
+            <button role="radio" data-value="10080" aria-checked="false">7d</button>
+          </div>
+        </div>
+
+        <div class="tablewrap" data-od-id="runs-table-wrap">
+          <table class="table runs" data-od-id="runs-table">
+            <thead><tr><th>Status</th><th>Run</th><th>Conversation</th><th>Agent</th><th class="hide-sm">Model</th><th class="hide-sm">Phases</th><th class="num">Duration</th><th class="num hide-sm">Tokens</th><th class="num">Cost</th><th><span class="sr-only">Actions</span></th></tr></thead>
+            <tbody id="runs-body"></tbody>
+          </table>
+        </div>
+        <p class="count-line" id="count-line" data-od-id="runs-count"></p>
+        <p class="gap-note" data-od-id="gap-filters"><i></i><span>Backend gap: <span class="mono">GET /api/uar/runs</span> is a flat list. Filtering by <span class="mono">agent_id</span>, status and start time across conversations needs query params (or this page filters a full page client-side).</span></p>
+        <p class="gap-note" data-od-id="gap-nesting"><i></i><span>Backend gap: <span class="mono">Run</span> has no parent field. Sub-agent nesting is inferred from <span class="mono">SUBAGENT_STARTED</span> events and the <span class="mono">root_run_id</span> on admission evidence.</span></p>
+        <p class="gap-note" data-od-id="gap-waiting"><i></i><span>Backend gap: the backend reports <span class="mono">paused</span>, not why. "Waiting on you" means <span class="mono">paused</span> plus a non-empty <span class="mono">GET /runs/{id}/tool-approval/pending</span>, which costs one request per paused run.</span></p>
+      </div>
+    </section>
+  </main>
+
+  <aside class="panel" aria-label="Run inspector" aria-hidden="true" data-od-id="run-inspector">
+    <div class="panel-handle"></div>
+    <div class="panel-head">
+      <div class="tabs" role="tablist" aria-label="Run sections" data-od-id="inspector-tabs">
+        <button class="tab" role="tab" data-tab="trace" aria-selected="true" id="tab-trace">Trace</button>
+        <button class="tab" role="tab" data-tab="approvals" aria-selected="false" id="tab-approvals">Approvals <span class="count" id="ap-count"></span></button>
+        <button class="tab" role="tab" data-tab="evidence" aria-selected="false" id="tab-evidence">Evidence <span class="count" id="ev-count"></span></button>
+        <button class="tab" role="tab" data-tab="usage" aria-selected="false" id="tab-usage">Usage</button>
+        <button class="tab" role="tab" data-tab="checkpoints" aria-selected="false" id="tab-checkpoints">Checkpoints <span class="count" id="ck-count"></span></button>
+      </div>
+      <span style="flex:1"></span>
+      <button class="icon-btn" data-action="panel-close" aria-label="Close inspector (Esc)" data-od-id="inspector-close"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="panel-body">
+      <div class="runhead" id="runhead" data-od-id="inspector-runhead"></div>
+      <div role="tabpanel" data-tabpanel="trace" class="active" aria-labelledby="tab-trace" id="p-trace" data-od-id="trace-tab"></div>
+      <div role="tabpanel" data-tabpanel="approvals" aria-labelledby="tab-approvals" id="p-approvals" data-od-id="approvals-tab"></div>
+      <div role="tabpanel" data-tabpanel="evidence" aria-labelledby="tab-evidence" id="p-evidence" data-od-id="evidence-tab"></div>
+      <div role="tabpanel" data-tabpanel="usage" aria-labelledby="tab-usage" id="p-usage" data-od-id="usage-tab"></div>
+      <div role="tabpanel" data-tabpanel="checkpoints" aria-labelledby="tab-checkpoints" data-od-id="checkpoints-tab">
+        <div id="p-checkpoints"></div>
+        <p class="gap-note" data-od-id="gap-retry"><i></i><span>Backend gap: there is no retry endpoint. <span class="mono">POST /runs/{id}/resume/{checkpoint_id}</span> is the closest thing and always starts a new run.</span></p>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-overlay" aria-hidden="true"></div>
+</div>
+
+<div class="cmdk-backdrop"></div>
+<div class="cmdk" role="dialog" aria-label="Search" data-od-id="cmdk">
+  <input class="input" type="search" placeholder="Search runs and pages…" aria-label="Search runs and pages" />
+  <div class="cmdk-list">
+    <p class="menu-label">Runs</p>
+    <button class="menu-item" data-action="open-waiting"><svg class="icon"><use href="#i-alert"/></svg>Open the run waiting on you</button>
+    <button class="menu-item" data-action="filter" data-v="live"><svg class="icon"><use href="#i-play"/></svg>Show live runs</button>
+    <button class="menu-item" data-action="filter" data-v="failed"><svg class="icon"><use href="#i-x"/></svg>Show failed runs</button>
+    <button class="menu-item" data-action="refresh"><svg class="icon"><use href="#i-refresh"/></svg>Refresh runs</button>
+    <p class="menu-label">Workspace</p>
+    <a class="menu-item" href="chat-workspace.html"><svg class="icon"><use href="#i-chat"/></svg>Chat</a>
+    <a class="menu-item" href="knowledge.html"><svg class="icon"><use href="#i-book"/></svg>Knowledge</a>
+    <a class="menu-item" href="agents.html"><svg class="icon"><use href="#i-bot"/></svg>Agents</a>
+    <a class="menu-item" href="a2ui-registries.html"><svg class="icon"><use href="#i-layers"/></svg>A2UI registries</a>
+    <a class="menu-item" href="runs.html"><svg class="icon"><use href="#i-runs"/></svg>Runs</a>
+    <p class="menu-label">Settings</p>
+    <a class="menu-item" href="models-and-providers.html"><svg class="icon"><use href="#i-cpu"/></svg>Models &amp; providers</a>
+    <a class="menu-item" href="skills.html"><svg class="icon"><use href="#i-spark"/></svg>Skills</a>
+    <a class="menu-item" href="tools-and-mcp.html"><svg class="icon"><use href="#i-tool"/></svg>Tools &amp; MCP</a>
+  </div>
+</div>
+
+<script src="assets/settings.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+(function () {
+  "use strict";
+  const S = window.UARShell, app = document.querySelector(".app"), $ = (s) => document.querySelector(s);
+  const AG = { "default-agent": "Default Assistant", "orchestrator-agent": "Orchestrator", "compiler-agent": "UAR Compiler Agent", "general-purpose": "general-purpose", "rust-reviewer": "rust-reviewer", "ops-agent": "Ops agent", "policy-reviewer": "Policy reviewer" };
+  const PH = ["context", "skill", "memory", "retrieval", "reasoning", "tool", "generate"];
+  const LABEL = { context: "Context assembled", skill: "Skill matched", memory: "Memory recall", retrieval: "Knowledge retrieval", reasoning: "Reasoning", tool: "Tool calls", generate: "Response generated" };
+  const KIND = { context: "state", skill: "state", memory: "tool", retrieval: "tool", reasoning: "reasoning", tool: "tool", generate: "message" };
+  const EVN = { context: "STATE_DELTA", skill: "STEP_STARTED", memory: "TOOL_CALL_RESULT", retrieval: "TOOL_CALL_RESULT", reasoning: "STEP_STARTED", tool: "TOOL_CALL_RESULT", generate: "STEP_STARTED" };
+  const ST = { queued: ["off", "Queued"], running: ["live", "Running"], waiting: ["warn", "Waiting on you"], completed: ["", "Completed"], failed: ["err", "Failed"], cancelled: ["off", "Cancelled"] };
+  const LIVE = ["queued", "running", "waiting"];
+  const EVST = { succeeded: "ok", failed: "err", denied: "err", awaiting_approval: "warn", outcome_unknown: "warn", claim_intent: "live", cancelled: "", invalidated: "", interrupted: "" };
+
+  /* step: [phase, kind, title, detail, secs (null = live, -1 = not started), AG-UI event] */
+  const R = (o) => Object.assign({ kids: [], ev: [], ck: [], steps: null, approval: null, parent: null, lastEv: 0 }, o);
+  const RUNS = [
+    R({ id: "8c2f1e07-5b3a-4d19-9a6e-2f0c7d3b9e41", agent: "ops-agent", conv: "Staging MCP timeouts", st: "running", model: "anthropic/claude-sonnet-5", age: 1, dur: 41, tin: 18420, tout: 2113, cost: 0.058, lastEv: 214, note: "step 6 of 7",
+      steps: [["context", "state", "Context assembled", "system prompt · 4 project files · thread history", 0.3, "STATE_DELTA"], ["retrieval", "tool", "Knowledge retrieval", "mcp-runbook · 3 passages · hybrid", 1.1, "TOOL_CALL_RESULT"], ["reasoning", "reasoning", "Planned the investigation", "effort medium · 6,902 thinking tokens", 12.6, "STEP_STARTED"], ["tool", "tool", "mcp.health", "staging/mcp-filesystem · 200 · healthy", 0.8, "TOOL_CALL_RESULT"], ["tool", "tool", "logs.tail", "staging/mcp-filesystem · 500 lines · 2 timeouts at 71 s and 84 s", 2.4, "TOOL_CALL_RESULT"], ["reasoning", "reasoning", "Comparing the timeouts with timeout_secs", "streaming", null, "STEP_STARTED"], ["generate", "message", "Report and proposed change", "not started", -1, ""]],
+      ev: [["ev_8c2f01", "mcp.health", "succeeded", "10:41:12", "inv_8c2f04", "adm_8c2f04"], ["ev_8c2f02", "logs.tail", "succeeded", "10:41:15", "inv_8c2f05", "adm_8c2f05"]],
+      ck: [["ckpt_8c2f05", 5, "after logs.tail", "10:41:16"]] }),
+    R({ id: "3b9a6c12-7e4d-4a0b-b5f1-90de2a6c11d7", agent: "orchestrator-agent", conv: "Rotate the Groq key", st: "waiting", model: "anthropic/claude-opus-5-5", age: 6, dur: 312, tin: 9810, tout: 1460, cost: 0.041,
+      steps: [["context", "state", "Context assembled", "thread history · providers.toml referenced", 0.4, "STATE_DELTA"], ["reasoning", "reasoning", "Split the task between two agents", "review policy, then write config", 8.9, "STEP_STARTED"], ["lifecycle", "state", "Policy reviewer finished", "Cedar check passed · 0 forbids", 21.3, "SUBAGENT_FINISHED"], ["lifecycle", "state", "Ops agent started", "writes config/providers.toml", 1.2, "SUBAGENT_STARTED"], ["lifecycle", "approval", "Waiting on a sub-agent tool approval", "filesystem__write_file · Ops agent", null, "TOOL_CALL_ARGS"], ["generate", "message", "Summarize the rotation", "not started", -1, ""]],
+      kids: [
+        R({ id: "a71d0f3e-2c58-4e96-8b0a-6f4e1d9c2b5a", agent: "policy-reviewer", st: "completed", model: "openai/gpt-6-sol", age: 6, dur: 21.3, tin: 4210, tout: 388, cost: 0.012, ph: { context: 0.3, reasoning: 14.2, tool: 5.1, generate: 1.7 }, ev: [["ev_a71d01", "filesystem__read_file", "succeeded", "10:36:20", "inv_a71d03", "adm_a71d03"]] }),
+        R({ id: "5d0e4b81-9f27-4c3a-a6d2-1b7e8c0f53a2", agent: "ops-agent", st: "waiting", model: "anthropic/claude-sonnet-5", age: 5, dur: 268, tin: 6120, tout: 540, cost: 0.019,
+          steps: [["context", "state", "Context from orchestrator", "task: point groq at the rotated key", 0.2, "STATE_DELTA"], ["tool", "tool", "filesystem__read_file", "config/providers.toml · 38 lines", 0.6, "TOOL_CALL_RESULT"], ["reasoning", "reasoning", "Prepared the edit", "groq api_key_env → GROQ_API_KEY_2026_10", 4.1, "STEP_STARTED"], ["lifecycle", "approval", "filesystem__write_file needs approval", "config/providers.toml · policy Ask", null, "TOOL_CALL_ARGS"], ["generate", "message", "Report back to the orchestrator", "not started", -1, ""]],
+          approval: { id: "apr_5d02e9", tool: "filesystem__write_file", path: "config/providers.toml", change: "1 line · api_key_env", adm: "adm_5d0e04", at: "10:37:44" },
+          ev: [["ev_5d0e01", "filesystem__read_file", "succeeded", "10:37:39", "inv_5d0e02", "adm_5d0e02"], ["ev_5d0e02", "filesystem__write_file", "awaiting_approval", "10:37:44", "inv_5d0e04", "adm_5d0e04"]] }),
+      ] }),
+    R({ id: "e4c7a2d9-1b3f-4e8a-9c60-7d2f5a8b0e13", agent: "default-agent", conv: "Summarize the Cedar policy diff", st: "completed", model: "anthropic/claude-sonnet-5", age: 14, dur: 18.6, tin: 7320, tout: 902, cost: 0.022, ph: { context: 0.4, retrieval: 1.6, reasoning: 5.2, generate: 11.4 } }),
+    R({ id: "c19b5f7a-08d2-4e6b-9a31-5e7c2f0d8b46", agent: "ops-agent", conv: "Why did run 7f3a stall?", st: "failed", model: "anthropic/claude-sonnet-5", age: 58, dur: 68.8, tin: 14260, tout: 610, cost: 0.052, why: "RUN_ERROR · tavily timed out after 60 s",
+      steps: [["context", "state", "Context assembled", "thread history · run 7f3a logs attached", 0.4, "STATE_DELTA"], ["retrieval", "tool", "Knowledge retrieval", "runbooks · 2 passages", 0.9, "TOOL_CALL_RESULT"], ["reasoning", "reasoning", "Planned the diagnosis", "effort medium", 6.2, "STEP_STARTED"], ["tool", "tool", "fetch", "status page · 200", 1.3, "TOOL_CALL_RESULT"], ["tool", "tool", "tavily", "search · no response", 60.0, "TOOL_CALL_ARGS"], ["lifecycle", "error", "tool_timeout", "tavily timed out after 60 s · server reconnecting, attempt 3", 0, "RUN_ERROR"]],
+      ev: [["ev_c19b01", "fetch", "succeeded", "09:49:31", "inv_c19b04", "adm_c19b04"], ["ev_c19b02", "tavily", "outcome_unknown", "09:50:31", "inv_c19b05", "adm_c19b05"], ["ev_c19b03", "tavily", "invalidated", "09:50:32", "inv_c19b05", "adm_c19b05"]],
+      ck: [["ckpt_c19b03", 3, "after reasoning", "09:49:29"], ["ckpt_c19b05", 5, "tavily call admitted", "09:49:31", "ev_c19b03"]] }),
+    R({ id: "2d8e5c4b-6a19-4f73-8e0d-b4c2a7f19e65", agent: "general-purpose", conv: "Knowledge base re-embed plan", st: "completed", model: "anthropic/claude-opus-5-5", age: 180, dur: 96.2, tin: 31840, tout: 4210, cost: 0.134, ph: { context: 0.6, memory: 1.8, retrieval: 4.4, reasoning: 38.9, tool: 12.1, generate: 38.4 },
+      ev: [["ev_2d8e01", "kreuzberg", "succeeded", "07:48:02", "inv_2d8e05", "adm_2d8e05"], ["ev_2d8e02", "surreal_memory", "succeeded", "07:48:40", "inv_2d8e06", "adm_2d8e06"]] }),
+    R({ id: "f60a1c3e-8b72-4d5e-a914-0c6e3b8d27f1", agent: "rust-reviewer", conv: "Review the admission evidence patch", st: "cancelled", model: "anthropic/claude-sonnet-5", age: 300, dur: 33.7, tin: 11020, tout: 214, cost: 0.035, note: "cancelled by Travis James", ph: { context: 0.5, skill: 0.3, reasoning: 20.4, tool: 12.5 },
+      ev: [["ev_f60a01", "filesystem__read_file", "cancelled", "05:49:02", "inv_f60a04", "adm_f60a04"]], ck: [["ckpt_f60a02", 2, "after skill match", "05:48:11"]] }),
+    R({ id: "0b4f7e92-3c1a-4a6d-9f58-e2d71c4a8b30", agent: "default-agent", conv: "Standup notes 10-04", st: "completed", model: "groq/llama-3.3-70b-versatile", age: 900, dur: 3.1, tin: 2140, tout: 388, cost: 0.001, ph: { context: 0.2, reasoning: 0.9, generate: 2.0 } }),
+    R({ id: "9e3d1b6f-0a47-4c2e-8d95-7b1f4e6a03c9", agent: "policy-reviewer", conv: "Cedar approvals audit", st: "failed", model: "openai/gpt-6-sol", age: 1300, dur: 12.8, tin: 5630, tout: 0, cost: 0.016, why: "RUN_ERROR · openai 429 rate limited", ph: { context: 0.4, retrieval: 2.1, reasoning: 10.3 }, ck: [["ckpt_9e3d02", 2, "after retrieval", "Oct 4 · 20:12"]] }),
+    R({ id: "6c2a8f14-d03e-4b97-a5e1-38f0b9c4d2e6", agent: "compiler-agent", conv: "Compile ops-agent skill bundle", st: "completed", model: "anthropic/claude-sonnet-5", age: 2900, dur: 44.0, tin: 22100, tout: 6120, cost: 0.158, ph: { context: 0.5, skill: 1.1, reasoning: 17.6, tool: 9.8, generate: 15.0 } }),
+    R({ id: "4a7e0d39-5f12-4c8b-b6a3-e91c2d7f0b54", agent: "general-purpose", conv: "API reference refresh", st: "completed", model: "groq/llama-3.3-70b-versatile", age: 6200, dur: 22.4, tin: 15400, tout: 2900, cost: 0.012, ph: { context: 0.4, retrieval: 3.2, reasoning: 6.6, generate: 12.2 } }),
+  ];
+  RUNS.forEach((r) => r.kids.forEach((k) => { k.parent = r.id; k.conv = r.conv; }));
+  const all = () => RUNS.flatMap((r) => [r, ...r.kids]);
+  const byId = (id) => all().find((r) => r.id === id);
+  const rootOf = (r) => (r.parent ? byId(r.parent) : r);
+
+  const filt = { status: "all", agent: "", q: "", range: 1440 };
+  const expanded = new Set(["3b9a6c12-7e4d-4a0b-b5f1-90de2a6c11d7"]);
+  let sel = null, confirmId = null, busy = null;
+
+  const short = (id) => id.slice(0, 4) + "…" + id.slice(-2);
+  const money = (n) => "$" + n.toFixed(3);
+  const ktok = (n) => (n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n));
+  const fmtDur = (s) => (s < 60 ? s.toFixed(s < 10 ? 1 : 0) + "s" : Math.floor(s / 60) + "m " + String(Math.floor(s % 60)).padStart(2, "0") + "s");
+  const ago = (m) => (m < 1 ? "just now" : m < 60 ? m + "m ago" : m < 1440 ? Math.round(m / 60) + "h ago" : Math.round(m / 1440) + "d ago");
+  const icon = (n, c) => `<svg class="icon${c ? " " + c : ""}"><use href="#i-${n}"/></svg>`;
+
+  /* ─── derived run data ─── */
+  function stepsOf(r) {
+    if (r.steps) return r.steps;
+    const s = PH.filter((p) => r.ph && r.ph[p]).map((p) => [p, KIND[p], LABEL[p], "", r.ph[p], EVN[p]]);
+    if (r.st === "failed") s.push(["lifecycle", "error", r.why.split(" · ").slice(1).join(" · ") || "run error", r.why, 0, "RUN_ERROR"]);
+    else if (r.st === "cancelled") s.push(["lifecycle", "state", "Run cancelled", "POST /runs/{id}/cancel", 0, "RUN_FINISHED"]);
+    else if (r.st === "completed") s.push(["lifecycle", "state", "Run finished", "", 0, "RUN_FINISHED"]);
+    return s;
+  }
+  function secsOf(r, step) {
+    if (step[4] !== null) return step[4];
+    const done = r.steps.reduce((a, x) => a + (x[4] > 0 ? x[4] : 0), 0);
+    return Math.max(0, r.dur - done);
+  }
+  function phOf(r) {
+    if (!r.steps) return r.ph || {};
+    const o = {}; r.steps.forEach((s) => { if (PH.includes(s[0]) && s[4] !== -1) o[s[0]] = (o[s[0]] || 0) + secsOf(r, s); }); return o;
+  }
+  function strip(r) {
+    const ph = phOf(r), tot = PH.reduce((a, p) => a + (ph[p] || 0), 0) || 1;
+    const segs = PH.filter((p) => ph[p]).map((p) => `<i class="ph-${p}" style="width:${(ph[p] / tot) * 100}%" title="${p} ${fmtDur(ph[p])}"></i>`).join("");
+    const lab = PH.filter((p) => ph[p]).map((p) => `${p} ${Math.round((ph[p] / tot) * 100)}%`).join(", ");
+    return `<span class="pstrip" role="img" aria-label="Phase timings: ${lab}">${segs}</span>`;
+  }
+  const pending = () => all().filter((r) => r.approval && !r.approval.done);
+
+  /* ─── table ─── */
+  function matches(r) {
+    const fam = [r, ...r.kids];
+    if (r.age > filt.range) return false;
+    if (filt.status === "live" && !LIVE.includes(r.st)) return false;
+    if (filt.status === "waiting" && r.st !== "waiting") return false;
+    if (filt.status === "failed" && r.st !== "failed") return false;
+    if (filt.status === "done" && !["completed", "cancelled"].includes(r.st)) return false;
+    if (filt.agent && !fam.some((x) => x.agent === filt.agent)) return false;
+    if (filt.q) { const q = filt.q.toLowerCase(); if (!fam.some((x) => x.id.includes(q) || short(x.id).includes(q) || (x.conv || "").toLowerCase().includes(q))) return false; }
+    return true;
+  }
+  function actions(r, child) {
+    if (confirmId === r.id) return `<span class="confirm" data-od-id="cancel-confirm-${r.id.slice(0, 8)}">Cancel${r.kids.length ? ` with ${r.kids.length} sub-agent runs` : ""}?<button class="btn btn-danger btn-sm${busy === r.id ? " is-loading" : ""}" data-action="cancel-yes" data-id="${r.id}"${busy === r.id ? " disabled" : ""}>${busy === r.id ? icon("refresh", "spin") : ""}Cancel run</button><button class="btn btn-ghost btn-sm" data-action="cancel-no">Keep</button></span>`;
+    const cancel = !child && LIVE.includes(r.st) ? `<button class="btn btn-ghost btn-sm" data-action="cancel-ask" data-id="${r.id}" data-od-id="cancel-${r.id.slice(0, 8)}">${icon("stop")}Cancel</button>` : "";
+    const open = child ? "" : `<a class="icon-btn" href="chat-workspace.html" aria-label="Open conversation ${r.conv}" title="Open conversation" data-od-id="open-conv-${r.id.slice(0, 8)}">${icon("chat")}</a>`;
+    return cancel + open;
+  }
+  function rowHTML(r, child) {
+    const [dc, lab] = ST[r.st], open = expanded.has(r.id), k = r.kids.length;
+    const lead = k ? `<button class="kid-t" data-action="toggle-kids" data-id="${r.id}" aria-expanded="${open}" aria-label="${open ? "Hide" : "Show"} ${k} sub-agent runs">${icon("chevr", "icon-sm")}</button>` : `<span class="kid-pad" aria-hidden="true">${child ? "↳" : ""}</span>`;
+    const conv = child ? `<span class="note">sub-agent of <span class="mono">${short(r.parent)}</span></span>` : `<a class="clink" href="chat-workspace.html">${r.conv}</a>`;
+    return `<tr class="${child ? "child" : ""}${sel === r.id ? " sel" : ""}" data-run="${r.id}" tabindex="0" aria-current="${sel === r.id}" data-od-id="run-row-${r.id.slice(0, 8)}">
+      <td><span class="stl"><span class="status-dot ${dc}"></span>${lab}</span></td>
+      <td><span class="rcell">${lead}<span class="mono rid" title="${r.id}">${short(r.id)}</span></span></td>
+      <td>${conv}${r.why ? `<span class="why">${r.why}</span>` : ""}${r.note ? `<span class="note" data-cell="note">${r.note}</span>` : ""}</td>
+      <td>${AG[r.agent]}<span class="sub mono">${r.agent}</span></td>
+      <td class="hide-sm"><span class="mono mdl">${r.model}</span></td>
+      <td class="hide-sm" data-cell="strip">${strip(r)}</td>
+      <td class="num" data-cell="dur">${fmtDur(r.dur)}<span class="sub">${ago(r.age)}</span></td>
+      <td class="num hide-sm" data-cell="tok">${ktok(r.tin + r.tout)}</td>
+      <td class="num" data-cell="cost">${money(r.cost)}</td>
+      <td class="acts">${actions(r, child)}</td></tr>`;
+  }
+  function renderTable() {
+    const vis = RUNS.filter(matches);
+    $("#runs-body").innerHTML = vis.length ? vis.map((r) => rowHTML(r, false) + (expanded.has(r.id) ? r.kids.map((k) => rowHTML(k, true)).join("") : "")).join("")
+      : `<tr><td colspan="10"><div class="empty" data-od-id="runs-empty">${icon("runs")}<b>No runs match</b><span>Clear the search or widen the time range.</span></div></td></tr>`;
+    const inRange = RUNS.filter((r) => r.age <= filt.range).length;
+    $("#count-line").textContent = `Showing ${vis.length} of ${inRange} root runs started in the last ${filt.range === 60 ? "hour" : filt.range === 1440 ? "24 hours" : "7 days"} · ${RUNS.reduce((a, r) => a + r.kids.length, 0)} sub-agent runs nested`;
+  }
+  function renderSummary() {
+    const live = RUNS.filter((r) => LIVE.includes(r.st)), running = live.filter((r) => r.st !== "waiting").length, wait = pending().length;
+    const day = all().filter((r) => r.age <= 1440), failed = day.filter((r) => r.st === "failed");
+    $("#sum-live").textContent = live.length; $("#sum-live-sub").textContent = `${running} running · ${live.length - running} waiting`;
+    $("#sum-wait").textContent = wait; $("#sum-wait-sub").textContent = wait ? "tool approval" : "nothing pending";
+    $("#sum-wait-dot").className = "status-dot " + (wait ? "warn" : "off");
+    $("#sum-failed").textContent = failed.length; $("#sum-failed-sub").textContent = failed.length ? "tool_timeout · rate limit" : "none";
+    $("#sum-spend").textContent = "$" + day.reduce((a, r) => a + r.cost, 0).toFixed(2);
+    const badge = document.querySelector("[data-workspace-nav] .chip.live"); if (badge) badge.textContent = live.length;
+  }
+  const refresh = () => { renderTable(); renderSummary(); if (sel) renderPanel(); };
+
+  /* ─── inspector ─── */
+  function renderHead(r) {
+    const [dc, lab] = ST[r.st];
+    $("#runhead").innerHTML = `<h2><span class="status-dot ${dc}"></span>${r.parent ? "Sub-agent run" : r.conv}</h2>
+      <div class="meta"><span class="mono" title="run_id">${r.id}</span></div>
+      <div class="meta"><span class="chip ${dc === "live" ? "live" : dc === "warn" ? "warn" : dc === "err" ? "err" : dc === "" ? "ok" : ""}" style="height:22px">${lab}</span><span>${AG[r.agent]} · <span class="mono">${r.agent}</span></span>${r.parent ? `<button class="chip" data-action="select" data-id="${r.parent}" data-od-id="inspector-parent">Root run <span class="mono">${short(r.parent)}</span></button>` : `<a class="chip" href="chat-workspace.html" data-od-id="inspector-open-conv">${icon("chat")}Open conversation</a>`}</div>`;
+  }
+  function renderTrace(r) {
+    const steps = stepsOf(r), ph = phOf(r), tot = PH.reduce((a, p) => a + (ph[p] || 0), 0) || 1, live = LIVE.includes(r.st);
+    const done = steps.filter((s) => s[4] !== -1).length;
+    const rows = steps.map((s, i) => {
+      const t = s[4] === -1 ? "—" : fmtDur(r.steps ? secsOf(r, s) : s[4]), isLive = s[4] === null && live;
+      return `<div class="tl${isLive ? " live" : ""}${s[4] === -1 ? " pend" : ""}${s[1] === "error" ? " err" : ""}" data-od-id="trace-step-${i}"><span class="ph ph-${s[0]}"></span><div><div class="d">${s[2]}<span class="cap">${s[1]}</span></div><div class="s">${s[3]}${s[5] ? ` · <span class="mono">${s[5]}</span>` : ""}</div></div><span class="t"${isLive ? ' data-live-clock' : ""}>${t}</span></div>`;
+    }).join("");
+    $("#p-trace").innerHTML = `<div class="pane-h"><h4>${live ? `Step ${Math.min(done, steps.length)} of ${steps.length}` : steps.length + " steps"} · <span class="mono">${fmtDur(r.dur)}</span></h4><span class="mono">${live && r.st === "running" ? `SSE /runs/{id}/stream · last_event_id ${r.lastEv}` : `GET /runs/{id}`}</span></div>
+      <div class="bar" aria-hidden="true">${PH.filter((p) => ph[p]).map((p) => `<i class="ph-${p}" style="width:${(ph[p] / tot) * 100}%"></i>`).join("")}</div>
+      <div class="timeline" data-od-id="trace-timeline">${rows}</div>`;
+  }
+  function renderApprovals(r) {
+    const fam = [rootOf(r), ...rootOf(r).kids].filter((x) => x.approval && (x === r || !r.parent));
+    $("#ap-count").textContent = fam.filter((x) => !x.approval.done).length || "";
+    $("#p-approvals").innerHTML = fam.length ? fam.map((x) => {
+      const a = x.approval, b = busy === a.id;
+      return `<div class="apcard" data-od-id="approval-${a.id}"><div class="k">Tool approval · requested by ${AG[x.agent]} in run <span class="mono">${short(x.id)}</span> at <span class="mono">${a.at}</span></div>
+        <div class="v mono">${a.tool}</div>
+        <dl class="dl"><dt>path</dt><dd class="mono">${a.path}</dd><dt>change</dt><dd>${a.change}</dd><dt>approval_id</dt><dd class="mono">${a.id}</dd><dt>admission_id</dt><dd class="mono">${a.adm}</dd><dt>policy</dt><dd>Ask · set in <a href="tools-and-mcp.html" style="text-decoration:underline;text-underline-offset:3px">Tools &amp; MCP</a></dd></dl>
+        ${a.done ? `<div class="res" data-od-id="approval-result"><span class="chip ${a.done === "allowed" ? "ok" : "err"}" style="height:22px">${a.done === "allowed" ? "Allowed once" : "Denied"}</span> · <span class="mono">POST /runs/${short(x.id)}/tool-approval</span> · the run resumed</div>`
+        : `<div class="acts" data-od-id="approval-actions"><button class="btn btn-primary btn-sm${b ? " is-loading" : ""}" data-action="approve" data-id="${x.id}" data-v="1"${b ? " disabled" : ""} data-od-id="approval-allow">${b ? icon("refresh", "spin") : icon("check")}Allow once</button><button class="btn btn-secondary btn-sm" data-action="approve" data-id="${x.id}" data-v="0"${b ? " disabled" : ""} data-od-id="approval-deny">Deny</button><span class="faint mono" style="font-size:11.5px">{approved, approval_id}</span></div>`}</div>`;
+    }).join("") : `<p class="empty-p" data-od-id="approvals-empty">No pending approvals. <span class="mono">GET /runs/{id}/tool-approval/pending</span> returned an empty list.</p>`;
+  }
+  function renderEvidence(r) {
+    const root = rootOf(r), fam = r.parent ? [r] : [r, ...r.kids];
+    const recs = fam.flatMap((x) => x.ev.map((e) => ({ e, x })));
+    $("#ev-count").textContent = recs.length || "";
+    $("#p-evidence").innerHTML = `<div class="pane-h"><h4>Tool admission evidence</h4><span class="mono">GET /runs/{id}/tool-admission-evidence</span></div>` + (recs.length ? `<table class="table evt" data-od-id="evidence-table"><thead><tr><th>evidence_id</th><th>tool_name</th><th>state</th><th class="num">occurred_at</th></tr></thead><tbody>${recs.map(({ e, x }, i) => `<tr data-od-id="evidence-${e[0]}"><td><span class="mono">${e[0]}</span><span class="sub mono" style="display:block;color:var(--faint);white-space:nowrap">${e[4]} · ${e[5]}${x !== r ? ` · run ${short(x.id)}` : ""}</span></td><td class="mono">${e[1]}</td><td><span class="chip ${EVST[e[2]]}" style="height:20px;font-size:11px">${e[2]}</span></td><td class="num">${e[3]}</td></tr>`).join("")}</tbody></table><p class="faint" style="font-size:12px;margin:8px 4px 0">root_run_id <span class="mono">${short(root.id)}</span> · each record also carries run_id, invocation_id and admission_id.</p>`
+      : `<p class="empty-p" data-od-id="evidence-empty">No tool calls were admitted in this run.</p>`);
+  }
+  function renderUsage(r) {
+    const ph = phOf(r), max = Math.max(...PH.map((p) => ph[p] || 0), 0.1), kidCost = r.kids.reduce((a, k) => a + k.cost, 0);
+    const card = (k, v, id) => `<div class="card" data-od-id="usage-${id}"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+    $("#p-usage").innerHTML = `<div class="ugrid">${card("input_tokens", r.tin.toLocaleString("en-US"), "in")}${card("output_tokens", r.tout.toLocaleString("en-US"), "out")}${card("total_tokens", (r.tin + r.tout).toLocaleString("en-US"), "total")}${card("cost_usd_estimate", money(r.cost) + (kidCost ? `<span class="faint" style="font-size:11.5px;display:block">+ ${money(kidCost)} in ${r.kids.length} sub-agent runs</span>` : ""), "cost")}${card("model", r.model.split("/")[1], "model")}${card("provider_id", r.model.split("/")[0], "provider")}</div>
+      <div class="pane-h"><h4>phase_timings</h4><span class="mono">seconds</span></div>
+      <div data-od-id="usage-phase-chart">${PH.map((p) => `<div class="hrow" data-od-id="usage-ph-${p}"><span>${p}</span><span class="hb" role="img" aria-label="${p} ${fmtDur(ph[p] || 0)}"><i class="ph-${p}" style="width:${((ph[p] || 0) / max) * 100}%"></i></span><span class="mono${ph[p] ? "" : " faint"}">${(ph[p] || 0).toFixed(1)}</span></div>`).join("")}</div>`;
+  }
+  function renderCheckpoints(r) {
+    $("#ck-count").textContent = r.ck.length || "";
+    const live = LIVE.includes(r.st);
+    $("#p-checkpoints").innerHTML = `<div class="pane-h"><h4>Checkpoints</h4><span class="mono">GET /runs/{id}/checkpoints</span></div>` + (r.ck.length ? r.ck.map((c) => {
+      const b = busy === c[0], bad = c[5] === "invalid";
+      return `<div class="mrow ck" data-od-id="checkpoint-${c[0]}"><span><span class="mono">${c[0]}</span> · after step ${c[1]}<span class="sub">${c[2]} · <span class="mono">${c[3]}</span>${bad ? ' · <span class="chip err" style="height:18px;font-size:11px">invalidated</span>' : ""}</span>${c[6] ? `<span class="errline">${c[6]}</span>` : ""}</span>
+        <button class="btn btn-secondary btn-sm${b ? " is-loading" : ""}" data-action="resume" data-id="${r.id}" data-ck="${c[0]}"${b || bad || live ? " disabled" : ""} title="${live ? "Cancel the run first; resume starts a new run" : "POST /runs/{id}/resume/{checkpoint_id}"}" data-od-id="resume-${c[0]}">${icon(b ? "refresh" : "play", b ? "spin" : "")}Resume</button></div>`;
+    }).join("") + (live ? `<p class="faint" style="font-size:12px;margin:8px 4px 0">This run is live. Resume is available once it has stopped.</p>` : "")
+      : `<p class="empty-p" data-od-id="checkpoints-empty">No checkpoints were written for this run.</p>`);
+  }
+  function renderPanel() {
+    const r = byId(sel); if (!r) return;
+    renderHead(r); renderTrace(r); renderApprovals(r); renderEvidence(r); renderUsage(r); renderCheckpoints(r);
+  }
+  function select(id, tab) {
+    sel = id; confirmId = null; renderTable(); renderPanel();
+    const r = byId(id); S.openPanel(tab || (r.approval && !r.approval.done ? "approvals" : r.st === "waiting" && !r.parent ? "approvals" : "trace"));
+  }
+
+  /* ─── flows ─── */
+  function advance(r, newStep) {
+    const i = r.steps.findIndex((s) => s[4] === null);
+    if (i >= 0) r.steps[i] = r.steps[i].slice(0, 4).concat([Math.round(secsOf(r, r.steps[i]) * 10) / 10, r.steps[i][5]]);
+    const p = r.steps.findIndex((s) => s[4] === -1);
+    if (newStep) r.steps.splice(p < 0 ? r.steps.length : p, 0, newStep);
+  }
+  function approve(id, ok) {
+    const k = byId(id), a = k.approval; busy = a.id; renderApprovals(k);
+    setTimeout(() => {
+      busy = null; a.done = ok ? "allowed" : "denied";
+      k.st = "running"; k.lastEv = 41;
+      advance(k, ok ? ["tool", "tool", "filesystem__write_file", "config/providers.toml · writing", null, "TOOL_CALL_ARGS"] : ["reasoning", "reasoning", "Replanning without the write", "operator denied filesystem__write_file", null, "STEP_STARTED"]);
+      const ev = k.ev.find((e) => e[2] === "awaiting_approval"); if (ev) ev[2] = ok ? "claim_intent" : "denied";
+      const root = rootOf(k);
+      if (root !== k) { root.st = "running"; root.lastEv = 96; advance(root, ["lifecycle", "state", "Ops agent resumed", ok ? "write allowed once" : "write denied", null, "STEP_STARTED"]); }
+      S.toast(ok ? `Allowed once · ${a.id} · run ${short(k.id)} resumed` : `Denied · ${a.tool} · the agent continues without it`, ok ? "ok" : "warn");
+      refresh();
+    }, 900);
+  }
+  function cancelRun(id) {
+    const r = byId(id); busy = id; renderTable();
+    setTimeout(() => {
+      busy = null; confirmId = null;
+      [r, ...r.kids].filter((x) => LIVE.includes(x.st)).forEach((x) => {
+        x.st = "cancelled"; x.note = "cancelled by Travis James";
+        if (x.steps) { advance(x, null); x.steps = x.steps.filter((s) => s[4] !== -1); x.steps.push(["lifecycle", "state", "Run cancelled", "POST /runs/{id}/cancel", 0, "RUN_FINISHED"]); }
+        if (x.approval && !x.approval.done) x.approval = null;
+        x.ev.forEach((e) => { if (["awaiting_approval", "claim_intent"].includes(e[2])) e[2] = "cancelled"; });
+      });
+      S.toast(`Run ${short(id)} cancelled · POST /api/uar/runs/${short(id)}/cancel`, "warn");
+      refresh();
+    }, 800);
+  }
+  const uuid = () => "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => { const v = (Math.random() * 16) | 0; return (c === "x" ? v : (v & 3) | 8).toString(16); });
+  function resume(id, ckId) {
+    const r = byId(id), c = r.ck.find((x) => x[0] === ckId); busy = ckId; renderCheckpoints(r);
+    setTimeout(() => {
+      busy = null;
+      if (c[4]) {
+        c[5] = "invalid"; c[6] = `409 checkpoint_invalidated · evidence ${c[4]} for ${r.ev.find((e) => e[0] === c[4])[1]} is invalidated. Resume from an earlier checkpoint.`;
+        S.toast(`Resume failed · ${ckId} was invalidated`, "err"); renderCheckpoints(r); return;
+      }
+      const src = stepsOf(r).slice(0, c[1]).map((s) => s.slice());
+      const n = R({ id: uuid(), agent: r.agent, conv: rootOf(r).conv, st: "queued", model: r.model, age: 0, dur: 0, tin: Math.round(r.tin * 0.8), tout: 0, cost: 0, lastEv: 1, note: `resumed from ${ckId}`,
+        steps: src.concat([["lifecycle", "state", `Resumed from ${ckId}`, `source run ${short(r.id)} · new run`, 0.2, "RUN_STARTED"], ["reasoning", "reasoning", "Re-planning from the checkpoint", "streaming", null, "STEP_STARTED"], ["generate", "message", "Response", "not started", -1, ""]]) });
+      n.dur = src.reduce((a, s) => a + (s[4] > 0 ? s[4] : 0), 0) + 0.2;
+      RUNS.unshift(n); r.note = `resumed as ${short(n.id)}`;
+      S.toast(`Run ${short(n.id)} started from ${ckId}`);
+      select(n.id, "trace");
+      setTimeout(() => { n.st = "running"; refresh(); }, 1200);
+    }, 1100);
+  }
+
+  /* ─── live tick: duration, tokens, stream cursor ─── */
+  setInterval(() => {
+    all().forEach((r) => {
+      if (r.st !== "running" && r.st !== "waiting") return;
+      r.dur += 1;
+      if (r.st === "running") { r.tout += 9; r.cost += 0.00014; r.lastEv += 2; }
+      const tr = document.querySelector(`tr[data-run="${r.id}"]`); if (!tr) return;
+      tr.querySelector('[data-cell="dur"]').innerHTML = `${fmtDur(r.dur)}<span class="sub">${ago(r.age)}</span>`;
+      tr.querySelector('[data-cell="tok"]').textContent = ktok(r.tin + r.tout);
+      tr.querySelector('[data-cell="cost"]').textContent = money(r.cost);
+      tr.querySelector('[data-cell="strip"]').innerHTML = strip(r);
+    });
+    const r = sel && byId(sel);
+    if (r && LIVE.includes(r.st)) { renderTrace(r); renderUsage(r); }
+    renderSummary();
+  }, 1000);
+
+  /* ─── wiring ─── */
+  const agentSel = $("#agent-filter");
+  agentSel.innerHTML += Object.entries(AG).map(([id, n]) => `<option value="${id}">${n}</option>`).join("");
+  agentSel.addEventListener("change", (e) => { filt.agent = e.target.value; renderTable(); });
+  $("#run-search").addEventListener("input", (e) => { filt.q = e.target.value.trim(); renderTable(); });
+  app.addEventListener("uar:choice", (e) => {
+    if (e.target.id === "status-filter") { filt.status = e.detail.value; renderTable(); }
+    if (e.target.id === "range-filter") { filt.range = Number(e.detail.value); renderTable(); }
+  });
+  app.addEventListener("uar:switch", (e) => S.toast(`${e.detail.id} ${e.detail.on ? "on" : "off"}`));
+  app.addEventListener("uar:source", () => {});
+  app.addEventListener("uar:panel", (e) => { if (!e.detail.open && sel) { sel = null; renderTable(); } });
+  const body = $("#runs-body");
+  body.addEventListener("click", (e) => { if (e.target.closest("[data-action], a, button")) return; const tr = e.target.closest("tr[data-run]"); if (tr) select(tr.dataset.run); });
+  body.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.matches("tr[data-run]")) { e.preventDefault(); select(e.target.dataset.run); } });
+  function setStatus(v) { const g = $("#status-filter"); g.querySelectorAll("[role=radio]").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.value === v))); filt.status = v; renderTable(); }
+
+  app.addEventListener("uar:action", (e) => {
+    const { action, el } = e.detail;
+    if (action === "toggle-kids") { const id = el.dataset.id; expanded.has(id) ? expanded.delete(id) : expanded.add(id); renderTable(); const b = document.querySelector(`.kid-t[data-id="${id}"]`); if (b) b.focus(); }
+    if (action === "cancel-ask") { confirmId = el.dataset.id; renderTable(); const y = document.querySelector('[data-action="cancel-yes"]'); if (y) y.focus(); }
+    if (action === "cancel-no") { confirmId = null; renderTable(); }
+    if (action === "cancel-yes") cancelRun(el.dataset.id);
+    if (action === "approve") approve(el.dataset.id, el.dataset.v === "1");
+    if (action === "resume") resume(el.dataset.id, el.dataset.ck);
+    if (action === "select") select(el.dataset.id);
+    if (action === "filter") setStatus(el.dataset.v);
+    if (action === "open-waiting") { const w = pending()[0]; if (w) { setStatus("all"); expanded.add(rootOf(w).id); select(w.id, "approvals"); } else S.toast("Nothing is waiting on you", "warn"); }
+    if (action === "refresh") {
+      const b = $("#refresh-btn"); b.classList.add("is-loading"); b.disabled = true; b.querySelector(".icon").classList.add("spin");
+      setTimeout(() => { b.classList.remove("is-loading"); b.disabled = false; b.querySelector(".icon").classList.remove("spin"); refresh(); S.toast(`Synced ${all().length} runs · GET /api/uar/runs`); }, 700);
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !S.state.panelOpen || document.querySelector(".cmdk.open")) return;
+    if (e.target.matches && e.target.matches("input, select, textarea")) return;
+    S.closePanel();
+  });
+
+  refresh();
+})();
+</script>
+</body>
+</html>

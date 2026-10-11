@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Governance · Settings · Universal Agent Runtime</title>
+<link rel="icon" href="assets/brand/uar-mark-dark.svg" />
+<link rel="stylesheet" href="assets/shell.css" />
+<link rel="stylesheet" href="assets/settings.css" />
+<style>
+  .banner.err { background: var(--err-soft); } .banner.err > .icon { color: var(--err); }
+  .banner .reasons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .banner .reasons .mono { font-size: 11.5px; background: var(--step-2); padding: 2px 7px; border-radius: 6px; color: var(--muted); }
+  .why { font-size: 12.5px; color: var(--muted); margin-top: 8px; max-width: 70ch; }
+  .plain { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .plain .rule { grid-template-columns: auto 1fr; }
+  .plain .chip { height: 22px; font-size: 11.5px; }
+  .code .ln { user-select: none; }
+  .appr { grid-template-columns: 1fr auto; }
+  .appr .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .appr .meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--faint); margin-top: 3px; }
+  .spend { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; min-width: 150px; }
+  .spend .mono { font-size: 11.5px; color: var(--muted); }
+  .table td .input { height: 32px; width: 96px; font-size: 12.5px; }
+  .addrow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .addrow .input { height: 34px; font-size: 13px; }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; }
+  .decision { margin-top: 14px; }
+  .decision .verdict { font-family: var(--font-display); font-size: 22px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .decision .verdict.permit { color: var(--ok); } .decision .verdict.forbid { color: var(--err); } .decision .verdict.ask { color: var(--warn); }
+  .decision .found { margin-top: 10px; }
+  .decision .mrow .chip { height: 20px; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="app" data-od-id="settings-shell" data-panel-persist="false">
+  <div class="titlebar" data-tauri-drag-region><span class="mono">universal-agent-runtime</span>&nbsp;· Settings</div>
+  <aside data-settings-nav data-current="governance" data-od-id="settings-sidebar"></aside>
+
+  <main class="main" id="content" data-od-id="settings-main">
+    <header class="topbar">
+      <button class="icon-btn" data-action="sidebar-mobile" aria-label="Open navigation" id="mobile-nav-btn" style="display:none"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+      <div class="title"><span class="crumb">Settings</span><span>Governance</span></div>
+      <span class="spacer"></span>
+      <button class="chip" data-action="cmdk"><svg class="icon"><use href="#i-search"/></svg>Search settings <kbd style="margin-left:4px" data-kbd="⌘K">⌘K</kbd></button>
+      <button class="icon-btn" data-action="theme" aria-pressed="false" aria-label="Switch theme" title="Switch theme"><svg class="icon"><use href="#i-sun"/></svg></button>
+    </header>
+
+    <section class="page">
+      <div class="page-inner">
+        <div class="page-head" data-od-id="page-head">
+          <div>
+            <h1>Governance</h1>
+            <p>What the agent may do, who approves the risky parts, what it may spend, and whether any of it is actually enforced. Cedar policies decide; this page explains them and lets you try a request before an agent does.</p>
+          </div>
+          <div class="acts" data-od-id="page-head-actions">
+            <button class="btn btn-secondary" data-action="status-refresh" id="status-btn" data-od-id="status-refresh-btn"><svg class="icon spin"><use href="#i-refresh"/></svg>Refresh status</button>
+            <button class="btn btn-primary" data-action="panel-open" data-tab="tester" data-od-id="test-request-cta"><svg class="icon"><use href="#i-flask"/></svg>Test a request</button>
+          </div>
+        </div>
+
+        <div class="banner warn" id="gov-banner" role="status" data-od-id="enforcement-banner">
+          <svg class="icon"><use href="#i-alert"/></svg>
+          <div class="grow">
+            <b id="banner-title">Enforcement on · permit_all baseline · JWT not required</b>
+            <span class="sub" id="banner-sub">Cedar is consulted on every action, but <span class="mono">default.cedar</span> permits every principal every action. Today the only real brakes are the RunManager approval heuristic and the production forbids in <span class="mono">skill-mutation.cedar</span>.</span>
+            <div class="reasons" id="banner-reasons"><span class="mono">effective_state: on</span><span class="mono">may_disable: true</span><span class="mono">mutation_available: true</span><span class="mono">jwt_required: false</span><span class="mono">3 policies loaded from policies/</span></div>
+          </div>
+          <span class="mono" style="font-size:11.5px;color:var(--faint)" id="banner-checked">checked 40 s ago</span>
+        </div>
+
+        <div class="summary" data-od-id="summary-strip">
+          <div class="card sum" data-od-id="sum-enforcement"><div class="k">Enforcement</div><div class="v"><span class="status-dot warn" id="sum-enf-dot"></span><span id="sum-enf">On</span><small id="sum-mode">permit_all</small></div></div>
+          <div class="card sum" data-od-id="sum-policies"><div class="k">Cedar policies</div><div class="v">3<small id="sum-reload">files · hot reload on</small></div></div>
+          <div class="card sum" data-od-id="sum-approvals"><div class="k">Pending approvals</div><div class="v"><span class="status-dot warn" id="sum-appr-dot"></span><span id="sum-appr">3</span><small>tool calls waiting</small></div></div>
+          <div class="card sum" data-od-id="sum-budget"><div class="k">LLM budget · sample spend</div><div class="v">$46.85<small id="sum-budget-of">of $150 · hard</small></div></div>
+        </div>
+
+        <div class="md">
+          <nav class="sources" aria-label="Governance sections" data-od-id="governance-sources">
+            <button class="srow" aria-current="true" data-src="overview" data-od-id="src-overview"><span class="smark"><svg class="icon"><use href="#i-shield"/></svg></span><span><span class="nm">Overview</span><span class="st" id="st-overview"><i class="status-dot warn"></i>On · permit_all · 5 actions</span></span><span></span></button>
+            <p class="group-label">Policies <span>policies/</span></p>
+            <button class="srow" aria-current="false" data-src="p-default" data-od-id="src-default-cedar"><span class="smark"><svg class="icon"><use href="#i-file"/></svg></span><span><span class="nm">default.cedar</span><span class="st"><i class="status-dot warn"></i>permit all · baseline</span></span><span class="chip warn" style="height:20px;font-size:11px">broad</span></button>
+            <button class="srow" aria-current="false" data-src="p-tool" data-od-id="src-tool-approval-cedar"><span class="smark"><svg class="icon"><use href="#i-file"/></svg></span><span><span class="nm">tool-approval.cedar</span><span class="st"><i class="status-dot"></i>execute_tool · heuristic asks</span></span><span class="chip" style="height:20px;font-size:11px">1 rule</span></button>
+            <button class="srow" aria-current="false" data-src="p-skill" data-od-id="src-skill-mutation-cedar"><span class="smark"><svg class="icon"><use href="#i-file"/></svg></span><span><span class="nm">skill-mutation.cedar</span><span class="st"><i class="status-dot"></i>env-gated · development</span></span><span class="chip" style="height:20px;font-size:11px">8 rules</span></button>
+            <p class="group-label">Runtime</p>
+            <button class="srow" aria-current="false" data-src="approvals" data-od-id="src-approvals"><span class="smark"><svg class="icon"><use href="#i-clock"/></svg></span><span><span class="nm">Approvals</span><span class="st">Tool calls paused for a human</span></span><span class="chip warn" style="height:20px;font-size:11px" id="appr-chip">3 pending</span></button>
+            <button class="srow" aria-current="false" data-src="guardrails" data-od-id="src-guardrails"><span class="smark"><svg class="icon"><use href="#i-eye"/></svg></span><span><span class="nm">Guardrails</span><span class="st">Sycophancy standard · screening on</span></span><span></span></button>
+            <button class="srow" aria-current="false" data-src="budget" data-od-id="src-budget"><span class="smark"><svg class="icon"><use href="#i-coins"/></svg></span><span><span class="nm">Budget</span><span class="st" id="st-budget">$150 / month · hard</span></span><span></span></button>
+            <button class="srow" aria-current="false" data-src="access" data-od-id="src-access"><span class="smark"><svg class="icon"><use href="#i-key"/></svg></span><span><span class="nm">Access</span><span class="st" id="st-access">JWT off · admin key on writes</span></span><span></span></button>
+          </nav>
+
+          <div class="detail" data-od-id="governance-detail">
+            <!-- Overview -->
+            <section class="view active" data-view="overview" aria-label="Overview" data-od-id="view-overview">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-shield"/></svg></span><div><h2>Overview</h2><div class="sub"><span>Saved under</span><span class="mono">governance.*</span><span>·</span><span>read back from</span><span class="mono">GET /api/uar/settings/governance/status</span></div></div></div>
+              <div class="rules" data-od-id="overview-enforce">
+                <div class="rule"><div>Enforce tool governance<span class="sub"><span class="mono">governance.enabled</span> · when off, Cedar is not consulted and every action runs. Allowed only while <span class="mono">may_disable</span> is true.</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Enforce tool governance" data-id="enabled" tabindex="0"></span></div>
+              </div>
+              <div class="section-title"><h3>Default mode</h3><p class="mono">governance.default_mode</p></div>
+              <div class="card" data-od-id="default-mode-card">
+                <div class="choice" role="radiogroup" aria-label="Default mode" id="mode"><button role="radio" aria-checked="true" data-value="permit_all">permit_all</button><button role="radio" aria-checked="false" data-value="deny_all">deny_all</button><button role="radio" aria-checked="false" data-value="custom">custom</button></div>
+                <p class="why" id="mode-why"></p>
+              </div>
+              <div class="section-title"><h3>Allowed actions</h3><p><span class="mono">governance.allowed_actions</span> · an action off here is refused before Cedar runs</p></div>
+              <div class="rules" data-od-id="allowed-actions">
+                <div class="rule" data-dims><div><span class="mono">execute_tool</span><span class="sub">Call a native or MCP tool. Risky names still pause for approval.</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Allow execute_tool" data-id="act:execute_tool" tabindex="0"></span></div>
+                <div class="rule" data-dims><div><span class="mono">call_llm</span><span class="sub">Send a completion request to a configured provider. Budget limits apply.</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Allow call_llm" data-id="act:call_llm" tabindex="0"></span></div>
+                <div class="rule" data-dims><div><span class="mono">spawn_agent</span><span class="sub">Start a sub-agent inside the current run.</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Allow spawn_agent" data-id="act:spawn_agent" tabindex="0"></span></div>
+                <div class="rule" data-dims><div><span class="mono">collaborate</span><span class="sub">Exchange messages with other agents in a collaboration session.</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Allow collaborate" data-id="act:collaborate" tabindex="0"></span></div>
+                <div class="rule" data-dims><div><span class="mono">access_knowledge</span><span class="sub">Read from knowledge bases and memory.</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Allow access_knowledge" data-id="act:access_knowledge" tabindex="0"></span></div>
+              </div>
+              <div class="section-title"><h3>Policies &amp; environment</h3></div>
+              <div class="rules" data-od-id="overview-reload">
+                <div class="rule"><div>Hot policy reload<span class="sub"><span class="mono">governance.policy_reload_enabled</span> · edits to <span class="mono">policies/*.cedar</span> apply without a restart.</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Hot policy reload" data-id="reload" tabindex="0"></span></div>
+                <div class="rule"><div>Environment<span class="sub">From <span class="mono">PROMETHEUS_ENVIRONMENT</span>, passed to Cedar as <span class="mono">context.environment</span>. Changing it needs a daemon restart.</span></div><span class="chip mono" style="height:24px">development</span></div>
+              </div>
+            </section>
+
+            <!-- Policy: default.cedar -->
+            <section class="view" data-view="p-default" aria-label="default.cedar" data-od-id="view-default-cedar">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-file"/></svg></span><div><h2 class="mono">default.cedar</h2><div class="sub"><span class="chip warn" style="height:22px">permits everything</span><span class="mono">policies/default.cedar · 10 lines</span></div></div>
+                <div class="acts"><button class="btn btn-secondary btn-sm" data-action="preset" data-preset="llm" data-od-id="default-test-btn"><svg class="icon"><use href="#i-flask"/></svg>Test against this</button></div></div>
+              <div class="plain" data-od-id="default-plain">
+                <div class="rule"><span class="chip ok">Permit</span><div>Any principal, any action, any resource, no conditions.<span class="sub">Cedar lets a forbid beat a permit, so this file never blocks a forbid elsewhere; it only means nothing is denied by default.</span></div></div>
+              </div>
+              <pre class="code" data-cedar data-od-id="default-source">// Default governance policy — permit all actions (permissive baseline)
+//
+// This policy allows any agent to perform any action on any resource.
+// Add restrictive policies alongside this file to narrow permissions.
+
+permit (
+    principal,
+    action,
+    resource
+);</pre>
+              <p class="gap-note"><i></i>Read-only here. Edit the file in the repo; hot reload picks it up.</p>
+            </section>
+
+            <!-- Policy: tool-approval.cedar -->
+            <section class="view" data-view="p-tool" aria-label="tool-approval.cedar" data-od-id="view-tool-approval-cedar">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-file"/></svg></span><div><h2 class="mono">tool-approval.cedar</h2><div class="sub"><span class="chip ok" style="height:22px">1 active rule</span><span class="mono">policies/tool-approval.cedar · 39 lines</span></div></div>
+                <div class="acts"><button class="btn btn-secondary btn-sm" data-action="preset" data-preset="delete" data-od-id="tool-test-btn"><svg class="icon"><use href="#i-flask"/></svg>Test against this</button></div></div>
+              <div class="plain" data-od-id="tool-plain">
+                <div class="rule"><span class="chip ok">Permit</span><div><span class="mono">execute_tool</span> for every tool (line 35).<span class="sub">Cedar alone never asks. The pause comes from RunManager, which asks a human when the tool name contains delete, remove, write, drop, truncate or destroy.</span></div></div>
+                <div class="rule"><span class="chip">Example</span><div>Two commented-out forbid rules show how to require <span class="mono">context.approved</span> for <span class="mono">filesystem__write</span> or any tool with <span class="mono">requires_approval</span>.<span class="sub">They are inactive until uncommented.</span></div></div>
+              </div>
+              <pre class="code" data-cedar data-od-id="tool-source">// Tool Approval Policy — require user approval for high-risk tool operations.
+//
+// Tools matching these patterns will pause execution and request
+// explicit user approval before proceeding.
+//
+// The RunManager checks tool names against a heuristic list:
+//   - delete, remove, write, drop, truncate, destroy
+//
+// To extend or override the heuristic with Cedar policy rules,
+// add forbid rules targeting specific tools:
+
+// Example: Require approval for filesystem write operations
+// forbid (
+//     principal,
+//     action == Action::"execute_tool",
+//     resource == Tool::"filesystem__write"
+// ) unless {
+//     context.approved == true
+// };
+
+// Example: Require approval for any tool that modifies external state
+// forbid (
+//     principal,
+//     action == Action::"execute_tool",
+//     resource
+// ) when {
+//     resource.requires_approval == true
+// } unless {
+//     context.approved == true
+// };
+
+// Default: permit all tool calls (the heuristic check in RunManager
+// handles approval for dangerous tools without Cedar rules).
+// Add specific forbid rules above to enforce Cedar-based approval.
+permit (
+    principal,
+    action == Action::"execute_tool",
+    resource
+);</pre>
+              <p class="gap-note"><i></i>Read-only here. Edit the file in the repo; hot reload picks it up. Per-tool Auto / Ask / Deny tiers live on&nbsp;<a href="tools-and-mcp.html" style="color:var(--fg);text-decoration:underline">Tools &amp; MCP</a>, which is also a backend gap there.</p>
+            </section>
+
+            <!-- Policy: skill-mutation.cedar -->
+            <section class="view" data-view="p-skill" aria-label="skill-mutation.cedar" data-od-id="view-skill-mutation-cedar">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-file"/></svg></span><div><h2 class="mono">skill-mutation.cedar</h2><div class="sub"><span class="chip ok" style="height:22px">8 active rules</span><span class="mono">policies/skill-mutation.cedar · 95 lines</span></div></div>
+                <div class="acts"><button class="btn btn-secondary btn-sm" data-action="preset" data-preset="mutate-prod" data-od-id="skill-test-btn"><svg class="icon"><use href="#i-flask"/></svg>Test against this</button></div></div>
+              <div class="plain" data-od-id="skill-plain">
+                <div class="rule"><span class="chip ok">development</span><div>Mutate, generate and promote skills freely (lines 18–40).</div></div>
+                <div class="rule"><span class="chip warn">staging</span><div>Mutations need <span class="mono">validation_passed</span>; promotions need <span class="mono">human_approved</span> and <span class="mono">test_pass_rate &gt;= 95</span> (lines 44–66).<span class="sub">While <span class="mono">default.cedar</span> permits all, these conditions do not stop anything on their own.</span></div></div>
+                <div class="rule"><span class="chip err">production</span><div>Forbids <span class="mono">skill.mutate</span> and <span class="mono">skill.generate</span> (lines 81–95).<span class="sub">There is no production forbid for <span class="mono">skill.promote</span>, so the baseline permit lets it through.</span></div></div>
+              </div>
+              <pre class="code" data-cedar data-od-id="skill-source">// ================================================================
+// Skill Mutation Policies — Self-Learning Pipeline Governance
+// ================================================================
+//
+// Gates all write operations against skill artifacts from the
+// prometheus-skill-system self-learning pipeline:
+// - prompt optimization (dspy-rs writes back to SKILL.md)
+// - skill generation (PMPO creates new skills from gap detection)
+// - skill promotion (generated skills move from staging to active)
+// - trace capture (execution data collection)
+//
+// Environment is passed in context. Default: "development".
+// Set PROMETHEUS_ENVIRONMENT=staging|production for stricter enforcement.
+// ================================================================
+
+// --- DEVELOPMENT: permit all skill operations ---
+
+permit(
+    principal,
+    action == Action::"skill.mutate",
+    resource
+) when {
+    context.environment == "development"
+};
+
+permit(
+    principal,
+    action == Action::"skill.generate",
+    resource
+) when {
+    context.environment == "development"
+};
+
+permit(
+    principal,
+    action == Action::"skill.promote",
+    resource
+) when {
+    context.environment == "development"
+};
+
+// --- STAGING: require validation for mutations ---
+
+permit(
+    principal,
+    action == Action::"skill.mutate",
+    resource
+) when {
+    context.environment == "staging" &amp;&amp;
+    context has validation_passed &amp;&amp;
+    context.validation_passed == true
+};
+
+// --- STAGING: require human approval + test pass rate for promotions ---
+
+permit(
+    principal,
+    action == Action::"skill.promote",
+    resource
+) when {
+    context.environment == "staging" &amp;&amp;
+    context has human_approved &amp;&amp;
+    context.human_approved == true &amp;&amp;
+    context has test_pass_rate &amp;&amp;
+    context.test_pass_rate &gt;= 95
+};
+
+// --- TRACE CAPTURE: always allow with governance consent ---
+
+permit(
+    principal,
+    action == Action::"trace.capture",
+    resource
+) when {
+    context has governance_consent &amp;&amp;
+    context.governance_consent == true
+};
+
+// --- PRODUCTION: deny all skill mutations ---
+
+forbid(
+    principal,
+    action == Action::"skill.mutate",
+    resource
+) when {
+    context.environment == "production"
+};
+
+forbid(
+    principal,
+    action == Action::"skill.generate",
+    resource
+) when {
+    context.environment == "production"
+};</pre>
+              <p class="gap-note"><i></i>Read-only here. Edit the file in the repo; hot reload picks it up.</p>
+            </section>
+
+            <!-- Approvals -->
+            <section class="view" data-view="approvals" aria-label="Approvals" data-od-id="view-approvals">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-clock"/></svg></span><div><h2>Approvals</h2><div class="sub"><span class="mono">GET /api/uar/tool-approval/pending</span><span>·</span><span id="appr-sub">3 waiting</span></div></div></div>
+              <div class="rules" id="appr-list" data-od-id="approvals-list">
+                <div class="rule appr" data-run="run_8c2f…41" data-od-id="approval-run-8c2f"><div><span class="mono">filesystem__write_file</span> · staging/config.yaml<div class="meta"><span class="mono">run_8c2f…41</span><span>agent:ops-assistant</span><span>heuristic: write</span><span class="mono">3 min</span></div></div>
+                  <div class="acts"><button class="btn btn-secondary btn-sm" data-action="approve" data-mode="once"><svg class="icon spin"><use href="#i-check"/></svg>Allow once</button><button class="btn btn-ghost btn-sm" data-action="approve" data-mode="always">Always</button><button class="btn btn-danger btn-sm" data-action="approve" data-mode="deny">Deny</button></div></div>
+                <div class="rule appr" data-run="run_91ab…07" data-od-id="approval-run-91ab"><div><span class="mono">surreal_memory__delete_memory</span> · mem:session-2231<div class="meta"><span class="mono">run_91ab…07</span><span>agent:research-scout</span><span>heuristic: delete</span><span class="mono">11 min</span></div></div>
+                  <div class="acts"><button class="btn btn-secondary btn-sm" data-action="approve" data-mode="once"><svg class="icon spin"><use href="#i-check"/></svg>Allow once</button><button class="btn btn-ghost btn-sm" data-action="approve" data-mode="always">Always</button><button class="btn btn-danger btn-sm" data-action="approve" data-mode="deny">Deny</button></div></div>
+                <div class="rule appr" data-run="run_4d10…c2" data-stale="true" data-od-id="approval-run-4d10"><div><span class="mono">postgres__drop_table</span> · scratch.import_tmp<div class="meta"><span class="mono">run_4d10…c2</span><span>agent:ops-assistant</span><span>heuristic: drop</span><span class="mono">2 h</span></div></div>
+                  <div class="acts"><button class="btn btn-secondary btn-sm" data-action="approve" data-mode="once"><svg class="icon spin"><use href="#i-check"/></svg>Allow once</button><button class="btn btn-ghost btn-sm" data-action="approve" data-mode="always">Always</button><button class="btn btn-danger btn-sm" data-action="approve" data-mode="deny">Deny</button></div></div>
+              </div>
+              <div class="card empty" id="appr-empty" hidden data-od-id="approvals-empty"><svg class="icon"><use href="#i-check"/></svg><b>Nothing waiting</b><span>New pauses appear here and inline in the run that asked.</span></div>
+              <p class="gap-note"><i></i>Allow once and Deny post to <span class="mono">/api/uar/runs/{id}/tool-approval</span>; Always writes the conversation's <span class="mono">/conversations/{id}/policy</span>.</p>
+              <p class="gap-note"><i></i>Backend gap: no cross-run audit log of past decisions; history exists only per run.</p>
+            </section>
+
+            <!-- Guardrails -->
+            <section class="view" data-view="guardrails" aria-label="Guardrails" data-od-id="view-guardrails">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-eye"/></svg></span><div><h2>Guardrails</h2><div class="sub"><span>Checks on what goes into and comes out of the model</span></div></div></div>
+              <div class="section-title"><h3>Sycophancy detection</h3><p class="mono">sycophancy.*</p></div>
+              <div class="rules" data-od-id="sycophancy-rules">
+                <div class="rule"><div>Detect sycophancy<span class="sub">Score replies for agreement-over-accuracy patterns.</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Detect sycophancy" data-id="syc" tabindex="0"></span></div>
+                <div class="rule"><div>Strictness<span class="sub" id="strict-why">Standard: flags clear capitulation and unearned praise.</span></div><div class="choice sm" role="radiogroup" aria-label="Sycophancy strictness" id="strictness"><button role="radio" aria-checked="false" data-value="permissive">permissive</button><button role="radio" aria-checked="true" data-value="standard">standard</button><button role="radio" aria-checked="false" data-value="strict">strict</button><button role="radio" aria-checked="false" data-value="adversarial">adversarial</button></div></div>
+                <div class="rule"><div>Reflect threshold<span class="sub">Above this score the agent re-examines its reply before sending.</span></div><div class="range"><input type="range" min="0" max="1" step="0.05" value="0.3" id="r-reflect" aria-label="Reflect threshold" /><output for="r-reflect">0.30</output></div></div>
+                <div class="rule"><div>Auto-correct threshold<span class="sub">Above this score the reply is rewritten, if auto-correct is on.</span></div><div class="range"><input type="range" min="0" max="1" step="0.05" value="0.5" id="r-correct" aria-label="Auto-correct threshold" /><output for="r-correct">0.50</output></div></div>
+                <div class="rule"><div>Log only<span class="sub">Record scores without reflecting or correcting.</span></div><span class="switch" role="switch" aria-checked="false" aria-label="Log only" data-id="log_only" tabindex="0"></span></div>
+                <div class="rule"><div>Auto-correct<span class="sub">Rewrite flagged replies automatically instead of only reflecting.</span></div><span class="switch" role="switch" aria-checked="false" aria-label="Auto-correct" data-id="auto_correct" tabindex="0"></span></div>
+              </div>
+              <div class="section-title"><h3>Input screening</h3><p class="mono">input_screening_enabled</p></div>
+              <div class="rules" data-od-id="screening-rules">
+                <div class="rule"><div>Screen user input<span class="sub">Detect prompt injection and PII before the message reaches the model. Detections are annotated on the run.</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Screen user input" data-id="screen" tabindex="0"></span></div>
+                <div class="rule" data-dims><div>Block on prompt injection<span class="sub">Off: flag and continue. On: reject the message.</span></div><span class="switch" role="switch" aria-checked="false" aria-label="Block on prompt injection" data-id="block_injection" tabindex="0"></span></div>
+                <div class="rule" data-dims><div>Block on PII<span class="sub">Off: flag and continue. On: reject the message.</span></div><span class="switch" role="switch" aria-checked="false" aria-label="Block on PII" data-id="block_pii" tabindex="0"></span></div>
+              </div>
+            </section>
+
+            <!-- Budget -->
+            <section class="view" data-view="budget" aria-label="Budget" data-od-id="view-budget">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-coins"/></svg></span><div><h2>LLM budget</h2><div class="sub"><span class="mono">LlmBudgetConfig</span><span>· USD</span></div></div>
+                <div class="acts"><button class="btn btn-secondary btn-sm" data-action="save-budget" id="budget-save" data-od-id="budget-save-btn"><svg class="icon spin"><use href="#i-check"/></svg>Save budget</button></div></div>
+              <div class="card" data-od-id="budget-global">
+                <div class="form-grid">
+                  <div class="field"><label for="b-global">Global monthly limit (USD)</label><input class="input mono" id="b-global" value="150" inputmode="decimal" /><span class="hint" id="b-global-hint"><span class="mono">global_limit</span> · all providers combined</span></div>
+                  <div class="field"><label id="enf-label">Enforcement</label><div class="choice" role="radiogroup" aria-labelledby="enf-label" id="enforcement"><button role="radio" aria-checked="true" data-value="hard">hard</button><button role="radio" aria-checked="false" data-value="soft">soft</button></div><span class="hint" id="enf-why">Hard: calls that would exceed a limit are refused.</span></div>
+                </div>
+              </div>
+              <div class="section-title"><h3>Per-model limits</h3><p><span class="mono">model_limits</span> · spend column is sample data</p></div>
+              <table class="table" data-od-id="model-limits-table">
+                <thead><tr><th>Model</th><th>Limit (USD)</th><th>Spend to date (sample)</th><th class="ctl"><span class="mono" style="font-size:11px">Remove</span></th></tr></thead>
+                <tbody id="limit-rows">
+                  <tr><td class="mono">anthropic/claude-sonnet-4-5</td><td><input class="input mono" value="80" aria-label="Limit for anthropic/claude-sonnet-4-5" /></td><td><div class="spend"><div class="meter warn"><i style="width:47%"></i></div><span class="mono">$37.90</span></div></td><td class="ctl"><button class="icon-btn" data-action="rm-limit" aria-label="Remove anthropic/claude-sonnet-4-5 limit"><svg class="icon"><use href="#i-trash"/></svg></button></td></tr>
+                  <tr><td class="mono">openai/gpt-5</td><td><input class="input mono" value="40" aria-label="Limit for openai/gpt-5" /></td><td><div class="spend"><div class="meter"><i style="width:22%"></i></div><span class="mono">$8.95</span></div></td><td class="ctl"><button class="icon-btn" data-action="rm-limit" aria-label="Remove openai/gpt-5 limit"><svg class="icon"><use href="#i-trash"/></svg></button></td></tr>
+                </tbody>
+              </table>
+              <div class="addrow" data-od-id="add-model-limit">
+                <input class="input mono" id="new-model" placeholder="provider/model" aria-label="New model address" style="width:260px" />
+                <input class="input mono" id="new-limit" placeholder="limit USD" aria-label="New model limit in USD" style="width:120px" inputmode="decimal" />
+                <button class="btn btn-ghost btn-sm" data-action="add-limit"><svg class="icon"><use href="#i-plus"/></svg>Add limit</button>
+              </div>
+              <p class="gap-note"><i></i>Backend gap: no budget spend endpoint, so spend-to-date here is sample data and the summary figure is not live.</p>
+            </section>
+
+            <!-- Access -->
+            <section class="view" data-view="access" aria-label="Access" data-od-id="view-access">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-key"/></svg></span><div><h2>Access</h2><div class="sub"><span>Who may call the API and who may change these settings</span></div></div></div>
+              <div class="rules" data-od-id="jwt-rules">
+                <div class="rule"><div>Require a JWT on API calls<span class="sub"><span class="mono">jwt_required</span> · off means any local caller is trusted.</span></div><span class="switch" role="switch" aria-checked="false" aria-label="Require a JWT" data-id="jwt" tabindex="0"></span></div>
+              </div>
+              <div class="card" style="margin-top:8px" data-od-id="jwt-fields">
+                <div class="form-grid">
+                  <div class="field span"><label for="jwks">JWKS URL</label><input class="input mono" id="jwks" placeholder="https://issuer/.well-known/jwks.json" /><span class="hint"><span class="mono">jwks_url</span> · keys used to verify signatures</span></div>
+                  <div class="field"><label for="iss">Issuer</label><input class="input mono" id="iss" placeholder="jwt_issuer" /></div>
+                  <div class="field"><label for="aud">Audience</label><input class="input mono" id="aud" placeholder="jwt_audience" /></div>
+                </div>
+              </div>
+              <div class="rules" style="margin-top:8px" data-od-id="access-rules">
+                <div class="rule"><div>Validate not-before<span class="sub"><span class="mono">jwt_validate_nbf</span> · reject tokens used before their <span class="mono">nbf</span> time.</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Validate not-before" data-id="nbf" tabindex="0"></span></div>
+                <div class="rule"><div>Settings changes need the admin key<span class="sub"><span class="mono">settings_mutation_auth_required</span> · writes must carry <span class="mono">X-UAR-Admin-Key</span>.</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Settings changes need the admin key" data-id="admin" tabindex="0"></span></div>
+                <div class="rule"><div>Admin key<span class="sub"><span class="mono">settings_admin_key</span> · the value is never sent to this screen.</span></div><span class="chip ok" style="height:24px"><span class="status-dot"></span>Set via environment</span></div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="panel" aria-label="Test a request" aria-hidden="true" data-od-id="tester-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-head">
+      <div class="tabs" role="tablist" aria-label="Inspector sections"><button class="tab" role="tab" data-tab="tester" aria-selected="true" id="tab-tester"><svg class="icon icon-sm"><use href="#i-flask"/></svg>Test a request</button></div>
+      <span style="flex:1"></span>
+      <button class="icon-btn" data-action="panel-close" aria-label="Close (Esc)"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="panel-body">
+      <div role="tabpanel" data-tabpanel="tester" class="active" aria-labelledby="tab-tester" data-od-id="tester-form">
+        <p class="muted" style="font-size:13px;margin-bottom:8px">Who wants to do what, to which thing, under what conditions. The answer is what the runtime would do with the policies loaded now.</p>
+        <div class="presets" data-od-id="tester-presets">
+          <button class="chip" data-action="preset" data-preset="delete">delete_file · not approved</button>
+          <button class="chip" data-action="preset" data-preset="delete-ok">delete_file · approved</button>
+          <button class="chip" data-action="preset" data-preset="mutate-prod">skill.mutate · production</button>
+          <button class="chip" data-action="preset" data-preset="promote-prod">skill.promote · production</button>
+        </div>
+        <div class="stack">
+          <div class="field"><label for="t-principal">Principal</label><div class="select-wrap"><select class="input select mono" id="t-principal"><option>user:travis</option><option selected>agent:ops-assistant</option></select></div></div>
+          <div class="field"><label for="t-action">Action</label><div class="select-wrap"><select class="input select mono" id="t-action"><option selected>execute_tool</option><option>call_llm</option><option>spawn_agent</option><option>skill.mutate</option><option>skill.promote</option></select></div></div>
+          <div class="field"><label for="t-resource">Resource</label><input class="input mono" id="t-resource" value='Tool::"filesystem__delete_file"' /><span class="hint" id="t-res-hint">Type::"id", for example Tool::"fetch__get" or Skill::"ops-runbook"</span></div>
+          <div class="field"><label for="t-env">context.environment</label><div class="select-wrap"><select class="input select mono" id="t-env"><option selected>development</option><option>staging</option><option>production</option></select></div></div>
+          <div class="rule"><div><span class="mono">context.approved</span><span class="sub">A human already approved this call.</span></div><span class="switch" role="switch" aria-checked="false" aria-label="context.approved" data-id="t-approved" id="t-approved" tabindex="0"></span></div>
+          <button class="btn btn-secondary" data-action="evaluate" id="t-eval" data-od-id="tester-evaluate"><svg class="icon spin"><use href="#i-bolt"/></svg>Evaluate</button>
+        </div>
+        <div class="card decision" id="t-result" hidden aria-live="polite" data-od-id="tester-result"></div>
+        <p class="gap-note"><i></i>Backend gap: no dry-run evaluation endpoint. This tester mirrors the three loaded policies and the RunManager heuristic in the client.</p>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-overlay" aria-hidden="true"></div>
+</div>
+
+<div class="cmdk-backdrop"></div>
+<div class="cmdk" role="dialog" aria-label="Search settings">
+  <input class="input" type="search" placeholder="Search settings…" aria-label="Search settings" />
+  <div class="cmdk-list">
+    <p class="menu-label">Governance</p>
+    <button class="menu-item" data-action="panel-open" data-tab="tester"><svg class="icon"><use href="#i-flask"/></svg>Test a request</button>
+    <button class="menu-item" data-action="goto" data-go="approvals"><svg class="icon"><use href="#i-clock"/></svg>Pending approvals</button>
+    <button class="menu-item" data-action="goto" data-go="p-tool"><svg class="icon"><use href="#i-file"/></svg>Cedar policies</button>
+    <button class="menu-item" data-action="goto" data-go="budget"><svg class="icon"><use href="#i-coins"/></svg>LLM budget</button>
+    <button class="menu-item" data-action="goto" data-go="access"><svg class="icon"><use href="#i-key"/></svg>JWT &amp; admin key</button>
+    <p class="menu-label">Other settings</p>
+    <a class="menu-item" href="models-and-providers.html"><svg class="icon"><use href="#i-cpu"/></svg>Models &amp; providers</a>
+    <a class="menu-item" href="tools-and-mcp.html"><svg class="icon"><use href="#i-tool"/></svg>Tools &amp; MCP</a>
+    <a class="menu-item" href="skills.html"><svg class="icon"><use href="#i-spark"/></svg>Skills</a>
+    <a class="menu-item" href="knowledge-and-memory.html"><svg class="icon"><use href="#i-book"/></svg>Knowledge &amp; memory</a>
+    <a class="menu-item" href="governance.html"><svg class="icon"><use href="#i-shield"/></svg>Governance</a>
+    <a class="menu-item" href="appearance.html"><svg class="icon"><use href="#i-sun"/></svg>Appearance</a>
+    <a class="menu-item" href="desktop.html"><svg class="icon"><use href="#i-desktop"/></svg>Desktop</a>
+    <a class="menu-item" href="chat-workspace.html"><svg class="icon"><use href="#i-back"/></svg>Back to chat<kbd>Esc</kbd></a>
+  </div>
+</div>
+
+<script src="assets/settings.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+(function () {
+  "use strict";
+  const S = window.UARShell, app = document.querySelector(".app"), $ = (id) => document.getElementById(id);
+  const st = { enabled: true, mode: "permit_all", jwt: false, pending: 3, actions: new Set(["execute_tool", "call_llm", "spawn_agent", "collaborate", "access_knowledge"]) };
+
+  /* Cedar source highlighter: comments, keywords, entity types, strings, line numbers */
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  document.querySelectorAll("pre[data-cedar]").forEach((pre) => {
+    pre.innerHTML = pre.textContent.split("\n").map((ln, i) => {
+      const n = '<span class="c ln">' + String(i + 1).padStart(3, " ") + "</span>  ";
+      if (/^\s*\/\//.test(ln)) return n + '<span class="c">' + esc(ln) + "</span>";
+      return n + esc(ln).replace(/"[^"]*"/g, (m) => '<span class="s">' + m + "</span>").replace(/\b(permit|forbid|when|unless|has|principal|action|resource|context)\b/g, '<span class="k">$1</span>').replace(/\b(Action|Tool)(?=::)/g, '<span class="t">$1</span>');
+    }).join("\n");
+  });
+
+  /* banner + summary follow the GovernanceRuntimeSnapshot */
+  const MODE_WHY = {
+    permit_all: "permit_all: anything on the allowed list passes unless a forbid matches. With default.cedar loaded this is almost everything; only RunManager's approval pause and the production skill forbids intervene.",
+    deny_all: "deny_all: a request with no matching permit is refused. default.cedar still permits everything, so this changes nothing until you narrow or remove that file.",
+    custom: "custom: no baseline is assumed; only the rules in policies/ decide. With default.cedar present the result equals permit_all.",
+  };
+  function render() {
+    const b = $("gov-banner"), on = st.enabled;
+    b.className = "banner " + (on ? "warn" : "err");
+    $("banner-title").textContent = on ? "Enforcement on · " + st.mode + " baseline · JWT " + (st.jwt ? "required" : "not required") : "Enforcement off · Cedar is not consulted";
+    $("banner-sub").innerHTML = on ? 'Cedar is consulted on every action, but <span class="mono">default.cedar</span> permits every principal every action. Today the only real brakes are the RunManager approval heuristic and the production forbids in <span class="mono">skill-mutation.cedar</span>.' : "Every action on every resource runs without a policy check. The approval heuristic still pauses risky tool names.";
+    $("banner-reasons").innerHTML = ["effective_state: " + (on ? "on" : "off"), "may_disable: true", "mutation_available: true", "jwt_required: " + st.jwt, "3 policies loaded from policies/"].map((r) => '<span class="mono">' + r + "</span>").join("");
+    $("sum-enf").textContent = on ? "On" : "Off"; $("sum-enf-dot").className = "status-dot " + (on ? "warn" : "err"); $("sum-mode").textContent = on ? st.mode : "not enforced";
+    $("st-overview").innerHTML = '<i class="status-dot ' + (on ? "warn" : "err") + '"></i>' + (on ? "On · " + st.mode + " · " + st.actions.size + " actions" : "Off · not enforced");
+    $("mode-why").textContent = MODE_WHY[st.mode];
+    $("st-access").textContent = "JWT " + (st.jwt ? "required" : "off") + " · admin key on writes";
+  }
+  render();
+
+  function busy(btn, ms, done) { btn.classList.add("is-loading"); btn.disabled = true; setTimeout(() => { btn.classList.remove("is-loading"); btn.disabled = false; done(); }, ms); }
+
+  app.addEventListener("uar:switch", (e) => {
+    const { id, on } = e.detail;
+    if (id === "enabled") { st.enabled = on; render(); S.toast(on ? "Governance enforced · Cedar consulted on every action" : "Governance off · actions run without a policy check", on ? "ok" : "warn"); }
+    else if (id.startsWith("act:")) { const a = id.slice(4); on ? st.actions.add(a) : st.actions.delete(a); render(); S.toast(a + (on ? " allowed" : " refused before Cedar runs"), on ? "ok" : "warn"); }
+    else if (id === "reload") { $("sum-reload").textContent = "files · hot reload " + (on ? "on" : "off"); S.toast(on ? "Hot reload on · policy edits apply live" : "Hot reload off · restart to apply policy edits", on ? "ok" : "warn"); }
+    else if (id === "jwt") { st.jwt = on; render(); S.toast(on ? "JWT required · unauthenticated calls get 401" : "JWT not required · local callers are trusted", on ? "ok" : "warn"); }
+    else if (id === "admin") S.toast(on ? "Settings writes need X-UAR-Admin-Key" : "Any caller can change settings now", on ? "ok" : "warn");
+    else if (id === "log_only" && on) S.toast("Log only · reflect and auto-correct are skipped", "warn");
+    else if (id === "block_injection" || id === "block_pii") S.toast((id === "block_pii" ? "PII" : "Injection") + (on ? " now rejects the message" : " is flagged, not blocked"), on ? "ok" : "warn");
+    else if (id !== "t-approved") S.toast(e.target.getAttribute("aria-label") + (on ? " on" : " off"), on ? "ok" : "warn");
+  });
+
+  app.addEventListener("uar:choice", (e) => {
+    const { id, value } = e.detail;
+    if (id === "mode") { st.mode = value; render(); S.toast("Default mode: " + value, value === "permit_all" ? "warn" : "ok"); }
+    if (id === "strictness") { $("strict-why").textContent = { permissive: "Permissive: only blatant reversals under pushback.", standard: "Standard: flags clear capitulation and unearned praise.", strict: "Strict: also hedged agreement and missing counterpoints.", adversarial: "Adversarial: assumes agreement is suspect; expect more reflection passes." }[value]; S.toast("Sycophancy strictness: " + value); }
+    if (id === "enforcement") { const hard = value === "hard"; $("enf-why").textContent = hard ? "Hard: calls that would exceed a limit are refused." : "Soft: calls continue past a limit; the overrun is logged and flagged on the run."; $("st-budget").textContent = "$" + $("b-global").value + " / month · " + value; $("sum-budget-of").textContent = "of $" + $("b-global").value + " · " + value; }
+  });
+
+  document.querySelectorAll(".range input").forEach((r) => r.addEventListener("input", () => { r.nextElementSibling.textContent = Number(r.value).toFixed(2); }));
+
+  /* tester */
+  const PRESETS = {
+    delete: ["agent:ops-assistant", "execute_tool", 'Tool::"filesystem__delete_file"', "development", false],
+    "delete-ok": ["agent:ops-assistant", "execute_tool", 'Tool::"filesystem__delete_file"', "development", true],
+    "mutate-prod": ["agent:ops-assistant", "skill.mutate", 'Skill::"ops-runbook"', "production", false],
+    "promote-prod": ["user:travis", "skill.promote", 'Skill::"ops-runbook"', "production", false],
+    llm: ["user:travis", "call_llm", 'Model::"anthropic/claude-sonnet-4-5"', "development", false],
+  };
+  function applyPreset(k) { const p = PRESETS[k]; $("t-principal").value = p[0]; $("t-action").value = p[1]; $("t-resource").value = p[2]; $("t-env").value = p[3]; $("t-approved").setAttribute("aria-checked", String(p[4])); $("t-resource").removeAttribute("aria-invalid"); $("t-result").hidden = true; }
+  const RISKY = ["delete", "remove", "write", "drop", "truncate", "destroy"];
+  function decide() {
+    const action = $("t-action").value, res = $("t-resource").value.trim(), env = $("t-env").value, approved = $("t-approved").getAttribute("aria-checked") === "true";
+    const m = res.match(/^(\w+)::"([^"]+)"$/); if (!m) return null;
+    const trace = [];
+    if (!st.enabled) return { v: "permit", why: "Enforcement is off; Cedar was not consulted.", by: "governance.enabled = false", trace };
+    if (["execute_tool", "call_llm", "spawn_agent"].includes(action) && !st.actions.has(action)) return { v: "forbid", why: action + " is not in governance.allowed_actions, so it is refused before any policy runs.", by: "governance.allowed_actions", trace };
+    trace.push(["default.cedar:6", "permit", "matches everything"]);
+    if (action === "execute_tool") {
+      trace.push(["tool-approval.cedar:35", "permit", "execute_tool"]);
+      const hit = RISKY.find((w) => m[2].toLowerCase().includes(w));
+      if (hit && !approved) return { v: "ask", label: "Ask (heuristic: " + hit + ")", why: "Cedar permits, then RunManager pauses the run because the tool name contains \"" + hit + "\". It resumes when someone allows it.", by: "tool-approval.cedar:35 + RunManager heuristic", trace };
+      return { v: "permit", why: hit ? "Approved by a human, so the heuristic pause is satisfied." : "No forbid matches and the tool name is not on the heuristic list.", by: "tool-approval.cedar:35", trace };
+    }
+    if (action.startsWith("skill.")) {
+      if (action === "skill.mutate" && env === "production") { trace.push(["skill-mutation.cedar:81", "forbid", "environment == production"]); return { v: "forbid", why: "Production forbids skill mutation. A forbid beats every permit, including default.cedar.", by: "skill-mutation.cedar:81", trace }; }
+      if (env === "development") { const ln = action === "skill.mutate" ? 18 : 34; trace.push(["skill-mutation.cedar:" + ln, "permit", "environment == development"]); return { v: "permit", why: "Development permits all skill operations.", by: "skill-mutation.cedar:" + ln, trace }; }
+      return { v: "permit", warn: true, why: env === "production" ? "No production forbid exists for skill.promote, so the default.cedar baseline lets it through. Add a forbid if promotions must stop in production." : "The staging conditions (validation, human approval, pass rate ≥ 95) are not met, but default.cedar permits anyway.", by: "default.cedar:6", trace };
+    }
+    return { v: "permit", why: "No forbid matches; the baseline permit applies.", by: "default.cedar:6", trace };
+  }
+  function evaluate() {
+    const btn = $("t-eval"), out = $("t-result"), r = decide();
+    if (!r) { $("t-resource").setAttribute("aria-invalid", "true"); $("t-res-hint").className = "hint err"; $("t-res-hint").textContent = 'Parse error: expected Type::"id", for example Tool::"filesystem__delete_file"'; S.toast("Could not parse the resource", "err"); return; }
+    $("t-resource").removeAttribute("aria-invalid"); $("t-res-hint").className = "hint"; $("t-res-hint").textContent = 'Type::"id", for example Tool::"fetch__get" or Skill::"ops-runbook"';
+    busy(btn, 650, () => {
+      const word = { permit: "Permit", forbid: "Forbid", ask: "Ask" }[r.v];
+      out.innerHTML = '<div class="verdict ' + r.v + '">' + (r.label || word) + '</div><p class="why">' + r.why + '</p><p class="why">Deciding: <span class="mono">' + r.by + "</span>" + (r.warn ? ' <span class="chip warn" style="height:20px;font-size:11px">check this</span>' : "") + "</p>" + (r.trace.length ? '<div class="found">' + r.trace.map((t) => '<div class="mrow"><span class="mono">' + t[0] + '<span class="sub">' + t[2] + '</span></span><span class="chip ' + (t[1] === "forbid" ? "err" : "ok") + '">' + t[1] + "</span></div>").join("") + "</div>" : "");
+      out.hidden = false; S.toast("Result: " + (r.label || word), r.v === "permit" ? "ok" : r.v === "ask" ? "warn" : "err");
+    });
+  }
+
+  /* approvals */
+  function setPending() {
+    const n = document.querySelectorAll("#appr-list .appr").length; st.pending = n;
+    $("sum-appr").textContent = n; $("sum-appr-dot").className = "status-dot " + (n ? "warn" : ""); $("appr-sub").textContent = n ? n + " waiting" : "none waiting";
+    $("appr-chip").textContent = n ? n + " pending" : "0 pending"; $("appr-chip").className = "chip " + (n ? "warn" : "ok"); $("appr-empty").hidden = n > 0;
+  }
+  function resolve(btn) {
+    const row = btn.closest(".appr"), mode = btn.dataset.mode, run = row.dataset.run, tool = row.querySelector(".mono").textContent;
+    row.querySelectorAll("button").forEach((b) => (b.disabled = true));
+    busy(btn, 700, () => {
+      if (row.dataset.stale === "true") { row.remove(); setPending(); S.toast("409 · " + run + " was cancelled and is no longer waiting", "err"); return; }
+      row.remove(); setPending();
+      S.toast(mode === "deny" ? tool + " denied · " + run + " continues without it" : mode === "always" ? tool + " allowed · saved to this conversation's policy" : tool + " allowed once · " + run + " resumed", mode === "deny" ? "warn" : "ok");
+    });
+  }
+
+  /* budget */
+  function saveBudget() {
+    const g = $("b-global"), v = Number(g.value), btn = $("budget-save");
+    const limits = [...document.querySelectorAll("#limit-rows input")].map((i) => Number(i.value));
+    busy(btn, 800, () => {
+      if (!g.value.trim() || !(v > 0)) { g.setAttribute("aria-invalid", "true"); $("b-global-hint").className = "hint err"; $("b-global-hint").textContent = "422 · global_limit must be a positive number of USD"; S.toast("Budget not saved · global_limit is invalid", "err"); return; }
+      if (limits.some((x) => !(x >= 0))) { S.toast("Budget not saved · a model limit is not a number", "err"); return; }
+      g.removeAttribute("aria-invalid"); $("b-global-hint").className = "hint"; $("b-global-hint").innerHTML = '<span class="mono">global_limit</span> · all providers combined';
+      const mode = document.querySelector("#enforcement [aria-checked=true]").dataset.value;
+      $("st-budget").textContent = "$" + v + " / month · " + mode; $("sum-budget-of").textContent = "of $" + v + " · " + mode;
+      S.toast("Budget saved · $" + v + " global, " + limits.length + " model limits");
+    });
+  }
+  function addLimit() {
+    const mi = $("new-model"), li = $("new-limit"), model = mi.value.trim(), lim = Number(li.value);
+    if (!/^[\w.-]+\/[\w.:-]+$/.test(model)) { mi.setAttribute("aria-invalid", "true"); S.toast("Use provider/model, for example openai/gpt-5", "err"); return; }
+    if (!(lim > 0)) { li.setAttribute("aria-invalid", "true"); S.toast("Limit must be a positive number", "err"); return; }
+    mi.removeAttribute("aria-invalid"); li.removeAttribute("aria-invalid");
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td class="mono">' + esc(model) + '</td><td><input class="input mono" value="' + lim + '" aria-label="Limit for ' + esc(model) + '" /></td><td><div class="spend"><div class="meter"><i style="width:0%"></i></div><span class="mono">$0.00</span></div></td><td class="ctl"><button class="icon-btn" data-action="rm-limit" aria-label="Remove ' + esc(model) + ' limit"><svg class="icon"><use href="#i-trash"/></svg></button></td>';
+    $("limit-rows").appendChild(tr); mi.value = ""; li.value = ""; S.toast(model + " limited to $" + lim + " · save to apply");
+  }
+
+  app.addEventListener("uar:action", (e) => {
+    const { action, el } = e.detail;
+    if (action === "status-refresh") { $("banner-checked").textContent = "checking…"; busy(el, 800, () => { render(); $("banner-checked").textContent = "checked just now"; S.toast("Status refreshed · effective_state " + (st.enabled ? "on" : "off")); }); }
+    if (action === "preset") { applyPreset(el.dataset.preset); S.openPanel("tester"); }
+    if (action === "evaluate") evaluate();
+    if (action === "approve") resolve(el);
+    if (action === "save-budget") saveBudget();
+    if (action === "add-limit") addLimit();
+    if (action === "rm-limit") { const tr = el.closest("tr"), nm = tr.querySelector("td").textContent; tr.remove(); S.toast(nm + " limit removed · save to apply", "warn"); }
+    if (action === "goto") { const row = document.querySelector('.srow[data-src="' + el.dataset.go + '"]'); if (row) { row.click(); row.focus(); } }
+  });
+  ["t-action", "t-env", "t-principal"].forEach((id) => $(id).addEventListener("change", () => { $("t-result").hidden = true; }));
+})();
+</script>
+</body>
+</html>

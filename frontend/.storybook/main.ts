@@ -5,7 +5,9 @@ const config: StorybookConfig = {
     "../src/**/*.mdx",
     "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)",
     "../packages/a2ui-uar/src/**/*.mdx",
-    "../packages/a2ui-uar/src/**/*.stories.@(js|jsx|mjs|ts|tsx)"
+    "../packages/a2ui-uar/src/**/*.stories.@(js|jsx|mjs|ts|tsx)",
+    "../packages/uar-ui/src/**/*.mdx",
+    "../packages/uar-ui/src/**/*.stories.@(js|jsx|mjs|ts|tsx)"
   ],
   "addons": [
     "@chromatic-com/storybook",

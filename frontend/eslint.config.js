@@ -23,10 +23,14 @@ export default tseslint.config({
         "coverage/**",
         "test-results/**",
         "../static",
-        // This workspace package has its own build/test lifecycle. Linting
-        // the product frontend must not traverse its examples, generated
-        // skill templates, or independently versioned source tree.
-        "packages/**",
+        // Workspace packages have their own build/test lifecycle. Linting
+        // the product frontend must not traverse their examples, generated
+        // skill templates, or independently versioned source trees.
+        "packages/*",
+        // Except the product's own presentational library, which must obey
+        // the same Flat 2.0, hooks and filename rules as frontend/src
+        // (docs/design/react-implementation-plan.md §2.3).
+        "!packages/uar-ui",
         // Storybook build output (Change 25).
         "storybook-static",
         // Deliberately invalid fixtures are exercised by the standalone

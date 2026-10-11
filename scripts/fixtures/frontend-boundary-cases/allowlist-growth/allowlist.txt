@@ -1,0 +1,1 @@
+component-direct-fetch scripts/fixtures/frontend-boundary-cases/allowlist-growth/features/example/ui/fetching-panel.tsx:2   # new exception without an ADR

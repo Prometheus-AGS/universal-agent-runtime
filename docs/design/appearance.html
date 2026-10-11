@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Appearance · Settings · Universal Agent Runtime</title>
+<link rel="icon" href="assets/brand/uar-mark-dark.svg" />
+<link rel="stylesheet" href="assets/shell.css" />
+<link rel="stylesheet" href="assets/settings.css" />
+<style>
+  /* two-column: settings stack + sticky live preview */
+  .ap { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; align-items: start; }
+  .ap-stack { min-width: 0; }
+  .ap-preview { position: sticky; top: 0; }
+
+  /* theme cards (radiogroup) */
+  .tgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .tcard { display: flex; flex-direction: column; gap: 8px; padding: 8px 8px 10px; border-radius: var(--r-card); background: var(--step-2); text-align: left; transition: background var(--fast) var(--ease); }
+  .tcard:hover { background: var(--hover); }
+  .tcard[aria-checked="true"] { background: var(--accent-soft); }
+  .tcard[aria-checked="true"] .tn { color: var(--accent); }
+  [data-theme="hc"] .tcard { box-shadow: inset 0 0 0 1px var(--border); }
+  [data-theme="hc"] .tcard[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--accent); }
+  .tcard .trow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 2px; }
+  .tcard .tn { font-weight: 600; font-size: 13.5px; }
+  .tcard .ts { display: block; font-size: 11.5px; color: var(--faint); padding: 0 2px; }
+  /* Swatches set data-theme locally, so every var() inside resolves to that theme's tokens.
+     shell.css defines dark on :root only; this block mirrors :root so a dark swatch renders dark inside a light page.
+     Move to shell.css as `:root, [data-theme="dark"]` when the token file is next touched. */
+  .tcard [data-theme="dark"] { --bg: oklch(16.7% 0.012 254); --surface: oklch(20.0% 0.022 264); --fg: oklch(94.4% 0.010 253); --muted: oklch(75.4% 0.020 256);
+    --accent: oklch(70.4% 0.192 37); --raised: oklch(26.4% 0.033 262); --input: oklch(30.9% 0.039 262); --accent-soft: oklch(23.9% 0.028 27); }
+  .sw { height: 76px; border-radius: 8px; background: var(--bg); display: grid; grid-template-columns: 28% 1fr; overflow: hidden; }
+  .sw-split { display: grid; grid-template-columns: 1fr 1fr; height: 76px; border-radius: 8px; overflow: hidden; }
+  .sw-split .sw { border-radius: 0; grid-template-columns: 1fr; }
+  .sw-split .sw > b { display: none; }
+  .sw > b { background: var(--surface); padding: 7px 5px; display: flex; flex-direction: column; gap: 4px; }
+  .sw > b i { height: 6px; border-radius: 3px; background: var(--raised); }
+  .sw > b i.on { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+  .sw > span { padding: 8px; display: flex; flex-direction: column; gap: 5px; }
+  .sw > span i { height: 5px; border-radius: 3px; background: var(--muted); width: 70%; }
+  .sw > span i.bub { align-self: flex-end; width: 46%; height: 10px; background: var(--raised); }
+  .sw > span i.fg { background: var(--fg); width: 85%; }
+  .sw > span i.cta { margin-top: auto; width: 100%; height: 10px; background: var(--input); box-shadow: inset -12px 0 0 var(--accent); }
+
+  .rule > dl { min-width: 0; margin: 0; }
+  .rule .ctl output { font-family: var(--font-mono); font-size: 12px; min-width: 44px; text-align: right; }
+  .os-note { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--faint); margin-top: 4px; }
+  .os-note .icon { width: 13px; height: 13px; }
+  .tf-sample { font-size: 18px; color: var(--fg); line-height: 1.2; }
+  .tf-sample.d { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+  .tf-sample.b { font-family: var(--font-body); font-size: 15px; }
+  .tf-sample.m { font-family: var(--font-mono); font-size: 13.5px; }
+  .keys { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .keys .rule { font-size: 13px; }
+  .keys kbd { font-size: 11.5px; }
+
+  /* live preview — a mini chat workspace drawn only with tokens */
+  .pv { padding: 0; overflow: hidden; }
+  .pv-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px 10px; }
+  .pv-head h3 { font-size: 14px; }
+  .pv-app { display: grid; grid-template-columns: 62px minmax(0, 1fr); height: 392px; margin: 0 12px; border-radius: 10px; overflow: hidden; background: var(--bg); color: var(--fg); }
+  .sidebar-collapsed-pv .pv-app { grid-template-columns: 22px minmax(0, 1fr); }
+  .pv-side { background: var(--surface); padding: 8px 6px; display: flex; flex-direction: column; gap: 4px; }
+  .pv-side i { height: 16px; border-radius: 5px; background: var(--raised); flex: none; }
+  .pv-side i.on { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+  .pv-side i.lbl { height: 5px; width: 60%; background: var(--input); margin: 6px 2px 2px; }
+  .pv-main { display: flex; flex-direction: column; gap: 10px; padding: 12px; min-width: 0; font-size: calc(var(--thread-fs) - 2px); line-height: 1.5; }
+  .pv-user { align-self: flex-end; max-width: 86%; background: var(--raised); padding: 6px 10px; border-radius: 12px; }
+  .pv-asst { color: var(--fg); }
+  .pv-code { font-family: var(--font-mono); font-size: 0.82em; background: var(--input); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+  .pv-rec { background: var(--step-2); border-radius: 8px; padding: 7px 9px; font-size: 11.5px; color: var(--muted); }
+  .pv-rec .r { display: flex; align-items: center; gap: 6px; }
+  .pv-rec .r .mono { margin-left: auto; color: var(--faint); font-size: 11px; }
+  .pv-rec .icon { width: 12px; height: 12px; transition: transform var(--base) var(--ease); }
+  .pv-rec.open .r .icon { transform: rotate(90deg); }
+  .pv-steps { display: none; margin-top: 6px; flex-direction: column; gap: 3px; }
+  .pv-rec.open .pv-steps { display: flex; }
+  .pv-steps span { display: flex; align-items: center; gap: 6px; }
+  .pv-steps .status-dot { width: 6px; height: 6px; }
+  .pv-comp { margin-top: auto; display: flex; align-items: center; gap: 8px; background: var(--step-2); border-radius: 10px; padding: 8px 8px 8px 10px; color: var(--faint); font-size: 12px; }
+  .pv-comp .grow { flex: 1; }
+  .pv-comp .send { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; }
+  .pv-comp .send .icon { width: 12px; height: 12px; }
+  [data-density="compact"] .pv-main { gap: 6px; padding: 8px 10px; }
+  [data-density="compact"] .pv-side { gap: 3px; padding: 6px 5px; }
+  [data-density="compact"] .pv-side i:not(.lbl) { height: 12px; }
+  [data-density="compact"] .pv-rec { padding: 5px 8px; }
+  .pv-foot { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px 14px; }
+  .ta { height: 190px; padding: 10px 12px; resize: vertical; width: 100%; line-height: 1.5; }
+  .res { display: none; margin-top: 12px; } .res.show { display: flex; }
+
+  @media (max-width: 1180px) { .ap { grid-template-columns: minmax(0, 1fr) 300px; } .tgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 920px) { .ap { grid-template-columns: 1fr; } .ap-preview { position: static; order: -1; } .keys { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app" data-od-id="settings-shell" data-panel-persist="false">
+  <div class="titlebar" data-tauri-drag-region><span class="mono">universal-agent-runtime</span>&nbsp;· Settings</div>
+  <aside data-settings-nav data-current="appearance" data-od-id="settings-sidebar"></aside>
+
+  <main class="main" id="content" data-od-id="settings-main">
+    <header class="topbar">
+      <button class="icon-btn" data-action="sidebar-mobile" aria-label="Open navigation" id="mobile-nav-btn" style="display:none"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+      <div class="title"><span class="crumb">Settings</span><span>Appearance</span></div>
+      <span class="spacer"></span>
+      <button class="chip" data-action="cmdk"><svg class="icon"><use href="#i-search"/></svg>Search settings <kbd style="margin-left:4px" data-kbd="⌘K">⌘K</kbd></button>
+      <button class="icon-btn" data-action="theme" aria-pressed="false" aria-label="Switch theme" title="Switch theme"><svg class="icon"><use href="#i-sun"/></svg></button>
+    </header>
+
+    <section class="page">
+      <div class="page-inner">
+        <div class="page-head" data-od-id="page-head">
+          <div>
+            <h1>Appearance</h1>
+            <p>Theme and comfort preferences for this device. Changes apply instantly to every screen; nothing here changes how the agent runs.</p>
+          </div>
+          <div class="acts" data-od-id="page-actions">
+            <button class="btn btn-ghost" data-action="panel-open" data-tab="import" data-od-id="import-cta"><svg class="icon"><use href="#i-upload"/></svg>Import</button>
+            <button class="btn btn-secondary" data-action="reset-all" data-od-id="reset-cta"><svg class="icon"><use href="#i-history"/></svg>Reset to defaults</button>
+          </div>
+        </div>
+
+        <div class="summary" data-od-id="summary-strip">
+          <div class="card sum" data-od-id="sum-theme"><div class="k">Theme</div><div class="v"><span id="sum-theme">Dark</span><small id="sum-theme-sub">set explicitly</small></div></div>
+          <div class="card sum" data-od-id="sum-text"><div class="k">Conversation text</div><div class="v"><span class="mono" id="sum-fs">15 px</span><small>13–19 · thread only</small></div></div>
+          <div class="card sum" data-od-id="sum-density"><div class="k">Density</div><div class="v"><span id="sum-density">Comfortable</span><small id="sum-density-sub">34 px nav rows</small></div></div>
+          <div class="card sum" data-od-id="sum-storage"><div class="k">Stored</div><div class="v"><span class="status-dot warn"></span>This device<small>no account sync</small></div></div>
+        </div>
+
+        <div class="ap" data-od-id="appearance-layout">
+          <div class="ap-stack" data-od-id="settings-stack">
+
+            <section aria-labelledby="h-theme" data-od-id="theme-section">
+              <div class="section-title"><h3 id="h-theme">Theme</h3><p>Frontend key <span class="mono">uar-theme</span> · class on <span class="mono">&lt;html&gt;</span></p></div>
+              <div class="tgrid" role="radiogroup" aria-labelledby="h-theme" id="theme-cards" data-od-id="theme-cards">
+                <button class="tcard" role="radio" data-value="dark" aria-checked="true" data-od-id="theme-card-dark">
+                  <span class="sw" data-theme="dark" aria-hidden="true"><b><i class="on"></i><i></i><i></i></b><span><i class="bub"></i><i class="fg"></i><i></i><i class="cta"></i></span></span>
+                  <span class="trow"><span class="tn">Dark</span><span class="radio" aria-hidden="true"></span></span>
+                  <span class="ts">Default · navy ladder</span>
+                </button>
+                <button class="tcard" role="radio" data-value="light" aria-checked="false" data-od-id="theme-card-light">
+                  <span class="sw" data-theme="light" aria-hidden="true"><b><i class="on"></i><i></i><i></i></b><span><i class="bub"></i><i class="fg"></i><i></i><i class="cta"></i></span></span>
+                  <span class="trow"><span class="tn">Light</span><span class="radio" aria-hidden="true"></span></span>
+                  <span class="ts">Darkened ember for 4.5:1</span>
+                </button>
+                <button class="tcard" role="radio" data-value="hc" aria-checked="false" data-od-id="theme-card-hc">
+                  <span class="sw" data-theme="hc" aria-hidden="true"><b><i class="on"></i><i></i><i></i></b><span><i class="bub"></i><i class="fg"></i><i></i><i class="cta"></i></span></span>
+                  <span class="trow"><span class="tn">High contrast</span><span class="radio" aria-hidden="true"></span></span>
+                  <span class="ts">Monochrome · strokes return</span>
+                </button>
+                <button class="tcard" role="radio" data-value="system" aria-checked="false" data-od-id="theme-card-system">
+                  <span class="sw-split" aria-hidden="true">
+                    <span class="sw" data-theme="dark"><b></b><span><i class="bub"></i><i class="fg"></i><i></i><i class="cta"></i></span></span>
+                    <span class="sw" data-theme="light"><b></b><span><i class="bub"></i><i class="fg"></i><i></i><i class="cta"></i></span></span>
+                  </span>
+                  <span class="trow"><span class="tn">Match system</span><span class="radio" aria-hidden="true"></span></span>
+                  <span class="ts" id="sys-resolves">OS is Dark right now</span>
+                </button>
+              </div>
+            </section>
+
+            <section aria-labelledby="h-comfort" data-od-id="comfort-section">
+              <div class="section-title"><h3 id="h-comfort">Reading &amp; layout</h3><p>Client-side preferences, stored with the theme</p></div>
+              <div class="rules">
+                <div class="rule" data-od-id="thread-fs-row">
+                  <div><label for="thread-fs">Conversation text</label><span class="sub">Messages, code and the composer. Chrome stays at 13–14 px.</span></div>
+                  <div class="ctl range" data-od-id="thread-fs-control">
+                    <input type="range" id="thread-fs" min="13" max="19" step="1" value="15" aria-describedby="thread-fs-out" />
+                    <output id="thread-fs-out" for="thread-fs">15 px</output>
+                    <button class="btn btn-ghost btn-sm" data-action="reset-fs" data-od-id="thread-fs-reset">Reset</button>
+                  </div>
+                </div>
+                <div class="rule" data-od-id="density-row">
+                  <div><span id="lbl-density">Density</span><span class="sub">Compact tightens nav rows, lists and tables. The conversation keeps its own size.</span></div>
+                  <div class="choice" role="radiogroup" aria-labelledby="lbl-density" id="density-choice" data-od-id="density-choice">
+                    <button role="radio" data-value="comfortable" aria-checked="true">Comfortable</button><button role="radio" data-value="compact" aria-checked="false">Compact</button>
+                  </div>
+                </div>
+                <div class="rule" data-od-id="motion-row">
+                  <div><span id="lbl-motion">Motion</span><span class="sub">Panel slides, fades and the spinner. Reduce keeps state changes, drops the movement.</span>
+                    <span class="os-note" id="motion-os"><svg class="icon"><use href="#i-desktop"/></svg>This device: reduce motion off</span></div>
+                  <div class="choice" role="radiogroup" aria-labelledby="lbl-motion" id="motion-choice" data-od-id="motion-choice">
+                    <button role="radio" data-value="system" aria-checked="true">Match system</button><button role="radio" data-value="reduce" aria-checked="false">Reduce</button><button role="radio" data-value="full" aria-checked="false">Full</button>
+                  </div>
+                </div>
+                <div class="rule" data-od-id="sidebar-row">
+                  <div><span id="lbl-sidebar">Sidebar on launch</span><span class="sub">Same state <kbd data-kbd="⌘B">⌘B</kbd> toggles; the last choice is restored next launch.</span></div>
+                  <div class="choice" role="radiogroup" aria-labelledby="lbl-sidebar" id="sidebar-choice" data-od-id="sidebar-choice">
+                    <button role="radio" data-value="expanded" aria-checked="true">Expanded</button><button role="radio" data-value="collapsed" aria-checked="false">Collapsed</button>
+                  </div>
+                </div>
+                <div class="rule" data-od-id="exec-row">
+                  <div><span id="lbl-exec">Execution record</span><span class="sub">How each finished turn's step list appears in the thread. Running turns always show progress.</span></div>
+                  <div class="choice" role="radiogroup" aria-labelledby="lbl-exec" id="exec-choice" data-od-id="exec-choice">
+                    <button role="radio" data-value="collapsed" aria-checked="true">Collapsed</button><button role="radio" data-value="expanded" aria-checked="false">Expanded</button>
+                  </div>
+                </div>
+              </div>
+              <p class="gap-note"><i></i>Density, motion, conversation text size and execution-record default are new client-only prefs: <span class="mono">theme-store.ts</span> holds only <span class="mono">Theme</span> today. They should persist beside <span class="mono">uar-theme</span>.</p>
+            </section>
+
+            <section aria-labelledby="h-brand" data-od-id="brand-section">
+              <div class="section-title"><h3 id="h-brand">Typefaces</h3><p>Fixed by the brand · read-only</p></div>
+              <div class="rules" data-od-id="typeface-list">
+                <div class="rule" data-od-id="typeface-display"><div><span class="tf-sample d">Run 4 needs approval</span><span class="sub">Headings · weights 500–700</span></div><span class="mono faint">Space Grotesk</span></div>
+                <div class="rule" data-od-id="typeface-body"><div><span class="tf-sample b">Ask before writing outside the workspace.</span><span class="sub">UI and conversation text</span></div><span class="mono faint">Inter</span></div>
+                <div class="rule" data-od-id="typeface-mono"><div><span class="tf-sample m">anthropic/claude-sonnet · 12,480 tok</span><span class="sub">Identifiers, addresses, counts, prices</span></div><span class="mono faint">JetBrains Mono</span></div>
+                <div class="rule" data-od-id="accent-fixed"><div>Accent<span class="sub">Ember is fixed: it marks selection and the one primary action, and a picked hue would collide with the ok/warn/err/live state colours.</span></div><span class="chip accent">Ember</span></div>
+              </div>
+            </section>
+
+            <section aria-labelledby="h-keys" data-od-id="shortcuts-section">
+              <div class="section-title"><h3 id="h-keys">Keyboard shortcuts</h3><p>Available on every screen</p></div>
+              <div class="keys" data-od-id="shortcut-list">
+                <div class="rule"><span>Search settings &amp; commands</span><kbd data-kbd="⌘K">⌘K</kbd></div>
+                <div class="rule"><span>Toggle sidebar</span><kbd data-kbd="⌘B">⌘B</kbd></div>
+                <div class="rule"><span>Toggle inspector</span><kbd data-kbd="⌘\">⌘\</kbd></div>
+                <div class="rule"><span>Inspector · Run details</span><kbd data-kbd="⇧⌘D">⇧⌘D</kbd></div>
+                <div class="rule"><span>Inspector · Files</span><kbd data-kbd="⇧⌘E">⇧⌘E</kbd></div>
+                <div class="rule"><span>Inspector · Browser</span><kbd data-kbd="⇧⌘B">⇧⌘B</kbd></div>
+                <div class="rule"><span>Open settings</span><kbd data-kbd="⌘,">⌘,</kbd></div>
+                <div class="rule"><span>Back to chat / close inspector</span><kbd>Esc</kbd></div>
+              </div>
+            </section>
+
+            <section aria-labelledby="h-store" data-od-id="storage-section">
+              <div class="section-title"><h3 id="h-store">Where this is stored</h3><p>Per device</p></div>
+              <div class="rules">
+                <div class="rule" data-od-id="storage-row">
+                  <dl class="kv">
+                    <dt>Frontend</dt><dd><span class="mono">localStorage["uar-theme"]</span> · <span class="mono">light | dark | high-contrast | system</span></dd>
+                    <dt>Account settings</dt><dd><span class="mono">/api/uar/user/settings</span> · <span class="mono">prompt_caching_enabled</span>, <span class="mono">preferred_scope</span> only</dd>
+                  </dl>
+                  <div class="ctl"><button class="btn btn-secondary btn-sm" data-action="export" data-od-id="export-cta"><svg class="icon"><use href="#i-copy"/></svg>Copy as JSON</button></div>
+                </div>
+              </div>
+              <p class="gap-note"><i></i>Syncing appearance across devices needs new fields on <span class="mono">/api/uar/user/settings</span>; until then, move prefs with Copy as JSON and Import.</p>
+            </section>
+          </div>
+
+          <aside class="ap-preview" aria-labelledby="h-preview" data-od-id="live-preview">
+            <div class="card pv">
+              <div class="pv-head"><h3 id="h-preview">Live preview</h3><span class="chip quiet mono" id="pv-cap">Dark · 15 px</span></div>
+              <div class="pv-app" aria-hidden="true" data-od-id="preview-workspace">
+                <div class="pv-side"><i></i><i class="lbl"></i><i class="on"></i><i></i><i></i><i></i></div>
+                <div class="pv-main">
+                  <div class="pv-user">Why did last night's eval run stop at step 3?</div>
+                  <div class="pv-asst">The <span class="pv-code">filesystem.write</span> call was denied by Cedar policy <span class="pv-code">default-workspace</span>, so the run ended before the report step.</div>
+                  <div class="pv-rec" id="pv-rec">
+                    <div class="r"><svg class="icon"><use href="#i-play"/></svg>Execution record · 3 steps<span class="mono">41.8s</span></div>
+                    <div class="pv-steps"><span><i class="status-dot"></i>Load eval set</span><span><i class="status-dot"></i>Run 120 cases</span><span><i class="status-dot err"></i>Write report · denied</span></div>
+                  </div>
+                  <div class="pv-comp"><span class="grow">Reply…</span><span class="send"><svg class="icon"><use href="#i-play"/></svg></span></div>
+                </div>
+              </div>
+              <div class="pv-foot"><span class="chip quiet" id="pv-density">Comfortable</span><span class="chip quiet" id="pv-motion">Motion · system</span><span class="chip quiet" id="pv-exec">Record collapsed</span></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="panel" aria-label="Import appearance" aria-hidden="true" data-od-id="import-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-head">
+      <div class="tabs" role="tablist" aria-label="Inspector sections"><button class="tab" role="tab" data-tab="import" aria-selected="true" id="tab-import"><svg class="icon icon-sm"><use href="#i-upload"/></svg>Import appearance</button></div>
+      <span style="flex:1"></span>
+      <button class="icon-btn" data-action="panel-close" aria-label="Close (Esc)"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="panel-body">
+      <div role="tabpanel" data-tabpanel="import" class="active" aria-labelledby="tab-import" data-od-id="import-flow">
+        <p class="muted" style="font-size:13px;margin:6px 2px 12px">Paste the JSON from Copy as JSON on another device. Values are checked before anything changes; <span class="mono">high-contrast</span> from the frontend store is accepted.</p>
+        <div class="toolbar" data-od-id="import-samples">
+          <button class="btn btn-ghost btn-sm" data-action="sample" data-sample="frontend">Sample · laptop</button>
+          <button class="btn btn-ghost btn-sm" data-action="sample" data-sample="old">Sample · older export</button>
+        </div>
+        <div class="field" data-od-id="import-field">
+          <label for="import-json">Preferences JSON</label>
+          <textarea class="input mono ta" id="import-json" spellcheck="false" aria-describedby="import-hint"></textarea>
+          <span class="hint" id="import-hint">Keys: <span class="mono">theme, density, motion, threadFs, sidebar, execRecord</span></span>
+        </div>
+        <div class="banner res" id="import-res" role="status" data-od-id="import-result"></div>
+        <div class="wizard-foot">
+          <button class="btn btn-ghost" data-action="panel-close">Cancel</button>
+          <button class="btn btn-primary" data-action="apply-import" id="apply-import" data-od-id="apply-import-cta"><svg class="icon"><use href="#i-check"/></svg>Validate &amp; apply</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-overlay" aria-hidden="true"></div>
+</div>
+
+<div class="cmdk-backdrop"></div>
+<div class="cmdk" role="dialog" aria-label="Search settings">
+  <input class="input" type="search" placeholder="Search settings…" aria-label="Search settings" />
+  <div class="cmdk-list">
+    <p class="menu-label">Appearance</p>
+    <button class="menu-item" data-action="theme"><svg class="icon"><use href="#i-sun"/></svg>Switch light / dark</button>
+    <button class="menu-item" data-action="cmd-hc"><svg class="icon"><use href="#i-contrast"/></svg>High contrast theme</button>
+    <button class="menu-item" data-action="cmd-compact"><svg class="icon"><use href="#i-layout"/></svg>Toggle compact density</button>
+    <button class="menu-item" data-action="panel-open" data-tab="import"><svg class="icon"><use href="#i-upload"/></svg>Import appearance</button>
+    <button class="menu-item" data-action="reset-all"><svg class="icon"><use href="#i-history"/></svg>Reset appearance to defaults</button>
+    <p class="menu-label">Other settings</p>
+    <a class="menu-item" href="models-and-providers.html"><svg class="icon"><use href="#i-cpu"/></svg>Models &amp; providers</a>
+    <a class="menu-item" href="tools-and-mcp.html"><svg class="icon"><use href="#i-tool"/></svg>Tools &amp; MCP</a>
+    <a class="menu-item" href="skills.html"><svg class="icon"><use href="#i-spark"/></svg>Skills</a>
+    <a class="menu-item" href="knowledge-and-memory.html"><svg class="icon"><use href="#i-book"/></svg>Knowledge &amp; memory</a>
+    <a class="menu-item" href="governance.html"><svg class="icon"><use href="#i-shield"/></svg>Governance</a>
+    <a class="menu-item" href="desktop.html"><svg class="icon"><use href="#i-desktop"/></svg>Desktop</a>
+    <a class="menu-item" href="chat-workspace.html"><svg class="icon"><use href="#i-back"/></svg>Back to chat<kbd>Esc</kbd></a>
+  </div>
+</div>
+
+<script src="assets/settings.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+  (function () {
+    const S = window.UARShell; const app = document.querySelector(".app"); if (!S || !app) return;
+    const $ = (id) => document.getElementById(id);
+    const DEFAULTS = { theme: "dark", density: "comfortable", motion: "system", threadFs: 15, execRecord: "collapsed", sidebar: "expanded" };
+    const THEME_NAME = { dark: "Dark", light: "Light", hc: "High contrast", system: "Match system" };
+    const sysLight = window.matchMedia("(prefers-color-scheme: light)");
+    const sysReduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const cards = [...document.querySelectorAll("#theme-cards [role=radio]")];
+    const range = $("thread-fs");
+    const cur = () => ({
+      theme: S.state.theme || DEFAULTS.theme, density: S.state.density || DEFAULTS.density, motion: S.state.motion || DEFAULTS.motion,
+      threadFs: S.state.threadFs || DEFAULTS.threadFs, execRecord: S.state.execRecord || DEFAULTS.execRecord, sidebar: S.state.sidebarCollapsed ? "collapsed" : "expanded",
+    });
+    const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+    function setChoice(id, value) { document.querySelectorAll("#" + id + " [role=radio]").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.value === value))); }
+
+    /* one render from shell state; every control and the preview read from here */
+    function render() {
+      const p = cur(); const resolved = S.resolvedTheme(); const osName = sysLight.matches ? "Light" : "Dark";
+      cards.forEach((c) => { const on = c.dataset.value === p.theme; c.setAttribute("aria-checked", String(on)); c.tabIndex = on ? 0 : -1; c.querySelector(".radio").setAttribute("aria-checked", String(on)); });
+      $("sys-resolves").textContent = "OS is " + osName + " right now";
+      range.value = p.threadFs; $("thread-fs-out").textContent = p.threadFs + " px";
+      setChoice("density-choice", p.density); setChoice("motion-choice", p.motion); setChoice("exec-choice", p.execRecord); setChoice("sidebar-choice", p.sidebar);
+      $("motion-os").lastChild.textContent = "This device: reduce motion " + (sysReduce.matches ? "on" : "off");
+      $("sum-theme").textContent = p.theme === "system" ? "System" : THEME_NAME[p.theme];
+      $("sum-theme-sub").textContent = p.theme === "system" ? "resolves to " + cap(resolved) : "set explicitly";
+      $("sum-fs").textContent = p.threadFs + " px";
+      $("sum-density").textContent = cap(p.density); $("sum-density-sub").textContent = p.density === "compact" ? "30 px nav rows" : "34 px nav rows";
+      $("pv-cap").textContent = THEME_NAME[resolved] + " · " + p.threadFs + " px";
+      $("pv-density").textContent = cap(p.density);
+      $("pv-motion").textContent = "Motion · " + (p.motion === "system" ? "system" : p.motion);
+      $("pv-exec").textContent = "Record " + p.execRecord;
+      $("pv-rec").classList.toggle("open", p.execRecord === "expanded");
+      document.querySelector(".ap-preview").classList.toggle("sidebar-collapsed-pv", p.sidebar === "collapsed");
+    }
+    const saved = (what) => S.toast(what + " · saved on this device");
+
+    /* theme cards: radiogroup with roving tabindex and arrow keys */
+    function pickTheme(card, focus) { if (focus) card.focus(); if (S.state.theme === card.dataset.value) return; S.setPref("theme", card.dataset.value); saved("Theme: " + THEME_NAME[card.dataset.value]); }
+    $("theme-cards").addEventListener("click", (e) => { const c = e.target.closest("[role=radio]"); if (c) pickTheme(c, false); });
+    $("theme-cards").addEventListener("keydown", (e) => {
+      const c = e.target.closest("[role=radio]"); if (!c) return; const i = cards.indexOf(c);
+      const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+      if (step) { e.preventDefault(); pickTheme(cards[(i + step + cards.length) % cards.length], true); }
+      if (e.key === "Home") { e.preventDefault(); pickTheme(cards[0], true); }
+      if (e.key === "End") { e.preventDefault(); pickTheme(cards[cards.length - 1], true); }
+    });
+
+    /* conversation text: live on input, confirm on change */
+    range.addEventListener("input", () => { S.setPref("threadFs", Number(range.value)); });
+    range.addEventListener("change", () => saved("Conversation text " + range.value + " px"));
+
+    /* segmented choices (settings.js flips aria-checked and emits uar:choice) */
+    app.addEventListener("uar:choice", (e) => {
+      const { id, value, label } = e.detail;
+      if (id === "density-choice") { S.setPref("density", value); saved("Density: " + label); }
+      else if (id === "motion-choice") { S.setPref("motion", value); saved("Motion: " + label); }
+      else if (id === "exec-choice") { S.setPref("execRecord", value); saved("Execution record: " + label); }
+      else if (id === "sidebar-choice") { S.setSidebar(value === "collapsed"); render(); saved("Sidebar: " + label); }
+    });
+
+    /* stay in sync with the topbar theme button, ⌘B and OS changes */
+    app.addEventListener("uar:prefs", render);
+    app.addEventListener("uar:sidebar", render);
+    sysLight.addEventListener("change", render); sysReduce.addEventListener("change", render);
+
+    /* import flow: validate, then apply; success and failure both land in the result banner */
+    const SAMPLES = {
+      frontend: { theme: "high-contrast", density: "compact", motion: "reduce", threadFs: 17, sidebar: "expanded", execRecord: "expanded" },
+      old: { theme: "midnight", fontSize: 22, density: "compact" },
+    };
+    const ENUMS = { theme: ["dark", "light", "hc", "high-contrast", "system"], density: ["comfortable", "compact"], motion: ["system", "reduce", "full"], sidebar: ["expanded", "collapsed"], execRecord: ["collapsed", "expanded"] };
+    function validate(text) {
+      let data; try { data = JSON.parse(text); } catch (err) { return { errors: ["Not valid JSON: " + err.message] }; }
+      if (!data || typeof data !== "object" || Array.isArray(data)) return { errors: ["Expected one JSON object"] };
+      const errors = [];
+      Object.keys(data).forEach((k) => {
+        const v = data[k];
+        if (k === "threadFs") { if (!Number.isInteger(v) || v < 13 || v > 19) errors.push("threadFs must be a whole number 13–19 (got " + JSON.stringify(v) + ")"); }
+        else if (ENUMS[k]) { if (!ENUMS[k].includes(v)) errors.push(k + " must be one of " + ENUMS[k].join(", ") + " (got " + JSON.stringify(v) + ")"); }
+        else errors.push("Unknown key " + k);
+      });
+      if (data.theme === "high-contrast") data.theme = "hc";
+      return { errors, data };
+    }
+    function showResult(kind, title, lines) {
+      const r = $("import-res"); r.className = "banner res show" + (kind === "ok" ? " ok" : " warn");
+      r.innerHTML = '<svg class="icon"><use href="#i-' + (kind === "ok" ? "check" : "alert") + '"/></svg><span class="grow"></span>';
+      const g = r.querySelector(".grow"); g.textContent = title;
+      lines.forEach((l) => { const s = document.createElement("span"); s.className = "sub mono"; s.textContent = l; g.appendChild(s); });
+    }
+    function applyPrefs(p) {
+      ["theme", "density", "motion", "threadFs", "execRecord"].forEach((k) => { if (p[k] !== undefined) S.setPref(k, p[k]); });
+      if (p.sidebar) S.setSidebar(p.sidebar === "collapsed");
+      render();
+    }
+
+    app.addEventListener("uar:action", (e) => {
+      const { action, el } = e.detail;
+      if (action === "reset-fs") { S.setPref("threadFs", DEFAULTS.threadFs); saved("Conversation text 15 px"); }
+      else if (action === "reset-all") { applyPrefs(DEFAULTS); saved("Appearance reset to defaults"); }
+      else if (action === "cmd-hc") { S.setPref("theme", "hc"); saved("Theme: High contrast"); }
+      else if (action === "cmd-compact") { const v = cur().density === "compact" ? "comfortable" : "compact"; S.setPref("density", v); saved("Density: " + cap(v)); }
+      else if (action === "export") {
+        const json = JSON.stringify(cur(), null, 2);
+        const done = () => S.toast("Copied appearance JSON (" + Object.keys(cur()).length + " keys)");
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json).then(done, () => S.toast("Clipboard blocked by the browser; use Import on this device to view the JSON", "warn"));
+        else S.toast("Clipboard unavailable in this window", "warn");
+      }
+      else if (action === "sample") { $("import-json").value = JSON.stringify(SAMPLES[el.dataset.sample], null, 2); $("import-res").className = "banner res"; $("import-json").removeAttribute("aria-invalid"); }
+      else if (action === "apply-import") {
+        const btn = $("apply-import"); const ta = $("import-json");
+        btn.classList.add("is-loading"); btn.disabled = true; btn.querySelector("use").setAttribute("href", "#i-refresh"); btn.querySelector(".icon").classList.add("spin");
+        $("import-res").className = "banner res";
+        setTimeout(() => {
+          btn.classList.remove("is-loading"); btn.disabled = false; btn.querySelector("use").setAttribute("href", "#i-check"); btn.querySelector(".icon").classList.remove("spin");
+          const { errors, data } = validate(ta.value);
+          if (errors.length) { ta.setAttribute("aria-invalid", "true"); showResult("warn", "Nothing applied · " + errors.length + (errors.length === 1 ? " problem" : " problems"), errors); S.toast("Import rejected", "err"); return; }
+          ta.removeAttribute("aria-invalid"); applyPrefs(data);
+          showResult("ok", "Applied " + Object.keys(data).length + " preferences", Object.entries(data).map(([k, v]) => k + " = " + v));
+          saved("Imported appearance");
+        }, 750);
+      }
+    });
+    app.addEventListener("uar:panel", (e) => { if (e.detail.open && !$("import-json").value) $("import-json").value = JSON.stringify(cur(), null, 2); });
+
+    render();
+  })();
+</script>
+</body>
+</html>

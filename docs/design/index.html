@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>UAR operator shell · prototype overview</title>
+<link rel="icon" href="assets/brand/uar-mark-dark.svg" />
+<link rel="stylesheet" href="assets/shell.css" />
+<style>
+  body { overflow: auto; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 48px 28px 72px; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 40px; align-items: end; padding-bottom: 36px; }
+  .hero h1 { font-size: 34px; line-height: 1.12; }
+  .hero p { color: var(--muted); font-size: 15.5px; margin-top: 14px; max-width: 58ch; }
+  .hero .brand { margin-bottom: 22px; }
+  .facts { display: grid; gap: 8px; font-size: 13.5px; }
+  .fact { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding: 10px 14px; background: var(--step-2); border-radius: 10px; }
+  .fact .k { color: var(--faint); }
+  .screens { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 10px; }
+  .screen { display: block; background: var(--step-2); border-radius: var(--r-panel); padding: 18px; transition: background var(--fast) var(--ease); }
+  .screen:hover { background: var(--raised); }
+  .screen h2 { font-size: 18px; display: flex; align-items: center; gap: 10px; }
+  .screen h2 .mono { font-size: 12px; color: var(--faint); font-weight: 400; }
+  .screen p { color: var(--muted); font-size: 13.5px; margin: 8px 0 14px; }
+  .thumb { aspect-ratio: 16 / 9; border-radius: 10px; background: var(--bg); overflow: hidden; display: grid; }
+  .thumb .mini { display: grid; height: 100%; gap: 3px; padding: 3px; }
+  .mini.chat { grid-template-columns: 22% 1fr 30%; }
+  .mini.settings { grid-template-columns: 22% 1fr; }
+  .mini > div { background: var(--surface); border-radius: 5px; position: relative; }
+  .mini .m { background: var(--bg); }
+  .mini .m::after { content: ""; position: absolute; left: 10%; right: 10%; bottom: 8%; height: 9%; background: var(--step-2); border-radius: 4px; }
+  .mini .m::before { content: ""; position: absolute; left: 12%; right: 20%; top: 18%; height: 30%; background: color-mix(in oklch, var(--step-2) 70%, transparent); border-radius: 4px; }
+  .mini .s::before { content: ""; position: absolute; left: 10%; right: 10%; top: 10%; height: 6%; background: var(--accent-soft); border-radius: 3px; }
+  .mini .p::before { content: ""; position: absolute; left: 10%; right: 10%; top: 10%; height: 5%; background: var(--raised); border-radius: 3px; }
+  .mini .md { display: grid; grid-template-columns: 30% 1fr; gap: 3px; background: transparent; }
+  .mini .md > div { background: var(--step-2); border-radius: 4px; position: relative; }
+  .mini .md > div:first-child::before { content: ""; position: absolute; left: 10%; right: 10%; top: 8%; height: 8%; background: var(--accent-soft); border-radius: 3px; }
+  .docs { margin-top: 28px; }
+  .docs h3 { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); font-family: var(--font-body); margin-bottom: 8px; }
+  .doclist { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; }
+  .doc { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: var(--step-2); border-radius: 10px; font-size: 13.5px; }
+  .doc:hover { background: var(--raised); }
+  .doc b { display: block; font-weight: 500; }
+  .doc span { color: var(--faint); font-size: 12.5px; }
+  .doc .mono { color: var(--muted); font-size: 12px; }
+  .keys { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+  .keys kbd { margin-right: 4px; }
+  @media (max-width: 1100px) { .screens { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 760px) { .hero, .screens { grid-template-columns: 1fr; } .wrap { padding: 28px 16px 48px; } .fact { grid-template-columns: 1fr; gap: 2px; } }
+</style>
+</head>
+<body>
+<main class="wrap" id="content">
+  <section class="hero" data-od-id="overview-hero">
+    <div>
+      <a class="brand" href="chat-workspace.html"><img src="assets/brand/uar-mark-dark.svg" alt="" /><span class="brand-name">Universal Agent Runtime<small>// OPERATOR SHELL · PROTOTYPE</small></span></a>
+      <h1>One sidebar, one inspector, one place to connect a model.</h1>
+      <p>A redesign of the built-in React 19 operator console so it works the way ChatGPT, Codex, Claude and Kimi desktop do: chats and runs in a single left column, a tabbed inspector that slides in on the right, and provider setup that finishes in three steps. Built on the UAR token system; ready to port into the React app and the Tauri shell.</p>
+      <div class="keys" aria-label="Shortcuts used across the prototype"><span><kbd>⌘B</kbd>sidebar</span><span><kbd>⌘\</kbd>inspector</span><span><kbd>⌘⇧D</kbd>run</span><span><kbd>⌘⇧E</kbd>files</span><span><kbd>⌘K</kbd>palette</span><span><kbd>⌘,</kbd>settings</span><span><kbd>Esc</kbd>close</span></div>
+    </div>
+    <div class="facts" aria-label="Key facts from the research">
+      <div class="fact"><span class="k">Today</span><span>Two 240px left columns, no right panel, provider setup across 5 screens, 2 orphaned routes.</span></div>
+      <div class="fact"><span class="k">Convergent pattern</span><span>Single collapsible sidebar · tabbed right inspector · model picker in the composer · settings as a page with a left nav.</span></div>
+      <div class="fact"><span class="k">Backend reality</span><span>343 catalog providers, <span class="mono">provider/model</span> addressing, test endpoint exists but is unused by the UI.</span></div>
+      <div class="fact"><span class="k">Tauri</span><span>800×600 undecorated window launches the mobile layout; fix window, titlebar overlay, permissions first.</span></div>
+    </div>
+  </section>
+
+  <section class="screens" data-od-id="overview-screens">
+    <a class="screen" href="chat-workspace.html" data-od-id="screen-chat">
+      <h2>Chat workspace <span class="mono">chat-workspace.html</span></h2>
+      <p>Sidebar with New chat, search, workspace surfaces, projects and recency buckets. Thread with an execution record, inline permission card and artifact chips. Composer with conversation target (orchestrator with routing on or off, or a pinned agent), model, effort and permission-mode controls; each reply shows how it was routed. <span class="mono">?new=1</span> opens the new-chat chooser. Inspector tabs: Run · Files · Browser · Plan, resizable, slide-over below 1180px.</p>
+      <div class="thumb" aria-hidden="true"><div class="mini chat"><div class="s"></div><div class="m"></div><div class="p"></div></div></div>
+    </a>
+    <a class="screen" href="projects.html" data-od-id="screen-projects">
+      <h2>Projects <span class="mono">projects.html</span></h2>
+      <p>Proposed feature. A project scopes chats, files, knowledge, agents and tools, instructions, memory, members, tasks and budget. Its home is a work board (waiting on you, working, ready for review, resolved). Lifecycle is pause, archive or delete, and moving a chat in re-applies the project's context. Data model in <span class="mono">project-management-design.md</span>.</p>
+      <div class="thumb" aria-hidden="true"><div class="mini settings"><div class="s"></div><div class="md"><div></div><div></div></div></div></div>
+    </a>
+    <a class="screen" href="knowledge.html" data-od-id="screen-knowledge-workspace">
+      <h2>Knowledge <span class="mono">knowledge.html</span></h2>
+      <p>Create knowledge bases, upload and index documents with per-file status, test retrieval against <span class="mono">min_score</span>, and catch an embedding-model mismatch before it breaks search. Re-embed, retry failed files, and see which agents use each base.</p>
+      <div class="thumb" aria-hidden="true"><div class="mini settings"><div class="s"></div><div class="md"><div></div><div></div></div></div></div>
+    </a>
+    <a class="screen" href="agents.html" data-od-id="screen-agents">
+      <h2>Agents <span class="mono">agents.html</span></h2>
+      <p>Describe an agent in plain words and the compiler agent asks what is missing, then runs the eight-stage pipeline and registers it. Attach model and fallbacks, knowledge bases, skills, tools and MCP, and A2UI libraries. Built-in agents are protected.</p>
+      <div class="thumb" aria-hidden="true"><div class="mini settings"><div class="s"></div><div class="md"><div></div><div></div></div></div></div>
+    </a>
+    <a class="screen" href="a2ui-registries.html" data-od-id="screen-registries">
+      <h2>A2UI registries <span class="mono">a2ui-registries.html</span></h2>
+      <p>Catalogs, custom components, presentation templates and design systems an agent may render, which agents may use each, a live surface preview with its wire messages, and the AG-UI recipe clients use to stream a run.</p>
+      <div class="thumb" aria-hidden="true"><div class="mini settings"><div class="s"></div><div class="md"><div></div><div></div></div></div></div>
+    </a>
+    <a class="screen" href="runs.html" data-od-id="screen-runs">
+      <h2>Runs <span class="mono">runs.html</span></h2>
+      <p>Every run with live and waiting runs first, orchestrator runs nesting their sub-agent runs, and an inspector for trace, approvals, admission evidence, usage and resume from checkpoint.</p>
+      <div class="thumb" aria-hidden="true"><div class="mini settings"><div class="s"></div><div class="md"><div></div><div></div></div></div></div>
+    </a>
+    <a class="screen" href="models-and-providers.html" data-od-id="screen-providers">
+      <h2>Models &amp; providers <span class="mono">models-and-providers.html</span></h2>
+      <p>Settings as a full page. Roles strip (default chat, fast, embeddings). Provider list with status pills and enable switches. Detail tabs: Connection with write-only credential and a test that names its outcome; Models table with capability chips, prices, bulk enable and default radio; Routing with a fallback chain. Add-provider runs in the right panel in three steps.</p>
+      <div class="thumb" aria-hidden="true"><div class="mini settings"><div class="s"></div><div class="md"><div></div><div></div></div></div></div>
+    </a>
+    <a class="screen" href="tools-and-mcp.html" data-od-id="screen-tools">
+      <h2>Tools &amp; MCP <span class="mono">tools-and-mcp.html</span></h2>
+      <p>Tool sources as master–detail: native tools (file read, opt-in write, web fetch, terminal off) and every MCP server with live health, latency and tool count. Per-tool approval tiers Auto · Ask · Deny · Inherit with a server default, policy-locked rows where Cedar forbids, connection transport and reconnect rules, and a 24-hour audit of decisions. Add-server runs in the right panel in three steps.</p>
+      <div class="thumb" aria-hidden="true"><div class="mini settings"><div class="s"></div><div class="md"><div></div><div></div></div></div></div>
+    </a>
+    <a class="screen" href="skills.html" data-od-id="screen-skills">
+      <h2>Skills <span class="mono">skills.html</span></h2>
+      <p>Installed skills by source with enable switches. Each skill shows its triggers, the tools it needs and whether those tools are actually available, scope and model override. A matching tester explains why a skill fires against the threshold. Evolution is governed per environment by Cedar. Import runs in the right panel with compiler checks.</p>
+      <div class="thumb" aria-hidden="true"><div class="mini settings"><div class="s"></div><div class="md"><div></div><div></div></div></div></div>
+    </a>
+    <a class="screen" href="knowledge-and-memory.html" data-od-id="screen-knowledge">
+      <h2>Knowledge &amp; memory <span class="mono">knowledge-and-memory.html</span></h2>
+      <p>Knowledge bases (documents you add) kept visibly separate from memory (what the agent learns). Documents with indexing status, a retrieval tester, and indexing settings that warn before a re-index. Memory starts off, as in the runtime, and explains itself before you enable it.</p>
+      <div class="thumb" aria-hidden="true"><div class="mini settings"><div class="s"></div><div class="md"><div></div><div></div></div></div></div>
+    </a>
+    <a class="screen" href="governance.html" data-od-id="screen-governance">
+      <h2>Governance <span class="mono">governance.html</span></h2>
+      <p>Effective enforcement state up front, Cedar policies with a request tester, pending approvals, sycophancy and input guardrails, budget limits, and access control.</p>
+      <div class="thumb" aria-hidden="true"><div class="mini settings"><div class="s"></div><div class="md"><div></div><div></div></div></div></div>
+    </a>
+    <a class="screen" href="appearance.html" data-od-id="screen-appearance">
+      <h2>Appearance <span class="mono">appearance.html</span></h2>
+      <p>Dark, light, high contrast or match system, plus conversation text size, density and motion, all applied live with a preview and kept on this device.</p>
+      <div class="thumb" aria-hidden="true"><div class="mini settings"><div class="s"></div><div class="md"><div></div><div></div></div></div></div>
+    </a>
+    <a class="screen" href="desktop.html" data-od-id="screen-desktop">
+      <h2>Desktop <span class="mono">desktop.html</span></h2>
+      <p>Tauri-only settings: the in-process runtime and its port fallback, bundled MCP sidecars, window behaviour, logs and data. Tray, shortcuts, launch at login and updates are designed but marked as not in this build.</p>
+      <div class="thumb" aria-hidden="true"><div class="mini settings"><div class="s"></div><div class="md"><div></div><div></div></div></div></div>
+    </a>
+  </section>
+
+  <section class="docs" data-od-id="overview-docs">
+    <h3>Documents</h3>
+    <div class="doclist">
+      <a class="doc" href="ui-research-findings.md"><span class="mono">01</span><span><b>ui-research-findings.md</b><span>Pattern survey, current-state audit, decisions, backend deltas, sources.</span></span></a>
+      <a class="doc" href="project-management-design.md"><span class="mono">05</span><span><b>project-management-design.md</b><span>Projects feature, scoping rules, PostgreSQL and SurrealDB schema, persistence trait, Cedar, API.</span></span></a>
+      <a class="doc" href="brand-spec.md"><span class="mono">02</span><span><b>brand-spec.md</b><span>Six OKLch tokens, type stack, and the Flat 2.0 rules inherited from the UAR frontend.</span></span></a>
+      <a class="doc" href="tauri-integration-notes.md"><span class="mono">03</span><span><b>tauri-integration-notes.md</b><span>Window, titlebar overlay, capabilities, menu accelerators, pop-out inspector, bundled fonts.</span></span></a>
+      <a class="doc" href="assets/shell.css"><span class="mono">04</span><span><b>assets/shell.css · shell.js</b><span>Shared tokens, components and shell behaviour; maps 1:1 onto CSS Modules and a Zustand slice.</span></span></a>
+    </div>
+  </section>
+</main>
+<script src="assets/shell.js"></script>
+</body>
+</html>

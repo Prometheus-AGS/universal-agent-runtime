@@ -1,0 +1,18 @@
+# Frontend boundary allowlist, read by scripts/check-frontend-boundaries.mjs.
+#
+# Format: one exception per line
+#   <rule> <repo-relative-path>:<line>   # why this is tolerated, and the issue that removes it
+# Example (not active):
+#   component-service-import frontend/src/features/example/ui/example.tsx:12   # legacy panel, removed by #123
+#
+# This file may only shrink (docs/frontend-architecture.md; decision D3 in
+# docs/design/react-implementation-plan.md):
+#   - an entry that is not present on the merge base with origin/main fails as
+#     `boundary-allowlist-growth`; adding one requires an architecture decision (ADR);
+#   - an entry that no longer matches a violation fails as `boundary-allowlist-stale`
+#     and must be deleted;
+#   - a line that does not follow the format fails as `boundary-allowlist-malformed`.
+#
+# Created empty on 2026-10-05. The script's older inline exception sets
+# (infrastructureFetchExceptions, legacyPerRowGraphWriteLocations) predate this file
+# and are tracked as existing debt, not as entries here.

@@ -1,13 +1,30 @@
 #!/usr/bin/env node
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import ts from "typescript";
 
 const root = resolve(import.meta.dirname, "..");
 const src = resolve(root, "frontend/src");
-const fixtureIndex = process.argv.indexOf("--fixture-dir");
-const scanRoot = fixtureIndex >= 0 ? resolve(root, process.argv[fixtureIndex + 1]) : src;
+const argValue = (flag) => {
+  const index = process.argv.indexOf(flag);
+  return index >= 0 ? process.argv[index + 1] : undefined;
+};
+const fixtureDir = argValue("--fixture-dir");
+const scanRoot = fixtureDir ? resolve(root, fixtureDir) : src;
+// The presentational component library (docs/design/react-implementation-plan.md §2).
+// Fixtures model it as a `__library__` folder inside the fixture directory.
+const libraryRoot = fixtureDir
+  ? resolve(scanRoot, "__library__")
+  : resolve(root, "frontend/packages/uar-ui/src");
+// Explicit, reviewed exceptions. The file may only shrink: an entry that is not
+// already present on the base revision fails the gate, and an entry that no
+// longer matches a violation must be deleted (docs/frontend-architecture.md).
+const ALLOWLIST_REPO_PATH = "scripts/frontend-boundary-allowlist.txt";
+const allowlistPath = argValue("--allowlist")
+  ? resolve(root, argValue("--allowlist"))
+  : fixtureDir ? null : resolve(root, ALLOWLIST_REPO_PATH);
 const infrastructureFetchExceptions = new Set([
   // Shared transport bootstrap, not feature/domain I/O.
   "frontend/src/entities/sync.ts",
@@ -55,6 +72,35 @@ const legacyPerRowGraphWriteLocations = new Set([
   "frontend/src/features/tools/model/tools-admin-store.ts:44",
   "frontend/src/features/tools/model/tools-admin-store.ts:46",
 ]);
+
+function parseAllowlist(text) {
+  const entries = [];
+  text.split("\n").forEach((raw, index) => {
+    const line = raw.replace(/#.*$/, "").trim();
+    if (!line) return;
+    const match = /^([a-z0-9-]+)\s+(\S+:\d+)$/.exec(line);
+    entries.push({ key: match ? `${match[2]}|${match[1]}` : null, raw: raw.trim(), line: index + 1 });
+  });
+  return entries;
+}
+
+function baseAllowlistText() {
+  const explicit = argValue("--allowlist-base");
+  if (explicit) return readFileSync(resolve(root, explicit), "utf8");
+  if (fixtureDir) return "";
+  const git = (args) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  try {
+    const baseRef = process.env.UAR_BOUNDARY_BASE_REF ?? "origin/main";
+    const base = git(["merge-base", "HEAD", baseRef]);
+    try {
+      return git(["show", `${base}:${ALLOWLIST_REPO_PATH}`]);
+    } catch {
+      return ""; // The file does not exist on the base revision: every entry is new.
+    }
+  } catch {
+    return null; // Not a git checkout (e.g. a container build): growth cannot be compared.
+  }
+}
 
 function walk(dir) {
   return readdirSync(dir).flatMap((entry) => {
@@ -318,8 +364,35 @@ function isUpwardImport(sourceLayer, targetLayer) {
   return sourceLayer === "feature" && targetLayer === "app";
 }
 
+function isInside(path, dir) {
+  const rel = relative(dir, path);
+  return rel !== "" && !rel.startsWith("..") && !rel.startsWith("/");
+}
+
+function libraryViolations(path, content, modules, addViolation) {
+  const at = (specifier) => lineNumberAt(content, content.indexOf(specifier));
+  const fetchPattern = /(?:\bfetch|(?:window|globalThis)\.fetch)\s*\(/;
+  if (fetchPattern.test(content)) addViolation("library-direct-fetch", lineNumberAt(content, firstMatchIndex(content, fetchPattern)));
+  for (const specifier of modules) {
+    const target = specifier.startsWith(".") ? resolve(dirname(path), specifier) : null;
+    if (specifier.startsWith("@/") || (target && !isInside(target, libraryRoot))) {
+      addViolation("library-app-import", at(specifier));
+    } else if (specifier === "zustand" || specifier.startsWith("zustand/")) {
+      addViolation("library-state-import", at(specifier));
+    } else if (/^@prometheus-ags\/(?:prometheus-entity-management|entity-graph-core)(?:\/|$)/.test(specifier)) {
+      addViolation("library-entity-import", at(specifier));
+    } else if (specifier.startsWith("@tauri-apps/")) {
+      addViolation("library-tauri-import", at(specifier));
+    } else if (importsLayer([specifier.replace(/^\.\.?\//, "./")], "services")) {
+      addViolation("library-service-import", at(specifier));
+    }
+  }
+}
+
+const libraryFiles = existsSync(libraryRoot) ? walk(libraryRoot).filter(isProductionTs) : [];
+const appFiles = walk(scanRoot).filter((path) => isProductionTs(path) && !isInside(path, libraryRoot));
 const violations = [];
-for (const path of walk(scanRoot).filter(isProductionTs)) {
+for (const path of [...appFiles, ...libraryFiles]) {
   const content = readFileSync(path, "utf8");
   const file = repoPath(path);
   const scanRelativePath = relative(scanRoot, path).replaceAll("\\", "/");
@@ -336,6 +409,13 @@ for (const path of walk(scanRoot).filter(isProductionTs)) {
   const zustandCreate = importBindings(sourceFile, "zustand", new Set(["create", "createStore"]));
   const sourceArchitectureLayer = architectureLayer(path);
   const addViolation = (rule, line = 1) => violations.push(`${file}:${line}|${rule}`);
+  if (isInside(path, libraryRoot)) {
+    libraryViolations(path, content, modules, addViolation);
+    for (const line of renderBodySetterLines(sourceFile, reactUseState)) {
+      addViolation("react-render-body-state-setter", line);
+    }
+    continue;
+  }
   const directEntitySpecifier = modules.find((specifier) => (
     specifier === "@prometheus-ags/prometheus-entity-management"
     || specifier.startsWith("@prometheus-ags/prometheus-entity-management/")
@@ -422,7 +502,29 @@ for (const path of walk(scanRoot).filter(isProductionTs)) {
   }
 }
 
-const actual = [...new Set(violations)].sort();
+// Apply the allowlist, then enforce "may only shrink" and "no stale entries".
+const allowlistText = allowlistPath && existsSync(allowlistPath) ? readFileSync(allowlistPath, "utf8") : "";
+const allowlistFile = allowlistPath ? repoPath(allowlistPath) : ALLOWLIST_REPO_PATH;
+const allowEntries = parseAllowlist(allowlistText);
+const allowKeys = new Set(allowEntries.map((entry) => entry.key).filter(Boolean));
+const allowlistProblems = [];
+for (const entry of allowEntries) {
+  if (!entry.key) allowlistProblems.push(`${allowlistFile}:${entry.line}|boundary-allowlist-malformed`);
+}
+const baseText = baseAllowlistText();
+if (baseText !== null) {
+  const baseKeys = new Set(parseAllowlist(baseText).map((entry) => entry.key).filter(Boolean));
+  for (const entry of allowEntries) {
+    if (entry.key && !baseKeys.has(entry.key)) allowlistProblems.push(`${allowlistFile}:${entry.line}|boundary-allowlist-growth`);
+  }
+} else if (allowEntries.length) {
+  console.warn(`Note: not a git checkout; ${ALLOWLIST_REPO_PATH} growth was not compared with a base revision.`);
+}
+const unique = [...new Set(violations)];
+for (const entry of allowEntries) {
+  if (entry.key && !unique.includes(entry.key)) allowlistProblems.push(`${allowlistFile}:${entry.line}|boundary-allowlist-stale`);
+}
+const actual = [...unique.filter((item) => !allowKeys.has(item)), ...allowlistProblems].sort();
 if (process.argv.includes("--print")) {
   process.stdout.write(`${actual.join("\n")}\n`);
   process.exit(0);

@@ -48,6 +48,17 @@ export default defineConfig({
       }
     }, {
       extends: true,
+      test: {
+        name: 'uar-ui',
+        environment: "happy-dom",
+        globals: true,
+        // The library has no app state to reset; it gets its own setup.
+        setupFiles: ["./packages/uar-ui/test/setup.ts"],
+        include: ["packages/uar-ui/src/**/*.test.{ts,tsx}"],
+        exclude: ["**/node_modules/**", "**/dist/**"]
+      }
+    }, {
+      extends: true,
       plugins: [
       // The plugin will run tests for the stories defined in your Storybook config
       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest

@@ -15,6 +15,8 @@ const scanRoot = fixtureIndex >= 0
   ? resolve(root, process.argv[fixtureIndex + 1])
   : resolve(frontend, "src");
 const target = relative(frontend, scanRoot).replaceAll("\\", "/");
+// The presentational library is held to the same contract as frontend/src.
+const targets = fixtureIndex >= 0 ? [target] : [target, "packages/uar-ui/src"];
 
 const result = spawnSync(
   "pnpm",
@@ -25,7 +27,7 @@ const result = spawnSync(
     "eslint-flat2-baseline.config.js",
     "--format",
     "json",
-    target,
+    ...targets,
   ],
   {
     cwd: frontend,

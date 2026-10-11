@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Knowledge &amp; memory · Settings · Universal Agent Runtime</title>
+<link rel="icon" href="assets/brand/uar-mark-dark.svg" />
+<link rel="stylesheet" href="assets/shell.css" />
+<link rel="stylesheet" href="assets/settings.css" />
+<style>
+  [hidden] { display: none !important; }
+  /* knowledge vs memory explainer */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 22px; }
+  .split .card { display: grid; grid-template-columns: 26px 1fr; gap: 12px; align-items: start; }
+  .split h3 { font-size: 15px; }
+  .split p { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .split .keys { font-size: 12px; color: var(--faint); margin-top: 6px; }
+  /* search test hits */
+  .hits { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .hit { display: grid; grid-template-columns: 64px 1fr; gap: 14px; padding: 12px 14px; background: var(--step-2); border-radius: 10px; }
+  .hit .score { font-family: var(--font-mono); font-size: 15px; font-weight: 600; }
+  .hit .score .meter { margin-top: 6px; min-width: 0; }
+  .hit p { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .hit .src { font-size: 12.5px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .hit .src .mono { color: var(--faint); font-size: 12px; }
+  .meta-line { font-size: 12px; color: var(--faint); margin-top: 10px; }
+  .table td .chip { height: 22px; font-size: 11.5px; }
+  .table .why { display: block; font-size: 12px; color: var(--err); }
+  /* upload panel */
+  .drop { display: grid; place-items: center; gap: 6px; padding: 22px 16px; border-radius: 12px; background: var(--step-2); width: 100%; text-align: center; color: var(--muted); font-size: 13px; }
+  .drop:hover { background: var(--hover); color: var(--fg); }
+  .drop .icon { width: 24px; height: 24px; }
+  .drop .sub { font-size: 12px; color: var(--faint); }
+  .files { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .frow { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; padding: 10px 12px; border-radius: 10px; background: var(--step-2); font-size: 13px; }
+  .frow .sub { display: block; font-size: 12px; color: var(--faint); }
+  .frow .meter { grid-column: 1 / -1; }
+  .frow .why { grid-column: 1 / -1; font-size: 12px; color: var(--err); }
+  /* memory */
+  .off-card { display: grid; grid-template-columns: auto 1fr; gap: 16px; padding: 20px; margin-bottom: 14px; }
+  .off-card ul { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; display: grid; gap: 4px; }
+  .mems { display: flex; flex-direction: column; gap: 6px; }
+  .mem { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 10px 14px; background: var(--step-2); border-radius: 10px; font-size: 13.5px; }
+  .mem .sub { display: block; font-size: 12px; color: var(--faint); margin-top: 2px; }
+  .chk { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-top: 8px; }
+  .chk input { accent-color: var(--accent); width: 16px; height: 16px; }
+  .form-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .rule .range input[type=range] { width: 160px; }
+  @media (max-width: 920px) { .split { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app" data-od-id="settings-shell" data-panel-persist="false">
+  <div class="titlebar" data-tauri-drag-region><span class="mono">universal-agent-runtime</span>&nbsp;· Settings</div>
+  <aside data-settings-nav data-current="knowledge" data-od-id="settings-sidebar"></aside>
+
+  <main class="main" id="content" data-od-id="settings-main">
+    <header class="topbar">
+      <button class="icon-btn" data-action="sidebar-mobile" aria-label="Open navigation" id="mobile-nav-btn" style="display:none"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+      <div class="title"><span class="crumb">Settings</span><span>Knowledge &amp; memory</span></div>
+      <span class="spacer"></span>
+      <button class="chip" data-action="cmdk"><svg class="icon"><use href="#i-search"/></svg>Search settings <kbd style="margin-left:4px" data-kbd="⌘K">⌘K</kbd></button>
+      <button class="icon-btn" data-action="theme" aria-pressed="false" aria-label="Switch theme" title="Switch theme"><svg class="icon"><use href="#i-sun"/></svg></button>
+    </header>
+
+    <section class="page">
+      <div class="page-inner">
+        <div class="page-head" data-od-id="page-head">
+          <div>
+            <h1>Knowledge &amp; memory</h1>
+            <p>Two different stores. Knowledge bases hold documents you add; the agent retrieves chunks from them when a question needs it. Memory holds what the agent learned from your conversations, and it is off until you turn it on.</p>
+          </div>
+          <div class="acts"><button class="btn btn-primary" id="cta" data-action="panel-open" data-tab="add" data-od-id="add-documents-cta"><svg class="icon"><use href="#i-upload"/></svg>Add documents</button></div>
+        </div>
+
+        <div class="summary" data-od-id="summary-strip">
+          <div class="card sum" data-od-id="sum-bases"><div class="k">Knowledge bases</div><div class="v"><span id="sum-kb">3</span><small>default · Workspace docs</small></div></div>
+          <div class="card sum" data-od-id="sum-docs"><div class="k">Documents</div><div class="v"><span class="status-dot warn" id="sum-docs-dot"></span><span id="sum-docs">313</span><small id="sum-docs-sub">3 processing · 1 failed</small></div></div>
+          <div class="card sum" data-od-id="sum-embed"><div class="k">Default embeddings</div><div class="v">fastembed<small class="mono">384-d · local</small></div></div>
+          <div class="card sum" data-od-id="sum-memory"><div class="k">Agent memory</div><div class="v"><span class="status-dot off" id="sum-mem-dot"></span><span id="sum-mem">Off</span><small id="sum-mem-sub">7 stored · not used</small></div></div>
+        </div>
+
+        <div class="split" data-od-id="knowledge-vs-memory">
+          <div class="card" data-od-id="explain-knowledge"><span class="smark"><svg class="icon"><use href="#i-book"/></svg></span><div><h3>Knowledge base = documents you add</h3><p>Files are extracted, split into chunks and embedded. At run time the agent searches them and quotes what it finds. Nothing is added unless you upload it.</p><p class="keys mono">/api/uar/knowledge-bases · rag.*</p></div></div>
+          <div class="card" data-od-id="explain-memory"><span class="smark"><svg class="icon"><use href="#i-brain"/></svg></span><div><h3>Memory = what the agent learns</h3><p>Facts and preferences captured from conversations, then injected into later runs. You never upload to it; you review and forget entries instead.</p><p class="keys mono">surreal-memory · /mcp/memory</p></div></div>
+        </div>
+
+        <div class="md">
+          <nav class="sources" aria-label="Knowledge and memory sources" data-od-id="source-list">
+            <input class="input" type="search" placeholder="Filter bases" aria-label="Filter sources" data-filter=".sources .srow[data-src]" />
+            <p class="group-label"><span>Knowledge bases</span><span>RAG</span></p>
+            <button class="srow" aria-current="true" data-src="workspace" data-view="kb" data-od-id="src-workspace"><span class="smark"><svg class="icon"><use href="#i-book"/></svg></span><span><span class="nm">Workspace docs</span><span class="st"><i class="status-dot warn"></i>214 docs · 3 processing</span></span><span class="side">default</span></button>
+            <button class="srow" aria-current="false" data-src="runbooks" data-view="kb" data-od-id="src-runbooks"><span class="smark"><svg class="icon"><use href="#i-list"/></svg></span><span><span class="nm">runbooks</span><span class="st"><i class="status-dot err"></i>38 docs · 1 failed</span></span><span class="side"></span></button>
+            <button class="srow" aria-current="false" data-src="api" data-view="kb" data-od-id="src-api-reference"><span class="smark"><svg class="icon"><use href="#i-link"/></svg></span><span><span class="nm">api-reference</span><span class="st"><i class="status-dot"></i>61 docs · indexed</span></span><span class="side"></span></button>
+            <button class="srow add" aria-current="false" data-src="newkb" data-od-id="src-add-kb"><span class="smark"><svg class="icon icon-sm"><use href="#i-plus"/></svg></span><span class="nm">Add knowledge base</span></button>
+            <p class="group-label"><span>Retrieval</span></p>
+            <button class="srow" aria-current="false" data-src="retrieval" data-od-id="src-retrieval"><span class="smark"><svg class="icon"><use href="#i-gear"/></svg></span><span><span class="nm">Retrieval defaults</span><span class="st">rag.* · recursive · 512</span></span><span class="side"></span></button>
+            <p class="group-label"><span>Memory</span></p>
+            <button class="srow" aria-current="false" data-src="memory" data-od-id="src-memory"><span class="smark"><svg class="icon"><use href="#i-brain"/></svg></span><span><span class="nm">Agent memory</span><span class="st" id="mem-st"><i class="status-dot off"></i>Off · 7 stored</span></span><span class="side"></span></button>
+          </nav>
+
+          <div>
+            <!-- knowledge base detail -->
+            <section class="view active detail" data-view="kb" aria-label="Knowledge base" data-od-id="kb-detail">
+              <div class="detail-head">
+                <span class="smark lg" id="kb-mark"><svg class="icon"><use href="#i-book"/></svg></span>
+                <div>
+                  <h2 id="kb-name">Workspace docs</h2>
+                  <div class="sub" id="kb-sub"></div>
+                </div>
+                <div class="acts">
+                  <button class="btn btn-secondary btn-sm" data-action="panel-open" data-tab="add" data-od-id="kb-upload-btn"><svg class="icon"><use href="#i-upload"/></svg>Upload documents</button>
+                </div>
+              </div>
+              <div class="tabs" role="tablist" aria-label="Knowledge base sections" data-od-id="kb-tabs">
+                <button class="tab" role="tab" data-dtab="docs" aria-selected="true">Documents <span class="count" id="kb-count">214</span></button>
+                <button class="tab" role="tab" data-dtab="search" aria-selected="false">Search test</button>
+                <button class="tab" role="tab" data-dtab="index" aria-selected="false">Indexing</button>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="docs" class="active" data-od-id="kb-docs-tab">
+                <div class="toolbar">
+                  <input class="input" type="search" placeholder="Filter documents" aria-label="Filter documents" data-filter="#doc-rows tr" />
+                  <span class="spacer"></span>
+                  <span class="faint" style="font-size:12.5px" id="kb-legend"></span>
+                </div>
+                <table class="table" data-od-id="kb-docs-table">
+                  <thead><tr><th>Document</th><th>Type</th><th class="num">Chunks</th><th>Status</th><th class="num hide-sm">Size</th><th class="hide-sm">Added</th><th class="ctl"><span class="sr-only">Actions</span></th></tr></thead>
+                  <tbody id="doc-rows"></tbody>
+                </table>
+                <p class="meta-line">Most recent documents · <span class="mono" id="kb-docs-ep">GET /api/uar/knowledge-bases/default/documents</span></p>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="search" data-od-id="kb-search-tab">
+                <form class="toolbar" id="search-form" data-od-id="kb-search-form">
+                  <label class="sr-only" for="q">Test query</label>
+                  <input class="input" id="q" type="search" placeholder="Ask what a user would ask" style="flex:1;width:auto" value="how do we roll back a failed deploy" />
+                  <button class="btn btn-secondary" id="q-go" type="submit"><svg class="icon"><use href="#i-search"/></svg>Search</button>
+                </form>
+                <p class="faint" style="font-size:12.5px">Runs the same retrieval the agent uses and shows which chunks would reach the model.</p>
+                <div id="hits" class="hits" data-od-id="kb-search-results"></div>
+                <p class="gap-note"><i></i>The runtime has no retrieval-count setting (no top_k in KnowledgeBaseConfig or rag.*); this test shows the first 5 chunks the search endpoint returns.</p>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="index" data-od-id="kb-indexing-tab">
+                <div class="banner warn" id="ix-warn" hidden data-od-id="reindex-warning">
+                  <svg class="icon"><use href="#i-alert"/></svg>
+                  <div class="grow"><b id="ix-warn-t">Re-index 214 documents</b><span class="sub" id="ix-warn-s"></span>
+                    <label class="chk"><input type="checkbox" id="ix-confirm" />I understand search is degraded until re-indexing finishes</label></div>
+                </div>
+                <div class="form-grid" data-od-id="indexing-form">
+                  <div class="field"><label for="ix-provider">Embedding provider</label><div class="select-wrap"><select class="input select" id="ix-provider"><option value="fastembed">fastembed · local</option><option value="openai">openai</option><option value="mistral">mistral</option></select></div><span class="hint" id="ix-key"></span></div>
+                  <div class="field"><label for="ix-model">Embedding model</label><div class="select-wrap"><select class="input select mono" id="ix-model"></select></div><span class="hint" id="ix-dims"></span></div>
+                  <div class="field span"><label id="ix-proc-l">File processor</label><div class="choice" role="radiogroup" aria-labelledby="ix-proc-l" id="ix-proc"><button role="radio" data-value="kreuzberg" aria-checked="true">kreuzberg</button><button role="radio" data-value="auto" aria-checked="false">auto</button><button role="radio" data-value="unstructured" aria-checked="false">unstructured</button><button role="radio" data-value="mistral" aria-checked="false">mistral</button><button role="radio" data-value="local" aria-checked="false">local</button></div><span class="hint">Extracts text from PDF, DOCX, PPTX, HTML and Markdown before chunking.</span></div>
+                  <div class="field span"><label id="ix-strat-l">Chunking strategy</label><div class="choice" role="radiogroup" aria-labelledby="ix-strat-l" id="ix-strat"><button role="radio" data-value="fixed" aria-checked="false">fixed</button><button role="radio" data-value="recursive" aria-checked="true">recursive</button><button role="radio" data-value="token" aria-checked="false">token</button><button role="radio" data-value="sentence" aria-checked="false">sentence</button><button role="radio" data-value="semantic" aria-checked="false">semantic</button><button role="radio" data-value="document" aria-checked="false">document</button></div></div>
+                  <div class="field"><label for="ix-size">Chunk size</label><div class="range"><input type="range" id="ix-size" min="128" max="2048" step="64" value="512" /><output for="ix-size" id="ix-size-o">512</output></div></div>
+                  <div class="field" id="ix-sem" hidden><label for="ix-thr">Semantic threshold</label><div class="range"><input type="range" id="ix-thr" min="0.5" max="0.95" step="0.05" value="0.75" /><output for="ix-thr" id="ix-thr-o">0.75</output></div><span class="hint">Split where neighbouring sentences fall below this similarity.</span></div>
+                </div>
+                <p class="gap-note"><i></i>KnowledgeBaseConfig has no chunk overlap field; chunks are cut without overlap today.</p>
+                <div class="form-foot">
+                  <span class="hint err" id="ix-err" style="margin-right:auto;font-size:12.5px;align-self:center"></span>
+                  <button class="btn btn-ghost" data-action="ix-reset">Discard</button>
+                  <button class="btn btn-secondary" id="ix-save" data-action="ix-save" data-od-id="indexing-save" disabled><svg class="icon"><use href="#i-check"/></svg><span>Save indexing settings</span></button>
+                </div>
+              </div>
+            </section>
+
+            <!-- new knowledge base -->
+            <section class="view detail" data-view="newkb" aria-label="New knowledge base" data-od-id="newkb-detail">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-folder"/></svg></span><div><h2>New knowledge base</h2><div class="sub">Starts empty with the retrieval defaults; add documents after creating it.</div></div></div>
+              <div class="card stack" data-od-id="newkb-form">
+                <div class="field"><label for="nk-name">Name</label><input class="input mono" id="nk-name" placeholder="e.g. support-macros" /><span class="hint" id="nk-hint">Lowercase letters, digits and dashes. Used as the id in <span class="mono">/api/uar/knowledge-bases/{id}</span>.</span></div>
+                <div class="field"><label for="nk-desc">Description</label><input class="input" id="nk-desc" placeholder="What is in it, so the agent knows when to search it" /></div>
+                <div class="field"><label for="nk-prov">Embedding provider</label><div class="select-wrap"><select class="input select" id="nk-prov"><option value="fastembed">fastembed · BAAI/bge-small-en-v1.5 · 384-d</option><option value="openai">openai · text-embedding-3-small · 1536-d</option></select></div></div>
+                <div class="form-foot"><button class="btn btn-secondary" id="nk-go" data-action="nk-create" data-od-id="newkb-create"><svg class="icon"><use href="#i-plus"/></svg><span>Create knowledge base</span></button></div>
+              </div>
+            </section>
+
+            <!-- retrieval defaults -->
+            <section class="view detail" data-view="retrieval" aria-label="Retrieval defaults" data-od-id="retrieval-detail">
+              <div class="detail-head"><span class="smark lg"><svg class="icon"><use href="#i-gear"/></svg></span><div><h2>Retrieval defaults</h2><div class="sub">Settings keys <span class="mono">rag.*</span> · used when a knowledge base is created. Existing bases keep their own Indexing settings.</div></div></div>
+              <div class="rules" data-od-id="retrieval-rules">
+                <div class="rule"><div>Embedding provider<span class="sub mono">rag.embedding_provider</span></div><div class="ctl"><div class="select-wrap"><select class="input select" aria-label="rag.embedding_provider"><option>fastembed</option><option>openai</option><option>mistral</option></select></div></div></div>
+                <div class="rule"><div>Embedding model<span class="sub mono">rag.embedding_model</span></div><div class="ctl"><input class="input mono" aria-label="rag.embedding_model" value="BAAI/bge-small-en-v1.5" style="width:240px" /></div></div>
+                <div class="rule"><div>Chunking strategy<span class="sub mono">rag.chunking_strategy</span></div><div class="ctl"><div class="select-wrap"><select class="input select" aria-label="rag.chunking_strategy"><option>fixed</option><option selected>recursive</option><option>token</option><option>sentence</option><option>semantic</option><option>document</option></select></div></div></div>
+                <div class="rule"><div>Chunk size<span class="sub mono">rag.chunk_size</span></div><div class="ctl"><input class="input mono" type="number" aria-label="rag.chunk_size" value="512" min="64" step="64" style="width:110px" /></div></div>
+                <div class="rule"><div>Chunk tokens<span class="sub mono">rag.chunk_tokens · used by the token strategy</span></div><div class="ctl"><input class="input mono" type="number" aria-label="rag.chunk_tokens" placeholder="unset" style="width:110px" /></div></div>
+                <div class="rule"><div>Semantic threshold<span class="sub mono">rag.semantic_threshold · used by the semantic strategy</span></div><div class="ctl"><input class="input mono" type="number" aria-label="rag.semantic_threshold" placeholder="unset" min="0" max="1" step="0.05" style="width:110px" /></div></div>
+              </div>
+              <p class="gap-note"><i></i>No rag.top_k key: how many retrieved chunks reach the model is decided inside the runtime and cannot be set here.</p>
+              <div class="form-foot"><button class="btn btn-secondary" data-action="toast" data-msg="Saved rag.* defaults · new knowledge bases start from these" data-od-id="retrieval-save"><svg class="icon"><use href="#i-check"/></svg>Save defaults</button></div>
+            </section>
+
+            <!-- memory -->
+            <section class="view detail" data-view="memory" aria-label="Agent memory" data-od-id="memory-detail">
+              <div class="detail-head">
+                <span class="smark lg"><svg class="icon"><use href="#i-brain"/></svg></span>
+                <div><h2>Agent memory</h2><div class="sub"><span class="mono">surreal-memory</span><span>·</span><span id="mem-sub-store">embedded SurrealKV · <span class="mono">./data/memory.db</span></span></div></div>
+                <div class="acts"><span class="muted" style="font-size:13px;white-space:nowrap" id="mem-switch-l">Memory off</span><span class="switch" tabindex="0" role="switch" id="mem-switch" aria-checked="false" aria-labelledby="mem-switch-l" data-id="memory" data-od-id="memory-enable-switch"></span></div>
+              </div>
+
+              <div class="card off-card" id="mem-off" data-od-id="memory-off-state">
+                <span class="smark lg"><svg class="icon"><use href="#i-info"/></svg></span>
+                <div>
+                  <h3>Memory is off, the default</h3>
+                  <p class="muted" style="font-size:13.5px;margin-top:4px">Nothing from your conversations is captured or injected. 7 memories from an earlier session stay in <span class="mono">./data/memory.db</span> and are used again when you turn memory on.</p>
+                  <ul>
+                    <li>Captures facts and preferences from each conversation <span class="mono">auto_capture</span></li>
+                    <li>Adds the relevant ones to the next run's context, up to <span class="mono">2,000</span> tokens <span class="mono">inject_context</span></li>
+                    <li>Embeds them with <span class="mono">openai/text-embedding-3-small</span>, so memory text is sent to OpenAI</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div id="mem-on" hidden data-od-id="memory-on-state">
+                <div class="tabs" role="tablist" aria-label="Memory sections">
+                  <button class="tab" role="tab" data-dtab="behaviour" aria-selected="true">Behaviour</button>
+                  <button class="tab" role="tab" data-dtab="storage" aria-selected="false">Storage</button>
+                  <button class="tab" role="tab" data-dtab="remembers" aria-selected="false">What it remembers <span class="count" id="mem-count">7</span></button>
+                </div>
+
+                <div role="tabpanel" data-dtabpanel="behaviour" class="active" data-od-id="memory-behaviour-tab">
+                  <div class="rules">
+                    <div class="rule"><div>Capture automatically<span class="sub">Extract memories from every finished conversation turn. <span class="mono">auto_capture</span></span></div><div class="ctl"><span class="switch" tabindex="0" role="switch" aria-checked="true" aria-label="Capture automatically" data-id="auto_capture"></span></div></div>
+                    <div class="rule"><div>Inject into context<span class="sub">Add relevant memories to each run's prompt. <span class="mono">inject_context</span></span></div><div class="ctl"><span class="switch" tabindex="0" role="switch" aria-checked="true" aria-label="Inject into context" data-id="inject_context"></span></div></div>
+                    <div class="rule" id="r-max"><div>Context budget<span class="sub">Most tokens of memory added to one run. <span class="mono">max_context_tokens</span></span></div><div class="ctl range"><input type="range" id="mem-max" min="500" max="8000" step="250" value="2000" aria-label="max_context_tokens" /><output id="mem-max-o">2,000</output></div></div>
+                    <div class="rule"><div>Retrieval blend<span class="sub mono" id="mem-blend-s">vector_weight 0.70 · bm25_weight 0.30</span></div><div class="ctl range"><span class="faint" style="font-size:12px">keyword</span><input type="range" id="mem-blend" min="0" max="100" step="5" value="70" aria-label="Vector share of retrieval blend" /><span class="faint" style="font-size:12px">vector</span><output id="mem-blend-o" style="min-width:96px">70% / 30%</output></div></div>
+                    <div class="rule"><div>Embeddings<span class="sub"><span class="mono">embedding_provider · embedding_model</span> · key from <span class="mono">OPENAI_API_KEY</span>, set</span></div><div class="ctl"><div class="select-wrap"><select class="input select" aria-label="Memory embedding provider" id="mem-prov"><option value="openai">openai</option><option value="cohere">cohere</option><option value="local">local</option></select></div><input class="input mono" aria-label="Memory embedding model" id="mem-model" value="text-embedding-3-small" style="width:210px" /></div></div>
+                  </div>
+                  <p class="gap-note"><i></i>MemoryConfig has no retention period and no memory types; entries live until forgotten.</p>
+                </div>
+
+                <div role="tabpanel" data-dtabpanel="storage" data-od-id="memory-storage-tab">
+                  <div class="field" style="margin-bottom:14px"><label id="st-l">Where memory is stored</label><div class="choice" role="radiogroup" aria-labelledby="st-l" id="mem-store"><button role="radio" data-value="embedded" aria-checked="true">Embedded · SurrealKV</button><button role="radio" data-value="server" aria-checked="false">SurrealDB server</button></div></div>
+                  <div class="form-grid">
+                    <div class="field span" id="st-emb"><label for="db-path">Database path</label><input class="input mono" id="db-path" value="./data/memory.db" /><span class="hint">Relative to the runtime working directory. <span class="mono">db_path</span></span></div>
+                    <div class="span" id="st-srv" hidden>
+                      <dl class="kv card" style="margin:0">
+                        <dt>surreal_endpoint</dt><dd><span class="mono">UAR_MEMORY__SURREAL_ENDPOINT</span> · <span class="chip ok" style="height:20px;font-size:11px">set</span></dd>
+                        <dt>surreal_user</dt><dd><span class="mono">UAR_MEMORY__SURREAL_USER</span> · <span class="chip ok" style="height:20px;font-size:11px">set</span></dd>
+                        <dt>surreal_pass</dt><dd><span class="mono">UAR_MEMORY__SURREAL_PASS</span> · <span class="chip warn" style="height:20px;font-size:11px">not set</span></dd>
+                      </dl>
+                      <div class="toolbar" style="margin-top:10px"><span class="faint" style="font-size:12.5px" id="st-res">Credentials are read from the environment, never stored here.</span><span class="spacer"></span><button class="btn btn-secondary btn-sm" id="st-test" data-action="st-test" data-od-id="surreal-test"><svg class="icon"><use href="#i-bolt"/></svg>Test connection</button></div>
+                    </div>
+                    <div class="field"><label for="ns">Namespace</label><input class="input mono" id="ns" value="uar" /></div>
+                    <div class="field"><label for="dbn">Database</label><input class="input mono" id="dbn" value="memory" /></div>
+                  </div>
+                  <div class="section-title"><h3>MCP endpoint</h3><p>Other agents read and write the same memory over MCP</p></div>
+                  <div class="rule" data-od-id="memory-mcp-rule"><div><span class="mono">/mcp/memory</span><span class="sub">Streamable HTTP on the runtime port. <span class="mono">mcp_http_enabled · mcp_http_path</span></span></div><div class="ctl"><button class="icon-btn" data-action="copy-mcp" aria-label="Copy MCP path"><svg class="icon"><use href="#i-copy"/></svg></button><span class="switch" tabindex="0" role="switch" aria-checked="true" aria-label="Serve memory over MCP" data-id="mcp_http"></span></div></div>
+                </div>
+
+                <div role="tabpanel" data-dtabpanel="remembers" data-od-id="memory-list-tab">
+                  <div class="toolbar"><input class="input" type="search" placeholder="Filter memories" aria-label="Filter memories" data-filter="#mems .mem" /><span class="spacer"></span><button class="btn btn-danger btn-sm" data-action="forget-ask" id="forget-all" data-od-id="forget-all"><svg class="icon"><use href="#i-trash"/></svg>Forget all</button></div>
+                  <div class="banner warn" id="forget-confirm" hidden data-od-id="forget-all-confirm"><svg class="icon"><use href="#i-alert"/></svg><div class="grow"><b>Forget all <span id="fc-n">7</span> memories?</b><span class="sub">Deletes them from <span class="mono">./data/memory.db</span>. This cannot be undone.</span></div><button class="btn btn-ghost btn-sm" data-action="forget-cancel">Cancel</button><button class="btn btn-danger btn-sm" data-action="forget-all" id="fc-go"><svg class="icon"><use href="#i-trash"/></svg><span>Forget all</span></button></div>
+                  <div class="mems" id="mems" data-od-id="memory-list"></div>
+                  <p class="gap-note"><i></i>No /api/uar route lists or deletes memories; this view would go through the /mcp/memory tools (get_all_memories, delete_memory, delete_all_memories).</p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="panel" aria-label="Add documents" aria-hidden="true" data-od-id="add-documents-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-head">
+      <div class="tabs" role="tablist" aria-label="Inspector sections"><button class="tab" role="tab" data-tab="add" aria-selected="true" id="tab-add"><svg class="icon icon-sm"><use href="#i-upload"/></svg>Add documents</button></div>
+      <span style="flex:1"></span>
+      <button class="icon-btn" data-action="panel-close" aria-label="Close (Esc)"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="panel-body">
+      <div role="tabpanel" data-tabpanel="add" class="active" aria-labelledby="tab-add">
+        <div class="field" style="margin:6px 0 12px" data-od-id="upload-target"><label for="up-kb">Add to</label><div class="select-wrap"><select class="input select" id="up-kb"><option value="workspace">Workspace docs · default</option><option value="runbooks">runbooks</option><option value="api">api-reference</option></select></div><span class="hint" id="up-cfg"></span></div>
+        <button class="drop" data-action="pick-files" id="drop" data-od-id="upload-dropzone"><svg class="icon"><use href="#i-upload"/></svg><b>Drop files or choose files</b><span class="sub">PDF · DOCX · PPTX · HTML · MD · TXT</span></button>
+        <div class="files" id="files" data-od-id="upload-file-list"></div>
+        <div class="banner" id="up-res" hidden style="margin:12px 0 0"><svg class="icon" id="up-res-i"><use href="#i-check"/></svg><div class="grow"><b id="up-res-t"></b><span class="sub mono" id="up-res-s"></span></div></div>
+        <div class="wizard-foot">
+          <button class="btn btn-ghost" data-action="panel-close">Cancel</button>
+          <button class="btn btn-primary" id="up-go" data-action="up-go" disabled data-od-id="upload-start"><svg class="icon"><use href="#i-upload"/></svg><span>Upload &amp; index</span></button>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-overlay" aria-hidden="true"></div>
+</div>
+
+<div class="cmdk-backdrop"></div>
+<div class="cmdk" role="dialog" aria-label="Search settings">
+  <input class="input" type="search" placeholder="Search settings…" aria-label="Search settings" />
+  <div class="cmdk-list">
+    <p class="menu-label">Knowledge &amp; memory</p>
+    <button class="menu-item" data-action="panel-open" data-tab="add"><svg class="icon"><use href="#i-upload"/></svg>Add documents</button>
+    <button class="menu-item" data-action="go" data-src="newkb"><svg class="icon"><use href="#i-plus"/></svg>Add knowledge base</button>
+    <button class="menu-item" data-action="go" data-src="retrieval"><svg class="icon"><use href="#i-gear"/></svg>Retrieval defaults</button>
+    <button class="menu-item" data-action="go" data-src="memory"><svg class="icon"><use href="#i-brain"/></svg>Agent memory</button>
+    <p class="menu-label">Other settings</p>
+    <a class="menu-item" href="models-and-providers.html"><svg class="icon"><use href="#i-cpu"/></svg>Models &amp; providers</a>
+    <a class="menu-item" href="tools-and-mcp.html"><svg class="icon"><use href="#i-tool"/></svg>Tools &amp; MCP</a>
+    <a class="menu-item" href="skills.html"><svg class="icon"><use href="#i-spark"/></svg>Skills</a>
+    <a class="menu-item" href="governance.html"><svg class="icon"><use href="#i-shield"/></svg>Governance</a>
+    <a class="menu-item" href="appearance.html"><svg class="icon"><use href="#i-sun"/></svg>Appearance</a>
+    <a class="menu-item" href="desktop.html"><svg class="icon"><use href="#i-desktop"/></svg>Desktop</a>
+    <a class="menu-item" href="chat-workspace.html"><svg class="icon"><use href="#i-back"/></svg>Back to chat<kbd>Esc</kbd></a>
+  </div>
+</div>
+
+<script src="assets/settings.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+(function () {
+  const S = window.UARShell, app = document.querySelector(".app");
+  const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  function busy(btn, on) { btn.classList.toggle("is-loading", on); btn.disabled = on; const ic = btn.querySelector(".icon"); if (!ic) return; if (on) { btn.dataset.ic = ic.querySelector("use").getAttribute("href"); ic.querySelector("use").setAttribute("href", "#i-refresh"); ic.classList.add("spin"); } else { ic.classList.remove("spin"); if (btn.dataset.ic) ic.querySelector("use").setAttribute("href", btn.dataset.ic); } }
+
+  const MODELS = { fastembed: [["BAAI/bge-small-en-v1.5", 384], ["BAAI/bge-base-en-v1.5", 768]], openai: [["text-embedding-3-small", 1536], ["text-embedding-3-large", 3072]], mistral: [["mistral-embed", 1024]] };
+  const KEYS = { fastembed: ["Runs on this machine · no API key", true], openai: ["Key from OPENAI_API_KEY · set", true], mistral: ["Key from MISTRAL_API_KEY · not set", false] };
+  const KBS = {
+    workspace: { id: "default", name: "Workspace docs", icon: "book", desc: "Design docs, ADRs and specs", total: 214, provider: "fastembed", model: "BAAI/bge-small-en-v1.5", proc: "kreuzberg", strat: "recursive", size: 512, docs: [
+      ["q3-design-review.pptx", "pptx", 0, "processing:40", "8.7 MB", "today 09:12"], ["onboarding-guide.docx", "docx", 0, "processing:75", "412 KB", "today 09:12"], ["model-routing-spec.md", "md", 0, "processing:10", "36 KB", "today 09:11"],
+      ["adr-014-runtime-sandbox.md", "md", 18, "indexed", "22 KB", "2 Oct"], ["security-baseline.pdf", "pdf", 64, "indexed", "1.4 MB", "30 Sep"], ["platform-architecture-2026.pdf", "pdf", 146, "indexed", "3.1 MB", "28 Sep"]],
+      hits: [[0.84, "platform-architecture-2026.pdf", 92, "Deploys are blue/green. A failed health check after cut-over rolls traffic back to the previous colour automatically within 90 seconds."], [0.79, "adr-014-runtime-sandbox.md", 7, "Rollback restores the last signed runtime image; sandbox state is not migrated back."], [0.71, "security-baseline.pdf", 31, "Any rollback of a production deploy must be recorded in the change log with the run id."]] },
+    runbooks: { id: "runbooks", name: "runbooks", icon: "list", desc: "On-call procedures", total: 38, provider: "fastembed", model: "BAAI/bge-small-en-v1.5", proc: "kreuzberg", strat: "sentence", size: 384, docs: [
+      ["db-failover.docx", "docx", 0, "failed:kreuzberg timed out after 60 s", "5.2 MB", "3 Oct"], ["deploy-rollback.md", "md", 12, "indexed", "14 KB", "1 Oct"], ["pager-escalation.md", "md", 6, "indexed", "8 KB", "1 Oct"],
+      ["redis-eviction.md", "md", 9, "indexed", "11 KB", "24 Sep"], ["cert-rotation.pdf", "pdf", 21, "indexed", "640 KB", "19 Sep"], ["incident-template.md", "md", 4, "indexed", "5 KB", "12 Sep"]],
+      hits: [[0.88, "deploy-rollback.md", 2, "1. Run `uar deploy rollback --to previous`. 2. Confirm the health endpoint returns 200 on all pods. 3. Post the run id in #ops."], [0.74, "incident-template.md", 1, "Record what was rolled back, when, and who approved it."]] },
+    api: { id: "api-reference", name: "api-reference", icon: "link", desc: "Runtime HTTP API", total: 61, provider: "openai", model: "text-embedding-3-small", proc: "auto", strat: "document", size: 1024, docs: [
+      ["knowledge-bases.md", "md", 14, "indexed", "19 KB", "26 Sep"], ["runs.md", "md", 22, "indexed", "31 KB", "26 Sep"], ["auth.md", "md", 9, "indexed", "12 KB", "26 Sep"],
+      ["mcp.md", "md", 11, "indexed", "15 KB", "26 Sep"], ["settings.md", "md", 17, "indexed", "24 KB", "26 Sep"], ["openapi.html", "html", 88, "indexed", "402 KB", "26 Sep"]],
+      hits: [[0.81, "runs.md", 6, "POST /api/uar/runs/{id}/cancel stops a run; a cancelled deploy run does not roll back on its own."]] },
+  };
+  let cur = "workspace";
+
+  function state(kb) { const p = kb.docs.filter((d) => d[3].startsWith("processing")).length, f = kb.docs.filter((d) => d[3].startsWith("failed")).length;
+    if (kb.reindex) return ["warn", kb.total + " docs · re-indexing", p, f]; if (f) return ["err", kb.total + " docs · " + f + " failed", p, f]; if (p) return ["warn", kb.total + " docs · " + p + " processing", p, f]; return ["", kb.total + " docs · indexed", p, f]; }
+  function statusChip(s) { if (s === "indexed") return '<span class="chip ok">indexed</span>'; if (s.startsWith("processing")) return '<span class="chip live">processing · ' + s.split(":")[1] + "%</span>"; return '<span class="chip err">failed</span>'; }
+  function dims(kb) { const m = (MODELS[kb.provider] || []).find((x) => x[0] === kb.model); return m ? m[1] : "?"; }
+
+  function renderDocs() {
+    const kb = KBS[cur];
+    $("#doc-rows").innerHTML = kb.docs.map((d, i) => { const failed = d[3].startsWith("failed");
+      return '<tr data-i="' + i + '"><td class="nm"><b>' + esc(d[0]) + "</b>" + (failed ? '<span class="why">' + esc(d[3].slice(7)) + "</span>" : "") + '</td><td class="mono">' + d[1] + '</td><td class="num">' + (d[2] || "–") + "</td><td>" + statusChip(d[3]) + '</td><td class="num hide-sm">' + d[4] + '</td><td class="hide-sm faint">' + d[5] + '</td><td class="ctl">' + (failed ? '<button class="btn btn-ghost btn-sm" data-action="retry" data-i="' + i + '" aria-label="Retry ' + esc(d[0]) + '"><svg class="icon"><use href="#i-refresh"/></svg>Retry</button>' : "") + "</td></tr>"; }).join("");
+  }
+  function renderMeta() {
+    const kb = KBS[cur], st = state(kb);
+    $("#kb-name").textContent = kb.name; $("#kb-mark use").setAttribute("href", "#i-" + kb.icon); $("#kb-count").textContent = kb.total;
+    $("#kb-sub").innerHTML = '<span class="chip ' + (st[0] || "ok") + '" style="height:22px"><span class="status-dot" style="background:currentColor"></span>' + st[1].split(" · ")[1] + '</span><span class="mono">' + kb.id + "</span><span>·</span><span>" + esc(kb.desc) + '</span><span>·</span><span class="mono">' + kb.provider + " · " + dims(kb) + "-d · " + kb.proc + " · " + kb.strat + " " + kb.size + "</span>";
+    $("#kb-legend").textContent = (kb.total - st[2] - st[3]) + " indexed · " + st[2] + " processing · " + st[3] + " failed";
+    $("#kb-docs-ep").textContent = "GET /api/uar/knowledge-bases/" + kb.id + "/documents";
+    const row = $('.srow[data-src="' + cur + '"] .st'); if (row) row.innerHTML = '<i class="status-dot ' + st[0] + '"></i>' + st[1];
+    let total = 0, p = 0, f = 0; Object.values(KBS).forEach((k) => { const s = state(k); total += k.total; p += s[2]; f += s[3]; });
+    $("#sum-docs").textContent = total; $("#sum-docs-sub").textContent = p + " processing · " + f + " failed"; $("#sum-docs-dot").className = "status-dot " + (f ? "err" : p ? "warn" : "");
+    $("#sum-kb").textContent = Object.keys(KBS).length;
+  }
+  function selectKb(id) { cur = id; renderDocs(); renderMeta(); loadForm(); $("#hits").innerHTML = ""; }
+
+  /* ── indexing form ── */
+  const prov = $("#ix-provider"), model = $("#ix-model"), size = $("#ix-size"), thr = $("#ix-thr");
+  const pick = (gid) => $("#" + gid + " [aria-checked=true]").dataset.value;
+  const setPick = (gid, v) => $$("#" + gid + " [role=radio]").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.value === v)));
+  function fillModels(sel) { model.innerHTML = MODELS[prov.value].map((m) => '<option value="' + m[0] + '">' + m[0] + "</option>").join(""); if (sel && MODELS[prov.value].some((m) => m[0] === sel)) model.value = sel; }
+  function loadForm() { const kb = KBS[cur]; prov.value = kb.provider; fillModels(kb.model); setPick("ix-proc", kb.proc); setPick("ix-strat", kb.strat); size.value = kb.size; $("#ix-confirm").checked = false; $("#ix-err").textContent = ""; syncForm(); }
+  function syncForm() {
+    const kb = KBS[cur], d = MODELS[prov.value].find((m) => m[0] === model.value)[1], key = KEYS[prov.value];
+    $("#ix-dims").innerHTML = '<span class="mono">' + d + "</span> dimensions" + (d !== dims(kb) ? ' · was <span class="mono">' + dims(kb) + "</span>" : "");
+    $("#ix-key").textContent = key[0]; $("#ix-key").classList.toggle("err", !key[1]);
+    $("#ix-size-o").textContent = size.value; $("#ix-thr-o").textContent = Number(thr.value).toFixed(2); $("#ix-sem").hidden = pick("ix-strat") !== "semantic";
+    const modelChanged = prov.value !== kb.provider || model.value !== kb.model;
+    const dirty = modelChanged || pick("ix-proc") !== kb.proc || pick("ix-strat") !== kb.strat || Number(size.value) !== kb.size;
+    $("#ix-warn").hidden = !modelChanged;
+    if (modelChanged) { $("#ix-warn-t").textContent = "Re-index " + kb.total + " documents (~" + Math.max(1, Math.ceil(kb.total * (prov.value === "fastembed" ? 2.5 : 1.2) / 60)) + " min)"; $("#ix-warn-s").textContent = "Vectors from " + kb.model + " (" + dims(kb) + "-d) cannot be compared with " + model.value + " (" + d + "-d). Every document is embedded again; search returns partial results until it finishes."; }
+    const save = $("#ix-save"); save.querySelector("span").textContent = modelChanged ? "Save & re-index" : "Save indexing settings";
+    save.disabled = !dirty || (modelChanged && !$("#ix-confirm").checked);
+  }
+  prov.addEventListener("change", () => { fillModels(); syncForm(); });
+  [model, size, thr, $("#ix-confirm")].forEach((el) => el.addEventListener("input", syncForm));
+  model.addEventListener("change", syncForm); $("#ix-confirm").addEventListener("change", syncForm);
+
+  async function saveIndexing() {
+    const kb = KBS[cur], btn = $("#ix-save"), modelChanged = prov.value !== kb.provider || model.value !== kb.model;
+    busy(btn, true); $("#ix-err").textContent = ""; await wait(900); busy(btn, false);
+    if (!KEYS[prov.value][1]) { $("#ix-err").textContent = "MISTRAL_API_KEY is not set in the runtime environment. Nothing was changed."; S.toast("Save failed · mistral needs MISTRAL_API_KEY", "err"); syncForm(); return; }
+    Object.assign(kb, { provider: prov.value, model: model.value, proc: pick("ix-proc"), strat: pick("ix-strat"), size: Number(size.value) });
+    if (modelChanged) { kb.reindex = true; S.toast("Re-index queued · " + kb.total + " documents · PUT /api/uar/knowledge-bases/" + kb.id, "warn"); }
+    else S.toast("Saved · new uploads use " + kb.strat + " " + kb.size + "; existing chunks keep their boundaries until re-indexed");
+    renderMeta(); loadForm();
+  }
+
+  /* ── search test ── */
+  $("#search-form").addEventListener("submit", async (e) => {
+    e.preventDefault(); const q = $("#q").value.trim().toLowerCase(), btn = $("#q-go"), kb = KBS[cur];
+    if (q.length < 3) { $("#q").setAttribute("aria-invalid", "true"); S.toast("Type a question of at least 3 characters", "warn"); return; }
+    $("#q").removeAttribute("aria-invalid"); busy(btn, true); $("#hits").innerHTML = '<p class="faint" style="font-size:12.5px">Embedding the query with ' + kb.model + "…</p>"; await wait(700); busy(btn, false);
+    const words = q.split(/\W+/).filter((w) => w.length > 3);
+    const hits = kb.hits.filter((h) => words.some((w) => (h[1] + " " + h[3]).toLowerCase().includes(w)));
+    const ms = 30 + Math.round(Math.random() * 30);
+    if (!hits.length) { $("#hits").innerHTML = '<div class="empty card"><svg class="icon"><use href="#i-search"/></svg><b>No matching chunks in ' + esc(kb.name) + '</b><span style="font-size:13px">The agent would answer this without this base. Check the document is indexed, or try the words your documents use.</span><span class="mono faint" style="font-size:12px">0 chunks · ' + ms + " ms</span></div>"; return; }
+    $("#hits").innerHTML = hits.map((h) => '<div class="hit"><div class="score">' + h[0].toFixed(2) + '<div class="meter ok"><i style="width:' + Math.round(h[0] * 100) + '%"></i></div></div><div><div class="src"><b>' + esc(h[1]) + '</b><span class="mono">chunk ' + h[2] + "</span></div><p>" + esc(h[3]) + "</p></div></div>").join("") + '<p class="meta-line mono">' + hits.length + " chunks · " + ms + " ms · POST /api/uar/knowledge-bases/" + kb.id + "/search</p>";
+  });
+
+  /* ── memory ── */
+  const MEMS = [["Staging deploys go through the ops-staging profile with Ask on every write.", "29 Sep · Staging rollout"], ["Uses pnpm, never npm, in the universal-agent-runtime repo.", "28 Sep · Fix CI cache"], ["Wants run summaries under 200 words with a Risks section.", "27 Sep · Weekly report"], ["Do not auto-merge PRs that touch Cedar policies.", "26 Sep · Policy review"], ["Postgres staging is referenced as DATABASE_URL, never written inline.", "24 Sep · Migrate schema"], ["On-call rotation changes Mondays 09:00 CET.", "22 Sep · Pager setup"], ["Prefers diagrams as Mermaid in Markdown replies.", "20 Sep · Architecture notes"]];
+  function renderMems() {
+    $("#mems").innerHTML = MEMS.length ? MEMS.map((m, i) => '<div class="mem" data-od-id="memory-item-' + i + '"><div>' + esc(m[0]) + '<span class="sub"><span class="mono">' + m[1].split(" · ")[0] + "</span> · " + esc(m[1].split(" · ")[1]) + ' · auto-captured</span></div><button class="btn btn-ghost btn-sm" data-action="forget" data-i="' + i + '">Forget</button></div>').join("")
+      : '<div class="empty card"><svg class="icon"><use href="#i-brain"/></svg><b>Nothing remembered</b><span style="font-size:13px">New memories appear here after conversations while capture is on.</span></div>';
+    $("#mem-count").textContent = MEMS.length; $("#fc-n").textContent = MEMS.length; $("#forget-all").disabled = !MEMS.length; syncMem();
+  }
+  function syncMem() {
+    const on = $("#mem-switch").getAttribute("aria-checked") === "true";
+    $("#mem-off").hidden = on; $("#mem-on").hidden = !on; $("#mem-switch-l").textContent = on ? "Memory on" : "Memory off";
+    $("#mem-st").innerHTML = '<i class="status-dot ' + (on ? "" : "off") + '"></i>' + (on ? "On · " + MEMS.length + " memories" : "Off · " + MEMS.length + " stored");
+    $("#sum-mem").textContent = on ? "On" : "Off"; $("#sum-mem-dot").className = "status-dot " + (on ? "" : "off"); $("#sum-mem-sub").textContent = on ? MEMS.length + " memories · auto capture" : MEMS.length + " stored · not used";
+  }
+  function syncBlend() { const v = Number($("#mem-blend").value); $("#mem-blend-o").textContent = v + "% / " + (100 - v) + "%"; $("#mem-blend-s").textContent = "vector_weight " + (v / 100).toFixed(2) + " · bm25_weight " + ((100 - v) / 100).toFixed(2); }
+  $("#mem-blend").addEventListener("input", syncBlend);
+  $("#mem-max").addEventListener("input", (e) => { $("#mem-max-o").textContent = Number(e.target.value).toLocaleString("en-US"); });
+  $("#mem-prov").addEventListener("change", (e) => { $("#mem-model").value = { openai: "text-embedding-3-small", cohere: "embed-english-v3.0", local: "BAAI/bge-small-en-v1.5" }[e.target.value]; S.toast("Memory embeddings changed · existing memories must be re-embedded before search is accurate", "warn"); });
+
+  /* ── upload panel ── */
+  const FILES = [["incident-review-q3.pdf", "2.4 MB", 58], ["oncall-handbook.md", "38 KB", 11], ["vendor-contract-2024.pdf", "1.1 MB", 0], ["api-changelog.html", "210 KB", 23]];
+  let queued = [], uploading = false;
+  function upCfg() { const kb = KBS[$("#up-kb").value]; $("#up-cfg").innerHTML = 'Extract with <span class="mono">' + kb.proc + '</span>, chunk <span class="mono">' + kb.strat + " " + kb.size + '</span>, embed with <span class="mono">' + kb.model + "</span>"; }
+  function renderFiles() {
+    $("#files").innerHTML = queued.map((f, i) => '<div class="frow" id="f' + i + '"><span><b>' + esc(f[0]) + '</b><span class="sub mono" id="fs' + i + '">' + f[1] + ' · queued</span></span>' + (uploading ? "<span></span>" : '<button class="icon-btn" data-action="unqueue" data-i="' + i + '" aria-label="Remove ' + esc(f[0]) + '"><svg class="icon icon-sm"><use href="#i-x"/></svg></button>') + '<div class="meter" id="fm' + i + '"><i style="width:0%"></i></div></div>').join("");
+    $("#up-go").disabled = !queued.length || uploading;
+  }
+  async function runFile(f, i) {
+    const st = $("#fs" + i), m = $("#fm" + i), bar = m.querySelector("i"), stages = [["extracting · kreuzberg", 30], ["chunking", 60], ["embedding", 90]];
+    for (const [label, pct] of stages) {
+      st.textContent = f[1] + " · " + label; bar.style.width = pct + "%"; await wait(500 + i * 180);
+      if (f[2] === 0) { m.className = "meter err"; st.textContent = f[1] + " · failed while extracting"; $("#f" + i).insertAdjacentHTML("beforeend", '<span class="why">Encrypted PDF: kreuzberg could not read the text. Remove the password and upload again.</span>'); return false; }
+    }
+    bar.style.width = "100%"; m.className = "meter ok"; st.textContent = f[1] + " · indexed · " + f[2] + " chunks"; return true;
+  }
+  async function upload() {
+    const kbId = $("#up-kb").value, kb = KBS[kbId], btn = $("#up-go"); uploading = true; renderFiles(); busy(btn, true); $("#drop").disabled = true;
+    const res = await Promise.all(queued.map(runFile)); busy(btn, false); uploading = false;
+    const ok = res.filter(Boolean).length, bad = res.length - ok;
+    queued.forEach((f, i) => kb.docs.unshift([f[0], f[0].split(".").pop(), f[2], res[i] ? "indexed" : "failed:Encrypted PDF, text could not be extracted", f[1], "just now"])); kb.docs = kb.docs.slice(0, 8);
+    kb.total += queued.length; $("#up-res").hidden = false; $("#up-res").className = "banner " + (bad ? "warn" : "ok"); $("#up-res-i use").setAttribute("href", bad ? "#i-alert" : "#i-check");
+    $("#up-res-t").textContent = ok + " indexed · " + bad + " failed"; $("#up-res-s").textContent = "POST /api/uar/knowledge-bases/" + kb.id + "/documents";
+    S.toast(ok + " documents added to " + kb.name + (bad ? " · 1 failed" : ""), bad ? "warn" : "ok");
+    btn.querySelector("span").textContent = "Done"; btn.dataset.action = "up-done"; btn.disabled = false;
+    if (kbId === cur) { renderDocs(); } const keep = cur; cur = kbId; renderMeta(); cur = keep; renderMeta();
+  }
+  function resetPanel() { queued = []; uploading = false; $("#up-res").hidden = true; $("#drop").disabled = false; const b = $("#up-go"); b.dataset.action = "up-go"; b.querySelector("span").textContent = "Upload & index"; $("#up-kb").value = cur in KBS ? cur : "workspace"; upCfg(); renderFiles(); }
+  $("#up-kb").addEventListener("change", upCfg);
+
+  /* ── events ── */
+  document.addEventListener("uar:source", (e) => { const id = e.detail.id; if (KBS[id]) selectKb(id); });
+  document.addEventListener("uar:choice", (e) => { if (e.detail.id === "ix-proc" || e.detail.id === "ix-strat") syncForm(); if (e.detail.id === "mem-store") { const srv = e.detail.value === "server"; $("#st-emb").hidden = srv; $("#st-srv").hidden = !srv; $("#mem-sub-store").innerHTML = srv ? "SurrealDB server · <span class='mono'>uar/memory</span>" : "embedded SurrealKV · <span class='mono'>./data/memory.db</span>"; S.toast(srv ? "Storage: SurrealDB server · restart memory to apply" : "Storage: embedded SurrealKV"); } });
+  document.addEventListener("uar:switch", (e) => {
+    const { id, on } = e.detail;
+    if (id === "memory") { syncMem(); S.toast(on ? "Memory on · " + MEMS.length + " stored memories available to new runs" : "Memory off · nothing captured or injected; stored memories kept", on ? "ok" : "warn"); }
+    if (id === "auto_capture") S.toast(on ? "Auto capture on" : "Auto capture off · existing memories still injected", on ? "ok" : "warn");
+    if (id === "inject_context") { $("#r-max").classList.toggle("off", !on); $("#mem-max").disabled = !on; S.toast(on ? "Memories injected into context" : "Memories captured but not injected", on ? "ok" : "warn"); }
+    if (id === "mcp_http") S.toast(on ? "/mcp/memory serving" : "/mcp/memory stopped · surreal_memory in Tools & MCP will disconnect", on ? "ok" : "warn");
+  });
+  app.addEventListener("uar:panel", (e) => { $("#cta").classList.toggle("btn-primary", !e.detail.open); $("#cta").classList.toggle("btn-secondary", e.detail.open); if (e.detail.open && !uploading) resetPanel(); });
+  app.addEventListener("uar:action", async (e) => {
+    const { action, el } = e.detail;
+    if (action === "ix-save") saveIndexing();
+    if (action === "ix-reset") { loadForm(); S.toast("Changes discarded"); }
+    if (action === "pick-files") { queued = FILES.slice(); renderFiles(); }
+    if (action === "unqueue") { queued.splice(Number(el.dataset.i), 1); renderFiles(); }
+    if (action === "up-go") upload();
+    if (action === "up-done") S.closePanel();
+    if (action === "go") { const r = $('.srow[data-src="' + el.dataset.src + '"]'); if (r) r.click(); }
+    if (action === "copy-mcp") { try { await navigator.clipboard.writeText("/mcp/memory"); } catch (err) { /* clipboard blocked in file:// previews */ } S.toast("Copied /mcp/memory"); }
+    if (action === "forget") { const m = MEMS.splice(Number(el.dataset.i), 1)[0]; renderMems(); S.toast("Forgot: " + m[0].slice(0, 48) + "…"); }
+    if (action === "forget-ask") $("#forget-confirm").hidden = false;
+    if (action === "forget-cancel") $("#forget-confirm").hidden = true;
+    if (action === "forget-all") { const b = $("#fc-go"), n = MEMS.length; busy(b, true); await wait(800); busy(b, false); MEMS.length = 0; $("#forget-confirm").hidden = true; renderMems(); S.toast("Forgot " + n + " memories", "warn"); }
+    if (action === "retry") {
+      const kb = KBS[cur], d = kb.docs[Number(el.dataset.i)], encrypted = /encrypted/i.test(d[3]); busy(el, true); await wait(1100);
+      if (encrypted) { d[3] = "failed:Still encrypted. Remove the password and upload again."; S.toast(d[0] + " failed again · encrypted PDF", "err"); }
+      else { d[3] = "indexed"; d[2] = 47; S.toast(d[0] + " indexed · 47 chunks"); }
+      renderDocs(); renderMeta();
+    }
+    if (action === "st-test") { const b = $("#st-test"); busy(b, true); $("#st-res").textContent = "Signing in to UAR_MEMORY__SURREAL_ENDPOINT…"; await wait(1000); busy(b, false); $("#st-res").innerHTML = '<span style="color:var(--err)">Sign-in refused: UAR_MEMORY__SURREAL_PASS is not set in the runtime environment.</span>'; S.toast("SurrealDB sign-in failed · set UAR_MEMORY__SURREAL_PASS", "err"); }
+    if (action === "nk-create") {
+      const inp = $("#nk-name"), hint = $("#nk-hint"), v = inp.value.trim(), b = $("#nk-go");
+      const taken = Object.values(KBS).some((k) => k.id === v || k.name === v);
+      const err = !v ? "Name is required." : !/^[a-z0-9][a-z0-9-]*$/.test(v) ? "Use lowercase letters, digits and dashes." : taken ? "A knowledge base named " + v + " already exists." : "";
+      if (err) { inp.setAttribute("aria-invalid", "true"); hint.className = "hint err"; hint.textContent = err; S.toast("Not created · " + err, "err"); return; }
+      inp.removeAttribute("aria-invalid"); hint.className = "hint"; busy(b, true); await wait(800); busy(b, false);
+      const p = $("#nk-prov").value; KBS[v] = { id: v, name: v, icon: "folder", desc: $("#nk-desc").value.trim() || "No description", total: 0, provider: p, model: MODELS[p][0][0], proc: "kreuzberg", strat: "recursive", size: 512, docs: [], hits: [] };
+      const row = document.createElement("button"); row.className = "srow"; row.dataset.src = v; row.dataset.view = "kb"; row.dataset.odId = "src-" + v; row.setAttribute("aria-current", "false");
+      row.innerHTML = '<span class="smark"><svg class="icon"><use href="#i-folder"/></svg></span><span><span class="nm">' + esc(v) + '</span><span class="st"><i class="status-dot"></i>0 docs · indexed</span></span><span class="side"></span>';
+      $(".srow.add").before(row); inp.value = ""; $("#nk-desc").value = ""; row.click(); S.toast("Created " + v + " · POST /api/uar/knowledge-bases · add documents next");
+    }
+  });
+
+  selectKb("workspace"); renderMems(); syncBlend(); upCfg(); renderFiles();
+  $("#search-form").dispatchEvent(new Event("submit", { cancelable: true }));
+})();
+</script>
+</body>
+</html>

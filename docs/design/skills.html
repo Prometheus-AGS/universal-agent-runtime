@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Skills · Settings · Universal Agent Runtime</title>
+<link rel="icon" href="assets/brand/uar-mark-dark.svg" />
+<link rel="stylesheet" href="assets/shell.css" />
+<link rel="stylesheet" href="assets/settings.css" />
+<style>
+  .input.ta { height: auto; min-height: 76px; padding: 10px 12px; line-height: 1.5; resize: vertical; }
+  .kw { display: flex; flex-wrap: wrap; gap: 6px; }
+  .kw .chip { cursor: default; font-family: var(--font-mono); font-size: 12px; height: 26px; }
+  .kw .chip:hover { background: var(--raised); color: var(--fg); }
+  .req { display: flex; flex-direction: column; gap: 4px; }
+  .req .mrow { grid-template-columns: 1fr auto auto; }
+  .req .mono { font-size: 12.5px; }
+  .ex { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 12px; }
+  .ex .chip { font-size: 12px; height: 26px; }
+  .mres { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+  .mres .mrow { grid-template-columns: 22px minmax(0, 1fr) 160px 46px; gap: 12px; }
+  .mres .rk { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); }
+  .mres .sc { font-family: var(--font-mono); font-size: 12px; text-align: right; }
+  .mbar { position: relative; height: 6px; border-radius: 6px; background: var(--input); }
+  .mbar > i { display: block; height: 100%; border-radius: 6px; background: var(--faint); }
+  .mbar.hit > i { background: var(--ok); }
+  .mbar > b { position: absolute; top: -4px; bottom: -4px; width: 2px; border-radius: 1px; background: var(--fg); }
+  .verdict { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--step-2); font-size: 13px; margin-top: 12px; }
+  .verdict .mono { font-size: 12px; color: var(--muted); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .envs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .envc { padding: 12px 14px; border-radius: 10px; background: var(--step-2); font-size: 12.5px; color: var(--muted); }
+  .envc b { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--fg); font-weight: 500; margin-bottom: 4px; }
+  .envc.cur { background: var(--raised); }
+  .deps[inert] { opacity: 0.5; }
+  .prop { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; }
+  .prop .sub { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .muted-p { color: var(--muted); font-size: 13.5px; }
+  @media (max-width: 920px) { .two, .envs { grid-template-columns: 1fr; } .mres .mrow { grid-template-columns: 22px 1fr 46px; } .mres .mbar { display: none; } }
+</style>
+</head>
+<body>
+<div class="app" data-od-id="settings-shell" data-panel-persist="false">
+  <div class="titlebar" data-tauri-drag-region><span class="mono">universal-agent-runtime</span>&nbsp;· Settings</div>
+  <aside data-settings-nav data-current="skills" data-od-id="settings-sidebar"></aside>
+
+  <main class="main" id="content" data-od-id="settings-main">
+    <header class="topbar">
+      <button class="icon-btn" data-action="sidebar-mobile" aria-label="Open navigation" id="mobile-nav-btn" style="display:none"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+      <div class="title"><span class="crumb">Settings</span><span>Skills</span></div>
+      <span class="spacer"></span>
+      <button class="chip" data-action="cmdk" data-od-id="topbar-search"><svg class="icon"><use href="#i-search"/></svg>Search settings <kbd style="margin-left:4px" data-kbd="⌘K">⌘K</kbd></button>
+      <button class="icon-btn" data-action="theme" aria-pressed="false" aria-label="Switch theme" title="Switch theme" data-od-id="topbar-theme"><svg class="icon"><use href="#i-sun"/></svg></button>
+    </header>
+
+    <section class="page">
+      <div class="page-inner">
+        <div class="page-head" data-od-id="page-head">
+          <div>
+            <h1>Skills</h1>
+            <p>What is installed, what is on, why a skill fires for a prompt, and whether the tools it needs are actually reachable. Each skill is a <span class="mono">SKILL.md</span> with YAML frontmatter; changes to skills themselves are gated by Cedar.</p>
+          </div>
+          <div class="acts"><button class="btn btn-primary" data-action="panel-open" data-tab="import" data-od-id="import-skill-cta"><svg class="icon"><use href="#i-upload"/></svg>Import skill</button></div>
+        </div>
+
+        <div class="summary" data-od-id="summary-strip">
+          <div class="card sum" data-od-id="sum-installed"><div class="k">Installed</div><div class="v"><span id="sum-installed">142</span><small id="sum-installed-sub">2 workspace · 140 library</small></div></div>
+          <div class="card sum" data-od-id="sum-enabled"><div class="k">Enabled</div><div class="v"><span class="status-dot"></span><span id="sum-enabled">37</span><small>of <span id="sum-of">142</span> · 1 agent-scoped</small></div></div>
+          <div class="card sum" data-od-id="sum-matching"><div class="k">Matching</div><div class="v"><span id="sum-algo">Hybrid</span><small id="sum-match">threshold 0.50 · top_k 3</small></div></div>
+          <div class="card sum" data-od-id="sum-evolution"><div class="k">Skill evolution</div><div class="v"><span class="status-dot off" id="sum-evo-dot"></span><span id="sum-evo">Off</span><small>env <span class="mono">development</span></small></div></div>
+        </div>
+
+        <div class="md">
+          <nav class="sources" aria-label="Skills" data-od-id="skill-list">
+            <button class="srow" aria-current="false" data-src="matching" data-od-id="row-matching"><span class="smark"><svg class="icon"><use href="#i-scale"/></svg></span><span><span class="nm">Matching &amp; evolution</span><span class="st" id="row-matching-st"><i class="status-dot off"></i>Hybrid · 0.50 · evolution off</span></span><span class="side">global</span></button>
+            <input class="input" type="search" placeholder="Filter skills" aria-label="Filter skills" data-filter=".sources .srow.sk" data-od-id="skill-filter" />
+            <p class="group-label">Workspace <span>skills/</span></p>
+            <div id="ws-group">
+              <button class="srow sk" aria-current="true" data-src="sample-skill" data-view="skill" data-od-id="row-sample-skill"><span class="smark"><svg class="icon"><use href="#i-folder"/></svg></span><span><span class="nm">Sample Filesystem Skill</span><span class="st"><i class="status-dot warn"></i>On · Global · 1.0.0</span></span><span class="switch" role="switch" aria-checked="true" aria-label="Sample Filesystem Skill enabled" data-id="sample-skill" tabindex="0"></span></button>
+              <button class="srow sk" aria-current="false" data-src="db-skill" data-view="skill" data-od-id="row-db-skill"><span class="smark"><svg class="icon"><use href="#i-db"/></svg></span><span><span class="nm">db_helper</span><span class="st"><i class="status-dot off"></i>Off · Global · 1.0.0</span></span><span class="switch" role="switch" aria-checked="false" aria-label="db_helper enabled" data-id="db-skill" tabindex="0"></span></button>
+            </div>
+            <p class="group-label">Library · rust <span>4</span></p>
+            <button class="srow sk" aria-current="false" data-src="actor-model" data-view="skill" data-od-id="row-actor-model"><span class="smark"><svg class="icon"><use href="#i-spark"/></svg></span><span><span class="nm">actor-model</span><span class="st"><i class="status-dot"></i>On · Global · 1.0.0</span></span><span class="switch" role="switch" aria-checked="true" aria-label="actor-model enabled" data-id="actor-model" tabindex="0"></span></button>
+            <button class="srow sk" aria-current="false" data-src="async-patterns" data-view="skill" data-od-id="row-async-patterns"><span class="smark"><svg class="icon"><use href="#i-spark"/></svg></span><span><span class="nm">async-patterns</span><span class="st"><i class="status-dot"></i>On · Global · 1.0.0</span></span><span class="switch" role="switch" aria-checked="true" aria-label="async-patterns enabled" data-id="async-patterns" tabindex="0"></span></button>
+            <button class="srow sk" aria-current="false" data-src="axum-patterns" data-view="skill" data-od-id="row-axum-patterns"><span class="smark"><svg class="icon"><use href="#i-spark"/></svg></span><span><span class="nm">axum-patterns</span><span class="st"><i class="status-dot"></i>On · Global · 1.0.0</span></span><span class="switch" role="switch" aria-checked="true" aria-label="axum-patterns enabled" data-id="axum-patterns" tabindex="0"></span></button>
+            <button class="srow sk" aria-current="false" data-src="error-handling" data-view="skill" data-od-id="row-error-handling"><span class="smark"><svg class="icon"><use href="#i-spark"/></svg></span><span><span class="nm">error-handling</span><span class="st"><i class="status-dot"></i>On · Global · 1.0.0</span></span><span class="switch" role="switch" aria-checked="true" aria-label="error-handling enabled" data-id="error-handling" tabindex="0"></span></button>
+            <p class="group-label">Library · testing &amp; devops <span>2</span></p>
+            <button class="srow sk" aria-current="false" data-src="bdd-testing" data-view="skill" data-od-id="row-bdd-testing"><span class="smark"><svg class="icon"><use href="#i-flask"/></svg></span><span><span class="nm">bdd-testing</span><span class="st"><i class="status-dot off"></i>Off · Global · 1.0.0</span></span><span class="switch" role="switch" aria-checked="false" aria-label="bdd-testing enabled" data-id="bdd-testing" tabindex="0"></span></button>
+            <button class="srow sk" aria-current="false" data-src="gitops-bootstrap" data-view="skill" data-od-id="row-gitops-bootstrap"><span class="smark"><svg class="icon"><use href="#i-git"/></svg></span><span><span class="nm">gitops-bootstrap</span><span class="st"><i class="status-dot off"></i>Off · Global · 1.0.0</span></span><span class="switch" role="switch" aria-checked="false" aria-label="gitops-bootstrap enabled" data-id="gitops-bootstrap" tabindex="0"></span></button>
+            <p class="group-label">Library · research &amp; extraction <span>2</span></p>
+            <button class="srow sk" aria-current="false" data-src="deep-research" data-view="skill" data-od-id="row-deep-research"><span class="smark"><svg class="icon"><use href="#i-search"/></svg></span><span><span class="nm">deep-research</span><span class="st"><i class="status-dot warn"></i>On · Agent research-agent · 1.0.0</span></span><span class="switch" role="switch" aria-checked="true" aria-label="deep-research enabled" data-id="deep-research" tabindex="0"></span></button>
+            <button class="srow sk" aria-current="false" data-src="kreuzberg" data-view="skill" data-od-id="row-kreuzberg"><span class="smark"><svg class="icon"><use href="#i-file"/></svg></span><span><span class="nm">kreuzberg</span><span class="st"><i class="status-dot"></i>On · Global · 1.0.0</span></span><span class="switch" role="switch" aria-checked="true" aria-label="kreuzberg enabled" data-id="kreuzberg" tabindex="0"></span></button>
+            <p class="group-label">Library · process &amp; imported <span>2</span></p>
+            <button class="srow sk" aria-current="false" data-src="adversarial-review" data-view="skill" data-od-id="row-adversarial-review"><span class="smark"><svg class="icon"><use href="#i-shield"/></svg></span><span><span class="nm">adversarial-review</span><span class="st"><i class="status-dot"></i>On · Global · 1.0.0</span></span><span class="switch" role="switch" aria-checked="true" aria-label="adversarial-review enabled" data-id="adversarial-review" tabindex="0"></span></button>
+            <button class="srow sk" aria-current="false" data-src="sycophancy-correction" data-view="skill" data-od-id="row-sycophancy-correction"><span class="smark"><svg class="icon"><use href="#i-download"/></svg></span><span><span class="nm">sycophancy-correction</span><span class="st"><i class="status-dot warn"></i>On · Global · 1.0.0</span></span><span class="switch" role="switch" aria-checked="true" aria-label="sycophancy-correction enabled" data-id="sycophancy-correction" tabindex="0"></span></button>
+            <button class="srow add" data-action="more-skills" data-od-id="row-more-skills"><span class="smark"><svg class="icon icon-sm"><use href="#i-plus"/></svg></span><span class="nm">+ 130 more in library</span></button>
+          </nav>
+
+          <div>
+            <!-- skill detail -->
+            <section class="view detail active" data-view="skill" aria-label="Skill detail" data-od-id="skill-detail">
+              <div class="detail-head">
+                <span class="smark lg"><svg class="icon"><use href="#i-spark"/></svg></span>
+                <div>
+                  <h2 id="d-name">Sample Filesystem Skill</h2>
+                  <div class="sub" id="d-sub"></div>
+                </div>
+                <div class="acts">
+                  <button class="btn btn-ghost btn-sm" data-action="reload" id="reload-btn" data-od-id="skill-reload"><svg class="icon"><use href="#i-refresh"/></svg>Reload</button>
+                  <span class="switch" role="switch" aria-checked="true" aria-label="Skill enabled" data-id="detail-enabled" id="d-enabled" tabindex="0" data-od-id="skill-enabled-switch"></span>
+                </div>
+              </div>
+              <div class="tabs" role="tablist" aria-label="Skill sections" data-od-id="skill-tabs">
+                <button class="tab" role="tab" data-dtab="overview" aria-selected="true">Overview</button>
+                <button class="tab" role="tab" data-dtab="try" aria-selected="false">Try matching</button>
+                <button class="tab" role="tab" data-dtab="source" aria-selected="false">Source</button>
+                <button class="tab" role="tab" data-dtab="versions" aria-selected="false">Versions <span class="count" id="d-prop-count"></span></button>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="overview" class="active" data-od-id="overview-tab">
+                <div class="banner warn" id="tool-banner" data-od-id="tool-banner"><svg class="icon"><use href="#i-alert"/></svg><span class="grow"><b id="tool-banner-t"></b><span class="sub">The skill can still match and inject its prompt, but calls to missing tools fail at run time.</span></span><a class="btn btn-secondary btn-sm" href="tools-and-mcp.html" data-od-id="tool-banner-link"><svg class="icon"><use href="#i-tool"/></svg>Open Tools &amp; MCP</a></div>
+                <p class="muted-p" id="d-desc" data-od-id="skill-description"></p>
+                <div class="section-title"><h3>Fires when</h3><p><span class="mono">triggers.keywords</span> · scored by the matcher</p></div>
+                <div class="kw" id="d-kw" data-od-id="trigger-keywords"></div>
+                <p class="muted-p" id="d-when" style="margin-top:8px;font-size:12.5px"></p>
+                <div class="section-title"><h3>Needs these tools</h3><p>Cross-checked against Tools &amp; MCP</p></div>
+                <div class="req" id="d-tools" data-od-id="required-tools"></div>
+                <p class="gap-note"><i></i>Availability is a client-side join of <span class="mono">required_tools</span> against <span class="mono">GET /api/uar/mcp/servers</span>; bare names such as <span class="mono">tavily</span> are matched to a server by prefix. No endpoint returns this join. Backend gap.</p>
+                <div class="section-title"><h3>Scope &amp; model</h3><p>Saved per skill to <span class="mono">skill_config.&lt;skillId&gt;</span></p></div>
+                <div class="card" data-od-id="scope-card">
+                  <div class="form-grid">
+                    <div class="field span"><label id="scope-lbl">Scope</label><div class="choice" role="radiogroup" aria-labelledby="scope-lbl" id="scope-choice" data-od-id="scope-choice"><button role="radio" data-value="Global" aria-checked="true">Global</button><button role="radio" data-value="Agent" aria-checked="false">Agent</button><button role="radio" data-value="Conversation" aria-checked="false">Conversation</button></div></div>
+                    <div class="field"><label for="scope-target" id="scope-target-lbl">Agent</label><div class="select-wrap"><select class="input select" id="scope-target" disabled data-od-id="scope-target"></select></div><span class="hint" id="scope-hint">Global skills are offered to every agent and conversation.</span></div>
+                    <div class="field"><label for="model-ovr">Model override</label><div class="select-wrap"><select class="input select mono" id="model-ovr" data-od-id="model-override"><option value="">Inherit workspace default</option><option>openai/gpt-4.1-mini</option><option>anthropic/claude-sonnet-4-5</option></select></div><span class="hint"><span class="mono">SkillExecutionConfig</span> · preferred_provider / preferred_model</span></div>
+                    <div class="field"><label for="max-tok">max_tokens</label><input class="input mono" id="max-tok" inputmode="numeric" placeholder="inherit" disabled data-od-id="max-tokens" /></div>
+                  </div>
+                </div>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="try" data-od-id="try-tab">
+                <div class="field"><label for="m-prompt">Prompt to score</label><textarea class="input ta" id="m-prompt" data-od-id="match-prompt">Research the latest Cedar policy language changes and cite sources</textarea></div>
+                <div class="ex" data-od-id="match-examples">
+                  <button class="chip" data-action="example" data-q="Research the latest Cedar policy language changes and cite sources">Research prompt</button>
+                  <button class="chip" data-action="example" data-q="Write a postgres migration that adds an index on runs.created_at">Postgres migration</button>
+                  <button class="chip" data-action="example" data-q="Suggest a name for my cat">Unrelated prompt</button>
+                </div>
+                <div class="toolbar"><button class="btn btn-secondary" data-action="match" id="match-btn" data-od-id="run-match"><svg class="icon"><use href="#i-play"/></svg>Run match</button><span class="spacer"></span><span class="mono faint" style="font-size:12px" id="m-params">POST /api/uar/skills/match · Hybrid · top_k 3</span></div>
+                <div id="m-out" data-od-id="match-results"><p class="muted-p" style="font-size:12.5px">Scores every installed skill against the prompt with the current matching settings. The white line on each bar is the threshold.</p></div>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="source" data-od-id="source-tab">
+                <div class="code" id="d-code" data-od-id="skill-frontmatter"></div>
+                <dl class="kv" style="margin-top:14px" data-od-id="skill-provenance">
+                  <dt>installed_location</dt><dd class="mono" id="d-loc"></dd>
+                  <dt>entrypoint</dt><dd class="mono">SKILL.md</dd>
+                  <dt>artifact_digest</dt><dd class="mono" id="d-digest"></dd>
+                  <dt>provider_id</dt><dd class="mono" id="d-prov"></dd>
+                  <dt>Provenance</dt><dd id="d-origin"></dd>
+                </dl>
+                <div class="toolbar" style="margin-top:14px"><button class="btn btn-secondary btn-sm" data-action="update-check" id="upd-btn" data-od-id="update-check"><svg class="icon"><use href="#i-refresh"/></svg>Check for updates</button><span class="faint" style="font-size:12.5px" id="upd-res">Compiler: parser, conformance and completeness checks run on reload.</span></div>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="versions" data-od-id="versions-tab">
+                <div class="section-title"><h3>History</h3><p>Installed and reloaded artifacts</p></div>
+                <div class="req" id="d-hist" data-od-id="version-history"></div>
+                <div class="section-title"><h3>Evolution proposals</h3><p>From reflection after runs · gated by <span class="mono">skill-mutation.cedar</span></p></div>
+                <div id="d-props" data-od-id="evolution-proposals"></div>
+                <p class="gap-note"><i></i>Version history and a proposal queue with approve/reject are not exposed by <span class="mono">/api/uar/skills</span>; only <span class="mono">update-check</span> and <span class="mono">provenance</span> exist. Backend gap.</p>
+              </div>
+            </section>
+
+            <!-- matching & evolution -->
+            <section class="view detail" data-view="matching" aria-label="Matching and evolution" data-od-id="matching-view">
+              <div class="detail-head">
+                <span class="smark lg"><svg class="icon"><use href="#i-scale"/></svg></span>
+                <div><h2>Matching &amp; evolution</h2><div class="sub"><span class="mono">skill_config</span><span>·</span><span class="mono">skill_evolution</span><span>·</span><span>saved via <span class="mono">POST /api/uar/skills/config</span></span></div></div>
+              </div>
+              <div class="section-title"><h3>Matching</h3><p>How a prompt picks skills before the run starts</p></div>
+              <div class="rules" data-od-id="matching-rules">
+                <div class="rule"><div>Algorithm<span class="sub">Hybrid blends keyword hits with embedding similarity.</span></div><div class="choice sm" role="radiogroup" aria-label="Matching algorithm" id="algo" data-od-id="algo-choice"><button role="radio" data-value="Keyword" aria-checked="false">Keyword</button><button role="radio" data-value="Embedding" aria-checked="false">Embedding</button><button role="radio" data-value="Llm" aria-checked="false">Llm</button><button role="radio" data-value="Hybrid" aria-checked="true">Hybrid</button><button role="radio" data-value="LocalEmbedding" aria-checked="false">LocalEmbedding</button></div></div>
+                <div class="rule"><div><label for="r-th">threshold</label><span class="sub">Minimum score for a skill to fire. Default 0.5.</span></div><div class="range"><input type="range" id="r-th" min="0" max="1" step="0.01" value="0.5" data-od-id="threshold-range" /><output for="r-th" id="o-th">0.50</output></div></div>
+                <div class="rule"><div><label for="r-mg">margin_threshold</label><span class="sub">Minimum lead of #1 over #2 before the top pick is treated as clear. Default 0.05.</span></div><div class="range"><input type="range" id="r-mg" min="0" max="0.3" step="0.01" value="0.05" data-od-id="margin-range" /><output for="r-mg" id="o-mg">0.05</output></div></div>
+                <div class="rule"><div><label for="r-k">top_k</label><span class="sub">Candidates scored and shown in Try matching. Default 3.</span></div><div class="range"><input type="range" id="r-k" min="1" max="10" step="1" value="3" data-od-id="topk-range" /><output for="r-k" id="o-k">3</output></div></div>
+                <div class="rule" id="mn-rule"><div><label for="m-name">model_name</label><span class="sub">Embedding or LLM model used by the matcher. Ignored by Keyword.</span></div><div class="ctl"><input class="input mono" id="m-name" placeholder="workspace embedding default" style="width:240px" data-od-id="matcher-model" /></div></div>
+              </div>
+              <p class="gap-note"><i></i>The runtime does not declare a default <span class="mono">algorithm</span> in settings; Hybrid is shown as the assumed default until it does. Backend gap.</p>
+
+              <div class="section-title"><h3>Skill evolution</h3><p>Reflection after a run may propose new or updated skills</p></div>
+              <div class="rules">
+                <div class="rule" data-od-id="evo-toggle"><div>Enable skill evolution<span class="sub"><span class="mono">skill_evolution.enabled</span> · off by default</span></div><span class="switch" role="switch" aria-checked="false" aria-label="Enable skill evolution" data-id="evo" tabindex="0"></span></div>
+              </div>
+              <div class="rules deps" id="evo-deps" inert style="margin-top:6px" data-od-id="evo-rules">
+                <div class="rule"><div><label for="e-model">trigger_model</label><span class="sub">Model that runs reflection, as provider/model.</span></div><div class="select-wrap"><select class="input select mono" id="e-model" style="width:240px"><option>openai/gpt-4.1-mini</option><option>anthropic/claude-sonnet-4-5</option></select></div></div>
+                <div class="rule"><div><label for="e-min">min_tool_calls</label><span class="sub">Only reflect on runs with at least this many tool calls.</span></div><input class="input mono" id="e-min" value="2" inputmode="numeric" style="width:90px" /></div>
+                <div class="rule"><div><label for="e-max">max_skills_per_run</label><span class="sub">Cap on proposals from one run.</span></div><input class="input mono" id="e-max" value="1" inputmode="numeric" style="width:90px" /></div>
+                <div class="rule"><div>allow_update<span class="sub">Proposals may rewrite an existing skill, not only add new ones.</span></div><span class="switch" role="switch" aria-checked="false" aria-label="allow_update" data-id="allow-update" tabindex="0"></span></div>
+                <div class="rule"><div>allow_deletion<span class="sub">Proposals may tombstone a skill.</span></div><span class="switch" role="switch" aria-checked="false" aria-label="allow_deletion" data-id="allow-deletion" tabindex="0"></span></div>
+                <div class="rule off" id="e-del-rule"><div><label for="e-del">min_executions_before_delete</label><span class="sub">A skill must have run this many times before it can be removed.</span></div><input class="input mono" id="e-del" value="5" inputmode="numeric" style="width:90px" disabled /></div>
+                <div class="field" style="margin-top:6px"><label for="e-prompt">reflection_prompt</label><textarea class="input ta" id="e-prompt">Review the finished run. If a repeatable procedure used two or more tools, propose one SKILL.md with name, version, description, triggers.keywords and tools.</textarea></div>
+              </div>
+
+              <div class="section-title"><h3>Who may change skills</h3><p><span class="mono">policies/skill-mutation.cedar</span> · <span class="mono">PROMETHEUS_ENVIRONMENT</span></p></div>
+              <div class="toolbar"><span class="chip ok" data-od-id="env-chip"><span class="status-dot"></span>Current: development</span><span class="spacer"></span><span class="faint" style="font-size:12.5px" id="pv-lbl">Preview as</span><div class="choice sm" role="radiogroup" aria-labelledby="pv-lbl" id="env-preview" data-od-id="env-preview"><button role="radio" data-value="development" aria-checked="true">development</button><button role="radio" data-value="staging" aria-checked="false">staging</button><button role="radio" data-value="production" aria-checked="false">production</button></div></div>
+              <div class="envs" data-od-id="env-cards">
+                <div class="envc cur" data-env="development"><b><span class="status-dot"></span>development</b>Permits <span class="mono">skill.mutate</span>, <span class="mono">skill.generate</span> and <span class="mono">skill.promote</span>.</div>
+                <div class="envc" data-env="staging"><b><span class="status-dot warn"></span>staging</b>Mutations need <span class="mono">validation_passed</span>. Promotions need human approval and a passing test rate.</div>
+                <div class="envc" data-env="production"><b><span class="status-dot err"></span>production</b>Forbids skill mutations. Proposals can be reviewed but never applied.</div>
+              </div>
+              <p class="faint" style="font-size:12.5px;margin:10px 4px 0">The environment is set on the daemon, not here. Preview only changes what the approve flow on the Versions tab simulates.</p>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="panel" aria-label="Import skill" aria-hidden="true" data-od-id="import-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-head">
+      <div class="tabs" role="tablist" aria-label="Inspector sections"><button class="tab" role="tab" data-tab="import" aria-selected="true" id="tab-import"><svg class="icon icon-sm"><use href="#i-upload"/></svg>Import skill</button></div>
+      <span style="flex:1"></span>
+      <button class="icon-btn" data-action="panel-close" aria-label="Close (Esc)" data-od-id="import-close"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="panel-body">
+      <div role="tabpanel" data-tabpanel="import" class="active" aria-labelledby="tab-import">
+        <div class="steps" aria-hidden="true"><span class="on" id="s1"></span><span id="s2"></span><span id="s3"></span></div>
+        <div class="wstep active" id="w1" data-od-id="import-step-source">
+          <h3 style="font-size:16px">1 · Where is the skill?</h3>
+          <p class="muted" style="font-size:13px;margin:4px 0 10px">Any source must contain a <span class="mono">SKILL.md</span> with YAML frontmatter.</p>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <button class="preset" data-kind="folder" data-val="~/skills/release-notes" data-od-id="pick-folder"><span class="smark"><svg class="icon"><use href="#i-folder"/></svg></span><span><span class="nm">Folder with SKILL.md</span><span class="sub">copied into the workspace <span class="mono">skills/</span></span></span><span class="cnt">local</span></button>
+            <button class="preset" data-kind="git" data-val="git@git.internal:skills/web-scraper.git" data-od-id="pick-git"><span class="smark"><svg class="icon"><use href="#i-git"/></svg></span><span><span class="nm">Git URL</span><span class="sub">cloned at a pinned commit</span></span><span class="cnt">remote</span></button>
+            <button class="preset" data-kind="zip" data-val="~/Downloads/pdf-tables.zip" data-od-id="pick-zip"><span class="smark"><svg class="icon"><use href="#i-box"/></svg></span><span><span class="nm">.zip archive</span><span class="sub">unpacked, digest recorded</span></span><span class="cnt">file</span></button>
+          </div>
+        </div>
+        <div class="wstep" id="w2" data-od-id="import-step-validate">
+          <h3 style="font-size:16px">2 · Validate</h3>
+          <div class="field" style="margin:10px 0 12px"><label for="i-src" id="i-src-lbl">Folder path</label><input class="input mono" id="i-src" /></div>
+          <div class="card" style="display:flex;align-items:center;gap:10px;padding:10px 12px"><span class="status-dot off" id="i-dot"></span><span class="grow" style="flex:1;font-size:13px" id="i-res">Runs the <span class="mono">src/uar/compiler</span> checks without installing.</span><button class="btn btn-secondary btn-sm" data-action="validate" id="i-val" data-od-id="import-validate"><svg class="icon"><use href="#i-bolt"/></svg>Validate</button></div>
+          <div class="found" id="i-checks" data-od-id="import-checks"></div>
+          <p class="gap-note"><i></i><span class="mono">POST /api/uar/skills/import</span> installs or fails as a whole; a dry-run returning each compiler check is not exposed. Backend gap.</p>
+        </div>
+        <div class="wstep" id="w3" data-od-id="import-step-scope">
+          <h3 style="font-size:16px">3 · Scope &amp; enable</h3>
+          <p class="muted" style="font-size:13px;margin:4px 0 10px" id="i-sum"></p>
+          <div class="choice" role="radiogroup" aria-label="Import scope" id="i-scope"><button role="radio" data-value="Global" aria-checked="true">Global</button><button role="radio" data-value="Agent" aria-checked="false">Agent</button><button role="radio" data-value="Conversation" aria-checked="false">Conversation</button></div>
+          <div class="rule" style="margin-top:12px"><div>Enable after import<span class="sub">Stored as <span class="mono">skill_config.&lt;skillId&gt;</span></span></div><span class="switch" role="switch" aria-checked="true" aria-label="Enable after import" data-id="imp-enable" id="i-enable" tabindex="0"></span></div>
+        </div>
+        <div class="wizard-foot">
+          <button class="btn btn-ghost" data-action="wiz-back" id="w-back" style="visibility:hidden" data-od-id="import-back">Back</button>
+          <button class="btn btn-secondary" data-action="wiz-next" id="w-next" disabled data-od-id="import-next">Continue</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-overlay" aria-hidden="true"></div>
+</div>
+
+<div class="cmdk-backdrop"></div>
+<div class="cmdk" role="dialog" aria-label="Search settings" data-od-id="cmdk">
+  <input class="input" type="search" placeholder="Search settings…" aria-label="Search settings" />
+  <div class="cmdk-list">
+    <p class="menu-label">Skills</p>
+    <button class="menu-item" data-action="panel-open" data-tab="import"><svg class="icon"><use href="#i-upload"/></svg>Import skill</button>
+    <button class="menu-item" data-action="goto-matching"><svg class="icon"><use href="#i-scale"/></svg>Matching threshold &amp; algorithm</button>
+    <button class="menu-item" data-action="goto-matching"><svg class="icon"><use href="#i-history"/></svg>Skill evolution</button>
+    <p class="menu-label">Other settings</p>
+    <a class="menu-item" href="models-and-providers.html"><svg class="icon"><use href="#i-cpu"/></svg>Models &amp; providers</a>
+    <a class="menu-item" href="tools-and-mcp.html"><svg class="icon"><use href="#i-tool"/></svg>Tools &amp; MCP</a>
+    <a class="menu-item" href="skills.html"><svg class="icon"><use href="#i-spark"/></svg>Skills</a>
+    <a class="menu-item" href="knowledge-and-memory.html"><svg class="icon"><use href="#i-book"/></svg>Knowledge &amp; memory</a>
+    <a class="menu-item" href="governance.html"><svg class="icon"><use href="#i-shield"/></svg>Governance</a>
+    <a class="menu-item" href="appearance.html"><svg class="icon"><use href="#i-sun"/></svg>Appearance</a>
+    <a class="menu-item" href="desktop.html"><svg class="icon"><use href="#i-desktop"/></svg>Desktop</a>
+    <a class="menu-item" href="chat-workspace.html"><svg class="icon"><use href="#i-back"/></svg>Back to chat<kbd>Esc</kbd></a>
+  </div>
+</div>
+
+<script src="assets/settings.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+(function () {
+  "use strict";
+  const S = window.UARShell, app = document.querySelector(".app"), $ = (s) => document.querySelector(s);
+  const LIB = "crates/prometheus-skill-system/skills/";
+  /* tool name → [state, where it comes from] — mirrors the server list on tools-and-mcp.html */
+  const TOOLS = {
+    mirror: ["err", "No connected server exposes it"],
+    file_system: ["ok", "filesystem · connected · 9 tools"], "filesystem__read_file": ["ok", "filesystem · connected"], "filesystem__write_file": ["ok", "filesystem · connected · Ask"],
+    tavily: ["warn", "tavily · reconnecting, attempt 3"], memory: ["ok", "surreal_memory · connected"], firecrawl: ["err", "No firecrawl server configured"],
+    detect_sycophancy: ["err", "sycophancy-correction server not added"], correct_sycophancy: ["err", "sycophancy-correction server not added"],
+  };
+  const SK = {
+    "sample-skill": { t: "Sample Filesystem Skill", v: "1.0.0", cat: "workspace", on: true, scope: "Global", d: "A sample skill loaded from the filesystem.", kw: ["filesystem test"], tools: ["mirror"], loc: "skills/sample-skill/SKILL.md", src: "Workspace folder · loaded at daemon start" },
+    "db-skill": { t: "db_helper", v: "1.0.0", cat: "workspace", on: false, scope: "Global", d: "Advanced PostgreSQL database management utility for running migrations, optimizations and querying schemas.", kw: ["postgres", "sql", "migration"], when: "When the user needs to interact with the database.", tools: [], loc: "skills/db-skill/SKILL.md", src: "Workspace folder · loaded at daemon start" },
+    "actor-model": { t: "actor-model", v: "1.0.0", cat: "rust", on: true, scope: "Global", d: "Tokio-native actor pattern: tasks communicating over mpsc with a typed message enum.", kw: ["actor", "mpsc", "tokio task"], tools: [] },
+    "async-patterns": { t: "async-patterns", v: "1.0.0", cat: "rust", on: true, scope: "Global", d: "Async Rust patterns for tokio services: cancellation, select, backpressure.", kw: ["async", "tokio", "select!"], tools: [] },
+    "axum-patterns": { t: "axum-patterns", v: "1.0.0", cat: "rust", on: true, scope: "Global", d: "Axum routers, extractors, state and error responses for HTTP services.", kw: ["axum", "router", "extractor"], tools: [] },
+    "error-handling": { t: "error-handling", v: "1.0.0", cat: "rust", on: true, scope: "Global", d: "Typed errors with thiserror at library edges and anyhow in binaries.", kw: ["thiserror", "anyhow", "error type"], tools: [] },
+    "bdd-testing": { t: "bdd-testing", v: "1.0.0", cat: "testing", on: false, scope: "Global", d: "Gherkin features and step definitions that drive acceptance tests.", kw: ["gherkin", "bdd", "scenario"], tools: ["filesystem__read_file", "filesystem__write_file"] },
+    "gitops-bootstrap": { t: "gitops-bootstrap", v: "1.0.0", cat: "devops", on: false, scope: "Global", d: "Bootstrap a GitOps repository layout for ArgoCD-managed clusters.", kw: ["gitops", "argocd", "bootstrap"], tools: [] },
+    "deep-research": { t: "deep-research", v: "1.0.0", cat: "research", on: true, scope: "Agent", target: "research-agent", d: "10-stage research pipeline from planner to export, producing cited .research packages.", kw: ["research", "deep research", "cite sources"], tools: ["file_system", "tavily", "memory", "firecrawl"], toolKey: "allowed-tools", model: "anthropic/claude-sonnet-4-5", maxTok: "8192", prop: true },
+    kreuzberg: { t: "kreuzberg", v: "1.0.0", cat: "document-extraction", on: true, scope: "Global", d: "Extract text, tables, metadata and images from 91+ document formats with Kreuzberg.", kw: ["pdf", "ocr", "extract text"], tools: [] },
+    "adversarial-review": { t: "adversarial-review", v: "1.0.0", cat: "process", on: true, scope: "Global", d: "Independent adversarial review of a change before it is accepted.", kw: ["review", "adversarial", "red team"], tools: [] },
+    "sycophancy-correction": { t: "sycophancy-correction", v: "1.0.0", cat: "imported", on: true, scope: "Global", d: "Detect and correct sycophantic patterns in completions and prompts.", kw: ["sycophancy", "flattery"], tools: ["detect_sycophancy", "correct_sycophancy"] },
+  };
+  const AGENTS = ["research-agent", "ops-assistant", "code-reviewer"], CONVS = ["c_9f21 · Cedar rollout notes", "c_4b07 · Staging incident 10-03"];
+  let cur = "sample-skill", enabled = 37, installed = 142, ws = 2, previewEnv = "development";
+  const cfg = { algo: "Hybrid", th: 0.5, mg: 0.05, k: 3 };
+  const hex = (s) => { let h = 2166136261; let o = ""; for (let r = 0; r < 8; r++) { for (const c of s + r) h = Math.imul(h ^ c.charCodeAt(0), 16777619); o += (h >>> 0).toString(16).padStart(8, "0"); } return o; };
+  const toolState = (n) => TOOLS[n] || ["ok", "native"];
+  const worst = (s) => s.tools.some((n) => toolState(n)[0] !== "ok") ? "warn" : "";
+  const stLine = (s) => `<i class="status-dot ${s.on ? worst(s) : "off"}"></i>${s.on ? "On" : "Off"} · ${s.scope}${s.scope !== "Global" && s.target ? " " + s.target.split(" ·")[0] : ""} · ${s.v}`;
+
+  function setChoice(group, val) { group.querySelectorAll("[role=radio]").forEach((r) => r.setAttribute("aria-checked", String(r.dataset.value === val))); }
+  function fillTarget(scope, sel) {
+    const t = $("#scope-target"), opts = scope === "Agent" ? AGENTS : scope === "Conversation" ? CONVS : [];
+    $("#scope-target-lbl").textContent = scope === "Conversation" ? "Conversation" : "Agent";
+    t.innerHTML = opts.length ? opts.map((o) => `<option${o === sel ? " selected" : ""}>${o}</option>`).join("") : "<option>Not needed for Global</option>";
+    t.disabled = !opts.length;
+    $("#scope-hint").textContent = scope === "Global" ? "Global skills are offered to every agent and conversation." : scope === "Agent" ? "Offered only to runs of this agent · /api/uar/agents/{id}/skills" : "Offered only inside this conversation.";
+  }
+  function render(id) {
+    cur = id; const s = SK[id]; const lib = s.cat !== "workspace";
+    $("#d-name").textContent = s.t;
+    $("#d-sub").innerHTML = `<span class="chip ${s.on ? "ok" : ""}" style="height:22px">${s.on ? "Enabled" : "Disabled"}</span><span class="mono">${id}@${s.v}</span><span>·</span><span>${lib ? "library · " + s.cat : "workspace"}</span>`;
+    $("#d-enabled").setAttribute("aria-checked", String(s.on)); $("#d-enabled").setAttribute("aria-label", s.t + " enabled");
+    $("#d-desc").textContent = s.d;
+    $("#d-kw").innerHTML = s.kw.map((k) => `<span class="chip">${k}</span>`).join("");
+    $("#d-when").innerHTML = s.when ? `<span class="mono">when_to_use</span> · ${s.when}` : "";
+    const bad = s.tools.filter((n) => toolState(n)[0] !== "ok");
+    $("#tool-banner").style.display = bad.length ? "" : "none";
+    $("#tool-banner-t").textContent = bad.length === 1 ? `1 of ${s.tools.length} required tools is not reachable` : `${bad.length} of ${s.tools.length} required tools are not fully reachable`;
+    $("#d-tools").innerHTML = s.tools.length ? s.tools.map((n) => { const [st, from] = toolState(n); const lab = st === "ok" ? "available" : st === "warn" ? "degraded" : "unavailable"; return `<div class="mrow" data-od-id="req-tool-${n}"><span><span class="mono">${n}</span><span class="sub">${from}</span></span><span class="chip ${st}" style="height:22px;font-size:11.5px">${lab}</span>${st === "ok" ? "<span></span>" : `<a class="btn btn-ghost btn-sm" href="tools-and-mcp.html">Fix in Tools &amp; MCP</a>`}</div>`; }).join("") : `<p class="muted-p" style="font-size:12.5px">No <span class="mono">tools</span> declared. Prompt-only skill; nothing to cross-check.</p>`;
+    setChoice($("#scope-choice"), s.scope); fillTarget(s.scope, s.target);
+    $("#model-ovr").value = s.model || ""; $("#max-tok").value = s.maxTok || ""; $("#max-tok").disabled = !s.model;
+    const tk = s.toolKey || "tools";
+    $("#d-code").innerHTML = `<span class="c">---</span>\n<span class="k">name</span>: <span class="s">${s.t}</span>\n<span class="k">version</span>: <span class="s">${s.v}</span>\n<span class="k">description</span>: <span class="t">${s.d}</span>\n<span class="k">triggers</span>:\n  <span class="k">keywords</span>: [${s.kw.map((k) => `<span class="s">"${k}"</span>`).join(", ")}]` + (s.when ? `\n  <span class="k">when_to_use</span>: <span class="s">"${s.when}"</span>` : "") + (s.tools.length ? `\n<span class="k">${tk}</span>:\n` + s.tools.map((n) => `  - <span class="t">${n}</span>`).join("\n") : "") + `\n<span class="c">---</span>`;
+    $("#d-loc").textContent = s.loc || LIB + s.cat + "/" + id + "/SKILL.md";
+    $("#d-digest").textContent = "sha256:" + hex(id + s.v);
+    $("#d-prov").textContent = lib ? "prometheus-skill-system" : "workspace";
+    $("#d-origin").textContent = s.src || "prometheus-skill-system library · installed 2026-09-14 · GET /api/uar/skills/provenance";
+    $("#upd-res").textContent = "Compiler: parser, conformance and completeness checks run on reload.";
+    $("#d-hist").innerHTML = [[s.v, lib ? "Installed from library" : "Loaded from workspace skills/", lib ? "2026-09-14 10:02" : "2026-09-02 16:40"], [s.v, "Reloaded · digest unchanged", "2026-10-04 09:12"]].map((h, i) => `<div class="mrow" data-od-id="hist-${i}"><span><span class="mono">${h[0]}</span> · ${h[1]}</span><span class="mono faint" style="font-size:11.5px">${h[2]}</span></div>`).join("");
+    $("#d-prop-count").textContent = s.prop ? "1" : "";
+    $("#d-props").innerHTML = s.prop ? `<div class="card prop" data-od-id="proposal-card"><div><b>1.0.0 → <span class="mono">1.0.1</span></b> <span class="chip warn" style="height:20px;font-size:11px">awaiting approval</span><span class="sub">Adds a fallback to <span class="mono">memory</span> search when <span class="mono">tavily</span> is unavailable. From reflection on run <span class="mono">r_7f3a91</span> (6 tool calls) on 2026-10-01, while evolution was on.</span><span class="sub" id="prop-res">Preview env: <span class="mono">${previewEnv}</span> · approving requests <span class="mono">skill.promote</span>.</span></div><div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" data-action="approve" id="approve-btn" data-od-id="proposal-approve"><svg class="icon"><use href="#i-check"/></svg>Approve</button><button class="btn btn-ghost btn-sm" data-action="reject" data-od-id="proposal-reject">Reject</button></div></div>` : `<p class="muted-p" style="font-size:12.5px">No proposals for this skill. Skill evolution is off, so reflection does not run.</p>`;
+  }
+  function syncRow(id) { const r = document.querySelector(`.srow[data-src="${id}"]`); if (!r) return; r.querySelector(".st").innerHTML = stLine(SK[id]); r.querySelector(".switch").setAttribute("aria-checked", String(SK[id].on)); }
+  function setEnabled(id, on) { if (SK[id].on === on) return; SK[id].on = on; enabled += on ? 1 : -1; $("#sum-enabled").textContent = enabled; syncRow(id); if (id === cur) render(id); S.toast(`${SK[id].t} ${on ? "enabled" : "disabled"} · POST /api/uar/skills/${id}/toggle`, on ? "ok" : "warn"); }
+
+  app.addEventListener("uar:source", (e) => { if (e.detail.view === "skill") render(e.detail.id); });
+  app.addEventListener("uar:switch", (e) => {
+    const { id, on } = e.detail;
+    if (SK[id]) return setEnabled(id, on);
+    if (id === "detail-enabled") return setEnabled(cur, on);
+    if (id === "evo") { $("#evo-deps").inert = !on; $("#sum-evo").textContent = on ? "On" : "Off"; $("#sum-evo-dot").className = "status-dot" + (on ? "" : " off"); syncMatchRow(); S.toast(on ? "Skill evolution on · reflection runs after qualifying runs" : "Skill evolution off", on ? "ok" : "warn"); return; }
+    if (id === "allow-deletion") { $("#e-del-rule").classList.toggle("off", !on); $("#e-del").disabled = !on; S.toast(on ? "allow_deletion on · still forbidden in production by Cedar" : "allow_deletion off", on ? "warn" : "ok"); return; }
+    if (id === "allow-update") S.toast("allow_update " + (on ? "on" : "off"));
+  });
+  app.addEventListener("uar:choice", (e) => {
+    const g = e.target.id, v = e.detail.value;
+    if (g === "scope-choice") { SK[cur].scope = v; SK[cur].target = v === "Agent" ? AGENTS[0] : v === "Conversation" ? CONVS[0] : ""; fillTarget(v, SK[cur].target); syncRow(cur); S.toast(`${SK[cur].t} scope: ${v} · POST /api/uar/skills/config`); }
+    if (g === "algo") { cfg.algo = v; $("#mn-rule").classList.toggle("off", v === "Keyword"); $("#m-name").disabled = v === "Keyword"; syncMatchRow(); S.toast("Matching algorithm: " + v); }
+    if (g === "env-preview") { previewEnv = v; document.querySelectorAll(".envc").forEach((c) => c.classList.toggle("cur", c.dataset.env === v)); const pr = $("#prop-res"); if (pr) pr.innerHTML = `Preview env: <span class="mono">${v}</span> · approving requests <span class="mono">skill.promote</span>.`; }
+  });
+  $("#scope-target").addEventListener("change", (e) => { SK[cur].target = e.target.value; syncRow(cur); S.toast(`${SK[cur].t} scoped to ${e.target.value.split(" ·")[0]}`); });
+  $("#model-ovr").addEventListener("change", (e) => { const v = e.target.value; SK[cur].model = v; $("#max-tok").disabled = !v; if (!v) { $("#max-tok").value = ""; SK[cur].maxTok = ""; } S.toast(v ? `${SK[cur].t} runs on ${v}` : `${SK[cur].t} inherits the workspace model`); });
+  $("#max-tok").addEventListener("change", (e) => { SK[cur].maxTok = e.target.value; });
+
+  /* ranges */
+  function syncMatchRow() { const evo = $("#sum-evo").textContent === "On"; $("#row-matching-st").innerHTML = `<i class="status-dot ${evo ? "" : "off"}"></i>${cfg.algo} · ${cfg.th.toFixed(2)} · evolution ${evo ? "on" : "off"}`; $("#sum-algo").textContent = cfg.algo; $("#sum-match").textContent = `threshold ${cfg.th.toFixed(2)} · top_k ${cfg.k}`; $("#m-params").textContent = `POST /api/uar/skills/match · ${cfg.algo} · top_k ${cfg.k}`; }
+  [["#r-th", "#o-th", "th", 2], ["#r-mg", "#o-mg", "mg", 2], ["#r-k", "#o-k", "k", 0]].forEach(([r, o, key, dp]) => $(r).addEventListener("input", (e) => { cfg[key] = Number(e.target.value); $(o).textContent = cfg[key].toFixed(dp); syncMatchRow(); }));
+
+  /* try matching */
+  function score(q) {
+    q = q.toLowerCase(); const words = q.split(/[^a-z0-9]+/).filter((w) => w.length > 3);
+    return Object.entries(SK).map(([id, s]) => { const hits = s.kw.filter((k) => q.includes(k.toLowerCase())).length; const soft = words.filter((w) => s.d.toLowerCase().includes(w)).length;
+      const sc = hits ? Math.min(0.94, 0.6 + 0.11 * hits + 0.03 * soft) : Math.min(0.44, 0.06 + 0.08 * soft + (id.length % 5) * 0.015); return { id, s, sc: Math.round(sc * 100) / 100 }; })
+      .sort((a, b) => b.sc - a.sc).slice(0, cfg.k);
+  }
+  function showMatch(res) {
+    const fire = res.find((r) => r.s.on && r.sc >= cfg.th); const offHit = res.find((r) => !r.s.on && r.sc >= cfg.th);
+    const rows = res.map((r, i) => `<div class="mrow" data-od-id="match-row-${r.id}"><span class="rk">#${i + 1}</span><span><span class="mono">${r.id}</span><span class="sub">${r.s.on ? r.s.scope : "off · excluded from matching"}</span></span><span class="mbar ${r.s.on && r.sc >= cfg.th ? "hit" : ""}" aria-hidden="true"><i style="width:${r.sc * 100}%"></i><b style="left:${cfg.th * 100}%"></b></span><span class="sc">${r.sc.toFixed(2)}</span></div>`).join("");
+    let v;
+    if (fire) { const next = res.find((r) => r !== fire); const m = next ? fire.sc - next.sc : fire.sc; const clear = m >= cfg.mg;
+      v = `<span class="status-dot ${clear ? "" : "warn"}"></span><span><b>${fire.s.t}</b> fires <span class="mono">${fire.sc.toFixed(2)} ≥ ${cfg.th.toFixed(2)} · margin ${m.toFixed(2)} ${clear ? "≥" : "<"} ${cfg.mg.toFixed(2)}</span>${clear ? "" : " · ambiguous lead over #2"}</span>`;
+      S.toast(`${fire.s.t} matched · ${fire.sc.toFixed(2)}`); }
+    else { v = `<span class="status-dot err"></span><span><b>No skill above threshold ${cfg.th.toFixed(2)}</b>${offHit ? ` · <span class="mono">${offHit.id}</span> scored ${offHit.sc.toFixed(2)} but is off` : ""} · the run proceeds without a skill overlay</span>`; S.toast("No skill above threshold", "warn"); }
+    $("#m-out").innerHTML = `<div class="mres">${rows}</div><div class="verdict" data-od-id="match-verdict">${v}</div>`;
+  }
+
+  /* import wizard */
+  let step = 1, kind = "folder";
+  const CHECKS = {
+    folder: { name: "release-notes", tools: ["filesystem__read_file"], res: [["Parse frontmatter", "ok", "name, version, description, triggers, tools"], ["Conformance", "ok", "schema matches SKILL.md v1"], ["Completeness", "ok", "prompt body present · 2 keywords"], ["Required tools resolved", "ok", "filesystem__read_file · filesystem"]] },
+    git: { name: "web-scraper", res: [["Parse frontmatter", "ok", "commit 4c1e9d2 · 5 fields"], ["Conformance", "ok", "schema matches SKILL.md v1"], ["Completeness", "ok", "prompt body present · 3 keywords"], ["Required tools resolved", "err", "browser__navigate · no connected server provides it"]] },
+    zip: { name: "pdf-tables", res: [["Parse frontmatter", "ok", "YAML parsed"], ["Conformance", "err", "missing required field: description"], ["Completeness", "off", "skipped after a conformance failure"], ["Required tools resolved", "off", "skipped"]] },
+  };
+  function setStep(n) {
+    step = Math.max(1, Math.min(3, n));
+    for (let i = 1; i <= 3; i++) { $("#w" + i).classList.toggle("active", i === step); $("#s" + i).className = i < step ? "done" : i === step ? "on" : ""; }
+    $("#w-back").style.visibility = step === 1 ? "hidden" : "visible"; const nx = $("#w-next"); nx.textContent = step === 3 ? "Import skill" : "Continue";
+    nx.disabled = step === 1 || (step === 2 && $("#i-dot").className !== "status-dot");
+  }
+  document.querySelectorAll(".preset").forEach((p) => p.addEventListener("click", () => {
+    kind = p.dataset.kind; $("#i-src").value = p.dataset.val; $("#i-src-lbl").textContent = kind === "git" ? "Git URL" : kind === "zip" ? "Archive path" : "Folder path";
+    $("#i-dot").className = "status-dot off"; $("#i-res").innerHTML = 'Runs the <span class="mono">src/uar/compiler</span> checks without installing.'; $("#i-checks").innerHTML = ""; setStep(2);
+  }));
+  function validate() {
+    const b = $("#i-val"), c = CHECKS[kind]; b.classList.add("is-loading"); b.disabled = true; b.querySelector("use").setAttribute("href", "#i-refresh"); b.querySelector(".icon").classList.add("spin");
+    $("#i-dot").className = "status-dot off"; $("#i-res").innerHTML = `Compiling <span class="mono">${c.name}/SKILL.md</span>…`; $("#i-checks").innerHTML = "";
+    setTimeout(() => {
+      b.classList.remove("is-loading"); b.disabled = false; b.querySelector(".icon").classList.remove("spin"); b.querySelector("use").setAttribute("href", "#i-bolt");
+      const fail = c.res.find((r) => r[1] === "err");
+      $("#i-checks").innerHTML = c.res.map((r, i) => `<div class="mrow" data-od-id="check-${i}"><span>${r[0]}<span class="sub mono">${r[2]}</span></span><span class="chip ${r[1]}" style="height:20px;font-size:11px">${r[1] === "ok" ? "pass" : r[1] === "err" ? "fail" : "skipped"}</span></div>`).join("");
+      if (fail) { $("#i-dot").className = "status-dot err"; $("#i-res").innerHTML = `<b>${fail[0]} failed</b> · ${kind === "git" ? 'connect a server in <a href="tools-and-mcp.html">Tools &amp; MCP</a> or drop the tool from <span class="mono">tools:</span>' : "add the field and validate again"}`; S.toast(`${c.name}: ${fail[2]}`, "err"); }
+      else { $("#i-dot").className = "status-dot"; $("#i-res").innerHTML = `<b>All 4 checks passed</b> · <span class="mono">${c.name}@1.0.0</span>`; S.toast(c.name + " is valid"); }
+      setStep(2);
+    }, 1100);
+  }
+  function finish() {
+    const c = CHECKS[kind], id = c.name, scope = document.querySelector("#i-scope [aria-checked=true]").dataset.value, on = $("#i-enable").getAttribute("aria-checked") === "true";
+    if (SK[id]) { S.toast(id + " is already installed", "warn"); return; }
+    SK[id] = { t: id, v: "1.0.0", cat: "workspace", on: false, scope, target: scope === "Agent" ? AGENTS[0] : scope === "Conversation" ? CONVS[0] : "", d: "Draft release notes from merged changes since the last tag.", kw: ["release notes", "changelog"], tools: c.tools || [], loc: "skills/" + id + "/SKILL.md", src: "Imported from " + $("#i-src").value + " · 2026-10-05" };
+    const row = document.createElement("button"); row.className = "srow sk"; row.setAttribute("aria-current", "false"); row.dataset.src = id; row.dataset.view = "skill"; row.dataset.odId = "row-" + id;
+    row.innerHTML = `<span class="smark"><svg class="icon"><use href="#i-folder"/></svg></span><span><span class="nm">${id}</span><span class="st"></span></span><span class="switch" role="switch" aria-checked="false" aria-label="${id} enabled" data-id="${id}" tabindex="0"></span>`;
+    $("#ws-group").appendChild(row); installed++; ws++;
+    $("#sum-installed").textContent = installed; $("#sum-of").textContent = installed; $("#sum-installed-sub").textContent = `${ws} workspace · 140 library`;
+    if (on) { SK[id].on = true; enabled++; $("#sum-enabled").textContent = enabled; }
+    syncRow(id); S.closePanel(); row.click(); S.toast(`${id} imported · ${scope}${on ? " · enabled" : " · off"} · POST /api/uar/skills/import`);
+  }
+  app.addEventListener("uar:panel", (e) => { if (e.detail.open) setStep(1); });
+
+  app.addEventListener("uar:action", (e) => {
+    const { action, el } = e.detail;
+    if (action === "example") { $("#m-prompt").value = el.dataset.q; showMatch(score(el.dataset.q)); }
+    if (action === "match") { const b = $("#match-btn"), q = $("#m-prompt").value.trim(); if (!q) { S.toast("Enter a prompt to score", "warn"); $("#m-prompt").focus(); return; } b.classList.add("is-loading"); b.disabled = true; $("#m-out").innerHTML = `<p class="muted-p" style="font-size:12.5px">Scoring ${installed} skills with ${cfg.algo}…</p>`; setTimeout(() => { b.classList.remove("is-loading"); b.disabled = false; showMatch(score(q)); }, 700); }
+    if (action === "update-check") { const b = $("#upd-btn"); b.classList.add("is-loading"); b.disabled = true; b.querySelector(".icon").classList.add("spin"); $("#upd-res").textContent = "POST /api/uar/skills/update-check…"; setTimeout(() => { b.classList.remove("is-loading"); b.disabled = false; b.querySelector(".icon").classList.remove("spin"); const s = SK[cur]; if (s.cat === "workspace") { $("#upd-res").textContent = "Workspace skills have no upstream; reload picks up local edits."; S.toast("No upstream for " + s.t, "warn"); } else { $("#upd-res").textContent = `Up to date · ${s.v} matches the library digest · checked just now`; S.toast(s.t + " is up to date"); } }, 900); }
+    if (action === "reload") { const b = $("#reload-btn"); b.classList.add("is-loading"); b.disabled = true; b.querySelector(".icon").classList.add("spin"); setTimeout(() => { b.classList.remove("is-loading"); b.disabled = false; b.querySelector(".icon").classList.remove("spin"); S.toast(`${SK[cur].t} reloaded · compiler checks passed · POST /api/uar/skills/reload`); }, 800); }
+    if (action === "approve") {
+      const b = $("#approve-btn"), r = $("#prop-res"); b.classList.add("is-loading"); b.disabled = true; r.innerHTML = `Evaluating <span class="mono">skill.promote</span> with environment <span class="mono">${previewEnv}</span>…`;
+      setTimeout(() => {
+        b.classList.remove("is-loading");
+        if (previewEnv === "development") { r.innerHTML = `<span class="lock" style="color:var(--ok)"><svg class="icon"><use href="#i-check"/></svg>Permitted</span> · promoted to <span class="mono">1.0.1</span>, previous artifact kept in history.`; b.textContent = "Approved"; SK[cur].prop = false; $("#d-prop-count").textContent = ""; S.toast(`${SK[cur].t} 1.0.1 promoted · Cedar permitted (development)`); }
+        else { b.disabled = false; r.innerHTML = previewEnv === "production" ? `<span class="lock"><svg class="icon"><use href="#i-lock"/></svg>Forbidden</span> · production forbids skill mutations in <span class="mono">skill-mutation.cedar</span>.` : `<span class="lock"><svg class="icon"><use href="#i-lock"/></svg>Denied</span> · staging needs human approval and a test pass rate; this proposal has no test run yet.`; S.toast(`skill.promote denied in ${previewEnv}`, "err"); }
+      }, 900);
+    }
+    if (action === "reject") { $("#d-props").innerHTML = `<p class="muted-p" style="font-size:12.5px">Proposal rejected. The skill stays at <span class="mono">${SK[cur].v}</span>.</p>`; SK[cur].prop = false; $("#d-prop-count").textContent = ""; S.toast("Proposal rejected", "warn"); }
+    if (action === "validate") validate();
+    if (action === "wiz-back") setStep(step - 1);
+    if (action === "wiz-next") { if (step === 2) $("#i-sum").innerHTML = `<span class="mono">${CHECKS[kind].name}@1.0.0</span> passed every compiler check. Choose who it is offered to.`; if (step === 3) finish(); else setStep(step + 1); }
+    if (action === "more-skills") S.toast("Prototype lists 12 of 142 · filter searches the full library in the app", "warn");
+    if (action === "goto-matching") document.querySelector('.srow[data-src="matching"]').click();
+  });
+
+  render(cur); syncMatchRow();
+})();
+</script>
+</body>
+</html>

@@ -333,7 +333,7 @@
 
 /* KnowMe eyebrow label utility (mono, 10px, ember) */
 .eyebrow {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.12em;

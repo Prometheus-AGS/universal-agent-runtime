@@ -1,6 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "@fontsource-variable/geist";
+// Brand fonts are bundled, not linked from a CDN, so the app renders correctly
+// offline, under a strict CSP and inside the Tauri desktop shell.
+import "@fontsource-variable/inter";
+import "@fontsource-variable/space-grotesk";
+import "@fontsource-variable/jetbrains-mono";
 import "./index.css";
 import { App } from "./App";
 import { DbProvider } from "@/lib/db-context";

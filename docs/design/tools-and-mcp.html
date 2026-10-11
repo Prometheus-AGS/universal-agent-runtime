@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tools &amp; MCP · Settings · Universal Agent Runtime</title>
+<link rel="icon" href="assets/brand/uar-mark-dark.svg" />
+<link rel="stylesheet" href="assets/shell.css" />
+<style>
+  .settings-nav .nav-item { height: 34px; font-size: 13.5px; }
+  .page { flex: 1; min-height: 0; overflow-y: auto; padding: 0 28px 40px; }
+  .page-inner { max-width: 1120px; margin: 0 auto; }
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 10px 0 20px; }
+  .page-head p { color: var(--muted); margin-top: 6px; max-width: 62ch; font-size: 14px; }
+
+  /* summary strip */
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
+  .sum { padding: 12px 14px; }
+  .sum .k { font-size: 11.5px; color: var(--faint); }
+  .sum .v { font-family: var(--font-display); font-weight: 600; font-size: 20px; margin-top: 2px; display: flex; align-items: baseline; gap: 8px; letter-spacing: -0.01em; }
+  .sum .v small { font-family: var(--font-body); font-weight: 400; font-size: 12.5px; color: var(--muted); letter-spacing: 0; }
+  .sum .v .status-dot { align-self: center; }
+
+  /* master–detail */
+  .md { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 18px; align-items: start; }
+  .servers { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 0; }
+  .servers .input { height: 34px; font-size: 13px; margin-bottom: 6px; }
+  .srow { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; width: 100%; text-align: left; transition: background var(--fast) var(--ease); }
+  .srow:hover { background: var(--hover); }
+  .srow[aria-current="true"] { background: var(--accent-soft); }
+  .srow[aria-current="true"] .nm { color: var(--accent); }
+  .srow .nm { font-weight: 500; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .srow .st { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--faint); margin-top: 1px; white-space: nowrap; }
+  .srow .st .status-dot { width: 6px; height: 6px; }
+  .srow .switch { margin-left: 4px; }
+  .smark { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: var(--muted); background: var(--input); flex: none; }
+  .smark .icon { width: 14px; height: 14px; }
+  .smark.lg { width: 40px; height: 40px; border-radius: 10px; } .smark.lg .icon { width: 20px; height: 20px; }
+  .srow.add { grid-template-columns: 26px 1fr; color: var(--muted); margin-top: 6px; }
+  .srow.add .smark { background: transparent; color: var(--accent); }
+  .srow.add:hover { color: var(--fg); }
+  .group-label { padding: 12px 10px 4px; font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
+
+  .detail { min-width: 0; }
+  .detail-head { display: flex; align-items: center; gap: 14px; padding: 4px 4px 16px; }
+  .detail-head h2 { font-size: 20px; }
+  .detail-head .sub { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; font-size: 12.5px; color: var(--muted); }
+  .detail-head .sub .mono { font-size: 12px; }
+  .detail-head .acts { margin-left: auto; display: flex; gap: 6px; }
+  .detail .tabs { margin: 0 0 14px; }
+  .detail [role="tabpanel"] { display: none; } .detail [role="tabpanel"].active { display: block; animation: fade-up var(--base) var(--ease-out); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+  .form-grid .span { grid-column: 1 / -1; }
+  .choice { display: inline-flex; background: var(--input); padding: 3px; border-radius: 9px; gap: 2px; }
+  .choice button { height: 30px; padding: 0 12px; border-radius: 7px; font-size: 13px; color: var(--muted); }
+  .choice button[aria-checked="true"] { background: var(--raised); color: var(--fg); }
+  .choice button:hover { color: var(--fg); }
+  .choice.sm button { height: 26px; padding: 0 9px; font-size: 12px; }
+  .choice button.deny[aria-checked="true"] { background: var(--err-soft); color: var(--err); }
+  .choice button.ask[aria-checked="true"] { background: var(--warn-soft); color: var(--warn); }
+  .choice button.auto[aria-checked="true"] { background: var(--ok-soft); color: var(--ok); }
+  .choice button:disabled { opacity: 0.45; cursor: default; }
+  .health-row { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; padding: 12px 14px; }
+  .health-row .res { flex: 1; min-width: 0; font-size: 13px; }
+  .health-row .res b { font-weight: 600; }
+  .health-row .res .mono { color: var(--faint); font-size: 12px; margin-left: 8px; }
+  .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .toolbar .input { height: 34px; font-size: 13px; width: 260px; }
+  .toolbar .spacer { flex: 1; }
+  .table .nm b { font-weight: 500; display: block; }
+  .table .nm .mono { font-size: 11.5px; color: var(--faint); }
+  .table td.acol { width: 250px; white-space: nowrap; }
+  .table td.ctl { width: 56px; text-align: right; }
+  .table .desc { color: var(--muted); font-size: 12.5px; min-width: 220px; }
+  .lock { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--err); }
+  .lock .icon { width: 13px; height: 13px; }
+  .gap-note { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--faint); }
+  .gap-note i { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); display: inline-block; flex: none; }
+
+  /* tier legend / rules */
+  .tiers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+  .tier-card { padding: 12px 14px; border-radius: 10px; background: var(--step-2); font-size: 12.5px; color: var(--muted); }
+  .tier-card b { display: flex; align-items: center; gap: 8px; color: var(--fg); font-size: 13.5px; margin-bottom: 4px; }
+  .tier-card .status-dot { width: 8px; height: 8px; }
+  .rules { display: flex; flex-direction: column; gap: 6px; }
+  .rule { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; background: var(--step-2); border-radius: 10px; font-size: 13.5px; }
+  .rule .sub { display: block; font-size: 12px; color: var(--faint); margin-top: 1px; }
+  .rule .mono { font-size: 12px; }
+
+  /* audit list */
+  .audit { display: flex; flex-direction: column; gap: 2px; }
+  .arow { display: grid; grid-template-columns: 10px 1fr auto; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 8px; font-size: 13px; }
+  .arow:hover { background: var(--hover); }
+  .arow .sub { display: block; font-size: 12px; color: var(--faint); }
+  .arow .t { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); }
+
+  /* native tools */
+  .native { display: flex; flex-direction: column; gap: 8px; }
+  .nrow { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; padding: 12px 14px; background: var(--step-2); border-radius: 10px; }
+  .nrow .ttl { font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  .nrow .sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .nrow .limits { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+  .nrow .limits .input { width: 120px; height: 32px; font-size: 12.5px; }
+  .nrow .limits label { font-size: 11.5px; color: var(--faint); display: block; margin-bottom: 3px; }
+  .nrow.danger .ttl { color: var(--fg); }
+
+  /* add-server wizard */
+  .steps { display: flex; gap: 6px; margin: 6px 0 14px; }
+  .steps span { flex: 1; height: 4px; border-radius: 2px; background: var(--input); }
+  .steps span.on { background: var(--accent); } .steps span.done { background: var(--ok); }
+  .wstep { display: none; } .wstep.active { display: block; animation: fade-up var(--base) var(--ease-out); }
+  .wizard-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 16px; }
+  .preset { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px; width: 100%; text-align: left; }
+  .preset:hover { background: var(--raised); }
+  .preset .nm { font-size: 13.5px; font-weight: 500; }
+  .preset .sub { font-size: 11.5px; color: var(--faint); font-family: var(--font-mono); display: block; }
+  .preset .cnt { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); }
+  .found { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
+  .mrow { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 9px; font-size: 13px; background: var(--step-2); }
+  .mrow .sub { display: block; font-size: 11.5px; color: var(--faint); }
+
+  @media (max-width: 1180px) { .md { grid-template-columns: 260px minmax(0, 1fr); } .summary { grid-template-columns: 1fr 1fr; } .tiers { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 920px) { .md { grid-template-columns: 1fr; } .servers { position: static; } .form-grid { grid-template-columns: 1fr; } .page { padding: 0 16px 32px; } .detail-head .acts { width: 100%; margin-left: 0; } .detail-head { flex-wrap: wrap; } .table .hide-sm { display: none; } .table td.acol { width: auto; } .summary, .tiers { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="i-sidebar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+  <symbol id="i-tool" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L22 9l-3-3-1.7 1.7zM3 21l8.5-8.5"/><path d="m10 7-4-4-3 3 4 4"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 1 2-2h13"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-desktop" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
+  <symbol id="i-term" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3M12 15h5"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5 12 12l8-4.5M12 12v9"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+</svg>
+
+<div class="app" data-od-id="settings-shell" data-panel-persist="false">
+  <div class="titlebar" data-tauri-drag-region><span class="mono">universal-agent-runtime</span>&nbsp;· Settings</div>
+
+  <aside class="sidebar settings-nav" aria-label="Settings navigation" data-od-id="settings-sidebar">
+    <div class="sidebar-top">
+      <a class="brand" href="chat-workspace.html" aria-label="Back to chat">
+        <img src="assets/brand/uar-mark-dark.svg" alt="" />
+        <span class="brand-name">Settings<small>// DEFAULT WORKSPACE</small></span>
+      </a>
+      <button class="icon-btn" data-action="sidebar" aria-expanded="true" aria-label="Collapse sidebar" title="Toggle sidebar (⌘B)"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+    </div>
+    <button class="nav-item rail-only icon-btn" data-action="sidebar" aria-label="Expand sidebar"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+    <div class="sidebar-section">
+      <a class="nav-item" href="chat-workspace.html" title="Back to chat"><svg class="icon"><use href="#i-back"/></svg><span class="grow">Back to chat</span><kbd>Esc</kbd></a>
+    </div>
+    <div class="sidebar-section" data-od-id="settings-nav">
+      <p class="sidebar-label">Settings</p>
+      <a class="nav-item" href="#" title="General"><svg class="icon"><use href="#i-gear"/></svg><span class="grow">General</span></a>
+      <a class="nav-item" href="models-and-providers.html" title="Models &amp; providers"><svg class="icon"><use href="#i-cpu"/></svg><span class="grow">Models &amp; providers</span></a>
+      <a class="nav-item" href="tools-and-mcp.html" aria-current="page" title="Tools &amp; MCP"><svg class="icon"><use href="#i-tool"/></svg><span class="grow">Tools &amp; MCP</span></a>
+      <a class="nav-item" href="skills.html" title="Skills"><svg class="icon"><use href="#i-spark"/></svg><span class="grow">Skills</span></a>
+      <a class="nav-item" href="knowledge-and-memory.html" title="Knowledge &amp; memory"><svg class="icon"><use href="#i-book"/></svg><span class="grow">Knowledge &amp; memory</span></a>
+      <a class="nav-item" href="governance.html" title="Governance"><svg class="icon"><use href="#i-shield"/></svg><span class="grow">Governance</span></a>
+      <a class="nav-item" href="appearance.html" title="Appearance"><svg class="icon"><use href="#i-sun"/></svg><span class="grow">Appearance</span></a>
+      <a class="nav-item" href="desktop.html" title="Desktop"><svg class="icon"><use href="#i-desktop"/></svg><span class="grow">Desktop</span></a>
+    </div>
+    <div class="sidebar-scroll"></div>
+    <div class="sidebar-bottom">
+      <a class="nav-item" href="#" title="About"><svg class="icon"><use href="#i-info"/></svg><span class="grow">About</span><span class="mono" style="font-size:11px;color:var(--faint)">1.0.0</span></a>
+      <div class="account"><span class="avatar">TJ</span><span class="who"><b>Travis James</b><span><i class="status-dot"></i>Runtime healthy</span></span></div>
+    </div>
+  </aside>
+
+  <main class="main" id="content" data-od-id="settings-main">
+    <header class="topbar">
+      <button class="icon-btn" data-action="sidebar-mobile" aria-label="Open navigation" id="mobile-nav-btn" style="display:none"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+      <div class="title"><span class="crumb">Settings</span><span>Tools &amp; MCP</span></div>
+      <span class="spacer"></span>
+      <button class="chip" data-action="cmdk"><svg class="icon"><use href="#i-search"/></svg>Search settings <kbd style="margin-left:4px" data-kbd="⌘K">⌘K</kbd></button>
+      <button class="icon-btn" data-action="theme" aria-pressed="false" aria-label="Switch theme" title="Switch theme"><svg class="icon"><use href="#i-sun"/></svg></button>
+    </header>
+
+    <section class="page">
+      <div class="page-inner">
+        <div class="page-head" data-od-id="page-head">
+          <div>
+            <h1>Tools &amp; MCP</h1>
+            <p>Every tool the agent can call, where it comes from, whether its server is healthy, and who has to approve it. Cedar policy decides last; a policy deny cannot be overridden here.</p>
+          </div>
+          <button class="btn btn-primary" data-action="panel-open" data-tab="add" data-od-id="add-server-cta"><svg class="icon"><use href="#i-plus"/></svg>Add MCP server</button>
+        </div>
+
+        <div class="summary" data-od-id="summary-strip">
+          <div class="card sum"><div class="k">MCP servers</div><div class="v"><span class="status-dot warn"></span><span id="sum-servers">4 of 5</span><small>connected · 1 reconnecting</small></div></div>
+          <div class="card sum"><div class="k">Tools discovered</div><div class="v"><span id="sum-tools">31</span><small>across servers + 3 native</small></div></div>
+          <div class="card sum"><div class="k">Default approval</div><div class="v"><span class="status-dot warn"></span>Ask<small>for writes · reads auto</small></div></div>
+          <div class="card sum"><div class="k">Decisions today</div><div class="v"><span id="sum-audit">148</span><small>2 denied · 11 approved by you</small></div></div>
+        </div>
+
+        <div class="md">
+          <!-- server list -->
+          <nav class="servers" aria-label="Tool sources" data-od-id="server-list">
+            <input class="input" type="search" placeholder="Filter servers and tools" aria-label="Filter servers" />
+            <button class="srow" aria-current="false" data-server="native"><span class="smark"><svg class="icon"><use href="#i-box"/></svg></span><span><span class="nm">Native tools</span><span class="st"><i class="status-dot"></i>3 on · terminal off</span></span><span class="mono" style="font-size:11px;color:var(--faint)">built in</span></button>
+            <p class="group-label">MCP servers</p>
+            <button class="srow" aria-current="true" data-server="filesystem"><span class="smark"><svg class="icon"><use href="#i-file"/></svg></span><span><span class="nm">filesystem</span><span class="st"><i class="status-dot"></i>Connected · 9 tools · 41 ms</span></span><span class="switch" role="switch" aria-checked="true" aria-label="filesystem enabled" tabindex="0"></span></button>
+            <button class="srow" aria-current="false" data-server="fetch"><span class="smark"><svg class="icon"><use href="#i-globe"/></svg></span><span><span class="nm">fetch</span><span class="st"><i class="status-dot"></i>Connected · 2 tools · 18 ms</span></span><span class="switch" role="switch" aria-checked="true" aria-label="fetch enabled" tabindex="0"></span></button>
+            <button class="srow" aria-current="false" data-server="surreal_memory"><span class="smark"><svg class="icon"><use href="#i-db"/></svg></span><span><span class="nm">surreal_memory</span><span class="st"><i class="status-dot"></i>Connected · 12 tools · 6 ms</span></span><span class="switch" role="switch" aria-checked="true" aria-label="surreal_memory enabled" tabindex="0"></span></button>
+            <button class="srow" aria-current="false" data-server="tavily"><span class="smark"><svg class="icon"><use href="#i-search"/></svg></span><span><span class="nm">tavily</span><span class="st"><i class="status-dot warn"></i>Reconnecting · attempt 3 · 4 tools</span></span><span class="switch" role="switch" aria-checked="true" aria-label="tavily enabled" tabindex="0"></span></button>
+            <button class="srow" aria-current="false" data-server="kreuzberg"><span class="smark"><svg class="icon"><use href="#i-term"/></svg></span><span><span class="nm">kreuzberg</span><span class="st"><i class="status-dot"></i>Connected · 4 tools · stdio</span></span><span class="switch" role="switch" aria-checked="true" aria-label="kreuzberg enabled" tabindex="0"></span></button>
+            <button class="srow add" data-action="panel-open" data-tab="add"><span class="smark"><svg class="icon icon-sm"><use href="#i-plus"/></svg></span><span class="nm">Add MCP server</span></button>
+          </nav>
+
+          <!-- detail: MCP server -->
+          <section class="detail" id="detail-server" aria-label="filesystem" data-od-id="server-detail">
+            <div class="detail-head">
+              <span class="smark lg" id="d-mark"><svg class="icon"><use href="#i-file"/></svg></span>
+              <div>
+                <h2 id="d-name">filesystem</h2>
+                <div class="sub" id="d-sub"><span class="chip ok" style="height:22px"><span class="status-dot"></span>Connected</span><span class="mono">stdio · mcp-server-filesystem</span><span>·</span><span>roots <span class="mono">/srv/staging</span></span><span>·</span><span>checked 12 s ago</span></div>
+              </div>
+              <div class="acts">
+                <button class="btn btn-secondary btn-sm" id="health-btn" data-action="health"><svg class="icon"><use href="#i-bolt"/></svg>Check health</button>
+                <button class="btn btn-ghost btn-sm" data-action="toast" data-msg="Restarting filesystem · tools re-discovered on reconnect"><svg class="icon"><use href="#i-refresh"/></svg>Restart</button>
+                <div style="position:relative">
+                  <button class="icon-btn" data-action="menu" aria-controls="srv-menu" aria-expanded="false" aria-haspopup="menu" aria-label="More"><svg class="icon"><use href="#i-more"/></svg></button>
+                  <div class="menu" id="srv-menu" role="menu" style="right:0;top:100%;margin-top:6px">
+                    <button class="menu-item" role="menuitem"><svg class="icon"><use href="#i-list"/></svg>View server log</button>
+                    <button class="menu-item" role="menuitem"><svg class="icon"><use href="#i-refresh"/></svg>Re-discover tools</button>
+                    <div class="menu-sep"></div>
+                    <button class="menu-item danger" role="menuitem"><svg class="icon" style="color:inherit"><use href="#i-trash"/></svg>Remove server</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tabs" role="tablist" aria-label="Server sections">
+              <button class="tab" role="tab" data-dtab="tools" aria-selected="true">Tools <span class="count" id="d-count">9</span></button>
+              <button class="tab" role="tab" data-dtab="connection" aria-selected="false">Connection</button>
+              <button class="tab" role="tab" data-dtab="audit" aria-selected="false">Audit <span class="count">24h</span></button>
+            </div>
+
+            <!-- Tools + approval tiers -->
+            <div role="tabpanel" data-dtabpanel="tools" class="active" data-od-id="tools-tab">
+              <div class="tiers" aria-label="Approval tiers">
+                <div class="tier-card"><b><span class="status-dot"></span>Auto</b>Governance decides. Runs without a prompt when policy allows.</div>
+                <div class="tier-card"><b><span class="status-dot warn"></span>Ask</b>Pauses the run with an inline card: allow once, always, or deny.</div>
+                <div class="tier-card"><b><span class="status-dot err"></span>Deny</b>Never called. Shown to the model as unavailable.</div>
+                <div class="tier-card"><b><span class="status-dot off"></span>Inherit</b>Use the server default, then the workspace default.</div>
+              </div>
+              <div class="toolbar">
+                <input class="input" type="search" id="tool-filter" placeholder="Filter 9 tools" aria-label="Filter tools" />
+                <span class="spacer"></span>
+                <span class="muted" style="font-size:12.5px">Server default</span>
+                <div class="choice sm" role="radiogroup" aria-label="Server default tier" id="server-default"><button role="radio" class="auto" aria-checked="false" data-tier="auto">Auto</button><button role="radio" class="ask" aria-checked="true" data-tier="ask">Ask</button><button role="radio" class="deny" aria-checked="false" data-tier="deny">Deny</button></div>
+              </div>
+              <table class="table" data-od-id="tools-table">
+                <thead><tr><th>Tool</th><th class="hide-sm">What it does</th><th class="num hide-sm">Calls · 24h</th><th class="acol">Approval</th><th class="ctl">On</th></tr></thead>
+                <tbody id="tool-rows">
+                  <tr data-name="read_file"><td class="nm"><b>read_file</b><span class="mono">filesystem__read_file</span></td><td class="desc hide-sm">Read one file under an allowed root.</td><td class="num hide-sm">62</td><td class="acol"><div class="choice sm" role="radiogroup" aria-label="Approval for read_file"><button role="radio" class="auto" aria-checked="true" data-tier="auto">Auto</button><button role="radio" class="ask" aria-checked="false" data-tier="ask">Ask</button><button role="radio" class="deny" aria-checked="false" data-tier="deny">Deny</button><button role="radio" aria-checked="false" data-tier="inherit">Inherit</button></div></td><td class="ctl"><span class="switch" role="switch" aria-checked="true" aria-label="Enable read_file" tabindex="0"></span></td></tr>
+                  <tr data-name="list_directory"><td class="nm"><b>list_directory</b><span class="mono">filesystem__list_directory</span></td><td class="desc hide-sm">List entries; bounded by max_listing_depth.</td><td class="num hide-sm">14</td><td class="acol"><div class="choice sm" role="radiogroup" aria-label="Approval for list_directory"><button role="radio" class="auto" aria-checked="true" data-tier="auto">Auto</button><button role="radio" class="ask" aria-checked="false" data-tier="ask">Ask</button><button role="radio" class="deny" aria-checked="false" data-tier="deny">Deny</button><button role="radio" aria-checked="false" data-tier="inherit">Inherit</button></div></td><td class="ctl"><span class="switch" role="switch" aria-checked="true" aria-label="Enable list_directory" tabindex="0"></span></td></tr>
+                  <tr data-name="search_files"><td class="nm"><b>search_files</b><span class="mono">filesystem__search_files</span></td><td class="desc hide-sm">Glob search under a root.</td><td class="num hide-sm">9</td><td class="acol"><div class="choice sm" role="radiogroup" aria-label="Approval for search_files"><button role="radio" class="auto" aria-checked="false" data-tier="auto">Auto</button><button role="radio" class="ask" aria-checked="false" data-tier="ask">Ask</button><button role="radio" class="deny" aria-checked="false" data-tier="deny">Deny</button><button role="radio" aria-checked="true" data-tier="inherit">Inherit</button></div></td><td class="ctl"><span class="switch" role="switch" aria-checked="true" aria-label="Enable search_files" tabindex="0"></span></td></tr>
+                  <tr data-name="write_file"><td class="nm"><b>write_file</b><span class="mono">filesystem__write_file</span></td><td class="desc hide-sm">Create or overwrite a file. Last asked 14 min ago.</td><td class="num hide-sm">3</td><td class="acol"><div class="choice sm" role="radiogroup" aria-label="Approval for write_file"><button role="radio" class="auto" aria-checked="false" data-tier="auto">Auto</button><button role="radio" class="ask" aria-checked="true" data-tier="ask">Ask</button><button role="radio" class="deny" aria-checked="false" data-tier="deny">Deny</button><button role="radio" aria-checked="false" data-tier="inherit">Inherit</button></div></td><td class="ctl"><span class="switch" role="switch" aria-checked="true" aria-label="Enable write_file" tabindex="0"></span></td></tr>
+                  <tr data-name="edit_file"><td class="nm"><b>edit_file</b><span class="mono">filesystem__edit_file</span></td><td class="desc hide-sm">Apply a line-based patch.</td><td class="num hide-sm">1</td><td class="acol"><div class="choice sm" role="radiogroup" aria-label="Approval for edit_file"><button role="radio" class="auto" aria-checked="false" data-tier="auto">Auto</button><button role="radio" class="ask" aria-checked="true" data-tier="ask">Ask</button><button role="radio" class="deny" aria-checked="false" data-tier="deny">Deny</button><button role="radio" aria-checked="false" data-tier="inherit">Inherit</button></div></td><td class="ctl"><span class="switch" role="switch" aria-checked="true" aria-label="Enable edit_file" tabindex="0"></span></td></tr>
+                  <tr data-name="move_file"><td class="nm"><b>move_file</b><span class="mono">filesystem__move_file</span></td><td class="desc hide-sm">Rename or move within allowed roots.</td><td class="num hide-sm">0</td><td class="acol"><div class="choice sm" role="radiogroup" aria-label="Approval for move_file"><button role="radio" class="auto" aria-checked="false" data-tier="auto">Auto</button><button role="radio" class="ask" aria-checked="false" data-tier="ask">Ask</button><button role="radio" class="deny" aria-checked="false" data-tier="deny">Deny</button><button role="radio" aria-checked="true" data-tier="inherit">Inherit</button></div></td><td class="ctl"><span class="switch" role="switch" aria-checked="true" aria-label="Enable move_file" tabindex="0"></span></td></tr>
+                  <tr data-name="delete_file" class="locked"><td class="nm"><b>delete_file</b><span class="mono">filesystem__delete_file</span></td><td class="desc hide-sm">Remove a file. <span class="lock"><svg class="icon"><use href="#i-lock"/></svg>Cedar · ops-staging forbids</span></td><td class="num hide-sm">0</td><td class="acol"><div class="choice sm" role="radiogroup" aria-label="Approval for delete_file (locked by policy)"><button role="radio" class="auto" aria-checked="false" disabled data-tier="auto">Auto</button><button role="radio" class="ask" aria-checked="false" disabled data-tier="ask">Ask</button><button role="radio" class="deny" aria-checked="true" disabled data-tier="deny">Deny</button><button role="radio" aria-checked="false" disabled data-tier="inherit">Inherit</button></div></td><td class="ctl"><span class="switch" role="switch" aria-checked="false" aria-label="Enable delete_file" tabindex="0" disabled style="opacity:.4"></span></td></tr>
+                  <tr data-name="get_file_info"><td class="nm"><b>get_file_info</b><span class="mono">filesystem__get_file_info</span></td><td class="desc hide-sm">Size, mtime, permissions.</td><td class="num hide-sm">21</td><td class="acol"><div class="choice sm" role="radiogroup" aria-label="Approval for get_file_info"><button role="radio" class="auto" aria-checked="true" data-tier="auto">Auto</button><button role="radio" class="ask" aria-checked="false" data-tier="ask">Ask</button><button role="radio" class="deny" aria-checked="false" data-tier="deny">Deny</button><button role="radio" aria-checked="false" data-tier="inherit">Inherit</button></div></td><td class="ctl"><span class="switch" role="switch" aria-checked="true" aria-label="Enable get_file_info" tabindex="0"></span></td></tr>
+                  <tr data-name="list_allowed_directories"><td class="nm"><b>list_allowed_directories</b><span class="mono">filesystem__list_allowed_directories</span></td><td class="desc hide-sm">Show configured roots.</td><td class="num hide-sm">4</td><td class="acol"><div class="choice sm" role="radiogroup" aria-label="Approval for list_allowed_directories"><button role="radio" class="auto" aria-checked="true" data-tier="auto">Auto</button><button role="radio" class="ask" aria-checked="false" data-tier="ask">Ask</button><button role="radio" class="deny" aria-checked="false" data-tier="deny">Deny</button><button role="radio" aria-checked="false" data-tier="inherit">Inherit</button></div></td><td class="ctl"><span class="switch" role="switch" aria-checked="true" aria-label="Enable list_allowed_directories" tabindex="0"></span></td></tr>
+                </tbody>
+              </table>
+              <p class="gap-note" style="margin:12px 4px 0"><i></i>Per-tool tiers need a settings namespace the runtime does not expose yet; today approval is <span class="mono">inherit · auto · ask · deny</span> at run scope only. Listed as a backend gap.</p>
+            </div>
+
+            <!-- Connection -->
+            <div role="tabpanel" data-dtabpanel="connection" data-od-id="connection-tab">
+              <div class="card health-row" id="health-row" data-od-id="health-result">
+                <span class="status-dot" id="health-dot"></span>
+                <div class="res" id="health-res"><b>Healthy</b><span class="mono">9 tools · 41 ms · initialize ok · 12 s ago</span></div>
+                <button class="btn btn-secondary btn-sm" data-action="health"><svg class="icon"><use href="#i-bolt"/></svg>Check again</button>
+              </div>
+              <div class="card">
+                <div class="card-head"><div><h3>Transport</h3><p>Saved to <span class="mono">mcp.json</span> through <span class="mono">PUT /api/uar/mcp/servers/filesystem</span>. Secrets are env-var references, never literals.</p></div>
+                  <div class="choice" role="radiogroup" aria-label="Transport"><button role="radio" aria-checked="true">stdio</button><button role="radio" aria-checked="false">HTTP</button></div></div>
+                <div class="form-grid">
+                  <div class="field"><label for="cmd">Command</label><input class="input mono" id="cmd" value="mcp-server-filesystem" /><span class="hint">Bundled sidecar in the desktop build.</span></div>
+                  <div class="field"><label for="args">Arguments</label><input class="input mono" id="args" value="--roots /srv/staging" /></div>
+                  <div class="field"><label for="env">Environment</label><input class="input mono" id="env" value="MCP_LOG_LEVEL=${MCP_LOG_LEVEL:-info}" /><span class="hint">One <span class="mono">KEY=${VAR}</span> per line.</span></div>
+                  <div class="field"><label for="to">Tool timeout (s)</label><input class="input mono" id="to" value="120" inputmode="numeric" /><span class="hint">Overrides the runtime default of 60 for this server.</span></div>
+                  <div class="field span"><label>Limits</label><div class="row" style="display:flex;gap:10px;flex-wrap:wrap"><input class="input mono" style="width:200px" value="max_listing_depth: 2" aria-label="max_listing_depth" /><input class="input mono" style="width:200px" value="max_entries: 1000" aria-label="max_entries" /></div></div>
+                </div>
+              </div>
+              <div class="rules" style="margin-top:12px">
+                <div class="rule"><div>Reconnect on failure<span class="sub">Backoff 1 s → 30 s, 5 attempts, then mark failed and remove its tools from the model.</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Reconnect on failure" tabindex="0"></span></div>
+                <div class="rule"><div>Re-discover tools on reconnect<span class="sub">Tool list and schemas are re-validated; renamed tools lose their tier and fall back to Inherit.</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Re-discover tools" tabindex="0"></span></div>
+              </div>
+            </div>
+
+            <!-- Audit -->
+            <div role="tabpanel" data-dtabpanel="audit" data-od-id="audit-tab">
+              <div class="audit">
+                <div class="arow"><span class="status-dot warn"></span><div>write_file · <b>asked</b>, allowed once by Travis<span class="sub">run_8c2f…41 · staging/config.yaml · policy ops-staging</span></div><span class="t">14 min</span></div>
+                <div class="arow"><span class="status-dot"></span><div>read_file · auto<span class="sub">run_8c2f…41 · staging/config.yaml</span></div><span class="t">15 min</span></div>
+                <div class="arow"><span class="status-dot"></span><div>list_directory · auto<span class="sub">run_8c2f…41 · /srv/staging · 2,412 entries · 71.3 s</span></div><span class="t">15 min</span></div>
+                <div class="arow"><span class="status-dot err"></span><div>delete_file · <b>denied by policy</b><span class="sub">run_7f3a…09 · Cedar forbid(principal, action == "mcp:delete_file", resource in Staging)</span></div><span class="t">yesterday</span></div>
+                <div class="arow"><span class="status-dot warn"></span><div>edit_file · asked, <b>denied</b> by Travis<span class="sub">run_7f3a…09 · skills/ops/runbook.md</span></div><span class="t">yesterday</span></div>
+                <div class="arow"><span class="status-dot off"></span><div>server reconnected<span class="sub">after 2 attempts · tools re-discovered · 9 unchanged</span></div><span class="t">2 d</span></div>
+              </div>
+              <p class="gap-note" style="margin:12px 4px 0"><i></i>Source: <span class="mono">GET /api/uar/runs/{run_id}/tool-admission-evidence</span> per run; a cross-run audit query is a backend gap.</p>
+            </div>
+          </section>
+
+          <!-- detail: native tools -->
+          <section class="detail" id="detail-native" aria-label="Native tools" style="display:none" data-od-id="native-detail">
+            <div class="detail-head">
+              <span class="smark lg"><svg class="icon"><use href="#i-box"/></svg></span>
+              <div>
+                <h2>Native tools</h2>
+                <div class="sub"><span class="tier t1">Stable</span><span>Built into the runtime · no server · governed like MCP tools</span></div>
+              </div>
+            </div>
+            <div class="native" data-od-id="native-list">
+              <div class="nrow"><div><div class="ttl">File read <span class="chip ok" style="height:20px;font-size:11px">on</span></div><div class="sub">Read files from the host filesystem. Approval: Auto.</div><div class="limits"><div><label for="n-fr">Max file size (KB)</label><input class="input mono" id="n-fr" value="1024" inputmode="numeric" /></div></div></div><span class="switch" role="switch" aria-checked="true" aria-label="File read" tabindex="0"></span></div>
+              <div class="nrow"><div><div class="ttl">File write <span class="chip warn" style="height:20px;font-size:11px">opt-in</span></div><div class="sub">Writes to the host filesystem. Approval: Ask. Off by default in the runtime config.</div><div class="limits"><div><label for="n-fw">Max write per call (KB)</label><input class="input mono" id="n-fw" value="512" inputmode="numeric" /></div></div></div><span class="switch" role="switch" aria-checked="false" aria-label="File write" tabindex="0"></span></div>
+              <div class="nrow"><div><div class="ttl">Web fetch <span class="chip ok" style="height:20px;font-size:11px">on</span></div><div class="sub">GET a URL and return text. Routed through the same Cedar policy as the inspector browser.</div><div class="limits"><div><label for="n-wt">Timeout (s)</label><input class="input mono" id="n-wt" value="30" inputmode="numeric" /></div><div><label for="n-ws">Max body (KB)</label><input class="input mono" id="n-ws" value="2048" inputmode="numeric" /></div></div></div><span class="switch" role="switch" aria-checked="true" aria-label="Web fetch" tabindex="0"></span></div>
+              <div class="nrow danger"><div><div class="ttl">Terminal <span class="chip err" style="height:20px;font-size:11px">off</span></div><div class="sub">Exposes a shell to the model. Only for sandboxed hosts; the runtime config warns against it. Approval is forced to Ask and cannot be set to Auto.</div><div class="limits"><div><label for="n-sh">Shell</label><input class="input mono" id="n-sh" value="/bin/sh" /></div></div></div><span class="switch" role="switch" aria-checked="false" aria-label="Terminal" tabindex="0"></span></div>
+              <div class="nrow"><div><div class="ttl">WASM native tools <span class="tier preview">Preview</span></div><div class="sub">Run opt-in WASM tool bundles in-process. Schema-validated and policy-gated like everything else; not a release promise.</div></div><span class="switch" role="switch" aria-checked="false" aria-label="WASM native tools" tabindex="0"></span></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- add-server flow in the right inspector -->
+  <aside class="panel" aria-label="Add MCP server" aria-hidden="true" data-od-id="add-server-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-head">
+      <div class="tabs" role="tablist" aria-label="Inspector sections"><button class="tab" role="tab" data-tab="add" aria-selected="true" id="tab-add"><svg class="icon icon-sm"><use href="#i-plug"/></svg>Add MCP server</button></div>
+      <span style="flex:1"></span>
+      <button class="icon-btn" data-action="panel-close" aria-label="Close (Esc)"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="panel-body">
+      <div role="tabpanel" data-tabpanel="add" class="active" aria-labelledby="tab-add">
+        <div class="steps" aria-hidden="true"><span class="on" id="s1"></span><span id="s2"></span><span id="s3"></span></div>
+
+        <div class="wstep active" id="w1" data-od-id="add-step-pick">
+          <h3 style="font-size:16px">1 · Choose a transport</h3>
+          <p class="muted" style="font-size:13px;margin:4px 0 10px">Pick a known server or describe your own. Bundled sidecars need no install.</p>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <button class="preset" data-pick="github" data-nm="github" data-kind="stdio" data-cmd="npx -y @modelcontextprotocol/server-github" data-env="GITHUB_TOKEN"><span class="smark"><svg class="icon"><use href="#i-term"/></svg></span><span><span class="nm">GitHub</span><span class="sub">stdio · needs GITHUB_TOKEN</span></span><span class="cnt">~26 tools</span></button>
+            <button class="preset" data-pick="postgres" data-nm="postgres" data-kind="stdio" data-cmd="npx -y @modelcontextprotocol/server-postgres" data-env="DATABASE_URL"><span class="smark"><svg class="icon"><use href="#i-db"/></svg></span><span><span class="nm">PostgreSQL</span><span class="sub">stdio · needs DATABASE_URL</span></span><span class="cnt">~3 tools</span></button>
+            <button class="preset" data-pick="http" data-nm="remote" data-kind="http" data-cmd="https://" data-env=""><span class="smark"><svg class="icon"><use href="#i-globe"/></svg></span><span><span class="nm">Remote HTTP server</span><span class="sub">streamable HTTP · bearer via env var</span></span><span class="cnt"></span></button>
+            <button class="preset" data-pick="custom" data-nm="custom" data-kind="stdio" data-cmd="" data-env=""><span class="smark"><svg class="icon"><use href="#i-plus"/></svg></span><span><span class="nm">Custom command</span><span class="sub">stdio · any executable on PATH</span></span><span class="cnt"></span></button>
+          </div>
+        </div>
+
+        <div class="wstep" id="w2" data-od-id="add-step-connect">
+          <h3 style="font-size:16px">2 · Connect</h3>
+          <div class="field" style="margin:10px 0 12px"><label for="a-name">Server name</label><input class="input mono" id="a-name" value="github" /><span class="hint">Becomes the tool prefix: <span class="mono" id="a-prefix">github__*</span></span></div>
+          <div class="field" style="margin-bottom:12px"><label for="a-cmd" id="a-cmd-label">Command</label><input class="input mono" id="a-cmd" value="npx -y @modelcontextprotocol/server-github" /></div>
+          <div class="field" style="margin-bottom:12px"><label for="a-env">Environment</label><input class="input mono" id="a-env" value="GITHUB_TOKEN=${GITHUB_TOKEN}" /><span class="hint" id="a-envhint"><span class="mono">GITHUB_TOKEN</span> is not set in the daemon environment.</span></div>
+          <div class="card health-row" style="margin:6px 0 0"><span class="status-dot off" id="a-dot"></span><div class="res" id="a-res"><b>Not connected</b><span class="mono">saves, starts the server, runs initialize</span></div><button class="btn btn-secondary btn-sm" data-action="wiz-connect" id="a-connect"><svg class="icon"><use href="#i-bolt"/></svg>Save &amp; connect</button></div>
+        </div>
+
+        <div class="wstep" id="w3" data-od-id="add-step-tools">
+          <h3 style="font-size:16px">3 · Set the approval tier</h3>
+          <p class="muted" style="font-size:13px;margin:4px 0 10px">Discovered tools start as Inherit. Pick the server default now; refine per tool afterwards.</p>
+          <div class="choice" role="radiogroup" aria-label="Server default tier" id="a-tier"><button role="radio" class="auto" aria-checked="false" data-tier="auto">Auto</button><button role="radio" class="ask" aria-checked="true" data-tier="ask">Ask</button><button role="radio" class="deny" aria-checked="false" data-tier="deny">Deny</button></div>
+          <div class="found" id="a-found">
+            <div class="mrow"><span>search_repositories<span class="sub">github__search_repositories · read</span></span><span class="chip ok" style="height:20px;font-size:11px">auto by rule</span></div>
+            <div class="mrow"><span>get_file_contents<span class="sub">github__get_file_contents · read</span></span><span class="chip ok" style="height:20px;font-size:11px">auto by rule</span></div>
+            <div class="mrow"><span>create_or_update_file<span class="sub">github__create_or_update_file · write</span></span><span class="chip warn" style="height:20px;font-size:11px">ask</span></div>
+            <div class="mrow"><span>create_pull_request<span class="sub">github__create_pull_request · write</span></span><span class="chip warn" style="height:20px;font-size:11px">ask</span></div>
+            <div class="mrow"><span>+ 22 more<span class="sub">visible in the Tools tab after finish</span></span><span></span></div>
+          </div>
+        </div>
+
+        <div class="wizard-foot">
+          <button class="btn btn-ghost" data-action="wiz-back" id="w-back" style="visibility:hidden">Back</button>
+          <button class="btn btn-primary" data-action="wiz-next" id="w-next" disabled>Continue</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-overlay" aria-hidden="true"></div>
+</div>
+
+<div class="cmdk-backdrop"></div>
+<div class="cmdk" role="dialog" aria-label="Search settings">
+  <input class="input" type="search" placeholder="Search settings…" aria-label="Search settings" />
+  <div class="cmdk-list">
+    <p class="menu-label">Tools &amp; MCP</p>
+    <button class="menu-item" data-action="panel-open" data-tab="add"><svg class="icon"><use href="#i-plus"/></svg>Add MCP server</button>
+    <button class="menu-item" data-action="health"><svg class="icon"><use href="#i-bolt"/></svg>Check server health</button>
+    <button class="menu-item"><svg class="icon"><use href="#i-shield"/></svg>Default approval tier</button>
+    <p class="menu-label">Other settings</p>
+    <a class="menu-item" href="models-and-providers.html"><svg class="icon"><use href="#i-cpu"/></svg>Models &amp; providers</a>
+    <button class="menu-item"><svg class="icon"><use href="#i-shield"/></svg>Cedar policies</button>
+    <a class="menu-item" href="chat-workspace.html"><svg class="icon"><use href="#i-back"/></svg>Back to chat<kbd>Esc</kbd></a>
+  </div>
+</div>
+
+<script src="assets/shell.js"></script>
+<script>
+  (function () {
+    const S = window.UARShell; const app = document.querySelector(".app");
+    /* detail tabs */
+    const dtabs = document.querySelectorAll("[data-dtab]"), dpanes = document.querySelectorAll("[data-dtabpanel]");
+    dtabs.forEach((t) => t.addEventListener("click", () => { dtabs.forEach((x) => x.setAttribute("aria-selected", String(x === t))); dpanes.forEach((p) => p.classList.toggle("active", p.dataset.dtabpanel === t.dataset.dtab)); }));
+    /* switches and tier radios */
+    document.addEventListener("click", (e) => {
+      const sw = e.target.closest(".switch[role=switch]"); if (sw && !sw.hasAttribute("disabled")) { e.stopPropagation(); const on = sw.getAttribute("aria-checked") !== "true"; sw.setAttribute("aria-checked", String(on)); const tr = sw.closest("tr"); if (tr) { tr.classList.toggle("disabled", !on); updateCount(); } const sr = sw.closest(".srow"); if (sr) { const st = sr.querySelector(".st"); st.innerHTML = on ? '<i class="status-dot"></i>Enabled · reconnecting' : '<i class="status-dot off"></i>Disabled · tools removed from the model'; S.toast(sr.querySelector(".nm").textContent + (on ? " enabled" : " disabled"), on ? "ok" : "warn"); } const nr = sw.closest(".nrow"); if (nr) { const chip = nr.querySelector(".chip"); if (chip && !chip.classList.contains("err")) { chip.className = "chip " + (on ? "ok" : "warn"); chip.textContent = on ? "on" : "off"; } if (nr.classList.contains("danger")) { const chip2 = nr.querySelector(".chip"); chip2.className = "chip " + (on ? "warn" : "err"); chip2.textContent = on ? "on · ask" : "off"; S.toast(on ? "Terminal enabled · every call will ask" : "Terminal disabled", on ? "warn" : "ok"); } } return; }
+      const ch = e.target.closest(".choice [role=radio]"); if (ch && !ch.disabled) { ch.parentElement.querySelectorAll("[role=radio]").forEach((r) => r.setAttribute("aria-checked", String(r === ch))); if (ch.parentElement.id === "server-default") { S.toast("Server default: " + ch.textContent + " · tools set to Inherit follow it"); } }
+    });
+    document.addEventListener("keydown", (e) => { if ((e.key === " " || e.key === "Enter") && e.target.matches(".switch, .radio")) { e.preventDefault(); e.target.click(); } });
+    function updateCount() { const on = document.querySelectorAll("#tool-rows .switch[aria-checked=true]").length; document.getElementById("d-count").textContent = on; }
+    const tf = document.getElementById("tool-filter"); tf.addEventListener("input", () => { const q = tf.value.trim().toLowerCase(); document.querySelectorAll("#tool-rows tr").forEach((tr) => { tr.style.display = !q || tr.dataset.name.includes(q) || tr.textContent.toLowerCase().includes(q) ? "" : "none"; }); });
+    /* server selection: native swaps the whole detail; MCP servers swap the header (full tools wired for filesystem) */
+    const META = { filesystem: ["filesystem", "i-file", "ok", "Connected", "stdio · mcp-server-filesystem", "9"], fetch: ["fetch", "i-globe", "ok", "Connected", "stdio · mcp-server-fetch", "2"], surreal_memory: ["surreal_memory", "i-db", "ok", "Connected", "http · ${UAR_MEMORY_MCP_URL}", "12"], tavily: ["tavily", "i-search", "warn", "Reconnecting · attempt 3 of 5", "http · mcp.tavily.com", "4"], kreuzberg: ["kreuzberg", "i-term", "ok", "Connected", "stdio · kreuzberg mcp --transport stdio", "4"] };
+    document.querySelectorAll(".srow[data-server]").forEach((p) => p.addEventListener("click", (e) => { if (e.target.closest(".switch")) return; document.querySelectorAll(".srow[data-server]").forEach((x) => x.setAttribute("aria-current", String(x === p))); const id = p.dataset.server; const nat = id === "native"; document.getElementById("detail-native").style.display = nat ? "" : "none"; document.getElementById("detail-server").style.display = nat ? "none" : ""; if (nat) return; const m = META[id]; document.getElementById("d-name").textContent = m[0]; document.getElementById("d-mark").innerHTML = '<svg class="icon"><use href="#' + m[1] + '"/></svg>'; document.getElementById("d-sub").innerHTML = '<span class="chip ' + m[2] + '" style="height:22px"><span class="status-dot" style="background:currentColor"></span>' + m[3] + '</span><span class="mono">' + m[4] + '</span><span>·</span><span>checked 12 s ago</span>'; document.getElementById("d-count").textContent = m[5]; document.getElementById("detail-server").setAttribute("aria-label", m[0]); if (id !== "filesystem") S.toast("Prototype: the full tool table is wired for filesystem; " + m[0] + " shows the header only"); }));
+    /* health check */
+    app.addEventListener("uar:action", (e) => {
+      const { action, el } = e.detail;
+      if (action === "health") { const btn = document.getElementById("health-btn"), dot = document.getElementById("health-dot"), res = document.getElementById("health-res"); btn.classList.add("is-loading"); btn.disabled = true; dot.className = "status-dot off"; res.innerHTML = "<b>Checking…</b><span class='mono'>GET /api/uar/mcp/health · initialize · tools/list</span>"; setTimeout(() => { btn.classList.remove("is-loading"); btn.disabled = false; dot.className = "status-dot"; res.innerHTML = "<b>Healthy</b><span class='mono'>9 tools · 38 ms · initialize ok · just now</span>"; S.toast("filesystem healthy · 38 ms"); }, 900); }
+      if (action === "wiz-back") setStep(step - 1);
+      if (action === "wiz-next") { if (step === 3) finish(); else setStep(step + 1); }
+      if (action === "wiz-connect") { const b = document.getElementById("a-connect"), d = document.getElementById("a-dot"), r = document.getElementById("a-res"); const envOk = !picked.env || /\$\{/.test(document.getElementById("a-env").value) === false; b.classList.add("is-loading"); b.disabled = true; r.innerHTML = "<b>Starting…</b><span class='mono'>PUT /api/uar/mcp/servers/" + picked.nm + " → initialize</span>"; setTimeout(() => { b.classList.remove("is-loading"); b.disabled = false; if (picked.env && !envOk) { d.className = "status-dot err"; r.innerHTML = "<b>Failed · auth</b><span class='mono'>" + picked.env + " unset · server exited 1</span>"; S.toast("Could not start " + picked.nm + " · set " + picked.env, "err"); } else { d.className = "status-dot"; r.innerHTML = "<b>Connected</b><span class='mono'>initialize ok · 26 tools discovered · 212 ms</span>"; document.getElementById("w-next").disabled = false; S.toast(picked.nm + " connected · 26 tools"); } }, 1200); }
+    });
+    let step = 1, picked = { nm: "github", env: "GITHUB_TOKEN", kind: "stdio" };
+    function setStep(n) { step = Math.max(1, Math.min(3, n)); for (let i = 1; i <= 3; i++) { document.getElementById("w" + i).classList.toggle("active", i === step); const s = document.getElementById("s" + i); s.className = i < step ? "done" : i === step ? "on" : ""; } document.getElementById("w-back").style.visibility = step === 1 ? "hidden" : "visible"; const nx = document.getElementById("w-next"); nx.textContent = step === 3 ? "Finish" : "Continue"; nx.disabled = step === 1 ? true : step === 2 ? document.getElementById("a-dot").className !== "status-dot" : false; }
+    document.querySelectorAll(".preset").forEach((c) => c.addEventListener("click", () => { picked = { nm: c.dataset.nm, env: c.dataset.env, kind: c.dataset.kind }; document.getElementById("a-name").value = c.dataset.nm; document.getElementById("a-prefix").textContent = c.dataset.nm + "__*"; document.getElementById("a-cmd-label").textContent = c.dataset.kind === "http" ? "URL" : "Command"; document.getElementById("a-cmd").value = c.dataset.cmd; document.getElementById("a-env").value = c.dataset.env ? c.dataset.env + "=${" + c.dataset.env + "}" : ""; document.getElementById("a-envhint").innerHTML = c.dataset.env ? '<span class="mono">' + c.dataset.env + "</span> is not set in the daemon environment." : "No secret needed, or reference one as <span class='mono'>KEY=${VAR}</span>."; document.getElementById("a-dot").className = "status-dot off"; document.getElementById("a-res").innerHTML = "<b>Not connected</b><span class='mono'>saves, starts the server, runs initialize</span>"; setStep(2); }));
+    document.getElementById("a-name").addEventListener("input", (e) => { document.getElementById("a-prefix").textContent = e.target.value + "__*"; });
+    function finish() {
+      const list = document.querySelector(".servers"); const add = list.querySelector(".srow.add"); const nm = document.getElementById("a-name").value || picked.nm;
+      const row = document.createElement("button"); row.className = "srow"; row.setAttribute("aria-current", "false"); row.dataset.server = nm;
+      row.innerHTML = '<span class="smark"><svg class="icon"><use href="#i-term"/></svg></span><span><span class="nm">' + nm + '</span><span class="st"><i class="status-dot"></i>Connected · 26 tools · 212 ms</span></span><span class="switch" role="switch" aria-checked="true" aria-label="' + nm + ' enabled" tabindex="0"></span>';
+      list.insertBefore(row, add); document.getElementById("sum-servers").textContent = "5 of 6"; document.getElementById("sum-tools").textContent = "57"; S.closePanel(); S.toast(nm + " added · 26 tools start as " + document.querySelector("#a-tier [aria-checked=true]").textContent); setStep(1);
+    }
+    app.addEventListener("uar:panel", (e) => { if (e.detail.open) setStep(1); });
+    const mq = window.matchMedia("(max-width: 760px)"); const btn = document.getElementById("mobile-nav-btn"); const sync = () => { btn.style.display = mq.matches ? "" : "none"; }; sync(); mq.addEventListener("change", sync);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !S.state.panelOpen && !document.querySelector(".cmdk.open") && !document.querySelector(".menu.open")) location.href = "chat-workspace.html"; });
+  })();
+</script>
+</body>
+</html>

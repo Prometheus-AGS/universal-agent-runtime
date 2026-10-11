@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Models &amp; providers · Settings · Universal Agent Runtime</title>
+<link rel="icon" href="assets/brand/uar-mark-dark.svg" />
+<link rel="stylesheet" href="assets/shell.css" />
+<style>
+  /* settings page uses the same frame; the sidebar becomes the settings nav */
+  .settings-nav .nav-item { height: 34px; font-size: 13.5px; }
+  .page { flex: 1; min-height: 0; overflow-y: auto; padding: 0 28px 40px; }
+  .page-inner { max-width: 1120px; margin: 0 auto; }
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 10px 0 20px; }
+  .page-head p { color: var(--muted); margin-top: 6px; max-width: 62ch; font-size: 14px; }
+
+  /* roles strip */
+  .roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
+  .role { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+  .role .k { font-size: 11.5px; color: var(--faint); }
+  .role .v { font-weight: 600; font-size: 14px; margin-top: 1px; display: flex; align-items: center; gap: 8px; }
+  .role .addr { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+  .role .grow { flex: 1; min-width: 0; }
+  .role .grow > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* master–detail */
+  .md { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 18px; align-items: start; }
+  .providers { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 0; }
+  .providers .input { height: 34px; font-size: 13px; margin-bottom: 6px; }
+  .prow { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; width: 100%; text-align: left; transition: background var(--fast) var(--ease); }
+  .prow:hover { background: var(--hover); }
+  .prow[aria-current="true"] { background: var(--accent-soft); }
+  .prow[aria-current="true"] .nm { color: var(--accent); }
+  .prow .nm { font-weight: 500; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .prow .st { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--faint); margin-top: 1px; white-space: nowrap; }
+  .prow .st .status-dot { width: 6px; height: 6px; }
+  .prow .switch { margin-left: 4px; }
+  .pmark { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 12px; color: var(--fg); background: var(--input); flex: none; }
+  .pmark.lg { width: 40px; height: 40px; font-size: 17px; border-radius: 10px; }
+  .prow.add { grid-template-columns: 26px 1fr; color: var(--muted); margin-top: 6px; }
+  .prow.add .pmark { background: transparent; color: var(--accent); }
+  .prow.add:hover { color: var(--fg); }
+
+  .detail { min-width: 0; }
+  .detail-head { display: flex; align-items: center; gap: 14px; padding: 4px 4px 16px; }
+  .detail-head h2 { font-size: 20px; }
+  .detail-head .sub { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; font-size: 12.5px; color: var(--muted); }
+  .detail-head .sub .mono { font-size: 12px; }
+  .detail-head .acts { margin-left: auto; display: flex; gap: 6px; }
+  .detail .tabs { margin: 0 0 14px; }
+  .detail [role="tabpanel"] { display: none; } .detail [role="tabpanel"].active { display: block; animation: fade-up var(--base) var(--ease-out); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+  .form-grid .span { grid-column: 1 / -1; }
+  .choice { display: inline-flex; background: var(--input); padding: 3px; border-radius: 9px; gap: 2px; }
+  .choice button { height: 30px; padding: 0 12px; border-radius: 7px; font-size: 13px; color: var(--muted); }
+  .choice button[aria-checked="true"] { background: var(--raised); color: var(--fg); }
+  .choice button:hover { color: var(--fg); }
+  .test-row { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 12px 14px; }
+  .test-row .res { flex: 1; min-width: 0; font-size: 13px; }
+  .test-row .res b { font-weight: 600; }
+  .test-row .res .mono { color: var(--faint); font-size: 12px; margin-left: 8px; }
+  .outcomes { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; margin-top: 12px; }
+  .outcome { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 8px; background: var(--step-2); font-size: 12px; color: var(--muted); }
+  .outcome .mono { color: var(--fg); font-size: 11.5px; }
+  .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .toolbar .input { height: 34px; font-size: 13px; width: 260px; }
+  .toolbar .spacer { flex: 1; }
+  .table .nm b { font-weight: 500; display: block; }
+  .table .nm .mono { font-size: 11.5px; color: var(--faint); }
+  .table td:first-child { width: 44px; }
+  .table td.ctl { width: 56px; text-align: right; }
+  .table tr.disabled .nm b { color: var(--muted); }
+  .gap-note { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--faint); }
+  .gap-note i { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); display: inline-block; }
+  .chain { display: flex; flex-direction: column; gap: 6px; }
+  .link { display: grid; grid-template-columns: 24px 26px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; background: var(--step-2); border-radius: 10px; font-size: 13.5px; }
+  .link .idx { font-family: var(--font-mono); font-size: 11px; color: var(--faint); text-align: center; }
+  .link .addr { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); display: block; }
+  .link .why { font-size: 12px; color: var(--faint); }
+  .link.primary { background: var(--accent-soft); }
+  .link.primary .idx { color: var(--accent); }
+
+  /* add-provider flow inside the inspector */
+  .steps { display: flex; gap: 6px; margin: 6px 0 14px; }
+  .steps span { flex: 1; height: 4px; border-radius: 2px; background: var(--input); }
+  .steps span.on { background: var(--accent); }
+  .steps span.done { background: var(--ok); }
+  .catalog { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; max-height: 52vh; overflow: auto; }
+  .crow { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 9px; width: 100%; text-align: left; }
+  .crow:hover { background: var(--raised); }
+  .crow .nm { font-size: 13.5px; font-weight: 500; }
+  .crow .sub { font-size: 11.5px; color: var(--faint); font-family: var(--font-mono); }
+  .crow .cnt { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); }
+  .wizard-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 16px; }
+  .wstep { display: none; } .wstep.active { display: block; animation: fade-up var(--base) var(--ease-out); }
+  .pick { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px; background: var(--step-2); font-size: 13.5px; }
+  .pick .sub { display: block; font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); }
+  .modelpick { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
+  .mrow { display: grid; grid-template-columns: 20px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 9px; font-size: 13px; }
+  .mrow:hover { background: var(--raised); }
+  .mrow .sub { display: block; font-family: var(--font-mono); font-size: 11px; color: var(--faint); }
+  .mrow .cb { width: 16px; height: 16px; border-radius: 5px; background: var(--input); display: grid; place-items: center; color: var(--accent-fg); }
+  .mrow .cb[aria-checked="true"] { background: var(--accent); }
+
+  @media (max-width: 1180px) { .md { grid-template-columns: 260px minmax(0, 1fr); } .roles { grid-template-columns: 1fr; } }
+  @media (max-width: 920px) { .md { grid-template-columns: 1fr; } .providers { position: static; } .form-grid { grid-template-columns: 1fr; } .page { padding: 0 16px 32px; } .detail-head .acts { width: 100%; margin-left: 0; } .detail-head { flex-wrap: wrap; } .table .hide-sm { display: none; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="i-sidebar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+  <symbol id="i-tool" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L22 9l-3-3-1.7 1.7zM3 21l8.5-8.5"/><path d="m10 7-4-4-3 3 4 4"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 1 2-2h13"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-desktop" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+</svg>
+
+<div class="app" data-od-id="settings-shell" data-panel-persist="false">
+  <div class="titlebar" data-tauri-drag-region><span class="mono">universal-agent-runtime</span>&nbsp;· Settings</div>
+
+  <aside class="sidebar settings-nav" aria-label="Settings navigation" data-od-id="settings-sidebar">
+    <div class="sidebar-top">
+      <a class="brand" href="chat-workspace.html" aria-label="Back to chat">
+        <img src="assets/brand/uar-mark-dark.svg" alt="" />
+        <span class="brand-name">Settings<small>// DEFAULT WORKSPACE</small></span>
+      </a>
+      <button class="icon-btn" data-action="sidebar" aria-expanded="true" aria-label="Collapse sidebar" title="Toggle sidebar (⌘B)"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+    </div>
+    <button class="nav-item rail-only icon-btn" data-action="sidebar" aria-label="Expand sidebar"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+    <div class="sidebar-section">
+      <a class="nav-item" href="chat-workspace.html" title="Back to chat"><svg class="icon"><use href="#i-back"/></svg><span class="grow">Back to chat</span><kbd>Esc</kbd></a>
+    </div>
+    <div class="sidebar-section" data-od-id="settings-nav">
+      <p class="sidebar-label">Settings</p>
+      <a class="nav-item" href="#" title="General"><svg class="icon"><use href="#i-gear"/></svg><span class="grow">General</span></a>
+      <a class="nav-item" href="#" aria-current="page" title="Models &amp; providers"><svg class="icon"><use href="#i-cpu"/></svg><span class="grow">Models &amp; providers</span></a>
+      <a class="nav-item" href="tools-and-mcp.html" title="Tools &amp; MCP"><svg class="icon"><use href="#i-tool"/></svg><span class="grow">Tools &amp; MCP</span></a>
+      <a class="nav-item" href="skills.html" title="Skills"><svg class="icon"><use href="#i-spark"/></svg><span class="grow">Skills</span></a>
+      <a class="nav-item" href="knowledge-and-memory.html" title="Knowledge &amp; memory"><svg class="icon"><use href="#i-book"/></svg><span class="grow">Knowledge &amp; memory</span></a>
+      <a class="nav-item" href="governance.html" title="Governance"><svg class="icon"><use href="#i-shield"/></svg><span class="grow">Governance</span></a>
+      <a class="nav-item" href="appearance.html" title="Appearance"><svg class="icon"><use href="#i-sun"/></svg><span class="grow">Appearance</span></a>
+      <a class="nav-item" href="desktop.html" title="Desktop"><svg class="icon"><use href="#i-desktop"/></svg><span class="grow">Desktop</span></a>
+    </div>
+    <div class="sidebar-scroll"></div>
+    <div class="sidebar-bottom">
+      <a class="nav-item" href="#" title="About"><svg class="icon"><use href="#i-info"/></svg><span class="grow">About</span><span class="mono" style="font-size:11px;color:var(--faint)">1.0.0</span></a>
+      <div class="account"><span class="avatar">TJ</span><span class="who"><b>Travis James</b><span><i class="status-dot"></i>Runtime healthy</span></span></div>
+    </div>
+  </aside>
+
+  <main class="main" id="content" data-od-id="settings-main">
+    <header class="topbar">
+      <button class="icon-btn" data-action="sidebar-mobile" aria-label="Open navigation" id="mobile-nav-btn" style="display:none"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+      <div class="title"><span class="crumb">Settings</span><span>Models &amp; providers</span></div>
+      <span class="spacer"></span>
+      <button class="chip" data-action="cmdk"><svg class="icon"><use href="#i-search"/></svg>Search settings <kbd style="margin-left:4px" data-kbd="⌘K">⌘K</kbd></button>
+      <button class="icon-btn" data-action="theme" aria-pressed="false" aria-label="Switch theme" title="Switch theme"><svg class="icon"><use href="#i-sun"/></svg></button>
+    </header>
+
+    <section class="page">
+      <div class="page-inner">
+        <div class="page-head" data-od-id="page-head">
+          <div>
+            <h1>Models &amp; providers</h1>
+            <p>Connect a provider once, enable the models you want to see in the composer, then assign roles. The composer only ever lists enabled models.</p>
+          </div>
+          <button class="btn btn-primary" data-action="panel-open" data-tab="add" data-od-id="add-provider-cta"><svg class="icon"><use href="#i-plus"/></svg>Add provider</button>
+        </div>
+
+        <div class="roles" data-od-id="roles-strip">
+          <div class="card role"><span class="pmark">A</span><span class="grow"><span class="k">Default chat</span><span class="v">Claude Sonnet 5</span><span class="addr">anthropic/claude-sonnet-5</span></span><button class="btn btn-sm btn-ghost">Change</button></div>
+          <div class="card role"><span class="pmark">G</span><span class="grow"><span class="k">Fast / background</span><span class="v">Llama 3.3 70B</span><span class="addr">groq/llama-3.3-70b-versatile</span></span><button class="btn btn-sm btn-ghost">Change</button></div>
+          <div class="card role"><span class="pmark" style="font-size:11px">fe</span><span class="grow"><span class="k">Embeddings</span><span class="v">FastEmbed local <span class="tier t1">Tier 1</span></span><span class="addr">fastembed/bge-small-en-v1.5</span></span><button class="btn btn-sm btn-ghost">Change</button></div>
+        </div>
+
+        <div class="md">
+          <!-- provider list -->
+          <nav class="providers" aria-label="Configured providers" data-od-id="provider-list">
+            <input class="input" type="search" placeholder="Filter providers" aria-label="Filter providers" />
+            <button class="prow" aria-current="true" data-provider="anthropic"><span class="pmark">A</span><span><span class="nm">Anthropic</span><span class="st"><i class="status-dot"></i>Connected · 3 of 15 models</span></span><span class="switch" role="switch" aria-checked="true" aria-label="Anthropic enabled" tabindex="0"></span></button>
+            <button class="prow" aria-current="false" data-provider="openai"><span class="pmark">O</span><span><span class="nm">OpenAI</span><span class="st"><i class="status-dot"></i>Connected · 2 of 50 models</span></span><span class="switch" role="switch" aria-checked="true" aria-label="OpenAI enabled" tabindex="0"></span></button>
+            <button class="prow" aria-current="false" data-provider="groq"><span class="pmark">G</span><span><span class="nm">Groq</span><span class="st"><i class="status-dot warn"></i>Cooldown 38 s · 2 of 16 models</span></span><span class="switch" role="switch" aria-checked="true" aria-label="Groq enabled" tabindex="0"></span></button>
+            <button class="prow" aria-current="false" data-provider="ollama"><span class="pmark" style="font-size:11px">ol</span><span><span class="nm">Ollama (build box)</span><span class="st"><i class="status-dot"></i>Connected · 2 models, added by id</span></span><span class="switch" role="switch" aria-checked="true" aria-label="Ollama enabled" tabindex="0"></span></button>
+            <button class="prow" aria-current="false" data-provider="deepseek"><span class="pmark">D</span><span><span class="nm">DeepSeek</span><span class="st"><i class="status-dot err"></i>Key missing · DEEPSEEK_API_KEY</span></span><span class="switch" role="switch" aria-checked="true" aria-label="DeepSeek enabled" tabindex="0"></span></button>
+            <button class="prow" aria-current="false" data-provider="zai"><span class="pmark">Z</span><span><span class="nm">Z.AI</span><span class="st"><i class="status-dot off"></i>Disabled · 0 of 18 models</span></span><span class="switch" role="switch" aria-checked="false" aria-label="Z.AI enabled" tabindex="0"></span></button>
+            <button class="prow add" data-action="panel-open" data-tab="add"><span class="pmark"><svg class="icon icon-sm"><use href="#i-plus"/></svg></span><span class="nm">Add provider <span class="mono" style="font-size:11px;color:var(--faint)">· 313 in catalog</span></span></button>
+          </nav>
+
+          <!-- detail -->
+          <section class="detail" aria-label="Anthropic" data-od-id="provider-detail">
+            <div class="detail-head">
+              <span class="pmark lg">A</span>
+              <div>
+                <h2>Anthropic</h2>
+                <div class="sub"><span class="tier t1">Tier 1 · chat, stream, tools, vision</span><span class="mono">anthropic</span><span>·</span><span class="mono">https://api.anthropic.com/v1</span><span>·</span><span>protocol auto</span></div>
+              </div>
+              <div class="acts">
+                <button class="btn btn-secondary btn-sm" id="test-btn" data-action="test"><svg class="icon"><use href="#i-bolt"/></svg>Test connection</button>
+                <div style="position:relative">
+                <button class="icon-btn" data-action="menu" aria-controls="prov-menu" aria-expanded="false" aria-haspopup="menu" aria-label="More"><svg class="icon"><use href="#i-more"/></svg></button>
+                  <div class="menu" id="prov-menu" role="menu" style="right:0;top:100%;margin-top:6px">
+                    <button class="menu-item" role="menuitem"><svg class="icon"><use href="#i-refresh"/></svg>Sync models<span class="right">gap</span></button>
+                    <button class="menu-item" role="menuitem"><svg class="icon"><use href="#i-eye"/></svg>View audit events</button>
+                    <div class="menu-sep"></div>
+                    <button class="menu-item danger" role="menuitem"><svg class="icon" style="color:inherit"><use href="#i-trash"/></svg>Remove provider</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tabs" role="tablist" aria-label="Provider sections">
+              <button class="tab" role="tab" data-dtab="connection" aria-selected="false">Connection</button>
+              <button class="tab" role="tab" data-dtab="models" aria-selected="true">Models <span class="count">3 / 15</span></button>
+              <button class="tab" role="tab" data-dtab="routing" aria-selected="false">Routing</button>
+            </div>
+
+            <!-- Connection -->
+            <div role="tabpanel" data-dtabpanel="connection" data-od-id="connection-tab">
+              <div class="card">
+                <div class="card-head"><div><h3>Credential</h3><p>Stored encrypted, write-only. The runtime never returns a key; you see the last four characters.</p></div>
+                  <div class="choice" role="radiogroup" aria-label="Credential source"><button role="radio" aria-checked="true" data-action="cred-source" data-src="key">Paste a key</button><button role="radio" aria-checked="false" data-action="cred-source" data-src="env">Reference an env var</button></div></div>
+                <div class="form-grid">
+                  <div class="field span" id="cred-key">
+                    <label for="apikey">API key</label>
+                    <div class="control"><input class="input mono" id="apikey" type="password" value="sk-ant-••••••••••••••••••••••••7Qk2" aria-describedby="apikey-hint" /><div class="trail"><button type="button" class="btn btn-sm btn-ghost" data-action="toast" data-msg="Paste a new key to replace the stored one">Replace</button><button type="button" class="btn btn-sm btn-ghost" data-action="toast" data-msg="Credential cleared · provider now Key missing" data-kind="warn">Clear</button></div></div>
+                    <span class="hint" id="apikey-hint">System scope · set 2026-09-14 · per-user keys override this for their own runs.</span>
+                  </div>
+                  <div class="field span" id="cred-env" style="display:none">
+                    <label for="envvar">Environment variable</label>
+                    <input class="input mono" id="envvar" value="ANTHROPIC_API_KEY" />
+                    <span class="hint">Present in the daemon environment · read at startup, re-read on reload.</span>
+                  </div>
+                  <div class="field"><label for="baseurl">Base URL</label><input class="input mono" id="baseurl" value="https://api.anthropic.com/v1" /><span class="hint">Include the version path. Catalog default shown.</span></div>
+                  <div class="field"><label>Protocol</label><div class="choice" role="radiogroup" aria-label="API protocol"><button role="radio" aria-checked="true">Auto</button><button role="radio" aria-checked="false">Chat</button><button role="radio" aria-checked="false">Responses</button></div><span class="hint">Auto picks the wire format from the provider id.</span></div>
+                </div>
+              </div>
+              <div class="card test-row" id="test-row" data-od-id="test-result">
+                <span class="status-dot" id="test-dot"></span>
+                <div class="res" id="test-res"><b>Last test passed</b><span class="mono">claude-sonnet-5 · 612 ms · 14 min ago</span></div>
+                <button class="btn btn-secondary btn-sm" data-action="test"><svg class="icon"><use href="#i-bolt"/></svg>Test again</button>
+              </div>
+              <div class="outcomes" aria-label="Possible test outcomes">
+                <div class="outcome"><span class="status-dot"></span><span><span class="mono">200</span> · reply received, latency shown</span></div>
+                <div class="outcome"><span class="status-dot err"></span><span><span class="mono">401 / 403</span> · key rejected</span></div>
+                <div class="outcome"><span class="status-dot warn"></span><span><span class="mono">429</span> · rate limited, retry later</span></div>
+                <div class="outcome"><span class="status-dot err"></span><span><span class="mono">502</span> · provider returned no text</span></div>
+                <div class="outcome"><span class="status-dot warn"></span><span><span class="mono">504</span> · no reply within 30 s</span></div>
+                <div class="outcome"><span class="status-dot off"></span><span><span class="mono">400</span> · no credential or no enabled model</span></div>
+              </div>
+            </div>
+
+            <!-- Models -->
+            <div role="tabpanel" data-dtabpanel="models" class="active" data-od-id="models-tab">
+              <div class="toolbar">
+                <input class="input" type="search" id="model-filter" placeholder="Filter 15 models · try “opus” or “vision”" aria-label="Filter models" />
+                <button class="chip" data-action="filter-cap" data-cap="reasoning" aria-pressed="false">Reasoning</button>
+                <button class="chip" data-action="filter-cap" data-cap="vision" aria-pressed="false">Vision</button>
+                <span class="spacer"></span>
+                <button class="btn btn-sm btn-ghost" data-action="enable-visible">Enable visible</button>
+                <button class="btn btn-sm btn-ghost" data-action="toast" data-msg="Sync models needs POST /providers/{id}/sync-models · listed as a backend gap" data-kind="warn"><svg class="icon"><use href="#i-refresh"/></svg>Sync</button>
+                <button class="btn btn-sm btn-secondary" data-action="toast" data-msg="Add a model id manually · for providers without a catalog list"><svg class="icon"><use href="#i-plus"/></svg>Add model id</button>
+              </div>
+              <table class="table" data-od-id="models-table">
+                <thead><tr><th><span class="sr-only">Default</span></th><th>Model</th><th>Capabilities</th><th class="num hide-sm">Context</th><th class="num">$ / 1M in · out</th><th class="ctl">On</th></tr></thead>
+                <tbody id="model-rows">
+                  <tr data-caps="tools reasoning vision structured" data-name="claude sonnet 5"><td><span class="radio" role="radio" aria-checked="true" aria-label="Default model" tabindex="0"></span></td><td class="nm"><b>Claude Sonnet 5</b><span class="mono">anthropic/claude-sonnet-5</span></td><td><span class="caps"><span class="cap on">tools</span><span class="cap on">reasoning</span><span class="cap on">vision</span><span class="cap on">json</span></span></td><td class="num hide-sm">1M</td><td class="num">2.00 · 10.00</td><td class="ctl"><span class="switch" role="switch" aria-checked="true" aria-label="Enable Claude Sonnet 5" tabindex="0"></span></td></tr>
+                  <tr data-caps="tools reasoning vision structured" data-name="claude opus 5.5"><td><span class="radio" role="radio" aria-checked="false" aria-label="Default model" tabindex="0"></span></td><td class="nm"><b>Claude Opus 5.5</b><span class="mono">anthropic/claude-opus-5-5</span></td><td><span class="caps"><span class="cap on">tools</span><span class="cap on">reasoning</span><span class="cap on">vision</span><span class="cap on">json</span></span></td><td class="num hide-sm">1M</td><td class="num">4.00 · 20.00</td><td class="ctl"><span class="switch" role="switch" aria-checked="true" aria-label="Enable Claude Opus 5.5" tabindex="0"></span></td></tr>
+                  <tr data-caps="tools reasoning vision structured" data-name="claude fable 5.1"><td><span class="radio" role="radio" aria-checked="false" aria-label="Default model" tabindex="0"></span></td><td class="nm"><b>Claude Fable 5.1</b><span class="mono">anthropic/claude-fable-5-1</span></td><td><span class="caps"><span class="cap on">tools</span><span class="cap on">reasoning</span><span class="cap on">vision</span><span class="cap on">json</span></span></td><td class="num hide-sm">1M</td><td class="num">10.00 · 50.00</td><td class="ctl"><span class="switch" role="switch" aria-checked="true" aria-label="Enable Claude Fable 5.1" tabindex="0"></span></td></tr>
+                  <tr class="disabled" data-caps="tools reasoning vision structured" data-name="claude opus 5"><td><span class="radio" role="radio" aria-checked="false" aria-label="Default model" tabindex="0"></span></td><td class="nm"><b>Claude Opus 5</b><span class="mono">anthropic/claude-opus-5</span></td><td><span class="caps"><span class="cap">tools</span><span class="cap">reasoning</span><span class="cap">vision</span><span class="cap">json</span></span></td><td class="num hide-sm">1M</td><td class="num">5.00 · 25.00</td><td class="ctl"><span class="switch" role="switch" aria-checked="false" aria-label="Enable Claude Opus 5" tabindex="0"></span></td></tr>
+                  <tr class="disabled" data-caps="tools reasoning vision structured" data-name="claude fable 5"><td><span class="radio" role="radio" aria-checked="false" aria-label="Default model" tabindex="0"></span></td><td class="nm"><b>Claude Fable 5</b><span class="mono">anthropic/claude-fable-5</span></td><td><span class="caps"><span class="cap">tools</span><span class="cap">reasoning</span><span class="cap">vision</span><span class="cap">json</span></span></td><td class="num hide-sm">1M</td><td class="num">10.00 · 50.00</td><td class="ctl"><span class="switch" role="switch" aria-checked="false" aria-label="Enable Claude Fable 5" tabindex="0"></span></td></tr>
+                  <tr class="disabled" data-caps="tools reasoning vision structured" data-name="claude opus 4.8"><td><span class="radio" role="radio" aria-checked="false" aria-label="Default model" tabindex="0"></span></td><td class="nm"><b>Claude Opus 4.8</b><span class="mono">anthropic/claude-opus-4-8</span></td><td><span class="caps"><span class="cap">tools</span><span class="cap">reasoning</span><span class="cap">vision</span><span class="cap">json</span></span></td><td class="num hide-sm">1M</td><td class="num">5.00 · 25.00</td><td class="ctl"><span class="switch" role="switch" aria-checked="false" aria-label="Enable Claude Opus 4.8" tabindex="0"></span></td></tr>
+                </tbody>
+              </table>
+              <p class="gap-note" style="margin:12px 4px 0"><i></i>Showing 6 of 15 catalog entries with a chat endpoint · older releases collapsed · prices are USD per 1M tokens from the catalog snapshot (2026-09-30).</p>
+            </div>
+
+            <!-- Routing -->
+            <div role="tabpanel" data-dtabpanel="routing" data-od-id="routing-tab">
+              <div class="card" style="margin-bottom:12px">
+                <div class="card-head"><div><h3>Fallback chain</h3><p>Used when the primary is unhealthy, in cooldown, or rejects the request. Today's runtime takes the first fallback only.</p></div><button class="btn btn-sm btn-ghost"><svg class="icon"><use href="#i-plus"/></svg>Add fallback</button></div>
+                <div class="chain" data-od-id="fallback-chain">
+                  <div class="link primary"><span class="idx">1</span><span class="pmark">A</span><span>Claude Sonnet 5<span class="addr">anthropic/claude-sonnet-5</span></span><span class="why">primary · role: default chat</span></div>
+                  <div class="link"><span class="idx">2</span><span class="pmark">O</span><span>GPT-6 Sol<span class="addr">openai/gpt-6-sol</span></span><span class="why">same price, tools + vision</span></div>
+                  <div class="link"><span class="idx">3</span><span class="pmark">G</span><span>Llama 3.3 70B<span class="addr">groq/llama-3.3-70b-versatile</span></span><span class="why">cheapest, no vision</span></div>
+                </div>
+              </div>
+              <div class="form-grid">
+                <div class="card"><div class="card-head"><div><h3>Failover</h3><p>Switch after consecutive errors; return after cooldown.</p></div></div>
+                  <div class="form-grid" style="gap:12px">
+                    <div class="field"><label>Strategy</label><div class="choice" role="radiogroup"><button role="radio" aria-checked="true">Priority</button><button role="radio" aria-checked="false">Round robin</button><button role="radio" aria-checked="false">Cost</button></div></div>
+                    <div class="field"><label for="thr">Error threshold</label><input class="input mono" id="thr" value="3" inputmode="numeric" /></div>
+                    <div class="field"><label for="cool">Cooldown (s)</label><input class="input mono" id="cool" value="60" inputmode="numeric" /></div>
+                  </div>
+                </div>
+                <div class="card"><div class="card-head"><div><h3>Cost ceilings by class</h3><p>Skills request a class per phase; the router caps $ / 1M input. Provisional values from the runtime.</p></div></div>
+                  <table class="table" style="font-size:13px"><tbody>
+                    <tr><td>small</td><td class="num">≤ 1.00</td><td class="hide-sm muted" style="font-size:12px">Groq · GPT-6 Luna</td></tr>
+                    <tr><td>medium</td><td class="num">≤ 5.00</td><td class="hide-sm muted" style="font-size:12px">Sonnet 5 · GPT-6 Sol · Opus 5.5</td></tr>
+                    <tr><td>large</td><td class="num">≤ 15.00</td><td class="hide-sm muted" style="font-size:12px">Fable 5.1</td></tr>
+                    <tr><td>frontier</td><td class="num">uncapped</td><td class="hide-sm muted" style="font-size:12px">any enabled</td></tr>
+                  </tbody></table>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- add-provider flow lives in the same right inspector -->
+  <aside class="panel" aria-label="Add provider" aria-hidden="true" data-od-id="add-provider-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-head">
+      <div class="tabs" role="tablist" aria-label="Inspector sections"><button class="tab" role="tab" data-tab="add" aria-selected="true" id="tab-add"><svg class="icon icon-sm"><use href="#i-plus"/></svg>Add provider</button></div>
+      <span style="flex:1"></span>
+      <button class="icon-btn" data-action="panel-close" aria-label="Close (Esc)"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="panel-body">
+      <div role="tabpanel" data-tabpanel="add" class="active" aria-labelledby="tab-add">
+        <div class="steps" aria-hidden="true"><span class="on" id="s1"></span><span id="s2"></span><span id="s3"></span></div>
+
+        <div class="wstep active" id="w1" data-od-id="add-step-pick">
+          <h3 style="font-size:16px">1 · Pick from the catalog</h3>
+          <p class="muted" style="font-size:13px;margin:4px 0 10px">313 providers expose a chat endpoint. Local servers (Ollama, LM Studio) need no key.</p>
+          <input class="input" type="search" id="cat-filter" placeholder="Search by name or id" aria-label="Search catalog" />
+          <div class="catalog" id="catalog">
+            <button class="crow" data-pick="moonshot" data-nm="Moonshot" data-url="https://api.moonshot.ai/v1" data-env="MOONSHOT_API_KEY" data-mark="M"><span class="pmark">M</span><span><span class="nm">Moonshot</span><span class="sub">moonshot · MOONSHOT_API_KEY</span></span><span class="cnt">0 listed</span></button>
+            <button class="crow" data-pick="google" data-nm="Google" data-url="https://generativelanguage.googleapis.com/v1beta" data-env="GOOGLE_API_KEY" data-mark="G"><span class="pmark">G</span><span><span class="nm">Google</span><span class="sub">google · GOOGLE_API_KEY</span></span><span class="cnt">39</span></button>
+            <button class="crow" data-pick="mistral" data-nm="Mistral AI" data-url="https://api.mistral.ai/v1" data-env="MISTRAL_API_KEY" data-mark="M"><span class="pmark">M</span><span><span class="nm">Mistral AI</span><span class="sub">mistral · MISTRAL_API_KEY</span></span><span class="cnt">35</span></button>
+            <button class="crow" data-pick="xai" data-nm="xAI" data-url="https://api.x.ai/v1" data-env="XAI_API_KEY" data-mark="X"><span class="pmark">X</span><span><span class="nm">xAI</span><span class="sub">xai · XAI_API_KEY</span></span><span class="cnt">12</span></button>
+            <button class="crow" data-pick="openrouter" data-nm="OpenRouter" data-url="https://openrouter.ai/api/v1" data-env="OPENROUTER_API_KEY" data-mark="R"><span class="pmark">R</span><span><span class="nm">OpenRouter</span><span class="sub">openrouter · OPENROUTER_API_KEY</span></span><span class="cnt">384</span></button>
+            <button class="crow" data-pick="minimax" data-nm="MiniMax" data-url="https://api.minimax.io/v1" data-env="MINIMAX_API_KEY" data-mark="M"><span class="pmark">M</span><span><span class="nm">MiniMax</span><span class="sub">minimax · MINIMAX_API_KEY</span></span><span class="cnt">7</span></button>
+            <button class="crow" data-pick="alibaba" data-nm="Alibaba (DashScope)" data-url="https://dashscope-intl.aliyuncs.com/compatible-mode/v1" data-env="DASHSCOPE_API_KEY" data-mark="A"><span class="pmark">A</span><span><span class="nm">Alibaba (DashScope)</span><span class="sub">alibaba · DASHSCOPE_API_KEY</span></span><span class="cnt">56</span></button>
+            <button class="crow" data-pick="lmstudio" data-nm="LM Studio" data-url="http://localhost:1234/v1" data-env="" data-mark="L"><span class="pmark">L</span><span><span class="nm">LM Studio</span><span class="sub">lmstudio · no key · local</span></span><span class="cnt">3</span></button>
+            <button class="crow" data-pick="custom" data-nm="Custom OpenAI-compatible" data-url="https://" data-env="" data-mark="＋"><span class="pmark">＋</span><span><span class="nm">Custom OpenAI-compatible</span><span class="sub">any base URL · chat or responses</span></span><span class="cnt"></span></button>
+          </div>
+        </div>
+
+        <div class="wstep" id="w2" data-od-id="add-step-connect">
+          <h3 style="font-size:16px">2 · Connect</h3>
+          <div class="pick" style="margin:10px 0 14px"><span class="pmark" id="p-mark">M</span><span><span id="p-name">Moonshot</span><span class="sub" id="p-id">moonshot</span></span><button class="btn btn-sm btn-ghost" data-action="wiz-back">Change</button></div>
+          <div class="field" style="margin-bottom:12px"><label for="p-url">Base URL</label><input class="input mono" id="p-url" value="https://api.moonshot.ai/v1" /><span class="hint">Include the version path (for example <span class="mono">/v1</span>).</span></div>
+          <div class="field" style="margin-bottom:12px"><label>Protocol</label><div class="choice" role="radiogroup"><button role="radio" aria-checked="true">Auto</button><button role="radio" aria-checked="false">Chat</button><button role="radio" aria-checked="false">Responses</button></div></div>
+          <div class="field" style="margin-bottom:12px"><label for="p-key">API key</label><input class="input mono" id="p-key" type="password" placeholder="Paste a key, or leave empty to use the env var below" /><span class="hint" id="p-envhint">Env var <span class="mono">MOONSHOT_API_KEY</span> is not set in the daemon environment.</span></div>
+          <div class="card test-row" style="margin-top:6px"><span class="status-dot off" id="w-dot"></span><div class="res" id="w-res"><b>Not tested</b><span class="mono">saves first, then calls /providers/{id}/test</span></div><button class="btn btn-secondary btn-sm" data-action="wiz-test" id="w-test"><svg class="icon"><use href="#i-bolt"/></svg>Save &amp; test</button></div>
+        </div>
+
+        <div class="wstep" id="w3" data-od-id="add-step-models">
+          <h3 style="font-size:16px">3 · Enable models</h3>
+          <p class="muted" style="font-size:13px;margin:4px 0 6px">Only enabled models appear in the composer. You can change these later in the Models tab.</p>
+          <div class="modelpick" id="w-models">
+            <button class="mrow" data-action="wiz-toggle"><span class="cb" role="checkbox" aria-checked="true"><svg class="icon icon-sm" style="width:11px;height:11px;stroke-width:2.5"><use href="#i-check"/></svg></span><span>Kimi K3<span class="sub">moonshot/kimi-k3 · 1M ctx · tools, vision</span></span><span class="mono" style="font-size:11.5px;color:var(--faint)">3.00 · 15.00</span></button>
+            <button class="mrow" data-action="wiz-toggle"><span class="cb" role="checkbox" aria-checked="false"></span><span>Add model id…<span class="sub">manual entry for ids missing from the catalog</span></span><span></span></button>
+          </div>
+          <label class="list-row" style="margin-top:10px;cursor:pointer"><span class="radio" role="radio" aria-checked="false" aria-label="Make default chat model" tabindex="0" data-action="wiz-default"></span><span class="grow"><span class="ttl">Make Kimi K3 the default chat model</span><span class="sub">Replaces anthropic/claude-sonnet-5 for new threads</span></span></label>
+        </div>
+
+        <div class="wizard-foot">
+          <button class="btn btn-ghost" data-action="wiz-back" id="w-back" style="visibility:hidden">Back</button>
+          <button class="btn btn-primary" data-action="wiz-next" id="w-next" disabled>Continue</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-overlay" aria-hidden="true"></div>
+</div>
+
+<div class="cmdk-backdrop"></div>
+<div class="cmdk" role="dialog" aria-label="Search settings">
+  <input class="input" type="search" placeholder="Search settings…" aria-label="Search settings" />
+  <div class="cmdk-list">
+    <p class="menu-label">Models &amp; providers</p>
+    <button class="menu-item" data-action="panel-open" data-tab="add"><svg class="icon"><use href="#i-plus"/></svg>Add provider</button>
+    <button class="menu-item"><svg class="icon"><use href="#i-cpu"/></svg>Default chat model</button>
+    <button class="menu-item"><svg class="icon"><use href="#i-cpu"/></svg>Fallback chain</button>
+    <p class="menu-label">Other settings</p>
+    <a class="menu-item" href="tools-and-mcp.html"><svg class="icon"><use href="#i-tool"/></svg>MCP servers</a>
+    <button class="menu-item"><svg class="icon"><use href="#i-shield"/></svg>Approval tiers</button>
+    <button class="menu-item"><svg class="icon"><use href="#i-desktop"/></svg>Quick entry shortcut</button>
+    <a class="menu-item" href="chat-workspace.html"><svg class="icon"><use href="#i-back"/></svg>Back to chat<kbd>Esc</kbd></a>
+  </div>
+</div>
+
+<script src="assets/shell.js"></script>
+<script>
+  (function () {
+    const S = window.UARShell; const app = document.querySelector(".app");
+    /* detail tabs (page-level, independent of the inspector tabs) */
+    const dtabs = document.querySelectorAll("[data-dtab]"), dpanes = document.querySelectorAll("[data-dtabpanel]");
+    dtabs.forEach((t) => t.addEventListener("click", () => { dtabs.forEach((x) => x.setAttribute("aria-selected", String(x === t))); dpanes.forEach((p) => p.classList.toggle("active", p.dataset.dtabpanel === t.dataset.dtab)); }));
+    /* switches & radios (generic) */
+    document.addEventListener("click", (e) => {
+      const sw = e.target.closest(".switch[role=switch]"); if (sw) { e.stopPropagation(); const on = sw.getAttribute("aria-checked") !== "true"; sw.setAttribute("aria-checked", String(on)); const tr = sw.closest("tr"); if (tr) { tr.classList.toggle("disabled", !on); tr.querySelectorAll(".cap").forEach((c) => c.classList.toggle("on", on)); updateCount(); } const pr = sw.closest(".prow"); if (pr) { const st = pr.querySelector(".st"); if (!on) { st.innerHTML = '<i class="status-dot off"></i>Disabled'; S.toast(pr.querySelector(".nm").textContent + " disabled · its models leave the composer", "warn"); } else { st.innerHTML = '<i class="status-dot"></i>Enabled · test to confirm'; S.toast(pr.querySelector(".nm").textContent + " enabled"); } } return; }
+      const rd = e.target.closest(".radio[role=radio]"); if (rd && rd.closest("#model-rows")) { document.querySelectorAll("#model-rows .radio").forEach((r) => r.setAttribute("aria-checked", String(r === rd))); const tr = rd.closest("tr"); if (tr.classList.contains("disabled")) { tr.querySelector(".switch").click(); } const nm = tr.querySelector(".nm b").textContent, addr = tr.querySelector(".nm .mono").textContent; const role = document.querySelector(".roles .role"); role.querySelector(".v").textContent = nm; role.querySelector(".addr").textContent = addr; S.toast("Default chat model: " + nm); }
+      const ch = e.target.closest(".choice [role=radio]"); if (ch) { ch.parentElement.querySelectorAll("[role=radio]").forEach((r) => r.setAttribute("aria-checked", String(r === ch))); }
+    });
+    document.addEventListener("keydown", (e) => { if ((e.key === " " || e.key === "Enter") && e.target.matches(".switch, .radio, .cb")) { e.preventDefault(); e.target.click(); } });
+    function updateCount() { const on = document.querySelectorAll("#model-rows .switch[aria-checked=true]").length; document.querySelector("[data-dtab=models] .count").textContent = on + " / 15"; document.querySelector(".prow[aria-current=true] .st").innerHTML = '<i class="status-dot"></i>Connected · ' + on + " of 15 models"; }
+    /* model filter */
+    const mf = document.getElementById("model-filter"); const capState = new Set();
+    function applyFilter() { const q = mf.value.trim().toLowerCase(); document.querySelectorAll("#model-rows tr").forEach((tr) => { const hit = (!q || tr.dataset.name.includes(q) || tr.dataset.caps.includes(q)) && [...capState].every((c) => tr.dataset.caps.includes(c)); tr.style.display = hit ? "" : "none"; }); }
+    mf.addEventListener("input", applyFilter);
+    /* provider list selection (prototype: Anthropic has the full detail; others swap the header) */
+    const META = { anthropic: ["Anthropic", "A", "https://api.anthropic.com/v1", "Tier 1 · chat, stream, tools, vision", "t1"], openai: ["OpenAI", "O", "https://api.openai.com/v1", "Tier 1 · chat, stream, tools, vision, structured", "t1"], groq: ["Groq", "G", "https://api.groq.com/openai/v1", "Tier 1 · OpenAI-compatible", "t1"], ollama: ["Ollama (build box)", "ol", "http://build-box.local:11434/v1", "Tier 2 · catalog native", "preview"], deepseek: ["DeepSeek", "D", "https://api.deepseek.com/v1", "Tier 1 · OpenAI-compatible", "t1"], zai: ["Z.AI", "Z", "https://api.z.ai/api/paas/v4", "Tier 2 · catalog native", "preview"] };
+    document.querySelectorAll(".prow[data-provider]").forEach((p) => p.addEventListener("click", (e) => { if (e.target.closest(".switch")) return; document.querySelectorAll(".prow[data-provider]").forEach((x) => x.setAttribute("aria-current", String(x === p))); const m = META[p.dataset.provider]; const d = document.querySelector(".detail"); d.querySelector("h2").textContent = m[0]; d.querySelector(".pmark.lg").textContent = m[1]; d.querySelector(".sub").innerHTML = '<span class="tier ' + m[4] + '">' + m[3] + '</span><span class="mono">' + p.dataset.provider + '</span><span>·</span><span class="mono">' + m[2] + '</span><span>·</span><span>protocol auto</span>'; d.setAttribute("aria-label", m[0]); if (p.dataset.provider !== "anthropic") S.toast("Prototype: full detail is wired for Anthropic; " + m[0] + " shows the header only"); }));
+    /* connection tab */
+    app.addEventListener("uar:action", (e) => {
+      const { action, el } = e.detail;
+      if (action === "cred-source") { el.parentElement.querySelectorAll("[role=radio]").forEach((r) => r.setAttribute("aria-checked", String(r === el))); document.getElementById("cred-key").style.display = el.dataset.src === "key" ? "" : "none"; document.getElementById("cred-env").style.display = el.dataset.src === "env" ? "" : "none"; }
+      if (action === "filter-cap") { const on = el.getAttribute("aria-pressed") !== "true"; el.setAttribute("aria-pressed", String(on)); el.classList.toggle("accent", on); on ? capState.add(el.dataset.cap) : capState.delete(el.dataset.cap); applyFilter(); }
+      if (action === "enable-visible") { let n = 0; document.querySelectorAll("#model-rows tr").forEach((tr) => { if (tr.style.display !== "none" && tr.querySelector(".switch").getAttribute("aria-checked") !== "true") { tr.querySelector(".switch").click(); n++; } }); S.toast(n ? "Enabled " + n + " model" + (n > 1 ? "s" : "") : "All visible models are already enabled"); }
+      if (action === "test") { const btn = document.getElementById("test-btn"), dot = document.getElementById("test-dot"), res = document.getElementById("test-res"); btn.classList.add("is-loading"); btn.disabled = true; dot.className = "status-dot off"; res.innerHTML = "<b>Testing…</b><span class='mono'>POST /api/uar/providers/anthropic/test</span>"; setTimeout(() => { btn.classList.remove("is-loading"); btn.disabled = false; dot.className = "status-dot"; res.innerHTML = "<b>200 · reply received</b><span class='mono'>claude-sonnet-5 · 587 ms · just now</span>"; S.toast("Anthropic responded in 587 ms"); }, 1100); }
+      /* wizard */
+      if (action === "wiz-back") { setStep(step - 1); }
+      if (action === "wiz-next") { if (step === 3) { finish(); } else setStep(step + 1); }
+      if (action === "wiz-test") { const b = document.getElementById("w-test"), d = document.getElementById("w-dot"), r = document.getElementById("w-res"); const hasKey = document.getElementById("p-key").value.trim().length > 0 || picked.local; b.classList.add("is-loading"); b.disabled = true; r.innerHTML = "<b>Saving…</b><span class='mono'>POST /providers → POST /providers/" + picked.id + "/test</span>"; setTimeout(() => { b.classList.remove("is-loading"); b.disabled = false; if (hasKey) { d.className = "status-dot"; r.innerHTML = "<b>200 · reply received</b><span class='mono'>" + (picked.local ? "local" : picked.id) + " · 742 ms</span>"; document.getElementById("w-next").disabled = false; S.toast(picked.nm + " connected"); } else { d.className = "status-dot err"; r.innerHTML = "<b>400 · no credential</b><span class='mono'>paste a key or set " + (picked.env || "an env var") + "</span>"; S.toast("Test failed · no credential", "err"); } }, 1200); }
+      if (action === "wiz-toggle") { const cb = el.querySelector(".cb"); const on = cb.getAttribute("aria-checked") !== "true"; cb.setAttribute("aria-checked", String(on)); cb.innerHTML = on ? '<svg class="icon icon-sm" style="width:11px;height:11px;stroke-width:2.5"><use href="#i-check"/></svg>' : ""; }
+      if (action === "wiz-default") { const r = el; r.setAttribute("aria-checked", String(r.getAttribute("aria-checked") !== "true")); }
+    });
+    let step = 1, picked = { id: "moonshot", nm: "Moonshot", env: "MOONSHOT_API_KEY", local: false };
+    function setStep(n) { step = Math.max(1, Math.min(3, n)); for (let i = 1; i <= 3; i++) { document.getElementById("w" + i).classList.toggle("active", i === step); const s = document.getElementById("s" + i); s.className = i < step ? "done" : i === step ? "on" : ""; } document.getElementById("w-back").style.visibility = step === 1 ? "hidden" : "visible"; const nx = document.getElementById("w-next"); nx.textContent = step === 3 ? "Finish" : "Continue"; nx.disabled = step === 1 ? true : step === 2 ? document.getElementById("w-dot").className !== "status-dot" : false; }
+    document.getElementById("catalog").addEventListener("click", (e) => { const c = e.target.closest(".crow"); if (!c) return; picked = { id: c.dataset.pick, nm: c.dataset.nm, env: c.dataset.env, local: !c.dataset.env && c.dataset.pick !== "custom" }; document.getElementById("p-name").textContent = c.dataset.nm; document.getElementById("p-id").textContent = c.dataset.pick; document.getElementById("p-mark").textContent = c.dataset.mark; document.getElementById("p-url").value = c.dataset.url; document.getElementById("p-envhint").innerHTML = c.dataset.env ? 'Env var <span class="mono">' + c.dataset.env + "</span> is not set in the daemon environment." : (picked.local ? "Local server · no key required." : "Custom endpoint · paste a key or reference an env var."); document.getElementById("w-dot").className = "status-dot off"; document.getElementById("w-res").innerHTML = "<b>Not tested</b><span class='mono'>saves first, then calls /providers/{id}/test</span>"; setStep(2); });
+    document.getElementById("cat-filter").addEventListener("input", (e) => { const q = e.target.value.trim().toLowerCase(); document.querySelectorAll(".crow").forEach((c) => { c.style.display = !q || c.textContent.toLowerCase().includes(q) ? "" : "none"; }); });
+    function finish() {
+      const list = document.querySelector(".providers"); const add = list.querySelector(".prow.add");
+      const row = document.createElement("button"); row.className = "prow"; row.setAttribute("aria-current", "false"); row.dataset.provider = picked.id;
+      row.innerHTML = '<span class="pmark">' + document.getElementById("p-mark").textContent + '</span><span><span class="nm">' + picked.nm + '</span><span class="st"><i class="status-dot"></i>Connected · 1 model</span></span><span class="switch" role="switch" aria-checked="true" aria-label="' + picked.nm + ' enabled" tabindex="0"></span>';
+      list.insertBefore(row, add); S.closePanel(); S.toast(picked.nm + " added · Kimi K3 is now in the composer"); setStep(1);
+    }
+    app.addEventListener("uar:panel", (e) => { if (e.detail.open) setStep(1); });
+    const mq = window.matchMedia("(max-width: 760px)"); const btn = document.getElementById("mobile-nav-btn"); const sync = () => { btn.style.display = mq.matches ? "" : "none"; }; sync(); mq.addEventListener("change", sync);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !S.state.panelOpen && !document.querySelector(".cmdk.open") && !document.querySelector(".menu.open")) location.href = "chat-workspace.html"; });
+  })();
+</script>
+</body>
+</html>

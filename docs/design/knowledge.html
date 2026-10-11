@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Knowledge · Universal Agent Runtime</title>
+<link rel="icon" href="assets/brand/uar-mark-dark.svg" />
+<link rel="stylesheet" href="assets/shell.css" />
+<link rel="stylesheet" href="assets/settings.css" />
+<style>
+  .srow .us { display: block; font-size: 11.5px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .srow .us .mono { font-size: 11px; }
+  .memlink { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; margin-top: 14px; padding: 12px; font-size: 12.5px; color: var(--muted); }
+  .memlink b { display: block; color: var(--fg); font-weight: 500; font-size: 13px; }
+  .memlink a { color: var(--fg); text-decoration: underline; text-underline-offset: 2px; }
+  .table .fn b { font-weight: 500; display: block; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .table .fn .mono { font-size: 11.5px; color: var(--faint); }
+  .table .mime { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .table .err-line { display: block; font-size: 12px; color: var(--err); margin-top: 2px; white-space: normal; }
+  .table td.acts { text-align: right; white-space: nowrap; }
+  .table tr.confirm td { background: var(--err-soft) !important; }
+  .table .chip { height: 22px; font-size: 11.5px; cursor: default; }
+  .hide-st { display: none !important; }
+  .view[data-view="kb"] .detail-head { flex-wrap: wrap; } .view[data-view="kb"] .detail-head > div:nth-child(2) { flex: 1 1 240px; min-width: 0; } .view[data-view="kb"] .detail-head .acts { flex: none; } .view[data-view="kb"] .tabs { flex-wrap: wrap; }
+  .tscroll { overflow-x: auto; }
+  .tfoot { font-size: 12px; color: var(--faint); margin: 8px 4px 0; }
+  .hits { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+  .hits .mrow { grid-template-columns: minmax(0, 1fr) 140px 44px; gap: 12px; align-items: start; }
+  .hits .snip { display: block; font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .hits .sc { font-family: var(--font-mono); font-size: 12px; text-align: right; }
+  .sbar { position: relative; height: 6px; border-radius: 6px; background: var(--input); margin-top: 6px; }
+  .sbar > i { display: block; height: 100%; border-radius: 6px; background: var(--ok); }
+  .sbar > b { position: absolute; top: -4px; bottom: -4px; width: 2px; border-radius: 1px; background: var(--fg); }
+  .verdict { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--step-2); font-size: 13px; margin-top: 12px; }
+  .cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cmp .card { padding: 12px 14px; }
+  .cmp .k { font-size: 11.5px; color: var(--faint); }
+  .cmp .v { font-family: var(--font-mono); font-size: 13px; margin-top: 4px; overflow-wrap: anywhere; }
+  .cmp .d { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .banner.err { background: var(--err-soft); } .banner.err > .icon { color: var(--err); }
+  .banner .bacts { display: flex; gap: 6px; flex: none; }
+  .ex { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 10px; }
+  .ex .chip { font-size: 12px; height: 26px; }
+  .prog { margin-top: 12px; display: none; } .prog.on { display: block; }
+  .prog .meter { height: 8px; }
+  .prog .pl { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+  .uses { display: flex; flex-direction: column; gap: 4px; }
+  .uses a.mrow:hover { background: var(--hover); }
+  .danger { background: var(--err-soft); }
+  .danger .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .danger .input { max-width: 260px; }
+  .fl { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+  .fl .mrow { grid-template-columns: 1fr auto; }
+  .fl .mrow .mono { font-size: 12.5px; }
+  .fl .err-line { display: block; font-size: 11.5px; color: var(--err); }
+  .pick { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 9px; background: var(--step-2); font-size: 13px; }
+  .pick input { accent-color: var(--accent); }
+  .expl { font-size: 12.5px; color: var(--muted); margin: 6px 2px 0; }
+  .file-in { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  @media (max-width: 920px) { .cmp { grid-template-columns: 1fr; } .hits .mrow { grid-template-columns: 1fr 44px; } .hits .sbar { display: none; } .banner { flex-wrap: wrap; } }
+</style>
+</head>
+<body>
+<div class="app" data-od-id="workspace-shell" data-panel-persist="false">
+  <div class="titlebar" data-tauri-drag-region><span class="mono">universal-agent-runtime</span>&nbsp;· Knowledge</div>
+  <aside data-workspace-nav data-current="knowledge" data-od-id="workspace-sidebar"></aside>
+
+  <main class="main" id="content" data-od-id="workspace-main">
+    <header class="topbar">
+      <button class="icon-btn" data-action="sidebar-mobile" aria-label="Open navigation" id="mobile-nav-btn" style="display:none"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+      <div class="title"><span class="crumb">Workspace</span><span>Knowledge</span></div>
+      <span class="spacer"></span>
+      <button class="chip" data-action="cmdk" data-od-id="topbar-search"><svg class="icon"><use href="#i-search"/></svg>Search <kbd style="margin-left:4px" data-kbd="⌘K">⌘K</kbd></button>
+      <button class="icon-btn" data-action="theme" aria-pressed="false" aria-label="Switch theme" title="Switch theme" data-od-id="topbar-theme"><svg class="icon"><use href="#i-sun"/></svg></button>
+    </header>
+
+    <section class="page">
+      <div class="page-inner">
+        <div class="page-head" data-od-id="page-head">
+          <div>
+            <h1 data-od-id="page-title">Knowledge</h1>
+            <p>Create knowledge bases, watch documents move through extraction, chunking and embedding, test what a query actually retrieves, and keep each index consistent with the embedding model that will query it.</p>
+          </div>
+          <div class="acts"><button class="btn btn-primary" data-action="panel-open" data-tab="new" data-od-id="new-kb-cta"><svg class="icon"><use href="#i-plus"/></svg>New knowledge base</button></div>
+        </div>
+
+        <div class="summary" data-od-id="summary-strip">
+          <div class="card sum" data-od-id="sum-bases"><div class="k">Knowledge bases</div><div class="v"><span id="sum-bases">4</span><small>1 default</small></div></div>
+          <div class="card sum" data-od-id="sum-docs"><div class="k">Documents indexed</div><div class="v"><span id="sum-docs">319</span><small id="sum-docs-sub">of 321</small></div></div>
+          <div class="card sum" data-od-id="sum-chunks"><div class="k">Chunks</div><div class="v"><span id="sum-chunks">18,406</span><small>embedded vectors</small></div></div>
+          <div class="card sum" data-od-id="sum-attn"><div class="k">Needs attention</div><div class="v"><span class="status-dot warn" id="sum-attn-dot"></span><span id="sum-attn">2</span><small id="sum-attn-sub">1 failed · 1 processing</small></div></div>
+        </div>
+
+        <div class="md">
+          <nav class="sources" aria-label="Knowledge bases" data-od-id="kb-list">
+            <input class="input" type="search" placeholder="Filter knowledge bases" aria-label="Filter knowledge bases" data-filter=".sources .srow.kb" data-od-id="kb-filter" />
+            <p class="group-label">Knowledge bases <span id="kb-count">4</span></p>
+            <div id="kb-rows"></div>
+            <button class="srow add" data-action="panel-open" data-tab="new" data-od-id="row-add-kb"><span class="smark"><svg class="icon icon-sm"><use href="#i-plus"/></svg></span><span class="nm">Add knowledge base</span></button>
+            <div class="card memlink" data-od-id="memory-link-card"><span class="smark"><svg class="icon"><use href="#i-brain"/></svg></span><span><b>Agent memory is configured in Settings</b>Defaults for new bases and memory live in <a href="knowledge-and-memory.html" data-od-id="memory-link">Settings · Knowledge &amp; memory</a>.</span></div>
+          </nav>
+
+          <section class="view detail active" data-view="kb" aria-label="Knowledge base detail" data-od-id="kb-detail">
+            <div class="detail-head">
+              <span class="smark lg"><svg class="icon"><use href="#i-book"/></svg></span>
+              <div><h2 id="d-name" data-od-id="kb-name">Workspace docs</h2><div class="sub" id="d-sub"></div></div>
+              <div class="acts"><button class="btn btn-secondary btn-sm" data-action="upload-here" data-od-id="kb-upload"><svg class="icon"><use href="#i-upload"/></svg>Upload documents</button></div>
+            </div>
+            <div class="tabs" role="tablist" aria-label="Knowledge base sections" data-od-id="kb-tabs">
+              <button class="tab" role="tab" data-dtab="docs" aria-selected="true" id="t-docs">Documents <span class="count" id="t-docs-n"></span></button>
+              <button class="tab" role="tab" data-dtab="search" aria-selected="false" id="t-search">Search test</button>
+              <button class="tab" role="tab" data-dtab="embed" aria-selected="false" id="t-embed">Embedding &amp; chunking</button>
+              <button class="tab" role="tab" data-dtab="maint" aria-selected="false" id="t-maint">Maintenance</button>
+            </div>
+
+            <div role="tabpanel" data-dtabpanel="docs" class="active" data-od-id="docs-tab">
+              <div class="toolbar" data-od-id="docs-toolbar">
+                <input class="input" type="search" placeholder="Filter by filename or mime" aria-label="Filter documents" data-filter="#doc-rows tr" data-od-id="doc-filter" />
+                <div class="choice sm" role="radiogroup" aria-label="Status filter" id="st-filter" data-od-id="status-filter"><button role="radio" data-value="all" aria-checked="true">All</button><button role="radio" data-value="processing" aria-checked="false">Processing</button><button role="radio" data-value="failed" aria-checked="false">Failed</button></div>
+                <span class="spacer"></span>
+                <span class="mono faint" style="font-size:12px" id="docs-ep">GET /api/uar/knowledge-bases/{id}/documents</span>
+              </div>
+              <div class="tscroll"><table class="table" data-od-id="docs-table">
+                <thead><tr><th>Document</th><th>Status</th><th class="num">chunk_count</th><th class="hide-sm">mime_type</th><th class="hide-sm">updated_at</th><th><span class="sr-only">Actions</span></th></tr></thead>
+                <tbody id="doc-rows"></tbody>
+              </table></div>
+              <p class="tfoot" id="doc-foot"></p>
+              <p class="gap-note"><i></i><span>Retry has no endpoint of its own; it re-uploads the stored file through <span class="mono">POST /{id}/documents</span>, which only works when <span class="mono">file_path</span> was kept. Backend gap: <span class="mono">POST /{id}/documents/{doc_id}/retry</span>.</span></p>
+            </div>
+
+            <div role="tabpanel" data-dtabpanel="search" data-od-id="search-tab">
+              <div class="field"><label for="q">Query</label><input class="input" id="q" value="How do I fix MCP timeouts on staging?" data-od-id="search-query" /></div>
+              <div class="ex" data-od-id="search-examples">
+                <button class="chip" data-action="example" data-q="How do I fix MCP timeouts on staging?">Staging MCP timeouts</button>
+                <button class="chip" data-action="example" data-q="How are Cedar policies evaluated?">Cedar evaluation</button>
+                <button class="chip" data-action="example" data-q="What is the office wifi password?">Off-topic query</button>
+              </div>
+              <div class="rules" data-od-id="search-params">
+                <div class="rule"><div><label for="r-lim">limit</label><span class="sub">Maximum chunks returned. Default 5.</span></div><div class="range"><input type="range" id="r-lim" min="1" max="20" step="1" value="5" /><output for="r-lim" id="o-lim">5</output></div></div>
+                <div class="rule"><div><label for="r-min">min_score</label><span class="sub">Chunks below this similarity are dropped. Default 0.7.</span></div><div class="range"><input type="range" id="r-min" min="0" max="1" step="0.01" value="0.7" /><output for="r-min" id="o-min">0.70</output></div></div>
+              </div>
+              <div class="toolbar" style="margin-top:12px"><button class="btn btn-secondary" data-action="search" id="search-btn" data-od-id="run-search"><svg class="icon"><use href="#i-search"/></svg>Run search</button><span class="spacer"></span><span class="mono faint" style="font-size:12px" id="search-ep"></span></div>
+              <div id="s-out" data-od-id="search-results"><p class="muted" style="font-size:12.5px">Embeds the query with the model the index was built with and returns the closest chunks. The white line on each bar is <span class="mono">min_score</span>.</p></div>
+            </div>
+
+            <div role="tabpanel" data-dtabpanel="embed" data-od-id="embed-tab">
+              <div class="banner err" id="mm-banner" style="display:none" data-od-id="mismatch-banner"><svg class="icon"><use href="#i-alert"/></svg><span class="grow"><b>Embedding space mismatch</b><span class="sub" id="mm-text"></span></span><span class="bacts"><button class="btn btn-secondary btn-sm" data-action="mm-reembed" data-od-id="mismatch-reembed"><svg class="icon"><use href="#i-refresh"/></svg>Re-embed and save</button><button class="btn btn-ghost btn-sm" data-action="mm-revert" data-od-id="mismatch-revert">Revert</button></span></div>
+              <div class="cmp" data-od-id="embedding-compare">
+                <div class="card"><div class="k">Index built with · <span class="mono">indexed_embedding</span></div><div class="v" id="c-idx"></div><div class="d" id="c-idx-d"></div></div>
+                <div class="card card-raised"><div class="k">Queries will use · <span class="mono">config</span></div><div class="v" id="c-cfg"></div><div class="d" id="c-cfg-d"></div></div>
+              </div>
+              <div class="section-title"><h3>Embedding</h3><p>Changing provider or model invalidates every stored vector</p></div>
+              <div class="rules" data-od-id="embedding-rules">
+                <div class="rule"><div>embedding_provider<span class="sub">fastembed runs locally; openai and mistral call their APIs per chunk.</span></div><div class="choice sm" role="radiogroup" aria-label="Embedding provider" id="e-prov" data-od-id="embed-provider"><button role="radio" data-value="fastembed" aria-checked="true">fastembed</button><button role="radio" data-value="openai" aria-checked="false">openai</button><button role="radio" data-value="mistral" aria-checked="false">mistral</button></div></div>
+                <div class="rule"><div><label for="e-model">embedding_model</label><span class="sub" id="e-dims">384 dimensions</span></div><div class="select-wrap"><select class="input select mono" id="e-model" style="width:250px" data-od-id="embed-model"></select></div></div>
+                <div class="rule"><div><label for="e-proc">file_processor</label><span class="sub">Extracts text before chunking. kreuzberg handles PDFs, Office files and OCR.</span></div><div class="select-wrap"><select class="input select mono" id="e-proc" style="width:170px" data-od-id="file-processor"><option>auto</option><option>unstructured</option><option>mistral</option><option>kreuzberg</option><option>local</option></select></div></div>
+              </div>
+              <div class="section-title"><h3>Chunking</h3><p><span class="mono">chunk_strategy</span> · applies to new uploads; re-embed to re-chunk existing documents</p></div>
+              <div class="rules" data-od-id="chunk-rules">
+                <div class="rule" style="grid-template-columns:1fr"><div class="choice sm" role="radiogroup" aria-label="Chunk strategy" id="e-chunk" data-od-id="chunk-strategy"><button role="radio" data-value="FixedSize" aria-checked="false">FixedSize</button><button role="radio" data-value="Token" aria-checked="false">Token</button><button role="radio" data-value="Recursive" aria-checked="true">Recursive</button><button role="radio" data-value="Sentence" aria-checked="false">Sentence</button><button role="radio" data-value="Document" aria-checked="false">Document</button><button role="radio" data-value="Semantic" aria-checked="false">Semantic</button><button role="radio" data-value="Agentic" aria-checked="false">Agentic</button></div></div>
+                <div class="rule" id="size-rule"><div><label for="r-size">size</label><span class="sub" id="size-sub">Recursive splits on headings, then paragraphs, then sentences until pieces fit.</span></div><div class="range"><input type="range" id="r-size" min="128" max="2048" step="64" value="512" /><output for="r-size" id="o-size">512</output></div></div>
+                <div class="rule" id="thr-rule" style="display:none"><div><label for="r-thr">threshold</label><span class="sub">Start a new chunk when similarity between neighbouring sentences drops below this.</span></div><div class="range"><input type="range" id="r-thr" min="0.5" max="0.95" step="0.01" value="0.8" /><output for="r-thr" id="o-thr">0.80</output></div></div>
+                <p class="expl" id="chunk-note" style="display:none"></p>
+              </div>
+              <div class="toolbar" style="margin-top:14px"><button class="btn btn-secondary" data-action="save-config" id="save-cfg" data-od-id="save-config"><svg class="icon"><use href="#i-check"/></svg>Save configuration</button><span class="faint" style="font-size:12.5px" id="save-hint">No unsaved changes.</span></div>
+              <p class="gap-note"><i></i><span>There is no <span class="mono">PUT /api/uar/knowledge-bases/{id}</span>; <span class="mono">config</span> is fixed at <span class="mono">POST /</span>. Saving here needs a KB update endpoint. Backend gap.</span></p>
+            </div>
+
+            <div role="tabpanel" data-dtabpanel="maint" data-od-id="maint-tab">
+              <div class="section-title"><h3>Re-embed</h3><p>Re-extracts, re-chunks and re-embeds every document with the configured model</p></div>
+              <div class="card" data-od-id="reembed-card">
+                <div class="card-head" style="margin-bottom:0"><div><h3 id="re-title">Re-embed 214 documents</h3><p id="re-sub">fastembed/BAAI/bge-small-en-v1.5 · searches keep using the old index until the run finishes</p></div><button class="btn btn-secondary" data-action="reembed" id="re-btn" data-od-id="reembed-start"><svg class="icon"><use href="#i-refresh"/></svg>Re-embed</button></div>
+                <div class="prog" id="re-prog" data-od-id="reembed-progress"><div class="meter" role="progressbar" aria-label="Re-embed progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="re-meter"><i style="width:0%"></i></div><div class="pl"><span id="re-now"></span><span class="mono" id="re-pct">0%</span></div></div>
+                <div id="re-res"></div>
+              </div>
+              <p class="gap-note"><i></i><span>No re-index or re-embed endpoint exists. The design assumes <span class="mono">POST /{id}/reembed</span> returning a job with per-document progress, keeping the old vectors live until it completes. Backend gap.</span></p>
+
+              <div class="section-title"><h3>Failed documents</h3><p>Status <span class="mono">failed</span> · not searchable</p></div>
+              <div class="rule" id="rmf-rule" data-od-id="remove-failed"><div id="rmf-text"></div><button class="btn btn-ghost btn-sm" data-action="rm-failed" id="rmf-btn"><svg class="icon"><use href="#i-trash"/></svg>Remove failed</button></div>
+
+              <div class="section-title"><h3>Used by agents</h3><p>Agents that retrieve from this base during runs</p></div>
+              <div class="uses" id="uses" data-od-id="used-by-agents"></div>
+              <p class="gap-note"><i></i><span>"Used by" is joined client-side from each agent's knowledge bases; no endpoint lists the agents for a base. Backend gap.</span></p>
+
+              <div class="section-title"><h3>Name &amp; description</h3><p><span class="mono">name</span> · <span class="mono">description</span></p></div>
+              <div class="card" data-od-id="rename-card">
+                <div class="form-grid"><div class="field"><label for="m-name">Name</label><input class="input" id="m-name" data-od-id="rename-name" /></div><div class="field"><label for="m-desc">Description</label><input class="input" id="m-desc" data-od-id="rename-desc" /></div></div>
+                <div class="toolbar" style="margin:12px 0 0"><button class="btn btn-secondary btn-sm" data-action="rename" data-od-id="rename-save">Save name</button><span class="faint" style="font-size:12.5px">Needs <span class="mono">PUT /{id}</span>, which does not exist yet.</span></div>
+              </div>
+
+              <div class="section-title"><h3>Danger zone</h3><p>Deletes documents, chunks and vectors</p></div>
+              <div class="card danger" data-od-id="delete-kb-card">
+                <b id="del-title">Delete this knowledge base</b>
+                <p class="muted" style="font-size:12.5px;margin-top:4px" id="del-sub"></p>
+                <div class="row"><label class="sr-only" for="del-in">Type the knowledge base name to confirm</label><input class="input" id="del-in" placeholder="Type the name to confirm" autocomplete="off" data-od-id="delete-kb-input" /><button class="btn btn-danger" data-action="delete-kb" id="del-btn" disabled data-od-id="delete-kb"><svg class="icon"><use href="#i-trash"/></svg>Delete knowledge base</button></div>
+              </div>
+              <p class="gap-note"><i></i><span>No <span class="mono">DELETE /api/uar/knowledge-bases/{id}</span> exists; only single documents can be deleted today. Backend gap.</span></p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="panel" aria-label="Knowledge inspector" aria-hidden="true" data-od-id="kb-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-head">
+      <div class="tabs" role="tablist" aria-label="Inspector sections"><button class="tab" role="tab" data-tab="new" aria-selected="true" id="tab-new"><svg class="icon icon-sm"><use href="#i-plus"/></svg>New base</button><button class="tab" role="tab" data-tab="upload" aria-selected="false" id="tab-upload"><svg class="icon icon-sm"><use href="#i-upload"/></svg>Upload</button></div>
+      <span style="flex:1"></span>
+      <button class="icon-btn" data-action="panel-close" aria-label="Close (Esc)" data-od-id="panel-close"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="panel-body">
+      <div role="tabpanel" data-tabpanel="new" class="active" aria-labelledby="tab-new" data-od-id="new-kb-flow">
+        <div class="steps" aria-hidden="true"><span class="on" id="s1"></span><span id="s2"></span><span id="s3"></span></div>
+        <div class="wstep active" id="w1" data-od-id="new-step-name">
+          <h3 style="font-size:16px">1 · Name it</h3>
+          <div class="field" style="margin-top:10px"><label for="n-name">Name</label><input class="input" id="n-name" placeholder="incident-postmortems" data-od-id="new-name" /><span class="hint" id="n-name-hint">Agents and search results show this name.</span></div>
+          <div class="field" style="margin-top:10px"><label for="n-desc">Description <span class="faint">optional</span></label><input class="input" id="n-desc" placeholder="What belongs in this base" data-od-id="new-desc" /></div>
+        </div>
+        <div class="wstep" id="w2" data-od-id="new-step-config">
+          <h3 style="font-size:16px">2 · How documents are read and indexed</h3>
+          <p class="expl">Recommended defaults are preselected. They run on this machine, cost nothing per document, and handle PDFs and Office files.</p>
+          <div class="field" style="margin-top:10px"><label id="n-prov-l">Embedding provider</label><div class="choice sm" role="radiogroup" aria-labelledby="n-prov-l" id="n-prov"><button role="radio" data-value="fastembed" aria-checked="true">fastembed</button><button role="radio" data-value="openai" aria-checked="false">openai</button><button role="radio" data-value="mistral" aria-checked="false">mistral</button></div><span class="hint" id="n-prov-hint">Local and free. Good quality for English text. Your documents never leave the machine.</span></div>
+          <div class="field" style="margin-top:10px"><label for="n-model">Embedding model</label><div class="select-wrap"><select class="input select mono" id="n-model"></select></div></div>
+          <div class="field" style="margin-top:10px"><label for="n-proc">File processor</label><div class="select-wrap"><select class="input select mono" id="n-proc"><option>auto</option><option>unstructured</option><option>mistral</option><option selected>kreuzberg</option><option>local</option></select></div><span class="hint">kreuzberg reads PDFs, Word, slides and scans (with OCR) without a cloud service.</span></div>
+          <div class="field" style="margin-top:10px"><label id="n-chunk-l">Chunk strategy</label><div class="choice sm" role="radiogroup" aria-labelledby="n-chunk-l" id="n-chunk"><button role="radio" data-value="Recursive" aria-checked="true">Recursive · 512</button><button role="radio" data-value="Sentence" aria-checked="false">Sentence</button><button role="radio" data-value="Semantic" aria-checked="false">Semantic</button></div><span class="hint">Recursive keeps sections and paragraphs together in roughly 512-character pieces. Other strategies are in Embedding &amp; chunking.</span></div>
+        </div>
+        <div class="wstep" id="w3" data-od-id="new-step-docs">
+          <h3 style="font-size:16px">3 · Add documents</h3>
+          <p class="expl">Pick files now or skip and upload later. Each file is extracted, chunked and embedded after the base is created.</p>
+          <div class="fl" id="n-files" data-od-id="new-files"></div>
+        </div>
+        <div class="wizard-foot">
+          <button class="btn btn-ghost" data-action="wiz-back" id="w-back" style="visibility:hidden" data-od-id="new-back">Back</button>
+          <button class="btn btn-secondary" data-action="wiz-next" id="w-next" data-od-id="new-next">Continue</button>
+        </div>
+      </div>
+
+      <div role="tabpanel" data-tabpanel="upload" aria-labelledby="tab-upload" data-od-id="upload-flow">
+        <div class="field"><label for="u-kb">Target knowledge base</label><div class="select-wrap"><select class="input select" id="u-kb" data-od-id="upload-target"></select></div><span class="hint mono" id="u-ep"></span></div>
+        <div class="toolbar" style="margin:12px 0 0"><label class="btn btn-secondary btn-sm" for="u-input" data-od-id="upload-choose"><svg class="icon"><use href="#i-folder"/></svg>Choose files</label><input class="file-in" type="file" id="u-input" multiple aria-label="Choose files to upload" /><button class="btn btn-ghost btn-sm" data-action="u-sample" data-od-id="upload-samples">Add sample files</button></div>
+        <div class="fl" id="u-files" data-od-id="upload-files"><p class="expl">No files yet.</p></div>
+        <div class="wizard-foot"><button class="btn btn-ghost" data-action="u-clear" data-od-id="upload-clear">Clear</button><button class="btn btn-secondary" data-action="u-start" id="u-start" disabled data-od-id="upload-start"><svg class="icon"><use href="#i-upload"/></svg>Upload</button></div>
+        <p class="gap-note"><i></i><span>Per-file status is polled from <span class="mono">GET /{id}/documents</span>; there is no progress stream for <span class="mono">pending → processing → indexed</span>. Backend gap.</span></p>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-overlay" aria-hidden="true"></div>
+</div>
+
+<div class="cmdk-backdrop"></div>
+<div class="cmdk" role="dialog" aria-label="Search" data-od-id="cmdk">
+  <input class="input" type="search" placeholder="Search workspace…" aria-label="Search workspace" />
+  <div class="cmdk-list">
+    <p class="menu-label">Knowledge</p>
+    <button class="menu-item" data-action="panel-open" data-tab="new"><svg class="icon"><use href="#i-plus"/></svg>New knowledge base</button>
+    <button class="menu-item" data-action="upload-here"><svg class="icon"><use href="#i-upload"/></svg>Upload documents</button>
+    <button class="menu-item" data-action="goto-tab" data-t="search"><svg class="icon"><use href="#i-search"/></svg>Test a search query</button>
+    <button class="menu-item" data-action="goto-tab" data-t="maint"><svg class="icon"><use href="#i-refresh"/></svg>Re-embed knowledge base</button>
+    <p class="menu-label">Go to</p>
+    <a class="menu-item" href="chat-workspace.html"><svg class="icon"><use href="#i-chat"/></svg>Chat</a>
+    <a class="menu-item" href="knowledge.html"><svg class="icon"><use href="#i-book"/></svg>Knowledge</a>
+    <a class="menu-item" href="agents.html"><svg class="icon"><use href="#i-bot"/></svg>Agents</a>
+    <a class="menu-item" href="a2ui-registries.html"><svg class="icon"><use href="#i-layers"/></svg>A2UI registries</a>
+    <a class="menu-item" href="runs.html"><svg class="icon"><use href="#i-runs"/></svg>Runs</a>
+    <a class="menu-item" href="models-and-providers.html"><svg class="icon"><use href="#i-cpu"/></svg>Models &amp; providers</a>
+    <a class="menu-item" href="skills.html"><svg class="icon"><use href="#i-spark"/></svg>Skills</a>
+    <a class="menu-item" href="tools-and-mcp.html"><svg class="icon"><use href="#i-tool"/></svg>Tools &amp; MCP</a>
+    <a class="menu-item" href="knowledge-and-memory.html"><svg class="icon"><use href="#i-brain"/></svg>Knowledge &amp; memory defaults</a>
+  </div>
+</div>
+
+<script src="assets/settings.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+(function () {
+  "use strict";
+  const S = window.UARShell, app = document.querySelector(".app"), $ = (s) => document.querySelector(s), EP = "/api/uar/knowledge-bases";
+  const MODELS = { fastembed: [["BAAI/bge-small-en-v1.5", 384], ["BAAI/bge-base-en-v1.5", 768]], openai: [["text-embedding-3-small", 1536], ["text-embedding-3-large", 3072]], mistral: [["mistral-embed", 1024]] };
+  const dims = (p, m) => (MODELS[p].find((x) => x[0] === m) || [m, 0])[1];
+  const AGENT = { "default-agent": "Default Assistant", "orchestrator-agent": "Orchestrator", "compiler-agent": "UAR Compiler Agent", "ops-agent": "Ops agent", "policy-reviewer": "Policy reviewer" };
+  const ENC = "encrypted PDF: kreuzberg could not extract text";
+  /* doc: [id, filename, mime, chunk_count, status, updated_at, snippet|error] */
+  const KB = {
+    "workspace-docs": { id: "kb_01j9w2", name: "Workspace docs", def: true, desc: "Product and architecture docs for the default workspace.", n: 214, chunks: 11240, agents: ["default-agent", "orchestrator-agent"], emb: ["fastembed", "BAAI/bge-small-en-v1.5"], proc: "kreuzberg", chunk: ["Recursive", 512], reFail: true, docs: [
+      ["doc_7a10", "architecture-overview.md", "text/markdown", 64, "indexed", "2026-09-28 14:02", "The daemon routes every agent run through the Cedar policy gate before any tool executes."],
+      ["doc_7a11", "cedar-policy-guide.pdf", "application/pdf", 118, "indexed", "2026-09-30 09:41", "Cedar policies are evaluated per action; a matching forbid always overrides a permit."],
+      ["doc_7a12", "onboarding-handbook.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 52, "indexed", "2026-09-22 11:15", "New operators start in development, where skill mutations are permitted."],
+      ["doc_7a13", "release-notes-1.0.md", "text/markdown", 22, "indexed", "2026-10-01 18:30", "1.0.0 adds knowledge bases with fastembed as the default embedding provider."],
+      ["doc_7a14", "agent-runtime-faq.html", "text/html", 31, "indexed", "2026-09-19 08:05", "Runs pause at approval gates until a reviewer allows or denies the tool call."],
+      ["doc_7a15", "q3-roadmap.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation", 40, "indexed", "2026-09-12 16:47", "Q3 focuses on MCP reliability and the operator shell."]] },
+    runbooks: { id: "kb_01j9w7", name: "runbooks", desc: "Staging and production runbooks for on-call.", n: 38, chunks: 1904, agents: ["ops-agent"], emb: ["fastembed", "BAAI/bge-small-en-v1.5"], proc: "kreuzberg", chunk: ["Recursive", 512], reFail: true, docs: [
+      ["doc_8b20", "mcp-gateway-restart.md", "text/markdown", 14, "indexed", "2026-10-03 22:10", "Restart the gateway with uarctl mcp restart --env staging, then confirm every server reports connected."],
+      ["doc_8b21", "staging-deploy.md", "text/markdown", 26, "indexed", "2026-10-02 10:31", "Staging deploys roll one pod at a time; MCP servers reconnect after the daemon restarts."],
+      ["doc_8b22", "incident-response.md", "text/markdown", 33, "indexed", "2026-09-29 07:55", "Page the on-call owner first, then open a run on ops-agent with the incident id."],
+      ["doc_8b23", "rotate-provider-keys.md", "text/markdown", 9, "indexed", "2026-10-04 12:20", "Rotate keys one provider at a time; the Groq key is read again on the next request."],
+      ["doc_8b24", "postgres-failover.pdf", "application/pdf", 0, "processing", "2026-10-05 09:58", ""]] },
+    "mcp-runbook": { id: "kb_01j9wa", name: "mcp-runbook", desc: "Per-server notes for the MCP fleet.", n: 12, chunks: 388, agents: ["ops-agent"], emb: ["fastembed", "BAAI/bge-small-en-v1.5"], proc: "kreuzberg", chunk: ["Recursive", 512], reFail: false, docs: [
+      ["doc_9c30", "mcp-timeouts-staging.md", "text/markdown", 12, "indexed", "2026-10-04 23:12", "Raise tool_timeout_ms for kreuzberg to 60000 on staging; large PDFs exceed the 30 s default."],
+      ["doc_9c31", "tavily-reconnect.md", "text/markdown", 8, "indexed", "2026-10-03 19:44", "tavily reconnects with backoff; after attempt 5 the server is marked degraded."],
+      ["doc_9c32", "filesystem-sandbox.md", "text/markdown", 7, "indexed", "2026-09-27 13:02", "filesystem is rooted at the workspace; writes ask for approval."],
+      ["doc_9c33", "vendor-mcp-contract.pdf", "application/pdf", 0, "failed", "2026-10-04 23:20", ENC]] },
+    "api-reference": { id: "kb_01j9wd", name: "api-reference", desc: "HTTP API reference generated from the OpenAPI document.", n: 57, chunks: 4874, agents: ["compiler-agent"], emb: ["openai", "text-embedding-3-small"], proc: "auto", chunk: ["Token", 384], reFail: false, docs: [
+      ["doc_ad40", "knowledge-bases.md", "text/markdown", 18, "indexed", "2026-09-30 15:00", "POST /{id}/search takes query, limit and min_score and returns scored chunks."],
+      ["doc_ad41", "agents.md", "text/markdown", 24, "indexed", "2026-09-30 15:00", "Agents declare model, tools and knowledge bases; built-ins cannot be deleted."],
+      ["doc_ad42", "runs.md", "text/markdown", 21, "indexed", "2026-09-30 15:00", "A run waiting on approval keeps its step and resumes when the gate is answered."],
+      ["doc_ad43", "openapi.json", "application/json", 160, "indexed", "2026-09-30 14:58", "Full OpenAPI 3.1 document for /api/uar."]] },
+  };
+  let cur = "workspace-docs", stFilter = "all", stg = null, reBusy = false;
+  const k = () => KB[cur], esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const bad = (kb, s) => kb.docs.filter((d) => d[4] === s).length;
+  const fmt = (n) => n.toLocaleString("en-US");
+  const busy = (b, on, icon) => { b.classList.toggle("is-loading", on); b.disabled = on; const ic = b.querySelector(".icon"); if (ic) { ic.classList.toggle("spin", on); if (icon) ic.querySelector("use").setAttribute("href", on ? "#i-refresh" : icon); } };
+
+  function summary() {
+    const all = Object.values(KB); let tot = 0, ch = 0, f = 0, p = 0;
+    all.forEach((x) => { tot += x.n; ch += x.chunks; f += bad(x, "failed"); p += bad(x, "processing") + bad(x, "pending"); });
+    $("#sum-bases").textContent = all.length; $("#kb-count").textContent = all.length; $("#sum-docs").textContent = fmt(tot - f - p); $("#sum-docs-sub").textContent = "of " + fmt(tot);
+    $("#sum-chunks").textContent = fmt(ch); $("#sum-attn").textContent = f + p; $("#sum-attn-sub").textContent = `${f} failed · ${p} processing`; $("#sum-attn-dot").className = "status-dot " + (f ? "err" : p ? "warn" : "");
+  }
+  function stLine(x) { const f = bad(x, "failed"), p = bad(x, "processing") + bad(x, "pending"); return `<i class="status-dot ${f ? "err" : p ? "warn" : ""}"></i>${fmt(x.n)} docs · ${f ? f + " failed" : p ? p + " processing" : "indexed"}`; }
+  function renderList() {
+    $("#kb-rows").innerHTML = Object.entries(KB).map(([key, x]) => `<button class="srow kb" aria-current="${key === cur}" data-src="${key}" data-view="kb" data-od-id="row-${key}"><span class="smark"><svg class="icon"><use href="#i-book"/></svg></span><span style="min-width:0"><span class="nm">${esc(x.name)}</span><span class="st">${stLine(x)}</span><span class="us">${x.agents.length ? "Used by " + x.agents.map((a) => `<span class="mono">${a}</span>`).join(", ") : "Not used by any agent"}</span></span><span class="side">${x.def ? "default" : ""}</span></button>`).join("");
+    summary();
+  }
+  function docRow(d) {
+    const [id, fn, mime, ch, st, up, ex] = d, chip = st === "indexed" ? "ok" : st === "failed" ? "err" : st === "processing" ? "live" : "";
+    return `<tr data-doc="${id}" data-st="${st}" data-od-id="doc-${id}"><td class="fn"><b title="${esc(fn)}">${esc(fn)}</b><span class="mono">${id}</span>${st === "failed" ? `<span class="err-line">${esc(ex)}</span>` : ""}</td><td><span class="chip ${chip}">${st}</span></td><td class="num">${st === "indexed" ? ch : "–"}</td><td class="hide-sm"><div class="mime" title="${mime}">${mime}</div></td><td class="hide-sm mono faint" style="font-size:12px">${up}</td><td class="acts">${st === "failed" ? `<button class="btn btn-ghost btn-sm" data-action="retry" data-id="${id}"><svg class="icon"><use href="#i-refresh"/></svg>Retry</button>` : ""}<button class="icon-btn" data-action="del-doc" data-id="${id}" aria-label="Delete ${esc(fn)}"><svg class="icon"><use href="#i-trash"/></svg></button></td></tr>`;
+  }
+  function renderDocs() {
+    const x = k(); $("#doc-rows").innerHTML = x.docs.length ? x.docs.map(docRow).join("") : `<tr><td colspan="6" class="muted" style="font-size:13px">No documents yet. Use Upload documents to add some.</td></tr>`; applySt();
+    $("#doc-foot").innerHTML = `Showing ${x.docs.length} of ${fmt(x.n)} · <span class="mono">GET ${EP}/${x.id}/documents</span>`; $("#t-docs-n").textContent = fmt(x.n);
+  }
+  function applySt() { document.querySelectorAll("#doc-rows tr[data-st]").forEach((r) => r.classList.toggle("hide-st", stFilter !== "all" && !(r.dataset.st === stFilter || (stFilter === "processing" && r.dataset.st === "pending")))); }
+
+  function render(key) {
+    cur = key; const x = k(); stg = { prov: x.emb[0], model: x.emb[1], proc: x.proc, chunk: x.chunk[0], size: x.chunk[1] || 512, thr: x.chunk[0] === "Semantic" ? x.chunk[1] : 0.8 };
+    $("#d-name").textContent = x.name;
+    $("#d-sub").innerHTML = `<span class="mono">${x.id}</span>${x.def ? '<span class="chip accent" style="height:22px">default</span>' : ""}<span>·</span><span class="mono">${x.emb[0]}/${x.emb[1]}</span><span>·</span><span>${esc(x.desc || "No description")}</span>`;
+    renderDocs(); $("#search-ep").textContent = `POST ${EP}/${x.id}/search`; $("#s-out").innerHTML = `<p class="muted" style="font-size:12.5px">Embeds the query with <span class="mono">${x.emb[0]}/${x.emb[1]}</span> and returns the closest chunks. The white line on each bar is <span class="mono">min_score</span>.</p>`;
+    loadEmbed(); renderMaint();
+  }
+
+  /* search test */
+  function search() {
+    const x = k(), q = $("#q").value.trim(), lim = +$("#r-lim").value, min = +$("#r-min").value, b = $("#search-btn");
+    if (!q) { $("#q").setAttribute("aria-invalid", "true"); S.toast("Enter a query to search", "warn"); $("#q").focus(); return; }
+    $("#q").removeAttribute("aria-invalid"); busy(b, true); $("#s-out").innerHTML = `<p class="muted" style="font-size:12.5px">Embedding query with <span class="mono">${x.emb[1]}</span>…</p>`;
+    setTimeout(() => {
+      busy(b, false); const words = q.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2);
+      const res = x.docs.filter((d) => d[4] === "indexed").map((d) => { const t = (d[1] + " " + d[6]).toLowerCase(); const h = words.filter((w) => t.includes(w)).length; const sc = h ? Math.min(0.93, 0.56 + 0.09 * h) : 0.22 + (d[1].length % 9) * 0.03; return { d, sc: Math.round(sc * 100) / 100, c: 1 + (d[1].length % Math.max(1, d[3])) }; }).sort((a, c) => c.sc - a.sc);
+      const keep = res.filter((r) => r.sc >= min).slice(0, lim);
+      if (!keep.length) { $("#s-out").innerHTML = `<div class="verdict" data-od-id="search-empty"><span class="status-dot warn"></span><span><b>No chunks at or above min_score ${min.toFixed(2)}</b> · best was <span class="mono">${res[0] ? res[0].sc.toFixed(2) : "–"}</span>${res[0] ? ` from <span class="mono">${esc(res[0].d[1])}</span>` : ""}. An agent would answer without this base. Lower <span class="mono">min_score</span> or add documents that cover the topic.</span></div>`; S.toast("0 results above min_score", "warn"); return; }
+      $("#s-out").innerHTML = `<div class="hits">${keep.map((r, i) => `<div class="mrow" data-od-id="hit-${i}"><span><span class="mono" style="font-size:12px">${esc(r.d[1])} · chunk ${r.c} of ${r.d[3]}</span><span class="snip">${esc(r.d[6])}</span></span><span class="sbar" aria-hidden="true"><i style="width:${r.sc * 100}%"></i><b style="left:${min * 100}%"></b></span><span class="sc">${r.sc.toFixed(2)}</span></div>`).join("")}</div><div class="verdict"><span class="status-dot"></span><span>${keep.length} of ${lim} chunks returned · ${res.length - keep.length} below <span class="mono">${min.toFixed(2)}</span></span></div>`;
+      S.toast(`${keep.length} chunks · top ${keep[0].sc.toFixed(2)}`);
+    }, 650);
+  }
+
+  /* embedding & chunking */
+  function fillModels(sel, prov, val) { sel.innerHTML = MODELS[prov].map(([m, d]) => `<option value="${m}"${m === val ? " selected" : ""}>${m} · ${d}d</option>`).join(""); }
+  function setChoice(g, v) { g.querySelectorAll("[role=radio]").forEach((r) => r.setAttribute("aria-checked", String(r.dataset.value === v))); }
+  function loadEmbed() { setChoice($("#e-prov"), stg.prov); fillModels($("#e-model"), stg.prov, stg.model); $("#e-proc").value = stg.proc; setChoice($("#e-chunk"), stg.chunk); $("#r-size").value = stg.size; $("#o-size").textContent = stg.size; $("#r-thr").value = stg.thr; $("#o-thr").textContent = (+stg.thr).toFixed(2); syncEmbed(); }
+  const NOTE = { FixedSize: "Cuts every N characters, ignoring structure. Predictable, but can split mid-sentence.", Token: "Cuts every N model tokens, so chunks line up with the embedding model's context.", Recursive: "Splits on headings, then paragraphs, then sentences until pieces fit.", Sentence: "One or more whole sentences per chunk; no size control.", Document: "Each document is one chunk. Only for short files.", Semantic: "", Agentic: "An LLM decides chunk boundaries. Slowest and billed per document." };
+  function syncEmbed() {
+    const x = k(), mm = stg.prov !== x.emb[0] || stg.model !== x.emb[1], dirty = mm || stg.proc !== x.proc || stg.chunk !== x.chunk[0] || (["FixedSize", "Token", "Recursive"].includes(stg.chunk) && +stg.size !== x.chunk[1]);
+    const sized = ["FixedSize", "Token", "Recursive"].includes(stg.chunk);
+    $("#size-rule").style.display = sized ? "" : "none"; $("#thr-rule").style.display = stg.chunk === "Semantic" ? "" : "none";
+    $("#size-sub").textContent = NOTE[stg.chunk] + (stg.chunk === "Token" ? " Size is in tokens." : " Size is in characters.");
+    $("#chunk-note").style.display = sized || stg.chunk === "Semantic" ? "none" : ""; $("#chunk-note").textContent = NOTE[stg.chunk];
+    $("#e-dims").textContent = dims(stg.prov, stg.model) + " dimensions" + (stg.prov === "fastembed" ? " · runs locally" : " · billed per token by " + stg.prov);
+    $("#c-idx").textContent = `${x.emb[0]}/${x.emb[1]}`; $("#c-idx-d").textContent = `${dims(x.emb[0], x.emb[1])} dims · ${fmt(x.chunks)} vectors`;
+    $("#c-cfg").textContent = `${stg.prov}/${stg.model}`; $("#c-cfg-d").textContent = mm ? `${dims(stg.prov, stg.model)} dims · not compatible with the index` : "Same space as the index";
+    $("#mm-banner").style.display = mm ? "" : "none";
+    $("#mm-text").innerHTML = `Index built with <span class="mono">${x.emb[0]}/${x.emb[1]}</span>; queries would use <span class="mono">${stg.prov}/${stg.model}</span> — re-embed ${fmt(x.n)} docs before saving.`;
+    $("#save-cfg").disabled = mm || !dirty; $("#save-hint").textContent = mm ? "Blocked until the index is re-embedded." : dirty ? "Unsaved changes · applies to new uploads." : "No unsaved changes.";
+    $("#re-sub").innerHTML = `Target <span class="mono">${stg.prov}/${stg.model}</span> · searches keep using the old index until the run finishes`;
+  }
+  $("#e-model").addEventListener("change", (e) => { stg.model = e.target.value; syncEmbed(); });
+  $("#e-proc").addEventListener("change", (e) => { stg.proc = e.target.value; syncEmbed(); });
+  [["#r-lim", "#o-lim", 0], ["#r-min", "#o-min", 2], ["#r-size", "#o-size", 0], ["#r-thr", "#o-thr", 2]].forEach(([r, o, dp]) => $(r).addEventListener("input", (e) => { $(o).textContent = (+e.target.value).toFixed(dp); if (r === "#r-size") { stg.size = +e.target.value; syncEmbed(); } if (r === "#r-thr") stg.thr = +e.target.value; }));
+
+  /* maintenance */
+  function renderMaint() {
+    const x = k(), f = bad(x, "failed");
+    $("#re-title").textContent = `Re-embed ${fmt(x.n)} documents`; $("#re-prog").classList.remove("on"); $("#re-res").innerHTML = "";
+    $("#rmf-text").innerHTML = f ? `<b>${f} failed document${f > 1 ? "s" : ""}</b><span class="sub">${x.docs.filter((d) => d[4] === "failed").map((d) => `<span class="mono">${esc(d[1])}</span> · ${esc(d[6])}`).join("<br>")}</span>` : `No failed documents<span class="sub">Every document in this base is indexed or still processing.</span>`;
+    $("#rmf-btn").disabled = !f; $("#rmf-btn").style.display = ""; $("#rmf-rule").querySelectorAll(".cf").forEach((n) => n.remove());
+    $("#uses").innerHTML = x.agents.length ? x.agents.map((a) => `<a class="mrow" href="agents.html" data-od-id="uses-${a}"><span><b style="font-weight:500">${AGENT[a]}</b> <span class="mono faint" style="font-size:11.5px">${a}</span></span><span class="faint" style="font-size:12px">Open agent →</span></a>`).join("") : `<p class="muted" style="font-size:12.5px">No agent retrieves from this base yet. Attach it on <a href="agents.html">Agents</a>.</p>`;
+    $("#m-name").value = x.name; $("#m-desc").value = x.desc || ""; $("#del-in").value = ""; $("#del-btn").disabled = true; $("#del-in").disabled = !!x.def;
+    $("#del-sub").innerHTML = x.def ? `<span class="lock"><svg class="icon"><use href="#i-lock"/></svg>The default base can't be deleted.</span> Make another base the default in Settings first.` : `Type <span class="mono">${esc(x.name)}</span> to confirm. Removes ${fmt(x.n)} documents and ${fmt(x.chunks)} vectors.${x.agents.length ? ` ${x.agents.map((a) => AGENT[a]).join(", ")} will lose access.` : ""}`;
+  }
+  function reembed(onlyFailed) {
+    if (reBusy) return; const x = k(), b = $("#re-btn"), key = cur, target = [stg.prov, stg.model], total = onlyFailed ? x.docs.filter((d) => d[4] === "failed" && d[6].startsWith("embedding")).length : x.n, failAt = !onlyFailed && x.reFail ? Math.floor(total * 0.6) : -1;
+    if (!total) { S.toast(onlyFailed ? "Nothing to retry" : "No documents to re-embed · upload some first", "warn"); return; }
+    reBusy = true; busy(b, true, "#i-refresh"); $("#re-prog").classList.add("on"); $("#re-res").innerHTML = ""; let i = 0, failed = null;
+    const names = x.docs.map((d) => d[1]);
+    const tick = setInterval(() => {
+      i = Math.min(total, i + Math.max(1, Math.ceil(total / 24))); const pct = Math.round((i / total) * 100);
+      if (cur !== key) return void (i >= total && finish());
+      $("#re-meter").firstElementChild.style.width = pct + "%"; $("#re-meter").setAttribute("aria-valuenow", pct); $("#re-pct").textContent = pct + "%";
+      $("#re-now").innerHTML = `Document ${i} of ${fmt(total)} · <span class="mono">${esc(names[i % names.length])}</span>${failed ? ` · <span style="color:var(--err)">1 failed, continuing</span>` : ""}`;
+      if (failAt >= 0 && !failed && i >= failAt) { failed = x.docs[1]; failed[4] = "failed"; failed[6] = `embedding request timed out after 30 s on chunk 41 · ${target[0]} worker restarted`; S.toast(`${failed[1]} failed · continuing with the rest`, "err"); if (cur === key) renderDocs(); }
+      if (i >= total) finish();
+    }, 140);
+    function finish() {
+      clearInterval(tick); reBusy = false; busy(b, false, "#i-refresh"); x.reFail = false;
+      if (onlyFailed) x.docs.forEach((d) => { if (d[4] === "failed" && d[6].startsWith("embedding")) { d[4] = "indexed"; d[6] = "Re-embedded after a timeout."; } });
+      x.emb = target; renderList();
+      if (cur === key) { render(key); $("#re-prog").classList.add("on"); $("#re-meter").firstElementChild.style.width = "100%"; $("#re-pct").textContent = "100%"; $("#re-now").textContent = "Done"; }
+      const still = x.docs.filter((d) => d[4] === "failed" && d[6].startsWith("embedding")).length;
+      if (cur === key) $("#re-res").innerHTML = still ? `<div class="verdict" data-od-id="reembed-result"><span class="status-dot warn"></span><span class="grow" style="flex:1"><b>${fmt(total - still)} re-embedded · ${still} failed</b> · index now on <span class="mono">${target.join("/")}</span></span><button class="btn btn-secondary btn-sm" data-action="reembed-failed"><svg class="icon"><use href="#i-refresh"/></svg>Retry failed</button></div>` : `<div class="verdict" data-od-id="reembed-result"><span class="status-dot"></span><span><b>${fmt(total)} document${total > 1 ? "s" : ""} re-embedded</b> · index on <span class="mono">${target.join("/")}</span></span></div>`;
+      S.toast(still ? `Re-embed finished with ${still} failure` : "Re-embed complete", still ? "warn" : "ok");
+    }
+  }
+
+  /* upload pipeline (shared by Upload and New base step 3) */
+  const SAMPLES = [["staging-postmortem-10-03.md", "text/markdown"], ["kreuzberg-limits.md", "text/markdown"], ["vendor-contract-scan.pdf", "application/pdf"], ["on-call-rotation.csv", "text/csv"]];
+  let queue = [], uploading = false;
+  function renderQueue() {
+    $("#u-files").innerHTML = queue.length ? queue.map((f, i) => { const c = f.st === "indexed" ? "ok" : f.st === "failed" ? "err" : f.st === "processing" ? "live" : ""; return `<div class="mrow" data-od-id="ufile-${i}"><span style="min-width:0"><span class="mono">${esc(f.name)}</span><span class="sub">${f.st === "failed" ? `<span class="err-line">${esc(f.err)}</span>` : f.st === "indexed" ? f.ch + " chunks" : esc(f.mime)}</span></span><span class="chip ${c}" style="height:22px;font-size:11.5px">${f.st}</span></div>`; }).join("") : `<p class="expl">No files yet.</p>`;
+    $("#u-start").disabled = uploading || !queue.some((f) => f.st === "pending");
+  }
+  function addFiles(list) { list.forEach(([name, mime]) => { if (!queue.some((f) => f.name === name)) queue.push({ name, mime: mime || "application/octet-stream", st: "pending" }); }); renderQueue(); }
+  function startUpload() {
+    const key = $("#u-kb").value, x = KB[key], todo = queue.filter((f) => f.st === "pending"); if (!todo.length) return;
+    uploading = true; busy($("#u-start"), true, "#i-upload"); let done = 0;
+    todo.forEach((f, i) => {
+      setTimeout(() => { f.st = "processing"; renderQueue(); }, 300 + i * 450);
+      setTimeout(() => {
+        const fail = /scan|encrypted/i.test(f.name); f.st = fail ? "failed" : "indexed"; f.err = fail ? ENC : ""; f.ch = fail ? 0 : 6 + (f.name.length % 17);
+        const id = "doc_" + (Math.random().toString(16).slice(2, 6)); x.docs.unshift([id, f.name, f.mime, f.ch, f.st, "2026-10-05 10:" + String(12 + i).padStart(2, "0"), fail ? ENC : `Uploaded ${f.name}; ${f.ch} chunks embedded with ${x.emb[1]}.`]); x.n++; x.chunks += f.ch;
+        renderQueue(); renderList(); if (cur === key) { renderDocs(); renderMaint(); }
+        if (++done === todo.length) { uploading = false; busy($("#u-start"), false, "#i-upload"); renderQueue(); const nf = todo.filter((t) => t.st === "failed").length; S.toast(`${todo.length - nf} indexed${nf ? ` · ${nf} failed` : ""} in ${x.name}`, nf ? "warn" : "ok"); }
+      }, 1200 + i * 600);
+    });
+  }
+  function fillTargets(sel) { $("#u-kb").innerHTML = Object.entries(KB).map(([key, x]) => `<option value="${key}"${key === (sel || $("#u-kb").value || cur) ? " selected" : ""}>${esc(x.name)}</option>`).join(""); $("#u-ep").textContent = `POST ${EP}/${KB[$("#u-kb").value].id}/documents`; }
+  $("#u-kb").addEventListener("change", () => fillTargets($("#u-kb").value));
+  $("#u-input").addEventListener("change", (e) => { addFiles([...e.target.files].map((f) => [f.name, f.type])); e.target.value = ""; });
+
+  /* new knowledge base wizard */
+  let step = 1; const NF = SAMPLES.slice(0, 3);
+  const PROV_HINT = { fastembed: "Local and free. Good quality for English text. Your documents never leave the machine.", openai: "Higher recall on mixed or long content. Sends each chunk to OpenAI and is billed per token.", mistral: "Hosted by Mistral; billed per token. Pairs well with the mistral file processor." };
+  function setStep(n) {
+    step = Math.max(1, Math.min(3, n)); for (let i = 1; i <= 3; i++) { $("#w" + i).classList.toggle("active", i === step); $("#s" + i).className = i < step ? "done" : i === step ? "on" : ""; }
+    $("#w-back").style.visibility = step === 1 ? "hidden" : "visible"; $("#w-next").textContent = step === 3 ? "Create knowledge base" : "Continue";
+  }
+  function resetWizard() { $("#n-name").value = ""; $("#n-desc").value = ""; $("#n-name").removeAttribute("aria-invalid"); $("#n-name-hint").className = "hint"; $("#n-name-hint").textContent = "Agents and search results show this name."; setChoice($("#n-prov"), "fastembed"); fillModels($("#n-model"), "fastembed", "BAAI/bge-small-en-v1.5"); $("#n-prov-hint").textContent = PROV_HINT.fastembed; setChoice($("#n-chunk"), "Recursive");
+    $("#n-files").innerHTML = NF.map(([f], i) => `<label class="pick" data-od-id="new-file-${i}"><input type="checkbox" value="${i}" checked /><span class="mono" style="font-size:12.5px">${f}</span></label>`).join(""); setStep(1); }
+  function checkName() {
+    const v = $("#n-name").value.trim(), dup = Object.values(KB).some((x) => x.name.toLowerCase() === v.toLowerCase()), h = $("#n-name-hint");
+    if (!v || dup) { $("#n-name").setAttribute("aria-invalid", "true"); h.className = "hint err"; h.textContent = !v ? "Name is required." : `A base named "${v}" already exists.`; $("#n-name").focus(); return false; }
+    $("#n-name").removeAttribute("aria-invalid"); h.className = "hint"; h.textContent = "Agents and search results show this name."; return true;
+  }
+  function createKb() {
+    const b = $("#w-next"), name = $("#n-name").value.trim(), prov = document.querySelector("#n-prov [aria-checked=true]").dataset.value, ch = document.querySelector("#n-chunk [aria-checked=true]").dataset.value;
+    const picks = [...document.querySelectorAll("#n-files input:checked")].map((c) => NF[+c.value]); busy(b, true);
+    setTimeout(() => {
+      busy(b, false); const key = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      KB[key] = { id: "kb_01j9x" + (Object.keys(KB).length + 1), name, desc: $("#n-desc").value.trim(), n: 0, chunks: 0, agents: [], emb: [prov, $("#n-model").value], proc: $("#n-proc").value, chunk: [ch, ch === "Semantic" ? 0.8 : 512], reFail: false, docs: [] };
+      cur = key; renderList(); render(key); S.toast(`${name} created · POST ${EP}`);
+      if (picks.length) { queue = []; fillTargets(key); addFiles(picks); S.openPanel("upload"); startUpload(); } else S.closePanel();
+    }, 800);
+  }
+
+  /* events */
+  app.addEventListener("uar:source", (e) => { if (e.detail.view === "kb" && KB[e.detail.id]) { cur = e.detail.id; render(cur); } });
+  app.addEventListener("uar:choice", (e) => {
+    const g = e.target.id, v = e.detail.value;
+    if (g === "st-filter") { stFilter = v; applySt(); }
+    if (g === "e-prov") { stg.prov = v; stg.model = v === k().emb[0] ? k().emb[1] : MODELS[v][0][0]; fillModels($("#e-model"), v, stg.model); syncEmbed(); }
+    if (g === "e-chunk") { stg.chunk = v; syncEmbed(); }
+    if (g === "n-prov") { fillModels($("#n-model"), v, MODELS[v][0][0]); $("#n-prov-hint").textContent = PROV_HINT[v]; }
+  });
+  app.addEventListener("uar:panel", (e) => { if (e.detail.open && S.state.panelTab === "new" && !uploading) resetWizard(); if (e.detail.open) fillTargets(); });
+  app.addEventListener("uar:paneltab", (e) => { if (e.detail.tab === "upload") fillTargets(); });
+  $("#del-in").addEventListener("input", (e) => { $("#del-btn").disabled = e.target.value !== k().name; });
+
+  app.addEventListener("uar:action", (e) => {
+    const { action, el } = e.detail, x = k();
+    if (action === "upload-here") { if (!uploading) queue = []; fillTargets(cur); renderQueue(); S.openPanel("upload"); }
+    if (action === "u-sample") addFiles(SAMPLES);
+    if (action === "u-clear") { if (uploading) return S.toast("Wait for the current upload to finish", "warn"); queue = []; renderQueue(); }
+    if (action === "u-start") startUpload();
+    if (action === "goto-tab") $("#t-" + el.dataset.t).click();
+    if (action === "example") { $("#q").value = el.dataset.q; search(); }
+    if (action === "search") search();
+    if (action === "retry") {
+      const d = x.docs.find((z) => z[0] === el.dataset.id), row = el.closest("tr"); el.disabled = true; row.querySelector(".chip").className = "chip live"; row.querySelector(".chip").textContent = "processing";
+      setTimeout(() => { if (d[6] === ENC) { el.disabled = false; row.querySelector(".chip").className = "chip err"; row.querySelector(".chip").textContent = "failed"; S.toast(`${d[1]} failed again · decrypt it, then upload a new copy`, "err"); } else { d[4] = "indexed"; d[3] = 18; d[6] = "Re-embedded after a timeout."; renderDocs(); renderList(); renderMaint(); S.toast(`${d[1]} indexed · 18 chunks`); } }, 1100);
+    }
+    if (action === "del-doc") {
+      const row = el.closest("tr"), d = x.docs.find((z) => z[0] === el.dataset.id); row.classList.add("confirm");
+      row.querySelector("td.acts").innerHTML = `<span style="font-size:12.5px;margin-right:6px">Delete ${d[4] === "indexed" ? d[3] + " chunks" : "this document"}?</span><button class="btn btn-danger btn-sm" data-action="del-doc-yes" data-id="${d[0]}">Delete</button><button class="btn btn-ghost btn-sm" data-action="del-doc-no">Cancel</button>`; row.querySelector("[data-action=del-doc-no]").focus();
+    }
+    if (action === "del-doc-no") renderDocs();
+    if (action === "del-doc-yes") { const i = x.docs.findIndex((z) => z[0] === el.dataset.id), d = x.docs[i]; x.docs.splice(i, 1); x.n--; x.chunks -= d[4] === "indexed" ? d[3] : 0; renderDocs(); renderList(); renderMaint(); S.toast(`${d[1]} deleted · DELETE ${EP}/${x.id}/documents/${d[0]}`, "warn"); }
+    if (action === "mm-revert") { stg.prov = x.emb[0]; stg.model = x.emb[1]; loadEmbed(); S.toast("Reverted to the indexed model"); }
+    if (action === "mm-reembed") { $("#t-maint").click(); reembed(false); }
+    if (action === "save-config") { x.proc = stg.proc; x.chunk = [stg.chunk, stg.chunk === "Semantic" ? stg.thr : stg.size]; syncEmbed(); S.toast(`Saved · ${stg.proc} · ${stg.chunk} · applies to new uploads`); }
+    if (action === "reembed") reembed(false);
+    if (action === "reembed-failed") reembed(true);
+    if (action === "rm-failed") { el.style.display = "none"; const c = document.createElement("span"); c.className = "cf"; c.style.cssText = "display:flex;gap:6px"; c.innerHTML = `<button class="btn btn-danger btn-sm" data-action="rm-failed-yes">Remove ${bad(x, "failed")}</button><button class="btn btn-ghost btn-sm" data-action="rm-failed-no">Cancel</button>`; $("#rmf-rule").appendChild(c); c.firstElementChild.focus(); }
+    if (action === "rm-failed-no") renderMaint();
+    if (action === "rm-failed-yes") { const f = bad(x, "failed"); x.docs = x.docs.filter((d) => d[4] !== "failed"); x.n -= f; renderDocs(); renderList(); renderMaint(); S.toast(`${f} failed document${f > 1 ? "s" : ""} removed`, "warn"); }
+    if (action === "rename") { const v = $("#m-name").value.trim(); if (!v) { $("#m-name").setAttribute("aria-invalid", "true"); return S.toast("Name can't be empty", "err"); } $("#m-name").removeAttribute("aria-invalid"); x.name = v; x.desc = $("#m-desc").value.trim(); renderList(); render(cur); S.toast(`Renamed to ${v} · PUT ${EP}/${x.id} (not yet available)`, "warn"); }
+    if (action === "delete-kb") {
+      const b = $("#del-btn"), name = x.name; busy(b, true, "#i-trash");
+      setTimeout(() => { busy(b, false, "#i-trash"); delete KB[cur]; cur = Object.keys(KB)[0]; renderList(); render(cur); S.toast(`${name} deleted · DELETE ${EP}/{id} (not yet available)`, "warn"); }, 900);
+    }
+    if (action === "wiz-back") setStep(step - 1);
+    if (action === "wiz-next") { if (step === 1 && !checkName()) return; if (step === 3) createKb(); else setStep(step + 1); }
+  });
+
+  renderList(); render(cur); fillTargets(cur); resetWizard();
+})();
+</script>
+</body>
+</html>

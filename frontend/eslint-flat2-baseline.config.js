@@ -13,7 +13,8 @@ export default tseslint.config({
         "coverage/**",
         "test-results/**",
         "storybook-static/**",
-        "packages/**",
+        "packages/*",
+        "!packages/uar-ui",
     ],
 }, {
     files: ["**/*.{ts,tsx}"],

@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Projects · Universal Agent Runtime</title>
+<link rel="icon" href="assets/brand/uar-mark-dark.svg" />
+<link rel="stylesheet" href="assets/shell.css" />
+<link rel="stylesheet" href="assets/settings.css" />
+<style>
+  .proposed { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--faint); }
+  .proposed i { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); display: inline-block; }
+  .muted-p { color: var(--muted); font-size: 13.5px; }
+  .srow .st .chip { height: 18px; padding: 0 6px; font-size: 11px; }
+  .avs { display: inline-flex; gap: 3px; } .avs .avatar { width: 22px; height: 22px; font-size: 11px; }
+  .detail-head .sub .chip { height: 22px; font-size: 11.5px; }
+  .menu-wrap { position: relative; } .menu-wrap .menu { right: 0; top: 100%; margin-top: 6px; min-width: 280px; }
+  .menu-item:disabled { cursor: default; color: var(--muted); } .menu-item:disabled:hover { background: transparent; }
+  .confirm { display: none; } .confirm.show { display: flex; } .banner .acts { display: flex; gap: 6px; flex: none; }
+  .banner.err { background: var(--err-soft); } .banner.err > .icon { color: var(--err); }
+  .state-banner { display: none; } .state-banner.show { display: flex; }
+  .a-dis { pointer-events: none; opacity: 0.45; }
+  .goal { font-size: 15px; color: var(--fg); max-width: 70ch; }
+  .board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .col { background: var(--step-2); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; min-height: 140px; }
+  .col h4 { font-family: var(--font-body); font-size: 12.5px; font-weight: 600; color: var(--muted); display: flex; justify-content: space-between; letter-spacing: 0; padding: 0 2px 4px; }
+  .col h4 .mono { color: var(--faint); font-weight: 400; }
+  .col.wait h4 { color: var(--warn); }
+  .bcard { display: block; width: 100%; text-align: left; background: var(--raised); border-radius: 10px; padding: 8px 10px; font-size: 13px; transition: background var(--fast) var(--ease); }
+  .bcard:hover { background: var(--hover); }
+  .bcard b { display: block; font-weight: 500; margin: 4px 0 2px; }
+  .bcard .meta { font-size: 11.5px; color: var(--faint); }
+  .bcard .chip { height: 20px; padding: 0 7px; font-size: 11px; }
+  .col .empty-col { font-size: 12px; color: var(--faint); padding: 6px 2px; }
+  .two { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 12px; margin-top: 12px; }
+  .addtask { display: grid; grid-template-columns: minmax(0, 1fr) 170px auto; gap: 6px; margin-bottom: 8px; }
+  .addtask .input { height: 34px; font-size: 13px; }
+  .tlist { display: flex; flex-direction: column; gap: 4px; }
+  .tlist .mrow { grid-template-columns: 64px minmax(0, 1fr) auto; }
+  .tlist .chip { height: 22px; font-size: 11.5px; justify-content: center; }
+  .tlist .done-t { text-decoration: line-through; color: var(--faint); }
+  .feed .mrow { grid-template-columns: 22px minmax(0, 1fr); align-items: start; background: transparent; padding: 6px 4px; }
+  .feed .mrow .icon { width: 15px; height: 15px; color: var(--faint); margin-top: 2px; }
+  .table .chip { height: 22px; font-size: 11.5px; }
+  .table a.tl { font-weight: 500; text-decoration: underline; text-decoration-color: var(--input); text-underline-offset: 3px; }
+  .table a.tl:hover { text-decoration-color: var(--fg); }
+  .tgt { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); } .tgt .icon { width: 14px; height: 14px; }
+  .flist { display: flex; flex-direction: column; gap: 4px; }
+  .flist .mrow { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .flist .chip { height: 22px; font-size: 11.5px; }
+  .file-in { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .note-card { padding: 12px 14px; border-radius: 10px; background: var(--step-2); font-size: 12.5px; color: var(--muted); margin: 10px 0; }
+  .note-card b { color: var(--fg); font-weight: 500; }
+  .note-card a { color: var(--fg); text-decoration: underline; text-underline-offset: 2px; }
+  .ta { height: auto; min-height: 150px; padding: 10px 12px; line-height: 1.55; resize: vertical; }
+  .layers { display: flex; flex-direction: column; gap: 4px; }
+  .layer { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 10px; background: var(--step-2); font-size: 13px; }
+  .layer .n { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); padding-top: 2px; }
+  .layer .sub { display: block; font-size: 12px; color: var(--faint); margin-top: 2px; }
+  .layer .chip { height: 22px; font-size: 11.5px; }
+  .layer.cur { background: var(--accent-soft); }
+  .lockline { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; color: var(--muted); margin-top: 8px; } .lockline .icon { width: 14px; height: 14px; margin-top: 2px; color: var(--faint); }
+  .danger-card { background: var(--err-soft); border-radius: 12px; padding: 14px; margin-top: 18px; font-size: 13px; }
+  .danger-card .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  .roles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px; }
+  .roles div { background: var(--step-2); border-radius: 10px; padding: 8px 10px; font-size: 12px; color: var(--muted); } .roles b { display: block; color: var(--fg); font-size: 13px; font-weight: 500; }
+  .invite { display: grid; grid-template-columns: minmax(0, 1fr) 140px auto; gap: 6px; align-items: end; }
+  .table .who { display: flex; align-items: center; gap: 10px; } .table .who .sub { display: block; font-size: 12px; color: var(--faint); }
+  .table .select-wrap .input { height: 32px; font-size: 13px; width: 130px; }
+  .spend { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; }
+  .spend b { font-family: var(--font-display); font-size: 26px; font-weight: 600; }
+  .bars { display: flex; flex-direction: column; gap: 4px; }
+  .bars .mrow { grid-template-columns: 150px minmax(0, 1fr) 72px; }
+  .bars .mrow .mono:last-child { text-align: right; font-size: 12.5px; }
+  .preset[aria-checked="true"] { background: var(--accent-soft); } .preset[aria-checked="true"] .nm { color: var(--accent); }
+  .presets { display: flex; flex-direction: column; gap: 2px; }
+  .lbl-sm { font-size: 12px; color: var(--faint); margin: 12px 0 6px; display: block; }
+  .cl { display: flex; flex-wrap: wrap; gap: 6px; } .cl .chip { height: 26px; font-size: 12px; cursor: pointer; }
+  .cl .chip[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+  .pick { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px; border-radius: 10px; background: var(--step-2); font-size: 13px; }
+  .pick input { accent-color: var(--accent); margin-top: 3px; }
+  .pick .sub { display: block; font-size: 12px; color: var(--faint); }
+  .pick .fix { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--warn-soft); font-size: 12.5px; }
+  .pick .fix .chip { cursor: pointer; height: 24px; font-size: 11.5px; }
+  .result { display: none; margin-top: 12px; } .result.show { display: flex; }
+  @media (max-width: 1100px) { .board { grid-template-columns: 1fr 1fr; } .two { grid-template-columns: 1fr; } .roles { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 920px) { .board { grid-template-columns: 1fr; } .addtask, .invite { grid-template-columns: 1fr; } .bars .mrow { grid-template-columns: 110px 1fr 64px; } }
+</style>
+</head>
+<body>
+<div class="app" data-od-id="workspace-shell" data-panel-persist="false">
+  <div class="titlebar" data-tauri-drag-region><span class="mono">universal-agent-runtime</span>&nbsp;· Projects</div>
+  <aside data-workspace-nav data-current="projects" data-od-id="workspace-sidebar"></aside>
+
+  <main class="main" id="content" data-od-id="workspace-main">
+    <header class="topbar">
+      <button class="icon-btn" data-action="sidebar-mobile" aria-label="Open navigation" id="mobile-nav-btn" style="display:none"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+      <div class="title"><span class="crumb">Workspace</span><span>Projects</span></div>
+      <span class="spacer"></span>
+      <button class="chip" data-action="cmdk" data-od-id="topbar-search"><svg class="icon"><use href="#i-search"/></svg>Search <kbd style="margin-left:4px" data-kbd="⌘K">⌘K</kbd></button>
+      <button class="icon-btn" data-action="theme" aria-pressed="false" aria-label="Switch theme" title="Switch theme" data-od-id="topbar-theme"><svg class="icon"><use href="#i-sun"/></svg></button>
+    </header>
+
+    <section class="page">
+      <div class="page-inner">
+        <div class="page-head" data-od-id="page-head">
+          <div>
+            <h1 data-od-id="page-title">Projects</h1>
+            <p>A project scopes the work around one goal: its conversations, files, knowledge, allowed agents and tools, instructions, memory, members, tasks and budget. Every chat inside it inherits those settings and can narrow them, never exceed them.</p>
+            <span class="proposed" data-od-id="proposed-note"><i></i>Proposed feature · see <span class="mono">project-management-design.md</span></span>
+          </div>
+          <div class="acts"><button class="btn btn-primary" data-action="new-open" data-od-id="new-project-cta"><svg class="icon"><use href="#i-plus"/></svg>New project</button></div>
+        </div>
+
+        <div class="summary" data-od-id="summary-strip">
+          <div class="card sum" data-od-id="sum-active"><div class="k">Active projects</div><div class="v"><span id="sum-active">2</span><small id="sum-active-sub"></small></div></div>
+          <div class="card sum" data-od-id="sum-waiting"><div class="k">Waiting on you</div><div class="v"><span class="status-dot warn"></span><span id="sum-wait">0</span><small>approvals and tasks</small></div></div>
+          <div class="card sum" data-od-id="sum-spend"><div class="k">Spend this month · sample</div><div class="v"><span class="mono" id="sum-spend">$0</span><small id="sum-spend-sub"></small></div></div>
+          <div class="card sum" data-od-id="sum-shared"><div class="k">Shared</div><div class="v"><span id="sum-shared">1</span><small>with other members</small></div></div>
+        </div>
+
+        <div class="md">
+          <nav class="sources" aria-label="Projects" data-od-id="project-list">
+            <input class="input" type="search" placeholder="Filter projects" aria-label="Filter projects" data-filter=".sources .srow.pj" data-od-id="project-filter" />
+            <p class="group-label">Active <span id="g-act-n"></span></p>
+            <div id="g-act" data-od-id="group-active"></div>
+            <p class="group-label">Archived <span id="g-arc-n"></span></p>
+            <div id="g-arc" data-od-id="group-archived"></div>
+            <button class="srow add" data-action="new-open" data-od-id="row-new-project"><span class="smark"><svg class="icon icon-sm"><use href="#i-plus"/></svg></span><span class="nm">Start a project</span></button>
+          </nav>
+
+          <section class="view detail active" data-view="project" aria-label="Project detail" data-od-id="project-detail">
+            <div class="detail-head" data-od-id="project-head">
+              <span class="smark lg"><svg class="icon"><use href="#i-folder"/></svg></span>
+              <div><h2 id="d-name" data-od-id="project-title">Staging ops</h2><div class="sub" id="d-sub"></div></div>
+              <div class="acts" data-od-id="project-actions">
+                <a class="btn btn-secondary btn-sm" id="d-chat" href="chat-workspace.html?new=1&amp;project=staging-ops" data-od-id="project-new-chat"><svg class="icon"><use href="#i-chat"/></svg>New chat in project</a>
+                <button class="btn btn-secondary btn-sm" data-action="share" data-od-id="project-share"><svg class="icon"><use href="#i-users"/></svg>Share</button>
+                <div class="menu-wrap">
+                  <button class="icon-btn" data-action="menu" aria-controls="proj-more" aria-expanded="false" aria-haspopup="menu" aria-label="More project actions" data-od-id="project-more-btn"><svg class="icon"><use href="#i-more"/></svg></button>
+                  <div class="menu" id="proj-more" role="menu" data-od-id="project-more-menu">
+                    <button class="menu-item" role="menuitem" data-action="ask" data-op="pause" id="m-pause"><svg class="icon"><use href="#i-clock"/></svg><span><span id="m-pause-t">Pause</span><span class="sub">Stops runs and scheduled work</span></span></button>
+                    <button class="menu-item" role="menuitem" data-action="ask" data-op="archive" id="m-archive"><svg class="icon"><use href="#i-box"/></svg><span><span id="m-archive-t">Archive</span><span class="sub">Hidden and read-only, restorable</span></span></button>
+                    <button class="menu-item" role="menuitem" data-action="ask" data-op="duplicate"><svg class="icon"><use href="#i-copy"/></svg><span>Duplicate as template<span class="sub">Settings only, no chats or memory</span></span></button>
+                    <div class="menu-sep"></div>
+                    <button class="menu-item danger" role="menuitem" data-action="ask" data-op="delete"><svg class="icon"><use href="#i-trash"/></svg><span>Delete project<span class="sub">Removed after 30 days</span></span></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="banner warn confirm" id="cf" role="alert" data-od-id="project-confirm"><svg class="icon"><use href="#i-alert"/></svg><span class="grow"><b id="cf-t"></b><span class="sub" id="cf-s"></span></span><span class="acts"><button class="btn btn-ghost btn-sm" data-action="cf-cancel" data-od-id="confirm-cancel">Cancel</button><button class="btn btn-sm" data-action="cf-go" id="cf-go" data-od-id="confirm-go"><svg class="icon"><use href="#i-check"/></svg><span>Confirm</span></button></span></div>
+            <div class="banner state-banner" id="st-ban" data-od-id="project-state-banner"><svg class="icon"><use href="#i-info"/></svg><span class="grow"><b id="st-t"></b><span class="sub" id="st-s"></span></span><button class="btn btn-secondary btn-sm" data-action="restore" id="st-go" data-od-id="state-restore"><svg class="icon"><use href="#i-refresh"/></svg><span id="st-go-t">Resume</span></button></div>
+
+            <div class="tabs" role="tablist" aria-label="Project sections" data-od-id="project-tabs" style="flex-wrap:wrap">
+              <button class="tab" role="tab" data-dtab="overview" aria-selected="true">Overview</button>
+              <button class="tab" role="tab" data-dtab="chats" aria-selected="false">Chats <span class="count" id="c-chats"></span></button>
+              <button class="tab" role="tab" data-dtab="knowledge" aria-selected="false">Knowledge &amp; files</button>
+              <button class="tab" role="tab" data-dtab="agents" aria-selected="false">Agents &amp; tools</button>
+              <button class="tab" role="tab" data-dtab="instructions" aria-selected="false">Instructions</button>
+              <button class="tab" role="tab" data-dtab="memory" aria-selected="false">Memory</button>
+              <button class="tab" role="tab" data-dtab="members" aria-selected="false" id="t-members">Members <span class="count" id="c-mem"></span></button>
+              <button class="tab" role="tab" data-dtab="budget" aria-selected="false">Budget &amp; usage</button>
+            </div>
+
+            <div id="panels">
+              <div role="tabpanel" data-dtabpanel="overview" class="active" data-od-id="overview-tab">
+                <p class="goal" id="o-goal" data-od-id="project-goal"></p>
+                <div class="section-title"><h3>Work board</h3><p>Conversations, runs and tasks in this project</p></div>
+                <div class="board" id="board" data-od-id="work-board"></div>
+                <div class="two">
+                  <div>
+                    <div class="section-title"><h3>Tasks</h3><p>Click a status to move it on</p></div>
+                    <form class="addtask" id="t-form" data-od-id="task-add">
+                      <label class="sr-only" for="t-title">Task title</label><input class="input" id="t-title" placeholder="Add a task" autocomplete="off" />
+                      <label class="sr-only" for="t-who">Assignee</label><div class="select-wrap"><select class="input select" id="t-who"></select></div>
+                      <button class="btn btn-secondary btn-sm" type="submit" data-od-id="task-add-btn"><svg class="icon"><use href="#i-plus"/></svg>Add</button>
+                    </form>
+                    <div class="tlist" id="tasks" data-od-id="task-list"></div>
+                  </div>
+                  <div>
+                    <div class="section-title"><h3>Recent activity</h3></div>
+                    <div class="feed" id="feed" data-od-id="activity-feed"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="chats" data-od-id="chats-tab">
+                <div class="toolbar"><button class="btn btn-secondary btn-sm" data-action="move-open" data-od-id="move-chats-btn"><svg class="icon"><use href="#i-download"/></svg>Move a chat in</button><span class="spacer"></span><span class="faint" style="font-size:12.5px">New chats here start with the project's default target</span></div>
+                <table class="table" data-od-id="chats-table"><thead><tr><th>Conversation</th><th>Target</th><th class="hide-sm">Last activity</th><th>Run state</th></tr></thead><tbody id="chat-rows"></tbody></table>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="knowledge" data-od-id="knowledge-tab">
+                <div class="section-title"><h3>Project files</h3><p>A knowledge base this project owns · <span class="mono" id="f-kb"></span></p></div>
+                <div class="toolbar"><label class="btn btn-secondary btn-sm" data-od-id="files-upload"><svg class="icon"><use href="#i-upload"/></svg>Upload files<input type="file" class="file-in" id="f-in" multiple /></label><span class="spacer"></span><span class="faint" style="font-size:12.5px" id="f-sum"></span></div>
+                <div class="flist" id="files" data-od-id="project-files"></div>
+                <div class="section-title"><h3>Linked knowledge bases</h3><p><a href="knowledge.html" style="text-decoration:underline;text-underline-offset:2px" data-od-id="kb-manage-link">Manage in Knowledge</a></p></div>
+                <div class="rules" id="kbs" data-od-id="linked-kbs"></div>
+                <div class="note-card" data-od-id="kb-reference-note"><b>Linked bases are references, not copies.</b> Live follows every re-embed of the base. Pinned freezes retrieval at one revision so answers stay reproducible while the base keeps changing for everyone else.</div>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="agents" data-od-id="agents-tab">
+                <div class="rules" data-od-id="target-rules">
+                  <div class="rule"><div>Default target<span class="sub">Who answers in a new chat of this project</span></div><div class="choice sm" role="radiogroup" aria-label="Default target" id="tgt" data-od-id="target-choice"><button role="radio" data-value="orchestrator" aria-checked="true">Orchestrator</button><button role="radio" data-value="pinned" aria-checked="false">Pin an agent</button></div></div>
+                  <div class="rule" id="r-routing"><div>Route to matching agents<span class="sub">The orchestrator picks an allowed agent per message, else Default Assistant</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Route to matching agents" data-id="routing" id="sw-routing" tabindex="0"></span></div>
+                  <div class="rule" id="r-pin"><div><label for="pin">Pinned agent</label><span class="sub">Only allowed agents can be pinned</span></div><div class="select-wrap"><select class="input select" id="pin" style="width:200px" data-od-id="pin-select"></select></div></div>
+                </div>
+                <div class="note-card" data-od-id="ceiling-note"><b>These lists are a ceiling.</b> A conversation in this project can switch any of them off for itself, but cannot turn on anything switched off here. Workspace policy still applies on top.</div>
+                <div id="allow" data-od-id="allow-lists"></div>
+                <div class="section-title"><h3>Defaults</h3></div>
+                <div class="rules" data-od-id="defaults-rules">
+                  <div class="rule"><div><label for="model">Default model</label><span class="sub">Used when the agent does not require its own</span></div><div class="select-wrap"><select class="input select mono" id="model" style="width:260px" data-od-id="model-select"></select></div></div>
+                  <div class="rule"><div>Tool approval default<span class="sub" id="appr-sub"></span></div><div class="choice sm" role="radiogroup" aria-label="Tool approval default" id="appr" data-od-id="approval-choice"><button role="radio" data-value="inherit" aria-checked="false">inherit</button><button role="radio" class="auto" data-value="auto" aria-checked="false">auto</button><button role="radio" class="ask" data-value="ask" aria-checked="true">ask</button><button role="radio" class="deny" data-value="deny" aria-checked="false">deny</button></div></div>
+                </div>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="instructions" data-od-id="instructions-tab">
+                <div class="field" data-od-id="brief-field"><label for="brief">Project brief</label><textarea class="input ta" id="brief" aria-describedby="brief-hint"></textarea><span class="hint" id="brief-hint"></span></div>
+                <div class="toolbar" style="margin-top:10px"><button class="btn btn-secondary btn-sm" data-action="brief-save" id="brief-save" data-od-id="brief-save"><svg class="icon"><use href="#i-check"/></svg>Save brief</button><button class="btn btn-ghost btn-sm" data-action="brief-long" data-od-id="brief-paste-long"><svg class="icon"><use href="#i-file"/></svg>Paste the full runbook</button><span class="spacer"></span><span class="faint" style="font-size:12.5px" id="brief-saved"></span></div>
+                <div class="section-title"><h3>Effective instructions</h3><p>Applied top to bottom; later layers cannot override an enforced one</p></div>
+                <div class="layers" id="layers" data-od-id="effective-instructions"></div>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="memory" data-od-id="memory-tab">
+                <div class="rules"><div class="rule"><div>Memory mode<span class="sub" id="mem-sub"></span></div><div class="choice sm" role="radiogroup" aria-label="Memory mode" id="mem" data-od-id="memory-mode"><button role="radio" data-value="project" aria-checked="true">Project only</button><button role="radio" data-value="personal" aria-checked="false">Also use my personal memory</button></div></div></div>
+                <p class="lockline" id="mem-lock" data-od-id="memory-lock"></p>
+                <div class="section-title"><h3>Project memories</h3><p id="mem-n"></p></div>
+                <div class="flist" id="mems" data-od-id="memory-list"></div>
+                <div class="danger-card" data-od-id="memory-forget-all"><b>Forget all project memory</b><p class="muted" style="font-size:12.5px;margin-top:2px">Agents stop recalling anything learned in this project. Chats, files and knowledge bases are not affected. This cannot be undone.</p>
+                  <div class="row" id="fa-row"><button class="btn btn-danger btn-sm" data-action="fa-ask" id="fa-ask" data-od-id="forget-all-ask"><svg class="icon"><use href="#i-trash"/></svg>Forget all</button></div>
+                  <div class="row" id="fa-confirm" hidden><span class="grow" id="fa-q" style="flex:1"></span><button class="btn btn-ghost btn-sm" data-action="fa-cancel" data-od-id="forget-all-cancel">Cancel</button><button class="btn btn-danger btn-sm" data-action="fa-go" id="fa-go" data-od-id="forget-all-go"><svg class="icon"><use href="#i-trash"/></svg>Forget everything</button></div>
+                </div>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="members" data-od-id="members-tab">
+                <div class="roles" data-od-id="role-guide"><div><b>Owner</b>Everything, including budget, sharing and delete</div><div><b>Editor</b>Changes settings and files</div><div><b>Runner</b>Chats and runs agents</div><div><b>Viewer</b>Reads chats and results</div></div>
+                <table class="table" data-od-id="members-table"><thead><tr><th>Principal</th><th>Role</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody id="mem-rows"></tbody></table>
+                <div class="section-title"><h3>Invite</h3><p>People in this workspace only</p></div>
+                <form class="invite" id="inv-form" data-od-id="invite-form">
+                  <div class="field"><label for="inv-email">Email</label><input class="input" id="inv-email" type="email" placeholder="name@uar.team" autocomplete="off" aria-describedby="inv-hint" /></div>
+                  <div class="field"><label for="inv-role">Role</label><div class="select-wrap"><select class="input select" id="inv-role"><option>Editor</option><option selected>Runner</option><option>Viewer</option><option>Owner</option></select></div></div>
+                  <button class="btn btn-secondary" type="submit" id="inv-go" data-od-id="invite-send"><svg class="icon"><use href="#i-plus"/></svg>Invite</button>
+                </form>
+                <p class="hint" id="inv-hint" style="font-size:12px;color:var(--faint);margin:6px 2px 0">Try <span class="mono">dana@gmail.com</span> to see an address outside the workspace tenant.</p>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="budget" data-od-id="budget-tab">
+                <div class="card" data-od-id="spend-card"><div class="spend"><b class="mono" id="b-pct"></b><div><div class="meter" id="b-meter"><i></i></div><p class="faint" style="font-size:12.5px;margin-top:6px" id="b-sum"></p></div></div></div>
+                <div class="rules" style="margin-top:12px" data-od-id="budget-rules">
+                  <div class="rule"><div><label for="b-limit">Monthly limit (USD)</label><span class="sub">Resets on the 1st. Counts every run started from this project.</span></div><input class="input mono" type="number" min="1" step="1" id="b-limit" style="width:120px" /></div>
+                  <div class="rule"><div>Enforcement<span class="sub" id="enf-sub"></span></div><div class="choice sm" role="radiogroup" aria-label="Budget enforcement" id="enf" data-od-id="enforcement-choice"><button role="radio" data-value="hard" aria-checked="true">hard</button><button role="radio" data-value="soft" aria-checked="false">soft</button></div></div>
+                </div>
+                <div class="section-title"><h3>Spend by agent</h3><p><span class="chip warn" style="height:22px;font-size:11.5px">sample data</span></p></div>
+                <div class="bars" id="bars" data-od-id="spend-by-agent"></div>
+                <p class="faint" style="font-size:12.5px;margin:12px 4px 0">Per-run cost and tokens live in <a href="runs.html" style="text-decoration:underline;text-underline-offset:2px" data-od-id="runs-link">Runs</a>.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="panel" aria-label="Project flows" aria-hidden="true" data-od-id="project-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-head">
+      <div class="tabs" role="tablist" aria-label="Project flows">
+        <button class="tab" role="tab" data-tab="new" aria-selected="true" id="tab-new"><svg class="icon icon-sm"><use href="#i-plus"/></svg>New project</button>
+        <button class="tab" role="tab" data-tab="move" aria-selected="false" id="tab-move"><svg class="icon icon-sm"><use href="#i-chat"/></svg>Move chats</button>
+      </div>
+      <span style="flex:1"></span>
+      <button class="icon-btn" data-action="panel-close" aria-label="Close (Esc)" data-od-id="panel-close"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="panel-body">
+      <div role="tabpanel" data-tabpanel="new" class="active" aria-labelledby="tab-new" data-od-id="new-flow">
+        <div class="steps" aria-hidden="true"><span class="on" id="s1"></span><span id="s2"></span><span id="s3"></span></div>
+        <div class="wstep active" id="w1" data-od-id="new-step-start">
+          <h3 style="font-size:16px">1 · Start from</h3>
+          <div class="presets" role="radiogroup" aria-label="Start from" id="starts" style="margin-top:10px"></div>
+          <div class="field" id="conv-f" style="margin-top:10px" hidden><label for="conv">Chat to convert</label><div class="select-wrap"><select class="input select" id="conv" data-od-id="convert-chat"></select></div><span class="hint">The chat moves into the new project; its history is kept as is.</span></div>
+        </div>
+        <div class="wstep" id="w2" data-od-id="new-step-details">
+          <h3 style="font-size:16px">2 · Name and goal</h3>
+          <div class="stack" style="margin-top:10px">
+            <div class="field"><label for="n-name">Name</label><input class="input" id="n-name" aria-describedby="n-name-hint" data-od-id="new-name" /><span class="hint" id="n-name-hint">Shown in the sidebar and on every chat in the project.</span></div>
+            <div class="field"><label for="n-goal">Goal</label><input class="input" id="n-goal" data-od-id="new-goal" /><span class="hint">One sentence. Agents see it at the top of the brief.</span></div>
+            <div class="field"><label for="n-brief">Brief</label><textarea class="input ta" id="n-brief" style="min-height:110px" data-od-id="new-brief"></textarea></div>
+          </div>
+        </div>
+        <div class="wstep" id="w3" data-od-id="new-step-bindings">
+          <h3 style="font-size:16px">3 · Bindings</h3>
+          <span class="lbl-sm">Default target</span>
+          <div class="choice sm" role="radiogroup" aria-label="New project default target" id="n-tgt"><button role="radio" data-value="orchestrator" aria-checked="true">Orchestrator · routing on</button><button role="radio" data-value="pinned" aria-checked="false">Pin the first agent</button></div>
+          <span class="lbl-sm">Allowed agents</span><div class="cl" id="n-agents" data-od-id="new-agents"></div>
+          <span class="lbl-sm">Linked knowledge bases · live</span><div class="cl" id="n-kbs" data-od-id="new-kbs"></div>
+          <span class="lbl-sm">Memory</span>
+          <div class="choice sm" role="radiogroup" aria-label="New project memory" id="n-mem"><button role="radio" data-value="project" aria-checked="true">Project only</button><button role="radio" data-value="personal" aria-checked="false">Also my personal memory</button></div>
+          <p class="faint" style="font-size:12.5px;margin-top:12px">Skills, MCP servers, budget and members start from workspace defaults and can be changed after creation.</p>
+          <div class="toolbar" style="margin-top:12px"><button class="btn btn-secondary" data-action="n-create" id="n-create" data-od-id="new-create"><svg class="icon"><use href="#i-check"/></svg>Create project</button></div>
+          <div class="banner err result" id="n-err" role="alert" data-od-id="new-error"><svg class="icon"><use href="#i-alert"/></svg><span class="grow"><b id="n-err-t"></b><span class="sub">Project names are unique in a workspace so chats and links stay unambiguous.</span></span><button class="btn btn-ghost btn-sm" data-action="n-edit-name" data-od-id="new-edit-name">Edit name</button></div>
+        </div>
+        <div class="wizard-foot">
+          <button class="btn btn-ghost" data-action="wiz-back" id="w-back" style="visibility:hidden" data-od-id="wizard-back">Back</button>
+          <button class="btn btn-secondary" data-action="wiz-next" id="w-next" data-od-id="wizard-next">Next</button>
+        </div>
+      </div>
+      <div role="tabpanel" data-tabpanel="move" aria-labelledby="tab-move" data-od-id="move-flow">
+        <h3 style="font-size:16px">Move chats into <span id="mv-p"></span></h3>
+        <div class="note-card" data-od-id="move-explainer">Moving re-applies the project's <b>instructions, knowledge and policies</b> to future turns. <b>Past turns are unchanged</b>; they keep the answers, tools and citations they had. A chat pinned to an agent the project does not allow must add that agent or switch to the orchestrator.</div>
+        <div class="stack" id="mv-list" style="gap:6px" data-od-id="move-list"></div>
+        <div class="toolbar" style="margin-top:14px"><button class="btn btn-secondary" data-action="mv-go" id="mv-go" disabled data-od-id="move-go"><svg class="icon"><use href="#i-download"/></svg><span id="mv-go-t">Move chats</span></button><span class="faint" style="font-size:12.5px" id="mv-hint"></span></div>
+        <div class="banner ok result" id="mv-done" data-od-id="move-done"><svg class="icon"><use href="#i-check"/></svg><span class="grow"><b id="mv-done-t"></b><span class="sub">The next turn in each chat uses this project's settings.</span></span></div>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-overlay" aria-hidden="true"></div>
+</div>
+
+<div class="cmdk-backdrop"></div>
+<div class="cmdk" role="dialog" aria-label="Search" data-od-id="cmdk">
+  <input class="input" type="search" placeholder="Search projects and pages…" aria-label="Search" />
+  <div class="cmdk-list">
+    <p class="menu-label">Projects</p>
+    <button class="menu-item" data-action="new-open"><svg class="icon"><use href="#i-plus"/></svg>New project</button>
+    <button class="menu-item" data-action="move-open"><svg class="icon"><use href="#i-chat"/></svg>Move a chat into the selected project</button>
+    <button class="menu-item" data-action="goto" data-p="staging-ops"><svg class="icon"><use href="#i-folder"/></svg>Staging ops</button>
+    <button class="menu-item" data-action="goto" data-p="policy-review-q4"><svg class="icon"><use href="#i-folder"/></svg>Policy review Q4</button>
+    <p class="menu-label">Go to</p>
+    <a class="menu-item" href="chat-workspace.html"><svg class="icon"><use href="#i-chat"/></svg>Chat</a>
+    <a class="menu-item" href="knowledge.html"><svg class="icon"><use href="#i-book"/></svg>Knowledge</a>
+    <a class="menu-item" href="agents.html"><svg class="icon"><use href="#i-bot"/></svg>Agents</a>
+    <a class="menu-item" href="runs.html"><svg class="icon"><use href="#i-runs"/></svg>Runs</a>
+  </div>
+</div>
+
+<script src="assets/settings.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+(function () {
+  "use strict";
+  const S = window.UARShell, app = document.querySelector(".app"), $ = (s) => document.querySelector(s);
+  const ic = (n) => `<svg class="icon"><use href="#i-${n}"/></svg>`;
+  const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const money = (n) => "$" + n.toFixed(2);
+  const ME = "Travis James", TENANT = "uar.team", LIMIT = 8000;
+  const AG = { "ops-agent": "Ops agent", "policy-reviewer": "Policy reviewer", "default-agent": "Default Assistant", "general-purpose": "general-purpose", "rust-reviewer": "rust-reviewer" };
+  const SKILLS = ["kreuzberg", "adversarial-review", "deep-research", "error-handling", "sycophancy-correction"];
+  const MCP = [["filesystem", "connected · 9 tools"], ["fetch", "connected · 1 tool"], ["kreuzberg", "connected · 3 tools"], ["surreal_memory", "connected · 14 tools"], ["tavily", "reconnecting"]];
+  const A2UI = [["uar-core", "approval cards, forms, run timeline"], ["ops-kit", "incident summary, config diff"], ["charts-lite", "spend and latency charts"]];
+  const KB_ALL = { runbooks: 31, "mcp-runbook": 7, "api-reference": 14, "Workspace docs": 58 };
+  const MODELS = ["anthropic/claude-sonnet-5", "openai/gpt-6-sol", "anthropic/claude-opus-5-5", "groq/llama-3.3-70b-versatile"];
+  const BRIEF = "Staging only. Never touch production endpoints.\nDiagnose before changing anything and cite the runbook passage behind each step.\nConfig writes need an approved permission request (config.write).\nWhen the mcp-runbook and memory disagree, trust the runbook.\nSummarize each incident as an incident card and file follow-ups as project tasks.";
+  const mem = (n, e, r) => ({ n, e, r, ini: n.split(" ").map((w) => w[0]).join("").slice(0, 2) });
+  const P = {
+    "staging-ops": { t: "Staging ops", goal: "Keep staging MCP and config healthy before the 1.1 release", status: "active", shared: false, target: "orchestrator", routing: true, pin: "ops-agent",
+      agents: ["ops-agent", "policy-reviewer"], skills: ["kreuzberg", "adversarial-review"], mcp: ["filesystem", "fetch", "kreuzberg"], a2ui: ["uar-core", "ops-kit"], model: MODELS[0], appr: "ask", memMode: "project", brief: BRIEF,
+      kbs: [["runbooks", "live"], ["mcp-runbook", "live"], ["api-reference", "pinned", 12]],
+      files: [["runbook-staging.md", "indexed", 48], ["mcp-timeouts-2026-10.md", "indexed", 22], ["config-staging.toml", "indexed", 9], ["incident-0931.pdf", "indexed", 31], ["groq-rotation-notes.md", "indexed", 6], ["probe-results.csv", "indexing", 0]],
+      members: [mem(ME, "travis@" + TENANT, "Owner"), mem("Priya Shah", "priya@" + TENANT, "Editor"), mem("Marco Ruiz", "marco@" + TENANT, "Runner")],
+      chats: [{ t: "Staging MCP timeouts", tgt: "orchestrator", via: "ops-agent", last: "4 min ago", st: "waiting", note: "approval config.write" }, { t: "Rotate the Groq key", tgt: "ops-agent", last: "2 days ago", st: "done" }, { t: "Knowledge base re-embed plan", tgt: "orchestrator", via: "policy-reviewer", last: "1 h ago", st: "idle" }],
+      board: [["wait", "run", "Approve config.write on staging-mcp", "ops-agent", "4 min", 0], ["work", "run", "Nightly MCP health probe", "ops-agent", "12 min", "runs.html"], ["review", "chat", "Knowledge base re-embed plan", "policy-reviewer", "1 h", 2], ["done", "chat", "Rotate the Groq key", "ops-agent", "2 d", 1]],
+      tasks: [{ t: "Confirm the fetch timeout is 30 s on staging", who: ME, s: "todo" }, { t: "Re-embed mcp-runbook after the doc fixes", who: "ops-agent", s: "doing" }, { t: "Review the Cedar permit for config.write", who: "policy-reviewer", s: "done" }],
+      feed: [["alert", "Ops agent asked for approval on config.write", "4 min ago"], ["check", "Policy reviewer finished the re-embed plan", "1 h ago"], ["pin", "Priya Shah pinned api-reference to rev 12", "3 h ago"], ["key", "Groq key rotated · chat resolved", "2 days ago"]],
+      mems: [["The fetch MCP server times out after 30 s on staging", "from Staging MCP timeouts · 4 min ago"], ["Config writes need an approved permission request", "from the brief · 2 days ago"], ["The Groq key is stored in the staging secret store; last rotated 3 Oct", "from Rotate the Groq key · 2 days ago"]],
+      budget: { limit: 150, mode: "hard", spent: 61.4, per: [["ops-agent", 44.1], ["policy-reviewer", 12.8], ["orchestrator-agent", 4.5]] } },
+    "policy-review-q4": { t: "Policy review Q4", goal: "Review every Cedar policy change landing in Q4 before it is promoted", status: "active", shared: true, target: "pinned", routing: false, pin: "policy-reviewer",
+      agents: ["policy-reviewer", "default-agent"], skills: ["adversarial-review", "sycophancy-correction"], mcp: ["fetch"], a2ui: ["uar-core"], model: MODELS[1], appr: "ask", memMode: "project", brief: "Explain every permit you would narrow and why. Never promote a policy without a named human approver.",
+      kbs: [["api-reference", "live"], ["Workspace docs", "live"]], files: [["cedar-q4-changes.md", "indexed", 18], ["approver-roster.csv", "indexed", 3]],
+      members: [mem("Dana Lee", "dana@" + TENANT, "Owner"), mem(ME, "travis@" + TENANT, "Editor"), mem("Priya Shah", "priya@" + TENANT, "Runner"), mem("Sam Okafor", "sam@" + TENANT, "Viewer")],
+      chats: [{ t: "Summarize the Cedar policy diff", tgt: "policy-reviewer", last: "yesterday", st: "idle" }, { t: "Q4 permit audit", tgt: "policy-reviewer", last: "20 min ago", st: "running" }],
+      board: [["work", "run", "Q4 permit audit", "policy-reviewer", "20 min", 1], ["review", "chat", "Summarize the Cedar policy diff", "policy-reviewer", "1 d", 0]],
+      tasks: [{ t: "Name an approver for the billing permits", who: "Dana Lee", s: "todo" }], feed: [["play", "Q4 permit audit started", "20 min ago"], ["users", "Sam Okafor joined as Viewer", "2 days ago"]],
+      mems: [["Billing permits need two approvers in Q4", "from Summarize the Cedar policy diff · yesterday"]], budget: { limit: 80, mode: "soft", spent: 18.2, per: [["policy-reviewer", 16.9], ["default-agent", 1.3]] } },
+    "release-notes-101": { t: "Release notes 1.0.1", goal: "Draft and publish the 1.0.1 release notes", status: "archived", shared: false, target: "orchestrator", routing: true, pin: "default-agent",
+      agents: ["default-agent"], skills: [], mcp: ["filesystem"], a2ui: [], model: MODELS[0], appr: "inherit", memMode: "project", brief: "Write for operators, not developers. One line per change.",
+      kbs: [["Workspace docs", "pinned", 51]], files: [["changes-1.0.1.md", "indexed", 12]], members: [mem(ME, "travis@" + TENANT, "Owner")],
+      chats: [{ t: "Draft the 1.0.1 notes", tgt: "orchestrator", via: "default-agent", last: "Sept 12", st: "done" }], board: [["done", "chat", "Draft the 1.0.1 notes", "default-agent", "23 d", 0]], tasks: [], feed: [["box", "Archived by Travis James", "Sept 14"]], mems: [], budget: { limit: 40, mode: "hard", spent: 0, per: [] } },
+  };
+  const LOOSE = [{ id: "l1", t: "Summarize the Cedar policy diff (draft)", tgt: "orchestrator", last: "yesterday" }, { id: "l2", t: "Why did run 7f3a stall?", tgt: "rust-reviewer", last: "2 days ago" }, { id: "l3", t: "Draft the 1.1 changelog", tgt: "default-agent", last: "3 days ago" }];
+  let cur = "staging-ops", pendingOp = null;
+
+  const chatHref = (id, c) => `chat-workspace.html?${c.tgt !== "orchestrator" ? "agent=" + c.tgt + "&amp;" : ""}project=${id}`;
+  const who = (w) => AG[w] || w;
+  const isAgent = (w) => !!AG[w] || w === "orchestrator-agent";
+  function busy(b, on) { b.classList.toggle("is-loading", on); b.disabled = on; const u = b.querySelector("use"), svg = b.querySelector(".icon"); if (!u) return; if (on) { b.dataset.ic = u.getAttribute("href"); u.setAttribute("href", "#i-refresh"); svg.classList.add("spin"); } else { u.setAttribute("href", b.dataset.ic); svg.classList.remove("spin"); } }
+  function setChoice(g, v) { g.querySelectorAll("[role=radio]").forEach((r) => r.setAttribute("aria-checked", String(r.dataset.value === v))); }
+  function boardItems(p) {
+    const tk = p.tasks.map((t, i) => [t.s === "done" ? "done" : t.s === "todo" && t.who === ME ? "wait" : "work", "task", t.t, t.who, t.s, "task:" + i]);
+    return p.board.concat(tk);
+  }
+  const waitingOf = (p) => p.status === "archived" ? 0 : boardItems(p).filter((b) => b[0] === "wait").length;
+
+  function rowHtml(id) {
+    const p = P[id], w = waitingOf(p);
+    const st = p.status === "archived" ? "archived" : p.status === "paused" ? "paused" : `${p.chats.length} chat${p.chats.length === 1 ? "" : "s"}`;
+    return `<button class="srow pj" aria-current="${id === cur}" data-src="${id}" data-view="project" data-od-id="row-${id}"><span class="smark">${ic(p.shared ? "users" : "folder")}</span><span><span class="nm">${esc(p.t)}</span><span class="st">${p.status === "active" ? "" : `<i class="status-dot ${p.status === "paused" ? "warn" : "off"}"></i>`}${st}${w ? ` · <span class="chip warn">${w} waiting on you</span>` : ""} · ${p.members.length} member${p.members.length === 1 ? "" : "s"}</span></span><span class="side"></span></button>`;
+  }
+  function renderList() {
+    const ids = Object.keys(P), act = ids.filter((i) => P[i].status !== "archived"), arc = ids.filter((i) => P[i].status === "archived");
+    $("#g-act").innerHTML = act.map(rowHtml).join(""); $("#g-arc").innerHTML = arc.length ? arc.map(rowHtml).join("") : `<p class="faint" style="font-size:12px;padding:4px 10px">Nothing archived</p>`;
+    $("#g-act-n").textContent = act.length; $("#g-arc-n").textContent = arc.length;
+    $("#sum-active").textContent = act.filter((i) => P[i].status === "active").length;
+    $("#sum-active-sub").textContent = `${act.filter((i) => P[i].status === "paused").length} paused · ${arc.length} archived`;
+    $("#sum-wait").textContent = ids.reduce((n, i) => n + waitingOf(P[i]), 0);
+    const sp = ids.reduce((n, i) => n + P[i].budget.spent, 0), lim = act.reduce((n, i) => n + P[i].budget.limit, 0);
+    $("#sum-spend").textContent = money(sp); $("#sum-spend-sub").textContent = `of ${money(lim)} in limits`;
+    $("#sum-shared").textContent = ids.filter((i) => P[i].shared && P[i].status !== "archived").length;
+  }
+
+  function render(id) {
+    cur = id; const p = P[id]; hideConfirm();
+    document.querySelectorAll(".sources .srow[data-src]").forEach((r) => r.setAttribute("aria-current", String(r.dataset.src === id)));
+    $("#d-name").textContent = p.t;
+    const chip = { active: "ok", paused: "warn", archived: "" }[p.status];
+    $("#d-sub").innerHTML = `<span class="mono">${id}</span><span class="chip ${chip}">${p.status}</span>${p.shared ? `<span class="chip">shared</span>` : ""}<span class="avs" aria-label="${p.members.length} members">${p.members.map((m) => `<span class="avatar" title="${esc(m.n)} · ${m.r}">${m.ini}</span>`).join("")}</span>`;
+    const chat = $("#d-chat"); chat.href = `chat-workspace.html?new=1&project=${id}`; chat.classList.toggle("a-dis", p.status !== "active"); chat.setAttribute("aria-disabled", String(p.status !== "active"));
+    $("#m-pause").disabled = p.status === "archived"; $("#m-pause").dataset.op = p.status === "paused" ? "resume" : "pause"; $("#m-pause-t").textContent = p.status === "paused" ? "Resume" : "Pause";
+    $("#m-archive").dataset.op = p.status === "archived" ? "restore" : "archive"; $("#m-archive-t").textContent = p.status === "archived" ? "Restore" : "Archive";
+    const ban = $("#st-ban"); ban.classList.toggle("show", p.status !== "active"); ban.classList.toggle("warn", p.status === "paused");
+    if (p.status === "paused") { $("#st-t").textContent = "Paused"; $("#st-s").textContent = "Live runs and scheduled work are stopped. Everything is kept; you can still read and edit settings."; $("#st-go-t").textContent = "Resume"; }
+    if (p.status === "archived") { $("#st-t").textContent = "Archived · read-only"; $("#st-s").textContent = "Runs are stopped and nothing here can change. Restore to work in it again."; $("#st-go-t").textContent = "Restore"; }
+    $("#panels").inert = p.status === "archived";
+    $("#c-chats").textContent = p.chats.length; $("#c-mem").textContent = p.members.length;
+    rOverview(); rChats(); rKnow(); rAgents(); rInstr(); rMem(); rMembers(); rBudget();
+  }
+
+  /* overview */
+  const COLS = [["wait", "Waiting on you"], ["work", "Working"], ["review", "Ready for review"], ["done", "Resolved"]];
+  const KIND = { chat: "quiet", run: "live", task: "" };
+  function rOverview() {
+    const p = P[cur], items = boardItems(p);
+    $("#o-goal").textContent = p.goal;
+    $("#board").innerHTML = COLS.map(([k, label]) => { const its = items.filter((b) => b[0] === k); return `<div class="col ${k}" data-od-id="col-${k}"><h4>${label}<span class="mono">${its.length}</span></h4>${its.length ? its.map((b, i) => {
+      const [, kind, t, a, age, ref] = b, isTask = String(ref).startsWith("task:"), href = isTask ? null : typeof ref === "number" ? chatHref(cur, p.chats[ref] || { tgt: "orchestrator" }) : ref;
+      const inner = `<span class="chip ${KIND[kind]}">${kind}</span><b>${esc(t)}</b><span class="meta">${esc(who(a))} · ${isTask ? age : age + " ago"}</span>`;
+      return href ? `<a class="bcard" href="${href}" data-od-id="card-${k}-${i}">${inner}</a>` : `<button class="bcard" data-action="task-cycle" data-i="${ref.slice(5)}" data-od-id="card-${k}-${i}" aria-label="${esc(t)} · ${age}, move to next status">${inner}</button>`;
+    }).join("") : `<p class="empty-col">Nothing here</p>`}</div>`; }).join("");
+    const opts = [...new Set(p.members.map((m) => m.n).concat(p.agents))];
+    $("#t-who").innerHTML = opts.map((o) => `<option value="${o}">${esc(who(o))}${isAgent(o) ? " · agent" : ""}</option>`).join("");
+    $("#tasks").innerHTML = p.tasks.length ? p.tasks.map((t, i) => `<div class="mrow" data-od-id="task-${i}"><button class="chip ${t.s === "done" ? "ok" : t.s === "doing" ? "live" : ""}" data-action="task-cycle" data-i="${i}" aria-label="Status ${t.s}, change">${t.s}</button><span class="${t.s === "done" ? "done-t" : ""}">${esc(t.t)}</span><span class="faint" style="font-size:12px">${esc(who(t.who))}</span></div>`).join("") : `<p class="muted-p" style="font-size:12.5px">No tasks yet.</p>`;
+    $("#feed").innerHTML = p.feed.map((f, i) => `<div class="mrow" data-od-id="activity-${i}">${ic(f[0])}<span>${esc(f[1])}<span class="sub">${f[2]}</span></span></div>`).join("");
+  }
+
+  /* chats */
+  const STATE = { waiting: ["warn", "waiting on you"], running: ["live", "running"], idle: ["", "idle"], done: ["ok", "resolved"] };
+  const tgtHtml = (c) => c.tgt === "orchestrator" ? `<span class="tgt">${ic("route")}Orchestrator${c.via ? ` → ${who(c.via)}` : ""}</span>` : `<span class="tgt">${ic("pin")}${who(c.tgt)}</span>`;
+  function rChats() {
+    const p = P[cur];
+    $("#chat-rows").innerHTML = p.chats.map((c, i) => `<tr data-od-id="chat-row-${i}"><td><a class="tl" href="${chatHref(cur, c)}">${esc(c.t)}</a></td><td>${tgtHtml(c)}</td><td class="hide-sm faint">${c.last}</td><td><span class="chip ${STATE[c.st][0]}">${STATE[c.st][1]}</span>${c.note ? ` <span class="mono faint" style="font-size:11.5px">${c.note.replace("approval ", "")}</span>` : ""}</td></tr>`).join("") || `<tr><td colspan="4" class="faint">No chats yet. Start one or move one in.</td></tr>`;
+  }
+
+  /* knowledge & files */
+  function rKnow() {
+    const p = P[cur];
+    $("#f-kb").textContent = `kb_${cur.replace(/-/g, "_")}_files`;
+    $("#f-sum").textContent = `${p.files.length} files · ${p.files.reduce((n, f) => n + f[2], 0)} chunks`;
+    $("#files").innerHTML = p.files.map((f, i) => `<div class="mrow" data-od-id="file-${i}"><span class="mono">${esc(f[0])}</span><span class="mono faint" style="font-size:12px">${f[2] ? f[2] + " chunks" : ""}</span><span class="chip ${f[1] === "indexed" ? "ok" : "live"}">${f[1]}</span></div>`).join("");
+    $("#kbs").innerHTML = p.kbs.map(([n, mode, rev], i) => `<div class="rule" data-od-id="kb-${i}"><div>${esc(n)}<span class="sub">${mode === "pinned" ? `Pinned at <span class="mono">rev ${rev}</span> · latest is <span class="mono">rev ${KB_ALL[n]}</span>` : `Live · follows <span class="mono">rev ${KB_ALL[n]}</span> and every re-embed`}</span></div><div class="choice sm" role="radiogroup" aria-label="Binding for ${esc(n)}" id="kbb-${i}"><button role="radio" data-value="live" aria-checked="${mode === "live"}">live</button><button role="radio" data-value="pinned" aria-checked="${mode === "pinned"}">pinned</button></div></div>`).join("");
+  }
+
+  /* agents & tools */
+  const APPR = { inherit: "Use the workspace approval policy", auto: "Run allowed tools without asking", ask: "Ask before any tool that writes", deny: "Block tools that write; read-only project" };
+  function rAgents() {
+    const p = P[cur];
+    setChoice($("#tgt"), p.target); $("#sw-routing").setAttribute("aria-checked", String(p.routing));
+    $("#r-routing").hidden = p.target !== "orchestrator"; $("#r-pin").hidden = p.target !== "pinned";
+    $("#pin").innerHTML = p.agents.map((a) => `<option value="${a}"${a === p.pin ? " selected" : ""}>${who(a)}</option>`).join("");
+    const sec = (title, key, list, label) => `<div class="section-title"><h3>${title}</h3><p>${p[key].length} of ${list.length} allowed</p></div><div class="rules" data-od-id="allow-${key}">${list.map(([n, s]) => `<div class="rule" data-od-id="allow-${key}-${n}"><div>${label(n)}<span class="sub">${s}</span></div><span class="switch" role="switch" aria-checked="${p[key].includes(n)}" aria-label="Allow ${esc(n)}" data-id="al:${key}:${n}" tabindex="0"></span></div>`).join("")}</div>`;
+    $("#allow").innerHTML = sec("Agents", "agents", Object.keys(AG).map((a) => [a, a === p.pin && p.target === "pinned" ? "pinned default target" : "agent"]), (n) => `${who(n)} <span class="mono faint">${n}</span>`)
+      + sec("Skills", "skills", SKILLS.map((s) => [s, "skill"]), (n) => `<span class="mono">${n}</span>`)
+      + sec("MCP servers", "mcp", MCP, (n) => `<span class="mono">${n}</span>`)
+      + sec("A2UI libraries", "a2ui", A2UI, (n) => `<span class="mono">${n}</span>`);
+    $("#model").innerHTML = MODELS.map((m) => `<option${m === p.model ? " selected" : ""}>${m}</option>`).join("");
+    setChoice($("#appr"), p.appr); $("#appr-sub").textContent = APPR[p.appr];
+  }
+
+  /* instructions */
+  function rInstr() { const p = P[cur]; $("#brief").value = p.brief; $("#brief-saved").textContent = ""; briefCount(); rLayers(); }
+  function briefCount() {
+    const n = $("#brief").value.length, over = n > LIMIT, h = $("#brief-hint");
+    h.innerHTML = `<span class="mono">${n.toLocaleString()} / ${LIMIT.toLocaleString()}</span> characters${over ? " · over the limit" : ""}`; h.classList.toggle("err", over);
+    if (!over) $("#brief").setAttribute("aria-invalid", "false");
+  }
+  function rLayers() {
+    const p = P[cur], agent = p.target === "pinned" ? p.pin : "ops-agent";
+    const L = [["Workspace policy", "Cedar · tool permits, egress, approvals", "enforced"], ["Project brief", `${p.brief ? p.brief.split("\n")[0].slice(0, 80) + "…" : "No brief yet"} · the text is advisory; this project's allowed lists and budget are enforced`, "advisory"], [`Agent prompt · ${who(agent)}`, p.target === "pinned" ? `pinned agent ${agent}` : `example: when the orchestrator routes to ${agent}`, "advisory"], ["Skill overlays", p.skills.join(", ") || "none allowed", "advisory"], ["Conversation settings", "can switch off tools and agents, never add them", "enforced"], ["This message", "the user's turn and attachments", "advisory"]];
+    $("#layers").innerHTML = L.map((l, i) => `<div class="layer${i === 1 ? " cur" : ""}" data-od-id="layer-${i + 1}"><span class="n">${i + 1}</span><span><b style="font-weight:500">${esc(l[0])}</b><span class="sub">${esc(l[1])}</span></span><span class="chip ${l[2] === "enforced" ? "ok" : ""}">${l[2] === "enforced" ? "enforced by policy" : "advisory text"}</span></div>`).join("");
+  }
+
+  /* memory */
+  function rMem() {
+    const p = P[cur], perBtn = $('#mem [data-value="personal"]');
+    if (p.shared) p.memMode = "project";
+    setChoice($("#mem"), p.memMode); perBtn.disabled = p.shared;
+    $("#mem-sub").textContent = p.memMode === "project" ? "Agents recall only what was learned in this project" : "Agents also recall your personal memory; it is never written back here";
+    $("#mem-lock").innerHTML = p.shared ? `${ic("lock")}<span>Locked to Project only because this project is shared. Personal memory would expose what you remember to ${p.members.length - 1} other members.</span>` : "";
+    $("#mem-n").textContent = `${p.mems.length} item${p.mems.length === 1 ? "" : "s"}`;
+    $("#mems").innerHTML = p.mems.length ? p.mems.map((m, i) => `<div class="mrow" style="grid-template-columns:minmax(0,1fr) auto" data-od-id="memory-${i}"><span>${esc(m[0])}<span class="sub">${esc(m[1])}</span></span><button class="btn btn-ghost btn-sm" data-action="mem-forget" data-i="${i}">Forget</button></div>`).join("") : `<p class="muted-p" style="font-size:12.5px">No project memories.</p>`;
+    $("#fa-ask").disabled = !p.mems.length; $("#fa-confirm").hidden = true; $("#fa-row").hidden = false;
+  }
+
+  /* members */
+  const owners = (p) => p.members.filter((m) => m.r === "Owner").length;
+  function rMembers() {
+    const p = P[cur], last = owners(p) === 1;
+    $("#mem-rows").innerHTML = p.members.map((m, i) => { const lock = last && m.r === "Owner"; return `<tr data-od-id="member-${i}"><td><span class="who"><span class="avatar">${m.ini}</span><span>${esc(m.n)}${m.n === ME ? " (you)" : ""}<span class="sub">${esc(m.e)}</span></span></span></td><td><label class="sr-only" for="role-${i}">Role for ${esc(m.n)}</label><div class="select-wrap"><select class="input select" id="role-${i}" data-role="${i}"${lock ? ` disabled title="Last owner · make someone else Owner first"` : ""}>${["Owner", "Editor", "Runner", "Viewer"].map((r) => `<option${r === m.r ? " selected" : ""}>${r}</option>`).join("")}</select></div>${lock ? `<span class="faint" style="font-size:11.5px;display:block;margin-top:3px">Last owner · cannot change or remove</span>` : ""}</td><td style="text-align:right"><button class="icon-btn" data-action="mem-rm" data-i="${i}" aria-label="Remove ${esc(m.n)}"${lock ? ` disabled title="A project needs at least one owner"` : ""}>${ic("x")}</button></td></tr>`; }).join("");
+  }
+
+  /* budget */
+  const ENF = { hard: "New runs are refused once spend reaches the limit; a run in flight finishes its current step.", soft: "Runs continue past the limit; owners are warned at 80% and 100%." };
+  function rBudget() {
+    const b = P[cur].budget, pct = b.limit ? Math.round(b.spent / b.limit * 100) : 0;
+    $("#b-pct").textContent = pct + "%"; $("#b-meter").className = "meter " + (pct >= 100 ? "err" : pct >= 80 ? "warn" : "ok"); $("#b-meter").firstElementChild.style.width = Math.min(pct, 100) + "%";
+    $("#b-sum").innerHTML = `<span class="mono">${money(b.spent)}</span> of <span class="mono">${money(b.limit)}</span> this month · sample · ${b.mode} limit`;
+    $("#b-limit").value = b.limit; setChoice($("#enf"), b.mode); $("#enf-sub").textContent = ENF[b.mode];
+    const max = Math.max(1, ...b.per.map((x) => x[1]));
+    $("#bars").innerHTML = b.per.length ? b.per.map(([a, v], i) => `<div class="mrow" data-od-id="spend-${i}"><span>${esc(who(a === "orchestrator-agent" ? "Orchestrator" : a))}</span><div class="meter"><i style="width:${Math.round(v / max * 100)}%"></i></div><span class="mono">${money(v)}</span></div>`).join("") : `<p class="muted-p" style="font-size:12.5px">No spend this month.</p>`;
+  }
+
+  /* more-menu ops with inline confirm */
+  const OPS = {
+    pause: ["Pause", "Stops live runs and scheduled work. Chats, files, memory, tasks and settings are kept; resume any time.", "Pause project", "btn-secondary"],
+    archive: ["Archive", "Hides it under Archived, stops runs and makes it read-only. Restorable at any time; nothing is deleted.", "Archive project", "btn-danger"],
+    duplicate: ["Duplicate as a template", "Copies the brief, bindings, allowed lists and budget. Chats, project files, memory, members and tasks are not copied.", "Duplicate", "btn-secondary"],
+    delete: ["Delete", "", "Delete project", "btn-danger"],
+  };
+  function ask(op) {
+    const p = P[cur];
+    if (op === "resume" || op === "restore") return setStatus("active", op === "resume" ? "Resumed · scheduled work restarts" : "Restored to Active");
+    const o = OPS[op]; pendingOp = op;
+    $("#cf-t").textContent = `${o[0]} ${p.t}?`;
+    $("#cf-s").textContent = op === "delete" ? `Removes ${p.chats.length} chats, ${p.files.length} project files, project memory and ${p.tasks.length} tasks after 30 days. Linked knowledge bases and agents are untouched.` : o[1];
+    const go = $("#cf-go"); go.className = "btn btn-sm " + o[3]; go.querySelector("span").textContent = o[2];
+    $("#cf").classList.add("show"); go.focus();
+  }
+  function hideConfirm() { pendingOp = null; $("#cf").classList.remove("show"); }
+  function setStatus(s, msg) { P[cur].status = s; P[cur].feed.unshift(["info", `${msg} by ${ME}`, "just now"]); renderList(); render(cur); S.toast(msg, s === "active" ? "ok" : "warn"); }
+  function confirmGo() {
+    const op = pendingOp, b = $("#cf-go"), p = P[cur]; if (!op) return; busy(b, true);
+    setTimeout(() => {
+      busy(b, false); hideConfirm();
+      if (op === "pause") return setStatus("paused", "Paused · runs and scheduled work stopped");
+      if (op === "archive") return setStatus("archived", "Archived · read-only");
+      if (op === "duplicate") { let id = cur + "-template", n = 2; while (P[id]) id = `${cur}-template-${n++}`; addProject(id, { t: `${p.t} template`, goal: p.goal, brief: p.brief, agents: p.agents.slice(), skills: p.skills.slice(), mcp: p.mcp.slice(), a2ui: p.a2ui.slice(), kbs: p.kbs.map((k) => k.slice()), target: p.target, pin: p.pin, routing: p.routing, model: p.model, appr: p.appr, budget: { limit: p.budget.limit, mode: p.budget.mode, spent: 0, per: [] } }); return S.toast(`Duplicated as ${id} · settings only`); }
+      if (op === "delete") { const t = p.t; delete P[cur]; cur = Object.keys(P).find((i) => P[i].status !== "archived") || Object.keys(P)[0]; renderList(); render(cur); S.toast(`${t} deleted · recoverable for 30 days`, "warn"); }
+    }, 650);
+  }
+  function addProject(id, o) {
+    P[id] = Object.assign({ status: "active", shared: false, routing: true, target: "orchestrator", pin: "default-agent", agents: ["default-agent"], skills: [], mcp: ["filesystem"], a2ui: ["uar-core"], model: MODELS[0], appr: "inherit", memMode: "project", brief: "", kbs: [], files: [], members: [mem(ME, "travis@" + TENANT, "Owner")], chats: [], board: [], tasks: [], feed: [["plus", `Created by ${ME}`, "just now"]], mems: [], budget: { limit: 50, mode: "soft", spent: 0, per: [] } }, o);
+    cur = id; renderList(); render(id);
+  }
+
+  /* new project flow */
+  const STARTS = [["blank", "Blank", "folder", "Nothing bound; workspace defaults"], ["ops", "Ops runbook project", "wand", "Template · Ops agent, runbooks, approvals on writes"], ["policy", "Policy review", "shield", "Template · Policy reviewer, shared-safe memory"], ["research", "Research", "book", "Template · deep-research skill, Workspace docs"], ["convert", "Convert an existing chat", "chat", "Moves one chat in and seeds the brief from it"]];
+  const TPL = {
+    blank: { name: "", goal: "", brief: "", agents: ["default-agent"], kbs: [], tgt: "orchestrator" },
+    ops: { name: "Ops runbook project", goal: "Keep an environment healthy with runbook-backed fixes", brief: "Diagnose before changing anything. Cite the runbook passage behind each step. Config writes need approval.", agents: ["ops-agent", "policy-reviewer"], kbs: ["runbooks", "mcp-runbook"], tgt: "orchestrator" },
+    policy: { name: "Policy review", goal: "Review policy changes before promotion", brief: "Explain every permit you would narrow and why. Never promote without a named approver.", agents: ["policy-reviewer"], kbs: ["api-reference"], tgt: "pinned" },
+    research: { name: "Research", goal: "Answer a question with cited sources", brief: "Prefer primary sources. Cite every claim.", agents: ["general-purpose", "default-agent"], kbs: ["Workspace docs"], tgt: "orchestrator" },
+  };
+  let step = 1, NW = null;
+  function freshNew() { NW = { start: "blank", agents: TPL.blank.agents.slice(), kbs: [], tgt: "orchestrator", mem: "project" }; ["#n-name", "#n-goal", "#n-brief"].forEach((s) => { $(s).value = ""; }); $("#n-name").setAttribute("aria-invalid", "false"); rStarts(); setStep(1); }
+  function rStarts() {
+    $("#starts").innerHTML = STARTS.map(([k, n, icn, s]) => `<button class="preset" role="radio" aria-checked="${NW.start === k}" data-action="n-start" data-k="${k}" data-od-id="start-${k}"><span class="smark">${ic(icn)}</span><span><span class="nm">${n}</span><span class="sub">${s}</span></span></button>`).join("");
+    $("#conv-f").hidden = NW.start !== "convert"; $("#conv").innerHTML = LOOSE.map((c) => `<option value="${c.id}">${esc(c.t)}</option>`).join("");
+  }
+  function applyStart(k) {
+    NW.start = k; const t = TPL[k] || TPL.blank;
+    if (k === "convert") { const c = LOOSE.find((x) => x.id === $("#conv").value) || LOOSE[0]; $("#n-name").value = c.t.replace(/\?$/, ""); $("#n-goal").value = ""; $("#n-brief").value = `Seeded from the chat "${c.t}".`; NW.agents = c.tgt === "orchestrator" ? ["default-agent"] : [c.tgt]; NW.kbs = []; NW.tgt = c.tgt === "orchestrator" ? "orchestrator" : "pinned"; }
+    else { $("#n-name").value = t.name; $("#n-goal").value = t.goal; $("#n-brief").value = t.brief; NW.agents = t.agents.slice(); NW.kbs = t.kbs.slice(); NW.tgt = t.tgt; }
+    rStarts();
+  }
+  function rBind() {
+    setChoice($("#n-tgt"), NW.tgt); setChoice($("#n-mem"), NW.mem);
+    $("#n-agents").innerHTML = Object.keys(AG).map((a) => `<button class="chip" aria-pressed="${NW.agents.includes(a)}" data-action="n-tog" data-l="agents" data-k="${a}">${who(a)}</button>`).join("");
+    $("#n-kbs").innerHTML = Object.keys(KB_ALL).map((k) => `<button class="chip" aria-pressed="${NW.kbs.includes(k)}" data-action="n-tog" data-l="kbs" data-k="${k}">${k}</button>`).join("");
+  }
+  function setStep(n) {
+    step = n;
+    for (let i = 1; i <= 3; i++) { $("#w" + i).classList.toggle("active", i === n); $("#s" + i).className = i < n ? "done" : i === n ? "on" : ""; }
+    $("#w-back").style.visibility = n === 1 ? "hidden" : "visible"; $("#w-next").style.visibility = n === 3 ? "hidden" : "visible";
+    $("#n-err").classList.remove("show"); if (n === 3) rBind();
+  }
+  function create() {
+    const name = $("#n-name").value.trim(), b = $("#n-create"); busy(b, true); $("#n-err").classList.remove("show");
+    setTimeout(() => {
+      busy(b, false);
+      if (Object.values(P).some((p) => p.t.toLowerCase() === name.toLowerCase())) { $("#n-err-t").textContent = `A project named "${name}" already exists`; $("#n-err").classList.add("show"); S.toast("Name already in use", "err"); return; }
+      let id = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "project", n = 2; while (P[id]) id = id + "-" + n++;
+      const agents = NW.agents.length ? NW.agents.slice() : ["default-agent"], chats = [];
+      if (NW.start === "convert") { const i = LOOSE.findIndex((x) => x.id === $("#conv").value); if (i >= 0) { const c = LOOSE.splice(i, 1)[0]; chats.push({ t: c.t, tgt: c.tgt, last: c.last, st: "idle" }); } }
+      addProject(id, { t: name, goal: $("#n-goal").value.trim() || "No goal set yet", brief: $("#n-brief").value.trim(), agents, kbs: NW.kbs.map((k) => [k, "live"]), target: NW.tgt, pin: agents[0], memMode: NW.mem, chats, board: chats.map((c, i) => ["review", "chat", c.t, c.tgt === "orchestrator" ? "default-agent" : c.tgt, "now", i]) });
+      S.closePanel(); S.toast(`Created ${name} · ${id}`); NW = null;
+    }, 800);
+  }
+
+  /* move chats flow */
+  let MV = {};
+  function rMove() {
+    const p = P[cur]; $("#mv-p").textContent = p.t; $("#mv-done").classList.remove("show");
+    $("#mv-list").innerHTML = LOOSE.length ? LOOSE.map((c) => { const m = MV[c.id], bad = c.tgt !== "orchestrator" && !p.agents.includes(c.tgt);
+      return `<div class="pick" data-od-id="move-${c.id}"><input type="checkbox" id="mv-${c.id}" data-mv="${c.id}"${m ? " checked" : ""} /><label for="mv-${c.id}">${esc(c.t)}<span class="sub">${c.tgt === "orchestrator" ? "Orchestrator" : "Pinned to " + who(c.tgt)} · ${c.last}</span></label>${m && bad ? `<div class="fix" role="alert">${ic("alert")}<span style="flex:1 1 100%">${who(c.tgt)} is not allowed in ${esc(p.t)}. Choose one:</span><button class="chip ${m.fix === "allow" ? "accent" : ""}" data-action="mv-fix" data-id="${c.id}" data-fix="allow" aria-pressed="${m.fix === "allow"}">Allow ${who(c.tgt)} in the project</button><button class="chip ${m.fix === "orch" ? "accent" : ""}" data-action="mv-fix" data-id="${c.id}" data-fix="orch" aria-pressed="${m.fix === "orch"}">Switch the chat to Orchestrator</button></div>` : ""}</div>`; }).join("") : `<p class="muted-p" style="font-size:12.5px">No loose chats left. Every chat belongs to a project.</p>`;
+    const sel = Object.keys(MV), open = sel.filter((id) => { const c = LOOSE.find((x) => x.id === id); return c && c.tgt !== "orchestrator" && !p.agents.includes(c.tgt) && !MV[id].fix; });
+    $("#mv-go").disabled = !sel.length || !!open.length; $("#mv-go-t").textContent = sel.length ? `Move ${sel.length} chat${sel.length > 1 ? "s" : ""}` : "Move chats";
+    $("#mv-hint").textContent = open.length ? `${open.length} chat${open.length > 1 ? "s need" : " needs"} a decision` : "";
+  }
+  function moveGo() {
+    const p = P[cur], b = $("#mv-go"), ids = Object.keys(MV); busy(b, true);
+    setTimeout(() => {
+      busy(b, false);
+      ids.forEach((id) => { const i = LOOSE.findIndex((x) => x.id === id); if (i < 0) return; const c = LOOSE.splice(i, 1)[0];
+        if (MV[id].fix === "allow" && !p.agents.includes(c.tgt)) p.agents.push(c.tgt);
+        p.chats.unshift({ t: c.t, tgt: MV[id].fix === "orch" ? "orchestrator" : c.tgt, last: c.last, st: "idle" }); p.board = p.board.map((x) => typeof x[5] === "number" ? x.slice(0, 5).concat(x[5] + 1) : x); });
+      p.feed.unshift(["chat", `${ids.length} chat${ids.length > 1 ? "s" : ""} moved in by ${ME}`, "just now"]);
+      MV = {}; render(cur); renderList(); rMove(); $("#mv-done-t").textContent = `Moved ${ids.length} chat${ids.length > 1 ? "s" : ""} into ${p.t}`; $("#mv-done").classList.add("show"); S.toast(`Moved ${ids.length} into ${p.t}`);
+    }, 700);
+  }
+
+  /* events */
+  app.addEventListener("uar:source", (e) => { if (e.detail.view === "project") render(e.detail.id); });
+  app.addEventListener("uar:switch", (e) => {
+    const { id, on } = e.detail, p = P[cur];
+    if (id === "routing") { p.routing = on; rLayers(); return S.toast(on ? "Routing on · the orchestrator picks an allowed agent" : "Routing off · Default Assistant answers every message", on ? "ok" : "warn"); }
+    const [, key, n] = id.split(":"); if (!key) return; const list = p[key];
+    if (!on && key === "agents" && p.target === "pinned" && n === p.pin) { e.target.setAttribute("aria-checked", "true"); return S.toast(`${who(n)} is the pinned default target. Pin another agent or use Orchestrator first.`, "err"); }
+    if (on && !list.includes(n)) list.push(n); if (!on) p[key] = list.filter((x) => x !== n);
+    rAgents(); if (key === "skills") rLayers(); const sw = document.querySelector(`[data-id="${id}"]`); if (sw) sw.focus();
+    S.toast(`${who(n)} ${on ? "allowed" : "removed"} · conversations in ${p.t} ${on ? "may now use it" : "lose it on their next turn"}`, on ? "ok" : "warn");
+  });
+  app.addEventListener("uar:choice", (e) => {
+    const g = e.target.id, v = e.detail.value, p = P[cur];
+    if (g === "tgt") { p.target = v; if (v === "pinned" && !p.agents.includes(p.pin)) p.pin = p.agents[0]; rAgents(); rLayers(); S.toast(v === "pinned" ? `New chats go to ${who(p.pin)}` : "New chats go to the Orchestrator"); }
+    if (g === "appr") { p.appr = v; $("#appr-sub").textContent = APPR[v]; S.toast(`Tool approval default: ${v}`, v === "deny" ? "warn" : "ok"); }
+    if (g === "mem") { p.memMode = v; rMem(); S.toast(v === "project" ? "Project memory only" : "Personal memory also used in this project"); }
+    if (g === "enf") { p.budget.mode = v; rBudget(); S.toast(`${v === "hard" ? "Hard" : "Soft"} limit · ${ENF[v]}`); }
+    if (g.startsWith("kbb-")) { const k = p.kbs[Number(g.slice(4))]; k[1] = v; k[2] = v === "pinned" ? KB_ALL[k[0]] : undefined; rKnow(); const r = document.querySelector(`#${g} [data-value="${v}"]`); if (r) r.focus(); S.toast(v === "pinned" ? `${k[0]} pinned at rev ${k[2]}` : `${k[0]} is live · follows every re-embed`); }
+    if (g === "n-tgt") NW.tgt = v; if (g === "n-mem") NW.mem = v;
+  });
+  $("#pin").addEventListener("change", (e) => { P[cur].pin = e.target.value; rAgents(); rLayers(); S.toast(`Pinned ${who(e.target.value)} as the default target`); });
+  $("#model").addEventListener("change", (e) => { P[cur].model = e.target.value; S.toast("Default model " + e.target.value); });
+  $("#brief").addEventListener("input", briefCount);
+  $("#b-limit").addEventListener("change", (e) => { const v = Number(e.target.value); if (!(v > 0)) { e.target.setAttribute("aria-invalid", "true"); return S.toast("Enter a limit above $0", "err"); } e.target.setAttribute("aria-invalid", "false"); P[cur].budget.limit = v; rBudget(); renderList(); S.toast(`Monthly limit ${money(v)}`); });
+  $("#conv").addEventListener("change", () => applyStart("convert"));
+  $("#f-in").addEventListener("change", (e) => {
+    const p = P[cur], names = [...e.target.files].map((f) => f.name); if (!names.length) return;
+    names.forEach((n) => p.files.unshift([n, "indexing", 0])); rKnow(); S.toast(`${names.length} file${names.length > 1 ? "s" : ""} uploading to project files`); e.target.value = "";
+    setTimeout(() => { names.forEach((n) => { const f = p.files.find((x) => x[0] === n); if (f) { f[1] = "indexed"; f[2] = 4 + n.length % 9; } }); if (P[cur] === p) rKnow(); S.toast(`${names.length} indexed`); }, 1600);
+  });
+  $("#mv-list").addEventListener("change", (e) => { const id = e.target.dataset.mv; if (!id) return; if (e.target.checked) MV[id] = { fix: null }; else delete MV[id]; rMove(); const el = document.getElementById("mv-" + id); if (el) el.focus(); });
+  $("#t-form").addEventListener("submit", (e) => {
+    e.preventDefault(); const t = $("#t-title").value.trim(), w = $("#t-who").value;
+    if (!t) { $("#t-title").setAttribute("aria-invalid", "true"); $("#t-title").focus(); return S.toast("Give the task a title", "err"); }
+    $("#t-title").setAttribute("aria-invalid", "false"); P[cur].tasks.push({ t, who: w, s: "todo" }); $("#t-title").value = ""; rOverview(); renderList(); S.toast(`Task added for ${who(w)}`);
+  });
+  $("#inv-form").addEventListener("submit", (e) => {
+    e.preventDefault(); const em = $("#inv-email"), v = em.value.trim().toLowerCase(), h = $("#inv-hint"), b = $("#inv-go"), p = P[cur];
+    const fail = (msg) => { em.setAttribute("aria-invalid", "true"); h.style.color = "var(--err)"; h.innerHTML = msg; em.focus(); S.toast("Invite not sent", "err"); };
+    if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(v)) return fail("Enter an email address.");
+    if (p.members.some((m) => m.e === v)) return fail(`<span class="mono">${esc(v)}</span> is already a member.`);
+    busy(b, true);
+    setTimeout(() => {
+      busy(b, false);
+      if (!v.endsWith("@" + TENANT)) return fail(`<span class="mono">${esc(v)}</span> is not in this workspace. Only people in the <span class="mono">${TENANT}</span> tenant can be invited; ask a workspace admin to add them first.`);
+      const name = v.split("@")[0].replace(/[._-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      p.members.push(mem(name, v, $("#inv-role").value)); em.value = ""; em.setAttribute("aria-invalid", "false"); h.style.color = ""; h.textContent = `Invited ${name} as ${$("#inv-role").value}.`;
+      p.shared = true; renderList(); render(cur); document.querySelector('[data-dtab="members"]').click(); S.toast(`Invited ${v} · project is now shared`);
+    }, 750);
+  });
+  document.addEventListener("change", (e) => {
+    const sel = e.target.closest("select[data-role]"); if (!sel) return; const p = P[cur], m = p.members[Number(sel.dataset.role)];
+    if (m.r === "Owner" && sel.value !== "Owner" && owners(p) === 1) { sel.value = "Owner"; return S.toast("A project needs at least one owner", "err"); }
+    m.r = sel.value; rMembers(); S.toast(`${m.n} is now ${m.r}`);
+  });
+
+  app.addEventListener("uar:action", (e) => {
+    const { action, el } = e.detail, p = P[cur];
+    if (action === "new-open") { freshNew(); S.openPanel("new"); $("#tab-new").focus(); }
+    if (action === "move-open") { MV = {}; rMove(); S.openPanel("move"); $("#tab-move").focus(); }
+    if (action === "goto") { if (P[el.dataset.p]) render(el.dataset.p); }
+    if (action === "share") { document.querySelector('[data-dtab="members"]').click(); $("#inv-email").focus(); }
+    if (action === "ask") ask(el.dataset.op);
+    if (action === "cf-cancel") hideConfirm();
+    if (action === "cf-go") confirmGo();
+    if (action === "restore") setStatus("active", p.status === "paused" ? "Resumed · scheduled work restarts" : "Restored to Active");
+    if (action === "task-cycle") { const inList = !!el.closest("#tasks"), t = p.tasks[Number(el.dataset.i)]; t.s = { todo: "doing", doing: "done", done: "todo" }[t.s]; rOverview(); renderList(); S.toast(`${t.t} → ${t.s}`); const f = document.querySelector(`#tasks [data-i="${el.dataset.i}"]`); if (f && inList) f.focus(); }
+    if (action === "brief-long") { const add = "\n\nRunbook excerpt: restart the MCP gateway, confirm the probe is green, then re-run the failing tool call with tracing on."; let v = $("#brief").value; while (v.length <= LIMIT + 400) v += add; $("#brief").value = v; briefCount(); }
+    if (action === "brief-save") {
+      const v = $("#brief").value, b = $("#brief-save");
+      if (v.length > LIMIT) { $("#brief").setAttribute("aria-invalid", "true"); $("#brief-hint").innerHTML = `<span class="mono">${v.length.toLocaleString()} / ${LIMIT.toLocaleString()}</span> · too long. Move reference material into Project files, where it is retrieved instead of sent every turn.`; $("#brief").focus(); return S.toast("Brief not saved · over 8,000 characters", "err"); }
+      busy(b, true); setTimeout(() => { busy(b, false); p.brief = v; rLayers(); $("#brief-saved").textContent = "Saved just now"; S.toast("Brief saved · applies from the next turn in every project chat"); }, 700);
+    }
+    if (action === "mem-forget") { const m = p.mems.splice(Number(el.dataset.i), 1)[0]; rMem(); S.toast(`Forgotten: ${m[0].slice(0, 48)}…`, "warn"); }
+    if (action === "fa-ask") { $("#fa-q").textContent = `Forget all ${p.mems.length} memories in ${p.t}?`; $("#fa-row").hidden = true; $("#fa-confirm").hidden = false; $("#fa-go").focus(); }
+    if (action === "fa-cancel") { $("#fa-confirm").hidden = true; $("#fa-row").hidden = false; $("#fa-ask").focus(); }
+    if (action === "fa-go") { const b = $("#fa-go"), n = p.mems.length; busy(b, true); setTimeout(() => { busy(b, false); p.mems = []; rMem(); S.toast(`${n} project memories forgotten`, "warn"); }, 700); }
+    if (action === "mem-rm") { const m = p.members.splice(Number(el.dataset.i), 1)[0]; render(cur); renderList(); document.querySelector('[data-dtab="members"]').click(); S.toast(`${m.n} removed from ${p.t}`, "warn"); }
+    if (action === "n-start") { applyStart(el.dataset.k); const b = document.querySelector(`[data-action="n-start"][data-k="${el.dataset.k}"]`); if (b) b.focus(); }
+    if (action === "n-tog") { const l = NW[el.dataset.l], k = el.dataset.k, i = l.indexOf(k); if (i < 0) l.push(k); else l.splice(i, 1); el.setAttribute("aria-pressed", String(i < 0)); }
+    if (action === "wiz-back") setStep(step - 1);
+    if (action === "wiz-next") {
+      if (step === 2 && !$("#n-name").value.trim()) { $("#n-name").setAttribute("aria-invalid", "true"); $("#n-name-hint").classList.add("err"); $("#n-name-hint").textContent = "Give the project a name."; $("#n-name").focus(); return; }
+      $("#n-name").setAttribute("aria-invalid", "false"); $("#n-name-hint").classList.remove("err"); $("#n-name-hint").textContent = "Shown in the sidebar and on every chat in the project.";
+      setStep(step + 1);
+    }
+    if (action === "n-create") create();
+    if (action === "n-edit-name") { setStep(2); $("#n-name").setAttribute("aria-invalid", "true"); $("#n-name").focus(); }
+    if (action === "mv-fix") { MV[el.dataset.id].fix = el.dataset.fix; rMove(); const f = document.querySelector(`[data-action="mv-fix"][data-id="${el.dataset.id}"][data-fix="${el.dataset.fix}"]`); if (f) f.focus(); }
+    if (action === "mv-go") moveGo();
+  });
+  app.addEventListener("uar:panel", (e) => { if (e.detail.open && !NW) freshNew(); });
+  app.addEventListener("uar:paneltab", (e) => { if (e.detail.tab === "move") rMove(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && pendingOp) { hideConfirm(); e.preventDefault(); } });
+
+  const q = new URLSearchParams(location.search);
+  renderList(); render(P[q.get("p")] ? q.get("p") : cur); freshNew();
+  if (q.has("new")) S.openPanel("new");
+})();
+</script>
+</body>
+</html>

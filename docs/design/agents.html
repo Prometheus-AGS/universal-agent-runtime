@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agents · Universal Agent Runtime</title>
+<link rel="icon" href="assets/brand/uar-mark-dark.svg" />
+<link rel="stylesheet" href="assets/shell.css" />
+<link rel="stylesheet" href="assets/settings.css" />
+<style>
+  .input.ta { height: auto; min-height: 96px; padding: 10px 12px; line-height: 1.5; resize: vertical; }
+  .input.ta.mono { font-size: 12.5px; min-height: 260px; }
+  .muted-p { color: var(--muted); font-size: 13.5px; }
+  .cl { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cl .chip { height: 26px; font-size: 12px; }
+  .cl .chip.mono, .chip .mono { font-family: var(--font-mono); }
+  .cl .chip[aria-pressed] { cursor: pointer; }
+  .cl .chip[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+  .chip .x { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: -6px; border-radius: 50%; color: var(--muted); }
+  .chip .x:hover { background: var(--hover); color: var(--fg); }
+  .chip .x .icon { width: 11px; height: 11px; }
+  .menu-wrap { position: relative; }
+  .menu-wrap .menu { right: 0; top: 100%; margin-top: 6px; min-width: 260px; }
+  .menu-item:disabled { cursor: default; color: var(--muted); }
+  .menu-item:disabled:hover { background: transparent; }
+  .confirm { display: none; } .confirm.show { display: flex; }
+  .confirm .acts { display: flex; gap: 6px; }
+  .fb .mrow { grid-template-columns: 22px minmax(0, 1fr) auto; }
+  .fb .rk { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); }
+  .fb .ctl, .inst .ctl { display: flex; gap: 2px; }
+  .stgs { display: flex; flex-direction: column; gap: 4px; }
+  .stg { display: grid; grid-template-columns: 22px minmax(0, 1fr) 56px 78px; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 9px; background: var(--step-2); font-size: 13px; }
+  .stg .sn { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); }
+  .stg .sub { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .stg .sub.error { color: var(--err); } .stg .sub.warning { color: var(--warn); }
+  .stg .dur { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); text-align: right; }
+  .stg .chip { height: 22px; font-size: 11.5px; justify-self: end; }
+  .stg .spin { width: 12px; height: 12px; animation: spin 0.9s linear infinite; }
+  .bubble { background: var(--step-2); border-radius: 12px; padding: 14px; margin-top: 10px; }
+  .bubble .who { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+  .bubble .who .mono { font-size: 11.5px; color: var(--faint); font-weight: 400; }
+  .cmp { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; margin: 4px 0 10px; }
+  .cmp b { font-family: var(--font-display); font-size: 24px; font-weight: 600; }
+  .q { padding: 10px 0 0; }
+  .q > p { font-size: 13.5px; margin-bottom: 6px; }
+  .q > p .mono { font-size: 11.5px; color: var(--faint); }
+  .lbl-sm { font-size: 11.5px; color: var(--faint); margin: 10px 0 4px; display: block; }
+  .recipe { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 10px; background: var(--step-2); margin-bottom: 6px; font-size: 13px; }
+  .recipe .code { padding: 8px 10px; margin-top: 6px; max-height: none; white-space: pre-wrap; }
+  .recipe .sn { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); padding-top: 2px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .note-card { padding: 12px 14px; border-radius: 10px; background: var(--step-2); font-size: 12.5px; color: var(--muted); margin-bottom: 10px; }
+  .note-card b { color: var(--fg); font-weight: 500; }
+  .result { display: none; margin-top: 12px; } .result.show { display: flex; }
+  @media (max-width: 920px) { .two { grid-template-columns: 1fr; } .stg { grid-template-columns: 22px 1fr 70px; } .stg .dur { display: none; } }
+</style>
+</head>
+<body>
+<div class="app" data-od-id="workspace-shell" data-panel-persist="false">
+  <div class="titlebar" data-tauri-drag-region><span class="mono">universal-agent-runtime</span>&nbsp;· Agents</div>
+  <aside data-workspace-nav data-current="agents" data-od-id="workspace-sidebar"></aside>
+
+  <main class="main" id="content" data-od-id="workspace-main">
+    <header class="topbar">
+      <button class="icon-btn" data-action="sidebar-mobile" aria-label="Open navigation" id="mobile-nav-btn" style="display:none"><svg class="icon"><use href="#i-sidebar"/></svg></button>
+      <div class="title"><span class="crumb">Workspace</span><span>Agents</span></div>
+      <span class="spacer"></span>
+      <button class="chip" data-action="cmdk" data-od-id="topbar-search"><svg class="icon"><use href="#i-search"/></svg>Search <kbd style="margin-left:4px" data-kbd="⌘K">⌘K</kbd></button>
+      <button class="icon-btn" data-action="theme" aria-pressed="false" aria-label="Switch theme" title="Switch theme" data-od-id="topbar-theme"><svg class="icon"><use href="#i-sun"/></svg></button>
+    </header>
+
+    <section class="page">
+      <div class="page-inner">
+        <div class="page-head" data-od-id="page-head">
+          <div>
+            <h1 data-od-id="page-title">Agents</h1>
+            <p>Describe an agent and the UAR Compiler Agent turns it into a signed <span class="mono">AgentArtifact</span>. Then compose it: model and fallbacks, knowledge bases, skills, tools and MCP servers, and the A2UI presentations it may render.</p>
+          </div>
+          <div class="acts"><button class="btn btn-primary" data-action="panel-open" data-tab="new" data-od-id="new-agent-cta"><svg class="icon"><use href="#i-plus"/></svg>New agent</button></div>
+        </div>
+
+        <div class="summary" data-od-id="summary-strip">
+          <div class="card sum" data-od-id="sum-agents"><div class="k">Agents</div><div class="v"><span id="sum-agents">7</span><small id="sum-agents-sub">5 built-in · 2 yours</small></div></div>
+          <div class="card sum" data-od-id="sum-protected"><div class="k">Protected</div><div class="v"><span>2</span><small>cannot be deleted</small></div></div>
+          <div class="card sum" data-od-id="sum-live"><div class="k">Live instances</div><div class="v"><span class="status-dot" style="background:var(--live)"></span><span>2</span><small>1 running · 1 awaiting approval</small></div></div>
+          <div class="card sum" data-od-id="sum-compile"><div class="k">Last compile</div><div class="v"><span id="sum-compile">8/8</span><small id="sum-compile-sub"><span class="mono">ops-agent</span> · 2 h ago</small></div></div>
+        </div>
+
+        <div class="md">
+          <nav class="sources" aria-label="Agents" data-od-id="agent-list">
+            <input class="input" type="search" placeholder="Filter agents" aria-label="Filter agents" data-filter=".sources .srow.ag" data-od-id="agent-filter" />
+            <p class="group-label">Your agents <span id="g-mine-n">2</span></p>
+            <div id="g-mine" data-od-id="group-mine"></div>
+            <p class="group-label">Built-in <span>5</span></p>
+            <div id="g-built" data-od-id="group-built"></div>
+            <button class="srow add" data-action="panel-open" data-tab="new" data-od-id="row-new-agent"><span class="smark"><svg class="icon icon-sm"><use href="#i-wand"/></svg></span><span class="nm">Describe a new agent</span></button>
+          </nav>
+
+          <div>
+            <section class="view detail active" data-view="agent" aria-label="Agent detail" data-od-id="agent-detail">
+              <div class="detail-head" data-od-id="agent-head">
+                <span class="smark lg"><svg class="icon"><use href="#i-bot" id="d-icon"/></svg></span>
+                <div><h2 id="d-name" data-od-id="agent-title">Ops agent</h2><div class="sub" id="d-sub"></div></div>
+                <div class="acts">
+                  <a class="btn btn-secondary btn-sm" id="d-chat" href="chat-workspace.html?agent=ops-agent" data-od-id="agent-chat-link"><svg class="icon"><use href="#i-chat"/></svg>Chat with this agent</a>
+                  <div class="menu-wrap">
+                    <button class="icon-btn" data-action="menu" aria-controls="agent-more" aria-expanded="false" aria-haspopup="menu" aria-label="More agent actions" data-od-id="agent-more-btn"><svg class="icon"><use href="#i-more"/></svg></button>
+                    <div class="menu" id="agent-more" role="menu" data-od-id="agent-more-menu">
+                      <button class="menu-item" role="menuitem" data-action="duplicate"><svg class="icon"><use href="#i-copy"/></svg>Duplicate</button>
+                      <button class="menu-item" role="menuitem" data-action="export"><svg class="icon"><use href="#i-download"/></svg><span>Export UAR-AGENT-MD<span class="sub">Decompiled from the stored artifact</span></span></button>
+                      <div class="menu-sep"></div>
+                      <button class="menu-item danger" role="menuitem" data-action="delete-ask" id="m-delete"><svg class="icon"><use href="#i-trash"/></svg><span>Delete agent<span class="sub" id="m-delete-sub">DELETE /api/agents/{id}</span></span></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="banner warn confirm" id="del-confirm" role="alert" data-od-id="delete-confirm"><svg class="icon"><use href="#i-alert"/></svg><span class="grow"><b id="del-t">Delete Ops agent?</b><span class="sub" id="del-s"></span></span><span class="acts"><button class="btn btn-ghost btn-sm" data-action="delete-cancel" data-od-id="delete-cancel">Cancel</button><button class="btn btn-danger btn-sm" data-action="delete-go" id="del-go" data-od-id="delete-go"><svg class="icon"><use href="#i-trash"/></svg>Delete agent</button></span></div>
+
+              <div class="tabs" role="tablist" aria-label="Agent sections" data-od-id="agent-tabs">
+                <button class="tab" role="tab" data-dtab="overview" aria-selected="true">Overview</button>
+                <button class="tab" role="tab" data-dtab="model" aria-selected="false">Model</button>
+                <button class="tab" role="tab" data-dtab="knowledge" aria-selected="false">Knowledge <span class="count" id="c-kb"></span></button>
+                <button class="tab" role="tab" data-dtab="skills" aria-selected="false">Skills <span class="count" id="c-sk"></span></button>
+                <button class="tab" role="tab" data-dtab="tools" aria-selected="false">Tools &amp; MCP</button>
+                <button class="tab" role="tab" data-dtab="interface" aria-selected="false">Interface</button>
+                <button class="tab" role="tab" data-dtab="compile" aria-selected="false">Compile</button>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="overview" class="active" data-od-id="overview-tab">
+                <p class="muted-p" id="o-desc" data-od-id="agent-description"></p>
+                <div class="cl" id="o-tags" style="margin-top:10px" data-od-id="agent-tags"></div>
+                <div class="section-title"><h3>System prompt</h3><p><span class="mono">prompt.system</span> · <span class="mono">prompt.instructions[]</span></p></div>
+                <div class="code" id="o-sys" style="white-space:pre-wrap;max-height:200px" data-od-id="agent-prompt"></div>
+                <div class="section-title"><h3>Compiled completeness</h3><p>From the last compiler session</p></div>
+                <div class="card" data-od-id="completeness-card">
+                  <div class="cmp"><b class="mono" id="o-pct">85%</b><div><div class="meter ok" id="o-meter"><i style="width:85%"></i></div><p class="faint" style="font-size:12.5px;margin-top:6px" id="o-sum"></p></div></div>
+                  <span class="lbl-sm">Present</span><div class="cl" id="o-present" data-od-id="completeness-present"></div>
+                  <span class="lbl-sm">Missing · workspace defaults apply</span><div class="cl" id="o-missing" data-od-id="completeness-missing"></div>
+                </div>
+                <div class="section-title"><h3>Instances</h3><p><span class="mono">/api/uar/agent-instances/v1/{id}/…</span></p></div>
+                <div class="stack inst" id="o-inst" style="gap:4px" data-od-id="agent-instances"></div>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="model" data-od-id="model-tab">
+                <div class="card" data-od-id="model-default-card">
+                  <div class="form-grid">
+                    <div class="field"><label for="m-default">Default model</label><div class="select-wrap"><select class="input select mono" id="m-default" data-od-id="model-default"></select></div><span class="hint"><span class="mono">policy.provider.default</span> · provider/model</span></div>
+                    <div class="field"><label for="fb-add">Add a fallback</label><div style="display:flex;gap:6px"><div class="select-wrap" style="flex:1"><select class="input select mono" id="fb-add" data-od-id="fallback-picker"></select></div><button class="btn btn-secondary" data-action="fb-add" data-od-id="fallback-add">Add</button></div><span class="hint">Tried in order when the default errors or is rate limited.</span></div>
+                  </div>
+                </div>
+                <div class="section-title"><h3>Fallback chain</h3><p><span class="mono">policy.provider.fallbacks[]</span></p></div>
+                <div class="stack fb" id="m-fb" style="gap:4px" data-od-id="fallback-chain"></div>
+                <p class="faint" style="font-size:12.5px;margin:12px 4px 0">Keys, health and pricing for each provider live in <a href="models-and-providers.html">Models &amp; providers</a>.</p>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="knowledge" data-od-id="knowledge-tab">
+                <div class="rules" data-od-id="memory-rules">
+                  <div class="rule"><div>Conversation memory<span class="sub"><span class="mono">memory.conversation.enabled</span></span></div><span class="switch" role="switch" aria-checked="true" aria-label="Conversation memory" data-id="conv" id="k-conv" tabindex="0"></span></div>
+                  <div class="rule"><div>Knowledge retrieval<span class="sub"><span class="mono">memory.kb.enabled</span> · retrieve from the bases below before answering</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Knowledge retrieval" data-id="kb-on" id="k-on" tabindex="0"></span></div>
+                  <div class="rule"><div>Require citations<span class="sub"><span class="mono">memory.kb.citation_required</span> · answers without a cited passage are rejected</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Require citations" data-id="cite" id="k-cite" tabindex="0"></span></div>
+                </div>
+                <div class="section-title"><h3>Attached knowledge bases</h3><p><span class="mono">memory.kb.knowledge_bases[]</span></p></div>
+                <div class="rules" id="k-list" data-od-id="kb-list"></div>
+                <p class="faint" style="font-size:12.5px;margin:12px 4px 0">Create, ingest and re-embed bases in <a href="knowledge.html">Knowledge</a>.</p>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="skills" data-od-id="skills-tab">
+                <div class="section-title"><h3>Preferred skills</h3><p><span class="mono">policy.skills.prefer[]</span> · ranked ahead of the matcher</p></div>
+                <div class="cl" id="s-prefer" data-od-id="skills-prefer"></div>
+                <div class="toolbar" style="margin-top:12px"><label class="sr-only" for="s-add">Skill to add</label><div class="select-wrap"><select class="input select mono" id="s-add" style="width:240px" data-od-id="skill-picker"></select></div><button class="btn btn-secondary btn-sm" data-action="skill-add" data-od-id="skill-add"><svg class="icon"><use href="#i-plus"/></svg>Add skill</button><span class="spacer"></span><span class="mono faint" style="font-size:12px">POST /api/uar/agents/{id}/skills/{skill_id}</span></div>
+                <div class="rules" style="margin-top:8px"><div class="rule" data-od-id="skills-max"><div><label for="r-max">max_active</label><span class="sub">Most skills injected into one run. Default 3.</span></div><div class="range"><input type="range" id="r-max" min="1" max="8" step="1" value="3" /><output for="r-max" id="o-max">3</output></div></div></div>
+                <p class="faint" style="font-size:12.5px;margin:12px 4px 0">Install, match-test and enable skills in <a href="skills.html">Skills</a>.</p>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="tools" data-od-id="tools-tab">
+                <div class="section-title"><h3>Tool bundles</h3><p><span class="mono">tools.bundles[]</span></p></div>
+                <div class="stack" id="t-bundles" style="gap:4px" data-od-id="tool-bundles"></div>
+                <div class="two" style="margin-top:12px">
+                  <div class="note-card" data-od-id="tools-allow"><b>Allow</b> · <span class="mono">policy.tools.allow</span><div class="cl" id="t-allow" style="margin-top:8px"></div></div>
+                  <div class="note-card" data-od-id="tools-deny"><b>Deny</b> · <span class="mono">policy.tools.deny</span><div class="cl" id="t-deny" style="margin-top:8px"></div></div>
+                </div>
+                <div class="rules">
+                  <div class="rule" data-od-id="exec-mode-rule"><div>Execution mode<span class="sub"><span class="mono">policy.tools.execution_mode</span> · sandboxed runs tools in an isolated worker</span></div><div class="choice sm" role="radiogroup" aria-label="Execution mode" id="exec-mode" data-od-id="exec-mode"><button role="radio" data-value="direct" aria-checked="false">direct</button><button role="radio" data-value="sandboxed" aria-checked="false">sandboxed</button><button role="radio" data-value="auto" aria-checked="true">auto</button></div></div>
+                  <div class="rule" data-od-id="max-concurrent-rule"><div><label for="r-mc">max_concurrent</label><span class="sub">Tool calls in flight at once. Default 1.</span></div><div class="range"><input type="range" id="r-mc" min="1" max="8" step="1" value="1" /><output for="r-mc" id="o-mc">1</output></div></div>
+                </div>
+                <div class="section-title"><h3>MCP servers · agent policy</h3><p><span class="mono">RunPolicy</span> at agent scope · <span class="mono">ResourceSelection</span></p></div>
+                <div class="toolbar"><div class="choice sm" role="radiogroup" aria-label="MCP server selection mode" id="mcp-mode" data-od-id="mcp-mode"><button role="radio" data-value="inherit" aria-checked="true">inherit</button><button role="radio" data-value="auto" aria-checked="false">auto</button><button role="radio" data-value="all" aria-checked="false">all</button><button role="radio" data-value="none" aria-checked="false">none</button><button role="radio" data-value="selected" aria-checked="false">selected</button></div><span class="spacer"></span><a class="btn btn-ghost btn-sm" href="tools-and-mcp.html" data-od-id="mcp-manage-link"><svg class="icon"><use href="#i-tool"/></svg>Manage servers</a></div>
+                <p class="faint" style="font-size:12.5px;margin:0 4px 8px" id="mcp-hint"></p>
+                <div class="rules" id="t-mcp" data-od-id="mcp-checklist"></div>
+                <p class="gap-note"><i></i>MCP servers are not part of <span class="mono">AgentArtifact</span>; they bind through an agent-scope <span class="mono">RunPolicy</span>. <span class="mono">/api/agents</span> does not read or write that policy, so this binding needs its own endpoint. Backend gap.</p>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="interface" data-od-id="interface-tab">
+                <div class="rules" data-od-id="ui-rules">
+                  <div class="rule"><div>Forms<span class="sub"><span class="mono">ui.forms.enabled</span> · the agent may ask for structured input</span></div><span class="switch" role="switch" aria-checked="true" aria-label="Forms" data-id="forms" id="u-forms" tabindex="0"></span></div>
+                  <div class="rule"><div>Artifacts<span class="sub"><span class="mono">ui.artifacts.enabled</span> · preferred types: <span class="mono" id="u-types"></span></span></div><span class="switch" role="switch" aria-checked="true" aria-label="Artifacts" data-id="arts" id="u-arts" tabindex="0"></span></div>
+                </div>
+                <div class="section-title"><h3>A2UI presentation libraries · agent policy</h3><p><span class="mono">RunPolicy</span> · <span class="mono">ResourceSelection</span></p></div>
+                <div class="toolbar"><div class="choice sm" role="radiogroup" aria-label="Presentation selection mode" id="ui-mode" data-od-id="ui-mode"><button role="radio" data-value="inherit" aria-checked="true">inherit</button><button role="radio" data-value="auto" aria-checked="false">auto</button><button role="radio" data-value="all" aria-checked="false">all</button><button role="radio" data-value="none" aria-checked="false">none</button><button role="radio" data-value="selected" aria-checked="false">selected</button></div><span class="spacer"></span><a class="btn btn-ghost btn-sm" href="a2ui-registries.html" data-od-id="ui-registries-link"><svg class="icon"><use href="#i-layers"/></svg>A2UI registries</a></div>
+                <div class="rules" id="u-list" data-od-id="presentation-list"></div>
+                <div class="section-title"><h3>Use this agent from an AG-UI client</h3><p>profile <span class="mono">uar.agui/1</span></p></div>
+                <div data-od-id="agui-recipe">
+                  <div class="recipe" data-od-id="agui-step-1"><span class="sn">1</span><div>Start a run<div class="code" id="r-1"></div></div><button class="btn btn-ghost btn-sm" data-action="copy" data-src="#r-1" data-od-id="copy-step-1"><svg class="icon"><use href="#i-copy"/></svg>Copy</button></div>
+                  <div class="recipe" data-od-id="agui-step-2"><span class="sn">2</span><div>Stream AG-UI events from the returned <span class="mono">stream_url</span><div class="code" id="r-2">GET /api/uar/runs/{id}/stream?stream_mode=agui_spec</div></div><button class="btn btn-ghost btn-sm" data-action="copy" data-src="#r-2" data-od-id="copy-step-2"><svg class="icon"><use href="#i-copy"/></svg>Copy</button></div>
+                  <div class="recipe" data-od-id="a2a-card"><span class="sn"><svg class="icon icon-sm"><use href="#i-link"/></svg></span><div>A2A agent card<div class="code" id="r-3"></div></div><button class="btn btn-ghost btn-sm" data-action="copy" data-src="#r-3" data-od-id="copy-a2a"><svg class="icon"><use href="#i-copy"/></svg>Copy</button></div>
+                </div>
+                <p class="gap-note"><i></i>There is no per-agent AG-UI endpoint; clients go through <span class="mono">POST /api/uar/runs</span> with <span class="mono">agent_id</span>. Presentation libraries bind through agent-scope <span class="mono">RunPolicy</span>, which <span class="mono">/api/agents</span> does not expose. Backend gap.</p>
+              </div>
+
+              <div role="tabpanel" data-dtabpanel="compile" data-od-id="compile-tab">
+                <div class="toolbar"><span class="chip ok" id="c-status" data-od-id="compile-status">completed</span><span class="mono faint" style="font-size:12px" id="c-meta"></span><span class="spacer"></span><button class="btn btn-secondary btn-sm" data-action="recompile" id="rc-btn" data-od-id="recompile"><svg class="icon"><use href="#i-refresh"/></svg>Recompile</button></div>
+                <div class="stgs" id="c-stages" data-od-id="compile-report"></div>
+                <dl class="kv" style="margin-top:14px" data-od-id="compile-provenance">
+                  <dt>revision</dt><dd class="mono" id="c-rev"></dd>
+                  <dt>signature</dt><dd class="mono" id="c-sig"></dd>
+                  <dt>extensions.source</dt><dd class="mono" id="c-src"></dd>
+                </dl>
+                <p class="gap-note"><i></i><span class="mono">CompileReport</span> is only returned by <span class="mono">compile-and-register</span>; the runtime does not store the last report per agent, so this tab has nothing to read after a reload. Backend gap.</p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="panel" aria-label="New agent" aria-hidden="true" data-od-id="new-agent-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-head">
+      <div class="tabs" role="tablist" aria-label="New agent">
+        <button class="tab" role="tab" data-tab="new" aria-selected="true" id="tab-new"><svg class="icon icon-sm"><use href="#i-wand"/></svg>Describe</button>
+        <button class="tab" role="tab" data-tab="hand" aria-selected="false" id="tab-hand"><svg class="icon icon-sm"><use href="#i-file"/></svg>UAR-AGENT-MD</button>
+      </div>
+      <span style="flex:1"></span>
+      <button class="icon-btn" data-action="panel-close" aria-label="Close (Esc)" data-od-id="panel-close"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="panel-body">
+      <div role="tabpanel" data-tabpanel="new" class="active" aria-labelledby="tab-new" data-od-id="describe-flow">
+        <div class="steps" aria-hidden="true"><span class="on" id="s1"></span><span id="s2"></span><span id="s3"></span></div>
+        <div class="wstep active" id="w1" data-od-id="describe-step">
+          <h3 style="font-size:16px">1 · Describe it</h3>
+          <p class="muted" style="font-size:13px;margin:4px 0 10px">Plain language is fine. The compiler asks for what it cannot infer.</p>
+          <div class="field"><label for="n-text">Describe what this agent should do</label><textarea class="input ta" id="n-text" placeholder="It watches staging, reads our runbooks, and …" data-od-id="describe-text"></textarea></div>
+          <span class="lbl-sm">Or start from</span>
+          <div class="cl" data-od-id="describe-templates">
+            <button class="chip" data-action="tpl" data-k="ops">Ops triage</button>
+            <button class="chip" data-action="tpl" data-k="policy">Policy review</button>
+            <button class="chip" data-action="tpl" data-k="api">API docs helper</button>
+          </div>
+        </div>
+        <div class="wstep" id="w2" data-od-id="clarify-step">
+          <h3 style="font-size:16px">2 · Answer the compiler</h3>
+          <div class="bubble" data-od-id="compiler-reply">
+            <div class="who"><svg class="icon icon-sm"><use href="#i-bot"/></svg>UAR Compiler Agent <span class="mono" id="n-sess"></span><span class="spacer" style="flex:1"></span><span class="chip" id="n-status" style="height:22px;font-size:11.5px">active</span></div>
+            <div class="cmp"><b class="mono" id="n-pct">65%</b><div><div class="meter warn" id="n-meter"><i style="width:65%"></i></div><p class="faint" style="font-size:12px;margin-top:6px" id="n-sum"></p></div></div>
+            <span class="lbl-sm">Present</span><div class="cl" id="n-present"></div>
+            <span class="lbl-sm">Missing</span><div class="cl" id="n-missing"></div>
+            <div class="q" data-od-id="q-knowledge"><p>Which knowledge bases should it cite? <span class="mono">Knowledge</span></p><div class="cl" id="q-kb"></div></div>
+            <div class="q" data-od-id="q-model"><p>Which model should it run on? <span class="mono">ModelRequirements</span></p><div class="choice sm" role="radiogroup" aria-label="Model" id="q-model"><button role="radio" data-value="anthropic/claude-sonnet-5" aria-checked="false">anthropic/claude-sonnet-5</button><button role="radio" data-value="openai/gpt-6-sol" aria-checked="false">openai/gpt-6-sol</button><button role="radio" data-value="groq/llama-3.3-70b-versatile" aria-checked="false">groq/llama-3.3-70b-versatile</button></div></div>
+            <div class="q" data-od-id="q-governance"><p>When should it stop for approval? <span class="mono">Governance</span></p><div class="choice sm" role="radiogroup" aria-label="Approval" id="q-gov"><button role="radio" data-value="writes" aria-checked="false">Before any write</button><button role="radio" data-value="config" aria-checked="false">Config changes only</button><button role="radio" data-value="never" aria-checked="false">Never · read-only tools</button></div></div>
+          </div>
+        </div>
+        <div class="wstep" id="w3" data-od-id="review-step">
+          <h3 style="font-size:16px">3 · Review &amp; compile</h3>
+          <div class="field" style="margin:10px 0"><label for="n-id">Agent id</label><input class="input mono" id="n-id" data-od-id="new-agent-id" /><span class="hint" id="n-id-hint">Lowercase letters, digits and dashes. Becomes <span class="mono">/a2a/agents/{id}</span>.</span></div>
+          <dl class="kv" id="n-review" data-od-id="review-summary"></dl>
+          <div class="toolbar" style="margin-top:12px"><button class="btn btn-secondary" data-action="n-compile" id="n-compile" data-od-id="compile-register"><svg class="icon"><use href="#i-bolt"/></svg>Compile &amp; register</button><span class="mono faint" style="font-size:11.5px">POST /api/uar/compiler/compile-and-register</span></div>
+          <div class="stgs" id="n-stages" data-od-id="new-stages"></div>
+          <div class="banner warn result" id="n-fix" data-od-id="compile-fix"><svg class="icon"><use href="#i-alert"/></svg><span class="grow"><b>Server <span class="mono">github</span> is not configured</b><span class="sub">Drop it from McpServers, or add it in Tools &amp; MCP and compile again.</span></span><button class="btn btn-ghost btn-sm" data-action="n-drop-github" data-od-id="fix-drop-github">Remove github</button><a class="btn btn-ghost btn-sm" href="tools-and-mcp.html" data-od-id="fix-open-tools">Tools &amp; MCP</a></div>
+          <div class="banner ok result" id="n-done" data-od-id="compile-done"><svg class="icon"><use href="#i-check"/></svg><span class="grow"><b id="n-done-t"></b><span class="sub mono" id="n-done-s"></span></span><button class="btn btn-ghost btn-sm" data-action="n-open" data-od-id="open-new-agent">Open agent</button></div>
+        </div>
+        <div class="wizard-foot">
+          <button class="btn btn-ghost" data-action="wiz-back" id="w-back" style="visibility:hidden" data-od-id="wizard-back">Back</button>
+          <button class="btn btn-secondary" data-action="wiz-next" id="w-next" disabled data-od-id="wizard-next">Send to compiler</button>
+        </div>
+      </div>
+      <div role="tabpanel" data-tabpanel="hand" aria-labelledby="tab-hand" data-od-id="hand-flow">
+        <h3 style="font-size:16px">Write UAR-AGENT-MD by hand</h3>
+        <p class="muted" style="font-size:13px;margin:4px 0 10px">Frontmatter plus one heading per IR section. Compiled to a <span class="mono">CompiledDescriptor</span>, signed, then stored.</p>
+        <div class="field"><label for="h-text">UAR-AGENT-MD source</label><textarea class="input ta mono" id="h-text" spellcheck="false" data-od-id="hand-source"></textarea></div>
+        <div class="rule" style="margin-top:10px"><div>Replace an existing agent<span class="sub"><span class="mono">replace</span> · sends <span class="mono">expected_revision</span> so a concurrent edit fails</span></div><span class="switch" role="switch" aria-checked="false" aria-label="Replace existing agent" data-id="replace" tabindex="0"></span></div>
+        <div class="toolbar" style="margin-top:12px"><button class="btn btn-ghost" data-action="h-verify" id="h-verify" data-od-id="hand-verify"><svg class="icon"><use href="#i-check"/></svg>Verify</button><button class="btn btn-secondary" data-action="h-compile" id="h-compile" data-od-id="hand-compile"><svg class="icon"><use href="#i-bolt"/></svg>Compile &amp; register</button></div>
+        <p class="faint" style="font-size:12.5px" id="h-res" data-od-id="hand-result">Verify checks the signature of an emitted descriptor · <span class="mono">POST /api/uar/compiler/verify</span></p>
+        <div class="stgs" id="h-stages" style="margin-top:8px" data-od-id="hand-stages"></div>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-overlay" aria-hidden="true"></div>
+</div>
+
+<div class="cmdk-backdrop"></div>
+<div class="cmdk" role="dialog" aria-label="Search" data-od-id="cmdk">
+  <input class="input" type="search" placeholder="Search agents and pages…" aria-label="Search" />
+  <div class="cmdk-list">
+    <p class="menu-label">Agents</p>
+    <button class="menu-item" data-action="panel-open" data-tab="new"><svg class="icon"><use href="#i-wand"/></svg>New agent from a description</button>
+    <button class="menu-item" data-action="panel-open" data-tab="hand"><svg class="icon"><use href="#i-file"/></svg>Write UAR-AGENT-MD by hand</button>
+    <button class="menu-item" data-action="recompile"><svg class="icon"><use href="#i-refresh"/></svg>Recompile selected agent</button>
+    <p class="menu-label">Go to</p>
+    <a class="menu-item" href="chat-workspace.html"><svg class="icon"><use href="#i-chat"/></svg>Chat</a>
+    <a class="menu-item" href="knowledge.html"><svg class="icon"><use href="#i-book"/></svg>Knowledge</a>
+    <a class="menu-item" href="agents.html"><svg class="icon"><use href="#i-bot"/></svg>Agents</a>
+    <a class="menu-item" href="a2ui-registries.html"><svg class="icon"><use href="#i-layers"/></svg>A2UI registries</a>
+    <a class="menu-item" href="runs.html"><svg class="icon"><use href="#i-runs"/></svg>Runs</a>
+    <a class="menu-item" href="models-and-providers.html"><svg class="icon"><use href="#i-cpu"/></svg>Models &amp; providers</a>
+    <a class="menu-item" href="skills.html"><svg class="icon"><use href="#i-spark"/></svg>Skills</a>
+    <a class="menu-item" href="tools-and-mcp.html"><svg class="icon"><use href="#i-tool"/></svg>Tools &amp; MCP</a>
+  </div>
+</div>
+
+<script src="assets/settings.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+(function () {
+  "use strict";
+  const S = window.UARShell, app = document.querySelector(".app"), $ = (s) => document.querySelector(s);
+  const ic = (n) => `<svg class="icon"><use href="#i-${n}"/></svg>`;
+  const MODELS = ["anthropic/claude-sonnet-5", "openai/gpt-6-sol", "anthropic/claude-opus-5-5", "groq/llama-3.3-70b-versatile"];
+  const KBS = [["Workspace docs", "default · 1,284 chunks"], ["runbooks", "312 chunks"], ["mcp-runbook", "96 chunks"], ["api-reference", "2,410 chunks"]];
+  const MCP = [["filesystem", "connected · 9 tools"], ["fetch", "connected · 1 tool"], ["surreal_memory", "connected · 14 tools"], ["tavily", "reconnecting"], ["kreuzberg", "connected · 3 tools"]];
+  const PRES = [["uar-core/approval-card", "uar-core · approval request with diff"], ["uar-core/run-timeline", "uar-core · phase timeline"], ["uar-core/form", "uar-core · structured input"], ["ops-kit/incident-summary", "ops-kit · incident card"], ["ops-kit/config-diff", "ops-kit · side-by-side config diff"]];
+  const SKILLS = ["deep-research", "kreuzberg", "adversarial-review", "error-handling", "axum-patterns", "actor-model", "async-patterns", "gitops-bootstrap", "bdd-testing", "sycophancy-correction"];
+  const IR = ["Metadata", "Identity", "Ui", "Capabilities", "Skills", "Tools", "McpServers", "Knowledge", "Memory", "A2A", "Governance", "Budgets", "Execution", "Observability", "Deployment", "ModelRequirements", "PromptDialect", "RagConfiguration", "ContextStrategy", "ApiHarness"];
+  const STAGES = ["Validate Frontmatter", "Validate A2UI Schemas", "Validate MCP Config", "Validate A2A Schemas", "Compile Cedar Policy", "Register Endpoints", "Install PEP", "Sign & Emit"];
+  const MS = [4, 11, 7, 6, 38, 9, 5, 14];
+  const hex = (s, n) => { let h = 2166136261, o = ""; for (let r = 0; o.length < n; r++) { for (const c of s + r) h = Math.imul(h ^ c.charCodeAt(0), 16777619); o += (h >>> 0).toString(16).padStart(8, "0"); } return o.slice(0, n); };
+  const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const rev = (id) => "sha256:" + hex(id + "rev", 12) + "…";
+
+  const BASE = { entry: "default", icon: "bot", tags: [], model: "anthropic/claude-sonnet-5", fb: ["openai/gpt-6-sol"], conv: true, kbOn: true, cite: false, kbs: ["Workspace docs"], skills: [], maxA: 3, bundles: [], allow: ["*"], deny: [], mode: "auto", maxc: 1, mcpMode: "inherit", mcp: [], uiMode: "inherit", ui: [], forms: true, arts: true, types: ["markdown"], missing: ["Budgets", "Deployment", "ApiHarness", "Observability"], inst: [], convs: 0, src: "builtin", diag: {} };
+  const def = (o) => Object.assign({}, BASE, o, { missing: (o.missing || BASE.missing).slice(), kbs: (o.kbs || BASE.kbs).slice(), fb: (o.fb || BASE.fb).slice(), skills: (o.skills || []).slice(), mcp: (o.mcp || []).slice(), ui: (o.ui || []).slice() });
+  const AG = {
+    "ops-agent": def({ t: "Ops agent", mine: true, icon: "wand", d: "Works staging incidents: reads the runbooks, probes MCP servers, tails logs and proposes config changes that a human approves.", tags: ["ops", "staging", "mcp"], fb: ["openai/gpt-6-sol", "groq/llama-3.3-70b-versatile"], kbs: ["runbooks", "mcp-runbook"], cite: true, skills: ["deep-research", "kreuzberg"], bundles: [["ops-core", ["mcp.health", "logs.tail", "config.read"], true], ["ops-write", ["config.propose", "config.write"], false]], allow: ["mcp.*", "logs.tail", "config.*"], deny: ["shell.exec"], mode: "sandboxed", maxc: 2, mcpMode: "selected", mcp: ["filesystem", "surreal_memory"], uiMode: "selected", ui: ["uar-core/approval-card", "ops-kit/config-diff", "ops-kit/incident-summary"], types: ["markdown", "diff"], missing: ["Budgets", "Deployment", "ApiHarness"], sys: "You are the Ops agent for the staging environment. Diagnose before you change anything. Cite the runbook passage that justifies each step.", instr: ["Probe mcp.health before reading logs.", "Never write config without an approved permission request.", "Summarize findings as an incident card."], inst: [["inst_ops_7c1e", "live", "Staging MCP timeouts · step 6 of 7"]], convs: 3, src: "compiler", ago: "2 h ago" }),
+    "policy-reviewer": def({ t: "Policy reviewer", mine: true, icon: "shield", d: "Reviews Cedar policy diffs and approval rules, flags over-broad permits and asks a human before anything is promoted.", tags: ["cedar", "approvals", "governance"], model: "openai/gpt-6-sol", fb: ["anthropic/claude-opus-5-5"], kbs: ["Workspace docs", "api-reference"], cite: true, skills: ["adversarial-review", "sycophancy-correction"], maxA: 2, bundles: [["policy-read", ["policy.diff", "policy.evaluate"], true]], allow: ["policy.*", "fetch.get"], deny: ["config.write", "shell.exec"], mode: "direct", mcpMode: "selected", mcp: ["fetch"], uiMode: "selected", ui: ["uar-core/approval-card", "uar-core/form"], types: ["markdown", "diff"], missing: ["Budgets", "Deployment", "ApiHarness", "Observability", "RagConfiguration"], sys: "You review Cedar policy changes. Explain every permit you would narrow and why.", instr: ["Evaluate each changed policy against the test principals.", "Request approval before promotion."], inst: [["inst_pol_21a9", "warn", "Cedar policy diff review · awaiting approval"]], convs: 1, src: "compiler", ago: "yesterday", diag: { 4: [["warning", "approval rule references group 'reviewers' with no members", "Governance"]], 2: "skip" } }),
+    "default-agent": def({ t: "Default Assistant", prot: true, d: "General assistant every conversation falls back to. Has every tool the workspace allows.", tags: ["general"], sys: "You are the Default Assistant for this UAR workspace.", instr: ["Use tools when they help; ask before destructive actions."], convs: 41 }),
+    "orchestrator-agent": def({ t: "Orchestrator", prot: true, icon: "route", entry: "orchestrator", d: "Routes each message to the best matching agent through a router graph, and can spawn sub-agents.", tags: ["routing"], allow: ["*", "spawn_agent"], sys: "Pick the agent whose capabilities best match the request. Spawn helpers for independent subtasks.", instr: ["Fall back to default-agent when nothing matches."], convs: 18 }),
+    "general-purpose": def({ t: "general-purpose", d: "Multi-step research and execution agent used for delegated subtasks.", tags: ["subagent"], allow: ["fetch.*", "filesystem__read_file"], sys: "Complete the delegated task and report back concisely.", instr: [] }),
+    "rust-reviewer": def({ t: "rust-reviewer", d: "Reviews Rust changes for ownership, error handling and async correctness.", tags: ["rust", "review"], skills: ["error-handling", "async-patterns", "axum-patterns"], allow: ["filesystem__read_file"], sys: "Review Rust code. Prefer concrete fixes over style notes.", instr: [] }),
+    "compiler-agent": def({ t: "UAR Compiler Agent", icon: "wand", d: "Turns a plain-language description into UAR-AGENT-MD, asks for missing sections, then compiles and signs it.", tags: ["compiler"], model: "anthropic/claude-opus-5-5", fb: ["anthropic/claude-sonnet-5"], sys: "Elicit a complete agent definition. Ask at most three questions per turn.", instr: ["Report completeness after each answer."] }),
+  };
+  let cur = "ops-agent", confirmOpen = false;
+
+  function setChoice(g, v) { g.querySelectorAll("[role=radio]").forEach((r) => r.setAttribute("aria-checked", String(r.dataset.value === v))); }
+  function setSw(sel, on, dis) { const s = $(sel); s.setAttribute("aria-checked", String(!!on)); if (dis !== undefined) s.setAttribute("aria-disabled", String(!!dis)); }
+  const opts = (list, sel) => list.map((m) => `<option${m === sel ? " selected" : ""}>${m}</option>`).join("");
+
+  function rowHtml(id) {
+    const a = AG[id], live = a.inst[0];
+    const st = live ? `<i class="status-dot ${live[1] === "live" ? "" : "warn"}" style="${live[1] === "live" ? "background:var(--live)" : ""}"></i>${live[1] === "live" ? "Running" : "Awaiting approval"}` : `<i class="status-dot off"></i>${a.entry} · ${a.model.split("/")[1]}`;
+    return `<button class="srow ag" aria-current="${id === cur}" data-src="${id}" data-view="agent" data-od-id="row-${id}"><span class="smark">${ic(a.icon)}</span><span><span class="nm">${a.t}</span><span class="st">${st}</span></span><span class="side">${a.prot ? `<svg class="icon icon-sm" aria-label="Protected" role="img"><use href="#i-lock"/></svg>` : live ? "1 live" : ""}</span></button>`;
+  }
+  function renderList() {
+    const ids = Object.keys(AG);
+    $("#g-mine").innerHTML = ids.filter((i) => AG[i].mine).map(rowHtml).join("");
+    $("#g-built").innerHTML = ids.filter((i) => !AG[i].mine).map(rowHtml).join("");
+    const mine = ids.filter((i) => AG[i].mine).length;
+    $("#g-mine-n").textContent = mine; $("#sum-agents").textContent = ids.length; $("#sum-agents-sub").textContent = `${ids.length - mine} built-in · ${mine} yours`;
+  }
+
+  function stageRow(i, o, ms, dg) {
+    const chip = o === "pass" ? "ok" : o === "fail" ? "err" : o === "running" ? "live" : "quiet";
+    const lab = o === "running" ? `<svg class="icon spin"><use href="#i-refresh"/></svg>running` : o;
+    return `<div class="stg" data-od-id="stage-${i + 1}"><span class="sn">${i + 1}</span><span><b style="font-weight:500">${STAGES[i]}</b>${(dg || []).map((d) => `<span class="sub ${d[0]}">${d[0]} · ${d[1]}${d[2] ? ` · <span class="mono">${d[2]}</span>` : ""}</span>`).join("")}</span><span class="dur">${ms ? ms + " ms" : ""}</span><span class="chip ${chip}">${lab}</span></div>`;
+  }
+  function plan(a) { return STAGES.map((_, i) => { const d = a.diag[i]; return d === "skip" ? { o: "skip", dg: [["info", "no MCP config in this agent; inherits the workspace", "McpServers"]] } : { o: "pass", ms: MS[i], dg: d || [] }; }); }
+  function staticReport(box, p) { box.innerHTML = p.map((s, i) => stageRow(i, s.o, s.ms, s.dg)).join(""); }
+  function runStages(box, p, done) {
+    box.innerHTML = p.map((_, i) => stageRow(i, "pending")).join(""); let i = 0;
+    const rows = () => box.querySelectorAll(".stg");
+    (function tick() {
+      if (i >= p.length) return done(true);
+      rows()[i].outerHTML = stageRow(i, "running");
+      setTimeout(() => {
+        const s = p[i]; rows()[i].outerHTML = stageRow(i, s.o, s.ms, s.dg);
+        if (s.o === "fail") { for (let j = i + 1; j < p.length; j++) rows()[j].outerHTML = stageRow(j, "skip", 0, [["info", "skipped after a failed stage"]]); return done(false, s); }
+        i++; tick();
+      }, 320);
+    })();
+  }
+  function busy(b, on, icon) { b.classList.toggle("is-loading", on); b.disabled = on; const u = b.querySelector("use"), svg = b.querySelector(".icon"); if (on) { b.dataset.ic = u.getAttribute("href"); u.setAttribute("href", "#i-refresh"); svg.classList.add("spin"); } else { u.setAttribute("href", icon || b.dataset.ic); svg.classList.remove("spin"); } }
+
+  function render(id) {
+    cur = id; const a = AG[id]; hideConfirm();
+    $("#d-name").textContent = a.t; $("#d-icon").setAttribute("href", "#i-" + a.icon);
+    $("#d-sub").innerHTML = `<span class="mono">${id}</span><span class="chip ${a.entry === "orchestrator" ? "live" : ""}" style="height:22px;font-size:11.5px">entry ${a.entry}</span><span class="mono">${rev(id)}</span>${a.prot ? `<span class="lock">${ic("lock")}Protected</span>` : ""}`;
+    $("#d-chat").href = "chat-workspace.html?agent=" + id;
+    const del = $("#m-delete"); del.disabled = !!a.prot; $("#m-delete-sub").textContent = a.prot ? `Protected · ${id} is required by the runtime` : `DELETE /api/agents/${id}`;
+    $("#o-desc").textContent = a.d;
+    $("#o-tags").innerHTML = a.tags.map((t) => `<span class="chip">${t}</span>`).join("");
+    $("#o-sys").innerHTML = `<span class="t">${esc(a.sys)}</span>` + (a.instr.length ? "\n\n" + a.instr.map((x, i) => `<span class="c">${i + 1}.</span> ${x}`).join("\n") : "");
+    const present = IR.filter((s) => !a.missing.includes(s)), pct = Math.round(present.length / IR.length * 100);
+    $("#o-pct").textContent = pct + "%"; $("#o-meter").className = "meter " + (pct >= 80 ? "ok" : "warn"); $("#o-meter").firstElementChild.style.width = pct + "%";
+    $("#o-sum").innerHTML = `<span class="mono">is_ready</span> true · ${present.length} of ${IR.length} IR sections present`;
+    $("#o-present").innerHTML = present.map((s) => `<span class="chip mono">${s}</span>`).join("");
+    $("#o-missing").innerHTML = a.missing.map((s) => `<span class="chip warn mono">${s}</span>`).join("");
+    $("#o-inst").innerHTML = a.inst.length ? a.inst.map((n) => `<div class="mrow" style="grid-template-columns:1fr auto auto" data-od-id="inst-${n[0]}"><span><span class="mono">${n[0]}</span><span class="sub">${n[2]}</span></span><span class="chip ${n[1] === "live" ? "live" : "warn"}" style="height:22px;font-size:11.5px">${n[1] === "live" ? "active" : "waiting"}</span><span class="ctl"><button class="btn btn-ghost btn-sm" data-action="inst" data-op="drain" data-i="${n[0]}">Drain</button><button class="btn btn-ghost btn-sm" data-action="inst" data-op="restart" data-i="${n[0]}">Restart</button></span></div>`).join("") : `<p class="muted-p" style="font-size:12.5px">No live instances. One is activated on the next run.</p>`;
+    renderModel(); renderKb(); renderSkills(); renderTools(); renderUi();
+    $("#c-status").className = "chip ok"; $("#c-status").textContent = "completed";
+    $("#c-meta").textContent = a.src === "builtin" ? "built-in · compiled at daemon start" : `last compiled ${a.ago || "just now"}`;
+    staticReport($("#c-stages"), plan(a));
+    $("#c-rev").textContent = rev(id); $("#c-sig").textContent = "ed25519:" + hex(id + "sig", 24) + "…";
+    $("#c-src").textContent = `{ kind: "${a.src}", id: "${id}", revision: "${rev(id)}" }`;
+  }
+  function renderModel() {
+    const a = AG[cur];
+    $("#m-default").innerHTML = opts(MODELS, a.model);
+    const free = MODELS.filter((m) => m !== a.model && !a.fb.includes(m));
+    $("#fb-add").innerHTML = free.length ? opts(free) : "<option value=''>All models are in the chain</option>"; $("#fb-add").disabled = !free.length;
+    $("#m-fb").innerHTML = a.fb.length ? a.fb.map((m, i) => `<div class="mrow" data-od-id="fallback-${i}"><span class="rk">#${i + 1}</span><span class="mono">${m}</span><span class="ctl"><button class="icon-btn" data-action="fb-move" data-i="${i}" data-d="-1" aria-label="Move ${m} up"${i === 0 ? " disabled" : ""}><svg class="icon" style="transform:rotate(180deg)"><use href="#i-chevd"/></svg></button><button class="icon-btn" data-action="fb-move" data-i="${i}" data-d="1" aria-label="Move ${m} down"${i === a.fb.length - 1 ? " disabled" : ""}>${ic("chevd")}</button><button class="icon-btn" data-action="fb-rm" data-i="${i}" aria-label="Remove ${m}">${ic("x")}</button></span></div>`).join("") : `<p class="muted-p" style="font-size:12.5px">No fallbacks. A provider error fails the run.</p>`;
+  }
+  function renderKb() {
+    const a = AG[cur];
+    setSw("#k-conv", a.conv); setSw("#k-on", a.kbOn); setSw("#k-cite", a.cite, !a.kbOn);
+    $("#k-cite").closest(".rule").classList.toggle("off", !a.kbOn);
+    $("#k-list").innerHTML = KBS.map(([n, s]) => `<div class="rule${a.kbOn ? "" : " off"}" data-od-id="kb-${n.replace(/\s/g, "-").toLowerCase()}"><div>${n}<span class="sub">${s}</span></div><span class="switch" role="switch" aria-checked="${a.kbs.includes(n)}" aria-disabled="${!a.kbOn}" aria-label="Attach ${n}" data-id="kb:${n}" tabindex="0"></span></div>`).join("");
+    $("#c-kb").textContent = a.kbOn ? a.kbs.length : "off";
+  }
+  function renderSkills() {
+    const a = AG[cur];
+    $("#s-prefer").innerHTML = a.skills.length ? a.skills.map((s) => `<span class="chip mono">${s}<button class="x" data-action="skill-rm" data-s="${s}" aria-label="Remove ${s}">${ic("x")}</button></span>`).join("") : `<p class="muted-p" style="font-size:12.5px">None preferred. The matcher picks from every enabled skill.</p>`;
+    const free = SKILLS.filter((s) => !a.skills.includes(s)); $("#s-add").innerHTML = opts(free);
+    $("#r-max").value = a.maxA; $("#o-max").textContent = a.maxA; $("#c-sk").textContent = a.skills.length || "";
+  }
+  function renderTools() {
+    const a = AG[cur];
+    $("#t-bundles").innerHTML = a.bundles.length ? a.bundles.map(([id, tools, req]) => `<div class="mrow" data-od-id="bundle-${id}"><span><span class="mono">${id}</span><span class="sub mono">${tools.join(" · ")}</span></span><span class="chip ${req ? "accent" : ""}" style="height:22px;font-size:11.5px">${req ? "required" : "optional"}</span></div>`).join("") : `<p class="muted-p" style="font-size:12.5px">No bundles. Tools come from the allow list below.</p>`;
+    $("#t-allow").innerHTML = a.allow.map((t) => `<span class="chip ok mono">${t}</span>`).join("");
+    $("#t-deny").innerHTML = a.deny.length ? a.deny.map((t) => `<span class="chip err mono">${t}</span>`).join("") : `<span class="faint">nothing denied</span>`;
+    setChoice($("#exec-mode"), a.mode); $("#r-mc").value = a.maxc; $("#o-mc").textContent = a.maxc;
+    setChoice($("#mcp-mode"), a.mcpMode); renderMcp();
+  }
+  const MODE_HINT = { inherit: "Uses the workspace RunPolicy.", auto: "Servers whose tools match the agent's allow list.", all: "Every connected server.", none: "No MCP tools for this agent.", selected: "Only the servers switched on below." };
+  function renderMcp() {
+    const a = AG[cur], sel = a.mcpMode === "selected";
+    $("#mcp-hint").innerHTML = `<span class="mono">mode: ${a.mcpMode}</span> · ${MODE_HINT[a.mcpMode]}`;
+    $("#t-mcp").innerHTML = MCP.map(([n, s]) => `<div class="rule${sel ? "" : " off"}" data-od-id="mcp-${n}"><div><span class="mono">${n}</span><span class="sub">${s}</span></div><span class="switch" role="switch" aria-checked="${sel ? a.mcp.includes(n) : a.mcpMode === "all"}" aria-disabled="${!sel}" aria-label="Allow ${n}" data-id="mcp:${n}" tabindex="0"></span></div>`).join("");
+  }
+  function renderUi() {
+    const a = AG[cur], sel = a.uiMode === "selected";
+    setSw("#u-forms", a.forms); setSw("#u-arts", a.arts); $("#u-types").textContent = "[" + a.types.join(", ") + "]";
+    setChoice($("#ui-mode"), a.uiMode);
+    $("#u-list").innerHTML = PRES.map(([n, s]) => `<div class="rule${sel ? "" : " off"}" data-od-id="pres-${n.replace("/", "-")}"><div><span class="mono">${n}</span><span class="sub">${s}</span></div><span class="switch" role="switch" aria-checked="${sel ? a.ui.includes(n) : a.uiMode === "all"}" aria-disabled="${!sel}" aria-label="Allow ${n}" data-id="ui:${n}" tabindex="0"></span></div>`).join("");
+    $("#r-1").textContent = `POST /api/uar/runs\n{ "agent_id": "${cur}", "input": "…" }\n→ { "run_id": "…", "stream_url": "…" }`;
+    $("#r-3").textContent = `/a2a/agents/${cur}`;
+  }
+  const save = (msg, kind) => S.toast(`${msg} · PATCH /api/agents/${cur}`, kind);
+
+  /* delete with inline confirm */
+  function hideConfirm() { confirmOpen = false; $("#del-confirm").classList.remove("show"); }
+  function askDelete() {
+    const a = AG[cur]; if (a.prot) return;
+    $("#del-t").textContent = `Delete ${a.t}?`;
+    $("#del-s").innerHTML = (a.convs ? `${a.convs} conversation${a.convs > 1 ? "s are" : " is"} pinned to <span class="mono">${cur}</span> and will move to Default Assistant. ` : "") + (a.inst.length ? "Its live instance is drained first. " : "") + "The artifact and its revisions are removed.";
+    $("#del-confirm").classList.add("show"); confirmOpen = true; $("#del-go").focus();
+  }
+  function doDelete() {
+    const b = $("#del-go"), id = cur, t = AG[id].t; busy(b, true);
+    setTimeout(() => { busy(b, false); delete AG[id]; cur = "default-agent"; renderList(); render(cur); S.toast(`${t} deleted · DELETE /api/agents/${id}`, "warn"); }, 700);
+  }
+  function addAgent(id, spec) { AG[id] = def(spec); cur = id; renderList(); render(id); }
+
+  /* new-agent flow */
+  const TPL = {
+    ops: ["ops-triage", "Triage staging alerts: read the runbooks and mcp-runbook, check MCP server health, tail logs, and open a GitHub issue with the findings. Propose config fixes but never apply them without approval."],
+    policy: ["cedar-diff-reviewer", "Review Cedar policy diffs on every change, explain any permit that got broader, and ask a human before promoting."],
+    api: ["api-docs-helper", "Answer questions about our HTTP API from the api-reference knowledge base and cite the endpoint section for every answer."],
+  };
+  const INIT = ["Metadata", "Identity", "Ui", "Capabilities", "Skills", "Tools", "McpServers", "Memory", "A2A", "Execution", "PromptDialect", "RagConfiguration", "ContextStrategy"];
+  let step = 1, NW = null, newId = "";
+  function freshSession(text) {
+    const t = text.toLowerCase(), mcp = ["filesystem"];
+    if (t.includes("github")) mcp.push("github"); if (t.includes("memory")) mcp.push("surreal_memory"); if (t.includes("health") || t.includes("log")) mcp.push("fetch");
+    const sugg = KBS.map((k) => k[0]).filter((k) => t.includes(k.toLowerCase()));
+    return { sid: "cs_" + hex(text, 8), text, present: new Set(INIT), kbs: [], sugg, model: "", gov: "", mcp, status: "active" };
+  }
+  function syncSession() {
+    const present = IR.filter((s) => NW.present.has(s)), missing = IR.filter((s) => !NW.present.has(s)), pct = Math.round(present.length / IR.length * 100);
+    const ready = ["Knowledge", "ModelRequirements", "Governance"].every((s) => NW.present.has(s));
+    if (NW.status === "active" && ready) NW.status = "ready"; if (NW.status === "ready" && !ready) NW.status = "active";
+    $("#n-sess").textContent = NW.sid; $("#n-status").textContent = NW.status; $("#n-status").className = "chip " + ({ ready: "ok", compiling: "live", completed: "ok", failed: "err" }[NW.status] || "");
+    $("#n-pct").textContent = pct + "%"; $("#n-meter").className = "meter " + (ready ? "ok" : "warn"); $("#n-meter").firstElementChild.style.width = pct + "%";
+    $("#n-sum").innerHTML = ready ? `<span class="mono">is_ready</span> true · ${missing.join(", ")} will use workspace defaults.` : `<span class="mono">is_ready</span> false · answer the ${3 - ["Knowledge", "ModelRequirements", "Governance"].filter((s) => NW.present.has(s)).length} remaining questions below.`;
+    $("#n-present").innerHTML = present.map((s) => `<span class="chip mono">${s}</span>`).join("");
+    $("#n-missing").innerHTML = missing.map((s) => `<span class="chip warn mono">${s}</span>`).join("");
+    if (step === 2) $("#w-next").disabled = !ready;
+  }
+  function setStep(n) {
+    step = n;
+    for (let i = 1; i <= 3; i++) { $("#w" + i).classList.toggle("active", i === step); $("#s" + i).className = i < step ? "done" : i === step ? "on" : ""; }
+    $("#w-back").style.visibility = step === 1 ? "hidden" : "visible";
+    const nx = $("#w-next"); nx.style.visibility = step === 3 ? "hidden" : "visible";
+    nx.textContent = step === 1 ? "Send to compiler" : "Review & compile";
+    if (step === 1) nx.disabled = $("#n-text").value.trim().length < 20;
+    if (step === 2) syncSession();
+    if (step === 3) review();
+  }
+  function review() {
+    const gov = { writes: "approval before any write", config: "approval for config changes", never: "read-only tools, no approvals" }[NW.gov];
+    $("#n-review").innerHTML = `<dt>Model</dt><dd class="mono">${NW.model}</dd><dt>Knowledge</dt><dd>${NW.kbs.join(", ")}</dd><dt>McpServers</dt><dd>${NW.mcp.map((m) => `<span class="chip mono ${m === "github" ? "err" : ""}" style="height:22px;font-size:11.5px;margin:0 4px 4px 0">${m}</span>`).join("")}</dd><dt>Governance</dt><dd>${gov}</dd><dt>Session</dt><dd class="mono">${NW.sid} · ${NW.status}</dd>`;
+    $("#n-stages").innerHTML = ""; $("#n-fix").classList.remove("show"); $("#n-done").classList.remove("show"); $("#n-compile").disabled = false;
+  }
+  function renderKbQ() { $("#q-kb").innerHTML = KBS.map(([k]) => `<button class="chip" aria-pressed="${NW.kbs.includes(k)}" data-action="q-kb" data-k="${k}">${k}${NW.sugg.includes(k) && !NW.kbs.includes(k) ? " · suggested" : ""}</button>`).join(""); }
+  function compileNew() {
+    const idEl = $("#n-id"), id = idEl.value.trim(), hint = $("#n-id-hint");
+    const bad = !/^[a-z0-9][a-z0-9-]{2,40}$/.test(id) ? "Use 3–40 lowercase letters, digits or dashes." : AG[id] ? `${id} already exists. Pick another id or use replace from the UAR-AGENT-MD tab.` : "";
+    idEl.setAttribute("aria-invalid", String(!!bad)); hint.classList.toggle("err", !!bad);
+    if (bad) { hint.textContent = bad; idEl.focus(); return; }
+    hint.innerHTML = `Becomes <span class="mono">/a2a/agents/${id}</span>.`;
+    const b = $("#n-compile"); NW.status = "compiling"; review(); busy(b, true);
+    $("#n-review").lastElementChild.textContent = `${NW.sid} · compiling`;
+    const p = STAGES.map((_, i) => ({ o: "pass", ms: MS[i] + (i * 3) % 7, dg: [] }));
+    if (NW.mcp.includes("github")) p[2] = { o: "fail", ms: 9, dg: [["error", "server 'github' referenced but not configured", "McpServers"]] };
+    runStages($("#n-stages"), p, (ok) => {
+      busy(b, false); b.disabled = false;
+      if (!ok) { NW.status = "failed"; $("#n-review").lastElementChild.textContent = `${NW.sid} · failed`; $("#n-fix").classList.add("show"); S.toast("Validate MCP Config failed · github is not configured", "err"); return; }
+      NW.status = "completed"; newId = id; const r = rev(id);
+      addAgent(id, { t: id.split("-").map((w) => w[0].toUpperCase() + w.slice(1)).join(" "), mine: true, icon: "wand", d: NW.text, tags: ["new"], model: NW.model, fb: MODELS.filter((m) => m !== NW.model).slice(0, 1), kbs: NW.kbs.slice(), cite: true, mcpMode: "selected", mcp: NW.mcp.slice(), allow: ["mcp.*", "logs.tail", "config.read"], deny: NW.gov === "never" ? ["config.write"] : [], missing: IR.filter((s) => !NW.present.has(s)), sys: "Compiled from your description: " + NW.text, instr: [], src: "compiler", ago: "just now" });
+      $("#sum-compile").textContent = "8/8"; $("#sum-compile-sub").innerHTML = `<span class="mono">${id}</span> · just now`;
+      $("#n-done-t").textContent = `Registered ${id}`; $("#n-done-s").textContent = `revision ${r}`; $("#n-done").classList.add("show");
+      S.toast(`Registered ${id} · 8 stages passed`);
+    });
+  }
+
+  /* hand-written UAR-AGENT-MD */
+  $("#h-text").value = `---\nkind: agent\nid: release-notes\ntitle: Release notes writer\nentry: default\ntags: [docs, release]\n---\n\n# Identity\nDrafts release notes from merged changes since the last tag.\n\n# ModelRequirements\ndefault: anthropic/claude-sonnet-5\nfallbacks: [openai/gpt-6-sol]\n\n# Knowledge\nknowledge_bases: [Workspace docs]\ncitation_required: false\n\n# Tools\nallow: [filesystem__read_file, fetch.get]\nexecution_mode: sandboxed\n\n# Governance\napproval: never`;
+  function handCompile() {
+    const src = $("#h-text").value, m = src.match(/^id:\s*([a-z0-9-]+)/m), replace = document.querySelector('[data-id="replace"]').getAttribute("aria-checked") === "true", b = $("#h-compile");
+    if (!m) { $("#h-res").innerHTML = `<span style="color:var(--err)">Frontmatter has no <span class="mono">id</span>.</span>`; S.toast("Validate Frontmatter would fail · id missing", "err"); return; }
+    const id = m[1]; busy(b, true); $("#h-res").innerHTML = `Compiling <span class="mono">${id}</span> · replace ${replace}${replace && AG[id] ? ` · expected_revision <span class="mono">${rev(id)}</span>` : ""}`;
+    const p = STAGES.map((_, i) => ({ o: "pass", ms: MS[i], dg: [] }));
+    if (AG[id] && !replace) p[0] = { o: "fail", ms: 3, dg: [["error", `agent '${id}' exists; send replace with expected_revision`, "Metadata"]] };
+    if (AG[id] && AG[id].prot) p[0] = { o: "fail", ms: 3, dg: [["error", `'${id}' is protected and cannot be replaced`, "Metadata"]] };
+    runStages($("#h-stages"), p, (ok, s) => {
+      busy(b, false);
+      if (!ok) { $("#h-res").innerHTML = `<span style="color:var(--err)">${s.dg[0][1]}</span>`; S.toast("Compile failed at Validate Frontmatter", "err"); return; }
+      const t = (src.match(/^title:\s*(.+)$/m) || [0, id])[1];
+      addAgent(id, { t, mine: true, icon: "file", d: (src.match(/# Identity\n(.+)/) || [0, "Written by hand."])[1], tags: ["docs", "release"], kbs: ["Workspace docs"], mode: "sandboxed", allow: ["filesystem__read_file", "fetch.get"], sys: "Compiled from UAR-AGENT-MD.", instr: [], src: "manual", ago: "just now" });
+      $("#h-res").innerHTML = `Registered <span class="mono">${id}</span> · revision <span class="mono">${rev(id)}</span>`; S.toast(`Registered ${id} from UAR-AGENT-MD`);
+    });
+  }
+
+  /* events */
+  app.addEventListener("uar:source", (e) => { if (e.detail.view === "agent") render(e.detail.id); });
+  app.addEventListener("uar:switch", (e) => {
+    const { id, on } = e.detail, a = AG[cur];
+    if (id === "conv") { a.conv = on; return save(`Conversation memory ${on ? "on" : "off"}`); }
+    if (id === "kb-on") { a.kbOn = on; renderKb(); return save(`Knowledge retrieval ${on ? "on" : "off"}`, on ? "ok" : "warn"); }
+    if (id === "cite") { a.cite = on; return save(`citation_required ${on}`); }
+    if (id === "forms" || id === "arts") { a[id] = on; return save(`${id === "forms" ? "Forms" : "Artifacts"} ${on ? "on" : "off"}`); }
+    if (id === "replace") return S.toast(on ? "Replace on · an existing id is overwritten if its revision matches" : "Replace off", on ? "warn" : "ok");
+    const [k, n] = id.split(/:(.+)/); const list = k === "kb" ? a.kbs : k === "mcp" ? a.mcp : k === "ui" ? a.ui : null; if (!list) return;
+    const i = list.indexOf(n); if (on && i < 0) list.push(n); if (!on && i >= 0) list.splice(i, 1);
+    if (k === "kb") { $("#c-kb").textContent = a.kbs.length; save(`${n} ${on ? "attached" : "detached"}`, on ? "ok" : "warn"); }
+    else S.toast(`${n} ${on ? "allowed" : "removed"} for ${cur} · agent-scope RunPolicy`, on ? "ok" : "warn");
+  });
+  app.addEventListener("uar:choice", (e) => {
+    const g = e.target.id, v = e.detail.value, a = AG[cur];
+    if (g === "exec-mode") { a.mode = v; save("execution_mode " + v); }
+    if (g === "mcp-mode") { a.mcpMode = v; renderMcp(); S.toast(`MCP servers: ${v} · agent-scope RunPolicy`); }
+    if (g === "ui-mode") { a.uiMode = v; renderUi(); S.toast(`Presentations: ${v} · agent-scope RunPolicy`); }
+    if (g === "q-model") { NW.model = v; NW.present.add("ModelRequirements"); syncSession(); }
+    if (g === "q-gov") { NW.gov = v; NW.present.add("Governance"); syncSession(); }
+  });
+  $("#m-default").addEventListener("change", (e) => { const a = AG[cur]; a.model = e.target.value; a.fb = a.fb.filter((m) => m !== a.model); renderModel(); renderList(); save("Default model " + a.model); });
+  [["#r-max", "#o-max", "maxA", "policy.skills.max_active"], ["#r-mc", "#o-mc", "maxc", "policy.tools.max_concurrent"]].forEach(([r, o, k, label]) => {
+    $(r).addEventListener("input", (e) => { $(o).textContent = e.target.value; });
+    $(r).addEventListener("change", (e) => { AG[cur][k] = Number(e.target.value); save(`${label} ${e.target.value}`); });
+  });
+  $("#n-text").addEventListener("input", (e) => { if (step === 1) $("#w-next").disabled = e.target.value.trim().length < 20; });
+
+  app.addEventListener("uar:action", (e) => {
+    const { action, el } = e.detail, a = AG[cur];
+    if (action === "fb-add") { const m = $("#fb-add").value; if (!m) return; a.fb.push(m); renderModel(); save(`Fallback #${a.fb.length} ${m}`); }
+    if (action === "fb-move") { const i = Number(el.dataset.i), j = i + Number(el.dataset.d); [a.fb[i], a.fb[j]] = [a.fb[j], a.fb[i]]; renderModel(); save(`Fallback order ${a.fb.join(" → ")}`); const btn = document.querySelector(`[data-action="fb-move"][data-i="${j}"][data-d="${el.dataset.d}"]`) || document.querySelector(`[data-action="fb-move"][data-i="${j}"]`); if (btn) btn.focus(); }
+    if (action === "fb-rm") { const m = a.fb.splice(Number(el.dataset.i), 1)[0]; renderModel(); save(`Removed fallback ${m}`, "warn"); }
+    if (action === "skill-add") { const s = $("#s-add").value; if (!s) return; a.skills.push(s); renderSkills(); S.toast(`${s} preferred · POST /api/uar/agents/${cur}/skills/${s}`); }
+    if (action === "skill-rm") { a.skills = a.skills.filter((s) => s !== el.dataset.s); renderSkills(); S.toast(`${el.dataset.s} removed · DELETE /api/uar/agents/${cur}/skills/${el.dataset.s}`, "warn"); }
+    if (action === "copy") { const txt = $(el.dataset.src).textContent; if (navigator.clipboard) navigator.clipboard.writeText(txt).catch(() => {}); S.toast("Copied"); }
+    if (action === "inst") { const op = el.dataset.op; busy(el, true); setTimeout(() => { busy(el, false); el.textContent = op === "drain" ? "Drain" : "Restart"; S.toast(`${el.dataset.i} ${op === "drain" ? "draining · finishes the current step, accepts no new runs" : "restarted"} · POST /api/uar/agent-instances/v1/${el.dataset.i}/${op}`, op === "drain" ? "warn" : "ok"); }, 800); }
+    if (action === "duplicate") { let id = cur + "-copy", n = 2; while (AG[id]) id = `${cur}-copy-${n++}`; addAgent(id, Object.assign({}, a, { t: a.t + " copy", mine: true, prot: false, inst: [], convs: 0, src: "manual", ago: "just now", tags: a.tags.slice(), bundles: a.bundles.slice(), allow: a.allow.slice(), deny: a.deny.slice(), types: a.types.slice(), instr: a.instr.slice(), diag: {} })); S.toast(`Duplicated as ${id} · POST /api/agents`); }
+    if (action === "export") S.toast(`${cur}.uar-agent.md exported · ${IR.length - a.missing.length} sections`);
+    if (action === "delete-ask") askDelete();
+    if (action === "delete-cancel") hideConfirm();
+    if (action === "delete-go") doDelete();
+    if (action === "recompile") {
+      const b = $("#rc-btn"); document.querySelector('[data-dtab="compile"]').click(); busy(b, true);
+      $("#c-status").className = "chip live"; $("#c-status").textContent = "compiling";
+      runStages($("#c-stages"), plan(a), () => { busy(b, false); $("#c-status").className = "chip ok"; $("#c-status").textContent = "completed"; $("#c-meta").textContent = "last compiled just now · revision unchanged"; a.ago = "just now"; $("#sum-compile-sub").innerHTML = `<span class="mono">${cur}</span> · just now`; S.toast(`${a.t} recompiled · 8 stages${Object.keys(a.diag).length ? " · 1 warning" : " passed"}`); });
+    }
+    if (action === "tpl") { const t = TPL[el.dataset.k]; $("#n-text").value = t[1]; $("#n-id").value = t[0]; $("#w-next").disabled = false; }
+    if (action === "q-kb") { const k = el.dataset.k, i = NW.kbs.indexOf(k); if (i < 0) NW.kbs.push(k); else NW.kbs.splice(i, 1); if (NW.kbs.length) NW.present.add("Knowledge"); else NW.present.delete("Knowledge"); renderKbQ(); syncSession(); }
+    if (action === "wiz-back") setStep(step - 1);
+    if (action === "wiz-next") {
+      if (step === 1) {
+        const text = $("#n-text").value.trim(), b = $("#w-next"); b.classList.add("is-loading"); b.disabled = true; b.textContent = "Compiler is reading…";
+        setTimeout(() => { b.classList.remove("is-loading"); NW = freshSession(text); if (!$("#n-id").value) $("#n-id").value = "agent-" + hex(text, 4); setChoice($("#q-model"), ""); setChoice($("#q-gov"), ""); renderKbQ(); setStep(2); S.toast(`Session ${NW.sid} · POST /api/uar/compiler/sessions`); }, 900);
+      } else if (step === 2) setStep(3);
+    }
+    if (action === "n-compile") compileNew();
+    if (action === "n-drop-github") { NW.mcp = NW.mcp.filter((m) => m !== "github"); NW.status = "ready"; review(); S.toast("github removed from McpServers · compile again"); }
+    if (action === "n-open") { S.closePanel(); const r = document.querySelector(`.srow[data-src="${newId}"]`); if (r) r.click(); }
+    if (action === "h-verify") { const b = $("#h-verify"); busy(b, true); setTimeout(() => { busy(b, false); const ok = /^---\n[\s\S]*?\nkind:\s*agent[\s\S]*?\n---/.test($("#h-text").value); $("#h-res").innerHTML = ok ? `<span style="color:var(--ok)">Frontmatter valid</span> · no signed descriptor yet, so there is no signature to verify` : `<span style="color:var(--err)">Frontmatter must open with --- and declare kind: agent</span>`; S.toast(ok ? "Source parses · POST /api/uar/compiler/verify" : "Frontmatter invalid", ok ? "ok" : "err"); }, 600); }
+    if (action === "h-compile") handCompile();
+  });
+  app.addEventListener("uar:panel", (e) => { if (e.detail.open && (!NW || NW.status === "completed")) { NW = null; newId = ""; $("#n-text").value = ""; $("#n-id").value = ""; setStep(1); } });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && confirmOpen) { hideConfirm(); e.preventDefault(); } });
+
+  renderList(); render(cur); setStep(1);
+})();
+</script>
+</body>
+</html>

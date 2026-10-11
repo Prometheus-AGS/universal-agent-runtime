@@ -2,16 +2,19 @@
 @import "tw-animate-css";
 
 @source "../../../packages/a2ui-uar/src";
+@source "../../../packages/uar-ui/src";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
-  --font-sans: "Geist Variable", "Inter", system-ui, sans-serif;
-  --font-body: "Geist Variable", "Inter", system-ui, sans-serif;
-  --font-ui: "Geist Variable", "Inter", system-ui, sans-serif;
-  --font-reading: "Roboto", "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  /* Inter is the body/UI face per docs/knowme-ui-ux-standard.md (decision D1,
+     docs/design/react-implementation-plan.md). All three faces are bundled in main.tsx. */
+  --font-display: "Space Grotesk Variable", "Space Grotesk", "Inter Variable", system-ui, sans-serif;
+  --font-sans: "Inter Variable", "Inter", system-ui, sans-serif;
+  --font-body: "Inter Variable", "Inter", system-ui, sans-serif;
+  --font-ui: "Inter Variable", "Inter", system-ui, sans-serif;
+  --font-reading: "Roboto", "Inter Variable", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", "Fira Code", ui-monospace, monospace;
 
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
