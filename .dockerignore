@@ -63,6 +63,8 @@ data/
 docs/
 # Compiled in via include_str! (src/uar/compiler/collaboration/validation/schema_registry.rs).
 !docs/agents/collaboration/v0.1.0-draft.2/schemas/
+# Compiled in via include_str! (workflow_execution/compiler.rs, validation/projection.rs).
+!docs/agents/collaboration/workflow-execution/1.0.0/
 plans/
 openspec/
 
