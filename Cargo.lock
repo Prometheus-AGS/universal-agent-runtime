@@ -14298,7 +14298,7 @@ dependencies = [
  "nonzero_ext",
  "notify",
  "num_cpus",
- "opentelemetry 0.32.0",
+ "opentelemetry 0.33.0",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "ort",
