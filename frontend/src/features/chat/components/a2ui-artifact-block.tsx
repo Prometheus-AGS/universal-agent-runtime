@@ -1,7 +1,7 @@
 import { CheckCircle2Icon, Loader2Icon, PanelTopOpenIcon } from "lucide-react";
 import { type FC, useMemo, useState } from "react";
 import { A2uiMessageSchema, MessageProcessor } from "@prometheus-ags/a2ui-core/v0_9";
-import { UarSurface, uarBasicCatalog } from "@prometheus-ags/a2ui-uar";
+import { UarSurface, uarBasicCatalog, type UarComponentImplementation } from "@prometheus-ags/a2ui-uar";
 
 import {
   A2UI_PROFILE,
@@ -262,7 +262,7 @@ function validateMessage(raw: unknown) {
 }
 
 function processA2uiDisplayContent(content: string) {
-  const processor = new MessageProcessor(
+  const processor = new MessageProcessor<UarComponentImplementation>(
     [uarBasicCatalog],
     undefined,
     { version: A2UI_VERSION },

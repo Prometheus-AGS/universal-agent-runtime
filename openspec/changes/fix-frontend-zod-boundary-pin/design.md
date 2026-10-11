@@ -16,3 +16,6 @@ The uncomfortable limitation is that compilation/bundling alone does not certify
 
 ## Migration Plan
 Commit corrected manifests/locks and source together; build static assets locally. Existing source history and immutable release acceptance remain untouched. Rollback is the previous commit, not a reinterpretation of accepted release evidence.
+
+## Observed lockfile mismatch
+Both checked-in lockfiles still referenced prior manifest versions (for example core 0.10.6 versus selected 0.12.0 and assistant-ui 0.15.16 versus selected 0.15.22). Regeneration therefore also reconciles dependencies already requested by current main manifests; those manifests are not upgraded in this repair. Peer resolution changes follow that existing manifest closure.

@@ -1660,3 +1660,6 @@ failed with LNK2038/LNK1319 because crates.io `esaxx-rs` 0.1.10 hard-codes
 whole Rust process to `/MT`: that leaves the dynamic native libraries on the
 opposite runtime. The release source closure vendors `esaxx-rs` 0.1.10 and
 applies upstream PR #19's `/MD` change through `[patch.crates-io]`.
+
+## 2026-10-11 — Restore the schema boundary, not an unsafe cast
+The consolidated frontend manifests selected Zod 4 while versions.toml and @a2ui/web_core 0.12 required Zod 3 schema objects. Restoring first-party 3.25.76 removed the schema/ReactNode errors. Core 0.12 additionally requires explicit catalog protocol version and a renderer generic on MessageProcessor. Both workspace lockfiles lagged their existing manifests, so repairing only installed node_modules would not have produced reproducible installs. Exact frontend typecheck and production build passed; live desktop qualification remains separate.

@@ -13,12 +13,12 @@ Google (`a2ui-team <a2ui-owners@google.com>`, org repo
 |---|---|
 | Package | `@a2ui/web_core` |
 | Workspace wrapper version | **0.10.4** |
-| Pinned upstream dependency | **0.10.6** (exact, no semver range) |
+| Pinned upstream dependency | **0.12.0** (exact, no semver range) |
 | License | Apache-2.0 |
 | Repository evidence | `package.json` exact dependency plus `frontend/pnpm-lock.yaml` integrity |
 
 The pin is enforced in `package.json`'s `dependencies` field with an exact
-version string (`"0.10.6"`, not `"^0.10.6"`), so `pnpm install` will not
+version string (`"0.12.0"`, not `"^0.12.0"`), so `pnpm install` will not
 silently drift to a newer upstream release. `pnpm-lock.yaml` additionally
 locks the resolved integrity hash.
 
