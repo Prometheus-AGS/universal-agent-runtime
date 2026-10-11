@@ -1,0 +1,5 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "target": "opencode",
+  "out": ".agent-team/uar-core/exports/opencode"
+}

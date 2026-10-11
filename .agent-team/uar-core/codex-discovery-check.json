@@ -1,0 +1,13 @@
+{
+  "command": [
+    "codex",
+    "doctor",
+    "--json"
+  ],
+  "code": 1,
+  "timedOut": false,
+  "observedRoleNames": [],
+  "stdoutBytes": 18418,
+  "stderrBytes": 0,
+  "successfulRosterDiscovery": false
+}

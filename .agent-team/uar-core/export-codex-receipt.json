@@ -1,0 +1,30 @@
+{
+  "directory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.agent-team/uar-core/exports/codex",
+  "files": [
+    ".codex/agents/uar-lead.toml",
+    ".codex/agents/uar-runtime.toml",
+    ".codex/agents/uar-providers.toml",
+    ".codex/agents/uar-trust-tools.toml",
+    ".codex/agents/uar-state.toml",
+    ".codex/agents/uar-console.toml",
+    ".codex/agents/uar-verifier.toml",
+    "export-receipt.json",
+    "team-export.json"
+  ],
+  "verification": {
+    "level": "source-verified",
+    "source": "https://learn.chatgpt.com/docs/agent-configuration/subagents",
+    "version": "documentation inspected 2026-09-24",
+    "live": "unverified"
+  },
+  "diagnostics": [
+    "Source-verified serialization only; installed native validation and live execution are unverified.",
+    "Only explicit model IDs are translated. Resolve tier, skill, capability and price policies with agent-team-models before native invocation.",
+    "Standalone agent files are supported. A Codex plugin agents manifest field is not verified; no such field is emitted.",
+    "Role overrides are preserved without native schema certification. Skill IDs refer to separately installed skills; prompt mentions do not install or authorize them."
+  ],
+  "instructions": [
+    "Review staged artifacts before installation. Export grants no execution or registration authority.",
+    "Review and merge .codex/agents and optional .codex/config.toml into the project; config values are native Codex options."
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "target": "minimax",
+  "out": ".agent-team/uar-core/exports/minimax"
+}

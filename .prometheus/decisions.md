@@ -1894,3 +1894,11 @@ The operator explicitly requested updated liter-llm and Prometheus mini submodul
 ### Liter compatibility repair for the existing credential boundary
 
 The actual release build at 14033d57 reproduced four missing API errors after the fork upgrade. Pin Liter 1bacb4adc47ba9fa262e1edec6c2f32c4f4649ba, based on 12a2fae9, retaining the existing redacted endpoint Debug output, explicit no-proxy transport and no-redirect transport behavior. The latest streaming, model catalog and budget refactors are preserved. This repair restores the prior UAR trust boundary; deleting UAR callers would have weakened it. No unit or standalone compiler checks were run.
+
+## 2026-09-24 — UAR project team across five coding harnesses
+
+Install one seven-role project roster with a default lead/specialist/verifier working group and maximum four active participants. Roles follow runtime, provider, host trust/tool, durable-state and console boundaries; Rust-only Compass coverage does not cover frontend or failed parses. Shared roots need an explicit single writer. Native role files are reusable definitions, not an autonomous scheduler or live UAR registration. Preserve KBD runtime-harness-gap-closure position and dependency pins.
+
+Use pinned project Vercel React/Composition and SurrealQL skills with UAR entity/pin precedence. MiniMax uses a child-only project data directory; generated credential/session state is ignored. No new product security behavior or foreign-repository ownership was added.
+
+Evidence: .agent-team/uar-core/verification.json and reviews/. Manifest/state, 35 export/installed files, 16 skill paths and existing config digests pass static checks; OpenCode discovers all seven roles. Other native activation/inference remains unverified, and mcode is absent. Cross-model design review produced corrections; both final cross-model requests timed out. Fresh artifact-only same-family fallback passed with limitations, not cross-model certification.

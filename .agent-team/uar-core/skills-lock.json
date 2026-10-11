@@ -1,0 +1,1059 @@
+{
+  "schemaVersion": 1,
+  "installedAt": "2026-09-24",
+  "project": "universal-agent-runtime",
+  "scope": "project-local",
+  "policyPath": ".agent-team/uar-core/skill-policy.md",
+  "discovery": {
+    "methods": [
+      "Firecrawl web search",
+      "Firecrawl developer_search skills=only",
+      "GitHub REST commit/tree metadata",
+      "Commit-addressed raw GitHub retrieval"
+    ],
+    "remoteCodeExecuted": false
+  },
+  "skills": [
+    {
+      "name": "vercel-react-best-practices",
+      "repository": "vercel-labs/agent-skills",
+      "commit": "063bee94c3f4df8453406c830b0a7df0f2860278",
+      "subtree": "skills/react-best-practices",
+      "description": "Apply Vercel React performance guidance under UAR entity and dependency constraints.",
+      "license": {
+        "spdx": "MIT",
+        "evidence": "SKILL.md frontmatter",
+        "caveat": "No root LICENSE file found; GitHub repository metadata did not identify a repository-wide license."
+      },
+      "auditCaveats": [
+        "Entrypoint and selected rules reviewed; entire subtree pattern-scanned, not a full semantic security audit.",
+        "Unpinned npx svgo example is not execution authorization.",
+        "SWR, direct imports, Next.js and caching examples never override UAR entity hooks, explicit business state, dependency pins or observed-problem scope."
+      ],
+      "canonicalPath": ".agents/skills/vercel-react-best-practices",
+      "wrapperPath": ".claude/skills/vercel-react-best-practices/SKILL.md",
+      "sourceUrl": "https://github.com/vercel-labs/agent-skills/tree/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices"
+    },
+    {
+      "name": "vercel-composition-patterns",
+      "repository": "vercel-labs/agent-skills",
+      "commit": "063bee94c3f4df8453406c830b0a7df0f2860278",
+      "subtree": "skills/composition-patterns",
+      "description": "Apply React composition guidance while preserving UAR graph-owned business state.",
+      "license": {
+        "spdx": "MIT",
+        "evidence": "SKILL.md frontmatter",
+        "caveat": "No root LICENSE file found; GitHub repository metadata did not identify a repository-wide license."
+      },
+      "auditCaveats": [
+        "Entrypoint and state-lifting rule reviewed; entire subtree pattern-scanned, not a full semantic security audit.",
+        "Provider/useState examples apply to UI-local mechanics, never graph-owned business records.",
+        "React-version-specific examples require checking the project dependency baseline."
+      ],
+      "canonicalPath": ".agents/skills/vercel-composition-patterns",
+      "wrapperPath": ".claude/skills/vercel-composition-patterns/SKILL.md",
+      "sourceUrl": "https://github.com/vercel-labs/agent-skills/tree/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns"
+    },
+    {
+      "name": "surrealql",
+      "repository": "surrealdb/agent-skills",
+      "commit": "e5eadc5901337f20ad06ab5acf48d8f83bbfc961",
+      "subtree": "skills/surrealql",
+      "description": "Use SurrealQL references against the UAR pinned SurrealDB version and host-owned persistence boundary.",
+      "license": {
+        "spdx": "MIT",
+        "evidence": "Repository LICENSE copied unchanged into canonical skill directory",
+        "copyright": "Copyright (c) 2026 SurrealDB Ltd."
+      },
+      "auditCaveats": [
+        "All four Markdown files reviewed; examples not executed or certified against UAR 3.2.4.",
+        "Latest-stable instruction is overridden by versions.toml.",
+        "curl and unpinned npx formatter examples do not authorize downloads or execution.",
+        "OWNER/password, FULL permissions and destructive DELETE/REMOVE examples are syntax illustrations, never production defaults or mutation authorization."
+      ],
+      "canonicalPath": ".agents/skills/surrealql",
+      "wrapperPath": ".claude/skills/surrealql/SKILL.md",
+      "sourceUrl": "https://github.com/surrealdb/agent-skills/tree/e5eadc5901337f20ad06ab5acf48d8f83bbfc961/skills/surrealql"
+    }
+  ],
+  "files": [
+    {
+      "path": ".agent-team/uar-core/skill-policy.md",
+      "origin": "local-policy",
+      "sha256": "3d118509f5d0a333580e0e5d22480d460a3e2a97e0431da85680398dfae9e784",
+      "sizeBytes": 4651
+    },
+    {
+      "path": ".agents/skills/surrealql/LICENSE",
+      "skill": "surrealql",
+      "origin": "upstream",
+      "sourcePath": "LICENSE",
+      "sourceUrl": "https://raw.githubusercontent.com/surrealdb/agent-skills/e5eadc5901337f20ad06ab5acf48d8f83bbfc961/LICENSE",
+      "gitBlobSha1": "2ff9f08758f044c287ec1882d4ad0742983c7afa",
+      "sha256": "fef82f3bef35ad9a90557468d775ee7862be1d5d9c6bff229d1361f39d93bcaa",
+      "sizeBytes": 1071
+    },
+    {
+      "path": ".agents/skills/surrealql/references/querying.md",
+      "skill": "surrealql",
+      "origin": "upstream",
+      "sourcePath": "skills/surrealql/references/querying.md",
+      "sourceUrl": "https://raw.githubusercontent.com/surrealdb/agent-skills/e5eadc5901337f20ad06ab5acf48d8f83bbfc961/skills/surrealql/references/querying.md",
+      "gitBlobSha1": "ff840878f5460a356f68c7ed53f1a1609a052b75",
+      "sha256": "c47ec563ad94c2f9a5640b55c5231062354fa82a23772ac4976b8bbd6afb4872",
+      "sizeBytes": 5762
+    },
+    {
+      "path": ".agents/skills/surrealql/references/schema.md",
+      "skill": "surrealql",
+      "origin": "upstream",
+      "sourcePath": "skills/surrealql/references/schema.md",
+      "sourceUrl": "https://raw.githubusercontent.com/surrealdb/agent-skills/e5eadc5901337f20ad06ab5acf48d8f83bbfc961/skills/surrealql/references/schema.md",
+      "gitBlobSha1": "940ee13d3039997e0487b986130aa778e086a258",
+      "sha256": "3718f208dd1677b07972d6b79d50a6049efd496f4090468e6920bb806e8ce1a8",
+      "sizeBytes": 3976
+    },
+    {
+      "path": ".agents/skills/surrealql/references/values.md",
+      "skill": "surrealql",
+      "origin": "upstream",
+      "sourcePath": "skills/surrealql/references/values.md",
+      "sourceUrl": "https://raw.githubusercontent.com/surrealdb/agent-skills/e5eadc5901337f20ad06ab5acf48d8f83bbfc961/skills/surrealql/references/values.md",
+      "gitBlobSha1": "dee50ced000e7b2eb94b37fbed684c1da4b5ed8f",
+      "sha256": "ce74dd2487024f1197b89782d2c5a8c8819478b6c4a185d8b7a9a7180312ea32",
+      "sizeBytes": 8077
+    },
+    {
+      "path": ".agents/skills/surrealql/SKILL.md",
+      "skill": "surrealql",
+      "origin": "upstream",
+      "sourcePath": "skills/surrealql/SKILL.md",
+      "sourceUrl": "https://raw.githubusercontent.com/surrealdb/agent-skills/e5eadc5901337f20ad06ab5acf48d8f83bbfc961/skills/surrealql/SKILL.md",
+      "gitBlobSha1": "b06af626064d91a6af0b283725b758d2cd542222",
+      "sha256": "3c2463137142d5d8a64a2d6502ce111712160374231d67481133ac230d6486bd",
+      "sizeBytes": 9128
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/AGENTS.md",
+      "skill": "vercel-composition-patterns",
+      "origin": "upstream",
+      "sourcePath": "skills/composition-patterns/AGENTS.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns/AGENTS.md",
+      "gitBlobSha1": "558bf9aa1e36db2161f1633c9bfae14a819f0508",
+      "sha256": "89e3ddd58fcf99a53a50e25dfd21b8cde1be5f10b7df6bacd3dfa6796932f516",
+      "sizeBytes": 22627
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/metadata.json",
+      "skill": "vercel-composition-patterns",
+      "origin": "upstream",
+      "sourcePath": "skills/composition-patterns/metadata.json",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns/metadata.json",
+      "gitBlobSha1": "3470b744190af044373abbfe80d94630c0cc6041",
+      "sha256": "49262ed5cb4186f31ee980cf8d990be0170c51efed4908d0464a1cff9905bd05",
+      "sizeBytes": 530
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/README.md",
+      "skill": "vercel-composition-patterns",
+      "origin": "upstream",
+      "sourcePath": "skills/composition-patterns/README.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns/README.md",
+      "gitBlobSha1": "01f359b0e79ce544d1463057be54946e50d62bcd",
+      "sha256": "85915a43a6f0b4efe525e3cf6398dd866166da2025837c4460468a24a940da94",
+      "sizeBytes": 2140
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/rules/_sections.md",
+      "skill": "vercel-composition-patterns",
+      "origin": "upstream",
+      "sourcePath": "skills/composition-patterns/rules/_sections.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns/rules/_sections.md",
+      "gitBlobSha1": "f921dd41b53e4d847f25a6b3eca25a4e8857db44",
+      "sha256": "a174213b87e6911e2b766995a2cbaf8d1534057076e82fb79fe3f0ecb38047df",
+      "sizeBytes": 829
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/rules/_template.md",
+      "skill": "vercel-composition-patterns",
+      "origin": "upstream",
+      "sourcePath": "skills/composition-patterns/rules/_template.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns/rules/_template.md",
+      "gitBlobSha1": "119a30167f162c439f05e73c63044c590dff645c",
+      "sha256": "587f7d16b0660eb61fee4a4d3d7df2b3077d6835de170602c7d6e60bee559131",
+      "sizeBytes": 329
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/rules/architecture-avoid-boolean-props.md",
+      "skill": "vercel-composition-patterns",
+      "origin": "upstream",
+      "sourcePath": "skills/composition-patterns/rules/architecture-avoid-boolean-props.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns/rules/architecture-avoid-boolean-props.md",
+      "gitBlobSha1": "ccee19ce495b9d7fdf08867db3c6b6282006312e",
+      "sha256": "007555ebb020f4d552582a2c4db194db71a1fd33094012e5187bcfa4f8c392d5",
+      "sizeBytes": 2267
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/rules/architecture-compound-components.md",
+      "skill": "vercel-composition-patterns",
+      "origin": "upstream",
+      "sourcePath": "skills/composition-patterns/rules/architecture-compound-components.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns/rules/architecture-compound-components.md",
+      "gitBlobSha1": "e5e3043cb5a81b83dce0389848b828455f00854f",
+      "sha256": "f246af13dc269b521cf20eb8ad99a0cb645beac381c8c9b117262c34612c8457",
+      "sizeBytes": 2600
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/rules/patterns-children-over-render-props.md",
+      "skill": "vercel-composition-patterns",
+      "origin": "upstream",
+      "sourcePath": "skills/composition-patterns/rules/patterns-children-over-render-props.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns/rules/patterns-children-over-render-props.md",
+      "gitBlobSha1": "d4345ee30aea5f1b11815251edca7ebd0aefe2e2",
+      "sha256": "7c45a0d21b3c4126a32cba916ee31adeae195386ad1dbbe6634aedb7457aa0ad",
+      "sizeBytes": 1886
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/rules/patterns-explicit-variants.md",
+      "skill": "vercel-composition-patterns",
+      "origin": "upstream",
+      "sourcePath": "skills/composition-patterns/rules/patterns-explicit-variants.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns/rules/patterns-explicit-variants.md",
+      "gitBlobSha1": "56e32e8bee5e5768f747db4e9718a6c2b54bfce5",
+      "sha256": "8c19e596e61807549d01ce8c6954c6358199f97a8511c0c02c625ec0efda8c0e",
+      "sizeBytes": 2395
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/rules/react19-no-forwardref.md",
+      "skill": "vercel-composition-patterns",
+      "origin": "upstream",
+      "sourcePath": "skills/composition-patterns/rules/react19-no-forwardref.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns/rules/react19-no-forwardref.md",
+      "gitBlobSha1": "e0d8f8a76f14888f2fafc8cccd3d9395e4711d0d",
+      "sha256": "881830adb7534c4b2d70db426556646ad9837f5478f744f35641f635ada22227",
+      "sizeBytes": 953
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/rules/state-context-interface.md",
+      "skill": "vercel-composition-patterns",
+      "origin": "upstream",
+      "sourcePath": "skills/composition-patterns/rules/state-context-interface.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns/rules/state-context-interface.md",
+      "gitBlobSha1": "d961bede0c6c6e318f6ba3aca9b5dfcdb768d8f9",
+      "sha256": "09e73afbf9285fa416679cc864a287b9e8b821d0969272ab784295386d8c9bc3",
+      "sizeBytes": 4974
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/rules/state-decouple-implementation.md",
+      "skill": "vercel-composition-patterns",
+      "origin": "upstream",
+      "sourcePath": "skills/composition-patterns/rules/state-decouple-implementation.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns/rules/state-decouple-implementation.md",
+      "gitBlobSha1": "71a5afaa7d7078c262c92d32c3b97723de62f99f",
+      "sha256": "76a8c1eb29a70d8996ab3f71260345af2f7bc89deab815a421d6c87c6591a9c3",
+      "sizeBytes": 2699
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/rules/state-lift-state.md",
+      "skill": "vercel-composition-patterns",
+      "origin": "upstream",
+      "sourcePath": "skills/composition-patterns/rules/state-lift-state.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns/rules/state-lift-state.md",
+      "gitBlobSha1": "d7fe27b54933135f9050365b6c2001c101029d51",
+      "sha256": "74c54038a6c554c748fe31cec673b80861b5d920b7553cf78cdf10d18b4b759b",
+      "sizeBytes": 3224
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/SKILL.md",
+      "skill": "vercel-composition-patterns",
+      "origin": "upstream",
+      "sourcePath": "skills/composition-patterns/SKILL.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/composition-patterns/SKILL.md",
+      "gitBlobSha1": "d07025bf943345bc1cf15eb923594f889ff881f0",
+      "sha256": "e38e0eaa609316b10423a9a138ed95e35099accd3f735585295c8a8f165c28a3",
+      "sizeBytes": 2886
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/AGENTS.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/AGENTS.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/AGENTS.md",
+      "gitBlobSha1": "4e340a50684a8e7811d5bfa4df48bd9989d0fd87",
+      "sha256": "fc93e7421177bbf869cce892bc60a6c83a4517d974bc3bf65c4e2c1e58a6ccf6",
+      "sizeBytes": 108261
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/metadata.json",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/metadata.json",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/metadata.json",
+      "gitBlobSha1": "3bec38b176cc71d105895ec4678bbe79305dcb4c",
+      "sha256": "c4e18bac3290fbe1b471a605867d4df68b03144ea26b8befdbe8f9d8fd124354",
+      "sizeBytes": 921
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/README.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/README.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/README.md",
+      "gitBlobSha1": "f283e1c0c21c5b13c848452528c3949ff544846c",
+      "sha256": "9eafb2123d3b8b2aef41fba0db2648a3f4f49996f8c7c8bb2c86263befd8b48a",
+      "sizeBytes": 3360
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/_sections.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/_sections.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/_sections.md",
+      "gitBlobSha1": "4d20c144bc3b9265fc5976c704a8dd60ed3a806a",
+      "sha256": "01c59969e4e867f0708c8f8ef9c6d87fab9a07d0586244f429ff84013db8a115",
+      "sizeBytes": 1554
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/_template.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/_template.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/_template.md",
+      "gitBlobSha1": "1e9e70703485021e0b969f5731f38c8b9f8694db",
+      "sha256": "99df2a3ea088c6c22de2484ddc7e964d0e9923846f44c63380343ecc64455442",
+      "sizeBytes": 631
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/advanced-effect-event-deps.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/advanced-effect-event-deps.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/advanced-effect-event-deps.md",
+      "gitBlobSha1": "24d901b62be66f6088eb1de5b262e67f5c337d57",
+      "sha256": "55ed8f9f27a1bff803d6fa55828176207714b02123cbb97ddb8a90d88024a723",
+      "sizeBytes": 1802
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/advanced-event-handler-refs.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/advanced-event-handler-refs.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/advanced-event-handler-refs.md",
+      "gitBlobSha1": "97e7ade243aa6dae50d6faa5111dea0d04778ead",
+      "sha256": "a3097edeecfb2ff6851cd66ed8cdf0617c3c88180504bee824aa6e75a215bbbc",
+      "sizeBytes": 1483
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/advanced-init-once.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/advanced-init-once.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/advanced-init-once.md",
+      "gitBlobSha1": "73ee38e5e74c0afa28cb730afe3275479432092a",
+      "sha256": "3e4dc22173eb0e2b6dcf583e3babd862b8696328f8f59aee7c4d746c5bc05f6c",
+      "sizeBytes": 958
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/advanced-use-latest.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/advanced-use-latest.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/advanced-use-latest.md",
+      "gitBlobSha1": "9c7cb501693d4a9521697f13dbd5906dd99f0257",
+      "sha256": "8a3f64dfe5a77d1564248faf17fe662ae75b55d497a243cb30b38eb07ccbbf9a",
+      "sizeBytes": 1072
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/async-api-routes.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/async-api-routes.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/async-api-routes.md",
+      "gitBlobSha1": "6feda1ef0ac06b57b33c7b5bd6a19ca88d6c8a34",
+      "sha256": "523338540d73427dc14c0cbb19f2741ebccdf8b105a7b2c1b33d2905cf237a42",
+      "sizeBytes": 1125
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/async-cheap-condition-before-await.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/async-cheap-condition-before-await.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/async-cheap-condition-before-await.md",
+      "gitBlobSha1": "5799d7f6ee6e9d70422048ab0cae06ca021d22b2",
+      "sha256": "03107c1f70a293cd58a8abc5474c5548e20ea4efdf01b6d45aae7ad0ac1cb32c",
+      "sizeBytes": 1220
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/async-defer-await.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/async-defer-await.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/async-defer-await.md",
+      "gitBlobSha1": "460b5e16baf9c66f85e4169eb9d43e4d07f2ce94",
+      "sha256": "f3c142d090615abdcc99d31c123be37b31f0f1ed8d9ec9f7789a3bc6883ae0fb",
+      "sizeBytes": 2208
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/async-dependencies.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/async-dependencies.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/async-dependencies.md",
+      "gitBlobSha1": "0484ebab993f3db78277e8731872473d02475e6d",
+      "sha256": "16ef469f877e30c6b8e1e1b4bc3e527312fa3c6318cb785a4eca186ea236131a",
+      "sizeBytes": 1293
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/async-parallel.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/async-parallel.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/async-parallel.md",
+      "gitBlobSha1": "64133f6c31fec81eaaabd712586337d20122e09f",
+      "sha256": "6d2f841896279e976dfcdc1ac89e70771ac188baadfd43c096b5706cb838b961",
+      "sizeBytes": 654
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/async-suspense-boundaries.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/async-suspense-boundaries.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/async-suspense-boundaries.md",
+      "gitBlobSha1": "1fbc05b04ed2474637b12014a77688750e78f931",
+      "sha256": "de05fedac2eb7ae563b887b5a424464ec3dfaf84e5b7797467ebe2a796ac8afc",
+      "sizeBytes": 2510
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/bundle-analyzable-paths.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/bundle-analyzable-paths.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/bundle-analyzable-paths.md",
+      "gitBlobSha1": "8276f156cf1aa8a611bd5bc3cadcb362e16ccd13",
+      "sha256": "62090b5c815fd71bf1133dce754f51abc16a9456d0ccd025fd627de27726e92a",
+      "sizeBytes": 2382
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/bundle-barrel-imports.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/bundle-barrel-imports.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/bundle-barrel-imports.md",
+      "gitBlobSha1": "22d1050196671b7bc9f9aaf88cc665ba6fa8deb0",
+      "sha256": "e648f6d54525f07a691357040ca5bff6ea3424788a91ff63812adb29622a671b",
+      "sizeBytes": 2795
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/bundle-conditional.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/bundle-conditional.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/bundle-conditional.md",
+      "gitBlobSha1": "99d6fc90e31d683d2b6b71353b92d620b484b644",
+      "sha256": "09c8259c3efb04fc0abb8e412ccbda217c222ae8118516283e571c995fe3a7d4",
+      "sizeBytes": 949
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/bundle-defer-third-party.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/bundle-defer-third-party.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/bundle-defer-third-party.md",
+      "gitBlobSha1": "db041d1510e51defeade05926ba4e6bbad1068b5",
+      "sha256": "3719fb47b191e8db4fe22686ec88448ad5af9e6838585425abbe103d0b642e37",
+      "sizeBytes": 920
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/bundle-dynamic-imports.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/bundle-dynamic-imports.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/bundle-dynamic-imports.md",
+      "gitBlobSha1": "60b62695e7a080e2020ff2242d8d841c5e3ecbc4",
+      "sha256": "401817a7369f315fc5a68a1095742ff7d53d0461906880dc9d64a41495ee1986",
+      "sizeBytes": 791
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/bundle-preload.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/bundle-preload.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/bundle-preload.md",
+      "gitBlobSha1": "7000504065472628ae614786a3faadd23b0435a7",
+      "sha256": "d1f7cc28da7cd5ab249acd287edc5b761afcfb194e9cb62cd44c5f3543db2de2",
+      "sizeBytes": 1149
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/client-event-listeners.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/client-event-listeners.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/client-event-listeners.md",
+      "gitBlobSha1": "aad4ae91605d715aad8e92b76bd7fb85c91d7cdf",
+      "sha256": "242a873349febc1ce685e85617994784dbab92c2eaa68aed7fed5a83e7680e93",
+      "sizeBytes": 1969
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/client-localstorage-schema.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/client-localstorage-schema.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/client-localstorage-schema.md",
+      "gitBlobSha1": "d30a1a7d4f85b0d50a0808eaa1b382c6deb595f4",
+      "sha256": "0fb7cdf9dc93fdf22f87e3669f953fb9d4ac9b0be42eec4a29fe9a2560610b88",
+      "sizeBytes": 1950
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/client-passive-event-listeners.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/client-passive-event-listeners.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/client-passive-event-listeners.md",
+      "gitBlobSha1": "ce39a889efb4452ec4c044555ff818301dcf7ece",
+      "sha256": "1f35016f9053de69e884ee9be00654e37979c2ca85f5e57764dc2626ff7acb4b",
+      "sizeBytes": 1644
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/client-swr-dedup.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/client-swr-dedup.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/client-swr-dedup.md",
+      "gitBlobSha1": "2a430f27fd6abdc1b1b2f809b7a60114ff506790",
+      "sha256": "644652c39c6cc00de8d1c77a7273612e868dc3f7edda30764164c12ec0f764a3",
+      "sizeBytes": 1159
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/js-batch-dom-css.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/js-batch-dom-css.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/js-batch-dom-css.md",
+      "gitBlobSha1": "a62d84ed8149b6d4f173debc7043af03f8f8dd06",
+      "sha256": "480b891b9eaf96e929dc1e964274a4828e3a78009b7d00ccd965a0d425215959",
+      "sizeBytes": 3266
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/js-cache-function-results.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/js-cache-function-results.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/js-cache-function-results.md",
+      "gitBlobSha1": "180f8ac8fffd7e6ee320242d59d06565d40a12f8",
+      "sha256": "3daaa11d24f4295cb6be8bc6f407f2ce83cc7b5bd1f0e68891ea8ab835721dc7",
+      "sizeBytes": 1949
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/js-cache-property-access.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/js-cache-property-access.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/js-cache-property-access.md",
+      "gitBlobSha1": "39eec9061b4ca820150cc8183fb73f9e0c91ce85",
+      "sha256": "73e47431e74878a927061bf0ddc7cd91a7556cb35d2573f3421e82300d9ae311",
+      "sizeBytes": 532
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/js-cache-storage.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/js-cache-storage.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/js-cache-storage.md",
+      "gitBlobSha1": "aa4a30c08176aabd27b41fa44d5c1981457b675f",
+      "sha256": "11b826b0433898c1ece2d3547010d8e77db9fb240185748c45db91493de9b6cc",
+      "sizeBytes": 1651
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/js-combine-iterations.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/js-combine-iterations.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/js-combine-iterations.md",
+      "gitBlobSha1": "044d017ec3b24b53e46d638acd1d936a22ac6323",
+      "sha256": "71add08aeeb43091d4ff4c0b2842cce8b4bdef8ad3e732cc034bb5a84827e746",
+      "sizeBytes": 753
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/js-early-exit.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/js-early-exit.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/js-early-exit.md",
+      "gitBlobSha1": "f46cb89c6cbe06e481aba0136848e3b17263ba96",
+      "sha256": "925ce5ce87f3347186ca62212f29cc6baa2b8c85a96d2720ad07c3d0abf781c0",
+      "sizeBytes": 1133
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/js-flatmap-filter.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/js-flatmap-filter.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/js-flatmap-filter.md",
+      "gitBlobSha1": "ee0edf0da256eb8b62c5a998c768c51eb520e8cd",
+      "sha256": "9e5b166a41914d975bef7635467f8fb32cd98b5c3126c0bc6f163490812fb5f0",
+      "sizeBytes": 1411
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/js-hoist-regexp.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/js-hoist-regexp.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/js-hoist-regexp.md",
+      "gitBlobSha1": "dae3fefdc0a1db66badcd4875489715edcdb038b",
+      "sha256": "f9e9aef2f7c2307dd7310f283df85dcada45fc43e9bb941b0c3aa414dec21ec4",
+      "sizeBytes": 1028
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/js-index-maps.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/js-index-maps.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/js-index-maps.md",
+      "gitBlobSha1": "9d357a00b15ac67cdd638886f5197a13173a637d",
+      "sha256": "5df1bdc2cfabb2c98abd55d26762e5c18189535c2e686184f426082e62920391",
+      "sizeBytes": 837
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/js-length-check-first.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/js-length-check-first.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/js-length-check-first.md",
+      "gitBlobSha1": "8b89573630fdc3aa10564273f390ecc7e2b1cd3e",
+      "sha256": "8b54a311c826b299272f29187fc58bc55772a04c4a72eeb29456ee96dc9fc624",
+      "sizeBytes": 1747
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/js-min-max-loop.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/js-min-max-loop.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/js-min-max-loop.md",
+      "gitBlobSha1": "4b6656e96aecf3ae6ade52974090ae8b3e3f2bb5",
+      "sha256": "87dfb67e2f39df6ad8bcfb5b78c5fb364d3c07554ad188a202408d99f3763421",
+      "sizeBytes": 2290
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/js-request-idle-callback.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/js-request-idle-callback.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/js-request-idle-callback.md",
+      "gitBlobSha1": "d81927e5f0ddb9fa4eece79197728bfc4382cbfe",
+      "sha256": "ee08f83905b4011abbc33d594033157d77561b5bbd9b36b04f0f409581ffec32",
+      "sizeBytes": 2647
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/js-set-map-lookups.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/js-set-map-lookups.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/js-set-map-lookups.md",
+      "gitBlobSha1": "680a4892ee291c432bf8e769a44d0f1eb102b74b",
+      "sha256": "a7fd781a6ba9ad49065961b6f9a90ef486bf6b648390e1a08704025f98e1642b",
+      "sizeBytes": 532
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/js-tosorted-immutable.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/js-tosorted-immutable.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/js-tosorted-immutable.md",
+      "gitBlobSha1": "eae8b3f8aed2c7a893ceaae4cab55fa1c444b309",
+      "sha256": "d0a5e1b0fec48a0a81397957e2f068e224329f7c42cb5feeed8aae6fa64025e8",
+      "sizeBytes": 1782
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rendering-activity.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rendering-activity.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rendering-activity.md",
+      "gitBlobSha1": "c957a490b7c2688542766150741e85e066539251",
+      "sha256": "1e5e7eaf3555e61d6a2e900089c676527d26259501db5594f59544b6c664f85a",
+      "sizeBytes": 564
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rendering-animate-svg-wrapper.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rendering-animate-svg-wrapper.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rendering-animate-svg-wrapper.md",
+      "gitBlobSha1": "646744cbe53b213c6fa5ead54ef107510e5be89d",
+      "sha256": "9c6ae0ca7a51434e803887c64cded760956579a1452ccb80a461a03f9c937c77",
+      "sizeBytes": 1185
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rendering-conditional-render.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rendering-conditional-render.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rendering-conditional-render.md",
+      "gitBlobSha1": "7e866f5852dac80e0822e7f7c33476f5c9fc22f1",
+      "sha256": "2ec2fa23c4148285144687050c52369adba3da2fbe3d486f8d3e0aad8f06f2bc",
+      "sizeBytes": 980
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rendering-content-visibility.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rendering-content-visibility.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rendering-content-visibility.md",
+      "gitBlobSha1": "aa6656362b2c0dad9ffea788b5850843d6c0629e",
+      "sha256": "64eee6d5b916fe74df33363994b27fc7f71bea3bcedc7ee04bda23107ca3e6e4",
+      "sizeBytes": 815
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rendering-hoist-jsx.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rendering-hoist-jsx.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rendering-hoist-jsx.md",
+      "gitBlobSha1": "32d2f3fcea53dadcf847231ee20c60fa2c5c3049",
+      "sha256": "93b229560fae92005ed9a2a829064607b39b2e984e92d221d05b2d41df2b7c0e",
+      "sizeBytes": 1039
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rendering-hydration-no-flicker.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rendering-hydration-no-flicker.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rendering-hydration-no-flicker.md",
+      "gitBlobSha1": "5cf0e79b69afd7564b965c09435a2c7ee79eb2bd",
+      "sha256": "dc7ab358c67c177bca6e6f360fbc935ebe4efa928c0ba3ebd3f9f3d9e2000ca3",
+      "sizeBytes": 2308
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rendering-hydration-suppress-warning.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rendering-hydration-suppress-warning.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rendering-hydration-suppress-warning.md",
+      "gitBlobSha1": "24ba2513a29f5259b3184695d2d4da25e03e42ac",
+      "sha256": "915bacb934e2927d84b37a3f3d225a47b309ac8f9e494ed2bcb66ce07c5676a2",
+      "sizeBytes": 872
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rendering-resource-hints.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rendering-resource-hints.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rendering-resource-hints.md",
+      "gitBlobSha1": "1290bef06baf459f85dc5856ffc4486951224a48",
+      "sha256": "351b1095d641717b930f1b2253282b7120af3023bc74e06c17675168d4286864",
+      "sizeBytes": 2549
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rendering-script-defer-async.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rendering-script-defer-async.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rendering-script-defer-async.md",
+      "gitBlobSha1": "ee275ed1c06da8f1ae70e744e47965799eaebf02",
+      "sha256": "4cea07b7875ba7fc2c7465ff23b63a2bb334f90aaf2d9293d38d67b05fdb32ab",
+      "sizeBytes": 1868
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rendering-svg-precision.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rendering-svg-precision.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rendering-svg-precision.md",
+      "gitBlobSha1": "6d7712860365294936a1b736d29d3eb970b91da7",
+      "sha256": "ed468533f6e95f622859c884b122cf21f9f593ed6bb3d500a54de4b9f9bcb9fb",
+      "sizeBytes": 588
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rendering-usetransition-loading.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rendering-usetransition-loading.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rendering-usetransition-loading.md",
+      "gitBlobSha1": "0c1b0b98e884d2c77bdec66df754693bd48c7777",
+      "sha256": "3a1249c3f13026b6f54ab5712c388df219d6af01b12aa542749acd99a46f4bc1",
+      "sizeBytes": 2074
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-defer-reads.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-defer-reads.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-defer-reads.md",
+      "gitBlobSha1": "e867c95f02fe6ed6ac2f91fdf1c0922304e0423a",
+      "sha256": "234050a77faf50cb306be10a9e15bd4421134ab5907e75f13e6d78e2bd262dc9",
+      "sizeBytes": 973
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-dependencies.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-dependencies.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-dependencies.md",
+      "gitBlobSha1": "47a4d92685702e3a3b07073c62a61800fa0a6d7d",
+      "sha256": "17eb5830956fb56486fd3cfc7431f5849d39751730c05ad9e77dd4f0c27169c5",
+      "sizeBytes": 824
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-derived-state-no-effect.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-derived-state-no-effect.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-derived-state-no-effect.md",
+      "gitBlobSha1": "3d9fe4050794ea6655add6bee50cfbc104e5dc31",
+      "sha256": "cb11ec76f50aa7b6847269f02d79b120c889a30d9ecd2c1d578f75144419c77a",
+      "sizeBytes": 1201
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-derived-state.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-derived-state.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-derived-state.md",
+      "gitBlobSha1": "e5c899f6c073338bbd1b73c0275bc3e5e7d9ae7b",
+      "sha256": "1c326bb67b01fb084eb00c8911b0a7cff54681c2315b629f88e49b64eaa6481d",
+      "sizeBytes": 728
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-functional-setstate.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-functional-setstate.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-functional-setstate.md",
+      "gitBlobSha1": "b004ef45e347503947fee397b6c3d163b0a317fb",
+      "sha256": "5e68df6b2ae8058e67f476ff1ac67bde159f5a9d18df439e46eabcdeb7b52e58",
+      "sizeBytes": 2968
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-lazy-state-init.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-lazy-state-init.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-lazy-state-init.md",
+      "gitBlobSha1": "4ecb350fbadff3db805b72429276e672d42736dc",
+      "sha256": "4ae844740f266fc8cbf050701230286624a2440ec5be67b9a63d9edc3c580573",
+      "sizeBytes": 2016
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-memo-with-default-value.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-memo-with-default-value.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-memo-with-default-value.md",
+      "gitBlobSha1": "63570491848cb42c2bc7073bceb754893a6a4cfa",
+      "sha256": "81c47476564ad8a79fc68fc442734255ca7d6829424359464503fda0a9f9a0dd",
+      "sizeBytes": 1173
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-memo.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-memo.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-memo.md",
+      "gitBlobSha1": "f8982ab612105a3b7faee1292b797338e7fb5271",
+      "sha256": "1f258990c2f27ff6256b3cc5c43300631bb3f0d81f749aed08d07fcdcc131dd1",
+      "sizeBytes": 1148
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-move-effect-to-event.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-move-effect-to-event.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-move-effect-to-event.md",
+      "gitBlobSha1": "dd58a1af091b3cf5cb271d25904af4feb836d1aa",
+      "sha256": "abc2cbf167bee056743023351e96806a411d3398da8802093620aecf0721f029",
+      "sizeBytes": 1268
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-no-inline-components.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-no-inline-components.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-no-inline-components.md",
+      "gitBlobSha1": "d97592acefced05bc4a8538c77d226fa24c08534",
+      "sha256": "1cc32907a770272524ba682eef9e7efdd8ad4533b6f89b718a1fcd7d1d0eb6a3",
+      "sizeBytes": 2135
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-simple-expression-in-memo.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-simple-expression-in-memo.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-simple-expression-in-memo.md",
+      "gitBlobSha1": "59dfab0f3b048097627e0ca6e4c8da36629a5268",
+      "sha256": "5bdcf2d1558ba5204e643c887b7b4060f89630969425651eb68e96427d97f800",
+      "sizeBytes": 1018
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-split-combined-hooks.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-split-combined-hooks.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-split-combined-hooks.md",
+      "gitBlobSha1": "89d805644dbffe3877bc1356bdf8ad416a5c715b",
+      "sha256": "6f45d703343484ef9acef9388397f3642966ae6a5a258899a0cf1f9977cfbf6c",
+      "sizeBytes": 1844
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-transitions.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-transitions.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-transitions.md",
+      "gitBlobSha1": "d99f43f764232e994a49a1df89ec9d624552f439",
+      "sha256": "60f4033909a62df5e5b8c601494f9e50a562e2f8c1c2d81eac24f38142265f1c",
+      "sizeBytes": 1055
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-use-deferred-value.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-use-deferred-value.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-use-deferred-value.md",
+      "gitBlobSha1": "619c04b0142bf5a5b7d0f69532a56b797a78f664",
+      "sha256": "8c3579576a61a949884167745dcfaf1d5426ba305cc61fd0a79602d70fda4909",
+      "sizeBytes": 1846
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/rerender-use-ref-transient-values.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/rerender-use-ref-transient-values.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/rerender-use-ref-transient-values.md",
+      "gitBlobSha1": "cf04b81f8a531eacd07a32e8917fb3ed3c1bbecb",
+      "sha256": "f1a649af9d1d0b5c762f6c9c4c1c70c90d7df82aa10296ee87aadb78c1b76c54",
+      "sizeBytes": 1742
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/server-after-nonblocking.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/server-after-nonblocking.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/server-after-nonblocking.md",
+      "gitBlobSha1": "e8f5b260f5fc6d58141bc61e0a091569adb81e7e",
+      "sha256": "d0b8d24a3db9f0f65f9e2bddbf230b0e03a5f60e1229d93a4a18f5e7a991c7c2",
+      "sizeBytes": 2012
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/server-auth-actions.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/server-auth-actions.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/server-auth-actions.md",
+      "gitBlobSha1": "ee82c0442bc69ffae7bf20c07709d57893da1123",
+      "sha256": "a2ca8aa102839251c7971ec784560fab943c20b36fe6f80365d4110c13260c23",
+      "sizeBytes": 2649
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/server-cache-lru.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/server-cache-lru.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/server-cache-lru.md",
+      "gitBlobSha1": "ef6938aa53c55dc3c0035bd6c66838810d870260",
+      "sha256": "1924b64561841923b88a657085097a0aeba3e0ba2d5470b9f5c15cc10d6ae70f",
+      "sizeBytes": 1353
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/server-cache-react.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/server-cache-react.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/server-cache-react.md",
+      "gitBlobSha1": "87c9ca33168a321a59fbaaa84843e2f48c99751a",
+      "sha256": "fddeea6c870bb3da4134b61d54b7d09b83d2603f929b7547cd3dc1dc269edd5c",
+      "sizeBytes": 2228
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/server-dedup-props.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/server-dedup-props.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/server-dedup-props.md",
+      "gitBlobSha1": "fb24a2562c73fadbb9a11a79897c2cf93ea3c69a",
+      "sha256": "c2747424cdac46be62f835f245a0aa887b0090b416d28e2ac8676702645eeb37",
+      "sizeBytes": 2060
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/server-hoist-static-io.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/server-hoist-static-io.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/server-hoist-static-io.md",
+      "gitBlobSha1": "25205c2fc42d0dd684d6423acde642774329a8cc",
+      "sha256": "5abea4dd882b13661bd5f7dfb93f9e547d5f08176c61c448ade91b210ed5d49f",
+      "sizeBytes": 4423
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/server-no-shared-module-state.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/server-no-shared-module-state.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/server-no-shared-module-state.md",
+      "gitBlobSha1": "ff7d9f29c6e0e42ec1471acec8a3c7f394c8358d",
+      "sha256": "4d869bf1cd2f1632e5ca4c0e64b1cf0e71c5f5a0f940bc8a22174d205e735ed7",
+      "sizeBytes": 1766
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/server-parallel-fetching.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/server-parallel-fetching.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/server-parallel-fetching.md",
+      "gitBlobSha1": "1affc835a601a894fd02de08e6c9cdfd76d34b64",
+      "sha256": "569a2e9fc04f9606686cd75c5894ef8781b502786a7fffe241396846c7733472",
+      "sizeBytes": 1554
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/server-parallel-nested-fetching.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/server-parallel-nested-fetching.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/server-parallel-nested-fetching.md",
+      "gitBlobSha1": "be1dc25075e40e6bda46cb24dc5a6f42b916b0e8",
+      "sha256": "ad5d9656984d4a959997a2367bf59cc6632297b4634a1dd13a087939d83f30b3",
+      "sizeBytes": 992
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/rules/server-serialization.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/rules/server-serialization.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/rules/server-serialization.md",
+      "gitBlobSha1": "39c5c4164c31be7f171ea2f4b3b32fe47709a651",
+      "sha256": "f4c7d68b29c82381baad059c4a7f09e868e71ec9c3115a26ad3ae7d24c0dfe1f",
+      "sizeBytes": 996
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/SKILL.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "upstream",
+      "sourcePath": "skills/react-best-practices/SKILL.md",
+      "sourceUrl": "https://raw.githubusercontent.com/vercel-labs/agent-skills/063bee94c3f4df8453406c830b0a7df0f2860278/skills/react-best-practices/SKILL.md",
+      "gitBlobSha1": "237988de4a66dd8a71d30a2c24ebe1a86b58d04e",
+      "sha256": "71ed7794962fa6e803ee83030517b5b93a9f70fbfeb431ec4535c5480a8d8355",
+      "sizeBytes": 7251
+    },
+    {
+      "path": ".claude/skills/surrealql/SKILL.md",
+      "skill": "surrealql",
+      "origin": "local-wrapper",
+      "sha256": "33f12850deeab2c427651ed7d5f541af38edbe36fcc0981b16f86350dfa0bbe3",
+      "sizeBytes": 735
+    },
+    {
+      "path": ".claude/skills/vercel-composition-patterns/SKILL.md",
+      "skill": "vercel-composition-patterns",
+      "origin": "local-wrapper",
+      "sha256": "9cd32061adcc634bfd768ff7bbcf296c38c8b6161fe10adff5056e89b246eb81",
+      "sizeBytes": 768
+    },
+    {
+      "path": ".claude/skills/vercel-react-best-practices/SKILL.md",
+      "skill": "vercel-react-best-practices",
+      "origin": "local-wrapper",
+      "sha256": "1d73e1f85667c45aca318cf27f279862253f9b26475058d68ba6c5b67cb5940f",
+      "sizeBytes": 771
+    }
+  ],
+  "selfHashExcluded": true
+}

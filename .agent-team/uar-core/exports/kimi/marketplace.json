@@ -1,0 +1,10 @@
+{
+  "version": "2",
+  "plugins": [
+    {
+      "id": "uar-core",
+      "displayName": "uar-core",
+      "source": "./plugins/uar-core"
+    }
+  ]
+}

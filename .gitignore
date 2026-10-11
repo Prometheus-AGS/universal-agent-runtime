@@ -100,7 +100,7 @@ static/assets
 
 # Local agent/editor/research tooling state — machine-local, not shared.
 .agents/
-# Repository-owned UI/UX design intelligence is the only `.agents/` exception.
+# Repository-owned UI/UX design intelligence; additional team exceptions appear below.
 # Keep one canonical payload; tracked tool entry points link back to this path.
 !.agents/
 .agents/*
@@ -160,3 +160,32 @@ frontend/packages/*/dist/
 
 # Native Boss sidecar packages are generated from the pinned committed source.
 /dist/boss-sidecar/
+
+# UAR project team skills and isolated MiniMax state
+!.agents/skills/rust-best-practices/
+!.agents/skills/rust-best-practices/**
+!.agents/skills/rust-async-patterns/
+!.agents/skills/rust-async-patterns/**
+!.agents/skills/agent-runtime-security/
+!.agents/skills/agent-runtime-security/**
+!.agents/skills/agui-event-contract/
+!.agents/skills/agui-event-contract/**
+!.agents/skills/agent-team-creator/
+!.agents/skills/agent-team-creator/**
+!.agents/skills/agent-team-models/
+!.agents/skills/agent-team-models/**
+!.agents/skills/agent-team-manage/
+!.agents/skills/agent-team-manage/**
+!.agents/skills/agent-team-handoff/
+!.agents/skills/agent-team-handoff/**
+!.agents/skills/vercel-react-best-practices/
+!.agents/skills/vercel-react-best-practices/**
+!.agents/skills/vercel-composition-patterns/
+!.agents/skills/vercel-composition-patterns/**
+!.agents/skills/surrealql/
+!.agents/skills/surrealql/**
+!.agents/skills/uar-project-review/
+!.agents/skills/uar-project-review/**
+.minimax/*
+!.minimax/agents/
+!.minimax/agents/**

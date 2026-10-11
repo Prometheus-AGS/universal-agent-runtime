@@ -1,0 +1,14 @@
+{
+  "command": [
+    "opencode",
+    "agent",
+    "list",
+    "--pure"
+  ],
+  "code": 0,
+  "timedOut": false,
+  "observedRoleNames": [],
+  "stdoutBytes": 4390928,
+  "stderrBytes": 0,
+  "successfulRosterDiscovery": false
+}

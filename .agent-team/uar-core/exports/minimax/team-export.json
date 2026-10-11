@@ -1,0 +1,53 @@
+{
+  "target": "minimax",
+  "verification": {
+    "level": "source-verified",
+    "source": "https://github.com/MiniMax-AI/minimax-code/blob/main/packages/local-runtime-v2/src/service/agent/storage/canonical-agent-config.ts",
+    "version": "@minimax-ai/code 0.4.12; source inspected 2026-09-24",
+    "live": "unverified"
+  },
+  "diagnostics": [
+    "Source-verified serialization only; installed native validation and live execution are unverified.",
+    "Only explicit model IDs are translated. Resolve tier, skill, capability and price policies with agent-team-models before native invocation.",
+    "mcode exec has no verified custom-agent selector. The MiniMax plugin manifest supports skills/MCP/hooks/apps, not an agents field; no agent plugin is invented.",
+    "Role overrides are preserved without native schema certification. Skill IDs refer to separately installed skills; prompt mentions do not install or authorize them."
+  ],
+  "instructions": [
+    "Review staged artifacts before installation. Export grants no execution or registration authority.",
+    "Install agents/<name>/agent.md under the active MiniMax user-data directory: MINIMAX_DATA_DIR, MAVIS_DATA_DIR, or default ~/.minimax. Export does not install there."
+  ],
+  "files": [
+    {
+      "file": "agents/uar-lead/agent.md",
+      "sha256": "c2bbd6d1c8c9f9ce4670fbfae7ddba87fc032740d511cd065226a70d7afe83a3"
+    },
+    {
+      "file": "agents/uar-runtime/agent.md",
+      "sha256": "f2623de553698d4ab80f02b87fdc4c3ab8e182cb5f7c80bae0ab1a82b2ac575e"
+    },
+    {
+      "file": "agents/uar-providers/agent.md",
+      "sha256": "cb3fe6ad653ad7146568840c49371151735ff01ea8117de4a4712fbd35e29f2f"
+    },
+    {
+      "file": "agents/uar-trust-tools/agent.md",
+      "sha256": "0a71dc495ce685c1238df017f8efe495e9e73babd01ba37088599c9cd47cdec7"
+    },
+    {
+      "file": "agents/uar-state/agent.md",
+      "sha256": "0f68cbfc2192eb00c67857c95ebefe03609063a9766511483c3b66ec4d45cd3b"
+    },
+    {
+      "file": "agents/uar-console/agent.md",
+      "sha256": "620c2fb3bb8ef377c29598648565cbb721d3788c14d7302842f74175c5592203"
+    },
+    {
+      "file": "agents/uar-verifier/agent.md",
+      "sha256": "05e0572a5581fa14cb531ace96c2b551d561f7d9f30de7ae30610f1b5107ffc7"
+    },
+    {
+      "file": "export-receipt.json",
+      "sha256": "4cfb5eb172b92ece4b3da34e875000d201c944b37285bed3a8ac5d52379f6e2d"
+    }
+  ]
+}

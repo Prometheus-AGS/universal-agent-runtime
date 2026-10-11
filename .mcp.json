@@ -8,6 +8,16 @@
         "--manifest",
         "/Users/gqadonis/.config/zed/workspaces/flint-platform.zworkspace.toml"
       ]
+    },
+    "compass": {
+      "command": "/usr/local/bin/compass",
+      "args": [
+        "serve",
+        "--graph",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/compass-out/graph.json",
+        "--transport",
+        "stdio"
+      ]
     }
   }
 }
