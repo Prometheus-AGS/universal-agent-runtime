@@ -2983,6 +2983,56 @@ async fn api_models(State(state): State<AppState>) -> Response {
         );
     }
 
+    // Runtime bindings include gateway aliases and custom providers absent from the bundled catalog.
+    for provider in configured_providers.values() {
+        let mut models = root
+            .get(&provider.id)
+            .and_then(|entry| entry.get("models"))
+            .and_then(Value::as_object)
+            .cloned()
+            .unwrap_or_default();
+        for model in &provider.models {
+            let mut projected = models.remove(&model.id).unwrap_or_else(|| {
+                let price = model.pricing_identity.as_ref().and_then(|identity| {
+                    catalog.model(&identity.provider_id, &identity.model_id)
+                        .and_then(|entry| entry.cost.as_ref())
+                });
+                json!({
+                    "name": model.id,
+                    "limit": { "context": null, "input": null, "output": null },
+                    "cost": price.map(|price| json!({ "input": price.input, "output": price.output })),
+                    "benchmarks": []
+                })
+            });
+            if let Some(name) = &model.display_name {
+                projected["name"] = json!(name);
+            }
+            if let Some(context) = model.context_window {
+                projected["limit"]["context"] = json!(context);
+                projected["limit"]["input"] = json!(context);
+            }
+            if let Some(output) = model.max_output_tokens {
+                projected["limit"]["output"] = json!(output);
+            }
+            projected["enabled"] = json!(provider.enabled && model.enabled);
+            projected["tool_call"] = json!(model.supports_tools);
+            projected["reasoning"] = json!(model.supports_reasoning);
+            projected["structured_output"] = json!(model.supports_structured_output);
+            projected["streaming"] = json!(model.supports_streaming);
+            projected["modalities"] = json!({
+                "input": if model.supports_vision { vec!["text", "image"] } else { vec!["text"] },
+                "output": ["text"]
+            });
+            models.insert(model.id.clone(), projected);
+        }
+        root.insert(provider.id.clone(), json!({
+            "display_name": provider.display_name,
+            "base_url": provider.base_url,
+            "configured": provider.enabled,
+            "models": models
+        }));
+    }
+
     Json(Value::Object(root)).into_response()
 }
 
