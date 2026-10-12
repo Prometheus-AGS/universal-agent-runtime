@@ -12,7 +12,7 @@ pub struct ModelVerification {
 }
 
 pub fn key(provider: &str, model: &str) -> String {
-    format!("internal.model-verification.{}", format!("{:x}", Sha256::digest(format!("{provider}\0{model}").as_bytes())))
+    format!("internal.model-verification.{}", Sha256::digest(format!("{provider}\0{model}").as_bytes()).iter().map(|byte| format!("{byte:02x}")).collect::<String>())
 }
 
 pub async fn fingerprint(provider: &ProviderConfig, service: Option<&ProviderService>) -> Option<String> {
@@ -25,7 +25,7 @@ pub async fn fingerprint(provider: &ProviderConfig, service: Option<&ProviderSer
     } else { None };
     if revision.is_some() { config["api_key"] = serde_json::Value::Null; }
     config["credential_revision"] = serde_json::json!(revision);
-    Some(format!("{:x}", Sha256::digest(serde_json::to_vec(&config).ok()?)))
+    Some(Sha256::digest(serde_json::to_vec(&config).ok()?).iter().map(|byte| format!("{byte:02x}")).collect())
 }
 
 pub async fn current(provider: &ProviderConfig, model: &str, manager: Option<&SettingsManager>, service: Option<&ProviderService>) -> Option<ModelVerification> {
