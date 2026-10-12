@@ -103,10 +103,12 @@ async fn admit_task(
                 if run_request.artifact.is_some() || run_request.agent_id.is_some()
                     || run_request.mcp_servers.is_some() || run_request.tool_admission.is_some()
                     || run_request.run_credentials.is_some() || run_request.working_directory.is_some()
-                    || run_request.history.is_some()
                 {
                     return Err(super::host_context::run_mismatch());
                 }
+                // Conversation history is data, not a replacement for the paired host's
+                // resources. admit_run validates its session, roles, tool pairing and size;
+                // system/developer messages remain forbidden by HostHistoryInput::validate.
                 let context = state.contexts.for_admission(&id, delegated.as_ref().map(|value| &value.0),
                     &user, &workspace_id, run_request.deployment_binding_id.as_deref(), run_request.model.as_deref())
                     .map_err(super::host_context::run_error)?;
