@@ -135,6 +135,7 @@ impl CollaborationCatalogService {
         let receipt = binding.effective_binding_receipt.clone().ok_or_else(|| {
             CollaborationError::Conflict("binding has no effective binding receipt".to_owned())
         })?;
+        let receipt = self.admit_deployment_receipt(&receipt)?;
         self.revalidate_effective_binding(owner_id, workspace_id, &receipt)
             .await?;
         let definition = super::bindings::bound_agent_definition(&state, &binding.package)?;
@@ -208,7 +209,6 @@ impl CollaborationCatalogService {
         let stored_receipt = binding
             .effective_binding_receipt
             .as_ref()
-            .filter(|stored| stored.content_digest == receipt.content_digest)
             .and_then(|stored| state.effective_binding_receipts.get(&stored.content_digest))
             .ok_or_else(|| {
                 CollaborationError::Conflict(
@@ -222,6 +222,7 @@ impl CollaborationCatalogService {
                 "persisted effective binding receipt digest is invalid".to_owned(),
             ));
         }
+        self.validate_receipt_projection(stored_receipt, receipt)?;
         let current_grants = super::grants::validate_binding_grants(
             owner_id,
             workspace_id,

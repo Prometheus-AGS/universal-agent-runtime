@@ -285,6 +285,37 @@ impl ServiceInstanceAuthority {
         }
     }
 
+    /// Resolve a reusable deployment for a new admission on this same instance.
+    /// Only this process's trusted endpoint roles may replace its old address;
+    /// existing execution bindings must continue to use strict `revalidate`.
+    pub(crate) fn readmit_deployment(
+        &self,
+        binding: &EffectiveServiceBinding,
+    ) -> Result<EffectiveServiceBinding, CompatibilityResponse> {
+        let response = self.evaluate(
+            &ServicePlacementExpectation {
+                intent: binding.intent,
+                expected_instance_id: binding.instance_id.clone(),
+                expected_profile: binding.profile.clone(),
+                expected_workspace_location: Some(binding.workspace_location),
+                required_capabilities: binding.capabilities.clone(),
+                expected_endpoints: None,
+                binding_id: binding.binding_id.clone(),
+                binding_revision: binding.binding_revision,
+                credential_ref: binding.credential_ref.clone(),
+            },
+            PlacementIntent::New,
+        );
+        if !response.compatible {
+            return Err(response);
+        }
+        // Preserve the admitted capability set and every other identity field.
+        // A newer runtime's additional capabilities are not new authority.
+        let mut admitted = binding.clone();
+        admitted.endpoints = self.descriptor.endpoints.clone();
+        Ok(admitted)
+    }
+
     pub fn revalidate(
         &self,
         binding: &EffectiveServiceBinding,
