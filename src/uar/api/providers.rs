@@ -399,6 +399,7 @@ async fn test_provider(
     Path(id): Path<String>,
     Json(request): Json<TestProviderRequest>,
 ) -> Result<Json<TestProviderResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let _administration = state.registry.administration_guard().await;
     let provider = state.registry.get(&id).await.ok_or((
         StatusCode::NOT_FOUND,
         Json(ErrorResponse {
@@ -421,6 +422,12 @@ async fn test_provider(
                 error: "No enabled model is configured for this provider".to_string(),
             }),
         ))?;
+    let manager = state.settings_manager.as_ref().ok_or((StatusCode::SERVICE_UNAVAILABLE,
+        Json(ErrorResponse {error:"Model verification persistence is unavailable".into()})))?;
+    manager.invalidate_model_verification(&super::model_verification::key(&id,&model)).await
+        .map_err(|_| (StatusCode::SERVICE_UNAVAILABLE,Json(ErrorResponse {error:"Previous model verification could not be invalidated".into()})))?;
+    let initial_digest = super::model_verification::fingerprint(&provider,state.provider_service.as_deref()).await
+        .ok_or((StatusCode::SERVICE_UNAVAILABLE,Json(ErrorResponse {error:"Provider configuration cannot be verified".into()})))?;
     let mut llm_config = state
         .registry
         .resolve_to_llm_config(&id, &model)
@@ -431,11 +438,7 @@ async fn test_provider(
                 error: "Provider or model is disabled, unavailable, or incomplete".to_string(),
             }),
         ))?;
-    if llm_config
-        .api_key
-        .as_deref()
-        .is_none_or(|key| key.trim().is_empty())
-        && let Some(service) = state.provider_service.as_ref()
+    if let Some(service) = state.provider_service.as_ref()
         && let Some(record) = service
             .store()
             .get(CredentialScope::System, "system", &id)
@@ -468,12 +471,14 @@ async fn test_provider(
         .as_deref()
         .is_none_or(|key| key.trim().is_empty())
     {
+        if !super::model_verification::permits_anonymous_loopback(llm_config.base_url.as_deref().unwrap_or("")) {
         return Err((
             StatusCode::BAD_REQUEST,
             Json(ErrorResponse {
                 error: "Provider credential is not configured".to_string(),
             }),
         ));
+        }
     }
 
     let driver = crate::llm::LiterLlmDriver::new(
@@ -531,7 +536,12 @@ async fn test_provider(
                 }),
             )
         })?;
-    let events = stream.collect::<Vec<_>>().await;
+    let events = tokio::time::timeout(Duration::from_secs(30), stream.collect::<Vec<_>>()).await.map_err(|_| (
+        StatusCode::GATEWAY_TIMEOUT, Json(ErrorResponse { error: "Provider validation stream timed out".into() })
+    ))?;
+    if events.iter().any(Result::is_err) {
+        return Err((StatusCode::BAD_GATEWAY, Json(ErrorResponse { error: "Provider validation stream failed".into() })));
+    }
     let received_text = events.into_iter().any(|event| {
         matches!(
             event,
@@ -547,6 +557,13 @@ async fn test_provider(
         ));
     }
 
+
+    let digest = super::model_verification::fingerprint(&provider, state.provider_service.as_deref()).await
+        .ok_or((StatusCode::SERVICE_UNAVAILABLE, Json(ErrorResponse {error:"Provider configuration cannot be verified".into()})))?;
+    if digest != initial_digest { return Err((StatusCode::CONFLICT,Json(ErrorResponse {error:"Provider changed during verification; retry with the current configuration".into()}))); }
+    let proof = super::model_verification::ModelVerification { verified_at:chrono::Utc::now(), configuration_digest:digest };
+    manager.record_model_verification(&super::model_verification::key(&id, &model), serde_json::json!(proof)).await
+        .map_err(|_| (StatusCode::SERVICE_UNAVAILABLE, Json(ErrorResponse {error:"Model verification receipt could not be persisted".into()})))?;
     Ok(Json(TestProviderResponse {
         ok: true,
         provider_id: id,
@@ -576,6 +593,7 @@ struct ProviderView {
     models: Vec<ModelConfig>,
     enabled: bool,
     credential_configured: bool,
+    model_verifications: std::collections::BTreeMap<String, super::model_verification::ModelVerification>,
 }
 
 fn project_team_model_defaults(provider: &mut ProviderConfig) {
@@ -587,7 +605,6 @@ fn project_team_model_defaults(provider: &mut ProviderConfig) {
 }
 
 async fn provider_view(state: &ProviderApiState, mut provider: ProviderConfig) -> ProviderView {
-    project_team_model_defaults(&mut provider);
     let protected = if let Some(service) = state.provider_service.as_ref() {
         service
             .store()
@@ -599,7 +616,15 @@ async fn provider_view(state: &ProviderApiState, mut provider: ProviderConfig) -
     } else {
         false
     };
+    let mut model_verifications = std::collections::BTreeMap::new();
+    for model in &provider.models {
+        if let Some(proof) = super::model_verification::current(&provider, &model.id, state.settings_manager.as_deref(), state.provider_service.as_deref()).await {
+            model_verifications.insert(model.id.clone(), proof);
+        }
+    }
+    project_team_model_defaults(&mut provider);
     ProviderView {
+        model_verifications,
         id: provider.id,
         display_name: provider.display_name,
         base_url: provider.base_url,

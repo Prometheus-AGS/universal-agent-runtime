@@ -82,6 +82,8 @@ impl FullHarnessTaskAuthority {
             retention: self.retention.clone(),
             steer_supported: false,
             delegated_host_context_v1: true,
+            uar_target_catalog_v1: true,
+            uar_target_model_override_v1: true,
         }
     }
 
@@ -146,6 +148,7 @@ impl FullHarnessTaskAuthority {
             state: "reserved".to_owned(),
             retention: self.retention.clone(),
             effective_service_binding: None,
+            effective_target: None,
             diagnostics: Vec::new(),
             cancellation: CancellationReceipt::default(),
             detached: false,

@@ -29,6 +29,8 @@ pub struct DelegatedHostContextReceipt {
     pub definition: ImmutableDefinitionRef,
     pub binding: PrivateRevisionRef,
     pub agent_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
     pub expires_at: DateTime<Utc>,
 }
 
@@ -39,6 +41,8 @@ pub(super) struct Registration {
     workspace_id: String,
     runtime_epoch: String,
     deployment_binding_id: String,
+    #[serde(default)]
+    model: Option<String>,
     definition: ImmutableDefinitionRef,
     working_directory: PathBuf,
     mcp_servers: Vec<RunMcpServerInput>,
@@ -120,13 +124,14 @@ impl DelegatedHostContexts {
 
     pub(crate) fn for_admission(
         &self, id: &str, delegated: Option<&DelegationAuthenticated>, user: &UserContext,
-        workspace: &str, binding_id: Option<&str>,
+        workspace: &str, binding_id: Option<&str>, model: Option<&str>,
     ) -> Result<Arc<DelegatedHostContext>, ApiError> {
         let context = self.context(id)?;
         let delegated = delegated.ok_or_else(mismatch)?;
         if delegated.1 != context.receipt.grant_id
             || workspace != context.receipt.workspace_id
             || binding_id != Some(context.receipt.binding.id.as_str())
+            || model != context.receipt.model.as_deref()
             || verified_owner(user)? != verified_owner(&context.principal)?
         {
             return Err(mismatch());
@@ -175,11 +180,13 @@ pub(super) async fn register(
             }
         })?;
     if bound.binding.package != body.definition { return Err(mismatch()); }
+    state.runs.manager.target_sources().admit_bound(&bound, body.model.as_deref(), &body.workspace_id).await
+        .map_err(|message| ApiError::unprocessable("target_model_unavailable", message, None))?;
     let receipt = DelegatedHostContextReceipt {
         context_id: uuid::Uuid::new_v4().to_string(), grant_id: body.grant_id,
         workspace_id: body.workspace_id.clone(), runtime_epoch: body.runtime_epoch,
         definition: bound.binding.package.clone(), binding: bound.effective_binding_receipt.binding_ref.clone(),
-        agent_id: bound.artifact.id.clone(), expires_at: grant.expires_at,
+        agent_id: bound.artifact.id.clone(), model:body.model, expires_at: grant.expires_at,
     };
     let mut probe = RunExecutionRequest::from_bound_agent(bound, String::new(), owner,
         body.workspace_id, Arc::clone(&state.runs.collaboration_catalog))

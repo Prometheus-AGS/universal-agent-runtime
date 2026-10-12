@@ -24,6 +24,8 @@ pub struct TaskReceipt {
     pub retention: RetentionReceipt,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub effective_service_binding: Option<EffectiveServiceBinding>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub effective_target: Option<super::super::targets::TargetReceipt>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub diagnostics: Vec<TaskDiagnostic>,
     pub cancellation: CancellationReceipt,
@@ -54,6 +56,8 @@ pub struct RuntimeDescriptor {
     pub retention: RetentionReceipt,
     pub steer_supported: bool,
     pub delegated_host_context_v1: bool,
+    pub uar_target_catalog_v1: bool,
+    pub uar_target_model_override_v1: bool,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]

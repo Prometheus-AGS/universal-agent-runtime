@@ -108,7 +108,7 @@ async fn admit_task(
                     return Err(super::host_context::run_mismatch());
                 }
                 let context = state.contexts.for_admission(&id, delegated.as_ref().map(|value| &value.0),
-                    &user, &workspace_id, run_request.deployment_binding_id.as_deref())
+                    &user, &workspace_id, run_request.deployment_binding_id.as_deref(), run_request.model.as_deref())
                     .map_err(super::host_context::run_error)?;
                 state.authority.update(&task_id, |record| {
                     record.receipt.delegated_host_context = Some(context.receipt.clone());
@@ -143,6 +143,7 @@ async fn admit_task(
                 record.receipt.state = "submitted".to_owned();
                 record.receipt.agent_id = agent_id;
                 record.receipt.effective_service_binding = response.effective_service_binding;
+                record.receipt.effective_target = response.effective_target;
                 record.receipt.diagnostics = response
                     .activation_failures
                     .into_iter()

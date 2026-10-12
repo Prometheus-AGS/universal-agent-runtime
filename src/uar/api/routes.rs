@@ -78,6 +78,8 @@ pub(crate) struct CreateRunRequest {
     #[serde(default)]
     pub(crate) deployment_binding_id: Option<String>,
     #[serde(default)]
+    pub(crate) model: Option<String>,
+    #[serde(default)]
     pub(crate) service_placement: Option<crate::uar::service_instance::ServicePlacementExpectation>,
     pub(crate) input: String,
     pub(crate) session_id: Option<String>,
@@ -103,6 +105,8 @@ pub(crate) struct CreateRunRequest {
 #[derive(Clone, serde::Serialize)]
 pub(crate) struct CreateRunResponse {
     pub(crate) run_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) effective_target: Option<super::targets::TargetReceipt>,
     pub(crate) stream_url: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) effective_service_binding:
@@ -474,6 +478,7 @@ pub(crate) async fn admit_run(
         artifact,
         agent_id,
         deployment_binding_id,
+        model,
         service_placement,
         input,
         session_id,
@@ -509,6 +514,7 @@ pub(crate) async fn admit_run(
         None
     };
     let bound_selector = deployment_binding_id.is_some();
+    let mut effective_target = None;
     let mut request = if let Some(binding_id) = deployment_binding_id {
         if agent_id.is_some() || artifact.is_some() {
             return Err(selector_ambiguous());
@@ -534,6 +540,8 @@ pub(crate) async fn admit_run(
             .resolve_bound_agent_run(&owner_id, &workspace_id, &binding_id)
             .await
             .map_err(collaboration_run_error)?;
+        effective_target = Some(state.manager.target_sources().admit_bound(&bound, model.as_deref(), &workspace_id).await
+            .map_err(|message| RunApiError { status:StatusCode::UNPROCESSABLE_ENTITY,code:"target_model_unavailable",message })?);
         crate::uar::runtime::turn::RunExecutionRequest::from_bound_agent(
             bound,
             input,
@@ -552,6 +560,23 @@ pub(crate) async fn admit_run(
         request.host_resources_marker.artifact_inline = artifact_inline;
         request
     };
+    if let Some(model) = model.as_deref() {
+        if effective_target.is_none() {
+            let (route, proof) = state.manager.target_sources().verified_model(model).await
+                .map_err(|message| RunApiError { status:StatusCode::UNPROCESSABLE_ENTITY,code:"target_model_unavailable",message })?;
+            effective_target = Some(super::targets::TargetReceipt {version:1,id:model.to_owned(),kind:"model".into(),
+                agent_id:request.artifact.id.clone(),provider_id:route.provider_id,model_id:route.model_id,
+                verified_at:proof.verified_at,configuration_digest:proof.configuration_digest,definition:None,binding:None,
+                workspace_id:super::targets::workspace(&headers).map(str::to_owned),instance_id:Some(state.service_instance.descriptor().instance.id.clone())});
+        }
+    }
+    if let Some(target) = &effective_target {
+        request.host_policy_constraint = Some(crate::uar::domain::policy::RunPolicy {
+            model:Some(crate::uar::domain::policy::ModelRoute {provider_id:target.provider_id.clone(),model_id:target.model_id.clone()}),
+            ..Default::default()
+        });
+        request.target_selection = Some(serde_json::json!(target));
+    }
     request = request.with_credential_capture(credential_capture);
     let response_service_binding = admitted_service_binding.clone();
     if let Some(admitted) = admitted_service_binding {
@@ -660,6 +685,7 @@ pub(crate) async fn admit_run(
             .and_then(|value| serde_json::from_value(value).ok())
     });
     Ok(CreateRunResponse {
+        effective_target,
         run_id: run_id.clone(),
         stream_url: format!("/api/uar/runs/{run_id}/stream"),
         effective_service_binding,

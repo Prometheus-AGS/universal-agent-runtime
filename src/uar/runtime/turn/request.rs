@@ -108,6 +108,8 @@ pub struct RunExecutionRequest {
     pub(crate) host_secret_scrubber: super::host::RunSecretScrubber,
     pub memory_hits: Vec<MemoryItem>,
     pub resolved_policy: Option<EffectiveRunPolicy>,
+    /// Safe admitted target identity, never a mutable definition.
+    pub(crate) target_selection: Option<serde_json::Value>,
     /// Client output restrictions; these never grant template/resource access.
     pub presentation_negotiation: crate::uar::a2ui::presentation_selection::PresentationNegotiation,
     /// Restriction-only turn scope accepted from a verified host adapter.
@@ -171,6 +173,7 @@ impl RunExecutionRequest {
             host_secret_scrubber: Default::default(),
             memory_hits: Vec::new(),
             resolved_policy: None,
+            target_selection: None,
             presentation_negotiation: Default::default(),
             host_policy_constraint: None,
             host_budget_constraint: None,
@@ -224,7 +227,10 @@ impl RunExecutionRequest {
             .resolved_models
             .iter()
             .enumerate()
-            .filter(|(index, _)| *index != primary_index)
+            .filter(|(index, model)| {
+                *index != primary_index
+                    && model.get("role").and_then(serde_json::Value::as_str) != Some("override")
+            })
             .filter_map(|(_, model)| {
                 Some(crate::uar::domain::artifact::ProviderSelection {
                     provider: model.get("providerId")?.as_str()?.to_owned(),

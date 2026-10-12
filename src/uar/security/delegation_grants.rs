@@ -248,7 +248,10 @@ impl GrantRecord {
             && (matches!(path, "/api/models" | "/v1/models" | "/api/providers" | "/api/uar/providers")
                 || single_segment(path, "/v1/models/"))
         {
-            return true;
+            // Mixed model discovery includes private workspace agent bindings.
+            // A scoped grant cannot inspect another workspace's catalog.
+            return !request.headers().contains_key("x-uar-workspace-id")
+                || self.workspace_allowed(request);
         }
         if self
             .operations

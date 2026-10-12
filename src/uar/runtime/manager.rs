@@ -1519,6 +1519,15 @@ impl RunManager {
     }
 
     /// Set the provider registry for per-agent LLM provider resolution.
+    #[cfg(feature = "server")]
+    pub(crate) fn target_sources(&self) -> crate::uar::api::targets::ModelSources<'_> {
+        crate::uar::api::targets::ModelSources {
+            registry: self.provider_registry.as_deref(),
+            settings: self.settings_manager.as_deref(),
+            credentials: self.provider_service.as_deref(),
+        }
+    }
+
     pub fn with_provider_registry(mut self, registry: Arc<crate::llm::ProviderRegistry>) -> Self {
         self.provider_registry = Some(registry);
         self
@@ -2479,6 +2488,7 @@ impl RunManager {
             host_resources_marker: Default::default(),
             host_secret_scrubber: Default::default(),
             resolved_policy: None,
+            target_selection: None,
             presentation_negotiation: Default::default(),
             host_policy_constraint: None,
             host_budget_constraint: None,
@@ -2903,6 +2913,7 @@ impl RunManager {
             user_id,
             mut memory_hits,
             resolved_policy,
+            target_selection,
             presentation_negotiation,
             seed_history,
             host_history,
@@ -3619,6 +3630,7 @@ impl RunManager {
             context: serde_json::json!({
                 "input": null,
                 "effective_run_policy": retained_policy,
+                "effective_target": target_selection,
                 "presentation_negotiation": presentation_snapshot.negotiation(),
                 "presentation_selection": presentation_snapshot.selection(),
                 "presentation_templates": presentation_snapshot.identities(),
@@ -4515,7 +4527,7 @@ impl RunManager {
                 provider_policy.default.provider = route.provider_id.clone();
                 provider_policy.default.model = route.model_id.clone();
             }
-            let resolved = if is_team_attempt {
+            let resolved = if is_team_attempt || target_selection.is_some() {
                 registry.resolve_to_llm_config(&provider_policy.default.provider, &provider_policy.default.model).await
             } else { registry.resolve_llm_config_from_policy(&provider_policy).await };
             match resolved {
@@ -4527,7 +4539,7 @@ impl RunManager {
                     );
                     Some(resolved)
                 }
-                None if run_credentials.is_some() && !is_team_attempt => None,
+                None if run_credentials.is_some() && !is_team_attempt && target_selection.is_none() => None,
                 None => {
                     tracing::warn!(
                         provider = %provider_policy.default.provider,
@@ -4567,8 +4579,7 @@ impl RunManager {
             bindings.models.for_policy(&bindings.policy)
         } else {
             let preferred_llm_config = policy_llm_config.unwrap_or_else(|| self.llm_config.clone());
-            let skill_preferred_model = collaboration_binding
-                .is_none()
+            let skill_preferred_model = (collaboration_binding.is_none() && target_selection.is_none())
                 .then(|| {
                     matched_skills.iter().find_map(|skill| {
                         skill
@@ -4579,7 +4590,7 @@ impl RunManager {
                     })
                 })
                 .flatten();
-            let run_llm_config = if is_team_attempt {
+            let run_llm_config = if is_team_attempt || target_selection.is_some() {
                 // Admission selected an exact route. Availability routing may not
                 // replace it with another provider/model after that capture.
                 preferred_llm_config
@@ -4715,7 +4726,13 @@ impl RunManager {
                 run_llm_config.thinking_budget = effort.thinking_budget();
             }
             let mut run_failover_config =
-                if run_credentials.is_some() || collaboration_binding.is_some() {
+                if target_selection.is_some() {
+                    // Explicit target selection never authorizes another model or billing route.
+                    let mut failover = self.failover_config.clone();
+                    failover.enabled = false;
+                    failover.fallback_models.clear();
+                    failover
+                } else if run_credentials.is_some() || collaboration_binding.is_some() {
                     let mut failover = self.failover_config.clone();
                     failover.fallback_models = artifact
                         .policy

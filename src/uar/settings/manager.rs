@@ -558,6 +558,7 @@ impl SettingsManager {
     }
 
     async fn set_value_locked(&self, key: &str, value: Value) -> Result<()> {
+        anyhow::ensure!(!key.starts_with("internal.model-verification."), "Model verification receipts are operation-owned");
         if self.sidecar_feature_locks
             && SIDECAR_LOCKED_OFF_SETTINGS.contains(&key)
             && value.as_bool() != Some(false)
@@ -1023,6 +1024,29 @@ impl SettingsManager {
                 },
             },
         );
+        Ok(())
+    }
+
+    pub(crate) async fn invalidate_model_verification(&self, key: &str) -> Result<()> {
+        anyhow::ensure!(key.starts_with("internal.model-verification."), "invalid proof key");
+        self.persistence.delete_setting(key).await?;
+        self.cache.write().await.remove(key);
+        Ok(())
+    }
+
+    /// Write an operation-owned proof through the existing typed settings store.
+    pub(crate) async fn record_model_verification(&self, key: &str, data: Value) -> Result<()> {
+        anyhow::ensure!(key.starts_with("internal.model-verification."), "invalid proof key");
+        let kind = make_type("Model verification receipts", "internal-model-verification", json!({
+            "type":"object", "required":["verified_at", "configuration_digest"],
+            "properties":{"verified_at":{"type":"string"},"configuration_digest":{"type":"string"}},
+            "additionalProperties":false
+        }));
+        self.register_extension(kind.clone(), vec![make_setting(&kind, key, "Model verification", data.clone())]).await?;
+        let existing = self.persistence.get_setting(key).await?.ok_or_else(|| anyhow::anyhow!("proof missing"))?;
+        let setting = Settings { data, updated_at:Some(Utc::now()), ..existing };
+        self.persistence.upsert_setting(&setting).await?;
+        self.cache.write().await.insert(key.to_owned(), CacheEntry {setting, meta:SettingsMeta::from_config(SettingSource::Api)});
         Ok(())
     }
 

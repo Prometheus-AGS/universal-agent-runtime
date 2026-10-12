@@ -71,3 +71,8 @@ pub fn router() -> Router<std::sync::Arc<routes::RunApiState>> {
     // In M3 we will build the router in routes.rs and just return it here
     routes::build_router()
 }
+
+#[cfg(feature = "server")]
+pub mod model_verification;
+#[cfg(feature = "server")]
+pub mod targets;

@@ -3177,97 +3177,29 @@ async fn api_route_model(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// GET /v1/models — list available models in OpenAI API format.
-pub(crate) async fn api_v1_models(State(state): State<AppState>) -> Json<Value> {
-    let catalog = crate::llm::ModelCatalog::global();
-    let configured_ids: std::collections::HashSet<String> = state
-        .provider_registry
-        .list()
-        .await
-        .into_iter()
-        .filter(|p| p.enabled)
-        .map(|p| p.id)
-        .collect();
-
-    let now = Utc::now().timestamp();
-    let mut models = Vec::new();
-
-    for provider in catalog.all_providers() {
-        if !configured_ids.contains(&provider.id) {
-            continue;
-        }
-        for model in &provider.models {
-            models.push(json!({
-                "id": format!("{}/{}", provider.id, model.id),
-                "object": "model",
-                "created": now,
-                "owned_by": provider.id,
-            }));
-        }
+pub(crate) async fn api_v1_models(
+    State(state): State<AppState>,
+    axum::extract::Extension(user): axum::extract::Extension<uar::security::claims::UserContext>,
+    headers: HeaderMap,
+) -> Response {
+    match uar::api::targets::catalog(&state, &user, &headers).await {
+        Ok(models) => Json(json!({"object":"list","data":models})).into_response(),
+        Err(message) => openai_error_response(StatusCode::SERVICE_UNAVAILABLE,&message,Some("target_catalog_unavailable")),
     }
-
-    Json(json!({
-        "object": "list",
-        "data": models
-    }))
 }
 
-/// GET /v1/models/{model_id} — retrieve details for a specific model.
 async fn api_v1_model_detail(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
+    axum::extract::Extension(user): axum::extract::Extension<uar::security::claims::UserContext>,
+    headers: HeaderMap,
     axum::extract::Path(model_id): axum::extract::Path<String>,
 ) -> Response {
-    let catalog = crate::llm::ModelCatalog::global();
-
-    // Parse "provider/model" format
-    let parts: Vec<&str> = model_id.splitn(2, '/').collect();
-    if parts.len() != 2 {
-        return (
-            StatusCode::NOT_FOUND,
-            Json(json!({
-                "error": {
-                    "message": format!("Model '{model_id}' not found. Use provider/model format."),
-                    "type": "invalid_request_error",
-                    "code": "model_not_found"
-                }
-            })),
-        )
-            .into_response();
-    }
-
-    let (provider_id, raw_model_id) = (parts[0], parts[1]);
-
-    match catalog.model(provider_id, raw_model_id) {
-        Some(model) => {
-            let now = Utc::now().timestamp();
-            Json(json!({
-                "id": format!("{provider_id}/{}", model.id),
-                "object": "model",
-                "created": now,
-                "owned_by": provider_id,
-                "capabilities": {
-                    "tool_call": model.capabilities.tool_call,
-                    "reasoning": model.capabilities.reasoning,
-                    "structured_output": model.capabilities.structured_output,
-                    "streaming": model.capabilities.streaming,
-                },
-                "limits": {
-                    "context_window": model.limits.context_window,
-                    "max_output": model.limits.max_output,
-                },
-            }))
-            .into_response()
-        }
-        None => (
-            StatusCode::NOT_FOUND,
-            Json(json!({
-                "error": {
-                    "message": format!("Model '{model_id}' not found."),
-                    "type": "invalid_request_error",
-                    "code": "model_not_found"
-                }
-            })),
-        )
-            .into_response(),
+    match uar::api::targets::catalog(&state, &user, &headers).await {
+        Ok(models) => match models.into_iter().find(|row|row["id"].as_str()==Some(model_id.as_str())) {
+            Some(model) => Json(model).into_response(),
+            None => openai_error_response(StatusCode::NOT_FOUND,"Target is not installed or verified for this caller and workspace",Some("model_not_found")),
+        },
+        Err(message) => openai_error_response(StatusCode::SERVICE_UNAVAILABLE,&message,Some("target_catalog_unavailable")),
     }
 }
 
@@ -5146,139 +5078,19 @@ fn resolve_session_id(
     Ok(None)
 }
 
-fn model_known(provider: &crate::llm::ProviderConfig, model_id: &str) -> bool {
-    provider.default_model.as_deref() == Some(model_id)
-        || provider.models.iter().any(|m| m.id == model_id)
-}
-
-async fn resolve_requested_model(
-    state: &AppState,
-    requested_model: Option<&str>,
-) -> Result<ResolvedModel, Response> {
-    let default_provider_id = match state.provider_registry.default_id().await {
-        Some(id) => id,
-        None => {
-            let providers = state.provider_registry.list().await;
-            if let Some(first) = providers.first() {
-                first.id.clone()
-            } else {
-                return Err((
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({"error":{"message":"No configured providers"}})),
-                )
-                    .into_response());
-            }
-        }
+async fn resolve_requested_model(state: &AppState, requested_model: Option<&str>) -> Result<ResolvedModel, Response> {
+    let requested = requested_model.unwrap_or("").trim();
+    let selector = if requested.contains('/') { requested.to_owned() } else {
+        let id = state.provider_registry.default_id().await.ok_or_else(|| openai_error_response(
+            StatusCode::UNPROCESSABLE_ENTITY,"Select and verify a default provider/model in settings",Some("model_not_configured")))?;
+        let provider = state.provider_registry.get(&id).await.ok_or_else(|| openai_error_response(
+            StatusCode::UNPROCESSABLE_ENTITY,"Default provider is unavailable",Some("model_not_configured")))?;
+        let model = if requested.is_empty() { provider.default_model.as_deref().unwrap_or("") } else { requested };
+        format!("{id}/{model}")
     };
-
-    let default_provider = match state.provider_registry.get(&default_provider_id).await {
-        Some(p) => p,
-        None => {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error":{"message":"Default provider unavailable"}})),
-            )
-                .into_response());
-        }
-    };
-
-    let requested_model = requested_model.unwrap_or("").trim();
-
-    if requested_model.is_empty() {
-        // 1. Use the provider's configured default model
-        if let Some(model_id) = default_provider.default_model.clone() {
-            return Ok(ResolvedModel {
-                provider_id: default_provider_id,
-                model_id,
-            });
-        }
-        // 2. Use the global LLM config model (from .env / config.yaml)
-        let (_, global_model) =
-            crate::llm::registry::split_model_string_pub(&state.config.llm.model);
-        if !global_model.is_empty() {
-            tracing::debug!(
-                fallback_model = %global_model,
-                "No provider default_model set, falling back to global LLM config model"
-            );
-            return Ok(ResolvedModel {
-                provider_id: default_provider_id,
-                model_id: global_model,
-            });
-        }
-        // 3. Pick a chat-capable model from the provider's model list (skip image/embedding models)
-        let chat_model = default_provider.models.iter().find(|m| {
-            !m.id.contains("image")
-                && !m.id.contains("embedding")
-                && !m.id.contains("tts")
-                && !m.id.contains("whisper")
-                && !m.id.contains("dall-e")
-                && !m.id.contains("moderation")
-        });
-        if let Some(model) = chat_model {
-            return Ok(ResolvedModel {
-                provider_id: default_provider_id,
-                model_id: model.id.clone(),
-            });
-        }
-        // 4. Last resort: first model
-        if let Some(model) = default_provider.models.first() {
-            return Ok(ResolvedModel {
-                provider_id: default_provider_id,
-                model_id: model.id.clone(),
-            });
-        }
-        return Err(openai_error_response(
-            StatusCode::NOT_FOUND,
-            "No chat-capable model found for the default provider. Configure a default model in Settings > LLM Configuration.",
-            Some("model_not_found"),
-        ));
-    }
-
-    if let Some((provider_id, model_id)) = requested_model.split_once('/') {
-        let provider_id = provider_id.trim();
-        let model_id = model_id.trim();
-        if provider_id.is_empty() || model_id.is_empty() {
-            return Err(openai_error_response(
-                StatusCode::NOT_FOUND,
-                "Unknown model",
-                Some("model_not_found"),
-            ));
-        }
-
-        let Some(provider) = state.provider_registry.get(provider_id).await else {
-            return Err(openai_error_response(
-                StatusCode::NOT_FOUND,
-                "Unknown model",
-                Some("model_not_found"),
-            ));
-        };
-
-        if !model_known(&provider, model_id) {
-            return Err(openai_error_response(
-                StatusCode::NOT_FOUND,
-                "Unknown model",
-                Some("model_not_found"),
-            ));
-        }
-
-        return Ok(ResolvedModel {
-            provider_id: provider_id.to_string(),
-            model_id: model_id.to_string(),
-        });
-    }
-
-    if !model_known(&default_provider, requested_model) {
-        return Err(openai_error_response(
-            StatusCode::NOT_FOUND,
-            "Unknown model",
-            Some("model_not_found"),
-        ));
-    }
-
-    Ok(ResolvedModel {
-        provider_id: default_provider_id,
-        model_id: requested_model.to_string(),
-    })
+    let (route, _) = state.run_manager.target_sources().verified_model(&selector).await.map_err(|message|
+        openai_error_response(StatusCode::UNPROCESSABLE_ENTITY,&message,Some("model_not_verified")))?;
+    Ok(ResolvedModel {provider_id:route.provider_id,model_id:route.model_id})
 }
 
 /// Cursor for one runtime event and, optionally, one projected SSE frame.
@@ -5500,37 +5312,58 @@ pub(crate) async fn api_chat_completion(
         };
 
         let mut turn_policy = req.run_policy.clone().unwrap_or_default();
-        if let Some(agent_id) = &req.agent_id {
-            turn_policy.agent_id = Some(agent_id.clone());
-            turn_policy.chat_mode = Some(
-                if matches!(agent_id.as_str(), "default-agent" | "orchestrator-agent") {
-                    uar::domain::policy::ChatMode::Uar
-                } else {
-                    uar::domain::policy::ChatMode::Agent
-                },
-            );
-        }
-        if let Some(requested_model) = req.model.as_deref() {
-            let resolved_turn_model =
-                match resolve_requested_model(&state, Some(requested_model)).await {
-                    Ok(model) => model,
-                    Err(response) => return response,
-                };
-            turn_policy.model = Some(uar::domain::policy::ModelRoute {
-                provider_id: resolved_turn_model.provider_id,
-                model_id: resolved_turn_model.model_id,
-            });
-        }
-        if !req.memory_enabled {
-            turn_policy.memory_enabled = Some(false);
-        }
-
-        let initial_agent_id = req.agent_id.as_deref().unwrap_or("default-agent");
-        let mut agent =
-            match uar::api::discovery::resolve_agent_for_run(&state, initial_agent_id).await {
-                Ok(agent) => agent,
-                Err(error) => return error.into_response(),
+        let target_selector = req.model.as_deref().filter(|model|model.starts_with("uar:agent:"))
+            .or_else(||req.agent_id.as_deref().filter(|agent|agent.starts_with("uar:agent:")));
+        let mut selected_bound = None;
+        let mut target_receipt = None;
+        if let Some(selector) = target_selector {
+            let binding_id = match uar::api::targets::target_binding_id(selector) {
+                Ok(Some(id)) => id,
+                _ => return openai_error_response(StatusCode::BAD_REQUEST,"Invalid agent target",Some("target_invalid")),
             };
+            let Some(workspace) = uar::api::targets::workspace(&headers) else {
+                return openai_error_response(StatusCode::BAD_REQUEST,"Agent target requires x-uar-workspace-id",Some("workspace_required"));
+            };
+            let bound = match uar::api::targets::resolve_bound(&state.collaboration_catalog,&user_ctx,workspace,&binding_id).await {
+                Ok(bound) => bound,
+                Err(message) => return openai_error_response(StatusCode::CONFLICT,&message,Some("target_binding_unavailable")),
+            };
+            if req.agent_id.as_deref().is_some_and(|agent|agent != selector && agent != bound.artifact.id)
+                || turn_policy.agent_id.as_deref().is_some_and(|agent|agent != bound.artifact.id)
+                || (req.model.as_deref().is_some_and(|model|model.starts_with("uar:agent:") && model != selector)) {
+                return openai_error_response(StatusCode::BAD_REQUEST,"Contradictory agent and model selections",Some("target_selection_conflict"));
+            }
+            let override_model = req.model.as_deref().filter(|model|!model.starts_with("uar:agent:"));
+            let target = match state.run_manager.target_sources().admit_bound(&bound,override_model,workspace).await {
+                Ok(target) => target,
+                Err(message) => return openai_error_response(StatusCode::UNPROCESSABLE_ENTITY,&message,Some("model_not_verified")),
+            };
+            turn_policy.agent_id = Some(bound.artifact.id.clone());
+            turn_policy.model = Some(uar::domain::policy::ModelRoute {provider_id:target.provider_id.clone(),model_id:target.model_id.clone()});
+            target_receipt = Some(target);
+            selected_bound = Some(bound);
+        } else {
+            if let Some(agent_id) = &req.agent_id {
+                turn_policy.agent_id = Some(agent_id.clone());
+                turn_policy.chat_mode = Some(if matches!(agent_id.as_str(), "default-agent" | "orchestrator-agent") {
+                    uar::domain::policy::ChatMode::Uar
+                } else { uar::domain::policy::ChatMode::Agent });
+            } else if req.model.is_some() {
+                turn_policy.agent_id = Some("default-agent".into());
+            }
+            if let Some(requested_model) = req.model.as_deref() {
+                let resolved = match resolve_requested_model(&state,Some(requested_model)).await {Ok(model)=>model,Err(response)=>return response};
+                turn_policy.model = Some(uar::domain::policy::ModelRoute {provider_id:resolved.provider_id,model_id:resolved.model_id});
+            }
+        }
+        if !req.memory_enabled { turn_policy.memory_enabled = Some(false); }
+        let initial_agent_id = turn_policy.agent_id.as_deref().unwrap_or("default-agent");
+        let mut agent = match &selected_bound {
+            Some(bound) => bound.artifact.clone(),
+            None => match uar::api::discovery::resolve_agent_for_run(&state,initial_agent_id).await {
+                Ok(agent)=>agent,Err(error)=>return error.into_response(),
+            },
+        };
         let mut effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
             &state,
             &user_ctx,
@@ -5542,6 +5375,9 @@ pub(crate) async fn api_chat_completion(
         if let Some(effective_agent_id) = effective_run_policy.agent_id.clone()
             && effective_agent_id != agent.id
         {
+            if selected_bound.is_some() {
+                return openai_error_response(StatusCode::CONFLICT,"Policy cannot replace an admitted agent target",Some("target_policy_conflict"));
+            }
             agent = match uar::api::discovery::resolve_agent_for_run(&state, &effective_agent_id)
                 .await
             {
@@ -5567,12 +5403,27 @@ pub(crate) async fn api_chat_completion(
                 Ok(model) => model,
                 Err(response) => return response,
             };
-        agent.policy.provider.default.provider = resolved_model.provider_id.clone();
-        agent.policy.provider.default.model = resolved_model.model_id.clone();
+        if selected_bound.is_none() {
+            agent.policy.provider.default.provider = resolved_model.provider_id.clone();
+            agent.policy.provider.default.model = resolved_model.model_id.clone();
+        }
         effective_run_policy.model = Some(uar::domain::policy::ModelRoute {
             provider_id: resolved_model.provider_id.clone(),
             model_id: resolved_model.model_id.clone(),
         });
+        if target_receipt.is_none() {
+            let selector = format!("{}/{}",resolved_model.provider_id,resolved_model.model_id);
+            let (_, proof) = match state.run_manager.target_sources().verified_model(&selector).await {
+                Ok(value)=>value,
+                Err(message)=>return openai_error_response(StatusCode::UNPROCESSABLE_ENTITY,&message,Some("model_not_verified")),
+            };
+            target_receipt = Some(uar::api::targets::TargetReceipt {
+                version:1,id:selector,kind:"model".into(),agent_id:agent.id.clone(),
+                provider_id:resolved_model.provider_id.clone(),model_id:resolved_model.model_id.clone(),
+                verified_at:proof.verified_at,configuration_digest:proof.configuration_digest,
+                definition:None,binding:None,workspace_id:uar::api::targets::workspace(&headers).map(str::to_owned),instance_id:None,
+            });
+        }
 
         let agent_id_for_policy = agent.id.clone();
         let (effective_resilience_policy, policy_source) =
@@ -5711,25 +5562,29 @@ pub(crate) async fn api_chat_completion(
         };
 
         let stream_memory_ctx_count = usize::from(!memory_recall_items.is_empty());
-        let mut run_request =
-            match uar::runtime::turn::RunExecutionRequest::new(agent, effective_input.clone())
-                .with_user_context(&user_ctx)
-            {
-                Ok(request) => request,
-                Err(_) => {
-                    return openai_error_response(
-                        StatusCode::UNAUTHORIZED,
-                        "Invalid run principal",
-                        Some("invalid_run_principal"),
-                    );
-                }
-            };
+        let bound_execution = selected_bound.is_some();
+        let candidate = match selected_bound {
+            Some(bound) => uar::runtime::turn::RunExecutionRequest::from_bound_agent(bound,effective_input.clone(),
+                uar::api::user_settings::principal_storage_key(&user_ctx).unwrap_or_default(),
+                uar::api::targets::workspace(&headers).unwrap_or_default().to_owned(),Arc::clone(&state.collaboration_catalog)),
+            None => uar::runtime::turn::RunExecutionRequest::new(agent,effective_input.clone()),
+        };
+        let mut run_request = match candidate.with_user_context(&user_ctx) {
+            Ok(request)=>request,
+            Err(_)=>return openai_error_response(StatusCode::UNAUTHORIZED,"Invalid run principal",Some("invalid_run_principal")),
+        };
+        run_request.target_selection = target_receipt.map(|receipt|json!(receipt));
         run_request = run_request.with_credential_capture(credential_capture.map(|axum::Extension(capture)| capture));
         run_request.session_id = Some(session_id.clone());
         run_request.memory_hits = memory_recall_items;
         run_request.resolved_policy = Some(effective_run_policy);
         run_request.presentation_negotiation = req.presentation_negotiation.clone();
-        let run_id = state.run_manager.execute_request(run_request).await;
+        let run_id = if bound_execution {
+            match state.run_manager.execute_bound_request(run_request).await {
+                Ok(id)=>id,
+                Err(error)=>return openai_error_response(StatusCode::CONFLICT,&error.to_string(),Some("target_binding_changed")),
+            }
+        } else { state.run_manager.execute_request(run_request).await };
 
         // Surface a non-blocking input-guardrail finding on the run's event stream
         // (recorded in history before the client subscribes, so it replays).
