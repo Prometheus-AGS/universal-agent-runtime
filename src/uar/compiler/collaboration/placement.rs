@@ -41,8 +41,15 @@ impl CollaborationCatalogService {
         stored: &EffectiveBindingReceipt,
         receipt: &EffectiveBindingReceipt,
     ) -> Result<(), CollaborationError> {
+        // The caller already enforced this run's exact service endpoints.
+        // An unchanged persisted receipt retains its original placement intent,
+        // including Reattach; only a different receipt needs a New projection.
+        let actual = serde_json::to_value(receipt)?;
+        if serde_json::to_value(stored)? == actual {
+            return Ok(());
+        }
         let expected = self.admit_deployment_receipt(stored)?;
-        if serde_json::to_value(&expected)? != serde_json::to_value(receipt)? {
+        if serde_json::to_value(&expected)? != actual {
             return Err(CollaborationError::Conflict(
                 "effective binding receipt differs from its admitted deployment projection"
                     .to_owned(),
