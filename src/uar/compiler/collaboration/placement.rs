@@ -18,6 +18,11 @@ impl CollaborationCatalogService {
                     "effective binding receipt has no live service binding".to_owned(),
                 )
             })?;
+            // Reusable resolution also serves existing placements. Preserve a
+            // strict match (including Reattach); only relocation is New-only.
+            if authority.revalidate(binding).is_ok() {
+                return Ok(admitted);
+            }
             admitted.service_binding = Some(authority.readmit_deployment(binding).map_err(
                 |response| {
                     CollaborationError::Conflict(
