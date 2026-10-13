@@ -307,6 +307,40 @@ registered server name, carries an opaque downstream credential and is accepted
 only from a verified `uar:mcp:delegate` host whose `uar_instance_id` appears in
 that server's `trusted_hosts`. The inbound UAR bearer is never forwarded.
 
+### Pre-approved MCP tools
+
+Every MCP tool is approval-required by default: under `tool_approval: auto` a
+call waits for a human approver. Server-reported annotations such as
+`readOnlyHint` never change this, because they come from the server being
+governed. An administrator can name tools of one server that skip the approver:
+
+```json
+{
+  "mcpServers": {
+    "websearch": {
+      "url": "http://site-websearch.example.svc:8080/mcp",
+      "preapproved_tools": ["search"]
+    }
+  }
+}
+```
+
+- Names are the server's own tool names (`search`), not the provider-visible
+  name (`websearch__search`). Matching is exact.
+- Only the named tools become approval-not-required. Every other tool of the
+  server stays approval-required.
+- A blank name is a configuration error. A name the server does not offer is
+  ignored with a warning and never blocks startup.
+- The declaration is honoured only for administrator-owned (global)
+  definitions: `mcp.json` and entries in the MCP admin settings store. A skill
+  that declares an MCP server cannot pre-approve its tools; the field is ignored
+  there with a warning. The MCP admin save API does not accept the field. A
+  run-supplied loopback server never carries it; a run grant for a registered
+  destination uses that destination's administrator declaration.
+- `tool_approval: ask` and `deny`, a paired host's `ask`, and governance policy
+  still apply. Pre-approval removes only the descriptor's own approval
+  requirement; it does not change the tool's scheduling effect.
+
 ### Trusted host run-grant contract
 
 A BFF authenticates its human or tenant first, then calls UAR with a JWT that

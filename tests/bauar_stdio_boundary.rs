@@ -46,6 +46,7 @@ fn entry(directory: &Path, mode: &str) -> McpServerEntry {
             "${BAUAR_DECLARED_CREDENTIAL}".to_owned(),
         )]),
         sandboxed: false,
+        preapproved_tools: Default::default(),
     }
 }
 

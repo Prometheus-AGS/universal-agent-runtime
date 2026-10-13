@@ -6858,6 +6858,7 @@ marker.write_bytes(b"stdin-closed")
                         ],
                         env: HashMap::new(),
                         sandboxed: false,
+                        preapproved_tools: Default::default(),
                     },
                 )]),
             };

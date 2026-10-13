@@ -235,6 +235,8 @@ fn direct_loopback_server(
             env: HashMap::new(),
             headers: HashMap::new(),
             grant_policy: None,
+            // A caller-chosen loopback server is never administrator-declared.
+            preapproved_tools: Default::default(),
         },
         authentication: ServerAuthentication::Authenticated {
             binding_id: uuid::Uuid::new_v4().to_string(),

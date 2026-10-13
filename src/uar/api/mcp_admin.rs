@@ -71,6 +71,7 @@ impl SaveMcpServerRequest {
                     args: self.args,
                     env: self.env,
                     sandboxed: self.sandboxed,
+                    preapproved_tools: Default::default(),
                 }
             }
             "remote_http" | "http" => {
@@ -83,6 +84,7 @@ impl SaveMcpServerRequest {
                     env: self.env,
                     headers: self.headers,
                     grant_policy: self.grant_policy,
+                    preapproved_tools: Default::default(),
                 }
             }
             other => return Err(format!("unsupported MCP transport '{other}'")),
@@ -185,6 +187,7 @@ fn public_server(name: &str, stored: &StoredMcpServer, state: &AppState) -> Valu
             args,
             env,
             sandboxed,
+            preapproved_tools: _,
         } => json!({
             "name": name,
             "enabled": stored.enabled,
@@ -201,6 +204,7 @@ fn public_server(name: &str, stored: &StoredMcpServer, state: &AppState) -> Valu
             env,
             headers,
             grant_policy,
+            preapproved_tools: _,
         } => json!({
             "name": name,
             "enabled": stored.enabled,

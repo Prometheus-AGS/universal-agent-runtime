@@ -88,6 +88,7 @@ impl Destination {
                     required_scopes: BTreeSet::from(["read".to_owned()]),
                     allow_private_http: true,
                 }),
+                preapproved_tools: Default::default(),
             },
             true,
             ServerAuthentication::Required,

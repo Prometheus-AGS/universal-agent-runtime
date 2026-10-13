@@ -15,7 +15,7 @@ use rmcp::{
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap, BTreeSet, HashMap},
     path::{Path, PathBuf},
     sync::{
         Arc, RwLock,
@@ -137,11 +137,15 @@ fn insert_descriptor(
     Ok(())
 }
 
+/// Build one MCP descriptor. `preapproved_tools` is the administrator's list
+/// for `server` (empty for any non-administrator declaration); it is the only
+/// input that can make an MCP tool approval-not-required.
 fn mcp_descriptor(
     compiler: &ValidatorCompiler,
     server: &str,
     provider_name: &str,
     tool: &Tool,
+    preapproved_tools: &BTreeSet<String>,
 ) -> Result<Arc<ToolDescriptor>, ToolAssemblyError> {
     let input_schema = Value::Object((*tool.input_schema).clone());
     let validator = compiler.compile(provider_name, &input_schema)?;
@@ -164,12 +168,39 @@ fn mcp_descriptor(
         validator,
         effect,
         // MCP annotations are untrusted. readOnlyHint affects scheduling only.
-        approval_class: ApprovalClass::Required,
+        // Approval is waived solely by the administrator's per-server list.
+        approval_class: if preapproved_tools.contains(tool.name.as_ref()) {
+            ApprovalClass::NotRequired
+        } else {
+            ApprovalClass::Required
+        },
         sandbox_required: false,
         concurrency_key: None,
         exposure: Exposure::Eager,
         output_limit: None,
     }))
+}
+
+/// Log administrator-listed names the server did not offer. A stale or
+/// misspelled name must never block startup, and it pre-approves nothing.
+fn warn_unmatched_preapprovals<'a>(
+    server: &str,
+    preapproved_tools: &BTreeSet<String>,
+    offered: impl IntoIterator<Item = &'a str>,
+) {
+    if preapproved_tools.is_empty() {
+        return;
+    }
+    let offered = offered.into_iter().collect::<BTreeSet<_>>();
+    for tool in preapproved_tools {
+        if !offered.contains(tool.as_str()) {
+            tracing::warn!(
+                server = %server,
+                tool = %tool,
+                "preapproved_tools names a tool this MCP server does not offer; ignoring it"
+            );
+        }
+    }
 }
 
 fn native_tool_descriptor(
@@ -933,6 +964,7 @@ fn compile_discovered_tools(
     compiler: &ValidatorCompiler,
     server: &str,
     tools: Vec<Tool>,
+    preapproved_tools: &BTreeSet<String>,
 ) -> anyhow::Result<DiscoveredTools> {
     let mut discovered = DiscoveredTools {
         tools: Vec::new(),
@@ -946,7 +978,7 @@ fn compile_discovered_tools(
             "MCP server {server:?} returned an empty tool name"
         );
         let name = McpRegistry::sanitize_tool_name(&format!("{server}__{raw_name}"));
-        let descriptor = mcp_descriptor(compiler, server, &name, &tool)?;
+        let descriptor = mcp_descriptor(compiler, server, &name, &tool, preapproved_tools)?;
         insert_descriptor(&mut discovered.descriptors, descriptor)?;
         if !discovered.index.contains_key(&name) {
             discovered
@@ -979,7 +1011,12 @@ async fn reconnect_snapshot(
     let server = snapshot.request.definition().name();
     let catalog_check = async {
         let tools = service.list_all_tools().await?;
-        let discovered = compile_discovered_tools(compiler, server, tools)?;
+        let discovered = compile_discovered_tools(
+            compiler,
+            server,
+            tools,
+            snapshot.request.definition().preapproved_tools(),
+        )?;
         anyhow::ensure!(
             discovered.descriptors.len() == snapshot.catalog.tools().len()
                 && discovered.descriptors.iter().all(|(name, actual)| {
@@ -1149,7 +1186,12 @@ impl McpRegistry {
         let compiler = Arc::new(ValidatorCompiler::default());
         let discovery = async {
             let tools = service.list_all_tools().await?;
-            let discovered = compile_discovered_tools(&compiler, &server, tools)?;
+            let discovered = compile_discovered_tools(
+                &compiler,
+                &server,
+                tools,
+                request.definition().preapproved_tools(),
+            )?;
             let catalog = ServerToolCatalog::new(
                 Arc::clone(request.definition()),
                 discovered.descriptors.values().cloned(),
@@ -1305,6 +1347,18 @@ impl McpRegistry {
                 }
             };
 
+            // `cfg` is the administrator's mcp.json, so its list is honoured.
+            let preapproved_tools = cfg
+                .mcp_servers
+                .get(server_name)
+                .map(McpServerEntry::preapproved_tools)
+                .cloned()
+                .unwrap_or_default();
+            warn_unmatched_preapprovals(
+                server_name,
+                &preapproved_tools,
+                result.tools.iter().map(|tool| tool.name.as_ref()),
+            );
             for t in result.tools {
                 let tool_name = t.name.to_string();
                 // Sanitize tool name for OpenAI compatibility
@@ -1313,7 +1367,13 @@ impl McpRegistry {
                 let ns_name = Self::sanitize_tool_name(&format!("{server_name}__{tool_name}"));
                 insert_descriptor(
                     &mut descriptors,
-                    mcp_descriptor(&validator_compiler, server_name, &ns_name, &t)?,
+                    mcp_descriptor(
+                        &validator_compiler,
+                        server_name,
+                        &ns_name,
+                        &t,
+                        &preapproved_tools,
+                    )?,
                 )?;
                 tool_index.insert(ns_name.clone(), (server_name.clone(), tool_name));
                 all_tools.push((ns_name, t));
@@ -1463,7 +1523,13 @@ impl McpRegistry {
         .with_annotations(annotations);
 
         let validator_compiler = Arc::new(ValidatorCompiler::default());
-        let descriptor = mcp_descriptor(&validator_compiler, server, &ns_name, &tool)?;
+        let descriptor = mcp_descriptor(
+            &validator_compiler,
+            server,
+            &ns_name,
+            &tool,
+            &BTreeSet::new(),
+        )?;
         let tools = vec![(ns_name.clone(), tool)];
         let mut tool_index = HashMap::new();
         tool_index.insert(ns_name.clone(), (server.to_string(), name.to_string()));
@@ -1620,11 +1686,20 @@ impl McpRegistry {
                     .iter()
                     .find(|tool| tool.name.as_ref() == raw_name.as_str())
                     .ok_or_else(|| anyhow!("Selected MCP tool disappeared during binding"))?;
+                // This check detects server-side drift. The approval waiver was
+                // decided by the host when the descriptor was built, so carry it
+                // over rather than re-deriving it from configuration here.
+                let preapproved = if descriptor.approval_class == ApprovalClass::NotRequired {
+                    BTreeSet::from([raw_name.clone()])
+                } else {
+                    BTreeSet::new()
+                };
                 let current = mcp_descriptor(
                     &frozen.validator_compiler,
                     server,
                     &descriptor.provider_name,
                     tool,
+                    &preapproved,
                 )?;
                 if !descriptor.equivalent_to(&current) {
                     anyhow::bail!("Selected MCP descriptor changed during binding");
@@ -1808,6 +1883,13 @@ impl McpRegistry {
         let mut discovered = Vec::new();
         let mut indexed = Vec::new();
         let mut discovered_descriptors = Vec::new();
+        // Upserts come from administrator configuration (mcp.json or the
+        // admin settings store), so the entry's list is honoured.
+        warn_unmatched_preapprovals(
+            &name,
+            entry.preapproved_tools(),
+            result.tools.iter().map(|tool| tool.name.as_ref()),
+        );
         for tool in result.tools {
             let raw_name = tool.name.to_string();
             let namespaced = Self::sanitize_tool_name(&format!("{name}__{raw_name}"));
@@ -1816,6 +1898,7 @@ impl McpRegistry {
                 &name,
                 &namespaced,
                 &tool,
+                entry.preapproved_tools(),
             )?);
             indexed.push((namespaced.clone(), (name.clone(), raw_name)));
             discovered.push((namespaced, tool));
@@ -2588,6 +2671,7 @@ with open(trace_path, "a", encoding="utf-8") as trace:
                     args: vec![script.display().to_string(), trace.display().to_string()],
                     env: HashMap::new(),
                     sandboxed: false,
+                    preapproved_tools: Default::default(),
                 },
             )]),
         };
@@ -2683,6 +2767,7 @@ with open(trace_path, "a", encoding="utf-8") as trace:
                 mut args,
                 env,
                 sandboxed,
+                preapproved_tools,
             } => {
                 *args.last_mut().expect("fixture trace argument") =
                     replacement_trace.display().to_string();
@@ -2691,6 +2776,7 @@ with open(trace_path, "a", encoding="utf-8") as trace:
                     args,
                     env,
                     sandboxed,
+                    preapproved_tools,
                 }
             }
             McpServerEntry::RemoteHttp { .. } => panic!("fixture must use stdio"),

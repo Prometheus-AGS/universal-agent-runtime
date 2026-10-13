@@ -6,7 +6,7 @@
 //! connection. Catalog construction never connects, expands environment
 //! variables, provisions a command, or grants access to a server.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt;
 use std::sync::Arc;
 
@@ -129,6 +129,14 @@ impl ServerDefinition {
             );
         }
         configuration.validate_sandbox_policy(&name)?;
+        if matches!(source, ServerSource::Skill { .. })
+            && !configuration.preapproved_tools().is_empty()
+        {
+            tracing::warn!(
+                server = %name,
+                "ignoring preapproved_tools on a skill-declared MCP server; only administrator configuration can pre-approve tools"
+            );
+        }
         let config_hash = hash_configuration(&configuration);
         Ok(Self {
             name,
@@ -162,6 +170,18 @@ impl ServerDefinition {
     #[must_use]
     pub fn configuration(&self) -> &McpServerEntry {
         &self.configuration
+    }
+
+    /// Tools pre-approved by the administrator, honoured only for an
+    /// operator-owned (global) declaration. A skill-contributed declaration is
+    /// written by the skill author, not the operator, so its list is ignored.
+    #[must_use]
+    pub fn preapproved_tools(&self) -> &BTreeSet<String> {
+        static NONE: BTreeSet<String> = BTreeSet::new();
+        match self.source {
+            ServerSource::Global => self.configuration.preapproved_tools(),
+            ServerSource::Skill { .. } => &NONE,
+        }
     }
 
     /// Stable declared-input identity, independent of source and map order.
@@ -297,6 +317,7 @@ fn hash_configuration(configuration: &McpServerEntry) -> ServerConfigHash {
             args,
             env,
             sandboxed,
+            preapproved_tools: _,
         } => {
             hasher.update([0]);
             hash_field(&mut hasher, command);
@@ -312,6 +333,7 @@ fn hash_configuration(configuration: &McpServerEntry) -> ServerConfigHash {
             env,
             headers,
             grant_policy,
+            preapproved_tools: _,
         } => {
             hasher.update([1]);
             hash_field(&mut hasher, url);
@@ -351,6 +373,16 @@ fn hash_configuration(configuration: &McpServerEntry) -> ServerConfigHash {
                 }
                 None => hasher.update([0]),
             }
+        }
+    }
+    // Appended only when present so every existing declaration keeps its hash.
+    // A changed list changes descriptors, so it must not reuse a cached binding.
+    let preapproved_tools = configuration.preapproved_tools();
+    if !preapproved_tools.is_empty() {
+        hasher.update(b"preapproved_tools\0");
+        hasher.update((preapproved_tools.len() as u64).to_be_bytes());
+        for tool in preapproved_tools {
+            hash_field(&mut hasher, tool);
         }
     }
     ServerConfigHash(
