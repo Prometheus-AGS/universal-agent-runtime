@@ -296,6 +296,7 @@ async fn peer_connection_is_reused_until_the_skill_configuration_hash_changes() 
         env: HashMap::new(),
         headers: HashMap::new(),
         grant_policy: None,
+        preapproved_tools: Default::default(),
     };
     let registry = Arc::new(RwLock::new(SkillRegistry::default()));
     registry
@@ -384,6 +385,7 @@ async fn peer_connection_is_reused_until_the_skill_configuration_hash_changes() 
             env: HashMap::from([("PEER_CONFIG_REVISION".to_string(), "2".to_string())]),
             headers: HashMap::new(),
             grant_policy: None,
+            preapproved_tools: Default::default(),
         },
         McpServerEntry::Stdio { .. } => unreachable!("peer fixture is HTTP"),
     };
@@ -422,6 +424,7 @@ async fn cached_skill_catalog_stays_lazy_until_the_first_tool_call() {
         env: HashMap::new(),
         headers: HashMap::new(),
         grant_policy: None,
+        preapproved_tools: Default::default(),
     };
     let registry = Arc::new(RwLock::new(SkillRegistry::default()));
     let driver = Arc::new(MockLlmDriver::new(Vec::new()));
@@ -538,6 +541,7 @@ async fn required_startup_failure_aborts_while_optional_failure_omits_tools() {
         env: HashMap::new(),
         headers: HashMap::new(),
         grant_policy: None,
+        preapproved_tools: Default::default(),
     };
     let environment = McpBindingEnvironment::new(std::env::temp_dir(), BTreeMap::new())
         .expect("test environment is valid");
@@ -622,6 +626,7 @@ async fn search_tools_surfaces_deferred_matches_only_on_the_next_step() {
         env: HashMap::new(),
         headers: HashMap::new(),
         grant_policy: None,
+        preapproved_tools: Default::default(),
     };
     let catalog = catalog(configuration);
     let definition = Arc::clone(
@@ -742,6 +747,7 @@ async fn global_authority_and_peer_delegation_keep_connection_recipes_host_local
             args: Vec::new(),
             env: HashMap::new(),
             sandboxed: false,
+            preapproved_tools: Default::default(),
         },
         true,
         ServerAuthentication::NotRequired,
@@ -758,6 +764,7 @@ async fn global_authority_and_peer_delegation_keep_connection_recipes_host_local
             env: HashMap::new(),
             headers: HashMap::new(),
             grant_policy: None,
+            preapproved_tools: Default::default(),
         },
         false,
         ServerAuthentication::NotRequired,
@@ -833,6 +840,7 @@ async fn global_authority_and_peer_delegation_keep_connection_recipes_host_local
             env: HashMap::new(),
             headers: HashMap::new(),
             grant_policy: None,
+            preapproved_tools: Default::default(),
         },
         true,
         ServerAuthentication::NotRequired,
@@ -955,6 +963,7 @@ async fn refresh_is_single_flight_and_a_cancelled_leader_is_retried() {
         env: HashMap::new(),
         headers: HashMap::new(),
         grant_policy: None,
+        preapproved_tools: Default::default(),
     };
     let registry = Arc::new(RwLock::new(SkillRegistry::default()));
     let driver = Arc::new(MockLlmDriver::new(Vec::new()));
@@ -1114,6 +1123,7 @@ async fn lifecycle_events_and_status_metric_follow_binding_transitions_in_order(
         env: HashMap::new(),
         headers: HashMap::new(),
         grant_policy: None,
+        preapproved_tools: Default::default(),
     };
     let registry = Arc::new(RwLock::new(SkillRegistry::default()));
     let driver = Arc::new(MockLlmDriver::new(Vec::new()));
@@ -1306,6 +1316,7 @@ async fn real_stdio_server_covers_lazy_reconnect_cancel_and_shutdown() {
             "${MCP_FIXTURE_RECEIPT_DIR}".to_string(),
         )]),
         sandboxed: false,
+        preapproved_tools: Default::default(),
     };
     let definition = Arc::new(
         ServerDefinition::new(
@@ -1429,6 +1440,7 @@ async fn real_stdio_server_covers_lazy_reconnect_cancel_and_shutdown() {
                     ),
                 ]),
                 sandboxed: false,
+                preapproved_tools: Default::default(),
             },
             true,
             ServerAuthentication::NotRequired,

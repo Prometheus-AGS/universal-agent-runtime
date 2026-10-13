@@ -79,6 +79,7 @@ fn probe_entry(output: &Path) -> McpServerEntry {
         args: vec![output.to_string_lossy().into_owned(), "--mcp".to_owned()],
         env: HashMap::from([(DECLARED_KEY.to_owned(), DECLARED_VALUE.to_owned())]),
         sandboxed: false,
+        preapproved_tools: Default::default(),
     }
 }
 

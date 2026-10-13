@@ -52,6 +52,10 @@ pub enum McpServerEntry {
         /// Requires an OS sandbox. Rejected until a stdio sandbox backend exists.
         #[serde(default)]
         sandboxed: bool,
+        /// Administrator-named tools of this server that need no approver.
+        /// See [`McpServerEntry::preapproved_tools`].
+        #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+        preapproved_tools: BTreeSet<String>,
     },
     RemoteHttp {
         url: String,
@@ -65,6 +69,10 @@ pub enum McpServerEntry {
         /// attach a run-owned downstream credential to this exact destination.
         #[serde(default)]
         grant_policy: Option<RemoteHttpGrantPolicy>,
+        /// Administrator-named tools of this server that need no approver.
+        /// See [`McpServerEntry::preapproved_tools`].
+        #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+        preapproved_tools: BTreeSet<String>,
     },
 }
 
@@ -114,8 +122,35 @@ pub struct RemoteHttpGrantPolicy {
 }
 
 impl McpServerEntry {
+    /// Raw tool names (as the server lists them, not the namespaced provider
+    /// name) that the administrator pre-approved for unattended execution.
+    ///
+    /// MCP tool annotations are reported by the server being governed and are
+    /// never trusted for approval. This list is the only way an MCP tool's
+    /// descriptor becomes approval-not-required, and it is honoured only for
+    /// administrator-owned definitions: see
+    /// [`crate::mcp::catalog::ServerDefinition::preapproved_tools`]. Empty by
+    /// default, which keeps every tool of the server approval-required.
+    #[must_use]
+    pub fn preapproved_tools(&self) -> &BTreeSet<String> {
+        match self {
+            Self::Stdio {
+                preapproved_tools, ..
+            }
+            | Self::RemoteHttp {
+                preapproved_tools, ..
+            } => preapproved_tools,
+        }
+    }
+
     /// Reject unsupported sandbox requests before process or settings side effects.
     pub(crate) fn validate_sandbox_policy(&self, name: &str) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            self.preapproved_tools()
+                .iter()
+                .all(|tool| !tool.trim().is_empty()),
+            "MCP server {name:?} has a blank preapproved_tools entry"
+        );
         if matches!(
             self,
             Self::Stdio {

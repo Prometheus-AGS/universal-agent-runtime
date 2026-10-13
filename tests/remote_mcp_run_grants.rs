@@ -617,6 +617,7 @@ async fn gate_r_registered_agent_remote_mcp_identity_and_lifecycle() {
                     ),
                 )]),
                 grant_policy: None,
+                preapproved_tools: Default::default(),
             },
         )]),
     };

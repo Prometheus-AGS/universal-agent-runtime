@@ -447,6 +447,7 @@ async fn model_activation_updates_the_next_step_and_missing_is_a_typed_result() 
         env: HashMap::new(),
         headers: HashMap::new(),
         grant_policy: None,
+        preapproved_tools: Default::default(),
     };
     let driver = Arc::new(MockLlmDriver::new(vec![
         activation_turn("activate-s2", "s2"),
