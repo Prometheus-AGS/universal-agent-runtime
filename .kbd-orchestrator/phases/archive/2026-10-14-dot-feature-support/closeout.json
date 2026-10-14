@@ -1,0 +1,55 @@
+{
+  "phase": "dot-feature-support",
+  "status": "closed_and_archived",
+  "decision": "dot-operator-closeout-20261014",
+  "recorded_at": "2026-10-14T09:36:49.350935+00:00",
+  "production_implementation": {
+    "items": 24,
+    "requirements": 9,
+    "main_source_commit": "22088cee5508bd4dc9a145fe2d2817d9605044fc",
+    "pushed": true
+  },
+  "verification": {
+    "remaining_tasks_cancelled": 15,
+    "new_passing_results_claimed": false,
+    "final_certification": "waived_by_operator"
+  },
+  "repository": {
+    "branch": "main",
+    "extra_worktrees_removed": 3,
+    "non_main_local_and_remote_branches_removed": [
+      "fix/docker-image-build",
+      "feat/mcp-preapproved-tools"
+    ],
+    "detached_snapshot": "22c70da5 superseded; privately preserved binary patch",
+    "uncommitted_generated_files": "privately preserved and restored/removed"
+  },
+  "infrastructure": {
+    "paid_pools_removed": [
+      988676,
+      989030
+    ],
+    "paid_volume_removed": 18494907,
+    "namespace_removed": "dot17-uar",
+    "lima_vm_removed": "dot17-linux-qualification",
+    "fault_disk_removed": "dot17-linux-fault",
+    "buildx_builder_removed": "dot17-know-me-amd64",
+    "postgres_container_and_volume_removed": "uar-dot17-qualified-pg-d2243641d9814f76",
+    "owned_surreal_port_forward_stopped": true,
+    "unrelated_resources_untouched": true,
+    "receipt": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/cleanup-20261014/infrastructure-cleanup-completion.json"
+  },
+  "automations_removed": [
+    "clean-up-dot-qualification-worker",
+    "clean-up-dot-protected-survivor-worker"
+  ],
+  "disposable_local_build_artifacts_removed_bytes": 13206493845,
+  "archive": {
+    "phase": ".kbd-orchestrator/phases/archive/2026-10-14-dot-feature-support",
+    "canonical_path": "Compatibility symlink retained for canonical KBD references",
+    "openspec_changes": 20,
+    "validation_executed": false,
+    "dot19_spec_sync": "Skipped to preserve scenario already in main spec; delta retained in archive"
+  },
+  "next_work": null
+}

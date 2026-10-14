@@ -38,3 +38,17 @@ Evidence SHALL record API and shipped-UI observations for local proxy, Kimi K3, 
 #### Scenario: Required provider is unavailable
 - **WHEN** a credential, endpoint, capacity, or model prevents a required genuine response
 - **THEN** the phase stops before reflection and reports that exact inference requirement as unmet without substituting synthetic evidence
+
+### Requirement: Both required deployment profiles pass before first release
+
+First-release assistant certification SHALL require evidence for all six capabilities on both local and shared-host profiles. Product verification, publication and deployment health SHALL remain separate claims.
+
+#### Scenario: Only one profile passes
+
+- **WHEN** local operation passes but shared-host evidence is missing or fails, or vice versa
+- **THEN** first-release assistant certification remains incomplete
+
+#### Scenario: Final release evidence
+
+- **WHEN** all local product acceptance gates pass and artifacts are published
+- **THEN** the final source revision, backend/entry-point matrix, both architecture digests and deployment health are recorded separately from product test results

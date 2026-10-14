@@ -2,10 +2,10 @@
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 2585,
-  "derivedRevision": 2585,
+  "sourceRevision": 2853,
+  "derivedRevision": 2853,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2181,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2449,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -22,26 +22,29 @@
   "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
   "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
   "path": [
-    "runtime-harness-gap-closure"
+    "dot-feature-support"
   ],
   "phaseIds": [
-    "runtime-harness-gap-closure"
+    "dot-feature-support"
   ],
-  "activePhaseId": "runtime-harness-gap-closure",
-  "activePhase": "runtime-harness-gap-closure",
-  "phase": "runtime-harness-gap-closure",
-  "parentPhase": "runtime-harness-gap-closure",
+  "activePhaseId": "dot-feature-support",
+  "activePhase": "dot-feature-support",
+  "phase": "dot-feature-support",
+  "parentPhase": null,
   "childPointer": null,
-  "change": "harness-model-profiles-routing",
-  "currentTask": "harness-model-profiles-routing-2-4",
+  "change": null,
+  "currentTask": null,
   "status": "ready",
+  "lifecycle": "ready",
+  "stageId": null,
+  "stageStatus": null,
   "completionMetric": "implementation",
-  "implementationCompleted": 116,
-  "implementationTotal": 129,
-  "planRevision": 7,
-  "revision": 2585,
-  "exactNextCommand": "/kbd-execute runtime-harness-gap-closure",
-  "nextChange": "harness-model-profiles-routing",
-  "nextTask": "harness-model-profiles-routing-2-4",
-  "updatedAt": "2026-09-21T10:34:38.935974Z"
+  "implementationCompleted": 136,
+  "implementationTotal": 149,
+  "planRevision": 45,
+  "revision": 2853,
+  "exactNextCommand": "",
+  "nextChange": null,
+  "nextTask": null,
+  "updatedAt": "2026-10-14T09:33:38.512396Z"
 }

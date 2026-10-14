@@ -1,0 +1,210 @@
+{
+  "recorded_at": "2026-10-14T08:55:53.853375+00:00",
+  "phase": "dot-feature-support",
+  "requirements": [
+    {
+      "requirement": 1,
+      "name": "Reproducible container releases",
+      "implementation": "source_complete",
+      "primary_validation": "partial: actual frozen full amd64 build, publication/full anonymous pull and corrected two-runtime Envoy deployment health passed; arm64 and final release pending",
+      "final_release_acceptance": "waived_by_operator",
+      "final_release_acceptance_before_operator_closeout": "pending",
+      "operator_acceptance": "implemented_and_closed"
+    },
+    {
+      "requirement": 2,
+      "name": "Tenant-safe credential identity",
+      "implementation": "source_complete",
+      "primary_validation": "passed on current inventory15",
+      "final_release_acceptance": "waived_by_operator",
+      "tests_passed": 4,
+      "log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory15-attempt02/source_integration/credentials_api_integration_test.log",
+      "log_sha256": "7c44f1ffc159d3d9def6a2ebb9194129eb5f081113e71b7c55b96c43956e5d6e",
+      "inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-15.json",
+      "claim_limit": "Current complete-source gate passed on inventory15; subsequent MCP gate failed and batch stopped. Final installed release acceptance pending; original binding retained.",
+      "original_artifacts_available": true,
+      "current_inventory15_validation": "passed4/4 whole production source target; final installed-release acceptance pending",
+      "historical_validation": {
+        "log": "/tmp/uar-dot17-validation-20261013/source-integration-attempt-02/source_integration/credentials_api_integration_test.log",
+        "log_sha256": "a45c566300c54eb1e074205bc2af8393f432930d2996d601caded5099c5ed2bf",
+        "inventory": "/tmp/dot17-validation-20261013T064622Z/authorized-inventory-07.json",
+        "claim_limit": "Original whole production integration result at inventory07. Credential/key implementation behavior was not changed by later fixture corrections; inventory09 added the actual MCP startup table migration. Final combined installed-release acceptance remains pending. Original receipts are not relabelled. Host reboot removed original temporary receipt/log files; durable recorded observations and hashes remain. No new receipt verification or final closure is claimed.",
+        "original_artifacts_available": false
+      },
+      "receipt": ".kbd-orchestrator/phases/dot-feature-support/evidence/validation-20261013/r2-inventory15-source-gate-pass.json",
+      "final_release_acceptance_before_operator_closeout": "pending",
+      "operator_acceptance": "implemented_and_closed"
+    },
+    {
+      "requirement": 3,
+      "name": "Truthful MCP outcomes",
+      "implementation": "source_complete",
+      "primary_validation": "passed on current inventory17",
+      "final_release_acceptance": "waived_by_operator",
+      "latest_failed_receipt": "/tmp/uar-dot17-validation-20261013/truthful-outcomes-attempt-03/source_integration/receipt.json",
+      "tests_passed": 2,
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/validation-20261013/r3-inventory17-source-gate-pass.json",
+      "receipt_sha256": "949e242bf0828d134c39150772bb9c4207a39c5e8794dcdcc8482f452ae61b56",
+      "inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-17.json",
+      "claim_limit": "Whole current production-source target passed; Cargo-provided runtime. Not installed published artifact certification or aggregate source-stage acceptance; remaining suffix targets active.",
+      "receipt_annotation": "Historical prior-results reference prose calls correction fixture-only. Inventory09 actually includes the production MCP elicitation startup migration. Original receipt preserved; its actual current inventory/command/result bindings are correct.",
+      "original_artifacts_available": true,
+      "historical_primary_validation": "passed",
+      "current_failed_receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/validation-20261013/formal12-inventory15-attempt02-failure.json",
+      "current_inventory15_validation": "1 passed; 1 failed; no current pass claimed",
+      "historical_validation": {
+        "receipt": "/tmp/uar-dot17-validation-20261013/truthful-outcomes-attempt-04/source_integration/receipt.json",
+        "receipt_sha256": "7cf5b200ecf3835e4217e649cb4d1ed476c257552be29dc9f0af1044a5948db9",
+        "inventory": "/tmp/dot17-validation-20261013T064622Z/authorized-inventory-09.json",
+        "claim_limit": "Whole production source integration target passes local and shared runtime cases. Installed-release acceptance remains pending; R2/R7 historical receipts retain original inventory07. Host reboot removed original temporary receipt/log files; durable recorded observations and hashes remain. No new receipt verification or final closure is claimed.",
+        "receipt_annotation": "Historical prior-results reference prose calls correction fixture-only. Inventory09 actually includes the production MCP elicitation startup migration. Original receipt preserved; its actual current inventory/command/result bindings are correct."
+      },
+      "current_inventory17_validation": "2/2 whole real local/shared production target;1278.21s",
+      "log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/truthful_tool_outcomes.log",
+      "log_sha256": "a30b7a3b6577891cef5eb828eece4e756d40f6d9d08d0084b1635b6b98a318bd",
+      "final_release_acceptance_before_operator_closeout": "pending",
+      "operator_acceptance": "implemented_and_closed"
+    },
+    {
+      "requirement": 4,
+      "name": "Streaming correctness",
+      "implementation": "source_complete",
+      "primary_validation": "passed on current inventory17",
+      "final_release_acceptance": "waived_by_operator",
+      "latest_failed_receipt": "/tmp/uar-dot17-validation-20261013/stream-terminal-attempt-01/source_integration/receipt.json",
+      "tests_passed": 1,
+      "protocol_scenario_rows": 83,
+      "production_boundary_checks": 249,
+      "inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-17.json",
+      "log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/stream_terminal_contract.log",
+      "log_sha256": "94d1df06ad3952cfa76dc7f9046c7a739161f2476d59fcf7e3f92c230a59a190",
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/validation-20261013/r4-inventory17-source-gate-pass.json",
+      "original_artifacts_available": true,
+      "claim_limit": "Whole current production-source streaming target passed. Not installed published artifact certification or aggregate source-stage acceptance; remaining suffix targets active.",
+      "historical_inventory14_validation": {
+        "inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-14.json",
+        "log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/r4-inventory14-attempt-01/whole-target.log",
+        "log_sha256": "01faab266cc2a846df99f74829e32f374b0e05761fb39f8a06b1e302fb0b8c82",
+        "receipt": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/r4-inventory14-attempt-01/receipt.json",
+        "claim_limit": "Current source14 preliminary whole production target passed; final approved-pin/formal12/installed/release acceptance remains pending. No relabeling."
+      },
+      "current_inventory17_validation": "1/1 whole production target;510.07s",
+      "final_release_acceptance_before_operator_closeout": "pending",
+      "operator_acceptance": "implemented_and_closed"
+    },
+    {
+      "requirement": 5,
+      "name": "Fresh-process resume",
+      "implementation": "source_complete",
+      "primary_validation": "passed on original inventory17",
+      "final_release_acceptance": "waived_by_operator",
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/validation-20261013/r5-inventory17-source-gate-pass.json",
+      "receipt_sha256": "25c8237cdc6289722f6d5e4dac9ca71db923170f655a43c88807a8669ff3cf80",
+      "inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-17.json",
+      "log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/fresh_process_resume.log",
+      "log_sha256": "b99c313e0bc2faf6b8d11028d01979c13cbccbc33e2694a3eb4a1c7c721ff4f3",
+      "tests_passed": 1,
+      "claim_limit": "Whole production-source parent passed at original inventory17. Internal fresh-process children are retained in raw log. Aggregate batch later stopped at memory ownership; no installed release or final acceptance claimed.",
+      "final_release_acceptance_before_operator_closeout": "pending",
+      "operator_acceptance": "implemented_and_closed"
+    },
+    {
+      "requirement": 6,
+      "name": "Durable ingestion",
+      "implementation": "source_complete",
+      "primary_validation": "passed on original inventory17",
+      "final_release_acceptance": "waived_by_operator",
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/validation-20261013/r6-inventory17-source-gate-pass.json",
+      "receipt_sha256": "c2122c5fbc73d15a7e0f49b621d1f99684bdb68d1fc1f973d642c8b08a9f5a67",
+      "inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-17.json",
+      "log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/durable_ingestion.log",
+      "log_sha256": "cfb1b03dc439c8e81dccd0aced4086e4996278e96e6b0cf8f726164348832323",
+      "tests_passed": 1,
+      "claim_limit": "Whole production-source parent passed at original inventory17. Internal fresh-process children are retained in raw log. Aggregate batch later stopped at memory ownership; no installed release or final acceptance claimed.",
+      "final_release_acceptance_before_operator_closeout": "pending",
+      "operator_acceptance": "implemented_and_closed"
+    },
+    {
+      "requirement": 7,
+      "name": "Durable API keys",
+      "implementation": "source_complete",
+      "primary_validation": "passed on current inventory15",
+      "final_release_acceptance": "waived_by_operator",
+      "tests_passed": 5,
+      "log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory15-attempt02/source_integration/durable_api_keys_integration.log",
+      "log_sha256": "b53cf25d4aaad59172571e6cabf39ef9d9d6046942e1e5ea726485b04457c837",
+      "inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-15.json",
+      "claim_limit": "Current complete-source gate passed on inventory15; subsequent MCP gate failed and batch stopped. Final installed release acceptance pending; original binding retained.",
+      "original_artifacts_available": true,
+      "historical_validation": {
+        "log": "/tmp/uar-dot17-validation-20261013/source-integration-attempt-02/source_integration/durable_api_keys_integration.log",
+        "log_sha256": "c4e98f07ef5e99cfe2060393bffd1db6c160dc8686b539302d1f1ee8272cc82f",
+        "inventory": "/tmp/dot17-validation-20261013T064622Z/authorized-inventory-07.json",
+        "claim_limit": "Original whole production integration result at inventory07. Credential/key implementation behavior was not changed by later fixture corrections; inventory09 added the actual MCP startup table migration. Final combined installed-release acceptance remains pending. Original receipts are not relabelled. Host reboot removed original temporary receipt/log files; durable recorded observations and hashes remain. No new receipt verification or final closure is claimed.",
+        "original_artifacts_available": false
+      },
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/validation-20261013/r7-inventory15-source-gate-pass.json",
+      "final_release_acceptance_before_operator_closeout": "pending",
+      "operator_acceptance": "implemented_and_closed"
+    },
+    {
+      "requirement": 8,
+      "name": "Durable spend accounting",
+      "implementation": "source_complete",
+      "primary_validation": "passed on original inventory17",
+      "final_release_acceptance": "waived_by_operator",
+      "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/validation-20261013/r8-inventory17-source-gate-pass.json",
+      "receipt_sha256": "08d3e0d7941533e2c631fd89f348dbb74b8eabbdebd83a82fb23f098d63c51e5",
+      "inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-17.json",
+      "log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/run_cost_settlement.log",
+      "log_sha256": "3a20c4357124e4477296a70288a45608c6548d45c0f24a5580d2c73187897e62",
+      "tests_passed": 4,
+      "claim_limit": "Whole production-source parent passed at original inventory17. Internal fresh-process children are retained in raw log. Aggregate batch later stopped at memory ownership; no installed release or final acceptance claimed.",
+      "final_release_acceptance_before_operator_closeout": "pending",
+      "operator_acceptance": "implemented_and_closed"
+    },
+    {
+      "requirement": 9,
+      "name": "Supervisor recovery",
+      "implementation": "source_complete",
+      "primary_validation": "pending: A and protected B supervisors installed, runtimePods remain stopped pending final immutable image; actual containment and fault gates pending",
+      "final_release_acceptance": "waived_by_operator",
+      "final_release_acceptance_before_operator_closeout": "pending",
+      "operator_acceptance": "implemented_and_closed"
+    }
+  ],
+  "primary_passed": 7,
+  "final_closed": 0,
+  "current_gate": "Qualification suites cancelled by operator. Actual18 memory failure identified and source repaired. All planned production implemented; scope reconciliation complete. Next actual build/deploy and useful agent/customer use, serially.",
+  "source_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-18.json",
+  "additional_resource_authorization": ".kbd-orchestrator/phases/dot-feature-support/evidence/validation-20261013/additional-resources-authorization.json",
+  "private_state_root": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013",
+  "primary_passed_with_current_raw_artifacts": 7,
+  "source_inventory_scope": "Every24 production item plus entire observed four-file correctivebatch source-complete beforegate. Wholecurrent-source inventory17; immutable prefixpasses retainoriginal15 with verifiedfull inputequivalence except namedfixture/runner corrections.",
+  "qualification_environment_limits": {
+    "status": "operator_resolved",
+    "available": [
+      "developmentMac isolated nondisruptive gates",
+      "approvedLinuxguest native qualification",
+      "know-me LKE A andprotectedB"
+    ],
+    "release_native_qualification": [
+      "Linuxguest systemd containment, reboot, calendar and storage fault evidence"
+    ],
+    "excluded_qualification_claims": [
+      "macOS native recovery qualification",
+      "Windows SCM/reboot/timezone qualification"
+    ],
+    "operator_interactions": "2026-10-14 operator: Just use the Linux guest. No devMac reboot/clockchange or additional paid resources authorized."
+  },
+  "current_continuation_scope": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/source-continuation-scope.json",
+  "release_acceptance_mode": "actual_consumer_use",
+  "qualification_release_prerequisite": false,
+  "closeout": {
+    "recorded_at": "2026-10-14T09:31:01.398053+00:00",
+    "decision": "dot-operator-closeout-20261014",
+    "status": "closed_by_operator",
+    "main_commit": "22088cee5508bd4dc9a145fe2d2817d9605044fc",
+    "qualification_claim": "No new pass or final certification claimed"
+  }
+}

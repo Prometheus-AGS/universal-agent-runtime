@@ -1,0 +1,361 @@
+{
+  "schema_version": 1,
+  "phase": "dot-feature-support",
+  "recorded_at": "2026-10-14T09:06:10.226144+00:00",
+  "source_status": "committed_source_complete_consumer_delivery_authorized",
+  "sequencing_sha256": "f9077faf1e35566c1cb1daa73bfd0eae935edded57af6a74e3675a5640fab34e",
+  "source": {
+    "git_head": "22088cee5508bd4dc9a145fe2d2817d9605044fc",
+    "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "untracked_files": [],
+    "submodules": [
+      {
+        "path": "crates/prometheus-skill-system",
+        "identity": {
+          "git_head": "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2",
+          "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "untracked_files": [],
+          "submodules": [
+            {
+              "path": "skills/imported/artifact-refiner",
+              "identity": {
+                "git_head": "18d000f3e46952418f682159b227dbf71ce61dcb",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [
+                  {
+                    "path": "shared/sycophancy-correction",
+                    "identity": {
+                      "git_head": "bc348fffb4b622c142c1082b281dd2f44b74d37b",
+                      "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "untracked_files": [],
+                      "submodules": [],
+                      "content_sha256": "0e7d02ea9183ea2952d0efec3dbe0d705d883a0e30e8754ff00fcead9bd8b228"
+                    }
+                  },
+                  {
+                    "path": "tools/rust-mcp-filesystem",
+                    "identity": {
+                      "git_head": "ef808b7d0ccf7f56c4e8d125091d8d0115725a60",
+                      "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "untracked_files": [],
+                      "submodules": [],
+                      "content_sha256": "8346b801762d7910e9acd55dbb97398d7aeae398099a1edf9a0732b71067e84b"
+                    }
+                  }
+                ],
+                "content_sha256": "40f0e20d0f8a474de6175f82289f43a52f6becaa05cc56b13e96628efe835f87"
+              }
+            },
+            {
+              "path": "skills/imported/prometheus-entity-management",
+              "identity": {
+                "git_head": "34a211563fe7f06118996a40cc398c4c3af953ef",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "e2a8b0edc202ed7ce396a0dcb91dad939b2db5ff7fe2107075e797d89eae3d86"
+              }
+            },
+            {
+              "path": "skills/imported/sycophancy-correction",
+              "identity": {
+                "git_head": "bc348fffb4b622c142c1082b281dd2f44b74d37b",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "0e7d02ea9183ea2952d0efec3dbe0d705d883a0e30e8754ff00fcead9bd8b228"
+              }
+            },
+            {
+              "path": "tools/cowork-skills",
+              "identity": {
+                "git_head": "77edcf8a49237dc9b8f6733e794c48fa4e6da832",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "273815b0c166e683c1833ea7c03881e53c1ab225165c08533aaf92bcd6174e46"
+              }
+            },
+            {
+              "path": "tools/disk-space-guardian",
+              "identity": {
+                "git_head": "26487db64d5c44b00b57d19a649a82632dfe94d3",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "48f4af0f068010d120d6740f1934fc0458e28bbb722452c4e6798579b46ccf6e"
+              }
+            },
+            {
+              "path": "tools/liter-llm",
+              "identity": {
+                "git_head": "a6047386cc9fae4258b4a8577f6a016022095586",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "187ac05916b0a7f036de408f81fd7c895222565bc441817deaaccc2fd6075cdf"
+              }
+            },
+            {
+              "path": "tools/openai-proxy",
+              "identity": {
+                "git_head": "b68861e0a6672f5ece900c58fd44b9e23a6b5691",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "65363d385cb29081788b5bcbd756ca21074d724b23f02fa01de6e0f0d60ec420"
+              }
+            },
+            {
+              "path": "tools/prometheus-knowledge",
+              "identity": {
+                "git_head": "4b3a6744a4211512ff88a1cb96cf1e2a7db4c3ef",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "a917389a016378f959838c3c2f19689f5f505bbe707bd3831d17ca99d8f3f327"
+              }
+            },
+            {
+              "path": "tools/surreal-memory-server",
+              "identity": {
+                "git_head": "63eb413ebf520a4a525ffd3b8d1d07f1389d48d4",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "9a5e90a9fc08dd10b77b554a798326f0777e9adb0841528b44f045c985c6ac6a"
+              }
+            }
+          ],
+          "content_sha256": "21a203e53600b908651b5271273a0fdaeea6b19ef9252446094a66aa4fdb27ce"
+        }
+      },
+      {
+        "path": "frontend/packages/prometheus-entity-management",
+        "identity": {
+          "git_head": "34a211563fe7f06118996a40cc398c4c3af953ef",
+          "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "untracked_files": [],
+          "submodules": [],
+          "content_sha256": "e2a8b0edc202ed7ce396a0dcb91dad939b2db5ff7fe2107075e797d89eae3d86"
+        }
+      },
+      {
+        "path": "models.dev",
+        "identity": {
+          "git_head": "4a0154da2410bca18e97be812fecb9e8f85466e8",
+          "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "untracked_files": [],
+          "submodules": [],
+          "content_sha256": "1ac99bf56d8c8e09d20abfd13785e5c863be9827f95eea0fb81172639b484453"
+        }
+      },
+      {
+        "path": "vendor/git/liter-llm",
+        "identity": {
+          "git_head": "e446f5ef91003bbec5fce6b2f45fb94559dff335",
+          "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "untracked_files": [],
+          "submodules": [],
+          "content_sha256": "19f0b810e89f9c36fd36c2de73376159bab41a693c357293989991e03d10a7f3"
+        }
+      },
+      {
+        "path": "vendor/git/rust-mcp-filesystem",
+        "identity": {
+          "git_head": "01ae76b99db4b818458efe2dc5d76e70fa5eadb4",
+          "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "untracked_files": [],
+          "submodules": [],
+          "content_sha256": "d86b2abf2c7f1ef15650ece9bc5e22a75e471c50973c46f4b088b17f37869777"
+        }
+      }
+    ],
+    "content_sha256": "214847ddd38ffdd3a4c2fb5a929381f4a5983377cc9cc028ae1b95dec0e7117a"
+  },
+  "production": [
+    {
+      "change": "dot-01-release-provenance",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/source-completion-catalog.md"
+    },
+    {
+      "change": "dot-02-principal-credentials",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/source-completion-catalog.md"
+    },
+    {
+      "change": "dot-03-durable-api-keys",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/source-completion-catalog.md"
+    },
+    {
+      "change": "dot-04-truthful-tool-outcomes",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/source-completion-catalog.md"
+    },
+    {
+      "change": "dot-05-stream-terminal-contract",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/source-completion-catalog.md"
+    },
+    {
+      "change": "dot-06-fresh-process-resume",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/source-completion-catalog.md"
+    },
+    {
+      "change": "dot-07-approval-recovery",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/source-completion-catalog.md"
+    },
+    {
+      "change": "dot-08-durable-ingestion",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot08-handoff.md"
+    },
+    {
+      "change": "dot-09-idempotent-settlement",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot09-accounting-handoff.md"
+    },
+    {
+      "change": "dot-10-durable-budget-admission",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot10-budget-handoff.md"
+    },
+    {
+      "change": "dot-11-supervisor-fencing",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot11-fencing-handoff.md"
+    },
+    {
+      "change": "dot-12-memory-isolation",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot12-handoff.md"
+    },
+    {
+      "change": "dot-13-memory-controls",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot13-controls-handoff.md"
+    },
+    {
+      "change": "dot-14-durable-schedules",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot14-timing-fit.md"
+    },
+    {
+      "change": "dot-14-durable-schedules",
+      "backendTaskId": "2",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot14-schedules-handoff.md"
+    },
+    {
+      "change": "dot-15-proactive-followups",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot15-followups-handoff.md"
+    },
+    {
+      "change": "dot-16-assistant-capability-surface",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot16-capabilities-handoff.md"
+    },
+    {
+      "change": "dot-17-assistant-release-acceptance",
+      "backendTaskId": "3",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot17-runner-handoff.md"
+    },
+    {
+      "change": "dot-18-a2a-conformance",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot18-a2a-handoff.md"
+    },
+    {
+      "change": "dot-19-interactive-protocols",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot19-interactive-handoff.md"
+    },
+    {
+      "change": "dot-19-interactive-protocols",
+      "backendTaskId": "2",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot19-mcp-handoff.md"
+    },
+    {
+      "change": "dot-20-safe-host-settings",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot20-defaults-handoff.md"
+    },
+    {
+      "change": "dot-20-safe-host-settings",
+      "backendTaskId": "2",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot20-effective-handoff.md"
+    },
+    {
+      "change": "dot-12-memory-isolation",
+      "backendTaskId": "3",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot12-owner-adjacent-handoff.md"
+    }
+  ],
+  "verification_authorized": true,
+  "acceptance": "actual_consumer_use_pending",
+  "matrix_scenarios": 109,
+  "validation_targets": {
+    "development": "this Mac non-disruptive source/customer gates",
+    "native": "approved isolated Linux guest only",
+    "shared": "know-me LKE; existing Envoy/TLS"
+  },
+  "claim_limits": [
+    "All24 production items implemented before build or actual consumer use.",
+    "Seven historical primary passes retained, not relabelled. Historical qualification gates cancelled; no missing scenario is called passed.",
+    "Actualconsumer acceptance and artifactpublication remain pending. Unused protocol, adversarial and crash qualifications unverified.",
+    "Existing genuine cache namespace may be reused; actual new source/pins/artifact separately attested. No additional paid resources or developmentMac clock/reboot."
+  ],
+  "authorization": {
+    "source": "2026-10-14 operator explicit direction to certify for actual agent use and cancel qualification blocking",
+    "instruction": "Build/package and publish usable code-complete UAR; use actual installed provider/agent as consumer acceptance. No qualification-suite retry, fault tests, new paid resources or developmentMac disruption."
+  },
+  "source_correction": {
+    "files": [
+      "src/uar/memory/controls_store.rs",
+      "docs/operations/dot-release-acceptance.md",
+      ".kbd-orchestrator/phases/dot-feature-support/implementation/dot17-scenario-matrix.json"
+    ],
+    "reason": "Repair confirmed no-op flexible-metadata migration and reconcile operator consumer-use release scope. No speculative history rewrite. Historical failed receipts preserved; memory real-use result pending.",
+    "memory_handoff": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/memory-owner-correction-handoff.json",
+    "memory_file_sha256": "b39bfe02b9fb421572902bf00f898461e1ca3c6e7ac2de3bbfb6ce49b10f484e"
+  },
+  "release_acceptance_mode": "actual_consumer_use",
+  "qualification_suite_release_prerequisite": false,
+  "commit_only_lineage": {
+    "prior_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-19.json",
+    "prior_inventory_sha256": "97fc18064a2c487a937e042a469c7e51e9035a8443007d0715a003196f66cfc5",
+    "prior_source_revision": "3e6af7c4a81b9406c11dc3886d3626232f037375",
+    "current_source_revision": "22088cee5508bd4dc9a145fe2d2817d9605044fc",
+    "source_content_unchanged": true,
+    "tests_claimed": false
+  }
+}

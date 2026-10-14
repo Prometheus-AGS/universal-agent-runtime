@@ -9,7 +9,7 @@ mutating another user's runtime and durable data.
 
 ### Requirement: Per-user data is isolated by authenticated identity
 Threads, memories, knowledge bases, documents and chunks SHALL be scoped to the
-JWT-derived user identity; no endpoint SHALL accept a caller-supplied user id
+host-verified issuer/tenant/subject owner identity; no endpoint SHALL accept a caller-supplied user id
 for authorization decisions.
 
 #### Scenario: Cross-user thread access
@@ -30,7 +30,7 @@ for authorization decisions.
 
 #### Scenario: Memory identity from token
 - **WHEN** a request to any memory endpoint supplies a user_id in body or query
-- **THEN** the supplied id is ignored and the JWT subject is used
+- **THEN** the supplied id is ignored and the host-verified issuer/tenant/subject owner identity is used
 
 #### Scenario: Unresolved KB names fail closed
 - **WHEN** an agent's configured knowledge-base names resolve to no accessible KB
@@ -41,3 +41,27 @@ for authorization decisions.
   with identical logical identifiers
 - **THEN** both durable record graphs coexist, parent relationships remain
   owner-qualified, and either owner can read or delete only their own graph
+
+#### Scenario: Canonical-looking legacy subjects cannot claim private history
+- **WHEN** a legacy subject string is byte-identical to a new complete principal key
+- **THEN** authenticated history and knowledge access use disjoint storage namespaces
+  and do not read, overwrite, migrate or delete the legacy record
+
+#### Scenario: Session erasure preserves independent authority records
+- **WHEN** an authenticated owner erases a conversation session
+- **THEN** only that owner's session and conversation policy are removed, while
+  accounting and tool admission evidence remain controlled by their host lifecycle
+
+### Requirement: Assistant memory is scoped by verified complete owner
+
+All assistant memory operations and retrieval SHALL enforce complete verified owner identity, including direct IDs, history and background capture, without granting authority from retrieved content.
+
+#### Scenario: Cross-surface direct ID
+
+- **WHEN** a principal supplies another owner's memory ID through HTTP, MCP, native tools or history
+- **THEN** the operation is denied without revealing content or affecting the owner's record
+
+#### Scenario: Scoped context retrieval
+
+- **WHEN** memory is retrieved for prompt context or background processing
+- **THEN** only currently authorized owner-scoped content is returned and its text cannot grant execution authority

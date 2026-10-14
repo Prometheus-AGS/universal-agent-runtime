@@ -2,7 +2,9 @@
 
 ## Purpose
 TBD - created by archiving change gap-03-a2a-tenant-partitioning. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Tenant identity is distinct from user identity and is derived only from verified claims
 The runtime SHALL represent tenant identity as a claim distinct from the token
 subject, and SHALL populate it only from a credential that has passed
@@ -54,3 +56,17 @@ rather than serving an unpartitioned view.
 #### Scenario: Negative control for cross-tenant denial
 - **WHEN** the cross-tenant denial test is run against a build where the partition key is ignored
 - **THEN** the test fails, demonstrating the assertion is capable of failing
+
+### Requirement: Provider credentials use verified complete owner identity
+
+Credential ownership SHALL use host-verified issuer, tenant and subject in a namespace disjoint from legacy identifiers. Caller-supplied identity SHALL NOT confer ownership.
+
+#### Scenario: Identical subjects
+
+- **WHEN** two authenticated principals share a subject but differ by tenant or issuer
+- **THEN** their credential create, read, list, delete and use operations are isolated
+
+#### Scenario: Legacy ownership
+
+- **WHEN** a legacy credential lacks sufficient owner provenance
+- **THEN** it is not granted to a matching subject and only an authenticated audited mapping can migrate it without key collisions

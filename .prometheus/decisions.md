@@ -1980,3 +1980,8 @@ Operator selected “Just use the Linux guest.” The approved isolated Linux gu
 ## 2026-10-14T08:55:53.853375+00:00 — Consumer-use acceptance replaces qualification release gates
 
 Operator explicitly cancelled qualification blocking of code-complete UAR consumers and asked to certify UAR through real use. New authoritative phase acceptance requires current-source artifact, actual installation and useful configured-agent/provider task. Preserve prior evidence; unused edge cases/protocols remain unverified. Necessary builds/deployment and actual known defects remain actionable. Reuse genuine build cache namespace with independently bound current source; no source relabeling/cache cleanup. Existing resource deadlines stay fixed.
+
+
+## Final operator closeout — 2026-10-14
+
+Only resource cleanup, consolidation on main, and phase closure/archive remain authorized. All further qualification, builds, deployment, reviews, and consumer-use gates are cancelled, without recording them as passed. See the Dot phase closeout record and decision dot-operator-closeout-20261014.

@@ -2,10 +2,10 @@
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 2585,
-  "derivedRevision": 2585,
+  "sourceRevision": 2853,
+  "derivedRevision": 2853,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2181,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2449,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -19,20 +19,17 @@
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
   "conflictCount": 0,
-  "updatedAt": "2026-09-21T10:34:38.935974Z",
+  "updatedAt": "2026-10-14T09:33:38.512396Z",
   "cursor": [
-    "runtime-harness-gap-closure",
-    "execute",
-    "harness-model-profiles-routing",
-    "harness-model-profiles-routing-2-4"
+    "dot-feature-support"
   ],
   "root": {
     "type": "phase",
     "id": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
     "status": "ready",
     "progress": {
-      "done": 116,
-      "total": 129
+      "done": 136,
+      "total": 149
     },
     "children": [
       {
@@ -74,6 +71,211 @@
             "progress": {
               "done": 7,
               "total": 7
+            }
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "dot-feature-support",
+        "canonicalId": "dot-feature-support",
+        "status": "COMPLETE",
+        "progress": {
+          "done": 20,
+          "total": 20
+        },
+        "children": [
+          {
+            "type": "phase",
+            "id": "issue-379-dot-replan",
+            "canonicalId": "dot-feature-support::issue-379-dot-replan",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            },
+            "children": [],
+            "annotations": []
+          },
+          {
+            "type": "change",
+            "id": "dot-01-release-provenance",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-02-principal-credentials",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-03-durable-api-keys",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-04-truthful-tool-outcomes",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-05-stream-terminal-contract",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-06-fresh-process-resume",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-07-approval-recovery",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-08-durable-ingestion",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-09-idempotent-settlement",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-10-durable-budget-admission",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-11-supervisor-fencing",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-12-memory-isolation",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 3,
+              "total": 3
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-13-memory-controls",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-14-durable-schedules",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 3,
+              "total": 3
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-15-proactive-followups",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-16-assistant-capability-surface",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-18-a2a-conformance",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 2,
+              "total": 2
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-19-interactive-protocols",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 3,
+              "total": 3
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-20-safe-host-settings",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 3,
+              "total": 3
+            }
+          },
+          {
+            "type": "change",
+            "id": "dot-17-assistant-release-acceptance",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 3,
+              "total": 3
             }
           }
         ],

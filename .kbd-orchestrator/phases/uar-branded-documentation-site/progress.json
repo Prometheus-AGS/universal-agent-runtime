@@ -2,10 +2,10 @@
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 2482,
-  "derivedRevision": 2482,
+  "sourceRevision": 2668,
+  "derivedRevision": 2668,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2078,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2264,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -22,7 +22,7 @@
   "phase": "uar-branded-documentation-site",
   "phaseId": "uar-branded-documentation-site",
   "parentPhase": null,
-  "last_updated": "2026-09-16T18:44:15.929153Z",
+  "last_updated": "2026-10-11T21:47:19.875386Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 11,
   "changes_completed": 11,
@@ -34,6 +34,35 @@
       "completed": 11,
       "total": 11,
       "status": "COMPLETE"
+    },
+    "evidence": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "completionScopes": {
+    "completion": "phase",
+    "runCompletion": "run"
+  },
+  "runCompletion": {
+    "scope": "run",
+    "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 116,
+      "total": 146,
+      "status": "IN_PROGRESS"
     },
     "evidence": {
       "status": "IN_PROGRESS",

@@ -57,3 +57,17 @@ The runtime SHALL reject a tool set in which two non-identical descriptors share
 #### Scenario: Same tool on two servers
 - **WHEN** two MCP servers expose a tool with the same base name
 - **THEN** both are exposed under their server namespace and no duplicate entry appears in the tool list
+
+### Requirement: Tool execution preserves application and uncertain outcomes
+
+Tool outcomes SHALL distinguish success, application failure, transport failure and ambiguous external outcome. Unknown effects SHALL NOT advance success dependencies or be automatically replayed.
+
+#### Scenario: Application error
+
+- **WHEN** MCP returns isError=true inside a successful transport response
+- **THEN** ToolEnd, admission and durable receipts report application failure with original error content
+
+#### Scenario: Ambiguous external effect
+
+- **WHEN** transport ends after an effect may have occurred without definitive result
+- **THEN** outcome remains unknown, success dependencies stay blocked and automatic replay is prohibited

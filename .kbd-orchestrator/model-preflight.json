@@ -3,15 +3,30 @@
   "gateway": "http://localhost:4000/v1",
   "roles": {
     "judge": {
-      "model": "gpt-5.5",
-      "source": "/Users/gqadonis/.prometheus/kbd/models.toml"
+      "alias": "k3",
+      "identity": {
+        "providerConnectionId": "kimi-coding",
+        "providerId": "kimi",
+        "modelId": "k3"
+      },
+      "source": "env"
     },
     "critic": {
-      "model": "MiniMax-M3",
+      "alias": "MiniMax-M3",
+      "identity": {
+        "providerConnectionId": "minimax-direct",
+        "providerId": "minimax",
+        "modelId": "MiniMax-M3"
+      },
       "source": "/Users/gqadonis/.prometheus/kbd/models.toml"
     },
+    "backup": {
+      "alias": "",
+      "identity": null,
+      "source": "built-in-default"
+    },
     "generator": {
-      "model": "kbd-frontier",
+      "alias": "kbd-frontier",
       "source": "/Users/gqadonis/.prometheus/kbd/models.toml"
     }
   },
@@ -31,5 +46,5 @@
   "config_path": "/Users/gqadonis/.config/liter-llm/liter-llm-proxy.toml",
   "config_exists": true,
   "config_defects": [],
-  "checked_at": "2026-09-16T18:49:12Z"
+  "checked_at": "2026-10-12T23:07:13Z"
 }
