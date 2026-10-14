@@ -15,7 +15,7 @@ use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use super::claims::UserContext;
+use super::claims::{UserContext, VerifiedIdentity};
 
 /// Fixed maximum lifetime; a new runtime authority invalidates every old grant.
 pub const GRANT_TTL_SECONDS: u64 = 900;
@@ -133,6 +133,8 @@ impl DelegationGrantAuthority {
         {
             return Err("grant_scope_invalid");
         }
+        let identity = VerifiedIdentity::for_scoped_delegation(principal)
+            .map_err(|_| "principal_required")?;
         let mut bytes = [0_u8; 32];
         rand::fill(&mut bytes);
         let token = bytes
@@ -143,6 +145,7 @@ impl DelegationGrantAuthority {
         let expires_at = Utc::now() + chrono::Duration::seconds(GRANT_TTL_SECONDS as i64);
         // Delegate the captured principal without its launch/service host proof.
         let mut delegated_principal = principal.clone();
+        delegated_principal.authority = Some(identity);
         delegated_principal.host_authority = None;
         let mut records = self
             .records

@@ -57,6 +57,7 @@ impl CredentialKind {
 pub struct VerifiedIdentity {
     credential_kind: CredentialKind,
     api_key_id: Option<String>,
+    captured_principal: Option<CredentialPrincipal>,
     issuer: Option<String>,
     subject: String,
     tenant_id: Option<TenantId>,
@@ -65,7 +66,18 @@ pub struct VerifiedIdentity {
 
 impl VerifiedIdentity {
     pub(in crate::uar::security) fn new(issuer: Option<&str>, claims: &UserClaims, tenant_id: Option<TenantId>, credential_kind: CredentialKind) -> Self {
-        Self { credential_kind, api_key_id: None, issuer: issuer.map(str::to_owned), subject: claims.sub.clone(), tenant_id, roles: claims.roles.clone() }
+        Self { credential_kind, api_key_id: None, captured_principal: None, issuer: issuer.map(str::to_owned), subject: claims.sub.clone(), tenant_id, roles: claims.roles.clone() }
+    }
+
+    #[cfg(feature = "server")]
+    pub(in crate::uar::security) fn for_scoped_delegation(context: &UserContext) -> anyhow::Result<Self> {
+        let principal = CredentialPrincipal::from_verified_context(context)?;
+        if let Some(identity) = context.verified_identity() {
+            return Ok(identity.clone());
+        }
+        let mut identity = Self::new(None, &context.claims, context.tenant_id.clone(), CredentialKind::Unclassified);
+        identity.captured_principal = Some(principal);
+        Ok(identity)
     }
 
     pub(in crate::uar::security) fn with_api_key_id(mut self, id: Option<String>) -> Self {
@@ -189,6 +201,9 @@ impl CredentialPrincipal {
             anyhow::bail!("verified credential principal required");
         }
         if let Some(identity) = context.verified_identity() {
+            if let Some(principal) = &identity.captured_principal {
+                return Ok(principal.clone());
+            }
             let (issuer_kind, issuer) = match identity.issuer() {
                 Some(issuer) if !issuer.trim().is_empty() => ("issuer", issuer),
                 Some(_) => anyhow::bail!("verified credential issuer required"),

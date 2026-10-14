@@ -1744,3 +1744,7 @@ Passing R2/R7 targets must retain their original failed batch receipt, inventory
 ## 2026-10-14T08:40:38.803639+00:00 — Preserve the causal transaction error
 
 Dot memory-owner production gate failed both durable profiles at legacy import, but controlled-save error selection returned the lowest indexed SurrealDB transaction error. Pinned storage documents that early rows may be rollback NotExecuted placeholders; the substantive statement or COMMIT failure can appear later. Completed correction uses existing typed QueryError selection, without speculative history/migration changes. Memory metadata is flexible nested JSON; source analysis ruled out the proposed history RecordId payload cause. The actual functional failure remains unknown until the whole failed parent reports the causal error. Diagnostic completeness is not a passing product result.
+
+## 2026-10-14 — Removing scoped host privilege must retain captured owner identity
+
+Installed The Boss2.2.38 exposed fresh BossFang registration returning delegated_host_context_mismatch after consuming Dot main482c4180. ActorOwner now compares complete CredentialPrincipal, but grant issuance removed the sole local-host proof, yielding a different owner. Scoped VerifiedIdentity now retains the captured owner independently before host_authority is removed. Never restore host privilege or reduce owner equality to raw subject strings. Source review passed; rebuilt payload and installed consumer operation are recorded separately in preserve-scoped-delegation-principal.

@@ -1,0 +1,19 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "GPT-6 (harness-native; resolved provider/model identity unverified)",
+  "isolation_mode": "harness-native",
+  "producer_model": "unknown",
+  "cross_model_check": "unverified-producer-unknown",
+  "checked_classes": [
+    "Review scope: exact working-tree diff for src/uar/security/claims.rs and src/uar/security/delegation_grants.rs against preserve-scoped-delegation-principal proposal, design, tasks and spec; relevant ActorOwner, host_context, authentication middleware, sidecar guard and API-key policy callers inspected. No concrete defect identified in this scoped source review.",
+    "Source binding: claims.rs SHA-256 3191977671d89c1097af77b2972aa35d8439abbda25a4e9c3c665df533a700e3; delegation_grants.rs SHA-256 e95b0ffe242bacb56181b54fe091ccdd3696c0ca199c7d7a944e7af50175df1f.",
+    "Privilege escalation: issuance captures identity before clearing host_authority. The local-host fallback uses CredentialKind::Unclassified with no issuer or API-key identifier. trusted_host_id still requires matching HostAuthority; the grant cannot create HostAuthenticated and its token cannot access host-only issuance, revocation or delegated-context registration routes.",
+    "Issuer/tenant aliasing: CredentialPrincipal equality retains issuer_kind, issuer, tenant and subject. Local launch captures the existing local-host namespace instead of becoming local-jwt. Existing verified JWT/API-key proofs are cloned, preserving issuer, tenant, credential kind and key identifier. ActorOwner equality and host_context comparison remain intact.",
+    "Proof matching and caller replacement: for_scoped_delegation first requires CredentialPrincipal::from_verified_context to succeed. Retrieval of captured_principal occurs only through verified_identity, which matches user_id, claims.sub, verified tenant, claims tenant and roles. The outer sidecar guard authenticates the stored token and operation/workspace scope; middleware rejects caller principal headers without host authentication and retains the grant's stored identity.",
+    "Expiry/revocation/original scope: grant records remain process-local and use existing monotonic expiry. full_harness_grant still checks runtime epoch, operation and workspace, while host_context retains exact grant, owner, definition, binding and model comparisons and live-grant checks. This diff changes none of those checks.",
+    "Serialization and constructors: VerifiedIdentity and CredentialPrincipal have private fields and no Serialize/Deserialize implementations. The added captured field defaults to None in the sole VerifiedIdentity::new constructor; repository-wide Rust search found no other struct literals. The new constructor and its caller are both server-gated. Nested principal data introduces no recursive type. Compilation and supported-profile compatibility are not certified by source inspection.",
+    "Verification and isolation limits: no tests, Cargo commands, builds, GUI operations, commits, deployments or external writes were performed. Native builds and the installed Boss registration/prompt remain pending with the lead. This is an independent fresh-context harness-native fallback with a weaker same-family guarantee; distinct producer/judge identities were not verified and no cross-model certification is claimed."
+  ],
+  "findings": []
+}
