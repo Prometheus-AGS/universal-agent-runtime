@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-14T14:46:04.413Z",
+  "repairSource": "ac0970437096a1b935809bb90f48bfdd6d6421bd",
+  "codeStatus": "complete",
+  "nativePayloads": {
+    "run": 38571289891,
+    "result": "success",
+    "platforms": {
+      "darwin-arm64": {
+        "packaging": 38575305304,
+        "archiveSha256": "3104d30833c0a1e4c33f4f42a29f9e40e82c17e4c21f71500b8ac4cf6d2a27da"
+      },
+      "win32-x64": {
+        "packaging": 38577244578,
+        "archiveSha256": "38c189d42c864e1ad1ed4e554657ba45ffe35f3508bee3d53bdc5b5c341d37d4"
+      }
+    }
+  },
+  "consumer": {
+    "repository": "Prometheus-AGS/the-boss",
+    "source": "2a508b433db5dea80073b46fee34b8c549043056",
+    "version": "2.2.38",
+    "platform": "darwin-arm64",
+    "installed": "normal installed application",
+    "registration": "Dashboard, UAR execution, Models and Shared memory ready after clean start and whole-app restart",
+    "prompt": "Do not use tools. Reply with exactly UAR_AC097_READY.",
+    "response": "UAR_AC097_READY",
+    "streamingObserved": true,
+    "state": "completed",
+    "run": "6592dbb1-0887-47f1-a5be-6d14f1462ebe",
+    "evidence": "The Boss build/release-operation-2.2.38/operation.json"
+  },
+  "authority": {
+    "sourceReview": "review/native-findings.json; two-file source-bound independent native review PASS",
+    "hostPrivilege": "cleared in reviewed issuance source; capture remains non-host and subject/tenant/role checked",
+    "unchangedAdmission": "Exact complete owner, scope, expiry, epoch, definition and binding checks retained",
+    "negativeEffectMatrix": "not rerun or claimed"
+  },
+  "qualification": {
+    "affectedInstalledMacConsumer": "passed",
+    "nativeWindowsPackaging": "passed",
+    "installedWindowsConsumer": "pending",
+    "broaderDotConformance": "not claimed",
+    "originalPortfolioMarkers": "unchanged"
+  },
+  "handoff": "Immutable records suffix ac097043 consumed by the existing The Boss release workflow; consumer publication is recorded separately."
+}

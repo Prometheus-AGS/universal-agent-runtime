@@ -1,3 +1,6 @@
+## Purpose
+Preserve authenticated credential ownership when an installation host delegates scoped execution, while ensuring delegated callers do not acquire installation-level authority.
+
 ## ADDED Requirements
 
 ### Requirement: Delegation retains authenticated identity without host privilege
