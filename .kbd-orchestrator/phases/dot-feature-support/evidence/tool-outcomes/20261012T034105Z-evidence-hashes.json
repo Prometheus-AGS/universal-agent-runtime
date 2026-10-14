@@ -1,0 +1,156 @@
+{
+  "publicArtifacts": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-expected-inventory.json",
+      "sha256": "acab9788db611b1e37d899ebdaa8ca8ede93bddaf60af3d9e0d544ca342ad01a",
+      "bytes": 7424
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-failure-analysis.json",
+      "sha256": "3a0f1ed26760426ececbbfe7a4801da4368fcb6d2219c96a1358b4110a8010f2",
+      "bytes": 6455
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-fixture-correction.patch",
+      "sha256": "0fb986408102d4bb1efeaa0787e23c7145cfe639b9ea23e3db0edea56d15197a",
+      "bytes": 5149
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-local-activation-controls.json",
+      "sha256": "024b86c2ea36e1384d8eb6a6a4a439921bd219e0b84d27cb2f9819d6b432f171",
+      "bytes": 778
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-local-curated-binary-scenarios.json",
+      "sha256": "f3da8ee2a8e8972f2b49853d80d135ba5ba75902a130a4dc49945e2649609939",
+      "bytes": 16394
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-local-curated-peer-request-shapes.json",
+      "sha256": "5bc87af3ef3a86ae155f695bd33ea4dbe0f4a455afea7e4931405173c72b0c87",
+      "bytes": 11689
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-local-helper-18246.stderr.log",
+      "sha256": "4074b7bb1703ca57dc339224a0add7a6f8558ec4e9de4d2e9260a52408607f90",
+      "bytes": 596
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-local-helper-18246.stdout.log",
+      "sha256": "1b92b941a454a0cdff5a58716fae04aba97525682dba4bc4419510cfd99b2215",
+      "bytes": 270
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-local-receipts.json",
+      "sha256": "46115ce3dc1cf321a4b8f160dc1a7a6f024c0597acb853aae81f2b435b24e86f",
+      "bytes": 787
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-observed-correction.json",
+      "sha256": "0d38091896e85bfe5224ff2f34934cff58b74cd57769713d0eafe3b85ad5ca71",
+      "bytes": 7126
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-production-boundary.json",
+      "sha256": "c683c1d6094f51a4519af08836c74691931b823306593ecb2eeef1b12a6cb8c5",
+      "bytes": 66558
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-production-boundary.log",
+      "sha256": "c073cf0791a0284bc8a14e47c45bd634a92a3146ce87fcb1d0a52dc89e8d9cab",
+      "bytes": 12798
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-source-fingerprint-at-exit.json",
+      "sha256": "c5e60d8f829f101c7bcc65a236ad8181447db39616dbfebeba1555f6609ad9a1",
+      "bytes": 940772
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-source-fingerprint.json",
+      "sha256": "d0d3f913e652bcf6d10d89dddada31ef1a6043ba741aca9151cc7b0deb5fe777",
+      "bytes": 940772
+    }
+  ],
+  "privateArtifacts": [
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/source-snapshot.tar.gz",
+      "sha256": "7070dc7fb723588addd3e74c7a2d9e70c628b86dec33da3b643ca965e5234835",
+      "bytes": 71158232,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/receipt-path",
+      "sha256": "708356571ecf1b00f0c9042b6e9ed4885a5607832bfa6b91de675890e5833be6",
+      "bytes": 169,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/sampled-descendants.json",
+      "sha256": "c9b5a3a799a110f42b7b8a751c6bb1d0d6df89cc9da1da185bec06e28b8b7c50",
+      "bytes": 28875,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/source-before.json",
+      "sha256": "d0d3f913e652bcf6d10d89dddada31ef1a6043ba741aca9151cc7b0deb5fe777",
+      "bytes": 940772,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/dirty-source.patch",
+      "sha256": "cec4c3542e3a25160c06b9a2e85b306a08f8c58ce382e3b8e20a09d9e7e71bdb",
+      "bytes": 139099,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/task-refreeze.json",
+      "sha256": "c505060f8ac13f4a727a153e5b565c9a530d109a8ea5229b392e65afbc287f0c",
+      "bytes": 1920,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/correction.json",
+      "sha256": "a9045a78b93ae3cf517756b1273ae4b1396b244d362c5569318afb9ff441a2be",
+      "bytes": 4582,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/exact-thirteenth-to-reconciled.patch",
+      "sha256": "7e28e0ea7a78d4feab162232e785f53efe3f85aefb383b05012f6e5a67b46d47",
+      "bytes": 64411,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/expected-inventory.json",
+      "sha256": "acab9788db611b1e37d899ebdaa8ca8ede93bddaf60af3d9e0d544ca342ad01a",
+      "bytes": 7424,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/cargo-raw.log",
+      "sha256": "c073cf0791a0284bc8a14e47c45bd634a92a3146ce87fcb1d0a52dc89e8d9cab",
+      "bytes": 12798,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/owned-build-process-sample.json",
+      "sha256": "3f7dc7a94104ab64b2a0150a940d45a20a0b5f24d96307b8104703974237eaf8",
+      "bytes": 349,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/owned-build-76651-argv.log",
+      "sha256": "6b2eb2ff5d60a11dcded95d45b0470b967d987d3257dcc38b747b87324550010",
+      "bytes": 10,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/driver.py",
+      "sha256": "00628a8e5ca97bedb4a2469c31bceddcb8deaaf574c75d9cc84231c344611ff1",
+      "bytes": 17340,
+      "mode": "0o600"
+    }
+  ],
+  "privateRootMode": "0o700",
+  "task1Tier0PreservedSha256": "644fdd827eca59e24828c041594fdff5d5f334986d7b12fef66451012b26ee45"
+}

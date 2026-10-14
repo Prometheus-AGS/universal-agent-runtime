@@ -192,6 +192,9 @@ RUN set -eux; \
 # -----------------------------------------------------------------------------
 FROM toolchain AS builder
 
+ARG UAR_CARGO_BUILD_JOBS
+ARG UAR_CARGO_CACHE_KEY=default
+
 WORKDIR /src
 
 # Initialize submodules first so cargo's network step finds the vendored
@@ -212,22 +215,29 @@ RUN cd frontend \
     && pnpm build
 
 # Backend: cargo build (Linux drops the `metal` feature; uses surrealkv embedded).
-# The `kreuzberg` dep is an `ssh://git@github.com/...` cargo git dependency; the
-# build has no SSH key, so rewrite SSH→HTTPS using the mounted github_token
-# secret (BuildKit secret, never baked into a layer). Falls back to anonymous if
-# the secret is absent (works for public deps).
+# The current lockfile uses registry dependencies, including Kreuzberg. Retain
+# the optional github_token mount for private Git dependency compatibility.
+# Runtime-only Git configuration rewrites SSH to credential-free HTTPS URLs;
+# the GitHub-scoped helper reads the mount only on get and never stores secrets.
 RUN --mount=type=secret,id=github_token \
+    --mount=type=cache,id=uar-target-${RUST_TOOLCHAIN}-${TARGETARCH}-server-full-postgres-${UAR_CARGO_CACHE_KEY},target=/src/target,sharing=locked \
     if [ -s /run/secrets/github_token ]; then \
-      tok="$(cat /run/secrets/github_token)"; \
-      git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "ssh://git@github.com/"; \
-      git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "git@github.com:"; \
-      git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "https://github.com/"; \
+      export GIT_CONFIG_COUNT=4 \
+        GIT_CONFIG_KEY_0=url.https://github.com/.insteadOf \
+        GIT_CONFIG_VALUE_0=ssh://git@github.com/ \
+        GIT_CONFIG_KEY_1=url.https://github.com/.insteadOf \
+        GIT_CONFIG_VALUE_1=git@github.com: \
+        GIT_CONFIG_KEY_2=credential.helper \
+        GIT_CONFIG_VALUE_2= \
+        GIT_CONFIG_KEY_3=credential.https://github.com.helper \
+        GIT_CONFIG_VALUE_3='!f() { if [ "$1" = get ]; then printf "username=x-access-token\npassword="; cat /run/secrets/github_token || return; printf "\n"; fi; }; f'; \
     fi \
-    && CARGO_NET_GIT_FETCH_WITH_CLI=true cargo +"${RUST_TOOLCHAIN}" build --release \
+    && if [ -n "${UAR_CARGO_BUILD_JOBS}" ]; then export CARGO_BUILD_JOBS="${UAR_CARGO_BUILD_JOBS}"; fi \
+    && CARGO_NET_GIT_FETCH_WITH_CLI=true cargo +"${RUST_TOOLCHAIN}" build --release --locked \
         --features "server-full,postgres-backend" \
-        --bin universal-agent-runtime
-# (The token-bearing gitconfig lives only in this throwaway builder stage — the
-#  runtime image copies only /out/*, so the credential never ships.)
+        --bin universal-agent-runtime \
+    && mkdir -p /out/bin \
+    && cp target/release/universal-agent-runtime /out/bin/
 
 # AOT-precompile any shipped WASM component skills. The skill-system repo
 # doesn't ship .wasm files today; this loop is a no-op until authors add them,
@@ -242,7 +252,6 @@ RUN mkdir -p /out/skills/wasm-builtin \
 
 # Stage outputs that runtime needs.
 RUN mkdir -p /out/bin /out/static /out/skills/builtin \
-    && cp target/release/universal-agent-runtime /out/bin/ \
     && cp -R static/. /out/static/ \
     && cp -R crates/prometheus-skill-system/skills/. /out/skills/builtin/ \
     && cp -R src/uar/runtime/matching/models /out/models
@@ -267,12 +276,14 @@ ENV UAR_STATIC_DIR=/opt/uar/static \
     PNPM_STORE_DIR=/var/lib/uar/cache/pnpm
 
 COPY --from=builder /out/bin/universal-agent-runtime /usr/local/bin/universal-agent-runtime
-COPY --from=builder /out/static /opt/uar/static
-COPY --from=builder /out/skills /opt/uar/skills
-COPY --from=builder /out/models /opt/uar/models
+# Preserve restrictive source modes while making bundled assets readable by
+# the non-root runtime identity, including the mandatory governance policies.
+COPY --chown=65532:65532 --from=builder /out/static /opt/uar/static
+COPY --chown=65532:65532 --from=builder /out/skills /opt/uar/skills
+COPY --chown=65532:65532 --from=builder /out/models /opt/uar/models
 # Governed startup refuses to boot without a Cedar policy set; the engine
 # reads the relative "policies" directory, i.e. /opt/uar/policies.
-COPY --from=builder /src/policies /opt/uar/policies
+COPY --chown=65532:65532 --from=builder /src/policies /opt/uar/policies
 
 RUN mkdir -p /var/lib/uar/skills-user \
         /var/lib/uar/skills-derived \

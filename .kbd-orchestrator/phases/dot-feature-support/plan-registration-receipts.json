@@ -1,0 +1,245 @@
+[
+  {
+    "change": "dot-01-release-provenance",
+    "revision": 2597
+  },
+  {
+    "change": "dot-01-release-provenance",
+    "task": "1",
+    "revision": 2598
+  },
+  {
+    "change": "dot-01-release-provenance",
+    "task": "2",
+    "revision": 2599
+  },
+  {
+    "change": "dot-02-principal-credentials",
+    "revision": 2600
+  },
+  {
+    "change": "dot-02-principal-credentials",
+    "task": "1",
+    "revision": 2601
+  },
+  {
+    "change": "dot-02-principal-credentials",
+    "task": "2",
+    "revision": 2602
+  },
+  {
+    "change": "dot-03-durable-api-keys",
+    "revision": 2603
+  },
+  {
+    "change": "dot-03-durable-api-keys",
+    "task": "1",
+    "revision": 2604
+  },
+  {
+    "change": "dot-03-durable-api-keys",
+    "task": "2",
+    "revision": 2605
+  },
+  {
+    "change": "dot-04-truthful-tool-outcomes",
+    "revision": 2606
+  },
+  {
+    "change": "dot-04-truthful-tool-outcomes",
+    "task": "1",
+    "revision": 2607
+  },
+  {
+    "change": "dot-04-truthful-tool-outcomes",
+    "task": "2",
+    "revision": 2608
+  },
+  {
+    "change": "dot-05-stream-terminal-contract",
+    "revision": 2609
+  },
+  {
+    "change": "dot-05-stream-terminal-contract",
+    "task": "1",
+    "revision": 2610
+  },
+  {
+    "change": "dot-05-stream-terminal-contract",
+    "task": "2",
+    "revision": 2611
+  },
+  {
+    "change": "dot-06-fresh-process-resume",
+    "revision": 2612
+  },
+  {
+    "change": "dot-06-fresh-process-resume",
+    "task": "1",
+    "revision": 2613
+  },
+  {
+    "change": "dot-06-fresh-process-resume",
+    "task": "2",
+    "revision": 2614
+  },
+  {
+    "change": "dot-07-approval-recovery",
+    "revision": 2615
+  },
+  {
+    "change": "dot-07-approval-recovery",
+    "task": "1",
+    "revision": 2616
+  },
+  {
+    "change": "dot-07-approval-recovery",
+    "task": "2",
+    "revision": 2617
+  },
+  {
+    "change": "dot-08-durable-ingestion",
+    "revision": 2618
+  },
+  {
+    "change": "dot-08-durable-ingestion",
+    "task": "1",
+    "revision": 2619
+  },
+  {
+    "change": "dot-08-durable-ingestion",
+    "task": "2",
+    "revision": 2620
+  },
+  {
+    "change": "dot-09-idempotent-settlement",
+    "revision": 2621
+  },
+  {
+    "change": "dot-09-idempotent-settlement",
+    "task": "1",
+    "revision": 2622
+  },
+  {
+    "change": "dot-09-idempotent-settlement",
+    "task": "2",
+    "revision": 2623
+  },
+  {
+    "change": "dot-10-durable-budget-admission",
+    "revision": 2624
+  },
+  {
+    "change": "dot-10-durable-budget-admission",
+    "task": "1",
+    "revision": 2625
+  },
+  {
+    "change": "dot-10-durable-budget-admission",
+    "task": "2",
+    "revision": 2626
+  },
+  {
+    "change": "dot-11-supervisor-fencing",
+    "revision": 2627
+  },
+  {
+    "change": "dot-11-supervisor-fencing",
+    "task": "1",
+    "revision": 2628
+  },
+  {
+    "change": "dot-11-supervisor-fencing",
+    "task": "2",
+    "revision": 2629
+  },
+  {
+    "change": "dot-12-memory-isolation",
+    "revision": 2630
+  },
+  {
+    "change": "dot-12-memory-isolation",
+    "task": "1",
+    "revision": 2631
+  },
+  {
+    "change": "dot-12-memory-isolation",
+    "task": "2",
+    "revision": 2632
+  },
+  {
+    "change": "dot-13-memory-controls",
+    "revision": 2633
+  },
+  {
+    "change": "dot-13-memory-controls",
+    "task": "1",
+    "revision": 2634
+  },
+  {
+    "change": "dot-13-memory-controls",
+    "task": "2",
+    "revision": 2635
+  },
+  {
+    "change": "dot-14-durable-schedules",
+    "revision": 2636
+  },
+  {
+    "change": "dot-14-durable-schedules",
+    "task": "1",
+    "revision": 2637
+  },
+  {
+    "change": "dot-14-durable-schedules",
+    "task": "2",
+    "revision": 2638
+  },
+  {
+    "change": "dot-14-durable-schedules",
+    "task": "3",
+    "revision": 2639
+  },
+  {
+    "change": "dot-15-proactive-followups",
+    "revision": 2640
+  },
+  {
+    "change": "dot-15-proactive-followups",
+    "task": "1",
+    "revision": 2641
+  },
+  {
+    "change": "dot-15-proactive-followups",
+    "task": "2",
+    "revision": 2642
+  },
+  {
+    "change": "dot-16-assistant-capability-surface",
+    "revision": 2643
+  },
+  {
+    "change": "dot-16-assistant-capability-surface",
+    "task": "1",
+    "revision": 2644
+  },
+  {
+    "change": "dot-16-assistant-capability-surface",
+    "task": "2",
+    "revision": 2645
+  },
+  {
+    "change": "dot-17-assistant-release-acceptance",
+    "revision": 2646
+  },
+  {
+    "change": "dot-17-assistant-release-acceptance",
+    "task": "1",
+    "revision": 2647
+  },
+  {
+    "change": "dot-17-assistant-release-acceptance",
+    "task": "2",
+    "revision": 2648
+  }
+]

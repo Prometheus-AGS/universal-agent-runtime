@@ -1,3 +1,18 @@
+use crate::uar::persistence::knowledge_namespace::KnowledgeNamespace;
+#[path = "a2a_bindings/postgres.rs"]
+mod a2a_bindings;
+#[path = "agui_runs/postgres.rs"]
+mod agui_runs;
+#[path = "mcp_elicitations/postgres.rs"]
+mod mcp_elicitations;
+#[path = "accounting/postgres.rs"]
+mod accounting_records;
+#[path = "accounting_remote_grants/postgres.rs"]
+mod accounting_remote_grants;
+use crate::uar::persistence::accounting;
+#[path = "ingestion_records/postgres.rs"]
+mod ingestion_records;
+use crate::uar::persistence::ingestion_records::{IngestionJob, IngestionPublication};
 #[path = "approval_records/postgres.rs"]
 mod approval_records;
 use crate::uar::persistence::approval_decisions::ApprovalRecord;
@@ -67,6 +82,47 @@ async fn insert_agent_thread(
 
 #[async_trait]
 impl PersistenceLayer for PostgresProvider {
+    fn supports_durable_tool_receipts(&self) -> bool { true }
+    fn supports_durable_mcp_elicitations(&self) -> bool { true }
+    async fn create_mcp_elicitation(&self, row: &crate::uar::persistence::mcp_elicitations::McpElicitationRecord) -> Result<()> { mcp_elicitations::create(self,row).await }
+    async fn list_mcp_elicitations(&self, owner: &str, run: &str) -> Result<Vec<crate::uar::persistence::mcp_elicitations::McpElicitationRecord>> { mcp_elicitations::list(self,owner,run).await }
+    async fn compare_and_swap_mcp_elicitation(&self, before: &crate::uar::persistence::mcp_elicitations::McpElicitationRecord, after: &crate::uar::persistence::mcp_elicitations::McpElicitationRecord) -> Result<bool> { mcp_elicitations::transition(self,before,after).await }
+    fn supports_durable_agui_runs(&self) -> bool { true }
+    async fn create_agui_run(&self, row: &crate::uar::persistence::agui_runs::AguiRunBinding, previous: Option<&crate::uar::persistence::agui_runs::AguiRunBinding>) -> Result<bool> { agui_runs::create(self,row,previous).await }
+    async fn load_agui_run(&self, owner: &str, agent: &str, thread: &str, run: &str) -> Result<Option<crate::uar::persistence::agui_runs::AguiRunBinding>> { agui_runs::load(self,owner,agent,thread,run).await }
+    async fn list_agui_runs(&self, owner: &str, agent: &str, thread: &str) -> Result<Vec<crate::uar::persistence::agui_runs::AguiRunBinding>> { agui_runs::list(self,owner,agent,thread).await }
+    async fn compare_and_swap_agui_run(&self, before: &crate::uar::persistence::agui_runs::AguiRunBinding, after: &crate::uar::persistence::agui_runs::AguiRunBinding) -> Result<bool> { agui_runs::transition(self,before,after).await }
+    async fn bind_accounting_delegation(&self, link: &accounting::AccountingDelegation) -> Result<()> { accounting_records::bind_delegation(self,link).await }
+    async fn get_accounting_delegation(&self, digest: &str) -> Result<Option<accounting::AccountingCall>> { accounting_records::delegation(self,digest).await }
+
+    fn supports_durable_a2a_bindings(&self) -> bool { true }
+    async fn create_a2a_binding(&self, record: &crate::uar::api::a2a::durable::A2aBinding) -> Result<bool> { a2a_bindings::create(self, record).await }
+    async fn load_a2a_binding(&self, owner: &str, agent: &str, task: &str) -> Result<Option<crate::uar::api::a2a::durable::A2aBinding>> { a2a_bindings::load(self, owner, agent, task).await }
+    async fn compare_and_swap_a2a_binding(&self, before: &crate::uar::api::a2a::durable::A2aBinding, after: &crate::uar::api::a2a::durable::A2aBinding) -> Result<bool> { a2a_bindings::transition(self, before, after).await }
+    async fn list_a2a_bindings(&self, owner: &str, agent: &str) -> Result<Vec<crate::uar::api::a2a::durable::A2aBinding>> { a2a_bindings::list(self, owner, agent).await }
+
+    fn supports_durable_accounting(&self) -> bool { true }
+    async fn admit_remote_grant(&self, owner: &str, accounting_id: &str,
+        grant: &crate::uar::api::a2a::contract::UarUsageGrant,
+        activity: accounting::RemoteGrantActivity) -> Result<accounting::RemoteGrantState> {
+        accounting_remote_grants::admit(self, owner, accounting_id, grant, activity).await
+    }
+    async fn ensure_accounting_scope(&self, id: &accounting::ScopeIdentity, limits: &accounting::ScopeLimits) -> Result<accounting::AccountingScope> { accounting_records::ensure(self,id,limits).await }
+    async fn get_accounting_scope(&self, id: &accounting::ScopeIdentity) -> Result<Option<accounting::AccountingScope>> { accounting_records::scope(self,id).await }
+    async fn update_accounting_scope(&self, change: &accounting::ScopeUpdate) -> Result<accounting::AccountingScope> { accounting_records::update(self,change).await }
+    async fn admit_accounting_call(&self, admission: &accounting::CallAdmission) -> Result<accounting::AccountingCall> { accounting_records::admit(self,admission).await }
+    async fn record_accounting_usage(&self, usage: &accounting::CallUsage) -> Result<accounting::AccountingCall> { accounting_records::usage(self,usage).await }
+    async fn list_accounting_calls(&self, owner: &str, run: &str) -> Result<Vec<accounting::AccountingCall>> { accounting_records::list(self,owner,run).await }
+
+    fn supports_durable_ingestion(&self) -> bool { true }
+    async fn accept_ingestion(&self, document: &KnowledgeDocument, source: &[u8]) -> Result<IngestionJob> { ingestion_records::accept(self, document, source).await }
+    async fn discover_ingestion(&self, limit: usize) -> Result<Vec<IngestionJob>> { ingestion_records::discover(self, limit).await }
+    async fn get_ingestion_job(&self, owner: &str, document: &str) -> Result<Option<IngestionJob>> { ingestion_records::get(self, owner, document).await }
+    async fn get_ingestion_source(&self, job: &IngestionJob) -> Result<Option<Vec<u8>>> { ingestion_records::source(self, job).await }
+    async fn transition_ingestion(&self, before: &IngestionJob, after: &IngestionJob) -> Result<bool> { ingestion_records::transition(self, before, after).await }
+    async fn publish_ingestion(&self, job: &IngestionJob, publication: &IngestionPublication) -> Result<()> { ingestion_records::publish(self, job, publication).await }
+    async fn reconcile_ingestion(&self) -> Result<()> { ingestion_records::reconcile(self).await }
+
     fn supports_durable_approvals(&self) -> bool { true }
     async fn create_approval_record(&self, record: &ApprovalRecord) -> Result<()> { approval_records::create(self, record).await }
     async fn transition_approval_record(&self, before: &ApprovalRecord, after: &ApprovalRecord) -> Result<bool> { approval_records::transition(self, before, after).await }
@@ -450,7 +506,7 @@ impl PersistenceLayer for PostgresProvider {
     }
 
     async fn save_session(&self, session: &Session) -> Result<()> {
-        let id = crate::uar::persistence::tenant_storage_key(session.owner_id(), session.id());
+        let id = crate::uar::persistence::session_storage_key(session.owner_id(), session.id());
         // Serialize session to JSON
         let data = serde_json::to_value(session)?;
 
@@ -472,7 +528,7 @@ impl PersistenceLayer for PostgresProvider {
     }
 
     async fn load_session(&self, owner_id: &str, id: &str) -> Result<Option<Session>> {
-        let storage_id = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        let storage_id = crate::uar::persistence::session_storage_key(owner_id, id);
         let row = sqlx::query("SELECT data FROM sessions WHERE id = $1")
             .bind(&storage_id)
             .fetch_optional(&self.pool)
@@ -481,6 +537,7 @@ impl PersistenceLayer for PostgresProvider {
         if let Some(row) = row {
             let val: serde_json::Value = row.try_get("data")?;
             let session: Session = serde_json::from_value(val)?;
+            anyhow::ensure!(session.owner_id() == owner_id && session.id() == id, "Session partition mismatch");
             Ok(Some(session))
         } else if owner_id == crate::session::ANONYMOUS_SESSION_OWNER {
             let legacy = sqlx::query("SELECT data FROM sessions WHERE id = $1")
@@ -492,6 +549,7 @@ impl PersistenceLayer for PostgresProvider {
             };
             let val: serde_json::Value = legacy.try_get("data")?;
             let session: Session = serde_json::from_value(val)?;
+            if session.owner_id() != crate::session::ANONYMOUS_SESSION_OWNER || session.id() != id { return Ok(None); }
             self.save_session(&session).await?;
             sqlx::query("DELETE FROM sessions WHERE id = $1")
                 .bind(id)
@@ -504,7 +562,8 @@ impl PersistenceLayer for PostgresProvider {
     }
 
     async fn delete_session(&self, owner_id: &str, id: &str) -> Result<bool> {
-        let storage_id = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        if self.load_session(owner_id, id).await?.is_none() { return Ok(false); }
+        let storage_id = crate::uar::persistence::session_storage_key(owner_id, id);
         let mut tx = self.pool.begin().await?;
 
         // Delete the session itself
@@ -515,25 +574,19 @@ impl PersistenceLayer for PostgresProvider {
         let existed = result.rows_affected() > 0;
 
         // Cascade: conversation policy (conversation_id often matches session_id)
-        sqlx::query("DELETE FROM conversation_policies WHERE owner_id = $1 AND conversation_id = $2")
+        let policy_delete = if owner_id == crate::session::ANONYMOUS_SESSION_OWNER {
+            "DELETE FROM conversation_policies WHERE owner_id = $1 AND conversation_id = $2"
+        } else {
+            "DELETE FROM principal_conversation_policies WHERE owner_id = $1 AND conversation_id = $2"
+        };
+        sqlx::query(policy_delete)
             .bind(owner_id)
             .bind(id)
             .execute(&mut *tx)
             .await?;
 
-        // Cascade: cost ledger entries scoped to this session
-        sqlx::query("DELETE FROM cost_ledger WHERE scope = 'session' AND scope_id = $1")
-            .bind(id)
-            .execute(&mut *tx)
-            .await?;
-
-        // Cascade: tool admission evidence for this owner
-        // We cannot easily filter by session since the table uses run_id, not session_id.
-        // However, we can safely leave orphaned evidence — it is inert without a session.
-        // For full erasure, delete all evidence for this owner that references runs
-        // belonging to this session. Since we don't have a run→session mapping in SQL,
-        // we skip this cascade for Postgres (evidence is owner-scoped audit data).
-
+        // Cost/accounting and admission evidence remain host lifecycle-owned;
+        // a session ID does not carry authority over those independent records.
         tx.commit().await?;
         Ok(existed)
     }
@@ -839,10 +892,10 @@ impl PersistenceLayer for PostgresProvider {
     }
 
     async fn save_knowledge_base(&self, kb: &KnowledgeBase) -> Result<()> {
+        let namespace = KnowledgeNamespace::for_owner(&kb.owner_id)?;
         let config = serde_json::to_value(&kb.config)?;
 
-        sqlx::query(
-            r"
+        sqlx::query(&namespace.query(r"
             INSERT INTO knowledge_bases (id, owner_id, name, description, config, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
             ON CONFLICT (owner_id, id) DO UPDATE SET
@@ -850,8 +903,7 @@ impl PersistenceLayer for PostgresProvider {
                 description = EXCLUDED.description,
                 config = EXCLUDED.config,
                 updated_at = NOW()
-            ",
-        )
+            "))
         .bind(&kb.id)
         .bind(&kb.owner_id)
         .bind(&kb.name)
@@ -863,11 +915,11 @@ impl PersistenceLayer for PostgresProvider {
     }
 
     async fn save_chunk(&self, chunk: &KnowledgeChunk) -> Result<()> {
+        let namespace = KnowledgeNamespace::for_owner(&chunk.owner_id)?;
         let embedding_vector = Vector::from(chunk.embedding.clone());
         let metadata = serde_json::to_value(&chunk.metadata)?;
 
-        sqlx::query(
-            r"
+        sqlx::query(&namespace.query(r"
             INSERT INTO knowledge_chunks (id, owner_id, kb_id, document_id, content, metadata, embedding, created_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
             ON CONFLICT (owner_id, id) DO UPDATE SET
@@ -876,8 +928,7 @@ impl PersistenceLayer for PostgresProvider {
                 content = EXCLUDED.content,
                 metadata = EXCLUDED.metadata,
                 embedding = EXCLUDED.embedding
-            ",
-        )
+            "))
         .bind(chunk.id)
         .bind(&chunk.owner_id)
         .bind(&chunk.kb_id)
@@ -897,20 +948,19 @@ impl PersistenceLayer for PostgresProvider {
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
         let embedding_vector = Vector::from(query_vec.to_vec());
         let limit_i64 =
             i64::try_from(limit).map_err(|err| anyhow::anyhow!("limit exceeds i64: {err}"))?;
         let min_score_f64 = f64::from(min_score);
 
-        let rows = sqlx::query(
-            r"
+        let rows = sqlx::query(&namespace.query(r"
             SELECT id, owner_id, kb_id, content, metadata, created_at, 1 - (embedding <=> $1) as score
             FROM knowledge_chunks
             WHERE owner_id = $4 AND 1 - (embedding <=> $1) >= $3
             ORDER BY embedding <=> $1
             LIMIT $2
-            ",
-        )
+            "))
         .bind(embedding_vector) // $1
         .bind(limit_i64) // $2
         .bind(min_score_f64) // $3
@@ -1103,9 +1153,8 @@ impl PersistenceLayer for PostgresProvider {
     // =========================================================================
 
     async fn get_knowledge_base(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeBase>> {
-        let row = sqlx::query(
-            "SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 AND id = $2",
-        )
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let row = sqlx::query(&namespace.query("SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 AND id = $2"))
         .bind(owner_id)
         .bind(id)
         .fetch_optional(&self.pool)
@@ -1140,9 +1189,8 @@ impl PersistenceLayer for PostgresProvider {
         owner_id: &str,
         name: &str,
     ) -> Result<Option<KnowledgeBase>> {
-        let row = sqlx::query(
-            "SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 AND name = $2",
-        )
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let row = sqlx::query(&namespace.query("SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 AND name = $2"))
         .bind(owner_id)
         .bind(name)
         .fetch_optional(&self.pool)
@@ -1173,9 +1221,8 @@ impl PersistenceLayer for PostgresProvider {
     }
 
     async fn list_knowledge_bases(&self, owner_id: &str) -> Result<Vec<KnowledgeBase>> {
-        let rows = sqlx::query(
-            "SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 ORDER BY created_at",
-        )
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let rows = sqlx::query(&namespace.query("SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 ORDER BY created_at"))
         .bind(owner_id)
         .fetch_all(&self.pool)
         .await?;
@@ -1205,8 +1252,9 @@ impl PersistenceLayer for PostgresProvider {
     }
 
     async fn delete_knowledge_base(&self, owner_id: &str, id: &str) -> Result<()> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
         // CASCADE will handle chunks and documents
-        sqlx::query("DELETE FROM knowledge_bases WHERE owner_id = $1 AND id = $2")
+        sqlx::query(&namespace.query("DELETE FROM knowledge_bases WHERE owner_id = $1 AND id = $2"))
             .bind(owner_id)
             .bind(id)
             .execute(&self.pool)
@@ -1226,6 +1274,7 @@ impl PersistenceLayer for PostgresProvider {
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
         if kb_ids.is_empty() {
             return Ok(vec![]);
         }
@@ -1236,15 +1285,13 @@ impl PersistenceLayer for PostgresProvider {
         let min_score_f64 = f64::from(min_score);
         let kb_ids_vec: Vec<String> = kb_ids.iter().copied().map(str::to_string).collect();
 
-        let rows = sqlx::query(
-            r"
+        let rows = sqlx::query(&namespace.query(r"
             SELECT id, owner_id, kb_id, document_id, content, metadata, created_at, 1 - (embedding <=> $1) as score
             FROM knowledge_chunks
             WHERE owner_id = $5 AND kb_id = ANY($4) AND 1 - (embedding <=> $1) >= $3
             ORDER BY embedding <=> $1
             LIMIT $2
-            ",
-        )
+            "))
         .bind(embedding_vector)
         .bind(limit_i64)
         .bind(min_score_f64)
@@ -1289,6 +1336,7 @@ impl PersistenceLayer for PostgresProvider {
     // =========================================================================
 
     async fn save_document(&self, doc: &KnowledgeDocument) -> Result<()> {
+        let namespace = KnowledgeNamespace::for_owner(&doc.owner_id)?;
         let status_str = match &doc.status {
             DocumentStatus::Pending => "pending",
             DocumentStatus::Processing => "processing",
@@ -1300,8 +1348,7 @@ impl PersistenceLayer for PostgresProvider {
             _ => None,
         };
 
-        sqlx::query(
-            r"
+        sqlx::query(&namespace.query(r"
             INSERT INTO knowledge_documents (id, owner_id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
             ON CONFLICT (owner_id, id) DO UPDATE SET
@@ -1313,8 +1360,7 @@ impl PersistenceLayer for PostgresProvider {
                 status = EXCLUDED.status,
                 error_message = EXCLUDED.error_message,
                 updated_at = NOW()
-            ",
-        )
+            "))
         .bind(&doc.id)
         .bind(&doc.owner_id)
         .bind(&doc.kb_id)
@@ -1333,9 +1379,8 @@ impl PersistenceLayer for PostgresProvider {
     }
 
     async fn get_document(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeDocument>> {
-        let row = sqlx::query(
-            "SELECT id, owner_id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at FROM knowledge_documents WHERE owner_id = $1 AND id = $2",
-        )
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let row = sqlx::query(&namespace.query("SELECT id, owner_id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at FROM knowledge_documents WHERE owner_id = $1 AND id = $2"))
         .bind(owner_id)
         .bind(id)
         .fetch_optional(&self.pool)
@@ -1382,9 +1427,8 @@ impl PersistenceLayer for PostgresProvider {
     }
 
     async fn list_documents(&self, owner_id: &str, kb_id: &str) -> Result<Vec<KnowledgeDocument>> {
-        let rows = sqlx::query(
-            "SELECT id, owner_id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at FROM knowledge_documents WHERE owner_id = $1 AND kb_id = $2 ORDER BY created_at",
-        )
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let rows = sqlx::query(&namespace.query("SELECT id, owner_id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at FROM knowledge_documents WHERE owner_id = $1 AND kb_id = $2 ORDER BY created_at"))
         .bind(owner_id)
         .bind(kb_id)
         .fetch_all(&self.pool)
@@ -1431,9 +1475,8 @@ impl PersistenceLayer for PostgresProvider {
     }
 
     async fn count_documents(&self, owner_id: &str, kb_id: &str) -> Result<usize> {
-        let row = sqlx::query(
-            "SELECT COUNT(*)::bigint AS c FROM knowledge_documents WHERE owner_id = $1 AND kb_id = $2",
-        )
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let row = sqlx::query(&namespace.query("SELECT COUNT(*)::bigint AS c FROM knowledge_documents WHERE owner_id = $1 AND kb_id = $2"))
                 .bind(owner_id)
                 .bind(kb_id)
                 .fetch_one(&self.pool)
@@ -1448,6 +1491,7 @@ impl PersistenceLayer for PostgresProvider {
         doc_id: &str,
         status: &DocumentStatus,
     ) -> Result<()> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
         let status_str = match status {
             DocumentStatus::Pending => "pending",
             DocumentStatus::Processing => "processing",
@@ -1459,9 +1503,7 @@ impl PersistenceLayer for PostgresProvider {
             _ => None,
         };
 
-        sqlx::query(
-            "UPDATE knowledge_documents SET status = $1, error_message = $2, updated_at = NOW() WHERE owner_id = $3 AND id = $4",
-        )
+        sqlx::query(&namespace.query("UPDATE knowledge_documents SET status = $1, error_message = $2, updated_at = NOW() WHERE owner_id = $3 AND id = $4"))
         .bind(status_str)
         .bind(error_msg)
         .bind(owner_id)
@@ -1472,20 +1514,10 @@ impl PersistenceLayer for PostgresProvider {
     }
 
     async fn delete_document(&self, owner_id: &str, doc_id: &str) -> Result<()> {
-        // Delete associated chunks first
-        sqlx::query("DELETE FROM knowledge_chunks WHERE owner_id = $1 AND document_id = $2")
-            .bind(owner_id)
-            .bind(doc_id)
-            .execute(&self.pool)
-            .await?;
-
-        // Delete the document
-        sqlx::query("DELETE FROM knowledge_documents WHERE owner_id = $1 AND id = $2")
-            .bind(owner_id)
-            .bind(doc_id)
-            .execute(&self.pool)
-            .await?;
-
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        // The composite foreign keys revoke source/job/chunks in this same transaction.
+        sqlx::query(&namespace.query("DELETE FROM knowledge_documents WHERE owner_id = $1 AND id = $2"))
+            .bind(owner_id).bind(doc_id).execute(&self.pool).await?;
         Ok(())
     }
 

@@ -1,0 +1,27 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "gpt-6.1-sol",
+  "producer_model": "unknown",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "unverified-producer-unknown",
+  "findings": [],
+  "judge_identity": {
+    "providerConnectionId": "openai-proxy-8181",
+    "providerId": "openai",
+    "modelId": "gpt-6.1-sol"
+  },
+  "checked_classes": [
+    "Missing goal coverage \u2014 All six assistant capabilities are mapped to existing components and remaining gaps; goals 4\u201312 are addressed by R1\u2013R9, and the remaining process, preservation, provenance, and verification goals are covered in dedicated sections.",
+    "Unsupported or contradicted codebase claims \u2014 The cited source locations fall within directories present in the supplied tree. The tree does not expose their contents, so it establishes no contradiction with the source-level findings. Runtime reproduction, publication, callback routing, and dependency-pin limitations are explicitly identified rather than presented as verified outcomes.",
+    "Vague findings that cannot drive planning \u2014 R2\u2013R9 identify specific failure mechanisms, affected source locations, and concrete candidate acceptance conditions. Scheduling, follow-up, and memory gaps identify the contracts that Analyze must resolve.",
+    "Goals merely restated as findings \u2014 The assessment distinguishes existing machinery from missing end-to-end guarantees, including observer polling versus durable scheduling, durable approval records versus executable continuation, and team reservations versus aggregate budget enforcement.",
+    "Recommendations contradicting supplied goals or constraints \u2014 No project constraints were supplied. The assessment preserves the stated authority and fencing boundaries, separates publication from runtime verification, requires local product verification, and calls for OpenSpec deltas rather than treating the supplied review as an approved implementation plan.",
+    "Unacknowledged evidence or baseline limitations \u2014 The assessment records the baseline transition, pending release evidence, lack of runtime reproduction, exact-pin mismatch, bounded scheduling search, and incomplete historical recall as unresolved limitations for downstream work."
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

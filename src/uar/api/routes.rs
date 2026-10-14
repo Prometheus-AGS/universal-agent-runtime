@@ -958,40 +958,81 @@ struct ToolApprovalRequest {
     approved: bool,
     #[serde(default)]
     approval_id: Option<String>,
+    /// Resource renewal only; call bytes and history come from protected storage.
+    #[serde(default)]
+    resume: Option<ResumeRequest>,
 }
 
 /// POST /api/uar/runs/{run_id}/tool-approval
 ///
 /// Submit an approval or rejection decision for a pending tool call.
-/// Returns 200 OK if the decision was delivered, 404 if no pending approval exists.
+/// Fresh recovery renews resources through current checkpoint admission. A
+/// continuation admission response does not assert a committed tool effect.
 async fn api_tool_approval(
-    State(RunManagerState(manager)): State<RunManagerState>,
+    State(state): State<Arc<RunApiState>>,
     Extension(user): Extension<UserContext>,
+    credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
+    headers: HeaderMap,
     Path(run_id): Path<String>,
     Json(body): Json<ToolApprovalRequest>,
-) -> impl IntoResponse {
-    if manager.get_run_for_context(&user, &run_id).await.is_none() {
-        return (
-            StatusCode::NOT_FOUND,
-            Json(serde_json::json!({ "resolved": false })),
-        );
-    }
+) -> axum::response::Response {
+    let manager = &state.manager;
     let Some(approval_id) = body.approval_id.as_deref().filter(|id| !id.trim().is_empty()) else {
         return (StatusCode::BAD_REQUEST, Json(serde_json::json!({
             "resolved": false, "error": "approval_id_required",
             "message": "Submit the approval_id from the originating approval event or pending snapshot"
-        })));
+        }))).into_response();
     };
+    if manager.get_run_for_context(&user, &run_id).await.is_none() {
+        let workspace = headers.get("x-uar-workspace-id").and_then(|value| value.to_str().ok());
+        if manager.approval_records_for_context(&user, &run_id, workspace).await.is_err() {
+            return (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({"resolved":false,"code":"approval_history_unavailable"}))).into_response();
+        }
+        let record = match manager.approval_recovery_record(&user, &run_id, approval_id, workspace).await {
+            Ok(Some(record)) => record,
+            Ok(None) => return (StatusCode::NOT_FOUND, Json(serde_json::json!({"resolved":false}))).into_response(),
+            Err(_) => return (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({"resolved":false,"code":"approval_persistence_unavailable"}))).into_response(),
+        };
+        use crate::uar::persistence::approval_decisions::ApprovalState;
+        if record.state != ApprovalState::Pending {
+            return (StatusCode::CONFLICT, Json(serde_json::json!({"resolved":false,"code":"approval_not_pending","record":record}))).into_response();
+        }
+        if !body.approved {
+            return match manager.deny_recovered_approval(&record).await {
+                Ok(true) => (StatusCode::OK, Json(serde_json::json!({"resolved":true,"decision":"deny"}))).into_response(),
+                Ok(false) => (StatusCode::CONFLICT, Json(serde_json::json!({"resolved":false,"code":"approval_not_pending"}))).into_response(),
+                Err(_) => (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({"resolved":false,"code":"approval_persistence_unavailable"}))).into_response(),
+            };
+        }
+        let Some(continuation) = &record.continuation else {
+            if manager.finish_recovered_approval(&record, ApprovalState::Invalidated).await.is_err() {
+                return (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({"resolved":false,"code":"approval_persistence_unavailable"}))).into_response();
+            }
+            return (StatusCode::CONFLICT, Json(serde_json::json!({"resolved":false,"code":"approval_continuation_unavailable"}))).into_response();
+        };
+        let checkpoint_id = continuation.checkpoint_id.clone();
+        let req = match body.resume {
+            Some(req) => req,
+            None => match serde_json::from_value(serde_json::json!({})) {
+                Ok(req) => req,
+                Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"resolved":false,"code":"approval_resume_required"}))).into_response(),
+            },
+        };
+        if req.input.is_some() {
+            return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"resolved":false,"code":"approval_resume_input_invalid"}))).into_response();
+        }
+        return resume_checkpoint(state, user, credential_capture, run_id, checkpoint_id, req, Some(record)).await;
+    }
     match manager.resolve_approval_record(&run_id, Some(approval_id), body.approved).await {
         Ok(Some((record, delivered))) => (StatusCode::OK, Json(serde_json::json!({
             "resolved": delivered, "decision": if body.approved { "allow" } else { "deny" },
-            "record": crate::uar::persistence::approval_decisions::ApprovalRecordView { record, resolvable: false },
+            "record": crate::uar::persistence::approval_decisions::ApprovalRecordView { record, resolvable: false, recovery_available: false },
         }))),
         Ok(None) => (StatusCode::NOT_FOUND, Json(serde_json::json!({ "resolved": false }))),
         Err(_) => (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({
             "resolved": false, "code": "approval_persistence_unavailable",
         }))),
-    }
+    }.into_response()
 }
 
 /// Owner-scoped history remains readable after the live run leaves memory.
@@ -1012,19 +1053,25 @@ async fn api_approval_records(
 
 /// GET /api/uar/runs/{run_id}/tool-approval/pending
 ///
-/// Replays the owner-scoped live waiter with its stable approval identity and
-/// original stream cursor. It never creates a new waiter.
+/// Replays the owner-scoped live waiter or reads its durable recovery record.
+/// A read never creates a new waiter or execution authority.
 async fn api_pending_tool_approval(
     State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
     Path(run_id): Path<String>,
-) -> impl IntoResponse {
+) -> axum::response::Response {
     if manager.get_run_for_context(&user, &run_id).await.is_none() {
-        return Json(serde_json::json!({
-            "version": 1,
-            "runId": run_id,
-            "pending": null,
-        }));
+        let workspace = headers.get("x-uar-workspace-id").and_then(|value| value.to_str().ok());
+        return match manager.approval_records_for_context(&user, &run_id, workspace).await {
+            Ok((durable, records)) => {
+                let pending = records.into_iter().find(|view| view.record.state == crate::uar::persistence::approval_decisions::ApprovalState::Pending)
+                    .map(|view| serde_json::json!({"version":1,"approvalId":view.record.challenge_id,
+                        "record":view.record,"resolvable":view.resolvable,"recoveryAvailable":view.recovery_available}));
+                Json(serde_json::json!({"version":1,"runId":run_id,"durable":durable,"pending":pending})).into_response()
+            }
+            Err(_) => (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({"code":"approval_history_unavailable"}))).into_response(),
+        };
     }
     let pending = manager
         .pending_approval_for_user(&user.user_id, &run_id)
@@ -1033,7 +1080,7 @@ async fn api_pending_tool_approval(
         "version": 1,
         "runId": run_id,
         "pending": pending,
-    }))
+    })).into_response()
 }
 
 /// GET /api/uar/runs/{run_id}/tool-admission-evidence
@@ -1045,6 +1092,15 @@ async fn api_tool_admission_evidence(
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
+    if manager.get_run_for_context(&user, &run_id).await.is_none() {
+        let Ok(owner) = user.session_owner_key() else { return StatusCode::UNAUTHORIZED.into_response(); };
+        let Some(store) = &manager.persistence else { return StatusCode::NOT_FOUND.into_response(); };
+        match store.list_checkpoint_resumes(&owner, &run_id).await {
+            Ok(records) if !records.is_empty() => {},
+            Ok(_) => return StatusCode::NOT_FOUND.into_response(),
+            Err(_) => return StatusCode::SERVICE_UNAVAILABLE.into_response(),
+        }
+    }
     match manager
         .tool_admission_evidence_for_user(&user.user_id, &run_id)
         .await
@@ -1066,7 +1122,7 @@ async fn api_tool_admission_evidence(
                 "error": "Tool admission evidence could not be read; check the configured persistence service",
             })),
         ),
-    }
+    }.into_response()
 }
 
 /// POST /api/uar/runs/{run_id}/cancel
@@ -1139,44 +1195,65 @@ async fn api_cancel_session_run(
 struct CheckpointListResponse {
     run_id: String,
     checkpoints: Vec<Checkpoint>,
+    execution_restorable: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    unavailable_reason: Option<&'static str>,
 }
 
 /// GET /api/uar/runs/{run_id}/checkpoints
 ///
 /// List all persisted checkpoints for a run, ordered by creation time.
 /// Returns 503 if no persistence layer is configured.
+fn checkpoint_resume_api_error(error: anyhow::Error) -> RunApiError {
+    if error.downcast_ref::<crate::uar::persistence::approval_decisions::ApprovalRecoveryError>().is_some() {
+        return RunApiError { status: StatusCode::SERVICE_UNAVAILABLE, code: "approval_persistence_unavailable",
+            message: "Recovered approval state could not be durably confirmed; its continuation claim remains held".into() };
+    }
+    use crate::uar::persistence::checkpoint_resume::CheckpointResumeError;
+    let (status, code, message) = match error.downcast_ref::<CheckpointResumeError>() {
+        Some(CheckpointResumeError::Unsupported) => (StatusCode::SERVICE_UNAVAILABLE, "checkpoint_resume_unsupported", "Durable checkpoint resume is unavailable"),
+        Some(CheckpointResumeError::PredecessorUncertain) => (StatusCode::CONFLICT, "checkpoint_predecessor_uncertain", "Predecessor execution and effects have not been safely excluded"),
+        Some(CheckpointResumeError::Conflict) => (StatusCode::CONFLICT, "checkpoint_resume_conflict", "This source run already has a continuation claim"),
+        Some(CheckpointResumeError::ExecutorClosed) => (StatusCode::CONFLICT, "checkpoint_executor_closed", "The executor is closed"),
+        Some(CheckpointResumeError::AdmissionDenied) => (StatusCode::CONFLICT, "checkpoint_admission_denied", "Current checkpoint authority did not admit execution"),
+        Some(CheckpointResumeError::ExecutionUnavailable) => (StatusCode::CONFLICT, "checkpoint_execution_unavailable", "The captured host execution definition cannot be reconstructed"),
+        Some(CheckpointResumeError::Invalid) => (StatusCode::CONFLICT, "checkpoint_resume_invalid", "Protected checkpoint metadata does not match the request"),
+        None => (StatusCode::CONFLICT, "checkpoint_resume_unavailable", "Checkpoint persistence or current admission could not be confirmed"),
+    };
+    RunApiError { status, code, message: message.to_owned() }
+}
+
 async fn list_checkpoints(
     State(RunManagerState(manager)): State<RunManagerState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
-    if manager.get_run_for_context(&user, &run_id).await.is_none() {
+    let owner = match crate::uar::security::claims::CredentialPrincipal::from_verified_context(&user) {
+        Ok(owner) => owner.storage_key(),
+        Err(_) => return principal_invalid().into_response(),
+    };
+    let Some(db) = &manager.persistence else {
+        return checkpoint_resume_api_error(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into()).into_response();
+    };
+    let envelopes = match db.list_checkpoint_resumes(&owner, &run_id).await {
+        Ok(envelopes) => envelopes,
+        Err(error) => return checkpoint_resume_api_error(error).into_response(),
+    };
+    if envelopes.is_empty() && manager.get_run_for_context(&user, &run_id).await.is_none() {
         return StatusCode::NOT_FOUND.into_response();
     }
-    let Some(db) = &manager.persistence else {
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            Json(serde_json::json!({"error": "persistence not configured"})),
-        )
-            .into_response();
+    let checkpoints = match envelopes.iter().map(|envelope| envelope.checkpoint()).collect::<anyhow::Result<Vec<_>>>() {
+        Ok(checkpoints) => checkpoints,
+        Err(error) => return checkpoint_resume_api_error(error).into_response(),
     };
-
-    match db.list_checkpoints(&run_id).await {
-        Ok(checkpoints) => Json(CheckpointListResponse {
-            run_id,
-            checkpoints,
-        })
-        .into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({"error": e.to_string()})),
-        )
-            .into_response(),
-    }
+    let execution_restorable = !envelopes.is_empty() && envelopes.iter().all(|envelope| envelope.require_restorable_execution().is_ok());
+    Json(CheckpointListResponse { run_id, checkpoints, execution_restorable,
+        unavailable_reason: if envelopes.is_empty() { Some("checkpoint_resume_evidence_unavailable") }
+            else if execution_restorable { None } else { Some("checkpoint_execution_unavailable") } }).into_response()
 }
 
-#[derive(Deserialize)]
-struct ResumeRequest {
+#[derive(Clone, Deserialize)]
+pub(crate) struct ResumeRequest {
     #[serde(default)]
     artifact: Option<AgentArtifact>,
     /// Optional new input message; defaults to restoring the last checkpoint state.
@@ -1284,6 +1361,27 @@ fn resume_service_binding(
     Ok(Some(source))
 }
 
+fn renew_checkpoint_target(
+    request: &mut crate::uar::runtime::turn::RunExecutionRequest,
+    mut saved: super::targets::TargetReceipt,
+    current: super::targets::TargetReceipt,
+) -> Result<(), RunApiError> {
+    // Verification is fresh; every definition, binding and configuration identity
+    // must still match the protected source. The receipt is evidence, not a grant.
+    saved.verified_at = current.verified_at;
+    if saved != current {
+        return Err(RunApiError { status: StatusCode::CONFLICT, code: "run_target_changed",
+            message: "the current verified target no longer matches the source run".to_owned() });
+    }
+    request.host_policy_constraint = Some(crate::uar::domain::policy::RunPolicy {
+        model: Some(crate::uar::domain::policy::ModelRoute {
+            provider_id: current.provider_id.clone(), model_id: current.model_id.clone(),
+        }), ..Default::default()
+    });
+    request.target_selection = Some(serde_json::json!(current));
+    Ok(())
+}
+
 async fn resume_execution_request(
     state: &RunApiState,
     user: &UserContext,
@@ -1291,14 +1389,32 @@ async fn resume_execution_request(
     artifact: AgentArtifact,
     input: String,
 ) -> Result<(crate::uar::runtime::turn::RunExecutionRequest, bool), RunApiError> {
+    let target: Option<super::targets::TargetReceipt> = source_run.context.get("effective_target")
+        .filter(|value| !value.is_null()).cloned().map(serde_json::from_value).transpose()
+        .map_err(|_| RunApiError { status: StatusCode::CONFLICT, code: "run_target_changed",
+            message: "the protected target receipt is invalid".to_owned() })?;
     let Some(binding) = source_run
         .context
         .get("effective_collaboration_binding")
         .filter(|value| !value.is_null())
     else {
-        let request = crate::uar::runtime::turn::RunExecutionRequest::new(artifact, input)
+        let mut request = crate::uar::runtime::turn::RunExecutionRequest::new(artifact, input)
             .with_user_context(user)
             .map_err(|_| principal_invalid())?;
+        if let Some(saved) = target {
+            let selector = format!("{}/{}", saved.provider_id, saved.model_id);
+            let (route, proof) = state.manager.target_sources().verified_model(&selector).await
+                .map_err(|message| RunApiError { status: StatusCode::UNPROCESSABLE_ENTITY,
+                    code: "target_model_unavailable", message })?;
+            let current = super::targets::TargetReceipt {
+                version: 1, id: selector, kind: "model".to_owned(), agent_id: request.artifact.id.clone(),
+                provider_id: route.provider_id, model_id: route.model_id,
+                verified_at: proof.verified_at, configuration_digest: proof.configuration_digest,
+                definition: None, binding: None, workspace_id: saved.workspace_id.clone(),
+                instance_id: Some(state.service_instance.descriptor().instance.id.clone()),
+            };
+            renew_checkpoint_target(&mut request, saved, current)?;
+        }
         return Ok((request, false));
     };
     let owner_id = binding
@@ -1351,16 +1467,20 @@ async fn resume_execution_request(
         .resolve_bound_agent_run(owner_id, workspace_id, binding_id)
         .await
         .map_err(collaboration_run_error)?;
-    if bound.binding.revision != binding_revision
-        || bound.artifact.definition_revision() != artifact.definition_revision()
-    {
+    if bound.binding.revision != binding_revision {
         return Err(RunApiError {
             status: StatusCode::CONFLICT,
             code: "run_binding_changed",
             message: "deployment binding no longer resolves the source run definition".to_owned(),
         });
     }
-    let request = crate::uar::runtime::turn::RunExecutionRequest::from_bound_agent(
+    let current_target = if let Some(saved) = target.as_ref() {
+        Some(state.manager.target_sources().admit_bound(&bound,
+            Some(&format!("{}/{}", saved.provider_id, saved.model_id)), workspace_id).await
+            .map_err(|message| RunApiError { status: StatusCode::UNPROCESSABLE_ENTITY,
+                code: "target_model_unavailable", message })?)
+    } else { None };
+    let mut request = crate::uar::runtime::turn::RunExecutionRequest::from_bound_agent(
         bound,
         input,
         owner_id.to_owned(),
@@ -1369,27 +1489,21 @@ async fn resume_execution_request(
     )
     .with_user_context(user)
     .map_err(|_| principal_invalid())?;
-    Ok((request, true))
-}
-
-async fn execute_resumed_request(
-    manager: &RunManager,
-    request: crate::uar::runtime::turn::RunExecutionRequest,
-    bound: bool,
-) -> Result<String, RunApiError> {
-    if bound {
-        manager
-            .execute_bound_request(request)
-            .await
-            .map_err(collaboration_run_error)
-    } else {
-        Ok(manager.execute_request(request).await)
+    // Compare the current bound execution artifact after its existing model and
+    // skill resolution, rather than the unbound package definition.
+    if request.artifact.definition_revision() != artifact.definition_revision() {
+        return Err(RunApiError { status: StatusCode::CONFLICT, code: "run_binding_changed",
+            message: "deployment binding no longer resolves the source run definition".to_owned() });
     }
+    if let (Some(saved), Some(current)) = (target, current_target) {
+        renew_checkpoint_target(&mut request, saved, current)?;
+    }
+    Ok((request, true))
 }
 
 /// POST /api/uar/runs/{run_id}/resume
 ///
-/// Resume a run from its latest checkpoint (if any), or start fresh.
+/// Resume the latest protected checkpoint. Missing evidence never starts a fresh run.
 async fn resume_run(
     State(state): State<Arc<RunApiState>>,
     Extension(user): Extension<UserContext>,
@@ -1397,83 +1511,23 @@ async fn resume_run(
     Path(run_id): Path<String>,
     Json(req): Json<ResumeRequest>,
 ) -> impl IntoResponse {
-    let manager = Arc::clone(&state.manager);
-    let Some(source_run) = manager.get_run_for_context(&user, &run_id).await else {
-        return StatusCode::NOT_FOUND.into_response();
+    let owner = match crate::uar::security::claims::CredentialPrincipal::from_verified_context(&user) {
+        Ok(owner) => owner.storage_key(),
+        Err(_) => return principal_invalid().into_response(),
     };
-    let service_binding = match resume_service_binding(
-        &state.service_instance,
-        &source_run,
-        req.service_placement.as_ref(),
-    ) {
-        Ok(binding) => binding,
-        Err(error) => return error.into_response(),
+    let Some(db) = &state.manager.persistence else {
+        return checkpoint_resume_api_error(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into()).into_response();
     };
-    if req.history.is_some() {
-        return RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
-            "history_invalid",
-            "resume uses the source session history",
-        ))
-        .into_response();
-    }
-    let source_marker: crate::uar::runtime::turn::host::HostResourcesMarker = source_run
-        .context
-        .get("host_resources")
-        .cloned()
-        .and_then(|value| serde_json::from_value(value).ok())
-        .unwrap_or_default();
-    let artifact = match resume_artifact(&source_run, req.artifact) {
-        Ok(artifact) => artifact,
-        Err(error) => return error.into_response(),
+    let mut envelopes = match db.list_checkpoint_resumes(&owner, &run_id).await {
+        Ok(envelopes) => envelopes,
+        Err(error) => return checkpoint_resume_api_error(error).into_response(),
     };
-    let input = req.input.unwrap_or_else(|| {
-        // No explicit input — use a standard resume message.
-        format!("Resuming run {run_id}")
-    });
-
-    let (mut request, bound) =
-        match resume_execution_request(&state, &user, &source_run, artifact, input).await {
-            Ok(result) => result,
-            Err(error) => return error.into_response(),
-        };
-    request = request.with_credential_capture(credential_capture.map(|Extension(capture)| capture));
-    request.session_id = req
-        .session_id
-        .or_else(|| source_run.conversation_id.clone());
-    request.host_resources_marker.artifact_inline = source_marker.artifact_inline;
-    request.presentation_negotiation = req.presentation_negotiation;
-    let response_service_binding = service_binding.clone();
-    request.service_binding = service_binding;
-    inherit_host_context(&source_run, &mut request);
-    if let Err(error) = attach_host_resources(
-        &manager,
-        &user,
-        &mut request,
-        req.run_credentials,
-        req.mcp_servers,
-        req.working_directory,
-        req.reasoning_effort,
-        None,
-    )
-    .await
-    {
-        return error.into_response();
-    }
-    if let Err(error) = require_matching_host_resources(&source_marker, &request) {
-        return error.into_response();
-    }
-    let new_run_id = match execute_resumed_request(&manager, request, bound).await {
-        Ok(run_id) => run_id,
-        Err(error) => return error.into_response(),
+    let Some(envelope) = envelopes.pop() else {
+        return RunApiError { status: StatusCode::NOT_FOUND, code: "checkpoint_resume_evidence_unavailable",
+            message: "No checkpoint with protected owner-bound resume metadata is available".into() }.into_response();
     };
-
-    Json(serde_json::json!({
-        "resumed_from_run_id": run_id,
-        "run_id": new_run_id,
-        "stream_url": format!("/api/uar/runs/{new_run_id}/stream"),
-        "effective_service_binding": response_service_binding,
-    }))
-    .into_response()
+    resume_run_from_checkpoint(State(state), Extension(user), credential_capture,
+        Path((run_id, envelope.checkpoint_id)), Json(req)).await.into_response()
 }
 
 /// POST /api/uar/runs/{run_id}/resume/{checkpoint_id}
@@ -1487,24 +1541,164 @@ async fn resume_run_from_checkpoint(
     Path((run_id, checkpoint_id)): Path<(String, String)>,
     Json(req): Json<ResumeRequest>,
 ) -> impl IntoResponse {
+    resume_checkpoint(state, user, credential_capture, run_id, checkpoint_id, req, None).await
+}
+
+async fn resume_checkpoint(
+    state: Arc<RunApiState>, user: UserContext,
+    credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
+    run_id: String, checkpoint_id: String, req: ResumeRequest,
+    approval: Option<crate::uar::persistence::approval_decisions::ApprovalRecord>,
+) -> axum::response::Response {
+    match resume_checkpoint_admitted(state, user, credential_capture, run_id, checkpoint_id, req, approval, None, None).await {
+        Ok(receipt) => Json(receipt.response).into_response(),
+        Err(response) => response,
+    }
+}
+
+/// Exact host continuation result. Transport adapters never recreate admission.
+pub(crate) struct CheckpointResumeReceipt {
+    pub(crate) run_id: String,
+    pub(crate) response: serde_json::Value,
+}
+
+impl ResumeRequest {
+    pub(crate) fn for_approval() -> Self {
+        let mut request = Self::for_input(String::new());
+        request.input = None;
+        request
+    }
+    pub(crate) fn for_input(input: String) -> Self {
+        Self { artifact: None, input: Some(input), session_id: None, run_credentials: None,
+            mcp_servers: None, working_directory: None, reasoning_effort: None, history: None,
+            service_placement: None, presentation_negotiation: Default::default() }
+    }
+}
+
+/// Transport projection of the existing broker decision, never a second ledger.
+pub(crate) struct HostApprovalResolution {
+    pub(crate) run_id: String,
+}
+
+/// Authenticate the exact committed challenge before deciding or reconstructing
+/// its protected continuation. Callers reserve their transport correlation first.
+pub(crate) async fn resolve_host_approval(
+    state: Arc<RunApiState>, user: UserContext,
+    credential_capture: Option<AuthenticatedCredentialCapture>, run_id: String,
+    approval_id: String, approved: bool, workspace: Option<String>,
+    resume: ResumeRequest, reserved_run_id: Option<String>,
+    fresh_a2a_contract: Option<crate::uar::api::a2a::contract::UarDelegationContract>,
+) -> Result<HostApprovalResolution, axum::response::Response> {
+    use crate::uar::persistence::approval_decisions::ApprovalState;
+    let (_, records) = state.manager.approval_records_for_context(&user, &run_id, workspace.as_deref())
+        .await.map_err(|error| checkpoint_resume_api_error(error).into_response())?;
+    let view = records.into_iter().find(|view| view.record.challenge_id == approval_id)
+        .ok_or_else(|| StatusCode::NOT_FOUND.into_response())?;
+    let record = view.record;
+    if record.state != ApprovalState::Pending {
+        if record.decision.as_ref().is_some_and(|decision| decision.approved == approved)
+            && matches!(record.state, ApprovalState::Approved | ApprovalState::Denied) {
+            return Ok(HostApprovalResolution { run_id });
+        }
+        return Err((StatusCode::CONFLICT, Json(serde_json::json!({"code":"approval_not_pending"}))).into_response());
+    }
+    if view.resolvable {
+        return match state.manager.resolve_approval_record(&run_id, Some(&approval_id), approved).await {
+            Ok(Some(_)) => Ok(HostApprovalResolution { run_id }),
+            Ok(None) => Err(StatusCode::CONFLICT.into_response()),
+            Err(error) => Err(checkpoint_resume_api_error(error).into_response()),
+        };
+    }
+    if !approved {
+        if !state.manager.deny_recovered_approval(&record).await
+            .map_err(|error| checkpoint_resume_api_error(error).into_response())? {
+            return Err(StatusCode::CONFLICT.into_response());
+        }
+        let _record = state.manager.approval_recovery_record(&user, &run_id, &approval_id, workspace.as_deref()).await
+            .map_err(|error| checkpoint_resume_api_error(error).into_response())?
+            .ok_or_else(|| StatusCode::CONFLICT.into_response())?;
+        return Ok(HostApprovalResolution { run_id });
+    }
+    if resume.input.is_some() || !view.recovery_available {
+        return Err((StatusCode::CONFLICT, Json(serde_json::json!({"code":"approval_continuation_unavailable"}))).into_response());
+    }
+    let checkpoint_id = record.continuation.as_ref().ok_or_else(|| StatusCode::CONFLICT.into_response())?.checkpoint_id.clone();
+    let receipt = resume_checkpoint_admitted(Arc::clone(&state), user.clone(), credential_capture.map(Extension),
+        run_id.clone(), checkpoint_id, resume, Some(record), reserved_run_id, fresh_a2a_contract).await?;
+    let _record = state.manager.approval_recovery_record(&user, &run_id, &approval_id, workspace.as_deref()).await
+        .map_err(|error| checkpoint_resume_api_error(error).into_response())?
+        .ok_or_else(|| StatusCode::CONFLICT.into_response())?;
+    Ok(HostApprovalResolution { run_id: receipt.run_id })
+}
+
+/// Shared protected resume admission. A reserved ID comes only from a trusted
+/// transport reservation, never a client-supplied run ID.
+pub(crate) async fn resume_checkpoint_admitted(
+    state: Arc<RunApiState>, user: UserContext,
+    credential_capture: Option<Extension<AuthenticatedCredentialCapture>>,
+    run_id: String, checkpoint_id: String, req: ResumeRequest,
+    approval: Option<crate::uar::persistence::approval_decisions::ApprovalRecord>,
+    reserved_run_id: Option<String>,
+    fresh_a2a_contract: Option<crate::uar::api::a2a::contract::UarDelegationContract>,
+) -> Result<CheckpointResumeReceipt, axum::response::Response> {
     let manager = Arc::clone(&state.manager);
-    let Some(source_run) = manager.get_run_for_context(&user, &run_id).await else {
-        return StatusCode::NOT_FOUND.into_response();
+    let owner = match crate::uar::security::claims::CredentialPrincipal::from_verified_context(&user) {
+        Ok(owner) => owner.storage_key(),
+        Err(_) => return Err(principal_invalid().into_response()),
     };
+    let Some(db) = &manager.persistence else {
+        return Err(checkpoint_resume_api_error(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into()).into_response());
+    };
+    // Protected owner metadata comes first. No live manager or caller artifact
+    // supplies the source authority after a process restart.
+    let envelope = match db.load_checkpoint_resume(&owner, &run_id, &checkpoint_id).await {
+        Ok(Some(envelope)) => envelope,
+        Ok(None) => return Err(RunApiError { status: StatusCode::NOT_FOUND, code: "checkpoint_resume_evidence_unavailable",
+            message: "No checkpoint with protected owner-bound resume metadata is available".into() }.into_response()),
+        Err(error) => return Err(checkpoint_resume_api_error(error).into_response()),
+    };
+    let source_run = match envelope.source_run() {
+        Ok(source) => source,
+        Err(error) => return Err(checkpoint_resume_api_error(error).into_response()),
+    };
+    let restorable = match &fresh_a2a_contract {
+        Some(contract) if reserved_run_id.is_some()
+            && contract.owner_id == user.user_id
+            && user.claims.uar_instance_id.as_deref() == Some(contract.source_instance_id.as_str())
+            && contract.target_instance_id == state.service_instance.descriptor().instance.id => {
+                envelope.require_restorable_a2a(contract)
+            }
+        Some(_) => Err(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Invalid.into()),
+        None => envelope.require_restorable_execution(),
+    };
+    if let Err(error) = restorable {
+        return Err(checkpoint_resume_api_error(error).into_response());
+    }
+    if req.session_id.as_ref().is_some_and(|id| Some(id) != source_run.conversation_id.as_ref()) {
+        return Err(checkpoint_resume_api_error(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Invalid.into()).into_response());
+    }
     let service_binding = match resume_service_binding(
         &state.service_instance,
         &source_run,
         req.service_placement.as_ref(),
     ) {
         Ok(binding) => binding,
-        Err(error) => return error.into_response(),
+        Err(error) => {
+            if req.service_placement.is_none() && let Some(record) = &approval {
+                if manager.finish_recovered_approval(record,
+                    crate::uar::persistence::approval_decisions::ApprovalState::Invalidated).await.is_err() {
+                    return Err((StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({"code":"approval_persistence_unavailable"}))).into_response());
+                }
+            }
+            return Err(error.into_response());
+        }
     };
     if req.history.is_some() {
-        return RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
+        return Err(RunApiError::from(crate::uar::runtime::turn::host::HostInputError::new(
             "history_invalid",
             "checkpoint resume uses protected checkpoint history",
         ))
-        .into_response();
+        .into_response());
     }
     let source_marker: crate::uar::runtime::turn::host::HostResourcesMarker = source_run
         .context
@@ -1514,39 +1708,11 @@ async fn resume_run_from_checkpoint(
         .unwrap_or_default();
     let artifact = match resume_artifact(&source_run, req.artifact) {
         Ok(artifact) => artifact,
-        Err(error) => return error.into_response(),
+        Err(error) => return Err(error.into_response()),
     };
-    let Some(db) = &manager.persistence else {
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            Json(serde_json::json!({"error": "persistence not configured"})),
-        )
-            .into_response();
-    };
-
-    let checkpoint = match db.load_checkpoint(&checkpoint_id).await {
-        Ok(Some(cp)) if cp.run_id == run_id => cp,
-        Ok(Some(_)) => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(serde_json::json!({"error": "checkpoint not found"})),
-            )
-                .into_response();
-        }
-        Ok(None) => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(serde_json::json!({"error": "checkpoint not found"})),
-            )
-                .into_response();
-        }
-        Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({"error": e.to_string()})),
-            )
-                .into_response();
-        }
+    let checkpoint = match envelope.checkpoint() {
+        Ok(checkpoint) => checkpoint,
+        Err(error) => return Err(checkpoint_resume_api_error(error).into_response()),
     };
 
     // Seed the new run with what the checkpoint actually recorded. A resume
@@ -1555,21 +1721,21 @@ async fn resume_run_from_checkpoint(
     let restored = match checkpoint.try_restore_state() {
         Ok(state) => state,
         Err(e) => {
-            return (
+            return Err((
                 StatusCode::UNPROCESSABLE_ENTITY,
                 Json(serde_json::json!({"error": e.to_string()})),
             )
-                .into_response();
+                .into_response());
         }
     };
     let history = match crate::uar::runtime::checkpoint::history_from_checkpoint(&checkpoint) {
         Ok(messages) => messages,
         Err(e) => {
-            return (
+            return Err((
                 StatusCode::UNPROCESSABLE_ENTITY,
                 Json(serde_json::json!({"error": e.to_string()})),
             )
-                .into_response();
+                .into_response());
         }
     };
     let restored_state_keys = restored.data.len();
@@ -1589,7 +1755,7 @@ async fn resume_run_from_checkpoint(
     .await
     {
         Ok(result) => result,
-        Err(error) => return error.into_response(),
+        Err(error) => return Err(error.into_response()),
     };
     request = request.with_credential_capture(credential_capture.map(|Extension(capture)| capture));
     request.input = req.input;
@@ -1619,18 +1785,61 @@ async fn resume_run_from_checkpoint(
     )
     .await
     {
-        return error.into_response();
+        return Err(error.into_response());
     }
     if let Err(error) = require_matching_host_resources(&source_marker, &request) {
-        return error.into_response();
+        return Err(error.into_response());
     }
-    let new_run_id = match execute_resumed_request(&manager, request, bound).await {
-        Ok(run_id) => run_id,
-        Err(error) => return error.into_response(),
+    if let Some(contract) = fresh_a2a_contract {
+        let Some(actor_owner) = request.verified_owner.as_ref() else {
+            return Err(principal_invalid().into_response());
+        };
+        let Some(session_id) = request.session_id.as_deref() else {
+            return Err(checkpoint_resume_api_error(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Invalid.into()).into_response());
+        };
+        request.resolved_policy = Some(match manager.resolve_remote_policy_constraint(
+            &request.artifact, actor_owner, session_id, contract.execution_policy()).await {
+                Ok(policy) => policy,
+                Err(error) => return Err(checkpoint_resume_api_error(error).into_response()),
+            });
+        let digest = match contract.digest() {
+            Ok(digest) => digest,
+            Err(error) => return Err(checkpoint_resume_api_error(error).into_response()),
+        };
+        request.host_budget_constraint = Some(contract.budgets.clone());
+        request.host_policy_constraint = Some(contract.execution_policy());
+        request.host_sandbox_constraint = Some(contract.sandbox.clone());
+        request.host_usage_grant = Some(crate::uar::runtime::cost_budget::RemoteUsageGrantBinding {
+            accounting_id: format!("a2a:{digest}"), grant: contract.usage_grant.clone(),
+            started_at: std::time::Instant::now(),
+        });
+        request.presentation_negotiation = contract.presentation_negotiation.clone().unwrap_or_default();
+        request.a2a_delegation = Some(contract);
+    }
+    let recovering_approval = approval.clone();
+    let execution = match reserved_run_id {
+        Some(run_id) => manager.execute_checkpoint_a2a_with_run_id(request, &envelope, bound, approval, run_id).await,
+        None => manager.execute_checkpoint_approval(request, &envelope, bound, approval).await,
     };
+    let new_run_id = match execution {
+        Ok(run_id) => run_id,
+        Err(error) => return Err(checkpoint_resume_api_error(error).into_response()),
+    };
+    let decision_record = if let Some(record) = &recovering_approval {
+        match manager.approval_recovery_record(&user, &run_id, &record.challenge_id,
+            record.workspace_id.as_deref()).await {
+            Ok(record) => record,
+            Err(_) => return Err((StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({
+                "code":"approval_decision_unconfirmed", "run_id":new_run_id, "continuation_admitted":true,
+            }))).into_response()),
+        }
+    } else { None };
 
-    Json(serde_json::json!({
+    let response = serde_json::json!({
         "resumed_from_run_id": run_id,
+        "resolved": decision_record.as_ref().is_some_and(|record| record.state == crate::uar::persistence::approval_decisions::ApprovalState::Approved),
+        "continuation_admitted": recovering_approval.is_some(),
+        "approval_record": decision_record,
         "checkpoint_id": checkpoint_id,
         "checkpoint_node_id": checkpoint.node_id,
         "checkpoint_iteration": checkpoint.iteration,
@@ -1639,8 +1848,8 @@ async fn resume_run_from_checkpoint(
         "run_id": new_run_id,
         "stream_url": format!("/api/uar/runs/{new_run_id}/stream"),
         "effective_service_binding": response_service_binding,
-    }))
-    .into_response()
+    });
+    Ok(CheckpointResumeReceipt { run_id: new_run_id, response })
 }
 
 /// GET /api/uar/resolve-model

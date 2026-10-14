@@ -1,0 +1,113 @@
+--- failed-source/tests/truthful_tool_outcomes.rs
++++ refrozen-source/tests/truthful_tool_outcomes.rs
+@@ -144,6 +144,65 @@
+     }
+ }
+ 
++fn fixture_peer_pids(trace: &Path) -> Vec<u32> {
++    let output = Command::new("/bin/ps")
++        .args(["-axo", "pid=,args="])
++        .output()
++        .unwrap();
++    assert!(output.status.success());
++    let script = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
++        .join("tests/fixtures/truthful_tool_outcome_mcp.py");
++    String::from_utf8(output.stdout)
++        .unwrap()
++        .lines()
++        .filter_map(|line| {
++            let mut fields = line.split_whitespace();
++            let pid = fields.next()?.parse().ok()?;
++            let arguments = fields.collect::<Vec<_>>();
++            (arguments.contains(&script.to_str().unwrap())
++                && arguments.contains(&trace.to_str().unwrap()))
++            .then_some(pid)
++        })
++        .collect()
++}
++
++async fn await_fixture_peer_exit(trace: &Path) {
++    let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
++    while !fixture_peer_pids(trace).is_empty() {
++        assert!(
++            tokio::time::Instant::now() < deadline,
++            "fixture MCP peer did not close"
++        );
++        tokio::time::sleep(Duration::from_millis(50)).await;
++    }
++}
++
++async fn close_fixture_peer_before_dispatch(registry: &McpRegistry, trace: &Path) {
++    assert!(registry.resolve_mcp_tool(peer::TOOL).is_some());
++    let pids = fixture_peer_pids(trace);
++    assert!(!pids.is_empty(), "real discovered MCP peer must exist");
++    for pid in pids {
++        assert!(
++            Command::new("/bin/kill")
++                .arg("-TERM")
++                .arg(pid.to_string())
++                .status()
++                .unwrap()
++                .success()
++        );
++    }
++    await_fixture_peer_exit(trace).await;
++    // Preserve discovery and let the established rmcp reader publish the closed
++    // queue before dispatch; the typed outcome and zero-effect assertions follow.
++    tokio::time::sleep(Duration::from_millis(200)).await;
++    assert!(registry.resolve_mcp_tool(peer::TOOL).is_some());
++}
++
++async fn remove_fixture_server(registry: &McpRegistry, trace: &Path) {
++    assert!(registry.remove_server("outcomes"));
++    await_fixture_peer_exit(trace).await;
++}
++
+ async fn registry_boundary(root: &Path, scoped: bool, mode: &str) {
+     let trace = root.join(format!("registry-{scoped}-{mode}.jsonl"));
+     let (registry, runtime, preflight) = if scoped {
+@@ -162,7 +221,7 @@
+         if let Some(runtime) = &runtime {
+             runtime.shutdown().await.unwrap();
+         }
+-        registry.shutdown().await;
++        close_fixture_peer_before_dispatch(&registry, &trace).await;
+     }
+     let result = match &preflight {
+         Some(preflight) => {
+@@ -200,7 +259,7 @@
+     if let Some(runtime) = runtime {
+         runtime.shutdown().await.unwrap();
+     }
+-    registry.shutdown().await;
++    remove_fixture_server(&registry, &trace).await;
+     assert_eq!(
+         peer::effects(&trace).len(),
+         usize::from(mode != "predispatch"),
+@@ -317,7 +376,7 @@
+             .unwrap(),
+     );
+     if mode == "predispatch" {
+-        registry.shutdown().await;
++        close_fixture_peer_before_dispatch(&registry, &trace).await;
+     }
+     let peer = peer::Peer::start().await;
+     let manager = Arc::new(
+@@ -432,7 +491,7 @@
+         "unknown result triggered a model retry turn"
+     );
+     assert_receipt(store, &run, mode).await;
+-    registry.shutdown().await;
++    remove_fixture_server(&registry, &trace).await;
+     assert_eq!(
+         peer::effects(&trace).len(),
+         usize::from(mode != "predispatch")
+@@ -547,7 +606,7 @@
+     );
+     assert_receipt(store, &run, mode).await;
+     runtime.shutdown().await.unwrap();
+-    registry.shutdown().await;
++    remove_fixture_server(&registry, &trace).await;
+     assert_eq!(
+         peer::effects(&trace).len(),
+         usize::from(mode != "predispatch")

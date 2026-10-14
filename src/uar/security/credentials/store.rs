@@ -95,7 +95,7 @@ impl From<&CredentialRecord> for CredentialMetadata {
 
 /// Backend-agnostic credential storage.
 #[async_trait]
-pub trait CredentialStore: Send + Sync + std::fmt::Debug {
+pub trait CredentialStore: super::principal_store::PrincipalCredentialStore + Send + Sync + std::fmt::Debug {
     /// Insert or replace the credential for `(scope, scope_id, provider_id)`.
     async fn put(&self, record: CredentialRecord) -> anyhow::Result<()>;
 
@@ -136,7 +136,8 @@ fn key_of(scope: CredentialScope, scope_id: &str, provider_id: &str) -> (String,
 /// matching the `InMemoryApiKeyStorage` precedent.
 #[derive(Debug, Default)]
 pub struct InMemoryCredentialStore {
-    rows: RwLock<HashMap<(String, String, String), CredentialRecord>>,
+    pub(super) rows: RwLock<HashMap<(String, String, String), CredentialRecord>>,
+    pub(super) principals: RwLock<super::principal_store::PrincipalMemoryState>,
 }
 
 impl InMemoryCredentialStore {
@@ -144,6 +145,7 @@ impl InMemoryCredentialStore {
     pub fn new() -> Self {
         Self {
             rows: RwLock::new(HashMap::new()),
+            principals: RwLock::new(super::principal_store::PrincipalMemoryState::default()),
         }
     }
 }
@@ -200,7 +202,7 @@ impl CredentialStore for InMemoryCredentialStore {
 #[cfg(feature = "surreal-backend")]
 #[derive(Debug, Clone)]
 pub struct SurrealCredentialStore {
-    db: surrealdb::Surreal<surrealdb::engine::any::Any>,
+    pub(super) db: surrealdb::Surreal<surrealdb::engine::any::Any>,
 }
 
 #[cfg(feature = "surreal-backend")]
@@ -210,7 +212,7 @@ impl SurrealCredentialStore {
         Self { db }
     }
 
-    fn record_id(scope: CredentialScope, scope_id: &str, provider_id: &str) -> String {
+    pub(super) fn record_id(scope: CredentialScope, scope_id: &str, provider_id: &str) -> String {
         // Deterministic id => uniqueness on the triple + idempotent upsert.
         format!("{}:{}:{}", scope.as_str(), scope_id, provider_id)
     }
@@ -244,7 +246,7 @@ impl CredentialStore for SurrealCredentialStore {
             .query("UPSERT type::record('provider_credentials', $rid) CONTENT $data")
             .bind(("rid", rid))
             .bind(("data", payload))
-            .await?;
+            .await?.check()?;
         Ok(())
     }
 
@@ -259,7 +261,7 @@ impl CredentialStore for SurrealCredentialStore {
             .db
             .query("SELECT * FROM type::record('provider_credentials', $rid)")
             .bind(("rid", rid))
-            .await?;
+            .await?.check()?;
         let rows: Vec<surrealdb::types::Value> = resp.take(0).or_else(|e| {
             if e.to_string().contains("does not exist") {
                 Ok(vec![])
@@ -283,7 +285,7 @@ impl CredentialStore for SurrealCredentialStore {
             )
             .bind(("scope", scope.as_str().to_string()))
             .bind(("scope_id", scope_id.to_string()))
-            .await?;
+            .await?.check()?;
         let rows: Vec<surrealdb::types::Value> = resp.take(0).or_else(|e| {
             if e.to_string().contains("does not exist") {
                 Ok(vec![])
@@ -305,7 +307,7 @@ impl CredentialStore for SurrealCredentialStore {
         self.db
             .query("DELETE type::record('provider_credentials', $rid)")
             .bind(("rid", rid))
-            .await?;
+            .await?.check()?;
         Ok(existed)
     }
 }
@@ -421,7 +423,7 @@ mod tests {
 #[cfg(feature = "sqlx")]
 #[derive(Debug, Clone)]
 pub struct PostgresCredentialStore {
-    pool: sqlx::PgPool,
+    pub(super) pool: sqlx::PgPool,
 }
 
 #[cfg(feature = "sqlx")]
@@ -513,7 +515,7 @@ impl CredentialStore for PostgresCredentialStore {
 }
 
 #[cfg(feature = "sqlx")]
-fn row_to_record(r: &sqlx::postgres::PgRow) -> CredentialRecord {
+pub(super) fn row_to_record(r: &sqlx::postgres::PgRow) -> CredentialRecord {
     use sqlx::Row;
     CredentialRecord {
         scope: CredentialScope::from_str_lenient(&r.get::<String, _>("scope")),

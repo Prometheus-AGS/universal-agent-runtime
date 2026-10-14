@@ -95,14 +95,13 @@ def model_lines(model_id: str, display_name: str, context: int | None, output: i
     return lines
 
 
-def provider_lines(provider_id: str, name: str, base_url: str, default_model: str,
+def provider_lines(provider_id: str, name: str, base_url: str,
                    models: list[list[str]]) -> list[str]:
     lines = [
         f"  - id: {json.dumps(provider_id)}",
         f"    display_name: {json.dumps(name)}",
         f"    base_url: {json.dumps(base_url)}",
         "    protocol: chat",
-        f"    default_model: {json.dumps(default_model)}",
         "    enabled: true",
         "    models:",
     ]
@@ -115,7 +114,6 @@ def alibaba_provider_lines(model_id: str, display_name: str, context: int, outpu
                            vision: bool, reasoning: bool, structured: bool) -> list[str]:
     return provider_lines(
         "alibaba", "Alibaba/Qwen", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-        model_id,
         [model_lines(model_id, display_name, context, output, vision, True, reasoning, structured)],
     )
 
@@ -125,16 +123,16 @@ def desired_providers(present: set[str], proxy_url: str, proxy_models: list[str]
     if proxy_models:
         models = [model_lines(model, model, None, None, False, True, False, False) for model in proxy_models]
         providers["local-openai-proxy"] = provider_lines(
-            "local-openai-proxy", "Local OpenAI Proxy", proxy_url.rstrip("/"), proxy_models[0], models
+            "local-openai-proxy", "Local OpenAI Proxy", proxy_url.rstrip("/"), models
         )
     if "KIMI_API_KEY" in present:
         providers["kimi-for-coding"] = provider_lines(
-            "kimi-for-coding", "Kimi For Coding", "https://api.kimi.com/coding/v1", "k3",
+            "kimi-for-coding", "Kimi For Coding", "https://api.kimi.com/coding/v1",
             [model_lines("k3", "Kimi K3", 1_048_576, 131_072, True, True, True, True)],
         )
     if "MINIMAX_API_KEY" in present:
         providers["minimax"] = provider_lines(
-            "minimax", "MiniMax", "https://api.minimax.io/v1", "MiniMax-M3",
+            "minimax", "MiniMax", "https://api.minimax.io/v1",
             [model_lines("MiniMax-M3", "MiniMax M3", 1_000_000, 128_000, True, True, True, False)],
         )
     if "DASHSCOPE_API_KEY" in present:
@@ -143,7 +141,7 @@ def desired_providers(present: set[str], proxy_url: str, proxy_models: list[str]
         )
     if "ZAI_API_KEY" in present:
         providers["zai"] = provider_lines(
-            "zai", "Z.AI", "https://api.z.ai/api/paas/v4", "glm-5.2",
+            "zai", "Z.AI", "https://api.z.ai/api/paas/v4",
             [
                 model_lines("glm-4.7", "GLM-4.7", 204_800, 131_072, False, True, True, False),
                 model_lines("glm-5.2", "GLM-5.2", 1_000_000, 131_072, False, True, True, True),
@@ -151,7 +149,7 @@ def desired_providers(present: set[str], proxy_url: str, proxy_models: list[str]
         )
     if "MOONSHOT_API_KEY" in present:
         providers["moonshotai"] = provider_lines(
-            "moonshotai", "Moonshot AI", "https://api.moonshot.ai/v1", "kimi-k2.5",
+            "moonshotai", "Moonshot AI", "https://api.moonshot.ai/v1",
             [
                 model_lines("kimi-k2.5", "Kimi K2.5", 262_144, 262_144, True, True, True, True),
                 model_lines("kimi-k3", "Kimi K3", 1_048_576, 131_072, True, True, True, True),
@@ -193,9 +191,9 @@ def merge_server(lines: list[str]) -> None:
 
 
 def merge_security(lines: list[str]) -> None:
-    """Keep legacy loopback desktop installs compatible with packaged auth defaults."""
+    """Add safe missing settings without changing explicit operator choices."""
     bounds = section_bounds(lines, "security")
-    setting = "  settings_mutation_auth_required: false"
+    setting = "  settings_mutation_auth_required: true"
     if bounds is None:
         if lines and lines[-1] != "":
             lines.append("")
@@ -212,58 +210,6 @@ def merge_security(lines: list[str]) -> None:
     }
     if "settings_mutation_auth_required" not in present:
         lines.insert(end, setting)
-
-
-def merge_alibaba_default(lines: list[str], present: set[str]) -> None:
-    if "DASHSCOPE_API_KEY" not in present:
-        return
-
-    bounds = section_bounds(lines, "llm")
-    if bounds is None:
-        if lines and lines[-1] != "":
-            lines.append("")
-        lines.extend(
-            [
-                "llm:",
-                f"  model: {json.dumps(f'alibaba/{QWEN_MODEL_ID}')}",
-                '  api_key_env: "DASHSCOPE_API_KEY"',
-            ]
-        )
-        return
-
-    start, end = bounds
-    if lines[start].strip() != "llm:":
-        raise ValueError("top-level llm must be a block mapping")
-    for index in range(start + 1, end):
-        if re.fullmatch(r"  model:\s*[\"']?alibaba/qwen3\.7-max[\"']?\s*", lines[index]):
-            lines[index] = f"  model: {json.dumps(f'alibaba/{QWEN_MODEL_ID}')}"
-        elif re.fullmatch(r"  api_key_env:\s*[\"']?QWEN_TOKENPLAN_API_KEY[\"']?\s*", lines[index]):
-            lines[index] = '  api_key_env: "DASHSCOPE_API_KEY"'
-
-
-def migrate_phase_alibaba_seed(lines: list[str]) -> None:
-    bounds = section_bounds(lines, "providers")
-    if bounds is None:
-        return
-    start, end = bounds
-    legacy = alibaba_provider_lines(
-        "qwen3-coder-plus", "Qwen3 Coder Plus", 1_048_576, 65_536, False, False, False,
-    )
-    replacement = alibaba_provider_lines(
-        QWEN_MODEL_ID, QWEN_MODEL_NAME, 1_000_000, 131_072, True, True, True,
-    )
-    provider_starts = [
-        index
-        for index in range(start + 1, end)
-        if re.match(r"^  - id:\s*", lines[index])
-    ]
-    provider_starts.append(end)
-    for position in range(len(provider_starts) - 1):
-        block_start = provider_starts[position]
-        block_end = provider_starts[position + 1]
-        if lines[block_start:block_end] == legacy:
-            lines[block_start:block_end] = replacement
-            return
 
 
 def merge_provider_section(lines: list[str], providers: dict[str, list[str]]) -> None:
@@ -321,8 +267,6 @@ def main() -> int:
     merge_security(lines)
     present = present_provider_variables(args.env_file)
     proxy_models = discover_proxy_models(args.proxy_url)
-    merge_alibaba_default(lines, present)
-    migrate_phase_alibaba_seed(lines)
     merge_provider_section(lines, desired_providers(present, args.proxy_url, proxy_models))
     atomic_write(args.config, "\n".join(lines) + "\n")
     return 0

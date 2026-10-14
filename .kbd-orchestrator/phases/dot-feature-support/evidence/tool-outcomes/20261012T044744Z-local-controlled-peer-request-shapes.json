@@ -1,0 +1,432 @@
+[
+  {
+    "file": "26983bfa-4372-4975-8299-ee3d4adc2dd1.jsonl",
+    "sha256": "90a681066c5426e4e696793994b708659ec3c904bf6cc48ab258a3d371beabf6",
+    "requestCount": 1,
+    "messageRoles": [
+      [
+        "system",
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ]
+    ]
+  },
+  {
+    "file": "85f32ce2-41db-4a2b-9db0-627672dfd2b6.jsonl",
+    "sha256": "7413fa6420af4c42912344e8253a357b9733fc31c33a93c1b1b5c396539cf15f",
+    "requestCount": 2,
+    "messageRoles": [
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ],
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system",
+        "assistant",
+        "tool"
+      ]
+    ]
+  },
+  {
+    "file": "5548724f-79dc-4616-aa70-a7c800f1250b.jsonl",
+    "sha256": "c10910168123a9592a9aecab53a7b928ae14c94558f85d2b75847791aa6460cb",
+    "requestCount": 2,
+    "messageRoles": [
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ],
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system",
+        "assistant",
+        "tool"
+      ]
+    ]
+  },
+  {
+    "file": "ee649740-302d-4b28-855c-6b4ed1dcb327.jsonl",
+    "sha256": "cfa594bd2bfa81c94636e4942489ba952d47e44c9492ca8bdd0c78740dd591ab",
+    "requestCount": 1,
+    "messageRoles": [
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ]
+    ]
+  },
+  {
+    "file": "b8c81fca-01d4-4abc-951a-16c8ba857e59.jsonl",
+    "sha256": "ab94119def3c7f01f6aaa87f9706ce2c3b041fa1a9b31f60812ade0bad758bb8",
+    "requestCount": 2,
+    "messageRoles": [
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ],
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system",
+        "assistant",
+        "tool"
+      ]
+    ]
+  },
+  {
+    "file": "ccde9802-81bc-4898-9743-e38b1caa1fcd.jsonl",
+    "sha256": "904f8ccc1c226462833547c405a161ba130ad534460a9428f41fc9795adf4198",
+    "requestCount": 2,
+    "messageRoles": [
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ],
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system",
+        "assistant",
+        "tool"
+      ]
+    ]
+  },
+  {
+    "file": "796884ba-0bb5-4ca5-a662-b231e5c70228.jsonl",
+    "sha256": "3bf52eaa0d93231985133584c503daebc0f53c63c061d96a6fc3caeeb1c293cd",
+    "requestCount": 2,
+    "messageRoles": [
+      [
+        "system",
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ],
+      [
+        "system",
+        "system",
+        "system",
+        "system",
+        "assistant",
+        "tool",
+        "system",
+        "system",
+        "system",
+        "system"
+      ]
+    ]
+  },
+  {
+    "file": "d30f09db-4533-4f62-be5b-c610954c2054.jsonl",
+    "sha256": "780aacf329413e1344bb9b3918ca5122fca8cb3b10ead421405e16cbaa8328ee",
+    "requestCount": 2,
+    "messageRoles": [
+      [
+        "system",
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ],
+      [
+        "system",
+        "system",
+        "system",
+        "system",
+        "assistant",
+        "tool",
+        "system",
+        "system",
+        "system",
+        "system"
+      ]
+    ]
+  },
+  {
+    "file": "f715cedf-1559-4b8e-8d8f-e758d73bddc4.jsonl",
+    "sha256": "aa5f5eb956c166188a77b373e1f543bdabf48a712c516a0e3161f6e03ae4484c",
+    "requestCount": 1,
+    "messageRoles": [
+      [
+        "system",
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ]
+    ]
+  },
+  {
+    "file": "c757e093-89b4-497d-9be9-590812c53982.jsonl",
+    "sha256": "0fb033bbf8fb07a95f29e07b8f8178ce3d3b42389a2ea45ddb90e4ca2bd7b828",
+    "requestCount": 2,
+    "messageRoles": [
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ],
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system",
+        "assistant",
+        "tool"
+      ]
+    ]
+  },
+  {
+    "file": "5b9d7a55-7b86-4f18-9ec4-3aa4c1b11033.jsonl",
+    "sha256": "d61bec2a24156192088828ac2885014a13dc81d5fb303e298c4aa9e1492adb96",
+    "requestCount": 2,
+    "messageRoles": [
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ],
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system",
+        "assistant",
+        "tool"
+      ]
+    ]
+  },
+  {
+    "file": "1cf340aa-a80b-46e4-9942-229a4c76f28d.jsonl",
+    "sha256": "ea79d3e075147dcd965170c72456b8b1a8976380d7ede59d5f7698500b951fd0",
+    "requestCount": 1,
+    "messageRoles": [
+      [
+        "system",
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ]
+    ]
+  },
+  {
+    "file": "6360d522-4d89-4bff-84fa-afccf85b4dce.jsonl",
+    "sha256": "dd78d1d02a6aeacfa1f80e9439bdb7a57edd86f9c00274905b16556dca5ef315",
+    "requestCount": 2,
+    "messageRoles": [
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ],
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system",
+        "assistant",
+        "tool"
+      ]
+    ]
+  },
+  {
+    "file": "62e4daa8-43fc-414b-bd80-ac4e7a234c05.jsonl",
+    "sha256": "b143d64004329413290abb4898533a55d2b8c853b878167c18d579bd18da757d",
+    "requestCount": 1,
+    "messageRoles": [
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ]
+    ]
+  },
+  {
+    "file": "721981a7-0d51-4f82-9e8e-3c7ba078c1e2.jsonl",
+    "sha256": "749cad3a41a51a1342e5b10b89df75d8917e2eeef1dc8c0bfa993ccc87c743a9",
+    "requestCount": 2,
+    "messageRoles": [
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ],
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system",
+        "assistant",
+        "tool"
+      ]
+    ]
+  },
+  {
+    "file": "c007eeea-fb1c-47a1-b0f1-d229a50f916a.jsonl",
+    "sha256": "c3ad2fe44a69a4d85e5882791026d32923d889ba08b77da9e126d180796bf01c",
+    "requestCount": 2,
+    "messageRoles": [
+      [
+        "system",
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ],
+      [
+        "system",
+        "system",
+        "system",
+        "system",
+        "assistant",
+        "tool",
+        "system",
+        "system",
+        "system",
+        "system"
+      ]
+    ]
+  },
+  {
+    "file": "5dd10d70-bbdd-41e9-bec2-313ceaa7d5b0.jsonl",
+    "sha256": "fb5820de823b1e645d500de4d0904ac459d414d6c3c87024a4c3c761b6860a0f",
+    "requestCount": 1,
+    "messageRoles": [
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ]
+    ]
+  },
+  {
+    "file": "d50b3ef8-d351-4cdb-92cb-eec28e4e8e79.jsonl",
+    "sha256": "d4597c2da3233ffa7e9aa919750bac36431f4aa015416d5f92e413fc521d1e28",
+    "requestCount": 2,
+    "messageRoles": [
+      [
+        "system",
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ],
+      [
+        "system",
+        "system",
+        "system",
+        "system",
+        "assistant",
+        "tool",
+        "system",
+        "system",
+        "system",
+        "system"
+      ]
+    ]
+  },
+  {
+    "file": "868b5b25-dfc0-4fed-b2c8-0edc819d09cc.jsonl",
+    "sha256": "ff9b3e6a29d3a22adc4e49bea7f0b9672d3f8a2691b89bf0af8f89b3c1819b17",
+    "requestCount": 2,
+    "messageRoles": [
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system"
+      ],
+      [
+        "system",
+        "user",
+        "system",
+        "system",
+        "system",
+        "system",
+        "assistant",
+        "tool"
+      ]
+    ]
+  }
+]

@@ -1,0 +1,32 @@
+{
+  "recorded_at": "2026-10-14T01:11:22.415548+00:00",
+  "requirement": 4,
+  "status": "whole_production_target_passed",
+  "observation": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/stream_terminal_contract.json",
+  "observation_sha256": "fb5d44918696afc9227ba01c378076a304b10a8e42eadfc8433a5c11e3844b40",
+  "inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-17.json",
+  "inventory_sha256": "caabc77cc1b7eb5cce72efb913b215cd7b9a2be665cd8c34de3b7c6f5d261409",
+  "log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/stream_terminal_contract.log",
+  "log_sha256": "94d1df06ad3952cfa76dc7f9046c7a739161f2476d59fcf7e3f92c230a59a190",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,in-memory-backend",
+    "--test",
+    "stream_terminal_contract",
+    "--",
+    "--include-ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "returncode": 0,
+  "tests_passed": 1,
+  "failed": 0,
+  "ignored": 0,
+  "filtered": 0,
+  "duration_seconds": 510.07,
+  "claim_limit": "Whole current production-source streaming target passed. Not installed published artifact certification or aggregate source-stage acceptance; remaining suffix targets active."
+}

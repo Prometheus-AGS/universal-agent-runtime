@@ -13,9 +13,12 @@ server:
   port: 1906
 
   # The host address to bind to.
-  # Default: 0.0.0.0
+  # Default: 127.0.0.1
   # Env: UAR_SERVER__HOST
-  host: "0.0.0.0"
+  host: "127.0.0.1"
+  # Exact origins only; empty denies cross-origin browser access.
+  # Env: UAR_SERVER__CORS_ALLOWED_ORIGINS (comma-separated, no spaces).
+  cors_allowed_origins: []
 
 security:
   # Explicit identity profile: trusted_local preserves local launch semantics.
@@ -50,7 +53,6 @@ security:
   # Required at startup when jwt_required=true. Generate a deliberate value,
   # for example with: openssl rand -hex 32
   # Env: UAR_SECURITY__JWT_SECRET
-  jwt_secret: "replace_with_a_deliberate_secret"
 
   # Optional registered claims. When set, matching claims are required.
   # Env: UAR_SECURITY__JWT_ISSUER / UAR_SECURITY__JWT_AUDIENCE
@@ -68,9 +70,8 @@ security:
   # Env: UAR_SECURITY__SETTINGS_MUTATION_AUTH_REQUIRED
   settings_mutation_auth_required: true
 
-  # Replace before startup. Required when settings mutation auth is enabled.
+  # Set in the environment before startup; required for settings mutation auth.
   # Env: UAR_SECURITY__SETTINGS_ADMIN_KEY
-  settings_admin_key: "replace-with-a-long-random-secret"
 
 # Governed outbound A2A is disabled when this section has no trusted peers.
 # Each endpoint must also appear in the calling agent artifact's a2a.dependencies.
@@ -140,9 +141,9 @@ persistence:
 llm:
   # Model in "provider/model" format.
   # See https://models.dev for a full list of supported providers and models.
-  # Default: "openai/gpt-4o"
+  # Default: empty; inference requires an explicit model selection.
   # Env: UAR_LLM__MODEL | LLM_MODEL | --llm-model
-  model: "openai/gpt-4o"
+  model: ""
 
   # API key for the selected provider.
   # Can also be set via OPENAI_API_KEY, ANTHROPIC_API_KEY, GROQ_API_KEY, etc.

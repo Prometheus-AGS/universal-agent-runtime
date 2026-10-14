@@ -529,6 +529,15 @@ impl NativeSkillRegistry {
             .collect()
     }
 
+    /// Compose a read-only host inventory while registration remains stable.
+    pub(crate) async fn inspect_descriptors<R>(
+        &self,
+        inspect: impl FnOnce(Vec<Arc<ToolDescriptor>>) -> R,
+    ) -> R {
+        let skills = self.skills.read().await;
+        inspect(skills.values().map(|entry| Arc::clone(&entry.descriptor)).collect())
+    }
+
     /// Look up one compiled descriptor by source-local or provider-visible name.
     pub async fn descriptor(&self, name: &str) -> Option<Arc<ToolDescriptor>> {
         let skills = self.skills.read().await;

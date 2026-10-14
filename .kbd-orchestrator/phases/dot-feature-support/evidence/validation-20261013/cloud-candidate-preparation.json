@@ -1,0 +1,29 @@
+{
+  "recorded_at": "2026-10-13T12:25:02.255997+00:00",
+  "status": "actual_native_build_running",
+  "context": "know-me",
+  "namespace": "dot17-uar",
+  "builder": "dot17-know-me-amd64",
+  "pod": "dot17-know-me-amd640-68779968b5-92b29",
+  "pod_uid": "109eaf67-1044-4d37-9403-0b2b00b4ee27",
+  "node": "lke653426-965151-cmwxx",
+  "resources": {
+    "cpu": 4,
+    "memory": "8Gi",
+    "ephemeral_storage_request": "40Gi",
+    "ephemeral_storage_limit": "80Gi",
+    "new_pvcs": 0
+  },
+  "inventory": "/tmp/dot17-validation-20261013T064622Z/authorized-inventory-11.json",
+  "inventory_sha256": "91b43cd3bb9e8305ec1d6f331febcf2d2e421fecfb7ec192f68bc2f5c82f5586",
+  "source_content_sha256": "e3a0cd150000b9226691e98d5cbfa72d4a7d5e0037dd0bc9789a4583b3945142",
+  "context_manifest_sha256": "52a606163dc48d0fd3b34c11e36a3b662862e3bf6c6dede8d295c4570fe0dd8d",
+  "context_content_sha256": "33393eb47fde159d9a3c59281e4ae5ddc4ce4127850960dc58ced0fe8612e152",
+  "candidate_tag": "ghcr.io/prometheus-ags/universal-agent-runtime:dot17-candidate-e3a0cd150000",
+  "claim_limit": "Actual native amd64 candidate build running; immutable runtime digest not yet produced. No deployment or final acceptance credit.",
+  "supervisor_pid": 63281,
+  "supervisor_parent_pid": 1,
+  "client_pid": 63316,
+  "build_log": "/tmp/uar-dot17-validation-20261013/cloud-candidate-attempt-01/build.log",
+  "build_receipt": "/tmp/uar-dot17-validation-20261013/cloud-candidate-attempt-01/receipt.json"
+}

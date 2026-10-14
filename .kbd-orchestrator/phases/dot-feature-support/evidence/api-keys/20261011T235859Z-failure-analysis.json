@@ -1,0 +1,158 @@
+{
+  "phase": "dot-feature-support",
+  "change": "dot-03-durable-api-keys",
+  "task": "2",
+  "recordedAt": "2026-10-12T00:03:16.312421+00:00",
+  "status": "runtime-failure",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,in-memory-backend",
+    "--test",
+    "durable_api_keys_integration",
+    "--",
+    "--include-ignored",
+    "--test-threads=1"
+  ],
+  "observedExitCode": 101,
+  "observedTestSummary": [
+    "test result: FAILED. 2 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 114.02s"
+  ],
+  "sourceUnchangedAtExit": true,
+  "changedSourcePathsAtExit": [],
+  "boundFileCount": 6286,
+  "sourceClosureScope": "See explicit scope in source fingerprint: 6286 bound files, not complete external Cargo registry/toolchain/native transitive build closure.",
+  "failures": [
+    {
+      "scenario": "postgres_modified_key_paths_restart_revocation_and_outage",
+      "stage": "First runtime startup; exited before readiness",
+      "actualSanitizedDiagnostic": "Failed to initialize Postgres: no pg_hba.conf entry for host 192.168.215.1, synthetic user/database redacted, no encryption",
+      "runtimeAssertionLocation": "tests/support/api_key_process.rs:229",
+      "correctionOwner": "Root-owned test infrastructure; acceptance worker did not modify DB or pg_hba.conf",
+      "unverified": "All modified Postgres API-key paths; observer/checkpoint parity remains separately unsupported."
+    },
+    {
+      "scenario": "shared_surreal_two_processes_current_authority_and_transport_outage",
+      "stage": "First raw API-key GET following proxy.disconnect()",
+      "path": "/api/uar/auth/keys",
+      "actualHttpStatus": 408,
+      "requiredHttpStatus": 503,
+      "runtimeAssertionLocation": "tests/support/api_key_process.rs:369",
+      "unverified": "Remaining outage exchange/management/gRPC/issuer negative controls and final hashed tombstone/duplicate insertion checks not reached."
+    },
+    {
+      "scenario": "sidecar_delegated_key_admission_rechecks_revocation_and_outage",
+      "stage": "First API-derived delegation grant GET following proxy.disconnect()",
+      "path": "/api/uar/full-harness/v1/capabilities",
+      "actualHttpStatus": 408,
+      "requiredHttpStatus": 503,
+      "runtimeAssertionLocation": "tests/support/api_key_process.rs:369",
+      "unverified": "Host-grant preservation during outage after failed API-derived request not reached."
+    }
+  ],
+  "sourceMechanism": "Durable storage records/insert/revoke await backend operations without an API-key authority deadline. Unavailable classification occurs only when operation completes with an error. server.rs global request timeout returns408 first. This is a repo-source explanation; no claim about upstream SDK internals.",
+  "proposedProductionCorrection": "Source owner should bound durable API-key operations, map elapsed to existing ApiKeyStorageError::Unavailable, preserve required503 assertions and global request timeout.",
+  "completedScenarios": [
+    "explicit_local_development_memory_remains_volatile",
+    "local_surreal_kv_keys_exchange_and_revocation_survive_restart"
+  ],
+  "negativeControlsActuallyObserved": [
+    "Explicit local memory keys denied after actual process restart",
+    "Local SurrealKV: unauthorized management, owner tenant/subject isolation, reserved admin role escalation rejection, legacy reissue outcome, HTTP/gRPC expiry denial",
+    "Local SurrealKV: raw/exchanged admission after restart, revocation denial after another restart, inspectable tombstone, Argon2id-only durable record and duplicate-insertion rejection",
+    "Partial shared test before failing outage: cross-process revoke, two runtimes restarting and denying, current-role mismatch denial, equal subject foreign tenant/issuer isolation",
+    "Partial sidecar test before failing outage: API-derived grant denied after management revokes underlying key; independent host grant remains admitted before outage"
+  ],
+  "artifactFingerprintsAtExit": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067",
+      "sha256": "510ca649c7ca73c8ee239397cb7d4e46e1f3cd3bd1aad3723a1fe235b8d36ad4",
+      "bytes": 236395312,
+      "capturedAt": "2026-10-11T23:59:26.319267+00:00",
+      "sha256AtExit": "510ca649c7ca73c8ee239397cb7d4e46e1f3cd3bd1aad3723a1fe235b8d36ad4",
+      "unchangedSinceObservedLaunch": true
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "sha256": "ec0067dd9bec8e8d0bd783355742da6c442bea6f2009c1976cc75b63ec749434",
+      "bytes": 551676824,
+      "capturedAt": "2026-10-11T23:59:28.852683+00:00",
+      "sha256AtExit": "ec0067dd9bec8e8d0bd783355742da6c442bea6f2009c1976cc75b63ec749434",
+      "unchangedSinceObservedLaunch": true
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar",
+      "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar",
+      "sha256": "b828691a0534f2f9990eeee7faccd34530d83cb9ae6b3c93a264ba3024d381ef",
+      "bytes": 550305088,
+      "capturedAt": "2026-10-12T00:00:46.727339+00:00",
+      "sha256AtExit": "b828691a0534f2f9990eeee7faccd34530d83cb9ae6b3c93a264ba3024d381ef",
+      "unchangedSinceObservedLaunch": true
+    }
+  ],
+  "observedLaunchSampling": {
+    "intervalSecs": 1,
+    "observedCount": 10,
+    "notExhaustive": true,
+    "individualChildExitCodes": "Not instrumented by fixture; gate exit is recorded, fixture stop waits for exit, failure Drop kills/waits. OS launch observations alone do not establish individual exit codes.",
+    "observedChildrenStillLiveAtAnalysis": []
+  },
+  "childEvidence": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpEXYGbU-stdout.log",
+      "sha256": "993a44abb25c477191d15cf50c7c187e8f11031ab752ad25db8ade95e25be7de"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpEXYGbU-stderr.log",
+      "sha256": "2ed9ec4b2d6772031a675c2c932f9b8da69bb9633e68489f2b1ee1545ad080fd"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpuGtWI3-stdout.log",
+      "sha256": "ee72e15744983483817e172aef69ce78c12ad1c642ca3b54cafb7421a72f0e53"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpuGtWI3-stderr.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmp0AqOeL-stdout.log",
+      "sha256": "b2eae80179ea08cb447a1afd8620cca6911efdf3a164ca8a9c3511f2aa2a4a07"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmp0AqOeL-stderr.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpaJUzTK-stdout.log",
+      "sha256": "0b0ea55b5d4c9af0c7fcceb91bf22ec88fcf7e41567e4c1ccc7bb7a2b069708d"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpaJUzTK-stderr.log",
+      "sha256": "d52366db53ce68dce29340cecf164c669518c3bd4b272bcb080706f220714461"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpPfUlQu-stdout.log",
+      "sha256": "755a35d45612fd34535dc6d5d0a55742c71ecd04086e3564201eaa897df29e9c"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpPfUlQu-stderr.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    }
+  ],
+  "productionOrTestEditsByAcceptanceWorker": [],
+  "unrequestedAdditions": [],
+  "guardsAddedByAcceptanceWorker": [],
+  "unverified": [
+    "Postgres API-key path until pg_hba fixture correction and gate rerun",
+    "Shared and sidecar explicit storage503 outage contract until bounded operation correction and gate rerun",
+    "Postgres checkpoint/observer parity",
+    "Cumulative phase composition and independent review",
+    "Both-architecture publication/certification",
+    "Other35-task phase work"
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T021812Z-production-boundary.json",
+  "changedBoundPathsSincePreviousGate": [
+    "tests/support/truthful_tool_outcome_process.rs"
+  ],
+  "hashes": {
+    "tests/support/truthful_tool_outcome_process.rs": {
+      "old": "b6c90b26de8cacf791a081feb075c7f94c5f6943df84037cf064e8970e0d4cef",
+      "new": "b51c9c31dc4cce50a6b9d0a79b8f9d191a65b005284de33fddbe89e0257bb836"
+    }
+  },
+  "correctionPatchSha256": "5d43818a66a24c73f6263784f11f092bfbd00b5382bcef638c0e38b0809f09fb",
+  "patch": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T022508Z-observed-correction.patch",
+  "tier0Commands": [
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--no-index",
+        "--check",
+        "/dev/null",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--emit",
+        "stdout",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 66940,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--check",
+        "--config",
+        "reorder_imports=false,reorder_modules=false",
+        "--file-lines",
+        "[{\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs\", \"range\": [28, 28]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs\", \"range\": [132, 132]}]",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "rg",
+        "-n",
+        "dot04__outcomes__effect",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    }
+  ],
+  "tier0Attribution": "Original author command receipt; exact registered-literal fixture correction and broad source stability independently verified. Literal correction did not fix observed frozen capture failure."
+}

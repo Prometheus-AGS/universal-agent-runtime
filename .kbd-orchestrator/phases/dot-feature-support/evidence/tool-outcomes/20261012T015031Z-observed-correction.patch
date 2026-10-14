@@ -1,0 +1,353 @@
+--- failed-source/tests/truthful_tool_outcomes.rs
++++ refrozen-source/tests/truthful_tool_outcomes.rs
+@@ -13,7 +13,6 @@
+     body::{Body, to_bytes},
+     http::{Request, StatusCode},
+ };
+-use futures::StreamExt;
+ use serde_json::{Value, json};
+ use std::{
+     path::{Path, PathBuf},
+@@ -25,12 +24,10 @@
+ use tower::ServiceExt;
+ use universal_agent_runtime::{
+     config::{LlmConfig, ServiceInstanceConfig},
+-    llm::{Orchestrator, orchestrator::ToolApprovalResult},
+     mcp::{
+         outcome::{McpToolFailure, ToolOutcome},
+         registry::McpRegistry,
+     },
+-    normalized::NormalizedEvent as ModelEvent,
+     session::SessionStore,
+     uar::{
+         api::routes::{self, RunApiState},
+@@ -38,10 +35,7 @@
+             CollaborationCatalogService, CollaborationStorage, SurrealCollaborationStorage,
+         },
+         defaults::default_agent,
+-        domain::{
+-            events::NormalizedEvent as RunEvent,
+-            policy::{PolicyResolutionInput, PolicyUniverse, resolve_run_policy},
+-        },
++        domain::events::NormalizedEvent as RunEvent,
+         persistence::{
+             PersistenceLayer,
+             agent_threads::{CanonicalReceiptSource, CanonicalReceiptStoreError},
+@@ -54,11 +48,6 @@
+             matching::{VectorMatcher, intent::ClassifierConfig},
+             native_skill::NativeSkillRegistry,
+             skills::SkillRegistry,
+-            tool_admission::{
+-                HostToolAdmissionPort, StandaloneToolAdmissionPort, ToolAdmissionContext,
+-                ToolAdmissionRuntime,
+-            },
+-            turn::{ResolvedTurn, TurnEnvironment},
+         },
+         service_instance::ServiceInstanceAuthority,
+     },
+@@ -499,121 +488,6 @@
+     run
+ }
+ 
+-async fn scoped_run(root: &Path, store: &Arc<dyn PersistenceLayer>, mode: &str) -> String {
+-    let trace = root.join(format!("scoped-{mode}.jsonl"));
+-    let (registry, runtime, preflight) = peer::scoped(&trace).await;
+-    if mode == "predispatch" {
+-        runtime.shutdown().await.unwrap();
+-    }
+-    let peer = peer::Peer::start().await;
+-    let config = llm(&peer);
+-    let run = format!("scoped-{}-{mode}", uuid::Uuid::new_v4());
+-    let mut artifact = default_agent();
+-    artifact.policy.tools.allow = vec![peer::TOOL.into()];
+-    let policy = resolve_run_policy(PolicyResolutionInput {
+-        universe: PolicyUniverse {
+-            tools: [peer::TOOL.into()].into(),
+-            mcp_servers: ["outcomes".into()].into(),
+-            ..PolicyUniverse::default()
+-        },
+-        ..PolicyResolutionInput::default()
+-    });
+-    let epoch = uuid::Uuid::new_v4().to_string();
+-    let host: Arc<dyn HostToolAdmissionPort> = Arc::new(StandaloneToolAdmissionPort::new(&epoch));
+-    let context = ToolAdmissionContext::new(
+-        run.clone(),
+-        run.clone(),
+-        peer::OWNER.into(),
+-        peer::OWNER.into(),
+-        root.display().to_string(),
+-        epoch,
+-        &artifact,
+-        &policy,
+-        "standalone".into(),
+-        host.binding(),
+-    )
+-    .unwrap();
+-    let admission = Arc::new(
+-        ToolAdmissionRuntime::new(
+-            context,
+-            host,
+-            Some(store.clone()),
+-            tokio_util::sync::CancellationToken::new(),
+-            None,
+-            None,
+-        )
+-        .unwrap(),
+-    );
+-    let turn = Arc::new(ResolvedTurn::new(
+-        artifact,
+-        policy,
+-        TurnEnvironment {
+-            owner_id: peer::OWNER.into(),
+-            run_id: run.clone(),
+-            session_id: run.clone(),
+-        },
+-        config.clone(),
+-        Vec::new(),
+-    ));
+-    let orchestrator = Orchestrator::new(
+-        config,
+-        Arc::new(registry.clone()),
+-        Arc::new(NativeSkillRegistry::new()),
+-    )
+-    .unwrap()
+-    .with_mcp_preflight(Arc::new(preflight))
+-    .with_resolved_turn(turn)
+-    .with_tool_admission(admission)
+-    .with_canonical_receipt_store(Some(store.clone()))
+-    .with_tool_approval_gate(Arc::new(|_| {
+-        Box::pin(async { ToolApprovalResult::Allowed })
+-    }));
+-    let events = tokio::time::timeout(WAIT, async {
+-        orchestrator
+-            .chat(mode)
+-            .await
+-            .unwrap()
+-            .collect::<Vec<_>>()
+-            .await
+-    })
+-    .await
+-    .unwrap();
+-    let (content, success) = events
+-        .iter()
+-        .find_map(|event| match event {
+-            ModelEvent::ToolResult {
+-                name,
+-                content,
+-                success,
+-                ..
+-            } if name == peer::TOOL => Some((content, *success)),
+-            _ => None,
+-        })
+-        .expect("actual scoped orchestrator produced a result");
+-    assert_eq!(success, expected(mode).succeeded());
+-    if mode == "application" {
+-        peer::assert_content(
+-            &serde_json::from_str::<Value>(content).unwrap()["result"],
+-            mode,
+-        );
+-    }
+-    if mode == "unknown" {
+-        assert!(events.iter().any(|event| matches!(event, ModelEvent::Error { code: Some(code), .. } if code == "TOOL_OUTCOME_UNKNOWN")));
+-    }
+-    assert_eq!(
+-        peer.seen.requests.lock().unwrap().len(),
+-        if mode == "unknown" { 1 } else { 2 }
+-    );
+-    assert_receipt(store, &run, mode).await;
+-    runtime.shutdown().await.unwrap();
+-    remove_fixture_server(&registry, &trace).await;
+-    assert_eq!(
+-        peer::effects(&trace).len(),
+-        usize::from(mode != "predispatch")
+-    );
+-    run
+-}
+-
+ async fn observe(root: &Path, store: &Arc<dyn PersistenceLayer>) {
+     let legacy = store
+         .list_canonical_tool_receipts(peer::OWNER, "dot04-legacy")
+@@ -628,12 +502,19 @@
+     let manifest: Value =
+         serde_json::from_slice(&std::fs::read(root.join("receipts.json")).unwrap()).unwrap();
+     for scenario in manifest.as_array().unwrap() {
+-        assert_receipt(
+-            store,
+-            scenario["run"].as_str().unwrap(),
+-            scenario["mode"].as_str().unwrap(),
+-        )
+-        .await;
++        let mode = scenario["mode"].as_str().unwrap();
++        let scoped_store;
++        let receipt_store = if scenario["scopedDatabase"] == true {
++            let shared = std::env::var("UAR_DOT04_SHARED").as_deref() == Ok("1");
++            scoped_store = process::scoped_outcome_store(root, shared, mode).await;
++            &scoped_store
++        } else {
++            store
++        };
++        assert_receipt(receipt_store, scenario["run"].as_str().unwrap(), mode).await;
++        if scenario["scopedDatabase"] == true {
++            process::assert_scoped_effect_count(root, mode);
++        }
+     }
+     for trace in std::fs::read_dir(root)
+         .unwrap()
+@@ -874,9 +755,10 @@
+         let direct = direct_run(&root, &store, mode).await;
+         settle_dependency(&catalog, &stores.catalog, &store, &direct, mode, "direct").await;
+         receipts.push(json!({"mode":mode,"run":direct}));
+-        let scoped = scoped_run(&root, &store, mode).await;
+-        settle_dependency(&catalog, &stores.catalog, &store, &scoped, mode, "scoped").await;
+-        receipts.push(json!({"mode":mode,"run":scoped}));
++        let (scoped, scoped_store) = process::scoped_outcome_run(&root, shared, mode).await;
++        assert_receipt(&scoped_store, &scoped, mode).await;
++        settle_dependency(&catalog, &stores.catalog, &scoped_store, &scoped, mode, "scoped").await;
++        receipts.push(json!({"mode":mode,"run":scoped,"scopedDatabase":true}));
+     }
+     std::fs::write(
+         root.join("receipts.json"),
+--- failed-source/tests/support/truthful_tool_outcome_process.rs
++++ refrozen-source/tests/support/truthful_tool_outcome_process.rs
+@@ -366,11 +366,14 @@
+                             "predispatch fixture never reached approval boundary"
+                         );
+                     }
+-                    std::fs::write(
+-                        self.directory.join("run-events.json"),
+-                        serde_json::to_vec_pretty(&events).unwrap(),
+-                    )
+-                    .unwrap();
++                    let path = self.directory.join("run-events.json");
++                    std::fs::write(&path, serde_json::to_vec_pretty(&events).unwrap()).unwrap();
++                    #[cfg(unix)]
++                    {
++                        use std::os::unix::fs::PermissionsExt;
++                        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600))
++                            .unwrap();
++                    }
+                     return events;
+                 }
+             }
+@@ -1454,6 +1457,95 @@
+             assert!(attempt.usage.is_none());
+         }
+     }
++}
++
++/// Reopen the exact scoped fixture backend after its owning server has exited.
++pub async fn scoped_outcome_store(
++    root: &Path,
++    shared: bool,
++    mode: &str,
++) -> std::sync::Arc<dyn PersistenceLayer> {
++    std::sync::Arc::new(
++        Database::configuration(root, shared, &format!("scoped-{mode}"))
++            .connect()
++            .await,
++    )
++}
++
++pub fn assert_scoped_effect_count(root: &Path, mode: &str) {
++    let trace = root.join(format!("binary-scoped-{mode}/effects.jsonl"));
++    assert_eq!(
++        peer::effects(&trace).len(),
++        usize::from(mode != "predispatch"),
++        "observing durable scoped outcomes replayed an effect"
++    );
++}
++
++/// Enter scoped orchestration through authenticated public server admission.
++/// A public ResolvedTurn constructor cannot manufacture its verified owner.
++pub async fn scoped_outcome_run(
++    root: &Path,
++    shared: bool,
++    mode: &str,
++) -> (String, std::sync::Arc<dyn PersistenceLayer>) {
++    let label = format!("scoped-{mode}");
++    let database = Database::configuration(root, shared, &label);
++    let model = peer::Peer::start().await;
++    let mut node = Node::boot(root, &label, &database, &model).await;
++    let mut artifact = universal_agent_runtime::uar::defaults::default_agent();
++    artifact.id = format!("dot04-scoped-{mode}");
++    artifact.memory.kb.enabled = false;
++    artifact.policy.tools.allow = vec![peer::TOOL.into()];
++    let admitted = node
++        .post(
++            "/api/uar/runs",
++            json!({"artifact":artifact,"input":mode}),
++            200,
++        )
++        .await;
++    let run = admitted["run_id"].as_str().unwrap().to_owned();
++    // run_events retains the original stream privately before assertions.
++    let events = node.run_events(&run, mode).await;
++    assert_tool_end(&events, peer::TOOL, mode);
++    assert_eq!(
++        model.seen.requests.lock().unwrap().len(),
++        if mode == "unknown" { 1 } else { 2 },
++        "unknown result triggered a model retry turn"
++    );
++    assert_eq!(
++        peer::effects(&node.trace).len(),
++        usize::from(mode != "predispatch"),
++        "external effect was replayed or predispatch rejection executed"
++    );
++    node.stop().await;
++    let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
++    while !node.peer_pids().is_empty() {
++        assert!(
++            tokio::time::Instant::now() < deadline,
++            "scoped server MCP children did not exit"
++        );
++        tokio::time::sleep(Duration::from_millis(50)).await;
++    }
++    let path = node.directory.join("scoped-entrypoint.json");
++    std::fs::write(
++        &path,
++        serde_json::to_vec_pretty(&json!({
++            "kind":"authenticated_scoped_runtime_binary","pid":node.child.id(),
++            "startedAt":node.started_at,"run":run,"mode":mode,"database":database.name,
++            "route":"POST /api/uar/runs","events":"run-events.json",
++            "serverExited":node.child.try_wait().unwrap().is_some(),"mcpChildrenExited":true
++        }))
++        .unwrap(),
++    )
++    .unwrap();
++    #[cfg(unix)]
++    {
++        use std::os::unix::fs::PermissionsExt;
++        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
++    }
++    drop(node);
++    assert_scoped_effect_count(root, mode);
++    (run, scoped_outcome_store(root, shared, mode).await)
+ }
+ 
+ /// Execute actual startup-composed ordinary runs and durable team consumers.
+--- failed-source/docs/operations/truthful-tool-outcomes.md
++++ refrozen-source/docs/operations/truthful-tool-outcomes.md
+@@ -128,12 +128,17 @@
+ and scoped application failures, success, known predispatch rejection, and a
+ disconnect after an independently fsynced external effect. It checks actual
+ orchestrator/admission consumers, `ToolEnd`, immutable canonical receipts,
+-catalog dependency settlement, local fresh-process reopen, and concurrent shared
+-writer/observer helper processes. Those helpers are not deployed runtime binaries.
+-The additional server-process fixture enters scoped
+-manager startup and public collaboration admission to exercise actual team actor
+-execution, including the legacy certainty hold, instance passivation, and
+-joined-yield recovery. It authors 11 local and 16 shared process scenarios,
++catalog dependency settlement, and local fresh-process reopen. Direct manager
++cases use the in-process authenticated run router. The four scoped orchestrator
++cases per profile enter an ordinary UAR binary through authenticated
++`POST /api/uar/runs`, with its startup-installed scoped MCP runtime and verified
++turn owner. Each uses an isolated durable backend, which the library observer
++helper reopens after the owning server and its MCP children exit. These four
++changed entrypoints replace the manual scoped fixtures; they do not add scenario
++rows. Library writer/observer helpers remain distinct from actual server binaries.
++The additional server-process fixture enters public collaboration admission to
++exercise actual team actor execution, including the legacy certainty hold,
++instance passivation, and joined-yield recovery. It authors 11 local and 16 shared process scenarios,
+ including two same-name invocations whose unrelated native receipt must not
+ confirm the paired-host invocation's ambiguous historical failure.
+ For shared team scenarios, two real server binaries remain alive concurrently

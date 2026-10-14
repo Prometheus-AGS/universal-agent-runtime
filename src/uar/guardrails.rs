@@ -54,6 +54,7 @@ pub trait InputScreen: Send + Sync {
 
 /// The built-in heuristic screen (substring + shaped scans). This is the
 /// default screen used when no custom screen is configured.
+#[derive(Debug)]
 pub struct HeuristicScreen;
 
 impl InputScreen for HeuristicScreen {
@@ -66,6 +67,14 @@ impl InputScreen for HeuristicScreen {
 /// Screens are evaluated in order; the first non-`None` result wins.
 pub struct ChainedScreen {
     screens: Vec<Box<dyn InputScreen>>,
+}
+
+impl std::fmt::Debug for ChainedScreen {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ChainedScreen")
+            .field("screen_count", &self.screens.len())
+            .finish_non_exhaustive()
+    }
 }
 
 impl ChainedScreen {

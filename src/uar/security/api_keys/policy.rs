@@ -131,7 +131,8 @@ impl KeyPolicy {
         &self,
         record: &ApiKeyRecord,
     ) -> Result<(), ApiKeyAuthorityError> {
-        if record.subject.trim().is_empty()
+        if record.authority_version != AUTHORITY_VERSION
+            || record.subject.trim().is_empty()
             || record.subject == "anonymous"
             || record
                 .roles

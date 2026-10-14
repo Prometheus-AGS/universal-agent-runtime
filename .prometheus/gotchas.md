@@ -1663,3 +1663,84 @@ applies upstream PR #19's `/MD` change through `[patch.crates-io]`.
 
 ## 2026-10-11 — Restore the schema boundary, not an unsafe cast
 The consolidated frontend manifests selected Zod 4 while versions.toml and @a2ui/web_core 0.12 required Zod 3 schema objects. Restoring first-party 3.25.76 removed the schema/ReactNode errors. Core 0.12 additionally requires explicit catalog protocol version and a renderer generic on MessageProcessor. Both workspace lockfiles lagged their existing manifests, so repairing only installed node_modules would not have produced reproducible installs. Exact frontend typecheck and production build passed; live desktop qualification remains separate.
+
+
+## 2026-10-11 — Integration fixtures cannot call crate-private JWT adapters
+
+The first durable API-key production gate failed with E0603 before running tests because its external integration fixture called security::jwt::encode, a crate-private host wrapper. The accepted credential fixture already uses public jsonwebtoken::encode for synthetic signed input. Corrected only the new fixture call; widening production visibility was unnecessary. Keep the failed source snapshot and compiler receipt, and rerun the same completed-change gate after refreezing source. Compilation failure is not a runtime failure or acceptance evidence.
+
+
+## 2026-10-12 — Match fixture readback to actual durable provider selection
+
+Dot tool-outcome gate042639 passed actual local instance settlement and canonical/admission readback, then failed when its helper immediately opened the same SurrealKV database again for instance assertions. Reuse the already opened provider across related assertion sets and drop it afterward. The exact remaining lock holder and release timing were not sampled; do not claim a live runtime caused that lock.
+
+Gate043451 passed all30local and32shared scenarios, then a direct shared instance readback returned Unsupported. Actual Node binaries explicitly supplied UAR_REMOTE_SURREAL_DURABILITY_ATTESTED=1, but the env-cleared helper omitted it. SurrealDbProvider captures remote durability capability at construction. Explicitly pass the same trusted attestation only to children using the qualified durable infrastructure; retain environment clearing and production capability guards. Whole gate044744 then passed all65 scenarios with stable sources and executable identities. These fixtures prove qualified local/shared behavior, not arbitrary remote durability, PostgreSQL parity or supervisor takeover.
+
+
+## 2026-10-12 — Assert observed partial output, not fixture wire length
+
+Dot05 whole stream gate compiled successfully then failed the OpenAi invalid_utf8 local graph marker assertion at tests/stream_terminal_contract.rs:673. The fixture demanded TurnInterrupted from a nonempty wire-case label. Manager emits that marker for actual accumulated content or tool calls, and SseDecoder validates a received chunk before framing; malformed UTF8 can prevent a valid prefix from being exposed. The original failing case did not serialize events/session snapshots, so actual no-ChatDelta/chunk grouping remains unverified. Corrected only the fixture to require the marker for observed nonempty ChatDelta and added private event/state/history diagnostics before terminal assertions; retained Error/status/no successful checkpoint/noeffect/receipt checks. Whole runtime retry remains pending.
+
+
+## 2026-10-12 — Anthropic delta usage and fixture readiness need their actual contracts
+
+Dot05 attempt2 rejected valid native Anthropic message_delta usage with only output_tokens. StreamEvent reused full UsageResponse requiring input_tokens; strict decoding exposed the existing mismatch. Added partial MessageDeltaUsage with optional input/cache and required output, preserving full initial validation and existing cumulative merger. Whole native valid/split integration confirmed input2/output3/total5. Attempt3 failed ParseIntError Empty when Python created port before writing; fixture now writes closed complete port.pending then atomically replaces readiness port. The whole attempt4 passed83cases249boundaries. Retain failures and actual diagnostics; do not pad valid provider wire or retry a readiness reader to hide partial publication.
+
+
+## Interrupted gate receipts are stale state — 2026-10-12T19:01:19.617906+00:00
+
+Observed Dot resume attempt3 retained status=running across an approximately eight-hour interrupted chat interval. Fresh process inspection found its Cargo/test/runtime/MCP PIDs gone and its log lacked a terminal result. Treat a running receipt as historical until its timestamp, known process state and actual terminal logs are reconciled. Present source equality does not establish stability across an unsampled interval; retained binaries do not prove a now-missing original build path remained intact. Preserve the original receipt and append an explicit interrupted/unverified disposition, then prepare a fresh gate without duplicate writers.
+
+
+## 2026-10-12 — Joined process exit is the local KV readback boundary
+
+The first complete fresh-process resume gate reached a protected checkpoint but its fixture failed with `local-resume/database/LOCK already locked by another process`. It opened the same embedded SurrealKV repeatedly for envelope and proof checks. The exact lock holder at failure was not sampled. A lexical provider drop is not a joined shutdown of SDK session tasks. The fixture now performs each readback phase in an owned child process, reuses one production provider within that phase, and joins child exit before another KV owner starts. The whole 24-group gate passed with 42 such joined phases. Do not use sleeps or unobserved lock release as durability proof.
+
+## 2026-10-12 — An affected stream gate needs current auth and remote durability inputs
+
+After fresh resume changed authority and checkpoint contracts, the earlier streaming receipt did not certify current source. Its full rerun first failed because a fixture signed with raw `jsonwebtoken` before UAR installed its process crypto provider; the fixture now enters the public verifier with a malformed token, requires 401, then signs and verifies its real token. A later rerun completed local checkpoints but the shared graph failed `list_checkpoints` as unsupported because the env-cleared gate omitted `UAR_REMOTE_SURREAL_DURABILITY_ATTESTED=1`. The next gate bound that attestation to the same durable remote infrastructure proven in the accepted resume gate and passed 83 rows/249 observed boundaries. An arbitrary healthy remote endpoint is not durability attestation.
+
+## 2026-10-12 — A completed hourly slice was mistaken for the full-phase test boundary
+
+During Dot Execute, approval-recovery integration gates were started after that
+change's source slice, while later Dot changes remained unimplemented. The
+operator's boundary was the entire phase. `AGENTS.md` permitted a current-hour
+gate, a compiler exception, and a Rust completed-change gate; those weaker rules
+enabled the mistaken interpretation. The second approval gate's 32 qualification
+groups passed provisionally, but its customer build was interrupted, so it did
+not complete acceptance. The gate was stopped and its incomplete result retained.
+
+The project rule now requires an explicit inventory showing every planned
+production implementation item complete before any verification command. A
+change, hour, or compiler blocker does not open that boundary. An agent that
+believes an early command is necessary must first present its exact scope and
+reason to the operator and wait for explicit permission.
+
+## 2026-10-13 — Private session keys must not reuse raw subject or catalog ownership
+
+Dot12 task3 source inspection found session/ACP/history/KB caller paths using the
+raw JWT subject, while catalog presentation keys omit issuer by their separate
+contract. Equal subjects across issuers/tenants therefore require a distinct full
+credential-principal key for private history and knowledge. Conversation policy
+fallback to old subject rows could also adopt ambiguous legacy data. Source now
+uses strict verified keys and disjoint durable namespaces, preserving legacy rows
+without automatic adoption. Session deletion no longer cascades by unqualified
+session ID into independent accounting/audit records. Qualification is deferred to
+the full expanded phase; these source findings and edits are not a passed gate.
+
+
+## 2026-10-13 — qualified derive path did not supply its trait name
+
+Observed full-phase candidate gate failed with E0405 at src/uar/memory/migration.rs:102. The qualified surrealdb::types::SurrealValue derive still required SurrealValue in the row module scope; its existing import contained only RecordId and Datetime. The corrective batch added the trait import and the runner retained the actual failed log. Source-only inspection had missed this derive coupling. This is a compiler failure, not a runtime acceptance result. Full-phase testing authorization preceded the command; no early per-edit check ran.
+
+
+## 2026-10-14T00:34:07.086839+00:00 — Whole real-process sequence budgets and evidence retention
+
+Formal12 inventory15 MCP parent failed at600.083 seconds while its26 sequential real runtime boots progressed; retained logs showed later shutdowns and boots after parent exit. This was a fixture-wide deadline failure, not proof of a provider failure or pipe deadlock. Correct the complete-sequence budget separately from per-operation limits and cooperatively join the exact helper on cancellation. Existing fixture peer drops do not qualify hard descendant containment.
+
+Passing R2/R7 targets must retain their original failed batch receipt, inventory, sidecars and rawlog hashes. A fixed-prefix continuation requires actual source equivalence excluding only its named fixture/runner corrections. Never rewrite the old failed receipt as passed or rerun those passing targets merely because the runner lacked continuation. Binary and text evidence closure must be byte-hash checked; a JSON-only metadata reader cannot parse retained logs or source archives. All corrective implementation remains before the next fresh full-phase inventory and gate.
+
+
+## 2026-10-14T08:40:38.803639+00:00 — Preserve the causal transaction error
+
+Dot memory-owner production gate failed both durable profiles at legacy import, but controlled-save error selection returned the lowest indexed SurrealDB transaction error. Pinned storage documents that early rows may be rollback NotExecuted placeholders; the substantive statement or COMMIT failure can appear later. Completed correction uses existing typed QueryError selection, without speculative history/migration changes. Memory metadata is flexible nested JSON; source analysis ruled out the proposed history RecordId payload cause. The actual functional failure remains unknown until the whole failed parent reports the causal error. Diagnostic completeness is not a passing product result.

@@ -1,0 +1,273 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-12T20:08:59.784806+00:00",
+  "phase": "Execute",
+  "change": "dot-06-fresh-process-resume",
+  "task": "2",
+  "canonicalRevision": 2715,
+  "status": "failed_unsupported_memory_fixture_startup",
+  "accepted": false,
+  "exitCode": 101,
+  "testSummary": [
+    "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 133.85s"
+  ],
+  "command": [
+    "env",
+    "-i",
+    "HOME=/Users/gqadonis",
+    "PATH=/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/gqadonis/.minimax/bin:/Users/gqadonis/.local/bin:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/97288_1791831174106/bin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.pyenv/shims:/Users/gqadonis/.minimax/bin:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/usr/local/share/dotnet:~/.dotnet/tools:/usr/local/go/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/opt/podman/bin:/Users/gqadonis/.codex/tmp/arg0/codex-arg08wZZjw:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/29547_1791811184470/bin:/Users/gqadonis/miniconda3/condabin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.the-boss/commands:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/opt/zerobrew/prefix/bin:/Users/gqadonis/.pochi/bin:/Users/gqadonis/.antigravity/antigravity/bin:/Users/gqadonis/.codeium/windsurf/bin:/opt/homebrew/opt/openssl@3/bin:/opt/homebrew/opt/bison/bin:/Users/gqadonis/.opencode/bin:/Users/gqadonis/.console-ninja/.bin:/Users/gqadonis/.wasmedge/bin:/Users/gqadonis/.wasmtime/bin:/Users/gqadonis/.deno/bin:/Users/gqadonis/.paperspace/bin:/Users/gqadonis/.groundcover/bin:/Users/gqadonis/.rd/bin:/Users/gqadonis/google-cloud-sdk/bin:/Users/gqadonis/.shorebird/bin:/Applications/Android Studio/Contents/MacOS:/Users/gqadonis/development/flutter/bin:/Users/gqadonis/.rust-mcp-stack/bin:/Users/gqadonis/.cargo/bin:/Users/gqadonis/.bun/bin:/Users/gqadonis/Library/pnpm:/opt/homebrew/opt/go/libexec/bin:/Users/gqadonis/go/bin:/opt/local/bin:/opt/local/sbin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Users/gqadonis/.pub-cache/bin:/Users/gqadonis/development/flutter/.pub-cache/bin:/Users/gqadonis/Library/Android/sdk/platform-tools:/Users/gqadonis/Library/Android/sdk/tools:/Users/gqadonis/Library/Android/sdk/tools/bin:/Users/gqadonis/Library/Android/sdk/emulator:/Users/gqadonis/.rvm/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.modular/bin:/Users/gqadonis/bin:/Users/gqadonis/Projects/ide/bin:/Users/gqadonis/.dotnet/tools:/Users/gqadonis/.orbstack/bin:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/gqadonis/.dotnet/tools:/usr/local/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.orbstack/bin",
+    "UAR_DOT06_INFRA_FILE=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "UAR_DOT06_NAMESPACE=dot06_20261012T200103_7bce5970a2",
+    "UAR_DOT06_EVIDENCE_ROOT=/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures",
+    "UAR_REMOTE_SURREAL_DURABILITY_ATTESTED=1",
+    "RUSTC_WRAPPER=",
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend",
+    "--test",
+    "fresh_process_resume",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "publicGateReceipt": ".kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T200241Z-resume-production-boundary.json",
+  "privateGateReceipt": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-receipt.json",
+  "partialActualScenarioGroups": 21,
+  "partialActualSupportedScenarioInventory": [
+    {
+      "directory": "local-abrupt",
+      "profile": "local",
+      "case": "abrupt",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-abrupt/acceptance.json",
+      "sha256": "d098dedecbb5d8556195d31aa3a708a627c3e9c21a70336c44e51c0ddfc11e60"
+    },
+    {
+      "directory": "local-binding",
+      "profile": "local",
+      "case": "binding",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-binding/acceptance.json",
+      "sha256": "beb8f3b0e88012d0ce524f7c399b9ba7212ca0f05534fce6030ea80594cd8b94"
+    },
+    {
+      "directory": "local-corrupt",
+      "profile": "local",
+      "case": "corrupt",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-corrupt/acceptance.json",
+      "sha256": "c088f819a23a7a69e29f996abb5f394450a818db39bf0c49498e25934edf814b"
+    },
+    {
+      "directory": "local-kill-after",
+      "profile": "local",
+      "case": "kill-after",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-kill-after/acceptance.json",
+      "sha256": "e630bb7fad4ddb57d7a86d72eee8b5aecd7ed3de3dfbe6c8dd364db232cfbcad"
+    },
+    {
+      "directory": "local-kill-before",
+      "profile": "local",
+      "case": "kill-before",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-kill-before/acceptance.json",
+      "sha256": "0e00fd8bc8122990dd40c6e650fefb9fb488b7063be034d5ed5d18f9cb05fad5"
+    },
+    {
+      "directory": "local-negative",
+      "profile": "local",
+      "case": "negative",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-negative/acceptance.json",
+      "sha256": "2f72cec80e2e2b0ec081026771d83d1b9c9a4640d082b1a08a129402e0878030"
+    },
+    {
+      "directory": "local-policy",
+      "profile": "local",
+      "case": "policy",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-policy/acceptance.json",
+      "sha256": "e486708dfc5023d2ed5686756d4674da399201525c818ddf5703791ddcaf6f36"
+    },
+    {
+      "directory": "local-resume",
+      "profile": "local",
+      "case": "resume",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-resume/acceptance.json",
+      "sha256": "f29486efcc959a6b0d5a529d528adc6c2eaee427ed2d8aa83439d55bd121283d"
+    },
+    {
+      "directory": "local-target",
+      "profile": "local",
+      "case": "target",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-target/acceptance.json",
+      "sha256": "d4d3a8f900699487ab451de4cf4aa8673c35fe8ed652bc83544f2dcf50661849"
+    },
+    {
+      "directory": "local-uncertain",
+      "profile": "local",
+      "case": "uncertain",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-uncertain/acceptance.json",
+      "sha256": "73e6c1ebab210bbba17525602d46a7202700d08391c15e1efa5289dca94837fc"
+    },
+    {
+      "directory": "shared-abrupt",
+      "profile": "shared",
+      "case": "abrupt",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-abrupt/acceptance.json",
+      "sha256": "b36edcce4f29b7498d917a953b8596ba4ab4f60096d8754f591aaafe51e4021f"
+    },
+    {
+      "directory": "shared-binding",
+      "profile": "shared",
+      "case": "binding",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-binding/acceptance.json",
+      "sha256": "20e23e54f5cbb5f6f2b75d3ac2256a0dcfb343faec273ad836a69fbcfce45467"
+    },
+    {
+      "directory": "shared-corrupt",
+      "profile": "shared",
+      "case": "corrupt",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-corrupt/acceptance.json",
+      "sha256": "4bb1cedfe80f5fb4e8bda1bcefde454cbd98634909b4ea855ed4ad25a860045f"
+    },
+    {
+      "directory": "shared-kill-after",
+      "profile": "shared",
+      "case": "kill-after",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-kill-after/acceptance.json",
+      "sha256": "e3ad67fe8bf2b460fa2127dc390b5e7e56cf4a36406cc3621235540e69251582"
+    },
+    {
+      "directory": "shared-kill-before",
+      "profile": "shared",
+      "case": "kill-before",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-kill-before/acceptance.json",
+      "sha256": "cae4ae940b7daead355a7a0aada45c7d85b1eb3ea3dbbbd77383c0c8b92abb59"
+    },
+    {
+      "directory": "shared-negative",
+      "profile": "shared",
+      "case": "negative",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-negative/acceptance.json",
+      "sha256": "2d1ff0369b92f74c8af315307ab52ba89396609a7c6549b36537557a970e3883"
+    },
+    {
+      "directory": "shared-policy",
+      "profile": "shared",
+      "case": "policy",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-policy/acceptance.json",
+      "sha256": "d91a3ab7cb1392f6d7305ca02f15c2780d466f0eec275702a6140d43844688dd"
+    },
+    {
+      "directory": "shared-race",
+      "profile": "shared",
+      "case": "race",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-race/acceptance.json",
+      "sha256": "cb2970340cb465de6ec9ed12e370e4b5e5744c7ae7d7f5fc03eb1f679cbe5a06"
+    },
+    {
+      "directory": "shared-resume",
+      "profile": "shared",
+      "case": "resume",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-resume/acceptance.json",
+      "sha256": "27d9ae80b18e8be9b1e169e4fe4088a2657d126a8238852c69c8e8580701da29"
+    },
+    {
+      "directory": "shared-target",
+      "profile": "shared",
+      "case": "target",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-target/acceptance.json",
+      "sha256": "8eff8ba81996c4c4cff52e9a01332ef8b921d1393881a72b7e5280c9b08e454a"
+    },
+    {
+      "directory": "shared-uncertain",
+      "profile": "shared",
+      "case": "uncertain",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-uncertain/acceptance.json",
+      "sha256": "483cf149d6f72c0db4de9d52fc09f23fdfe0c2c5feb3f98983538ae45a8cadc2"
+    }
+  ],
+  "actualReadbackChildren": 42,
+  "readbackInventoryMatched": true,
+  "allReadbackChildrenJoined": true,
+  "readbackMatrix": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-readback-child-matrix.json",
+  "failedStage": "memory unsupported-profile node before readiness/API checks",
+  "failureSpan": "tests/support/fresh_process_resume_process.rs:195:13",
+  "observedServerError": "Server error: Failed to initialize SurrealDB at 'memory': Unsupported scheme: memory",
+  "privateFailureLog": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/memory/unsupported/stderr.log",
+  "privateFailureLogSha256": "22ffce497d00e92bd34b58d38fd5de9a09fab4fdeaaee4d8107a14f6a9b6a71e",
+  "missingScenarioIdentities": [
+    [
+      "memory",
+      "memory",
+      null
+    ],
+    [
+      "postgres",
+      "postgres",
+      null
+    ],
+    [
+      "unattested",
+      "shared",
+      null
+    ]
+  ],
+  "sourceStableAtExit": true,
+  "sourceStableAfterCleanup": true,
+  "sourceStableAtFinalSeal": true,
+  "environmentStableAtFinalSeal": true,
+  "rootInfrastructurePreserved": true,
+  "cleanupKnownPidCount": 218,
+  "cleanupUnknown": false,
+  "cleanupKnownRemaining": 0,
+  "detachedGroup19192": "gone",
+  "actualExecutableArtifacts": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "sha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "bytes": 235613496,
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-accepted-fresh_process_resume-1accb410428be83b",
+      "retainedSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+      "bytes": 551079464,
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-accepted-production-runtime",
+      "retainedSha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4"
+    }
+  ],
+  "sampledCustomerRuntimePathMatched": true,
+  "sourceEdits": [],
+  "newProductionGuards": [],
+  "unrequestedAdditions": [],
+  "streamsRun": false,
+  "nextStep": "Pinned memory URL scheme confirmation/sourceworker proposal androotreview; no retry untilcompletecorrection andfreshGO",
+  "limits": [
+    "Wholegatefailed;21supportedgroups/42readbackjoins arepartial observedprogress, notacceptance.",
+    "Memory API503/zeroexecution andunattested/Postgresgroups remainunverified.",
+    "No genuineinference/supervisor takeover/release or fullimageclosure claims."
+  ]
+}

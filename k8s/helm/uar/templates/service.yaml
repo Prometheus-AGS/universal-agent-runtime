@@ -18,3 +18,36 @@ spec:
       port: {{ .Values.uar.service.grpcPort }}
       targetPort: grpc
       protocol: TCP
+{{- if eq .Values.uar.workloadKind "StatefulSet" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "uar.fullname" . }}-headless
+  namespace: {{ include "uar.namespace" . }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "uar.appSelectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.uar.service.port }}
+      targetPort: http
+{{- end }}
+{{- range .Values.uar.instanceRoutes }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "uar.fullname" $ }}-{{ .name }}
+  namespace: {{ include "uar.namespace" $ }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "uar.appSelectorLabels" $ | nindent 4 }}
+    statefulset.kubernetes.io/pod-name: {{ include "uar.fullname" $ }}-{{ .ordinal }}
+  ports:
+    - name: http
+      port: {{ $.Values.uar.service.port }}
+      targetPort: http
+{{- end }}

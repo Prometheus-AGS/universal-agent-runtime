@@ -1,0 +1,27 @@
+{
+  "recorded_at": "2026-10-13T19:42:26.489386+00:00",
+  "context": "know-me",
+  "namespace": "dot17-uar",
+  "node": "lke653426-988676-r7ndr",
+  "node_uid": "fe9621ca-8582-41d4-9af0-8789929ecd5c",
+  "pool_id": 988676,
+  "instance_id": 108059651,
+  "pod": "dot17-recovery-a",
+  "pod_uid": "4a7e8408-15a8-4130-9746-87fd5c92b2fb",
+  "staged_create_exit": 0,
+  "file_install_exit": 0,
+  "controller_service": "uar-supervisor-dot17-a.service",
+  "controller_main_pid": 66715,
+  "controller_cgroup": "/system.slice/uar-supervisor-dot17-a.service",
+  "service_active_state_observed": "active",
+  "runtime_config_secret_created": false,
+  "runtime_started": false,
+  "production_qualified": false,
+  "recovery_faults_run": false,
+  "claim_limit": "Candidate infrastructure setup only; no runtime/containment/recovery acceptance. Keep Pod stopped until final immutable image.",
+  "private_receipts": [
+    "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/worker-a-staged-create-attempt01/receipt.json",
+    "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/worker-controller-a-install-root-dispatch.json",
+    "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/worker-controller-a-bundle/service-command-2.private.json"
+  ]
+}

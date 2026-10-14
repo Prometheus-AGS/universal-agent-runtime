@@ -1,5 +1,7 @@
 //! Non-durable persistence for minimal deployments and deterministic tests.
 
+use crate::uar::persistence::knowledge_namespace::KnowledgeNamespace;
+
 use std::{collections::HashMap, sync::RwLock};
 
 use crate::uar::a2ui::presentations::{Presentation, PresentationDraft};
@@ -45,6 +47,9 @@ pub struct InMemoryProvider {
     knowledge_bases: RwLock<HashMap<String, KnowledgeBase>>,
     chunks: RwLock<HashMap<String, KnowledgeChunk>>,
     documents: RwLock<HashMap<String, KnowledgeDocument>>,
+    principal_knowledge_bases: RwLock<HashMap<String, KnowledgeBase>>,
+    principal_chunks: RwLock<HashMap<String, KnowledgeChunk>>,
+    principal_documents: RwLock<HashMap<String, KnowledgeDocument>>,
     agents: RwLock<HashMap<String, AgentArtifact>>,
     agent_threads: RwLock<AgentThreadStore>,
     canonical_tool_receipts: RwLock<HashMap<String, Vec<CanonicalToolReceipt>>>,
@@ -116,6 +121,10 @@ impl PersistenceLayer for InMemoryProvider {
         before.validate_transition(after)?;
         let mut records = write(&self.approval_records)?;
         if records.get(&before.storage_key()) != Some(before) { return Ok(false); }
+        if matches!(after.state, ApprovalState::Approved | ApprovalState::Denied) && before.expires_at <= chrono::Utc::now() {
+            records.insert(before.storage_key(), before.expire());
+            return Ok(false);
+        }
         records.insert(before.storage_key(), after.clone());
         Ok(true)
     }
@@ -406,21 +415,27 @@ impl PersistenceLayer for InMemoryProvider {
     }
 
     async fn save_session(&self, session: &Session) -> Result<()> {
-        let key = crate::uar::persistence::tenant_storage_key(session.owner_id(), session.id());
+        let key = crate::uar::persistence::session_storage_key(session.owner_id(), session.id());
         write(&self.sessions)?.insert(key, session.clone());
         Ok(())
     }
     async fn load_session(&self, owner_id: &str, id: &str) -> Result<Option<Session>> {
-        let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        let key = crate::uar::persistence::session_storage_key(owner_id, id);
         Ok(read(&self.sessions)?.get(&key).cloned())
     }
 
     async fn delete_session(&self, owner_id: &str, id: &str) -> Result<bool> {
-        let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        let key = crate::uar::persistence::session_storage_key(owner_id, id);
         let existed = write(&self.sessions)?.remove(&key).is_some();
         // Cascade: conversation policy (conversation_id often matches session_id).
         let policy_key = crate::uar::persistence::tenant_storage_key(owner_id, id);
-        write(&self.conversation_policies)?.remove(&policy_key);
+        if existed {
+            if owner_id == crate::session::ANONYMOUS_SESSION_OWNER {
+                write(&self.conversation_policies)?.remove(&policy_key);
+            } else {
+                write(&self.principal_conversation_policies)?.remove(&policy_key);
+            }
+        }
         // Tool admission evidence is owner-scoped audit data; we skip cascade
         // here to avoid erasing evidence belonging to other sessions.
         Ok(existed)
@@ -536,43 +551,57 @@ impl PersistenceLayer for InMemoryProvider {
         Ok(())
     }
     async fn save_knowledge_base(&self, kb: &KnowledgeBase) -> Result<()> {
+        let namespace = KnowledgeNamespace::for_owner(&kb.owner_id)?;
+        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_knowledge_bases } else { &self.knowledge_bases };
         let key = crate::uar::persistence::tenant_storage_key(&kb.owner_id, &kb.id);
-        write(&self.knowledge_bases)?.insert(key, kb.clone());
+        write(knowledge_bases)?.insert(key, kb.clone());
         Ok(())
     }
     async fn get_knowledge_base(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeBase>> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_knowledge_bases } else { &self.knowledge_bases };
         let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
-        Ok(read(&self.knowledge_bases)?.get(&key).cloned())
+        Ok(read(knowledge_bases)?.get(&key).cloned())
     }
     async fn get_knowledge_base_by_name(
         &self,
         owner_id: &str,
         name: &str,
     ) -> Result<Option<KnowledgeBase>> {
-        Ok(read(&self.knowledge_bases)?
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_knowledge_bases } else { &self.knowledge_bases };
+        Ok(read(knowledge_bases)?
             .values()
             .find(|kb| kb.owner_id == owner_id && kb.name == name)
             .cloned())
     }
     async fn list_knowledge_bases(&self, owner_id: &str) -> Result<Vec<KnowledgeBase>> {
-        Ok(read(&self.knowledge_bases)?
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_knowledge_bases } else { &self.knowledge_bases };
+        Ok(read(knowledge_bases)?
             .values()
             .filter(|kb| kb.owner_id == owner_id)
             .cloned()
             .collect())
     }
     async fn delete_knowledge_base(&self, owner_id: &str, id: &str) -> Result<()> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let documents = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_documents } else { &self.documents };
+        let chunks = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_chunks } else { &self.chunks };
+        let knowledge_bases = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_knowledge_bases } else { &self.knowledge_bases };
         let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
-        write(&self.knowledge_bases)?.remove(&key);
-        write(&self.chunks)?.retain(|_, chunk| chunk.owner_id != owner_id || chunk.kb_id != id);
-        write(&self.documents)?
+        write(knowledge_bases)?.remove(&key);
+        write(chunks)?.retain(|_, chunk| chunk.owner_id != owner_id || chunk.kb_id != id);
+        write(documents)?
             .retain(|_, document| document.owner_id != owner_id || document.kb_id != id);
         Ok(())
     }
     async fn save_chunk(&self, chunk: &KnowledgeChunk) -> Result<()> {
+        let namespace = KnowledgeNamespace::for_owner(&chunk.owner_id)?;
+        let chunks = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_chunks } else { &self.chunks };
         let key =
             crate::uar::persistence::tenant_storage_key(&chunk.owner_id, &chunk.id.to_string());
-        write(&self.chunks)?.insert(key, chunk.clone());
+        write(chunks)?.insert(key, chunk.clone());
         Ok(())
     }
     async fn search_knowledge(
@@ -593,7 +622,9 @@ impl PersistenceLayer for InMemoryProvider {
         limit: usize,
         _min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
-        Ok(read(&self.chunks)?
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let chunks = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_chunks } else { &self.chunks };
+        Ok(read(chunks)?
             .values()
             .filter(|chunk| {
                 chunk.owner_id == owner_id
@@ -605,16 +636,22 @@ impl PersistenceLayer for InMemoryProvider {
             .collect())
     }
     async fn save_document(&self, doc: &KnowledgeDocument) -> Result<()> {
+        let namespace = KnowledgeNamespace::for_owner(&doc.owner_id)?;
+        let documents = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_documents } else { &self.documents };
         let key = crate::uar::persistence::tenant_storage_key(&doc.owner_id, &doc.id);
-        write(&self.documents)?.insert(key, doc.clone());
+        write(documents)?.insert(key, doc.clone());
         Ok(())
     }
     async fn get_document(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeDocument>> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let documents = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_documents } else { &self.documents };
         let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
-        Ok(read(&self.documents)?.get(&key).cloned())
+        Ok(read(documents)?.get(&key).cloned())
     }
     async fn list_documents(&self, owner_id: &str, kb_id: &str) -> Result<Vec<KnowledgeDocument>> {
-        Ok(read(&self.documents)?
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let documents = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_documents } else { &self.documents };
+        Ok(read(documents)?
             .values()
             .filter(|doc| doc.owner_id == owner_id && doc.kb_id == kb_id)
             .cloned()
@@ -626,17 +663,22 @@ impl PersistenceLayer for InMemoryProvider {
         doc_id: &str,
         status: &DocumentStatus,
     ) -> Result<()> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let documents = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_documents } else { &self.documents };
         let key = crate::uar::persistence::tenant_storage_key(owner_id, doc_id);
-        write(&self.documents)?
+        write(documents)?
             .get_mut(&key)
             .context("document not found")?
             .status = status.clone();
         Ok(())
     }
     async fn delete_document(&self, owner_id: &str, doc_id: &str) -> Result<()> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
+        let documents = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_documents } else { &self.documents };
+        let chunks = if namespace == KnowledgeNamespace::PrincipalV1 { &self.principal_chunks } else { &self.chunks };
         let key = crate::uar::persistence::tenant_storage_key(owner_id, doc_id);
-        write(&self.documents)?.remove(&key);
-        write(&self.chunks)?.retain(|_, chunk| {
+        write(documents)?.remove(&key);
+        write(chunks)?.retain(|_, chunk| {
             chunk.owner_id != owner_id || chunk.document_id.as_deref() != Some(doc_id)
         });
         Ok(())
@@ -964,7 +1006,7 @@ mod tests {
         let now = chrono::Utc::now().to_rfc3339();
         let kb = KnowledgeBase {
             id: "alice-kb".into(),
-            owner_id: "alice".into(),
+            owner_id: "v1:k:issuer:i:7:fixture:local:s:5:alice".into(),
             name: "private".into(),
             description: None,
             config: Default::default(),
@@ -973,7 +1015,7 @@ mod tests {
         };
         let document = KnowledgeDocument {
             id: "alice-doc".into(),
-            owner_id: "alice".into(),
+            owner_id: "v1:k:issuer:i:7:fixture:local:s:5:alice".into(),
             kb_id: kb.id.clone(),
             filename: "private.txt".into(),
             file_path: None,
@@ -985,7 +1027,7 @@ mod tests {
         };
         let chunk = KnowledgeChunk {
             id: Uuid::new_v4(),
-            owner_id: "alice".into(),
+            owner_id: "v1:k:issuer:i:7:fixture:local:s:5:alice".into(),
             kb_id: kb.id.clone(),
             document_id: Some(document.id.clone()),
             content: "alice secret".into(),
@@ -1000,37 +1042,37 @@ mod tests {
 
         assert!(
             provider
-                .get_knowledge_base("bob", &kb.id)
+                .get_knowledge_base("v1:k:issuer:i:7:fixture:local:s:3:bob", &kb.id)
                 .await
                 .unwrap()
                 .is_none()
         );
         assert!(
             provider
-                .get_document("bob", &document.id)
+                .get_document("v1:k:issuer:i:7:fixture:local:s:3:bob", &document.id)
                 .await
                 .unwrap()
                 .is_none()
         );
         assert!(
             provider
-                .search_knowledge_scoped("bob", &[&kb.id], &[1.0], 10, 0.0)
+                .search_knowledge_scoped("v1:k:issuer:i:7:fixture:local:s:3:bob", &[&kb.id], &[1.0], 10, 0.0)
                 .await
                 .unwrap()
                 .is_empty()
         );
 
-        provider.delete_knowledge_base("bob", &kb.id).await.unwrap();
+        provider.delete_knowledge_base("v1:k:issuer:i:7:fixture:local:s:3:bob", &kb.id).await.unwrap();
         assert!(
             provider
-                .get_knowledge_base("alice", &kb.id)
+                .get_knowledge_base("v1:k:issuer:i:7:fixture:local:s:5:alice", &kb.id)
                 .await
                 .unwrap()
                 .is_some()
         );
         assert!(
             provider
-                .get_document("alice", &document.id)
+                .get_document("v1:k:issuer:i:7:fixture:local:s:5:alice", &document.id)
                 .await
                 .unwrap()
                 .is_some()

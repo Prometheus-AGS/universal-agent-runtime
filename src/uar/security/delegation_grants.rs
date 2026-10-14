@@ -55,6 +55,17 @@ pub struct IssuedGrant {
     pub runtime_epoch: String,
 }
 
+impl std::fmt::Debug for IssuedGrant {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("IssuedGrant")
+            .field("token", &"[REDACTED]")
+            .field("token_type", &self.token_type)
+            .field("expires_at", &self.expires_at)
+            .field("expires_in", &self.expires_in)
+            .finish_non_exhaustive()
+    }
+}
+
 struct GrantRecord {
     token: Option<SecretString>,
     principal: UserContext,

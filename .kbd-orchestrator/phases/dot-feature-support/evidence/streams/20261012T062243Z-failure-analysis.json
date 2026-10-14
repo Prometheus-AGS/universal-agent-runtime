@@ -1,0 +1,111 @@
+{
+  "change": "dot-05-stream-terminal-contract",
+  "task": "2",
+  "attempt": "20261012T062243Z",
+  "observedFailure": "fixture234 HttpsPeer::start portparse ParseIntError Empty before shared Vertex missing_terminal providerrequest",
+  "gateExitCode": 101,
+  "scenarioCounts": {
+    "expectedRows": 83,
+    "completedRows": 53,
+    "enteredRows": 54,
+    "failedSetupRows": 1,
+    "unrunRows": 29,
+    "expectedBoundaries": 249,
+    "fixtureEnteredBoundaries": 162,
+    "wireRequestEnteredBoundaries": 161,
+    "completedBoundaries": 161,
+    "failedSetupBoundaries": 1,
+    "notStartedBoundaries": 87
+  },
+  "actualRow54Diagnostics": [
+    {
+      "route": "legacy",
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-mBiOMw/case-54/legacy/boundary-diagnostics.json",
+      "sha256": "0e7f6cad00b5af684cf10e55ca7a474e97a7f1c8c771b4e419cb25d850e51dea",
+      "terminalStatus": null,
+      "doneCount": 0,
+      "failed": true,
+      "partialTextExposed": null,
+      "toolCount": 0,
+      "requestCount": 1,
+      "eventCount": 5
+    },
+    {
+      "route": "local",
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-mBiOMw/case-54/local/boundary-diagnostics.json",
+      "sha256": "562642929f0157bd0dc6720bafe7a1575cc5b57043d6a5d49e6e4fe6ebbad170",
+      "terminalStatus": "error",
+      "doneCount": null,
+      "failed": null,
+      "partialTextExposed": true,
+      "toolCount": 0,
+      "requestCount": 1,
+      "eventCount": 13
+    }
+  ],
+  "failedSetup": {
+    "route": "shared",
+    "portPath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-mBiOMw/case-54/shared/port",
+    "portBytesAfterFailure": 5,
+    "portSha256AfterFailure": "93a5c1111c3466efb0cfed2acc748d75b3dc4fcf839c378efe78fc7c7d2d0729",
+    "providerRequestFilePresent": false,
+    "boundaryDiagnosticFilePresent": false,
+    "peerStderrBytes": 0
+  },
+  "rootCause": "FixturePython pathlib.write_text creates portfile before writing contents. Rust readiness waits only until exists, thenreads/parses. ActualParseIntError Empty proves trimstring wasempty atparse; currentportfile ispopulated. This is fixture publicationrace, not a providerstreamfailure.",
+  "productionDefectObserved": false,
+  "positiveEvidence": [
+    "All12NativeAnthropic rows passed after deltausagecorrection",
+    "Nativevalid/split legacy Usage2input/3output/5total assertion passed",
+    "All12GoogleAI rows passed withactualfixedHTTPSproviderDNS andverifiedsyntheticTLS",
+    "Vertexvalid/split/empty andmissingterminallegacy/local passed"
+  ],
+  "correctionSuggestion": "Atomic fixtureportpublication (write private temporaryfile thenrename) andguaranteedownedchildcleanup on startup failure; author/root choose narrowcorrection. No new pollingretry/provider guard or timeout requested.",
+  "cleanup": {
+    "actions": [
+      {
+        "pid": 74717,
+        "action": "TERM",
+        "basis": "sampled descendant and exact newlycreated fixture root plus exact script in currentargv"
+      }
+    ],
+    "sampledOwnedRemaining": [],
+    "exactOwnedHttpsPeers": [],
+    "rootInfrastructureRetained": true
+  },
+  "binding": {
+    "full6558SourceAnd16Gitlinks20OwnedStable": true,
+    "preparedToolsStable": true,
+    "hostConfigStable": true,
+    "infraManifestStable": true,
+    "launchedExecutableArtifacts": [
+      {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+        "sha256": "c8b12cb4c4113d98d66bf7d47a78e4aa488dedcdc29864330cdd762949faeb95",
+        "bytes": 326664376
+      },
+      {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    ],
+    "failedRuntimeBytesRetained": {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-native-usage-gate-mw8l9lxi/failed-integration-runtime",
+      "bytes": 326664376,
+      "sha256": "c8b12cb4c4113d98d66bf7d47a78e4aa488dedcdc29864330cdd762949faeb95"
+    }
+  },
+  "noFurtherCargo": true,
+  "sourceEditsByAcceptanceWorker": [],
+  "unrequestedAdditions": [],
+  "newProductionGuards": [],
+  "remainingUnverified": [
+    "29scenario rows neverstarted plus row54sharednotwireentered",
+    "RemainingVertex/Cohere/Bedrockmatrix",
+    "Whole83row249boundary acceptance",
+    "No transitiveclosure/crossprocess/release/Tier2/Tier3 claim"
+  ]
+}

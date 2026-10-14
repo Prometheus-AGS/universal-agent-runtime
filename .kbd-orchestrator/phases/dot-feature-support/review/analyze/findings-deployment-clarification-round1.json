@@ -1,0 +1,34 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "gpt-6.1-sol",
+  "producer_model": "unknown",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "unverified-producer-unknown",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "claim": "The analysis and its downstream handoff give contradictory first-release deployment priorities.",
+      "evidence": "analysis.md states, \"Both deployment profiles are required release gates; shared-host execution is not deferred.\" However, analyze.handoff.json tells the next stage, \"Deployment priority remains a provisional local-first assumption pending operator response.\" The goals explicitly record the operator's selection of equal priority from the first release.",
+      "suggested_fix": "Regenerate analyze.handoff.json so its summary explicitly requires both local and shared-host profiles for first-release acceptance and removes the superseded pending-response/local-first assumption."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "claim": "The analysis defers the required supported backend and entry-point combinations without establishing a concrete support matrix for either deployment profile.",
+      "evidence": "The operator clarification requires, \"Specify supported backend/entry-point combinations explicitly.\" The analysis instead says, \"Exact supported client surfaces remain to be specified,\" and \"Plan must explicitly map each profile to its supported backends and entry points.\" Its generic matrix of SurrealDB and Postgres configurations does not identify which server, sidecar, or embedded entry points must support each of the six capabilities in either profile.",
+      "suggested_fix": "Add a proposed profile-by-backend-by-entry-point support matrix, marking unsupported or unresolved combinations explicitly and mapping the six capability contracts to each proposed supported combination. Carry unresolved selections into Plan as blocking decisions rather than leaving the entire support boundary unspecified."
+    }
+  ],
+  "judge_identity": {
+    "providerConnectionId": "openai-proxy-8181",
+    "providerId": "openai",
+    "modelId": "gpt-6.1-sol"
+  },
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

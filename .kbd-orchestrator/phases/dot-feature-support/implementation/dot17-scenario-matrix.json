@@ -1,0 +1,3398 @@
+{
+  "schema_version": 1,
+  "phase": "dot-feature-support",
+  "purpose": "Source-authored concrete driver assignments. Every scenario remains unexecuted; implementation completeness is never product evidence.",
+  "scenarios": [
+    {
+      "id": "dot-01-release-provenance/offline-reproducible-build/1",
+      "change": "dot-01-release-provenance",
+      "spec": "openspec/changes/dot-01-release-provenance/specs/offline-reproducible-build/spec.md",
+      "line": 9,
+      "requirement": "Release artifacts have traceable locked inputs",
+      "scenario": "Unresolved pin policy",
+      "expectation": "- **WHEN** declared policy and effective dependency sources disagree\n- **THEN** packaging certification is blocked pending recorded operator resolution, without silently editing policy or accepting drift",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/build_delivery.py",
+        "entry_point": "run_candidate_inputs",
+        "stage": "oci-build",
+        "required_observations": [
+          {
+            "id": "candidate-locked-inputs",
+            "profile": "oci_build"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-01-release-provenance/offline-reproducible-build/2",
+      "change": "dot-01-release-provenance",
+      "spec": "openspec/changes/dot-01-release-provenance/specs/offline-reproducible-build/spec.md",
+      "line": 14,
+      "requirement": "Release artifacts have traceable locked inputs",
+      "scenario": "Reproducible container inputs",
+      "expectation": "- **WHEN** an approved source revision is packaged for either supported Linux architecture\n- **THEN** frozen JavaScript installs, locked Rust resolution and required embedded schemas are used and immutable source provenance is recorded",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/oci_build.py",
+        "entry_point": "run_oci_build",
+        "stage": "oci-build",
+        "required_observations": [
+          {
+            "id": "local-two-architecture-image",
+            "profile": "oci_build",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-02-principal-credentials/tenant-isolation/3",
+      "change": "dot-02-principal-credentials",
+      "spec": "openspec/changes/dot-02-principal-credentials/specs/tenant-isolation/spec.md",
+      "line": 9,
+      "requirement": "Provider credentials use verified complete owner identity",
+      "scenario": "Identical subjects",
+      "expectation": "- **WHEN** two authenticated principals share a subject but differ by tenant or issuer\n- **THEN** their credential create, read, list, delete and use operations are isolated",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/credentials_api_integration_test.rs",
+        "entry_point": "shared_surreal_principals_migrations_and_two_runtimes",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "credentials_api_integration_test",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-02-principal-credentials/tenant-isolation/4",
+      "change": "dot-02-principal-credentials",
+      "spec": "openspec/changes/dot-02-principal-credentials/specs/tenant-isolation/spec.md",
+      "line": 14,
+      "requirement": "Provider credentials use verified complete owner identity",
+      "scenario": "Legacy ownership",
+      "expectation": "- **WHEN** a legacy credential lacks sufficient owner provenance\n- **THEN** it is not granted to a matching subject and only an authenticated audited mapping can migrate it without key collisions",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/credentials_api_integration_test.rs",
+        "entry_point": "shared_surreal_principals_migrations_and_two_runtimes",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "credentials_api_integration_test",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-03-durable-api-keys/auth-key-management/5",
+      "change": "dot-03-durable-api-keys",
+      "spec": "openspec/changes/dot-03-durable-api-keys/specs/auth-key-management/spec.md",
+      "line": 9,
+      "requirement": "API-key authority survives restart and revocation is current",
+      "scenario": "Cross-process revocation",
+      "expectation": "- **WHEN** one runtime revokes a key and another receives a new request using it\n- **THEN** the second denies admission using durable current authority",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/credentials_journey.py",
+        "entry_point": "run_credentials",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "api-key-cross-runtime-revocation"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-03-durable-api-keys/auth-key-management/6",
+      "change": "dot-03-durable-api-keys",
+      "spec": "openspec/changes/dot-03-durable-api-keys/specs/auth-key-management/spec.md",
+      "line": 14,
+      "requirement": "API-key authority survives restart and revocation is current",
+      "scenario": "Durable storage outage",
+      "expectation": "- **WHEN** production key storage cannot establish current validity\n- **THEN** authentication and management fail explicitly without an in-memory or stale-authority fallback",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/durable_api_keys_integration.rs",
+        "entry_point": "shared_surreal_two_processes_current_authority_and_transport_outage",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "durable_api_keys_integration",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-04-truthful-tool-outcomes/tool-call-protocol/7",
+      "change": "dot-04-truthful-tool-outcomes",
+      "spec": "openspec/changes/dot-04-truthful-tool-outcomes/specs/tool-call-protocol/spec.md",
+      "line": 9,
+      "requirement": "Tool execution preserves application and uncertain outcomes",
+      "scenario": "Application error",
+      "expectation": "- **WHEN** MCP returns isError=true inside a successful transport response\n- **THEN** ToolEnd, admission and durable receipts report application failure with original error content",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/truthful_tool_outcomes.rs",
+        "entry_point": "actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "truthful_tool_outcomes",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-04-truthful-tool-outcomes/tool-call-protocol/8",
+      "change": "dot-04-truthful-tool-outcomes",
+      "spec": "openspec/changes/dot-04-truthful-tool-outcomes/specs/tool-call-protocol/spec.md",
+      "line": 14,
+      "requirement": "Tool execution preserves application and uncertain outcomes",
+      "scenario": "Ambiguous external effect",
+      "expectation": "- **WHEN** transport ends after an effect may have occurred without definitive result\n- **THEN** outcome remains unknown, success dependencies stay blocked and automatic replay is prohibited",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "connected",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "connected-unknown"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-05-stream-terminal-contract/model-path-resiliency/9",
+      "change": "dot-05-stream-terminal-contract",
+      "spec": "openspec/changes/dot-05-stream-terminal-contract/specs/model-path-resiliency/spec.md",
+      "line": 9,
+      "requirement": "Supported streams require protocol completion evidence",
+      "scenario": "EOF without terminal",
+      "expectation": "- **WHEN** a supported provider connection closes without its required terminal event\n- **THEN** the runtime reports an incomplete/error outcome rather than successful completion",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/stream_terminal_contract.rs",
+        "entry_point": "stream_terminal_contract_production_boundaries",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "stream_terminal_contract",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-05-stream-terminal-contract/model-path-resiliency/10",
+      "change": "dot-05-stream-terminal-contract",
+      "spec": "openspec/changes/dot-05-stream-terminal-contract/specs/model-path-resiliency/spec.md",
+      "line": 14,
+      "requirement": "Supported streams require protocol completion evidence",
+      "scenario": "Arbitrary byte boundaries",
+      "expectation": "- **WHEN** valid events including multibyte characters and tool arguments cross transport chunks\n- **THEN** the selected production route reconstructs the same events and succeeds only after valid terminal evidence",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/stream_terminal_contract.rs",
+        "entry_point": "stream_terminal_contract_production_boundaries",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "stream_terminal_contract",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-06-fresh-process-resume/dot-checkpoint-resume/11",
+      "change": "dot-06-fresh-process-resume",
+      "spec": "openspec/changes/dot-06-fresh-process-resume/specs/dot-checkpoint-resume/spec.md",
+      "line": 13,
+      "requirement": "Checkpoints restore authorized execution in a fresh process",
+      "scenario": "Fresh manager",
+      "expectation": "- **WHEN** the original process is gone and an authorized owner resumes a durable checkpoint\n- **THEN** the runtime reconstructs from protected persisted metadata after current authority and host-resource checks",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/fresh_process_resume_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "fresh_process_resume",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-06-fresh-process-resume/dot-checkpoint-resume/12",
+      "change": "dot-06-fresh-process-resume",
+      "spec": "openspec/changes/dot-06-fresh-process-resume/specs/dot-checkpoint-resume/spec.md",
+      "line": 18,
+      "requirement": "Checkpoints restore authorized execution in a fresh process",
+      "scenario": "Unavailable capability",
+      "expectation": "- **WHEN** the selected backend cannot persist or load resumable checkpoints\n- **THEN** the request fails explicitly and never claims a durable save or a successful empty resume",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/fresh_process_resume_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "fresh_process_resume",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-06-fresh-process-resume/dot-checkpoint-resume/13",
+      "change": "dot-06-fresh-process-resume",
+      "spec": "openspec/changes/dot-06-fresh-process-resume/specs/dot-checkpoint-resume/spec.md",
+      "line": 23,
+      "requirement": "Checkpoints restore authorized execution in a fresh process",
+      "scenario": "Concurrent checkpoint resume",
+      "expectation": "- **WHEN** two authorized runtimes resume the same checkpoint revision concurrently\n- **THEN** one durable incarnation-bound claim admits at most one continuation, and uncertain predecessors remain blocked until trusted exclusion and reconciliation",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/fresh_process_resume_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "fresh_process_resume",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-07-approval-recovery/tool-approval-workflow/14",
+      "change": "dot-07-approval-recovery",
+      "spec": "openspec/changes/dot-07-approval-recovery/specs/tool-approval-workflow/spec.md",
+      "line": 9,
+      "requirement": "Recovered approvals require current executable authority",
+      "scenario": "Pending approval after restart",
+      "expectation": "- **WHEN** an authorized owner reads a pending approval after its original process exits\n- **THEN** the current approval and continuation disposition remain visible and execution still requires valid current authority",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/approval_recovery_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "approval_recovery",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-07-approval-recovery/tool-approval-workflow/15",
+      "change": "dot-07-approval-recovery",
+      "spec": "openspec/changes/dot-07-approval-recovery/specs/tool-approval-workflow/spec.md",
+      "line": 14,
+      "requirement": "Recovered approvals require current executable authority",
+      "scenario": "Competing decisions",
+      "expectation": "- **WHEN** two processes attempt to consume the same approval or its binding has changed\n- **THEN** at most one valid continuation is admitted and stale or expired decisions cannot authorize effects",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/approval_recovery_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "approval_recovery",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-07-approval-recovery/tool-approval-workflow/16",
+      "change": "dot-07-approval-recovery",
+      "spec": "openspec/changes/dot-07-approval-recovery/specs/tool-approval-workflow/spec.md",
+      "line": 19,
+      "requirement": "Recovered approvals require current executable authority",
+      "scenario": "Pending checkpoint publication",
+      "expectation": "- **WHEN** the trusted host publishes a recoverable pending challenge\n- **THEN** its protected pre-effect checkpoint is already committed and the approval row contains only its stable checkpoint identity and binding digest\n- **AND** a checkpoint with a pending marker cannot execute through ordinary resume without its exact current decision",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/approval_recovery_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "approval_recovery",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-07-approval-recovery/tool-approval-workflow/17",
+      "change": "dot-07-approval-recovery",
+      "spec": "openspec/changes/dot-07-approval-recovery/specs/tool-approval-workflow/spec.md",
+      "line": 25,
+      "requirement": "Recovered approvals require current executable authority",
+      "scenario": "Orderly shutdown while pending",
+      "expectation": "- **WHEN** the original host cancels and joins execution during orderly shutdown\n- **THEN** it preserves only checkpoint-linked pending challenges after acknowledging cancellation of their prepared admission\n- **AND** failed cancellation or uncertain effects block predecessor exclusion and the original expiry remains unchanged",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/approval_recovery_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "approval_recovery",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-07-approval-recovery/tool-approval-workflow/18",
+      "change": "dot-07-approval-recovery",
+      "spec": "openspec/changes/dot-07-approval-recovery/specs/tool-approval-workflow/spec.md",
+      "line": 31,
+      "requirement": "Recovered approvals require current executable authority",
+      "scenario": "Current authority changed",
+      "expectation": "- **WHEN** current owner, policy, descriptor, payload or binding cannot renew a recovered pending call\n- **THEN** no effect executes and stale executable mapping becomes visibly invalidated\n- **AND** unsupported storage or a persistence outage is an explicit unavailable outcome, never an invented approval",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/approval_recovery_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "approval_recovery",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-07-approval-recovery/tool-approval-workflow/19",
+      "change": "dot-07-approval-recovery",
+      "spec": "openspec/changes/dot-07-approval-recovery/specs/tool-approval-workflow/spec.md",
+      "line": 37,
+      "requirement": "Recovered approvals require current executable authority",
+      "scenario": "Recovered block contains sibling calls",
+      "expectation": "- **WHEN** a protected unresolved assistant call block contains the selected call and remaining siblings\n- **THEN** the host executes calls in original order through current admission and each sibling's own approval\n- **AND** model continuation receives only complete real results without fabricated history repair",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/approval_recovery_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "approval_recovery",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-07-approval-recovery/tool-approval-workflow/20",
+      "change": "dot-07-approval-recovery",
+      "spec": "openspec/changes/dot-07-approval-recovery/specs/tool-approval-workflow/spec.md",
+      "line": 43,
+      "requirement": "Recovered approvals require current executable authority",
+      "scenario": "Decision admission response",
+      "expectation": "- **WHEN** a fresh approval request admits a continuation before its async gate commits a decision\n- **THEN** the response distinguishes continuation admission from durable decision state and execution success remains observable through the new run",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/approval_recovery_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "approval_recovery",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-07-approval-recovery/tool-approval-workflow/21",
+      "change": "dot-07-approval-recovery",
+      "spec": "openspec/changes/dot-07-approval-recovery/specs/tool-approval-workflow/spec.md",
+      "line": 48,
+      "requirement": "Recovered approvals require current executable authority",
+      "scenario": "Unknown recovered effect",
+      "expectation": "- **WHEN** the recovered executor commits its decision and loses effect certainty\n- **THEN** its immutable continuation claim remains held and another decision cannot replay the original call",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/approval_recovery_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "approval_recovery",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-07-approval-recovery/tool-approval-workflow/22",
+      "change": "dot-07-approval-recovery",
+      "spec": "openspec/changes/dot-07-approval-recovery/specs/tool-approval-workflow/spec.md",
+      "line": 53,
+      "requirement": "Recovered approvals require current executable authority",
+      "scenario": "Expired denied or unbound decision",
+      "expectation": "- **WHEN** an original challenge expires, is denied or has no protected executable mapping\n- **THEN** the current API exposes expired, denied or invalidated state and no effect executes\n- **AND** restart does not renew the timeout or assign legacy issuer authority",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/approval_recovery_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "approval_recovery",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-07-approval-recovery/tool-approval-workflow/23",
+      "change": "dot-07-approval-recovery",
+      "spec": "openspec/changes/dot-07-approval-recovery/specs/tool-approval-workflow/spec.md",
+      "line": 59,
+      "requirement": "Recovered approvals require current executable authority",
+      "scenario": "Denial without executable continuation",
+      "expectation": "- **WHEN** an authenticated owner denies a current pending challenge without a protected continuation or on an unsupported resume backend\n- **THEN** the pending decision can atomically become denied without a continuation claim or effect\n- **AND** an approval still requires its protected executable mapping",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/approval_recovery_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "approval_recovery",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-07-approval-recovery/tool-approval-workflow/24",
+      "change": "dot-07-approval-recovery",
+      "spec": "openspec/changes/dot-07-approval-recovery/specs/tool-approval-workflow/spec.md",
+      "line": 65,
+      "requirement": "Recovered approvals require current executable authority",
+      "scenario": "Deadline passes during decision persistence",
+      "expectation": "- **WHEN** an approve or deny intent reaches storage after its immutable expiry, including after awaiting a writer lock\n- **THEN** the atomic transition commits expired with no human decision and cannot commit approved or denied\n- **AND** the host exposes the actual committed state and executes no effect from the lost decision",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/approval_recovery_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "approval_recovery",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-07-approval-recovery/tool-approval-workflow/25",
+      "change": "dot-07-approval-recovery",
+      "spec": "openspec/changes/dot-07-approval-recovery/specs/tool-approval-workflow/spec.md",
+      "line": 71,
+      "requirement": "Recovered approvals require current executable authority",
+      "scenario": "Required invalidation persistence fails",
+      "expectation": "- **WHEN** current authority rejects recovery but the required invalidation cannot be durably committed\n- **THEN** the API or run events expose approval persistence unavailable without claiming a committed invalidation\n- **AND** the acquired continuation claim remains held and retry cannot replay the call",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/support/approval_recovery_process.rs",
+        "entry_point": "qualify",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "approval_recovery",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-08-durable-ingestion/dot-durable-ingestion/26",
+      "change": "dot-08-durable-ingestion",
+      "spec": "openspec/changes/dot-08-durable-ingestion/specs/dot-durable-ingestion/spec.md",
+      "line": 13,
+      "requirement": "Accepted uploads own durable recoverable ingestion work",
+      "scenario": "Crash after acceptance",
+      "expectation": "- **WHEN** the runtime returns 202 and exits before dispatch\n- **THEN** source bytes and one owner-bound ingestion job remain discoverable and recover without duplicate indexed chunks",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "ingestion",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "durable-upload-worker"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-08-durable-ingestion/dot-durable-ingestion/27",
+      "change": "dot-08-durable-ingestion",
+      "spec": "openspec/changes/dot-08-durable-ingestion/specs/dot-durable-ingestion/spec.md",
+      "line": 18,
+      "requirement": "Accepted uploads own durable recoverable ingestion work",
+      "scenario": "Commit failure",
+      "expectation": "- **WHEN** source or job transaction cannot commit\n- **THEN** the upload is not accepted and no metadata falsely promises future processing",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/recovery_fault_journey.py",
+        "entry_point": "run_recovery_faults",
+        "stage": "recovery-faults",
+        "required_observations": [
+          {
+            "id": "storage-commit-storage-exercise"
+          },
+          {
+            "id": "storage-commit-storage-cold"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Use fixed private case name storage-commit. Local profile requires measured embedded_enospc on a disposable guest volume with exact runtime transaction ENOSPC evidence. Shared profile requires independently observed actual network-store outage. Both require same pending settlement liability and absent upload after actual cold process replacement; neither mechanism is inferred from the other."
+    },
+    {
+      "id": "dot-09-idempotent-settlement/dot-spend-settlement/28",
+      "change": "dot-09-idempotent-settlement",
+      "spec": "openspec/changes/dot-09-idempotent-settlement/specs/dot-spend-settlement/spec.md",
+      "line": 13,
+      "requirement": "Usage settlement has stable durable identity",
+      "scenario": "Repeated settlement",
+      "expectation": "- **WHEN** a terminal usage result is persisted twice or replayed after a crash\n- **THEN** each applicable budget scope records the logical charge once",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/run_cost_settlement.rs",
+        "entry_point": "surrealkv_pending_liability_survives_process_exit",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "run_cost_settlement",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-09-idempotent-settlement/dot-spend-settlement/29",
+      "change": "dot-09-idempotent-settlement",
+      "spec": "openspec/changes/dot-09-idempotent-settlement/specs/dot-spend-settlement/spec.md",
+      "line": 18,
+      "requirement": "Usage settlement has stable durable identity",
+      "scenario": "Accounting outage",
+      "expectation": "- **WHEN** execution completes but usage settlement cannot be durably accepted\n- **THEN** execution truth is preserved and accounting remains visibly unresolved rather than reported settled",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/recovery_fault_journey.py",
+        "entry_point": "run_recovery_faults",
+        "stage": "recovery-faults",
+        "required_observations": [
+          {
+            "id": "storage-commit-storage-exercise"
+          },
+          {
+            "id": "storage-commit-storage-cold"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Use fixed private case name storage-commit. Local profile requires measured embedded_enospc on a disposable guest volume with exact runtime transaction ENOSPC evidence. Shared profile requires independently observed actual network-store outage. Both require same pending settlement liability and absent upload after actual cold process replacement; neither mechanism is inferred from the other."
+    },
+    {
+      "id": "dot-10-durable-budget-admission/dot-durable-budgets/30",
+      "change": "dot-10-durable-budget-admission",
+      "spec": "openspec/changes/dot-10-durable-budget-admission/specs/dot-durable-budgets/spec.md",
+      "line": 13,
+      "requirement": "Budget admission uses shared durable reservations",
+      "scenario": "Concurrent admission",
+      "expectation": "- **WHEN** two runtimes compete for insufficient remaining aggregate budget\n- **THEN** atomic reservation admits only work within the configured bound",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/budget_journey.py",
+        "entry_point": "run_budget",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "route-budget-admission"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-10-durable-budget-admission/dot-durable-budgets/31",
+      "change": "dot-10-durable-budget-admission",
+      "spec": "openspec/changes/dot-10-durable-budget-admission/specs/dot-durable-budgets/spec.md",
+      "line": 18,
+      "requirement": "Budget admission uses shared durable reservations",
+      "scenario": "Restart with unknown spend",
+      "expectation": "- **WHEN** a runtime restarts while prior work has unresolved spend\n- **THEN** enforcement restores the reservation and does not reset the available budget or release unknown liability",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/budget_journey.py",
+        "entry_point": "run_streams",
+        "stage": "streams",
+        "required_observations": [
+          {
+            "id": "unknown-spend-cold-admission"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-11-supervisor-fencing/dot-supervisor-recovery/32",
+      "change": "dot-11-supervisor-fencing",
+      "spec": "openspec/changes/dot-11-supervisor-fencing/specs/dot-supervisor-recovery/spec.md",
+      "line": 13,
+      "requirement": "Owner recovery requires trusted exclusion before epoch advancement",
+      "scenario": "Abrupt owner loss",
+      "expectation": "- **WHEN** a runtime dies without recording orderly shutdown\n- **THEN** a trusted supervisor must establish exclusion of its entire execution domain before a new epoch can be admitted",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/supervisor_journey.py",
+        "entry_point": "run_supervisor",
+        "stage": "supervisor",
+        "required_observations": [
+          {
+            "id": "supervisor-native-safe-checkpoint",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "supervisor-native-uncertain-checkpoint",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "supervisor-native-safe-team",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "supervisor-native-uncertain-team",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "supervisor-kubernetes-safe-checkpoint",
+            "applicable_profiles": [
+              "shared_two_runtime_surreal_db"
+            ]
+          },
+          {
+            "id": "supervisor-kubernetes-uncertain-checkpoint",
+            "applicable_profiles": [
+              "shared_two_runtime_surreal_db"
+            ]
+          },
+          {
+            "id": "supervisor-kubernetes-safe-team",
+            "applicable_profiles": [
+              "shared_two_runtime_surreal_db"
+            ]
+          },
+          {
+            "id": "supervisor-kubernetes-uncertain-team",
+            "applicable_profiles": [
+              "shared_two_runtime_surreal_db"
+            ]
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-11-supervisor-fencing/dot-supervisor-recovery/33",
+      "change": "dot-11-supervisor-fencing",
+      "spec": "openspec/changes/dot-11-supervisor-fencing/specs/dot-supervisor-recovery/spec.md",
+      "line": 18,
+      "requirement": "Owner recovery requires trusted exclusion before epoch advancement",
+      "scenario": "Stale executor",
+      "expectation": "- **WHEN** an old epoch attempts an effect or forged/replayed exclusion is submitted\n- **THEN** host admission rejects it and uncertain previous effects remain unreplayed",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/dot_stale_epoch_contract.rs",
+        "entry_point": "actual_closed_epoch_rejects_new_admission_without_effect_or_receipt",
+        "stage": "stale-epoch",
+        "required_observations": [
+          {
+            "id": "dot_stale_epoch_contract",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-11-supervisor-fencing/dot-supervisor-recovery/34",
+      "change": "dot-11-supervisor-fencing",
+      "spec": "openspec/changes/dot-11-supervisor-fencing/specs/dot-supervisor-recovery/spec.md",
+      "line": 27,
+      "requirement": "Selected supervisors prove complete execution exclusion",
+      "scenario": "Native service restarts with surviving child",
+      "expectation": "- **WHEN** a native service manager replaces a crashed root while a governed descendant may still execute\n- **THEN** the replacement cannot acquire effect authority until the trusted adapter proves exclusion of the old root and descendants",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/supervisor_journey.py",
+        "entry_point": "native_complete",
+        "stage": "supervisor",
+        "required_observations": [
+          {
+            "id": "supervisor-native-safe-checkpoint",
+            "profile": "local_surreal_kv"
+          },
+          {
+            "id": "supervisor-native-uncertain-checkpoint",
+            "profile": "local_surreal_kv"
+          },
+          {
+            "id": "supervisor-native-safe-team",
+            "profile": "local_surreal_kv"
+          },
+          {
+            "id": "supervisor-native-uncertain-team",
+            "profile": "local_surreal_kv"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Native reboot-bound platform qualification belongs to the local durable profile; shared runtime behavior is independently exercised under qualified Kubernetes exclusion."
+    },
+    {
+      "id": "dot-11-supervisor-fencing/dot-supervisor-recovery/35",
+      "change": "dot-11-supervisor-fencing",
+      "spec": "openspec/changes/dot-11-supervisor-fencing/specs/dot-supervisor-recovery/spec.md",
+      "line": 32,
+      "requirement": "Selected supervisors prove complete execution exclusion",
+      "scenario": "Kubernetes Pod disappears on an unreachable node",
+      "expectation": "- **WHEN** the Pod object is deleted while termination of its containers and descendants cannot be established\n- **THEN** ownership remains unreclaimed until authenticated runtime termination or independently verifiable infrastructure exclusion is proven",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/supervisor_journey.py",
+        "entry_point": "kubernetes",
+        "stage": "supervisor",
+        "required_observations": [
+          {
+            "id": "supervisor-kubernetes-safe-checkpoint",
+            "profile": "shared_two_runtime_surreal_db"
+          },
+          {
+            "id": "supervisor-kubernetes-uncertain-checkpoint",
+            "profile": "shared_two_runtime_surreal_db"
+          },
+          {
+            "id": "supervisor-kubernetes-safe-team",
+            "profile": "shared_two_runtime_surreal_db"
+          },
+          {
+            "id": "supervisor-kubernetes-uncertain-team",
+            "profile": "shared_two_runtime_surreal_db"
+          },
+          {
+            "id": "supervisor-node-partition-predecessor_controller-restored",
+            "profile": "shared_two_runtime_surreal_db"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-11-supervisor-fencing/dot-supervisor-recovery/36",
+      "change": "dot-11-supervisor-fencing",
+      "spec": "openspec/changes/dot-11-supervisor-fencing/specs/dot-supervisor-recovery/spec.md",
+      "line": 37,
+      "requirement": "Selected supervisors prove complete execution exclusion",
+      "scenario": "Validated supervisor evidence is replayed",
+      "expectation": "- **WHEN** an exclusion receipt is reused for a different Pod UID, service incarnation or ownership challenge\n- **THEN** the host rejects it and the ownership epoch is unchanged",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/supervisor_journey.py",
+        "entry_point": "controller_security",
+        "stage": "supervisor",
+        "required_observations": [
+          {
+            "id": "supervisor-native-controller-security",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "supervisor-kubernetes-controller-security",
+            "applicable_profiles": [
+              "shared_two_runtime_surreal_db"
+            ]
+          },
+          {
+            "id": "supervisor-native-safe-checkpoint",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "supervisor-kubernetes-safe-checkpoint",
+            "applicable_profiles": [
+              "shared_two_runtime_surreal_db"
+            ]
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-12-memory-isolation/multi-tenant-isolation/37",
+      "change": "dot-12-memory-isolation",
+      "spec": "openspec/changes/dot-12-memory-isolation/specs/multi-tenant-isolation/spec.md",
+      "line": 9,
+      "requirement": "Assistant memory is scoped by verified complete owner",
+      "scenario": "Cross-surface direct ID",
+      "expectation": "- **WHEN** a principal supplies another owner's memory ID through HTTP, MCP, native tools or history\n- **THEN** the operation is denied without revealing content or affecting the owner's record",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/dot_memory_owner_contract.rs",
+        "entry_point": "exercise",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "dot_memory_owner_contract",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-12-memory-isolation/multi-tenant-isolation/38",
+      "change": "dot-12-memory-isolation",
+      "spec": "openspec/changes/dot-12-memory-isolation/specs/multi-tenant-isolation/spec.md",
+      "line": 14,
+      "requirement": "Assistant memory is scoped by verified complete owner",
+      "scenario": "Scoped context retrieval",
+      "expectation": "- **WHEN** memory is retrieved for prompt context or background processing\n- **THEN** only currently authorized owner-scoped content is returned and its text cannot grant execution authority\n\n## MODIFIED Requirements",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/dot_memory_owner_contract.rs",
+        "entry_point": "exercise",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "dot_memory_owner_contract",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-12-memory-isolation/multi-tenant-isolation/39",
+      "change": "dot-12-memory-isolation",
+      "spec": "openspec/changes/dot-12-memory-isolation/specs/multi-tenant-isolation/spec.md",
+      "line": 26,
+      "requirement": "Per-user data is isolated by authenticated identity",
+      "scenario": "Cross-user thread access",
+      "expectation": "- **WHEN** user B requests a thread created by user A\n- **THEN** the API returns 404/403 and no content from user A leaks",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/owner_isolation_journey.py",
+        "entry_point": "run_owner_isolation",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "owner-thread-isolation"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-12-memory-isolation/multi-tenant-isolation/40",
+      "change": "dot-12-memory-isolation",
+      "spec": "openspec/changes/dot-12-memory-isolation/specs/multi-tenant-isolation/spec.md",
+      "line": 30,
+      "requirement": "Per-user data is isolated by authenticated identity",
+      "scenario": "Thread-adjacent state follows the verified owner",
+      "expectation": "- **WHEN** user B uses the direct API or ACP to request, stream, approve,\n  cancel, or resume a run or\n  reads agent configuration or conversation policy for user A's session\n- **THEN** the operation returns 404/403 or an empty owner-scoped result and\n  does not expose or mutate user A's state",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/owner_isolation_journey.py",
+        "entry_point": "run_owner_isolation",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "owner-adjacent-isolation"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-12-memory-isolation/multi-tenant-isolation/41",
+      "change": "dot-12-memory-isolation",
+      "spec": "openspec/changes/dot-12-memory-isolation/specs/multi-tenant-isolation/spec.md",
+      "line": 37,
+      "requirement": "Per-user data is isolated by authenticated identity",
+      "scenario": "Legacy sessions remain compatible without becoming claimable",
+      "expectation": "- **WHEN** a pre-ownership session is encountered after migration\n- **THEN** it remains available only in the anonymous compatibility scope and\n  an authenticated caller cannot claim it by presenting its former logical ID",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/dot_owner_adjacent_contract.rs",
+        "entry_point": "whole_target",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "dot_owner_adjacent_contract",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-12-memory-isolation/multi-tenant-isolation/42",
+      "change": "dot-12-memory-isolation",
+      "spec": "openspec/changes/dot-12-memory-isolation/specs/multi-tenant-isolation/spec.md",
+      "line": 42,
+      "requirement": "Per-user data is isolated by authenticated identity",
+      "scenario": "Memory identity from token",
+      "expectation": "- **WHEN** a request to any memory endpoint supplies a user_id in body or query\n- **THEN** the supplied id is ignored and the host-verified issuer/tenant/subject owner identity is used",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/dot_memory_owner_contract.rs",
+        "entry_point": "exercise",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "dot_memory_owner_contract",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-12-memory-isolation/multi-tenant-isolation/43",
+      "change": "dot-12-memory-isolation",
+      "spec": "openspec/changes/dot-12-memory-isolation/specs/multi-tenant-isolation/spec.md",
+      "line": 46,
+      "requirement": "Per-user data is isolated by authenticated identity",
+      "scenario": "Unresolved KB names fail closed",
+      "expectation": "- **WHEN** an agent's configured knowledge-base names resolve to no accessible KB\n- **THEN** retrieval returns no chunks rather than searching all knowledge bases",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/owner_isolation_journey.py",
+        "entry_point": "run_unresolved_knowledge",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "knowledge-unresolved-selection"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-12-memory-isolation/multi-tenant-isolation/44",
+      "change": "dot-12-memory-isolation",
+      "spec": "openspec/changes/dot-12-memory-isolation/specs/multi-tenant-isolation/spec.md",
+      "line": 50,
+      "requirement": "Per-user data is isolated by authenticated identity",
+      "scenario": "Owners may reuse durable knowledge identifiers",
+      "expectation": "- **WHEN** two verified owners create knowledge bases, documents, or chunks\n  with identical logical identifiers\n- **THEN** both durable record graphs coexist, parent relationships remain\n  owner-qualified, and either owner can read or delete only their own graph",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/dot_owner_adjacent_contract.rs",
+        "entry_point": "whole_target",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "dot_owner_adjacent_contract",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-13-memory-controls/dot-memory-controls/45",
+      "change": "dot-13-memory-controls",
+      "spec": "openspec/changes/dot-13-memory-controls/specs/dot-memory-controls/spec.md",
+      "line": 13,
+      "requirement": "Assistant capture and retention are owner controlled",
+      "scenario": "Capture consent changes",
+      "expectation": "- **WHEN** automatic capture is disabled or consent is revoked while capture work is queued\n- **THEN** no new assistant capture is committed under the stale policy",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/memory_capture_journey.py",
+        "entry_point": "run_memory_capture",
+        "stage": "memory-capture",
+        "required_observations": [
+          {
+            "id": "memory-capture-default-off"
+          },
+          {
+            "id": "memory-queue-revocation"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-13-memory-controls/dot-memory-controls/46",
+      "change": "dot-13-memory-controls",
+      "spec": "openspec/changes/dot-13-memory-controls/specs/dot-memory-controls/spec.md",
+      "line": 18,
+      "requirement": "Assistant capture and retention are owner controlled",
+      "scenario": "Deletion across restart",
+      "expectation": "- **WHEN** the owner deletes a memory and the process exits before index cleanup\n- **THEN** content becomes immediately unavailable to retrieval/history and durable purge resumes after restart",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "memory",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "memory-owner-controls"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-13-memory-controls/dot-memory-controls/47",
+      "change": "dot-13-memory-controls",
+      "spec": "openspec/changes/dot-13-memory-controls/specs/dot-memory-controls/spec.md",
+      "line": 27,
+      "requirement": "Automatic capture retention is explicit",
+      "scenario": "Explicit supported retention choice",
+      "expectation": "- **WHEN** an owner enables automatic capture with 7, 30, 90 or 365 days, or until-deleted\n- **THEN** the durable policy records that explicit choice and revision; any other duration or mixed/missing form is rejected",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "memory",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "memory-owner-controls"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-13-memory-controls/dot-memory-controls/48",
+      "change": "dot-13-memory-controls",
+      "spec": "openspec/changes/dot-13-memory-controls/specs/dot-memory-controls/spec.md",
+      "line": 36,
+      "requirement": "Automatic memory expiry has an immutable anchor",
+      "scenario": "Exact expiration boundary",
+      "expectation": "- **WHEN** an automatically captured memory reaches first durable capture plus its effective whole-day duration\n- **THEN** retrieval, direct-ID reads, export and history suppress its content at that exact instant without waiting for physical index cleanup",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/memory_capture_journey.py",
+        "entry_point": "run_memory_capture",
+        "stage": "memory-capture",
+        "required_observations": [
+          {
+            "id": "memory-expiry-7"
+          },
+          {
+            "id": "memory-expiry-30"
+          },
+          {
+            "id": "memory-expiry-90"
+          },
+          {
+            "id": "memory-expiry-365"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-13-memory-controls/dot-memory-controls/49",
+      "change": "dot-13-memory-controls",
+      "spec": "openspec/changes/dot-13-memory-controls/specs/dot-memory-controls/spec.md",
+      "line": 45,
+      "requirement": "Retention revisions cannot revive prior content",
+      "scenario": "Shortening cannot be undone by an interrupted purge",
+      "expectation": "- **WHEN** retention is shortened for existing automatic memories, the process exits before purge completes, and the owner later extends retention or chooses until-deleted\n- **THEN** existing effective expiry remains constrained by the earlier shortening across runtimes and restart; expired content is not revived, and purge resumes",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/memory_capture_journey.py",
+        "entry_point": "run_memory_capture",
+        "stage": "memory-capture",
+        "required_observations": [
+          {
+            "id": "memory-shorten-extend-no-revival"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-13-memory-controls/dot-memory-controls/50",
+      "change": "dot-13-memory-controls",
+      "spec": "openspec/changes/dot-13-memory-controls/specs/dot-memory-controls/spec.md",
+      "line": 54,
+      "requirement": "Capture commits use current policy",
+      "scenario": "New captures use current retention",
+      "expectation": "- **WHEN** queued capture commits after a retention policy revision\n- **THEN** the host atomically checks current opt-in and revision and records current retention at first durable capture; stale consent cannot commit and retries preserve the original timestamp rather than restarting retention",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/memory_capture_journey.py",
+        "entry_point": "run_memory_capture",
+        "stage": "memory-capture",
+        "required_observations": [
+          {
+            "id": "memory-queue-current-policy"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-14-durable-schedules/dot-durable-schedules/51",
+      "change": "dot-14-durable-schedules",
+      "spec": "openspec/changes/dot-14-durable-schedules/specs/dot-durable-schedules/spec.md",
+      "line": 13,
+      "requirement": "Schedules persist intent and unique governed occurrences",
+      "scenario": "Two scanners after downtime",
+      "expectation": "- **WHEN** two runtimes find several due occurrences of the same non-overlapping schedule\n- **THEN** cursor advancement and one latest coalesced occurrence commit atomically with a stable admission identity and visible skipped range",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/calendar_journey.py",
+        "entry_point": "run_calendar",
+        "stage": "calendar",
+        "required_observations": [
+          {
+            "id": "calendar-approval-hold"
+          },
+          {
+            "id": "calendar-unknown-hold"
+          },
+          {
+            "id": "calendar-paused-catchup"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-14-durable-schedules/dot-durable-schedules/52",
+      "change": "dot-14-durable-schedules",
+      "spec": "openspec/changes/dot-14-durable-schedules/specs/dot-durable-schedules/spec.md",
+      "line": 18,
+      "requirement": "Schedules persist intent and unique governed occurrences",
+      "scenario": "DST and revocation",
+      "expectation": "- **WHEN** a recurring local time is nonexistent or repeated, or its owner revokes the schedule before admission\n- **THEN** nonexistent time is visibly skipped, repeated time selects the earlier instant, and revoked work is denied under current authority",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/calendar_journey.py",
+        "entry_point": "run_calendar",
+        "stage": "calendar",
+        "required_observations": [
+          {
+            "id": "calendar-2027-03-14"
+          },
+          {
+            "id": "calendar-2027-07-01"
+          },
+          {
+            "id": "calendar-2027-11-07"
+          },
+          {
+            "id": "calendar-2027-12-01"
+          },
+          {
+            "id": "calendar-approval-hold"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-14-durable-schedules/dot-durable-schedules/53",
+      "change": "dot-14-durable-schedules",
+      "spec": "openspec/changes/dot-14-durable-schedules/specs/dot-durable-schedules/spec.md",
+      "line": 23,
+      "requirement": "Schedules persist intent and unique governed occurrences",
+      "scenario": "Validated recurrence revision",
+      "expectation": "- **WHEN** an owner submits daily or weekly HH:mm plus IANA timezone, then changes that timezone\n- **THEN** invalid forms are rejected, a valid edit creates a new revision, and unadmitted old-revision occurrences are cancelled without reinterpreting admitted work",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/calendar_journey.py",
+        "entry_point": "run_calendar",
+        "stage": "calendar",
+        "required_observations": [
+          {
+            "id": "calendar-approval-hold"
+          },
+          {
+            "id": "calendar-unknown-hold"
+          },
+          {
+            "id": "calendar-paused-catchup"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-14-durable-schedules/dot-durable-schedules/54",
+      "change": "dot-14-durable-schedules",
+      "spec": "openspec/changes/dot-14-durable-schedules/specs/dot-durable-schedules/spec.md",
+      "line": 32,
+      "requirement": "Busy schedules coalesce behind one durable overlap guard",
+      "scenario": "Multiple occurrences while busy",
+      "expectation": "- **WHEN** several due instants occur while a prior run executes or awaits approval\n- **THEN** competing scanners retain only the latest pending occurrence and do not admit another run until the prior run is safely resolved",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/calendar_journey.py",
+        "entry_point": "run_calendar",
+        "stage": "calendar",
+        "required_observations": [
+          {
+            "id": "calendar-approval-hold"
+          },
+          {
+            "id": "calendar-unknown-hold"
+          },
+          {
+            "id": "calendar-paused-catchup"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-14-durable-schedules/dot-durable-schedules/55",
+      "change": "dot-14-durable-schedules",
+      "spec": "openspec/changes/dot-14-durable-schedules/specs/dot-durable-schedules/spec.md",
+      "line": 37,
+      "requirement": "Busy schedules coalesce behind one durable overlap guard",
+      "scenario": "Uncertain predecessor after restart",
+      "expectation": "- **WHEN** a process restarts with an uncertain prior effect and a coalesced pending occurrence\n- **THEN** the durable guard remains held and the pending occurrence cannot execute until the predecessor is excluded and the effect is reconciled",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/calendar_journey.py",
+        "entry_point": "run_calendar",
+        "stage": "calendar",
+        "required_observations": [
+          {
+            "id": "calendar-approval-hold"
+          },
+          {
+            "id": "calendar-unknown-hold"
+          },
+          {
+            "id": "calendar-paused-catchup"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-14-durable-schedules/dot-durable-schedules/56",
+      "change": "dot-14-durable-schedules",
+      "spec": "openspec/changes/dot-14-durable-schedules/specs/dot-durable-schedules/spec.md",
+      "line": 42,
+      "requirement": "Busy schedules coalesce behind one durable overlap guard",
+      "scenario": "Edit during an active run",
+      "expectation": "- **WHEN** a schedule revision changes while the prior run holds its guard\n- **THEN** old unadmitted pending intent is cancelled, new-revision due instants may fill the pending slot, and no new-revision run overlaps the predecessor",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/calendar_journey.py",
+        "entry_point": "run_calendar",
+        "stage": "calendar",
+        "required_observations": [
+          {
+            "id": "calendar-approval-hold"
+          },
+          {
+            "id": "calendar-unknown-hold"
+          },
+          {
+            "id": "calendar-paused-catchup"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-14-durable-schedules/dot-durable-schedules/57",
+      "change": "dot-14-durable-schedules",
+      "spec": "openspec/changes/dot-14-durable-schedules/specs/dot-durable-schedules/spec.md",
+      "line": 47,
+      "requirement": "Busy schedules coalesce behind one durable overlap guard",
+      "scenario": "Safe release races a new due instant",
+      "expectation": "- **WHEN** scanners race to update pending intent and admit work as the predecessor becomes safely terminal\n- **THEN** one atomic current-revision admission consumes the latest eligible pending occurrence, records skipped occurrences, and preserves budget and approval checks",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/schedule_release_journey.py",
+        "entry_point": "run_schedule_release",
+        "stage": "schedule-release",
+        "required_observations": [
+          {
+            "id": "schedule-safe-release-race"
+          },
+          {
+            "id": "route-budget-admission"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-15-proactive-followups/local-scoped-observers/58",
+      "change": "dot-15-proactive-followups",
+      "spec": "openspec/changes/dot-15-proactive-followups/specs/local-scoped-observers/spec.md",
+      "line": 9,
+      "requirement": "Follow-up decisions and delivery remain governed and durable",
+      "scenario": "Policy suppresses follow-up",
+      "expectation": "- **WHEN** an observed event matches a rule but consent, source grant or destination permission is revoked\n- **THEN** no disclosure or effect occurs and an owner-visible scoped suppression reason is retained",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "schedules_followups",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "logical-schedule-followup"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-15-proactive-followups/local-scoped-observers/59",
+      "change": "dot-15-proactive-followups",
+      "spec": "openspec/changes/dot-15-proactive-followups/specs/local-scoped-observers/spec.md",
+      "line": 14,
+      "requirement": "Follow-up decisions and delivery remain governed and durable",
+      "scenario": "Delivery interrupted",
+      "expectation": "- **WHEN** a committed follow-up is interrupted during delivery\n- **THEN** the durable inbox item is recovered once logically, while uncertain external dispatch is held for reconciliation rather than retried blindly",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/followup_clock_journey.py",
+        "entry_point": "run_followup_clock",
+        "stage": "followup-clock",
+        "required_observations": [
+          {
+            "id": "followup-cold-inbox-once"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Actual committed logical outbox/deferred work survives all scanner processes dying before inbox delivery. External connectors are unavailable and no external-dispatch recovery is claimed."
+    },
+    {
+      "id": "dot-15-proactive-followups/local-scoped-observers/60",
+      "change": "dot-15-proactive-followups",
+      "spec": "openspec/changes/dot-15-proactive-followups/specs/local-scoped-observers/spec.md",
+      "line": 19,
+      "requirement": "Follow-up decisions and delivery remain governed and durable",
+      "scenario": "Overnight quiet hours",
+      "expectation": "- **WHEN** a rule uses daily 22:00\u201307:00 quiet hours in its explicit IANA zone\n- **THEN** 22:00 is suppressed and 07:00 is permitted, with overnight and repeated-hour membership evaluated at the candidate real instant and queued work rechecked after policy edits",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/followup_clock_journey.py",
+        "entry_point": "run_followup_clock",
+        "stage": "followup-clock",
+        "required_observations": [
+          {
+            "id": "followup-overnight-fold-policy"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-16-assistant-capability-surface/product-capability-support-matrix/61",
+      "change": "dot-16-assistant-capability-surface",
+      "spec": "openspec/changes/dot-16-assistant-capability-surface/specs/product-capability-support-matrix/spec.md",
+      "line": 9,
+      "requirement": "Assistant capability discovery matches reachable operations",
+      "scenario": "Advertised operation",
+      "expectation": "- **WHEN** a client discovers an assistant operation for its backend and entry point\n- **THEN** the operation is reachable under the same host authority and durable semantics claimed by discovery",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/http_capability_journey.py",
+        "entry_point": "reconcile_http_capabilities",
+        "stage": "http-capabilities",
+        "required_observations": [
+          {
+            "id": "discovered-tool-operations"
+          },
+          {
+            "id": "reconciled-http-operations"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-16-assistant-capability-surface/product-capability-support-matrix/62",
+      "change": "dot-16-assistant-capability-surface",
+      "spec": "openspec/changes/dot-16-assistant-capability-surface/specs/product-capability-support-matrix/spec.md",
+      "line": 14,
+      "requirement": "Assistant capability discovery matches reachable operations",
+      "scenario": "Unsupported profile",
+      "expectation": "- **WHEN** a client uses an operation unavailable on its backend or direct embedded entry point\n- **THEN** discovery marks it unsupported and invocation fails explicitly without an ephemeral substitute",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/unsupported_journey.py",
+        "entry_point": "run_unsupported",
+        "stage": "unsupported",
+        "required_observations": [
+          {
+            "id": "unsupported-assistant-controls"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-17-assistant-release-acceptance/product-validation-evidence/63",
+      "change": "dot-17-assistant-release-acceptance",
+      "spec": "openspec/changes/dot-17-assistant-release-acceptance/specs/product-validation-evidence/spec.md",
+      "line": 9,
+      "requirement": "Both required deployment profiles pass before first release",
+      "scenario": "Only one profile passes",
+      "expectation": "- **WHEN** local operation passes but shared-host evidence is missing or fails, or vice versa\n- **THEN** first-release assistant certification remains incomplete",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "kind": "profile_completeness_invariant",
+        "path": "scripts/dot/reconcile.py",
+        "entry_point": "reconcile",
+        "stage": "reconcile",
+        "required_observations": [
+          {
+            "id": "single-profile-rejected"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-17-assistant-release-acceptance/product-validation-evidence/64",
+      "change": "dot-17-assistant-release-acceptance",
+      "spec": "openspec/changes/dot-17-assistant-release-acceptance/specs/product-validation-evidence/spec.md",
+      "line": 14,
+      "requirement": "Both required deployment profiles pass before first release",
+      "scenario": "Final release evidence",
+      "expectation": "- **WHEN** all local product acceptance gates pass and artifacts are published\n- **THEN** the final source revision, backend/entry-point matrix, both architecture digests and deployment health are recorded separately from product test results",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/deployment_health.py",
+        "entry_point": "run_deployment_health",
+        "stage": "deployment-health",
+        "required_observations": [
+          {
+            "id": "published-provenance"
+          },
+          {
+            "id": "deployment-http-health"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "publication"
+    },
+    {
+      "id": "dot-18-a2a-conformance/a2a-grpc/65",
+      "change": "dot-18-a2a-conformance",
+      "spec": "openspec/changes/dot-18-a2a-conformance/specs/a2a-grpc/spec.md",
+      "line": 9,
+      "requirement": "A2A 1.0 public card identifies a usable conformant interface",
+      "scenario": "Anonymous reader obtains the card",
+      "expectation": "- **WHEN** an unauthenticated client requests `/.well-known/agent-card.json`\n- **THEN** UAR returns 200 JSON conforming to the pinned A2A 1.0 card schema with a usable interface URL\n- **AND** authenticated task methods do not become anonymously accessible",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "protocols",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "a2a-task-approval"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-18-a2a-conformance/a2a-grpc/66",
+      "change": "dot-18-a2a-conformance",
+      "spec": "openspec/changes/dot-18-a2a-conformance/specs/a2a-grpc/spec.md",
+      "line": 15,
+      "requirement": "A2A 1.0 public card identifies a usable conformant interface",
+      "scenario": "Legacy card alias",
+      "expectation": "- **WHEN** compatibility retains `/agent.json`\n- **THEN** it is documented as an alias and its anonymous exemption does not extend to task methods",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "protocols",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "a2a-task-approval"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-18-a2a-conformance/a2a-grpc/67",
+      "change": "dot-18-a2a-conformance",
+      "spec": "openspec/changes/dot-18-a2a-conformance/specs/a2a-grpc/spec.md",
+      "line": 24,
+      "requirement": "Advertised A2A tasks use the selected 1.0 wire contract",
+      "scenario": "Task exchange and interaction state",
+      "expectation": "- **WHEN** an authorized client sends a message and later reads or cancels its task\n- **THEN** the public methods, parts, roles and state values conform to the selected A2A 1.0 schema\n- **AND** pending human input is represented by the pinned input-required state rather than a working state",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "protocols",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "a2a-task-approval"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-18-a2a-conformance/a2a-grpc/68",
+      "change": "dot-18-a2a-conformance",
+      "spec": "openspec/changes/dot-18-a2a-conformance/specs/a2a-grpc/spec.md",
+      "line": 30,
+      "requirement": "Advertised A2A tasks use the selected 1.0 wire contract",
+      "scenario": "Insufficient authority",
+      "expectation": "- **WHEN** an authenticated client lacks the required scope for a task operation\n- **THEN** the response uses the pinned 1.0 auth-required state or specified protocol error without disclosing another owner's task",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "protocols",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "a2a-task-approval"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-18-a2a-conformance/a2a-grpc/69",
+      "change": "dot-18-a2a-conformance",
+      "spec": "openspec/changes/dot-18-a2a-conformance/specs/a2a-grpc/spec.md",
+      "line": 39,
+      "requirement": "A2A task correlation survives process loss without a second executor",
+      "scenario": "Fresh process reads an admitted task",
+      "expectation": "- **WHEN** the original runtime exits after admitting a task and an authorized second runtime reads that task\n- **THEN** the second runtime resolves its current durable state under the same owner without creating another logical execution",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "protocols",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "a2a-task-approval"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-18-a2a-conformance/a2a-grpc/70",
+      "change": "dot-18-a2a-conformance",
+      "spec": "openspec/changes/dot-18-a2a-conformance/specs/a2a-grpc/spec.md",
+      "line": 44,
+      "requirement": "A2A task correlation survives process loss without a second executor",
+      "scenario": "Competing submissions",
+      "expectation": "- **WHEN** two authorized requests race to update the same task binding\n- **THEN** the durable transition admits at most the intended logical turn and exposes a consistent task identity or explicit conflict",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "protocols",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "a2a-competing-submissions"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-18-a2a-conformance/a2a-grpc/71",
+      "change": "dot-18-a2a-conformance",
+      "spec": "openspec/changes/dot-18-a2a-conformance/specs/a2a-grpc/spec.md",
+      "line": 53,
+      "requirement": "Agent card version equals the published release",
+      "scenario": "Installed published artifact",
+      "expectation": "- **WHEN** Kubo reads the card from an installed artifact identified by its release tag and checksum or OCI digest\n- **THEN** the top-level version is plain `x.y.z` with no release-candidate suffix and equals that tag's version",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/publication.py",
+        "entry_point": "installed_identity",
+        "stage": "installed",
+        "required_observations": [
+          {
+            "id": "published-provenance"
+          },
+          {
+            "id": "a2a-task-approval"
+          },
+          {
+            "id": "a2a-competing-submissions"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "publication"
+    },
+    {
+      "id": "dot-19-interactive-protocols/ag-ui-chat-conformance/72",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/ag-ui-chat-conformance/spec.md",
+      "line": 9,
+      "requirement": "AG-UI run input supports durable interruption and resume",
+      "scenario": "Approval interrupts an AG-UI run",
+      "expectation": "- **WHEN** a `RunAgentInput` run reaches a pending Required tool approval\n- **THEN** the stream emits the selected spec events and a `RUN_FINISHED` interruption outcome identifying the durable pending interaction\n- **AND** no tool effect is reported before a valid host decision",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "protocols",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "agui-interrupt-resume"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-19-interactive-protocols/ag-ui-chat-conformance/73",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/ag-ui-chat-conformance/spec.md",
+      "line": 15,
+      "requirement": "AG-UI run input supports durable interruption and resume",
+      "scenario": "Resume after restart",
+      "expectation": "- **WHEN** the authorized client sends `resume[]` for that interaction after a fresh process starts\n- **THEN** the host resolves the same durable decision and protected continuation at most once\n- **AND** the resumed stream does not duplicate a logical effect or fabricate a completed prior run",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "protocols",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "agui-interrupt-resume"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-19-interactive-protocols/ag-ui-chat-conformance/74",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/ag-ui-chat-conformance/spec.md",
+      "line": 21,
+      "requirement": "AG-UI run input supports durable interruption and resume",
+      "scenario": "Invalid or stale resume",
+      "expectation": "- **WHEN** `resume[]` names another owner's, expired or invalidated interaction\n- **THEN** UAR denies continuation without disclosing private state or executing a tool",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "protocols",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "agui-interrupt-resume"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-19-interactive-protocols/mcp-runtime-projection/75",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/mcp-runtime-projection/spec.md",
+      "line": 9,
+      "requirement": "MCP client elicitation uses a governed run interaction",
+      "scenario": "Accept, decline and cancel",
+      "expectation": "- **WHEN** an MCP server requests elicitation during an authorized run\n- **THEN** the request reaches that run's governed interaction channel and returns the selected protocol's accept, decline or cancel result from a committed disposition",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/mcp_journey.py",
+        "entry_point": "run_mcp",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "mcp-stdio-form-accept"
+          },
+          {
+            "id": "mcp-stdio-form-decline"
+          },
+          {
+            "id": "mcp-stdio-form-cancel"
+          },
+          {
+            "id": "mcp-stdio-url-accept"
+          },
+          {
+            "id": "mcp-stdio-url-decline"
+          },
+          {
+            "id": "mcp-stdio-url-cancel"
+          },
+          {
+            "id": "mcp-http-form-accept"
+          },
+          {
+            "id": "mcp-http-form-decline"
+          },
+          {
+            "id": "mcp-http-form-cancel"
+          },
+          {
+            "id": "mcp-http-url-accept"
+          },
+          {
+            "id": "mcp-http-url-decline"
+          },
+          {
+            "id": "mcp-http-url-cancel"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-19-interactive-protocols/mcp-runtime-projection/76",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/mcp-runtime-projection/spec.md",
+      "line": 14,
+      "requirement": "MCP client elicitation uses a governed run interaction",
+      "scenario": "Accepted elicitation precedes a Required tool",
+      "expectation": "- **WHEN** the user accepts elicitation and the MCP server subsequently requests a Required tool effect\n- **THEN** the tool still waits for its own host approval and cannot execute solely because elicitation was accepted",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/mcp_journey.py",
+        "entry_point": "run_mcp",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "mcp-stdio-accepted-input-denied-effect"
+          },
+          {
+            "id": "mcp-http-accepted-input-denied-effect"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-19-interactive-protocols/mcp-runtime-projection/77",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/mcp-runtime-projection/spec.md",
+      "line": 19,
+      "requirement": "MCP client elicitation uses a governed run interaction",
+      "scenario": "Disconnected or restarted client",
+      "expectation": "- **WHEN** the MCP transport disconnects or the runtime restarts while elicitation is pending\n- **THEN** the interaction remains durably pending or reaches an explicit terminal outcome, without silent acceptance or automatic replay of an uncertain effect",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/mcp_journey.py",
+        "entry_point": "run_mcp",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "mcp-stdio-cold-history"
+          },
+          {
+            "id": "mcp-http-cold-history"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-19-interactive-protocols/runtime-console-governance-certification/78",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/runtime-console-governance-certification/spec.md",
+      "line": 9,
+      "requirement": "Governance-disabled local runs bypass governance decisions",
+      "scenario": "Available web search executes while governance is Off",
+      "expectation": "- **WHEN** an eligible local anonymous run calls an available configured `web_search` tool while `governance.enabled` is `false` and the descriptor does not require approval\n- **THEN** the tool executes without a governance-denied or approval-required outcome",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/governance_journey.py",
+        "entry_point": "local_cases",
+        "stage": "governance",
+        "required_observations": [
+          {
+            "id": "governance-web-search-applicability",
+            "profile": "local_surreal_kv"
+          },
+          {
+            "id": "eligible-local-governance",
+            "profile": "local_surreal_kv"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "The scenario requires an installed non-Required web_search descriptor. Current installed native inventory lacks one; actual discovery and provider advertisement must record unavailable applicability. Native system info separately exercises the non-Required path. MCP tools remain Required."
+    },
+    {
+      "id": "dot-19-interactive-protocols/runtime-console-governance-certification/79",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/runtime-console-governance-certification/spec.md",
+      "line": 14,
+      "requirement": "Governance-disabled local runs bypass governance decisions",
+      "scenario": "Automatic governance bypass preserves explicit policy",
+      "expectation": "- **WHEN** an eligible local root tool call has effective approval policy Auto, a non-Required descriptor and `governance.enabled` is `false`\n- **THEN** automatic Cedar/risk outcomes are bypassed and the available configured tool proceeds to execution\n- **AND** changing effective policy to explicit Ask or Deny still requires its decision or denies the call, respectively",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/governance_journey.py",
+        "entry_point": "run_governance",
+        "stage": "governance",
+        "required_observations": [
+          {
+            "id": "eligible-local-governance",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "mandatory-governance-refusal"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Eligible local mode executes positive Off controls. Mandatory authenticated local/shared hosts execute the real refusal-to-disable control; shared Off is forbidden."
+    },
+    {
+      "id": "dot-19-interactive-protocols/runtime-console-governance-certification/80",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/runtime-console-governance-certification/spec.md",
+      "line": 20,
+      "requirement": "Governance-disabled local runs bypass governance decisions",
+      "scenario": "Descriptor Required remains binding",
+      "expectation": "- **WHEN** an eligible local run with governance Off reaches an available configured tool with `ApprovalClass::Required`\n- **THEN** the tool pauses for the exact durable host approval and cannot execute through the governance bypass",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/governance_journey.py",
+        "entry_point": "run_governance",
+        "stage": "governance",
+        "required_observations": [
+          {
+            "id": "eligible-local-governance",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "mandatory-governance-refusal"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Eligible local mode executes positive Off controls. Mandatory authenticated local/shared hosts execute the real refusal-to-disable control; shared Off is forbidden."
+    },
+    {
+      "id": "dot-19-interactive-protocols/runtime-console-governance-certification/81",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/runtime-console-governance-certification/spec.md",
+      "line": 25,
+      "requirement": "Governance-disabled local runs bypass governance decisions",
+      "scenario": "Disabled or unselected tool remains unavailable",
+      "expectation": "- **WHEN** a tool is not registered, not selected, or otherwise unavailable while local governance is Off\n- **THEN** the runtime does not invent or expose the tool and reports the ordinary capability or execution failure",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/governance_journey.py",
+        "entry_point": "run_governance",
+        "stage": "governance",
+        "required_observations": [
+          {
+            "id": "eligible-local-governance",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "mandatory-governance-refusal"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Eligible local mode executes positive Off controls. Mandatory authenticated local/shared hosts execute the real refusal-to-disable control; shared Off is forbidden."
+    },
+    {
+      "id": "dot-19-interactive-protocols/runtime-console-governance-certification/82",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/runtime-console-governance-certification/spec.md",
+      "line": 30,
+      "requirement": "Governance-disabled local runs bypass governance decisions",
+      "scenario": "Enabled governance preserves denial semantics",
+      "expectation": "- **WHEN** `governance.enabled` is `true` and Cedar denies a tool execution\n- **THEN** execution stops, an auditable denial is emitted, and human approval cannot override it",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/governance_journey.py",
+        "entry_point": "run_governance",
+        "stage": "governance",
+        "required_observations": [
+          {
+            "id": "eligible-local-governance",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "mandatory-governance-refusal"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Eligible local mode executes positive Off controls. Mandatory authenticated local/shared hosts execute the real refusal-to-disable control; shared Off is forbidden."
+    },
+    {
+      "id": "dot-19-interactive-protocols/runtime-console-governance-certification/83",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/runtime-console-governance-certification/spec.md",
+      "line": 39,
+      "requirement": "Inactive governance posts one warning per process",
+      "scenario": "Process starts with governance Off",
+      "expectation": "- **WHEN** an eligible local process starts with `governance.enabled` set to `false`\n- **THEN** it emits exactly one structured warning about inactive governance and the continuing descriptor Required approval boundary",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/governance_journey.py",
+        "entry_point": "run_governance",
+        "stage": "governance",
+        "required_observations": [
+          {
+            "id": "governance-warning-new-process",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "eligible-local-governance",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "mandatory-governance-refusal"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Eligible local mode executes positive Off controls. Mandatory authenticated local/shared hosts execute the real refusal-to-disable control; shared Off is forbidden."
+    },
+    {
+      "id": "dot-19-interactive-protocols/runtime-console-governance-certification/84",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/runtime-console-governance-certification/spec.md",
+      "line": 44,
+      "requirement": "Inactive governance posts one warning per process",
+      "scenario": "Governance is disabled after startup",
+      "expectation": "- **WHEN** a process starts with governance On and an eligible local operator later changes `governance.enabled` to `false`\n- **THEN** the process emits its one inactive-governance warning when the Off state is first applied",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/governance_journey.py",
+        "entry_point": "run_governance",
+        "stage": "governance",
+        "required_observations": [
+          {
+            "id": "eligible-local-governance",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "mandatory-governance-refusal"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Eligible local mode executes positive Off controls. Mandatory authenticated local/shared hosts execute the real refusal-to-disable control; shared Off is forbidden."
+    },
+    {
+      "id": "dot-19-interactive-protocols/runtime-console-governance-certification/85",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/runtime-console-governance-certification/spec.md",
+      "line": 49,
+      "requirement": "Inactive governance posts one warning per process",
+      "scenario": "Repeated local activity does not repeat the warning",
+      "expectation": "- **WHEN** a process has already emitted its inactive-governance warning and then serves additional requests, runs, tool calls, settings reads, or On-to-Off transitions\n- **THEN** no additional inactive-governance warning is emitted by that process",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/governance_journey.py",
+        "entry_point": "run_governance",
+        "stage": "governance",
+        "required_observations": [
+          {
+            "id": "eligible-local-governance",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "mandatory-governance-refusal"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Eligible local mode executes positive Off controls. Mandatory authenticated local/shared hosts execute the real refusal-to-disable control; shared Off is forbidden."
+    },
+    {
+      "id": "dot-19-interactive-protocols/tool-approval-workflow/86",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/tool-approval-workflow/spec.md",
+      "line": 9,
+      "requirement": "Explicit Required tool approval survives local governance bypass",
+      "scenario": "Required tool under governance Off",
+      "expectation": "- **WHEN** an eligible local run with governance Off reaches an available tool whose descriptor approval class is Required\n- **THEN** the host records a pending exact approval ID and the tool remains uninvoked until a current valid decision",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/governance_journey.py",
+        "entry_point": "run_governance",
+        "stage": "governance",
+        "required_observations": [
+          {
+            "id": "eligible-local-governance",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "mandatory-governance-refusal"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Eligible local mode executes positive Off controls. Mandatory authenticated local/shared hosts execute the real refusal-to-disable control; shared Off is forbidden."
+    },
+    {
+      "id": "dot-19-interactive-protocols/tool-approval-workflow/87",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/tool-approval-workflow/spec.md",
+      "line": 14,
+      "requirement": "Explicit Required tool approval survives local governance bypass",
+      "scenario": "One valid decision",
+      "expectation": "- **WHEN** two clients approve the same pending decision across processes\n- **THEN** at most one protected continuation and effect is admitted and both clients observe the committed disposition",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/governance_journey.py",
+        "entry_point": "run_governance",
+        "stage": "governance",
+        "required_observations": [
+          {
+            "id": "eligible-local-governance",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "mandatory-governance-refusal"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Eligible local mode executes positive Off controls. Mandatory authenticated local/shared hosts execute the real refusal-to-disable control; shared Off is forbidden."
+    },
+    {
+      "id": "dot-19-interactive-protocols/tool-approval-workflow/88",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/tool-approval-workflow/spec.md",
+      "line": 19,
+      "requirement": "Explicit Required tool approval survives local governance bypass",
+      "scenario": "Denial or stale authority",
+      "expectation": "- **WHEN** the owner denies, the decision expires, or current authority/bindings no longer match\n- **THEN** no tool effect occurs and the exposed disposition is denied, expired or invalidated rather than success",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/governance_journey.py",
+        "entry_point": "run_governance",
+        "stage": "governance",
+        "required_observations": [
+          {
+            "id": "eligible-local-governance",
+            "applicable_profiles": [
+              "local_surreal_kv"
+            ]
+          },
+          {
+            "id": "mandatory-governance-refusal"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Eligible local mode executes positive Off controls. Mandatory authenticated local/shared hosts execute the real refusal-to-disable control; shared Off is forbidden."
+    },
+    {
+      "id": "dot-19-interactive-protocols/tool-approval-workflow/89",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/tool-approval-workflow/spec.md",
+      "line": 28,
+      "requirement": "A2A input-required projects the host approval record",
+      "scenario": "Pending A2A approval",
+      "expectation": "- **WHEN** an A2A task reaches a Required tool before a decision\n- **THEN** the task is input-required, identifies the exact pending approval and has not invoked the tool",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "protocols",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "a2a-task-approval"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-19-interactive-protocols/tool-approval-workflow/90",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/tool-approval-workflow/spec.md",
+      "line": 33,
+      "requirement": "A2A input-required projects the host approval record",
+      "scenario": "A2A denial",
+      "expectation": "- **WHEN** the authorized owner denies that exact pending approval\n- **THEN** the task reaches the selected terminal denial outcome without a tool effect",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "protocols",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "a2a-task-denial"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-20-safe-host-settings/jwt-hardening/91",
+      "change": "dot-20-safe-host-settings",
+      "spec": "openspec/changes/dot-20-safe-host-settings/specs/jwt-hardening/spec.md",
+      "line": 9,
+      "requirement": "Effective settings require one Bearer admin credential",
+      "scenario": "Missing or invalid token",
+      "expectation": "- **WHEN** the effective-settings path receives no Bearer token or an invalid token\n- **THEN** it returns 401 and no effective settings body",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "settings",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "effective-settings-auth"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-20-safe-host-settings/jwt-hardening/92",
+      "change": "dot-20-safe-host-settings",
+      "spec": "openspec/changes/dot-20-safe-host-settings/specs/jwt-hardening/spec.md",
+      "line": 14,
+      "requirement": "Effective settings require one Bearer admin credential",
+      "scenario": "Non-admin token",
+      "expectation": "- **WHEN** a valid authenticated non-admin principal requests effective settings\n- **THEN** it returns 403 without exposing the aggregate",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "settings",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "effective-settings-auth"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-20-safe-host-settings/jwt-hardening/93",
+      "change": "dot-20-safe-host-settings",
+      "spec": "openspec/changes/dot-20-safe-host-settings/specs/jwt-hardening/spec.md",
+      "line": 19,
+      "requirement": "Effective settings require one Bearer admin credential",
+      "scenario": "Bearer admin alone",
+      "expectation": "- **WHEN** a valid admin principal requests effective settings with only `Authorization: Bearer <token>`\n- **THEN** it returns the selected secret-free aggregate without requiring a second credential header",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "settings",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "effective-settings-auth"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-20-safe-host-settings/native-service-deployment/94",
+      "change": "dot-20-safe-host-settings",
+      "spec": "openspec/changes/dot-20-safe-host-settings/specs/native-service-deployment/spec.md",
+      "line": 9,
+      "requirement": "Shipped host profiles deny unlisted browser origins",
+      "scenario": "Empty default",
+      "expectation": "- **WHEN** a browser-origin request reaches a shipped UAR profile with no configured allowed origins\n- **THEN** the response has no allow-origin permission for that origin",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/settings_journey.py",
+        "entry_point": "run_settings",
+        "stage": "settings",
+        "required_observations": [
+          {
+            "id": "shipped-default-settings"
+          },
+          {
+            "id": "default-no-remote-egress"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-20-safe-host-settings/native-service-deployment/95",
+      "change": "dot-20-safe-host-settings",
+      "spec": "openspec/changes/dot-20-safe-host-settings/specs/native-service-deployment/spec.md",
+      "line": 14,
+      "requirement": "Shipped host profiles deny unlisted browser origins",
+      "scenario": "Explicit origin",
+      "expectation": "- **WHEN** an operator configures one allowed origin and requests arrive from that origin and another origin\n- **THEN** only the configured origin receives the corresponding allow-origin permission",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/settings_journey.py",
+        "entry_point": "run_settings",
+        "stage": "settings",
+        "required_observations": [
+          {
+            "id": "effective-settings-live-revision"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-20-safe-host-settings/native-service-deployment/96",
+      "change": "dot-20-safe-host-settings",
+      "spec": "openspec/changes/dot-20-safe-host-settings/specs/native-service-deployment/spec.md",
+      "line": 23,
+      "requirement": "Installable profiles declare safe network and authentication posture",
+      "scenario": "Native default starts",
+      "expectation": "- **WHEN** an installable local profile starts without operator overrides\n- **THEN** HTTP and A2A listeners bind only to loopback and private routes require JWT",
+      "profiles": [
+        "local_surreal_kv"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/settings_journey.py",
+        "entry_point": "run_settings",
+        "stage": "settings",
+        "required_observations": [
+          {
+            "id": "shipped-default-settings"
+          },
+          {
+            "id": "default-no-remote-egress"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Native local loopback default; shared explicit listener is scenario97."
+    },
+    {
+      "id": "dot-20-safe-host-settings/native-service-deployment/97",
+      "change": "dot-20-safe-host-settings",
+      "spec": "openspec/changes/dot-20-safe-host-settings/specs/native-service-deployment/spec.md",
+      "line": 28,
+      "requirement": "Installable profiles declare safe network and authentication posture",
+      "scenario": "Shared deployment override",
+      "expectation": "- **WHEN** the shared-host profile binds a non-loopback listener for its deployment\n- **THEN** the bind is explicit in the deployed profile and private routes remain authenticated",
+      "profiles": [
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/settings_journey.py",
+        "entry_point": "run_settings",
+        "stage": "settings",
+        "required_observations": [
+          {
+            "id": "shared-explicit-bind"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "applicability": "Explicit shared deployment listener; local default is scenario96."
+    },
+    {
+      "id": "dot-20-safe-host-settings/provider-model-settings-certification/98",
+      "change": "dot-20-safe-host-settings",
+      "spec": "openspec/changes/dot-20-safe-host-settings/specs/provider-model-settings-certification/spec.md",
+      "line": 9,
+      "requirement": "Shipped inference and memory defaults require deliberate selection",
+      "scenario": "No model selected",
+      "expectation": "- **WHEN** a fresh shipped profile receives inference without an explicit configured model\n- **THEN** it returns a clear missing-model outcome without remote model egress",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/settings_journey.py",
+        "entry_point": "run_settings",
+        "stage": "settings",
+        "required_observations": [
+          {
+            "id": "shipped-default-settings"
+          },
+          {
+            "id": "default-no-remote-egress"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-20-safe-host-settings/provider-model-settings-certification/99",
+      "change": "dot-20-safe-host-settings",
+      "spec": "openspec/changes/dot-20-safe-host-settings/specs/provider-model-settings-certification/spec.md",
+      "line": 14,
+      "requirement": "Shipped inference and memory defaults require deliberate selection",
+      "scenario": "Local or disabled memory embedding",
+      "expectation": "- **WHEN** a fresh shipped profile initializes memory without an operator override\n- **THEN** its effective memory embedder is local or Off and no remote embedding request is made",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/settings_journey.py",
+        "entry_point": "run_settings",
+        "stage": "settings",
+        "required_observations": [
+          {
+            "id": "shipped-default-settings"
+          },
+          {
+            "id": "default-no-remote-egress"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-20-safe-host-settings/provider-model-settings-certification/100",
+      "change": "dot-20-safe-host-settings",
+      "spec": "openspec/changes/dot-20-safe-host-settings/specs/provider-model-settings-certification/spec.md",
+      "line": 19,
+      "requirement": "Shipped inference and memory defaults require deliberate selection",
+      "scenario": "Existing operator choice survives upgrade",
+      "expectation": "- **WHEN** an installation has a persisted operator-selected model or provider setting\n- **THEN** upgrading to the safe-default release does not silently replace that selection",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/upgrade_journey.py",
+        "entry_point": "run_upgrade",
+        "stage": "upgrade",
+        "required_observations": [
+          {
+            "id": "upgrade-installations"
+          },
+          {
+            "id": "upgrade-retained-live-default"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-20-safe-host-settings/provider-model-settings-certification/101",
+      "change": "dot-20-safe-host-settings",
+      "spec": "openspec/changes/dot-20-safe-host-settings/specs/provider-model-settings-certification/spec.md",
+      "line": 28,
+      "requirement": "Admin reads one current effective settings aggregate",
+      "scenario": "Current provider and governance values",
+      "expectation": "- **WHEN** a Bearer admin reads effective settings after a provider or governance change\n- **THEN** the aggregate reflects current live routing/governance rather than stale per-key stored rows and its revision/hash changes according to the pinned policy",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/upgrade_journey.py",
+        "entry_point": "run_upgrade",
+        "stage": "upgrade",
+        "required_observations": [
+          {
+            "id": "upgrade-installations"
+          },
+          {
+            "id": "upgrade-retained-live-default"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-20-safe-host-settings/provider-model-settings-certification/102",
+      "change": "dot-20-safe-host-settings",
+      "spec": "openspec/changes/dot-20-safe-host-settings/specs/provider-model-settings-certification/spec.md",
+      "line": 33,
+      "requirement": "Admin reads one current effective settings aggregate",
+      "scenario": "Local embedder normalization",
+      "expectation": "- **WHEN** a supported local or disabled embedder is effective\n- **THEN** its provider-host value follows the selected documented schema mapping and does not invent a remote endpoint",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/settings_journey.py",
+        "entry_point": "run_settings",
+        "stage": "settings",
+        "required_observations": [
+          {
+            "id": "shipped-default-settings"
+          },
+          {
+            "id": "default-no-remote-egress"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-20-safe-host-settings/provider-model-settings-certification/103",
+      "change": "dot-20-safe-host-settings",
+      "spec": "openspec/changes/dot-20-safe-host-settings/specs/provider-model-settings-certification/spec.md",
+      "line": 38,
+      "requirement": "Admin reads one current effective settings aggregate",
+      "scenario": "Secret-free response",
+      "expectation": "- **WHEN** configured providers or MCP servers contain credentials\n- **THEN** the effective response exposes only allowed nonsecret host/capability information",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/journeys.py",
+        "entry_point": "settings",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "effective-settings-auth"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product"
+    },
+    {
+      "id": "dot-12-memory-isolation/multi-tenant-isolation/104",
+      "change": "dot-12-memory-isolation",
+      "spec": "openspec/changes/dot-12-memory-isolation/specs/multi-tenant-isolation/spec.md",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "tests/principal_knowledge_namespace.rs",
+        "entry_point": "whole_target_with_local_and_network_surreal_cold_stages",
+        "stage": "source-integration",
+        "required_observations": [
+          {
+            "id": "dot_owner_adjacent_contract",
+            "profile": "source_integration",
+            "source_only": true
+          },
+          {
+            "id": "principal_knowledge_namespace",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "line": 57,
+      "scenario": "Canonical-looking legacy subjects cannot claim private history",
+      "requirement": "Per-user data is isolated by authenticated identity",
+      "expectation": "- **WHEN** a legacy subject string is byte-identical to a new complete principal key\n- **THEN** authenticated history and knowledge access use disjoint storage namespaces\n  and do not read, overwrite, migrate or delete the legacy record"
+    },
+    {
+      "id": "dot-12-memory-isolation/multi-tenant-isolation/105",
+      "change": "dot-12-memory-isolation",
+      "spec": "openspec/changes/dot-12-memory-isolation/specs/multi-tenant-isolation/spec.md",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/owner_isolation_journey.py",
+        "entry_point": "run_owner_isolation",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "session-erasure-authority-scope"
+          },
+          {
+            "id": "dot_owner_adjacent_contract",
+            "profile": "source_integration",
+            "source_only": true
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "line": 62,
+      "scenario": "Session erasure preserves independent authority records",
+      "requirement": "Per-user data is isolated by authenticated identity",
+      "expectation": "- **WHEN** an authenticated owner erases a conversation session\n- **THEN** only that owner's session and conversation policy are removed, while\n  accounting and tool admission evidence remain controlled by their host lifecycle"
+    },
+    {
+      "id": "dot-19-interactive-protocols/mcp-runtime-projection/106",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/mcp-runtime-projection/spec.md",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/mcp_child_journey.py",
+        "entry_point": "run_mcp_child",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "mcp-stdio-child-root-isolation"
+          },
+          {
+            "id": "mcp-http-child-root-isolation"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "line": 24,
+      "scenario": "Run partition and frozen local children",
+      "requirement": "MCP client elicitation uses a governed run interaction",
+      "expectation": "- **WHEN** two roots use the same owner, server configuration and environment\n- **THEN** an enabled elicitation handler is partitioned by its host channel identity, while a local child inherits only the original frozen root channel and narrowed tool bindings\n- **AND** completing the root revokes and joins that channel's connections without closing another root's channel"
+    },
+    {
+      "id": "dot-19-interactive-protocols/mcp-runtime-projection/107",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/mcp-runtime-projection/spec.md",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/mcp_journey.py",
+        "entry_point": "run_mcp",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "mcp-stdio-form-accept"
+          },
+          {
+            "id": "mcp-stdio-absolute-lifetime"
+          },
+          {
+            "id": "mcp-stdio-root-cancel"
+          },
+          {
+            "id": "mcp-stdio-request-abandon"
+          },
+          {
+            "id": "mcp-http-form-accept"
+          },
+          {
+            "id": "mcp-http-absolute-lifetime"
+          },
+          {
+            "id": "mcp-http-root-cancel"
+          },
+          {
+            "id": "mcp-http-request-abandon"
+          },
+          {
+            "id": "mcp-http-grant-revoke"
+          },
+          {
+            "id": "mcp-http-grant-expiry"
+          },
+          {
+            "id": "mcp-http-request-stream-abandon"
+          }
+        ],
+        "applicability": "Both real transports prove ordinary timer suspension, absolute ten-minute expiry and root cancellation. Credential grants and independent request-stream abandonment apply to the real HTTP transport; stdio is process-bound and its EOF/disconnect is separately observed."
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "line": 30,
+      "scenario": "Input waits preserve absolute authority lifetimes",
+      "requirement": "MCP client elicitation uses a governed run interaction",
+      "expectation": "- **WHEN** a human input waiter is pending\n- **THEN** the ordinary MCP execution timer pauses within the ten-minute interaction lifetime\n- **AND** root cancellation, request abandonment and credential revocation or expiry continue to prevent response delivery without extending any tool or delegation authority"
+    },
+    {
+      "id": "dot-19-interactive-protocols/mcp-runtime-projection/108",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/mcp-runtime-projection/spec.md",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/mcp_journey.py",
+        "entry_point": "run_mcp",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "mcp-stdio-no-sdk-replay"
+          },
+          {
+            "id": "mcp-http-no-sdk-replay"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "line": 36,
+      "scenario": "Newer SDK multi-round behavior cannot replay tools",
+      "requirement": "MCP client elicitation uses a governed run interaction",
+      "expectation": "- **WHEN** a peer returns an unsupported multi-round input-required tool result\n- **THEN** UAR does not drive SDK-managed follow-up calls and reports the original invocation through its existing non-success outcome contract"
+    },
+    {
+      "id": "dot-19-interactive-protocols/mcp-runtime-projection/109",
+      "change": "dot-19-interactive-protocols",
+      "spec": "openspec/changes/dot-19-interactive-protocols/specs/mcp-runtime-projection/spec.md",
+      "profiles": [
+        "local_surreal_kv",
+        "shared_two_runtime_surreal_db"
+      ],
+      "driver": {
+        "implementation": "complete",
+        "path": "scripts/dot/mcp_journey.py",
+        "entry_point": "run_mcp",
+        "stage": "journeys",
+        "required_observations": [
+          {
+            "id": "mcp-stdio-cold-history"
+          },
+          {
+            "id": "mcp-stdio-cold-expiry"
+          },
+          {
+            "id": "mcp-http-cold-history"
+          },
+          {
+            "id": "mcp-http-cold-expiry"
+          }
+        ]
+      },
+      "status": "not_executed",
+      "evidence_boundary": "local_product",
+      "line": 41,
+      "scenario": "Cold history remains inspectable",
+      "requirement": "MCP client elicitation uses a governed run interaction",
+      "expectation": "- **WHEN** an authenticated owner reads a pending interaction after the original host process died\n- **THEN** the exact durable request remains visible with no resolvable live waiter, and a response cannot be accepted into a replacement root or connection\n- **AND** expiry is persisted on subsequent history reads without creating an approval or execution record"
+    }
+  ],
+  "issue379": [
+    {
+      "requirement": "A2A 1.0",
+      "scenario_numbers": [
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "status": "not_executed"
+    },
+    {
+      "requirement": "AG-UI interrupts",
+      "scenario_numbers": [
+        72,
+        73,
+        74
+      ],
+      "status": "not_executed"
+    },
+    {
+      "requirement": "MCP elicitation",
+      "scenario_numbers": [
+        75,
+        76,
+        77,
+        106,
+        107,
+        108,
+        109
+      ],
+      "status": "not_executed"
+    },
+    {
+      "requirement": "Governance inactive execution",
+      "scenario_numbers": [
+        78,
+        79,
+        80,
+        81,
+        82
+      ],
+      "status": "not_executed"
+    },
+    {
+      "requirement": "Governance warning lifecycle",
+      "scenario_numbers": [
+        83,
+        84,
+        85
+      ],
+      "status": "not_executed"
+    },
+    {
+      "requirement": "Required approval authority",
+      "scenario_numbers": [
+        86,
+        87,
+        88
+      ],
+      "status": "not_executed"
+    },
+    {
+      "requirement": "A2A approval interaction",
+      "scenario_numbers": [
+        89,
+        90
+      ],
+      "status": "not_executed"
+    },
+    {
+      "requirement": "Effective settings Bearer admin",
+      "scenario_numbers": [
+        91,
+        92,
+        93,
+        101,
+        102,
+        103
+      ],
+      "status": "not_executed"
+    },
+    {
+      "requirement": "Safe defaults and upgrade",
+      "scenario_numbers": [
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100
+      ],
+      "status": "not_executed"
+    }
+  ],
+  "release_native_qualification": {
+    "decision_date": "2026-10-14",
+    "operator_choice": "Just use the Linux guest.",
+    "native_environment": "approved isolated Linux guest",
+    "native_service_manager": "systemd",
+    "shared_environment": "existing know-me LKE two-runtime profile",
+    "unqualified_native_platforms": [
+      "macOS",
+      "Windows"
+    ],
+    "scenarios_removed": 0,
+    "observations_waived": 0,
+    "development_mac_reboot_authorized": false,
+    "additional_paid_resources_authorized": false
+  },
+  "release_acceptance_policy": {
+    "decision_date": "2026-10-14",
+    "mode": "actual_consumer_use",
+    "qualification_suite_release_prerequisite": false,
+    "historical_results_preserved": true,
+    "unexecuted_scenarios": "unverified, deferred from release prerequisites",
+    "implemented_requirements_removed": 0,
+    "additional_paid_resources_authorized": false
+  }
+}

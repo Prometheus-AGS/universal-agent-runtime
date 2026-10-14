@@ -77,7 +77,7 @@ impl CollaborationCatalogService {
             let current = self.load_state().await?;
             let fence = self.require_execution_owner(&current, true)?;
             if current.execution_claim.as_ref().is_none_or(|c| c.state != "draining") { return Err(conflict("TEAM_EFFECTS_UNCERTAIN")); }
-            let evidence = TeamExecutionFencingEvidence { id: Uuid::new_v4().to_string(), fence, root_and_children_stopped: true, source: "trusted-runtime-joined".into(), recorded_at: Utc::now() };
+            let evidence = TeamExecutionFencingEvidence { id: Uuid::new_v4().to_string(), fence, root_and_children_stopped: true, source: "trusted-runtime-joined".into(), recorded_at: Utc::now(), supervisor_challenge_json: None, supervisor_observation_json: None };
             let mut next = current.clone(); next.generation += 1;
             // Joining execution excludes future effects, not already-issued effects.
             // Preserve the latter as uncertain without preventing a safe owner stop.
@@ -116,6 +116,37 @@ impl CollaborationCatalogService {
         Err(conflict("TEAM_EXECUTION_OWNER_CONFLICT"))
     }
 
+    /// Accept only a sealed observation produced by the configured trusted
+    /// supervisor client. Catalog CAS binds its one-use receipt to the exact
+    /// predecessor fence; an agent/uploaded JSON object cannot mint this value.
+    pub async fn record_supervisor_exclusion(&self, proof: &crate::uar::runtime::supervisor::VerifiedSupervisorExclusion) -> Result<TeamExecutionFencingEvidence, CollaborationError> {
+        use crate::uar::runtime::supervisor::RecoveryTarget;
+        let challenge = proof.challenge();
+        let RecoveryTarget::TeamOwner { fence } = &challenge.target else { return Err(conflict("TEAM_RECLAIM_EVIDENCE_REQUIRED")); };
+        if fence.incarnation_id != challenge.registration.team_incarnation || challenge.generation != 1 {
+            return Err(conflict("TEAM_RECLAIM_EVIDENCE_REQUIRED"));
+        }
+        for _ in 0..MAX_CAS_ATTEMPTS {
+            let current = self.load_state().await?;
+            let claim = current.execution_claim.as_ref().ok_or_else(|| conflict("TEAM_EXECUTION_OWNER_CONFLICT"))?;
+            if &claim.fence != fence || !matches!(claim.state.as_str(), "held" | "draining") {
+                return Err(conflict("TEAM_EXECUTION_EPOCH_STALE"));
+            }
+            // Once staged, the exact evidence can only be used for this fence;
+            // reclaim advances that fence atomically with its command receipt.
+            if current.execution_fencing_evidence.contains_key(&challenge.id) {
+                return Err(conflict("TEAM_RECLAIM_EVIDENCE_REPLAYED"));
+            }
+            let evidence = TeamExecutionFencingEvidence { id: challenge.id.clone(), fence: fence.clone(),
+                root_and_children_stopped: true, source: "trusted-supervisor-excluded".into(), recorded_at: Utc::now(),
+                supervisor_challenge_json: Some(serde_json::to_string(challenge)?), supervisor_observation_json: Some(proof.observation_json().to_owned()) };
+            let mut next = current.clone(); next.generation += 1;
+            next.execution_fencing_evidence.insert(evidence.id.clone(),evidence.clone());
+            if self.cas(current.generation,&next).await? { return Ok(evidence); }
+        }
+        Err(conflict("TEAM_EXECUTION_OWNER_CONFLICT"))
+    }
+
     /// API caller must establish current privileged host administration first.
     pub(crate) async fn reclaim_execution_owner(&self, actor: &str, decision: &str, request: TeamExecutionReclaimRequest) -> Result<TeamExecutionReclaimReceipt, CollaborationError> {
         for id in [&request.command_id, &request.catalog_id, &request.replacement_service_instance_id, &request.fencing_evidence_ref] { super::super::validation::validate_id(id)?; }
@@ -130,7 +161,10 @@ impl CollaborationCatalogService {
             }
             let claim = current.execution_claim.as_ref().ok_or_else(|| conflict("TEAM_EXECUTION_OWNER_CONFLICT"))?;
             if request.catalog_id != claim.fence.catalog_id || request.expected_epoch != claim.fence.epoch { return Err(conflict("TEAM_EXECUTION_EPOCH_STALE")); }
-            let evidence = current.execution_fencing_evidence.get(&request.fencing_evidence_ref).filter(|e| e.fence == claim.fence && e.root_and_children_stopped && e.source == "trusted-runtime-joined").ok_or_else(|| conflict("TEAM_RECLAIM_EVIDENCE_REQUIRED"))?;
+            let evidence = current.execution_fencing_evidence.get(&request.fencing_evidence_ref).filter(|e| e.fence == claim.fence && e.root_and_children_stopped && matches!(e.source.as_str(), "trusted-runtime-joined" | "trusted-supervisor-excluded")).ok_or_else(|| conflict("TEAM_RECLAIM_EVIDENCE_REQUIRED"))?;
+            if current.execution_reclaim_receipts.values().any(|receipt| receipt.fencing_evidence_ref == evidence.id) {
+                return Err(conflict("TEAM_RECLAIM_EVIDENCE_REPLAYED"));
+            }
             let mut replacement = self.execution_identity()?;
             if replacement.service_instance_id != request.replacement_service_instance_id || replacement.catalog_id != request.catalog_id { return Err(conflict("TEAM_RECLAIM_UNAUTHORIZED")); }
             if replacement.incarnation_id == claim.fence.incarnation_id { return Err(conflict("TEAM_EXECUTION_OWNER_CONFLICT")); }
@@ -142,6 +176,13 @@ impl CollaborationCatalogService {
                     next.execution_transfers.insert(item.id.clone(), replacement.clone()); transferred.push(item.id.clone());
                 } else if matches!(item.status.as_str(), "running" | "cancellation_requested") {
                     item.status = "uncertain".into(); item.effect_disposition = "uncertain".into(); item.accounting_state = "reserved-unknown".into(); item.state_reason = Some("TEAM_EFFECTS_UNCERTAIN".into()); item.updated_at = Utc::now(); uncertain.push(item.id.clone());
+                    if let Some(team) = next.team_instances.get_mut(&super::team_key(&item.owner_id,&item.workspace_id,&item.team_id)) {
+                        if let Some(task) = team.tasks.iter_mut().find(|task| task.id == item.task_id && task.ownership_epoch == item.ownership_epoch) {
+                            task.status = "blocked".into(); task.state_reason = Some("TEAM_EFFECTS_UNCERTAIN".into());
+                            task.revision += 1; task.updated_at = item.updated_at;
+                        }
+                        team.revision += 1; team.updated_at = item.updated_at;
+                    }
                 } else if item.status == "uncertain" { uncertain.push(item.id.clone());
                 }
             }

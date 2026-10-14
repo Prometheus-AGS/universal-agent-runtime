@@ -72,12 +72,7 @@ impl Chunker {
                 // False positives just use MarkdownSplitter on plain text,
                 // which degrades gracefully (still respects paragraph/sentence
                 // boundaries). False negatives use TextSplitter (current behavior).
-                let has_markdown_structure = text.contains("\n#")
-                    || text.contains("\n##")
-                    || text.contains("```")
-                    || text.starts_with('#');
-
-                if has_markdown_structure {
+                if has_markdown_structure(text) {
                     let splitter = MarkdownSplitter::new(capacity);
                     Ok(splitter.chunks(text).map(|s| s.to_string()).collect())
                 } else {

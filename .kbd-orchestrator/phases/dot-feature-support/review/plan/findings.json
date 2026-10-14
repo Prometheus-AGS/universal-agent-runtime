@@ -1,0 +1,34 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "gpt-6.1-sol",
+  "producer_model": "unknown",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "unverified-producer-unknown",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The no-overlap scheduling contract does not define what happens when an occurrence becomes due while the previous occurrence is still active.",
+      "evidence": "The defaults specify \u201cno overlap\u201d and \u201cdowntime coalesces to the latest due occurrence,\u201d while change 14 requires \u201cDefault no overlap; coalesce backlog to the latest due occurrence.\u201d Neither section defines whether busy-time occurrences are skipped, deferred, or coalesced, whether pending approvals and uncertain outcomes count as active, or whether the exclusion spans schedule revisions. The two-scanner acceptance scenario covers downtime but not a due occurrence during an active predecessor.",
+      "suggested_fix": "Define the durable overlap guard and its scope across revisions, enumerate the run dispositions that hold it, and specify the busy-time occurrence policy. Add production-boundary tests for a due occurrence during execution, pending approval, uncertain outcome, and a schedule edit, including competing scanners and restart."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The required supervisor adapters remain unspecified, leaving the first-release recovery implementation and acceptance environment unresolved.",
+      "evidence": "The Analyze handoff requires Plan to \u201cresolve schedule/DST/delivery/retention/supervisor details.\u201d The plan instead requires change 11 to \u201cbind supervisor evidence to the deployment manager actually used in each tested profile\u201d and \u201cExercise real local and shared supervisor adapters,\u201d without identifying either deployment manager, its exclusion operation, or the independently verifiable evidence it can supply. The task assignment also lists \u201creal supervisor exclusion adapter\u201d as a prerequisite to the task that implements supervisor recovery.",
+      "suggested_fix": "Select the local and shared deployment managers and exclusion adapters before execution, or add an explicit qualification task that blocks recovery implementation. Record each adapter's root/descendant containment boundary, exclusion operation, evidence authentication and freshness mechanism, and required infrastructure access; make the implementation and acceptance tasks depend on that qualification."
+    }
+  ],
+  "judge_identity": {
+    "providerConnectionId": "openai-proxy-8181",
+    "providerId": "openai",
+    "modelId": "gpt-6.1-sol"
+  },
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

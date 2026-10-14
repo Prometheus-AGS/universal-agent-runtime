@@ -212,6 +212,48 @@ impl IngestService {
         Ok(chunks.len())
     }
 
+    /// Prepare a replay-safe generation without exposing partial chunks or changing a KB.
+    pub async fn prepare_ingestion(
+        &self,
+        content: &str,
+        job: &crate::uar::persistence::ingestion_records::IngestionJob,
+        extra_metadata: HashMap<String, serde_json::Value>,
+    ) -> Result<crate::uar::persistence::ingestion_records::IngestionPublication> {
+        use sha2::{Digest, Sha256};
+        use crate::uar::persistence::ingestion_records::{IngestionPublication, IngestionStoreError};
+        job.validate_namespace()?;
+        let kb = self.persistence.get_knowledge_base(&job.owner_id, &job.kb_id).await?
+            .ok_or(IngestionStoreError::Revoked)?;
+        let fingerprint = self.embedding_backend.fingerprint();
+        kb.ensure_embedding_space(&fingerprint)?;
+        let segments = Chunker::new(kb.config.chunk_strategy, Some(Arc::clone(&self.embedding_backend)))
+            .chunk(content).await?;
+        let refs: Vec<&str> = segments.iter().map(String::as_str).collect();
+        let embeddings = if refs.is_empty() { Vec::new() } else { self.embedding_backend.embed(&refs).await? };
+        anyhow::ensure!(segments.len() == embeddings.len(), "embedding result count differs from chunk count");
+        let created_at = chrono::Utc::now().to_rfc3339();
+        let chunks = segments.into_iter().zip(embeddings).enumerate().map(|(index, (content, embedding))| {
+            // A logical position in an immutable attempt has one stable chunk identity.
+            let mut hash = Sha256::new();
+            hash.update(job.storage_key().as_bytes());
+            hash.update(job.generation.as_bytes());
+            hash.update((index as u64).to_be_bytes());
+            let digest = hash.finalize();
+            let mut bytes = [0u8; 16];
+            bytes.copy_from_slice(&digest[..16]);
+            let mut metadata = extra_metadata.clone();
+            metadata.insert("document_id".to_string(), serde_json::json!(job.document_id));
+            metadata.insert("index".to_string(), serde_json::json!(index));
+            metadata.insert("ingestion_generation".to_string(), serde_json::json!(job.generation));
+            KnowledgeChunk {
+                id: Uuid::from_bytes(bytes), owner_id: job.owner_id.clone(), kb_id: job.kb_id.clone(),
+                document_id: Some(job.document_id.clone()), content,
+                metadata: Some(serde_json::json!(metadata)), embedding, created_at: created_at.clone(),
+            }
+        }).collect();
+        Ok(IngestionPublication { chunks, embedding: fingerprint })
+    }
+
     /// Recursively scan and ingest a directory
     pub async fn ingest_directory(&self, dir: &Path, kb_id: &str) -> Result<()> {
         for entry in WalkDir::new(dir)

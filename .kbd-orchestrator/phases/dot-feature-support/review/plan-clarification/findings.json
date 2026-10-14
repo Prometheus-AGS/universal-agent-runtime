@@ -1,0 +1,27 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "gpt-6.1-sol",
+  "producer_model": "unknown",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "unverified-producer-unknown",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The memory-retention decision remains underspecified despite being treated as a resolved first-release control.",
+      "evidence": "The Analyze handoff requires Plan to \"resolve schedule/DST/delivery/retention/supervisor details.\" The plan specifies \"Automatic assistant memory capture is opt-in and requires explicit retention selection,\" and change 13 says \"Require explicit retention choice at enablement,\" but neither defines permitted retention values, the timestamp from which retention runs, or whether a policy change applies to existing memories. Its acceptance criterion \"expire during retrieval\" therefore has no defined expiration rule to test.",
+      "suggested_fix": "Define the first-release retention input contract, including allowed durations or indefinite retention, the expiration anchor, and the effect of policy revisions on existing and queued captures. Add exact boundary and policy-change acceptance scenarios to change 13."
+    }
+  ],
+  "judge_identity": {
+    "providerConnectionId": "openai-proxy-8181",
+    "providerId": "openai",
+    "modelId": "gpt-6.1-sol"
+  },
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

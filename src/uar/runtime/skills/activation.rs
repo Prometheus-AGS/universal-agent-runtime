@@ -398,22 +398,6 @@ pub async fn activate(
             skill_id: skill_id.to_string(),
         });
     }
-    for required_tool in &skill.required_tools {
-        let available = ctx
-            .native_descriptors
-            .iter()
-            .any(|tool| tool.provider_name == *required_tool)
-            || ctx
-                .mcp_descriptors()
-                .iter()
-                .any(|tool| tool.provider_name == *required_tool);
-        if !available {
-            return Err(ActivationFailure::DependencyInvalid {
-                skill_id: skill_id.to_owned(),
-                reason: format!("required tool '{required_tool}' is unavailable"),
-            });
-        }
-    }
     if !ctx.active.contains_key(skill_id) && ctx.active.len() >= ctx.max_active as usize {
         return Err(ActivationFailure::LimitReached {
             skill_id: skill_id.to_string(),
@@ -494,6 +478,28 @@ pub async fn activate(
                     "Root MCP dependencies require a verified host binding".to_string(),
                 ));
             }
+        }
+    }
+    // A first activation may prepare the very MCP tools this skill requires.
+    // Validate the prospective set before publishing any activation or binding.
+    for required_tool in &skill.required_tools {
+        let available = ctx
+            .native_descriptors
+            .iter()
+            .any(|tool| tool.provider_name == *required_tool)
+            || mcp.descriptors().iter().any(|tool| {
+                (prepared.is_none()
+                    || tool.source != crate::uar::tools::descriptor::ToolSource::Mcp)
+                    && tool.provider_name == *required_tool
+            })
+            || prepared.as_ref().is_some_and(|preflight| {
+                preflight.projection().tools().contains_key(required_tool)
+            });
+        if !available {
+            return Err(ActivationFailure::DependencyInvalid {
+                skill_id: skill_id.to_owned(),
+                reason: format!("required tool '{required_tool}' is unavailable"),
+            });
         }
     }
     for descriptor in mcp.descriptors().into_iter().filter(|tool| {

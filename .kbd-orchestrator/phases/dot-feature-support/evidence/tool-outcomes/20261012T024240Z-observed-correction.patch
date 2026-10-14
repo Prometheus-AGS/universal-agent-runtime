@@ -1,0 +1,311 @@
+--- failed-source/src/uar/runtime/skills/activation.rs
++++ refrozen-source/src/uar/runtime/skills/activation.rs
+@@ -398,22 +398,6 @@
+             skill_id: skill_id.to_string(),
+         });
+     }
+-    for required_tool in &skill.required_tools {
+-        let available = ctx
+-            .native_descriptors
+-            .iter()
+-            .any(|tool| tool.provider_name == *required_tool)
+-            || ctx
+-                .mcp_descriptors()
+-                .iter()
+-                .any(|tool| tool.provider_name == *required_tool);
+-        if !available {
+-            return Err(ActivationFailure::DependencyInvalid {
+-                skill_id: skill_id.to_owned(),
+-                reason: format!("required tool '{required_tool}' is unavailable"),
+-            });
+-        }
+-    }
+     if !ctx.active.contains_key(skill_id) && ctx.active.len() >= ctx.max_active as usize {
+         return Err(ActivationFailure::LimitReached {
+             skill_id: skill_id.to_string(),
+@@ -494,6 +478,28 @@
+                     "Root MCP dependencies require a verified host binding".to_string(),
+                 ));
+             }
++        }
++    }
++    // A first activation may prepare the very MCP tools this skill requires.
++    // Validate the prospective set before publishing any activation or binding.
++    for required_tool in &skill.required_tools {
++        let available = ctx
++            .native_descriptors
++            .iter()
++            .any(|tool| tool.provider_name == *required_tool)
++            || mcp.descriptors().iter().any(|tool| {
++                (prepared.is_none()
++                    || tool.source != crate::uar::tools::descriptor::ToolSource::Mcp)
++                    && tool.provider_name == *required_tool
++            })
++            || prepared.as_ref().is_some_and(|preflight| {
++                preflight.projection().tools().contains_key(required_tool)
++            });
++        if !available {
++            return Err(ActivationFailure::DependencyInvalid {
++                skill_id: skill_id.to_owned(),
++                reason: format!("required tool '{required_tool}' is unavailable"),
++            });
+         }
+     }
+     for descriptor in mcp.descriptors().into_iter().filter(|tool| {
+--- failed-source/tests/support/truthful_tool_outcome_process.rs
++++ refrozen-source/tests/support/truthful_tool_outcome_process.rs
+@@ -25,7 +25,7 @@
+ const JWT_SECRET: &str = "dot04-process-jwt-fixture";
+ const ADMIN_KEY: &str = "dot04-process-admin-fixture";
+ const WORKSPACE: &str = "dot04-process-workspace";
+-const TEAM_TOOL: &str = peer::TOOL;
++const TEAM_TOOL: &str = "dot04__outcomes__effect";
+ const WAIT: Duration = Duration::from_secs(120);
+ 
+ struct Database {
+@@ -129,7 +129,7 @@
+         std::fs::write(directory.join("mcp.json"), &configuration).unwrap();
+         std::fs::write(directory.join("work/skills/dot04/mcp.json"), &configuration).unwrap();
+         std::fs::write(directory.join("work/skills/dot04/SKILL.md"),
+-            "---\nname: dot04\nversion: 1.0.0\ndescription: Controlled tool outcome production acceptance\ntools:\n  - outcomes__effect\n---\nUse the selected effect tool exactly once.\n").unwrap();
++            "---\nname: dot04\nversion: 1.0.0\ndescription: Controlled tool outcome production acceptance\ntools:\n  - dot04__outcomes__effect\n---\nUse the selected effect tool exactly once.\n").unwrap();
+         let port = unused_port();
+         // A/B and restarts share this logical backend identity, while their
+         // process IDs and catalog execution-owner claims remain independent.
+--- failed-source/tests/truthful_tool_outcomes.rs
++++ refrozen-source/tests/truthful_tool_outcomes.rs
+@@ -254,6 +254,203 @@
+         usize::from(mode != "predispatch"),
+         "external effect was replayed or predispatch rejection executed"
+     );
++}
++
++async fn activation_boundary(root: &Path, mode: &str) {
++    use std::{
++        collections::{BTreeMap, HashMap},
++        ffi::OsString,
++    };
++    use universal_agent_runtime::{
++        mcp::{
++            binding_cache::{McpBindingCache, McpBindingEnvironment},
++            catalog::{McpCatalog, ServerAuthentication, ServerDefinition, ServerSource},
++            config::McpConfig,
++            runtime::{ConfiguredMcpConnector, McpRuntimeManager},
++        },
++        uar::{
++            domain::{
++                policy::{
++                    PolicyResolutionInput, PolicyUniverse, ResourceSelection, RunPolicy,
++                    resolve_run_policy,
++                },
++                skills::{Skill, SkillKind},
++            },
++            runtime::{
++                actor::messages::ActorOwner,
++                skills::activation::{
++                    ActivationContext, ActivationFailure, InvokeType, ProjectedActivationHost,
++                    activate,
++                },
++            },
++        },
++    };
++    let trace = root.join(format!("activation-{mode}.jsonl"));
++    let server = "dot04__outcomes";
++    let tool = "dot04__outcomes__effect";
++    let missing = "dot04__outcomes__missing";
++    let entry = peer::configuration(&trace).mcp_servers["outcomes"].clone();
++    let configuration = McpConfig {
++        mcp_servers: HashMap::from([(server.into(), entry.clone())]),
++    };
++    let mut registry = SkillRegistry::default();
++    registry.register_loaded(Skill {
++        skill_id: "dot04".into(),
++        enabled: true,
++        kind: SkillKind::Manifest,
++        required_tools: vec![if mode == "missing" { missing } else { tool }.into()],
++        mcp_config: Some(configuration),
++        ..Skill::default()
++    });
++    let definition = ServerDefinition::new(
++        server.into(),
++        ServerSource::Skill {
++            skill_id: "dot04".into(),
++        },
++        entry,
++        true,
++        ServerAuthentication::NotRequired,
++    )
++    .unwrap();
++    let policy = resolve_run_policy(PolicyResolutionInput {
++        global: Some(RunPolicy {
++            skills: ResourceSelection::selected(["dot04".into()]),
++            tools: ResourceSelection::selected([tool.into(), missing.into()]),
++            mcp_servers: ResourceSelection::selected(if mode == "denied" {
++                Vec::new()
++            } else {
++                vec![server.into()]
++            }),
++            ..RunPolicy::default()
++        }),
++        universe: PolicyUniverse {
++            skills: ["dot04".into()].into(),
++            tools: [tool.into(), missing.into()].into(),
++            mcp_servers: [server.into()].into(),
++            ..PolicyUniverse::default()
++        },
++        ..PolicyResolutionInput::default()
++    });
++    let runtime = McpRuntimeManager::new(
++        McpBindingCache::default(),
++        Arc::new(ConfiguredMcpConnector::default()),
++        Duration::from_secs(15),
++        Duration::from_secs(15),
++    )
++    .unwrap();
++    let environment = Arc::new(
++        McpBindingEnvironment::new(
++            root.to_path_buf(),
++            BTreeMap::from([(OsString::from("PATH"), OsString::from("/usr/bin:/bin"))]),
++        )
++        .unwrap(),
++    );
++    let owner = ActorOwner::from_verified_context(&peer::user()).unwrap();
++    let host = ProjectedActivationHost::new(
++        runtime.clone(),
++        Arc::new(McpCatalog::from_definitions([definition]).unwrap()),
++        policy,
++        owner.clone(),
++        environment,
++        tokio_util::sync::CancellationToken::new(),
++    );
++    let mut context = ActivationContext::new_projected(
++        Arc::new(RwLock::new(registry)),
++        "dot04-agent".into(),
++        "dot04-session".into(),
++        1,
++        McpRegistry::empty(),
++        Vec::new(),
++        host,
++    )
++    .await
++    .unwrap();
++    assert!(context.active().is_empty());
++    assert!(
++        context
++            .mcp_preflight()
++            .unwrap()
++            .projection()
++            .tools()
++            .is_empty()
++    );
++    assert!(context.mcp_preflight().unwrap().servers().is_empty());
++    assert!(
++        fixture_peer_pids(&trace).is_empty(),
++        "inactive skill dependency was started"
++    );
++    let result = activate("dot04", &mut context, InvokeType::Attachment).await;
++    if mode == "eligible" {
++        result.unwrap();
++        assert_eq!(context.active().len(), 1);
++        let preflight = context.mcp_preflight().unwrap();
++        assert_eq!(preflight.owner(), &owner);
++        assert!(preflight.projection().tools().contains_key(tool));
++        let frozen = context.freeze_mcp_bindings().await.unwrap();
++        assert_eq!(
++            frozen.resolve_mcp_tool(tool),
++            Some((server.into(), "effect".into()))
++        );
++        peer::assert_content(
++            &preflight
++                .call_tool(tool, json!({"mode":"success"}), None)
++                .await
++                .unwrap(),
++            "success",
++        );
++    } else {
++        let error = result.unwrap_err();
++        assert!(matches!(
++            &error,
++            ActivationFailure::DependencyInvalid { .. }
++        ));
++        let message = error.to_string();
++        assert!(message.contains(if mode == "denied" {
++            "not eligible"
++        } else {
++            "unavailable"
++        }));
++        assert!(
++            context.active().is_empty(),
++            "failed activation was committed"
++        );
++        assert!(
++            context
++                .mcp_preflight()
++                .unwrap()
++                .projection()
++                .tools()
++                .is_empty()
++        );
++        assert!(
++            context.mcp_preflight().unwrap().servers().is_empty(),
++            "prospective binding was committed"
++        );
++        assert_eq!(
++            fixture_peer_pids(&trace).len(),
++            usize::from(mode == "missing"),
++            "denied dependency started or missing-tool control never discovered its real server"
++        );
++    }
++    runtime.shutdown().await.unwrap();
++    await_fixture_peer_exit(&trace).await;
++    assert_eq!(
++        peer::effects(&trace).len(),
++        usize::from(mode == "eligible"),
++        "activation failure executed or replayed an effect"
++    );
++    let path = root.join(format!("activation-{mode}.json"));
++    std::fs::write(&path, serde_json::to_vec_pretty(&json!({
++        "boundary":"production_activation_host","mode":mode,"server":server,"tool":tool,
++        "activeSkills":context.active().len(),
++        "preparedTools":context.mcp_preflight().unwrap().projection().tools().keys().collect::<Vec<_>>(),
++        "effects":peer::effects(&trace).len(),"mcpChildrenExited":true
++    })).unwrap()).unwrap();
++    #[cfg(unix)]
++    {
++        use std::os::unix::fs::PermissionsExt;
++        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600)).unwrap();
++    }
+ }
+ 
+ async fn assert_receipt(store: &Arc<dyn PersistenceLayer>, run: &str, mode: &str) {
+@@ -748,6 +945,9 @@
+     let catalog = CollaborationCatalogService::new(stores.catalog.clone());
+     catalog.acquire_execution_owner().await.unwrap();
+     legacy_receipt_is_not_migrated_to_success(&store).await;
++    for mode in ["eligible", "denied", "missing"] {
++        activation_boundary(&root, mode).await;
++    }
+     let mut receipts = Vec::new();
+     for mode in ["success", "application", "predispatch", "unknown"] {
+         registry_boundary(&root, false, mode).await;
+--- failed-source/docs/operations/truthful-tool-outcomes.md
++++ refrozen-source/docs/operations/truthful-tool-outcomes.md
+@@ -141,6 +141,18 @@
+ instance passivation, and joined-yield recovery. It authors 11 local and 16 shared process scenarios,
+ including two same-name invocations whose unrelated native receipt must not
+ confirm the paired-host invocation's ambiguous historical failure.
++The full target retains the original 59 scenario rows and adds three activation
++controls per profile, for 65 total. These controls enter the actual production
++activation host with a real MCP transport: first eligible activation discovers
++and calls the required tool; a disallowed server cannot start; a missing required
++tool after discovery cannot commit the active skill or its prospective preflight.
++Failure does not promise cache rollback: a completed eligible discovery may
++remain cached until normal host shutdown, but it does not execute a tool or
++publish the failed activation. Filesystem skill configs qualify the server name
++with the skill ID before discovery, so this fixture's required tool is
++`dot04__outcomes__effect`. The required-tool guard checks the prospective prepared
++descriptors before activation commit, allowing the first activation to prepare
++its own policy-eligible dependency without widening authority.
+ For shared team scenarios, two real server binaries remain alive concurrently
+ against the same durable database: A holds execution authority, while B observes
+ through public runtime routes and must not acquire A's held owner or replay its

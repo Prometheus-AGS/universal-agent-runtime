@@ -1,0 +1,94 @@
+[
+    {
+        "Id": "sha256:08f9f35da53d30f79a444205bf89c90bed5bfc154fd0598103fbb983958b81de",
+        "RepoTags": [
+            "uar-dot01:22c70da51e"
+        ],
+        "RepoDigests": [],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-10-11T18:23:56.928716939-05:00",
+        "Config": {
+            "User": "65532:65532",
+            "ExposedPorts": {
+                "1906/tcp": {},
+                "50051/tcp": {}
+            },
+            "Env": [
+                "PATH=/usr/local/cargo/bin:/usr/local/go/bin:/root/.local/bin:/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "DEBIAN_FRONTEND=noninteractive",
+                "LANG=C.UTF-8",
+                "LC_ALL=C.UTF-8",
+                "CARGO_HOME=/var/lib/uar/cache/cargo",
+                "RUSTUP_HOME=/usr/local/rustup",
+                "UAR_STATIC_DIR=/opt/uar/static",
+                "UAR_MODELS_DIR=/opt/uar/models",
+                "UAR_BUILTIN_SKILLS_DIR=/opt/uar/skills/builtin",
+                "UAR_PERSISTENCE__PROVIDER=surreal",
+                "UAR_PERSISTENCE__DATABASE_URL=surrealkv:///var/lib/uar/data/uar.db",
+                "UAR_SKILLS_WASM_BUILTIN_DIR=/opt/uar/skills/wasm-builtin",
+                "UAR_SKILLS_USER_DIR=/var/lib/uar/skills-user",
+                "UAR_SKILLS_DERIVED_DIR=/var/lib/uar/skills-derived",
+                "HF_HOME=/var/lib/uar/cache/huggingface",
+                "PNPM_STORE_DIR=/var/lib/uar/cache/pnpm"
+            ],
+            "Cmd": [
+                "universal-agent-runtime"
+            ],
+            "Volumes": {
+                "/var/lib/uar": {}
+            },
+            "WorkingDir": "/opt/uar",
+            "Labels": {
+                "org.opencontainers.image.version": "24.04"
+            },
+            "ArgsEscaped": true,
+            "Healthcheck": {
+                "Test": [
+                    "CMD-SHELL",
+                    "curl -fsS http://127.0.0.1:1906/health || exit 1"
+                ],
+                "Interval": 30000000000,
+                "Timeout": 5000000000,
+                "StartPeriod": 20000000000,
+                "Retries": 3
+            }
+        },
+        "Architecture": "arm64",
+        "Os": "linux",
+        "Size": 5528328965,
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/0sqpokcjjdmgzwr6amqtksjm1/diff:/var/lib/docker/overlay2/pddr3g54qplkjjea51bsauvk7/diff:/var/lib/docker/overlay2/vcq4gfda3kzrvuyj3xmyrxs49/diff:/var/lib/docker/overlay2/ij5iobv34c5lawzh588kfc6rp/diff:/var/lib/docker/overlay2/yz681fhu5fkbaoid3scwa5bsf/diff:/var/lib/docker/overlay2/t8i5oi7689txs57jzbfxq7365/diff:/var/lib/docker/overlay2/3ms0jozlcpglvjl7srsrdnvlg/diff:/var/lib/docker/overlay2/qm4v4hlgxrrcgmufhctqu0pcf/diff:/var/lib/docker/overlay2/o1favca8698qqf203ycs7fpco/diff:/var/lib/docker/overlay2/nwgwimjovsbmbpbehjoq9x7yp/diff:/var/lib/docker/overlay2/ntsmvzi0z7fnx1leygxx1j7br/diff:/var/lib/docker/overlay2/xz0gh3zz8shccbx5edwhio4fr/diff:/var/lib/docker/overlay2/6by76fys1gb9zjkdtpd784lzw/diff:/var/lib/docker/overlay2/y12d5szgdiohg7btqtq0a4myy/diff:/var/lib/docker/overlay2/sxeuwu17km362s02xte49w1nv/diff:/var/lib/docker/overlay2/a02f45de8ebd5f1f0d41a51dd0acdef9d4ebaaad4b338bce31b8b4a7b8dad415/diff",
+                "MergedDir": "/var/lib/docker/overlay2/cqcl4g3w6hx9n7ot3m3f5u8km/merged",
+                "UpperDir": "/var/lib/docker/overlay2/cqcl4g3w6hx9n7ot3m3f5u8km/diff",
+                "WorkDir": "/var/lib/docker/overlay2/cqcl4g3w6hx9n7ot3m3f5u8km/work"
+            },
+            "Name": "overlay2"
+        },
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:1e9178dc90058fa454a60803300219ee8c17e515be8718817ed824b96fa1207b",
+                "sha256:b76aeddc23478af3a44136bd35b46b6205d0af55a9e8a4011e2272b302a76783",
+                "sha256:fdc52d7c0219d78894f46cda6bd8160e7fce72633bfc0f16a9ad077ce08425e7",
+                "sha256:b0454dfab4e8e4292a438112ec35072c693ab2ac17a4864272ac7c86a8e97373",
+                "sha256:9edaf21234446a3246ac80de4fe6e38b2c48d7dfc1eb973c7c1a0bf0e28131b2",
+                "sha256:61e4f2626b4afea377b459c5c6f4b16beb2f69cb62bbded1ef2492da90b612bc",
+                "sha256:de18289534e014131860f86543ceed6251691d8b2a8ce6365f1ec3dafa3a6324",
+                "sha256:308b3a1167068687aba327aaa2ee741f67e23fb716a8f1e5df3a1d9d97e512b4",
+                "sha256:bee4f30e993d86d4ce19ff73954fafa62f6c7e8944c54b5bfb3fb58eaa9ff7ca",
+                "sha256:cd463912db832958c172527466ab0ad3b14e12e519bef07093e6030b2a147de9",
+                "sha256:08af80765ce04fed1352a8ca69c8a0c0fc8343cf9339c9f0701fcc382db679e4",
+                "sha256:4cd5d7358d391385018375283649bbd1abac36c88593eb46ce547710a027fe0f",
+                "sha256:168f826ed1ffe43536395381794e3750fe88f7ae38c81bf8656ccecc6e5bce90",
+                "sha256:4476cea268617314beef34f59e4a780cfee88953aa6208679ca4d4958542ed4e",
+                "sha256:b8d03eb7de4a90a831ad77fcfbad44fde58a2318846a77d652e298bc69d1a3e3",
+                "sha256:76fc2de2bb12de15e5119c023e93d9e1cc731ce8fdadcbf47e0269c314e923b4",
+                "sha256:0c91ff5ef609a368aaf28388845797c4cf5004e1dc484b6b79687a31d86b1e66"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-10-11T18:24:11.234449721-05:00"
+        }
+    }
+]

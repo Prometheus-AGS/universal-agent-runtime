@@ -1,0 +1,38 @@
+{
+  "observed_at": "2026-10-13T20:41:03.991252+00:00",
+  "phase": "dot-feature-support",
+  "scope": "approved free Linux guest database infrastructure setup",
+  "guest": "dot17-linux-qualification",
+  "surreal_version": "3.3.0",
+  "archive_sha256": "f03356497f875057126641f06757671542e0a7b75f18fd13820c2dab29349d74",
+  "installed_binary_sha256": "8c077d19f388e0bc18093ea0fddc86adec0624a23351c073ec08ff547a3b7be1",
+  "installed_binary_bytes": 305371352,
+  "service_active": "active",
+  "service_enabled": "enabled",
+  "listener": "127.0.0.1:8000",
+  "data_mount": "/",
+  "excluded_fault_mount": "/var/lib/uar/dot17-volume/embedded",
+  "credential_owner": "root",
+  "credential_mode": "0o600",
+  "initial_attempt": "stopped after verified transfer, before extraction, due to shell quoting defect; retained",
+  "retry": "reuse of guarded retained files; literal stdin installer; successful install/start",
+  "private_receipts": [
+    {
+      "path": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/linux-guest-surreal-install-preparation/guest-install-attempt01-receipt.json",
+      "sha256": "e3ea3be952e95f50d8d1cfdaa906f688b9c3cf3cf0d18c47307b6cf992356118"
+    },
+    {
+      "path": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/linux-guest-surreal-install-preparation/guest-install-attempt02-dispatch.json",
+      "sha256": "a2bbbc3b21129a485726df94ae747b743efc8c8c3b430563b0e9e96462f7f517"
+    },
+    {
+      "path": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/linux-guest-surreal-install-preparation/guest-install-attempt02-install.json",
+      "sha256": "32c03d423bacadd98d991ce35b6fbba09464072ba9a8ce9a2c6f44390378d4d5"
+    },
+    {
+      "path": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/linux-guest-surreal-install-preparation/guest-service-listener-observation.json",
+      "sha256": "2f1d8ce99ebb4deb2d08482023ddc6e1e605b19580c61c78ce512d2e4d5a9de4"
+    }
+  ],
+  "qualification_claim": "No functional database qualification, UAR gate, clock change, reboot or disk-fill fault ran. No new requirement passed."
+}

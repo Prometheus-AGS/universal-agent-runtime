@@ -1,0 +1,32 @@
+{
+  "recorded_at": "2026-10-14T08:18:57.920441+00:00",
+  "requirement": 5,
+  "status": "whole_production_target_passed",
+  "observation": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/fresh_process_resume.json",
+  "observation_sha256": "c0d7ed82db99c67a8da02fab20c7fa101b1c70926df507946248133ddd3fda59",
+  "inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-17.json",
+  "inventory_sha256": "caabc77cc1b7eb5cce72efb913b215cd7b9a2be665cd8c34de3b7c6f5d261409",
+  "log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/fresh_process_resume.log",
+  "log_sha256": "b99c313e0bc2faf6b8d11028d01979c13cbccbc33e2694a3eb4a1c7c721ff4f3",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,in-memory-backend",
+    "--test",
+    "fresh_process_resume",
+    "--",
+    "--include-ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "returncode": 0,
+  "tests_passed": 1,
+  "failed": 0,
+  "ignored": 0,
+  "filtered": 0,
+  "duration_seconds": 1148.57,
+  "claim_limit": "Whole production-source parent passed at original inventory17. Internal fresh-process children are retained in raw log. Aggregate batch later stopped at memory ownership; no installed release or final acceptance claimed."
+}

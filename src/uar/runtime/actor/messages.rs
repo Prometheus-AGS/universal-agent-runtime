@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 pub struct ActorOwner {
     user_id: String,
     tenant_id: Option<String>,
+    credential_principal: Option<crate::uar::security::claims::CredentialPrincipal>,
 }
 
 impl ActorOwner {
@@ -29,6 +30,7 @@ impl ActorOwner {
             anyhow::bail!("Actor operations require authenticated user context");
         }
         Ok(Self {
+            credential_principal: crate::uar::security::claims::CredentialPrincipal::from_verified_context(user).ok(),
             user_id: user.user_id.clone(),
             tenant_id: user
                 .tenant_id
@@ -53,6 +55,8 @@ impl ActorOwner {
             anyhow::bail!("Persisted observer principal is invalid");
         }
         let owner = Self {
+            // Subject/tenant persistence is not enough to reconstruct issuer proof.
+            credential_principal: None,
             user_id: user_id.to_owned(),
             tenant_id: tenant_id.map(str::to_owned),
         };
@@ -65,6 +69,40 @@ impl ActorOwner {
     /// The tenant part of a host-verified owner, if present.
     pub(crate) fn tenant_id(&self) -> Option<&str> {
         self.tenant_id.as_deref()
+    }
+
+    /// Full identity captured at ingress, retained for secret resolution and cache
+    /// partitioning. Legacy persisted observers have no credential capability.
+    pub fn credential_principal(&self) -> Option<&crate::uar::security::claims::CredentialPrincipal> {
+        self.credential_principal.as_ref()
+    }
+
+    /// Reconstruct only the authority delegated to a protected durable schedule.
+    /// The schedule host must load and recheck the exact record before dispatch.
+    pub(crate) fn from_schedule_grant(
+        grant: &crate::uar::security::claims::ScheduleOwnerGrant,
+        owner_key: &str, schedule_id: &str, workspace: &str, instance: &str,
+    ) -> anyhow::Result<Self> {
+        let principal = grant.restore(owner_key, schedule_id, workspace, instance)?;
+        Ok(Self { user_id: principal.subject().to_owned(),
+            tenant_id: principal.tenant_id().map(str::to_owned),
+            credential_principal: Some(principal) })
+    }
+
+    /// Scope-bound restoration for the trusted durable follow-up host only.
+    pub(crate) fn from_followup_grant(
+        grant: &crate::uar::security::claims::FollowupOwnerGrant,
+        owner_key: &str, rule_id: &str, workspace: &str, instance: &str,
+    ) -> anyhow::Result<Self> {
+        let principal = grant.restore(owner_key, rule_id, workspace, instance)?;
+        Ok(Self { user_id: principal.subject().to_owned(), tenant_id: principal.tenant_id().map(str::to_owned),
+            credential_principal: Some(principal) })
+    }
+
+    /// History and conversation policies require the full verified principal.
+    pub(crate) fn session_owner_key(&self) -> anyhow::Result<String> {
+        self.credential_principal.as_ref().map(|principal| principal.storage_key())
+            .ok_or_else(|| anyhow::anyhow!("Verified conversation owner required"))
     }
 
     /// Catalog partition for this host-verified tenant and subject.

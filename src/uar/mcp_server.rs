@@ -32,7 +32,7 @@ use rmcp::{
     handler::server::{
         router::tool::ToolRouter, tool::Extension as McpExtension, wrapper::Parameters,
     },
-    model::{CallToolResult, ContentBlock, Implementation, ServerCapabilities, ServerInfo},
+    model::{CallToolResult, ContentBlock, Implementation, ServerCapabilities, ServerConfig},
     tool, tool_handler, tool_router,
     transport::streamable_http_server::{
         StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
@@ -804,12 +804,12 @@ impl UarRuntimeMcpServer {
 
 #[tool_handler]
 impl ServerHandler for UarRuntimeMcpServer {
-    fn get_info(&self) -> ServerInfo {
-        // rmcp 1.8: ServerInfo (InitializeResult) and Implementation are both
+    fn get_info(&self) -> ServerConfig {
+        // rmcp 3.4.1: ServerConfig (InitializeResult) and Implementation are both
         // #[non_exhaustive] -- struct-literal syntax (even with
         // ..Default::default()) is rejected cross-crate; use the provided
         // constructors + field mutation instead (all fields are `pub`).
-        let mut info = ServerInfo::new(ServerCapabilities::builder().enable_tools().build());
+        let mut info = ServerConfig::new(ServerCapabilities::builder().enable_tools().build());
         info.server_info = Implementation::new("uar-runtime-mcp", env!("CARGO_PKG_VERSION"));
         info.instructions = Some(
             "UAR Runtime MCP server. Tools: \

@@ -1,0 +1,17 @@
+{
+  "recorded_at": "2026-10-13T11:56:19.640383+00:00",
+  "authorization": "additional-resources-authorization.json",
+  "guest": "one approved4CPU/8GiB Linux ARM64 VM,24GiBroot,nohostshares",
+  "machine_id": "2168718a9fbc4085a3d07490101577a3",
+  "boot_id": "1f014b53-46f2-4df6-8b66-755d952f8112",
+  "fault_device": "/dev/vdb",
+  "fault_capacity_bytes": 536870912,
+  "fault_filesystem": "ext4",
+  "fault_uuid": "258e46c2-8025-46c8-b8be-2d1388da1fb2",
+  "fault_mount": "/var/lib/uar/dot17-volume/fault",
+  "root_device": "/dev/vda1",
+  "fault_device_number": 64784,
+  "root_device_number": 64769,
+  "private_receipt": "/tmp/dot17-private-preparation-20261013/approved-resource-preparation/guest-disk-setup.stdout.json",
+  "claim_limits": "Infrastructure setup only; no clock/reboot/fill/product tests. Future-boot mount persistence and effective time isolation remain unverified."
+}

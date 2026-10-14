@@ -1,0 +1,11 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-10-12T22:53:00Z",
+  "outputs": [
+    "assessment.md"
+  ],
+  "nextStage": "analyze",
+  "summaryForNext": "Nine Kubo conformance requirements are mapped; most are outside the current Dot contract. Reconcile the parent task order with full-phase-only verification and decide release scope, effective-settings shape, and no-bypass approval policy.",
+  "skipped": false,
+  "skipReason": null
+}

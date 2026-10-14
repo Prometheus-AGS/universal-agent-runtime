@@ -10,6 +10,8 @@ mod placement;
 mod representation;
 mod runtime_semantics;
 mod service;
+mod schedules;
+mod followups;
 mod storage;
 mod team_mailbox;
 mod team_planning;

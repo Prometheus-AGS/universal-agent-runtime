@@ -1,0 +1,38 @@
+[
+  {
+    "mode": "success",
+    "run": "c057ac90-c105-4c56-9717-d52b8764cc71"
+  },
+  {
+    "mode": "success",
+    "run": "b488e528-8c53-4693-9593-2de50aa23831",
+    "scopedDatabase": true
+  },
+  {
+    "mode": "application",
+    "run": "b7bac381-5d2b-40ac-9f04-7ce3d829502d"
+  },
+  {
+    "mode": "application",
+    "run": "f8896bac-4596-47cd-82d6-a18866970bab",
+    "scopedDatabase": true
+  },
+  {
+    "mode": "predispatch",
+    "run": "580fb64f-adcf-4d1e-86eb-157f8505ee76"
+  },
+  {
+    "mode": "predispatch",
+    "run": "c08b5f9a-5348-437a-92f7-44024a4009ad",
+    "scopedDatabase": true
+  },
+  {
+    "mode": "unknown",
+    "run": "2595eb3d-5f82-4256-95e2-926c16ea6de4"
+  },
+  {
+    "mode": "unknown",
+    "run": "e480f316-0a06-45b0-8e25-723caa57bf4a",
+    "scopedDatabase": true
+  }
+]

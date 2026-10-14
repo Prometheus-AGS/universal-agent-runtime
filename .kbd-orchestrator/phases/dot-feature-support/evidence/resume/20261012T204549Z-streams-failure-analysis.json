@@ -1,0 +1,107 @@
+{
+  "observedAt": "2026-10-12T20:45:49.587388+00:00",
+  "phase": "Execute",
+  "change": "dot-06-fresh-process-resume",
+  "task": "2",
+  "gate": "streams",
+  "status": "whole_affected_stream_gate_failed",
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-affected-streams-dialrv26",
+  "sourceSetSha256": "f50f80ec67dd369c73bc34fd1b72dfaac4d77139431bc91fa5fc12bf713ab679",
+  "command": [
+    "env",
+    "-i",
+    "HOME=/Users/gqadonis",
+    "PATH=/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.local/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/41335_1791836860479/bin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.pyenv/shims:/Users/gqadonis/.minimax/bin:/Users/gqadonis/.local/bin:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/usr/local/share/dotnet:~/.dotnet/tools:/usr/local/go/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/opt/podman/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/gqadonis/.codex/tmp/arg0/codex-arg08wZZjw:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/29547_1791811184470/bin:/Users/gqadonis/miniconda3/condabin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.the-boss/commands:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/opt/zerobrew/prefix/bin:/Users/gqadonis/.pochi/bin:/Users/gqadonis/.antigravity/antigravity/bin:/Users/gqadonis/.codeium/windsurf/bin:/opt/homebrew/opt/openssl@3/bin:/opt/homebrew/opt/bison/bin:/Users/gqadonis/.opencode/bin:/Users/gqadonis/.console-ninja/.bin:/Users/gqadonis/.wasmedge/bin:/Users/gqadonis/.wasmtime/bin:/Users/gqadonis/.deno/bin:/Users/gqadonis/.paperspace/bin:/Users/gqadonis/.groundcover/bin:/Users/gqadonis/.rd/bin:/Users/gqadonis/google-cloud-sdk/bin:/Users/gqadonis/.shorebird/bin:/Applications/Android Studio/Contents/MacOS:/Users/gqadonis/development/flutter/bin:/Users/gqadonis/.rust-mcp-stack/bin:/Users/gqadonis/.cargo/bin:/Users/gqadonis/.bun/bin:/Users/gqadonis/Library/pnpm:/opt/homebrew/opt/go/libexec/bin:/Users/gqadonis/go/bin:/opt/local/bin:/opt/local/sbin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Users/gqadonis/.pub-cache/bin:/Users/gqadonis/development/flutter/.pub-cache/bin:/Users/gqadonis/Library/Android/sdk/platform-tools:/Users/gqadonis/Library/Android/sdk/tools:/Users/gqadonis/Library/Android/sdk/tools/bin:/Users/gqadonis/Library/Android/sdk/emulator:/Users/gqadonis/.rvm/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.modular/bin:/Users/gqadonis/bin:/Users/gqadonis/Projects/ide/bin:/Users/gqadonis/.dotnet/tools:/Users/gqadonis/.orbstack/bin:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/gqadonis/.dotnet/tools:/usr/local/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.orbstack/bin",
+    "VERTEXAI_PROJECT=dot05-fixture",
+    "VERTEXAI_LOCATION=us-central1",
+    "UAR_DOT05_INFRA_FILE=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "UAR_DOT05_NAMESPACE=dot05_affected06_20261012T202758_d3bee329a9",
+    "RUSTC_WRAPPER=",
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full",
+    "--test",
+    "stream_terminal_contract",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exitCode": 101,
+  "buildDurationObserved": "14m40s",
+  "testSummary": [
+    "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.96s"
+  ],
+  "gateElapsedSeconds": 888.28,
+  "failureSpan": [
+    {
+      "path": "tests/stream_terminal_contract.rs",
+      "line": 106,
+      "reason": "actual signed fixture principal verification: 500"
+    },
+    {
+      "path": "tests/stream_terminal_contract.rs",
+      "line": 891,
+      "reason": "worker thread join unwrap after prior panic"
+    }
+  ],
+  "enteredFirstBoundary": {
+    "retainedPath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-fTB4vE/case-1/legacy/boundary-diagnostics.json",
+    "sha256": "71233868383725a56180e8c6035d7b49863a1d0593eebbcd8dc37fe022a33847",
+    "protocol": "OpenAi",
+    "case": "valid",
+    "providerRequests": 1,
+    "toolEffects": 0,
+    "rowCompleted": false,
+    "qualification": "First legacy boundary entered and retained diagnostics; local signed principal failed before row completion."
+  },
+  "completedRows": 0,
+  "matchedBoundaries": 0,
+  "actualCustomerRuntimeChildrenRecordedOrSampled": 0,
+  "processQualification": "Streams invokes production paths inside integration image; no customer-runtime child recorded/sampled. Short-lived children can evade sampling; exact owned group is now gone.",
+  "knownPidCount": 1,
+  "cleanupObservations": [
+    {
+      "pid": 60415,
+      "basis": "exact-child-of-cargo",
+      "state": "gone"
+    }
+  ],
+  "cleanupUnknown": false,
+  "exactOwnedGroupGone": true,
+  "targetLocksNoHolder": true,
+  "sourceStableAtExit": true,
+  "sourceStableAfterCleanup": true,
+  "sourceStableAtFinalSeal": true,
+  "environmentStableAtExit": true,
+  "environmentStableAtFinalSeal": true,
+  "executableStableAtExit": true,
+  "rootInfrastructurePreserved": true,
+  "upstreamResumeCustomerArtifactStableAtFinalSeal": true,
+  "actualTestArtifact": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "sha256": "6103a1e80093e1f4b0d105377f1055b3922694becf3ffc1391b004dc062c53d0",
+      "bytes": 329831080,
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-affected-streams-dialrv26/streams-accepted-stream_terminal_contract-a0db6587c4848919",
+      "retainedSha256": "6103a1e80093e1f4b0d105377f1055b3922694becf3ffc1391b004dc062c53d0"
+    }
+  ],
+  "rawStdoutSha256": "8d8539f24a59080c07fdf3f5bbeaeee7ffb3ef08d97ad0862196e84a407bd44c",
+  "rawStderrSha256": "7171d85627c7ea61f2f2c68ff827a0ad1af3d55d396827c319084c97de58c0ef",
+  "privateStdout": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-affected-streams-dialrv26/streams.stdout",
+  "privateStderr": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-affected-streams-dialrv26/streams.stderr",
+  "privatePartialDiagnostics": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-fTB4vE/case-1/legacy/boundary-diagnostics.json",
+  "privatePrincipalHttpResponse": "No HTTP response exists: authenticate_bearer_context is called directly and returned StatusCode500.",
+  "sourceEdits": [],
+  "unrequestedAdditions": [],
+  "limits": [
+    "Accepted resume result remains separate and unchanged.",
+    "0 completed rows does not mean no boundary was entered; first legacy boundary diagnostics exist.",
+    "Affected streams acceptance failed; no83/249 certification.",
+    "No genuine inference, publication, release or supervisor takeover claim."
+  ]
+}

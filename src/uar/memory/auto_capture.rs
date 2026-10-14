@@ -34,7 +34,9 @@ pub async fn capture_from_stream_end(
     user_ctx: &UserContext,
     agent_id: &str,
     session_id: &str,
+    admission: Option<super::controls::CaptureAdmission>,
 ) -> Vec<Memory> {
+    let Some(admission) = admission else { return vec![]; };
     if !service.config().auto_capture {
         return vec![];
     }
@@ -55,7 +57,7 @@ pub async fn capture_from_stream_end(
         .collect();
 
     match service
-        .auto_capture(json_messages, user_ctx, Some(agent_id), Some(session_id))
+        .auto_capture_admitted(json_messages, user_ctx, Some(agent_id), Some(session_id), &admission)
         .await
     {
         Ok(extracted) => {

@@ -1,0 +1,34 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "gpt-6.1-sol",
+  "producer_model": "unknown",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "unverified-producer-unknown",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "plan.md",
+      "claim": "Change 06 requires successful abrupt-owner recovery in its completed-slice acceptance before change 11 supplies the exclusion mechanism required to permit that recovery.",
+      "evidence": "Change 06 acceptance says, \"Kill the original server, launch a new manager against the same durable backend, list/resume the checkpoint and verify authorized continuation.\" Its delivery simultaneously says, \"A predecessor that may still execute or has uncertain effects remains blocked until trusted exclusion/reconciliation; change 11 supplies abrupt-owner exclusion, so 06 alone does not certify abrupt takeover.\" Change 11 depends on 06, and the verification contract requires completing and verifying each production slice.",
+      "suggested_fix": "Make change 06's successful fresh-process continuation test use a predecessor with durably proven orderly exclusion, and require abrupt-loss tests at that stage to demonstrate denial. Move the successful kill-and-takeover acceptance to change 11, where supervisor exclusion is available."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The plan gives contradictory OpenSpec delta instructions for change 12, leaving the replacement of subject-only memory ownership requirements ambiguous.",
+      "evidence": "The ownership section says, \"Change 12 carries the full existing per-user isolation requirement as MODIFIED, preserving every scenario while replacing subject-only memory wording with complete verified owner identity; other additions are ADDED.\" Change 12 instead specifies \"OpenSpec: multi-tenant-isolation, additive requirement \u2018Assistant memory is scoped by verified complete owner\u2019,\" and the emission section requires \"at least one additive spec delta\" for every change.",
+      "suggested_fix": "Specify the existing requirement to emit under MODIFIED for change 12, preserving its scenarios and updating its ownership language. Distinguish any genuinely additional ADDED requirements, and amend the blanket additive-delta instruction so it does not contradict the required modification."
+    }
+  ],
+  "judge_identity": {
+    "providerConnectionId": "openai-proxy-8181",
+    "providerId": "openai",
+    "modelId": "gpt-6.1-sol"
+  },
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

@@ -1,10 +1,17 @@
 # Universal Agent Runtime Helm chart values
 
 uar:
+  workloadKind: Deployment
+  podSecurityContext: {}
+  runtimeDataMountEnabled: false
+  existingConfigSecret: ""
+  qualificationFixtureConfigMap: ""
+  instanceRoutes: []
   replicaCount: 2
   image:
     repository: PLACEHOLDER_IMAGE
     tag: ""
+    digest: ""
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
@@ -37,10 +44,12 @@ uar:
   env:
     UAR_SERVER__PORT: "1906"
     UAR_SERVER__GRPC_PORT: "50051"
+    # Deliberate shared-pod listener; JWT credentials are supplied by secrets.
     UAR_SERVER__HOST: "0.0.0.0"
+    UAR_SECURITY__JWT_REQUIRED: "true"
     UAR_SERVER__LOG_FORMAT: "json"
     UAR_SERVER__SHUTDOWN_TIMEOUT_SECS: "30"
-    UAR_MEMORY__ENABLED: "true"
+    UAR_MEMORY__ENABLED: "false"
     UAR_MEMORY__SURREAL_ENDPOINT: "ws://surrealdb:8000"
     DATABASE_URL: "postgres://uar:CHANGEME@postgres:5432/uar"
     RUST_LOG: "info,universal_agent_runtime=debug"
@@ -50,6 +59,7 @@ uar:
     POSTGRES_PASSWORD: Q0hBTkdFTUU=
     SURREAL_USER: cm9vdA==
     SURREAL_PASS: Q0hBTkdFTUU=
+  existingSecret: ""
 
 postgres:
   enabled: true
@@ -99,6 +109,7 @@ redis:
       memory: 512Mi
 
 storageClass:
+  create: true
   name: uar-immediate
   provisioner: pd.csi.storage.gke.io
   volumeBindingMode: Immediate
@@ -109,10 +120,15 @@ storageClass:
 
 gateway:
   enabled: false
+  timeouts: {}
   hostname: uar.example.com
   gatewayRef:
     name: envoy-gateway
     namespace: envoy-gateway-system
+    sectionName: ""
+  redirect:
+    enabled: false
+    sectionName: ""
 
 networkPolicies:
   enabled: true

@@ -1,0 +1,466 @@
+{
+  "expected": 65,
+  "entered": 28,
+  "completed": 27,
+  "failed": 1,
+  "unrun": 37,
+  "localCompleted": 27,
+  "sharedEntered": 0,
+  "rows": [
+    {
+      "profile": "local",
+      "boundary": "production_activation_host",
+      "mode": "eligible",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "production_activation_host",
+      "mode": "denied",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "production_activation_host",
+      "mode": "missing",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/direct",
+      "mode": "success",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/scoped",
+      "mode": "success",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "manager/direct",
+      "mode": "success",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "success",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/direct",
+      "mode": "application",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/scoped",
+      "mode": "application",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "manager/direct",
+      "mode": "application",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "application",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/direct",
+      "mode": "predispatch",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/scoped",
+      "mode": "predispatch",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "manager/direct",
+      "mode": "predispatch",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "predispatch",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/direct",
+      "mode": "unknown",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/scoped",
+      "mode": "unknown",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "manager/direct",
+      "mode": "unknown",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "unknown",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "server_process",
+      "mode": "success",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "server_process",
+      "mode": "application",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "server_process",
+      "mode": "predispatch",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "server_process",
+      "mode": "unknown",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "team_process",
+      "mode": "success",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "team_process",
+      "mode": "application",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "team_process",
+      "mode": "unknown",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "team_process",
+      "mode": "no_tool",
+      "status": "completed",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "instance_process",
+      "mode": "success",
+      "status": "failed-during-instance-creation",
+      "basis": "Sequential fixture completed each prior row before entering next; retained receipts, terminal/vector/artifact evidence and failure logs"
+    },
+    {
+      "profile": "local",
+      "boundary": "instance_process",
+      "mode": "application",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "local",
+      "boundary": "instance_process",
+      "mode": "unknown",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "production_activation_host",
+      "mode": "eligible",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "production_activation_host",
+      "mode": "denied",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "production_activation_host",
+      "mode": "missing",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/direct",
+      "mode": "success",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/scoped",
+      "mode": "success",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "manager/direct",
+      "mode": "success",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "success",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/direct",
+      "mode": "application",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/scoped",
+      "mode": "application",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "manager/direct",
+      "mode": "application",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "application",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/direct",
+      "mode": "predispatch",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/scoped",
+      "mode": "predispatch",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "manager/direct",
+      "mode": "predispatch",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "predispatch",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/direct",
+      "mode": "unknown",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/scoped",
+      "mode": "unknown",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "manager/direct",
+      "mode": "unknown",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "unknown",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "server_process",
+      "mode": "success",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "server_process",
+      "mode": "application",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "server_process",
+      "mode": "predispatch",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "server_process",
+      "mode": "unknown",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_process",
+      "mode": "success",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_process",
+      "mode": "application",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_process",
+      "mode": "unknown",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_process",
+      "mode": "no_tool",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_recovery_process",
+      "mode": "known-application-failure",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_recovery_process",
+      "mode": "legacy",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_recovery_process",
+      "mode": "native-legacy-failure",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_recovery_process",
+      "mode": "same-name-unrelated-native",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_process",
+      "mode": "legacy-hold",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "instance_process",
+      "mode": "success",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "instance_process",
+      "mode": "application",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    },
+    {
+      "profile": "shared",
+      "boundary": "instance_process",
+      "mode": "unknown",
+      "status": "unrun",
+      "basis": "gate aborted before entry"
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "change": "dot-05-stream-terminal-contract",
+  "task": "2",
+  "attempt": "20261012T060823Z",
+  "observedFailure": "fixture461 legacy NativeAnthropic/valid expectedDone1 actual0; actualprovider_stream_failed Malformed Anthropic SSE event after emittedtext",
+  "gateExitCode": 101,
+  "actualDiagnostic": {
+    "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-qpCIcH/case-27/legacy/boundary-diagnostics.json",
+    "sha256": "dae961024fe1859713998e94a24144f7cc1cd74183df54b4b288eb8ea06aa23c",
+    "eventCount": 6,
+    "lastEvents": [
+      {
+        "type": "message.delta",
+        "data": {
+          "text": "stream-control:\u03bb\ud83d\ude42"
+        }
+      },
+      {
+        "type": "error",
+        "data": {
+          "message": "Malformed Anthropic SSE event",
+          "code": "provider_stream_failed"
+        }
+      }
+    ],
+    "terminalState": {
+      "done_count": 0,
+      "failed": true,
+      "cancelled_by_fixture": false
+    },
+    "toolEffectCount": 0,
+    "requestCount": 1
+  },
+  "actualWire": {
+    "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-qpCIcH/case-27/legacy/first.bin",
+    "sha256": "f4630ec8f44d0b773d45cbd7aa6e41b2630559ec15836673bccbcf49ac775583",
+    "bytes": 1155,
+    "messageDeltaUsage": {
+      "output_tokens": 3
+    },
+    "messageStartUsage": {
+      "input_tokens": 2,
+      "output_tokens": 0
+    },
+    "requestFileSha256": "21b1cd50c9c02f36f1fc9da14ef35a3b9843d2722cda826143b7ee8bfcdd290f"
+  },
+  "rootCause": "Native strict StreamEvent deserialization reuses UsageResponse whoseinput_tokens field isrequired. Documentedmessage_delta usage mayomit input_tokens; retainedwire doesexactlythat. Native parser returns provider_stream_failed instead ofconsumingmessage_stop.",
+  "officialSources": [
+    {
+      "url": "https://platform.claude.com/docs/en/build-with-claude/streaming",
+      "evidence": "basic andtool streaming message_delta examples containoutput_tokens-only usage"
+    },
+    {
+      "url": "https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/types/message_delta_usage.py",
+      "evidence": "Context7 officialSDK MessageDeltaUsage.input_tokens Optional[int]=None; output_tokens required"
+    }
+  ],
+  "docsRetrieval": "Context7resolveAnthropicAPI thenquery /anthropics/anthropic-sdk-python; officialplatformstreamingpage opened viaweb, 2026-10-12",
+  "productionDefectObserved": true,
+  "sourceBoundary": "anthropic_types.rs UsageResponse.input_tokens and StreamEvent::MessageDelta usage; anthropic_driver.rs strict from_value",
+  "priorMarkerCorrectionObserved": {
+    "localAndSharedOpenAiInvalidUtf8": "actualdiagnostics partial_text_exposedfalse/statuserror/request1/tool0; correctedcase completed allroutes"
+  },
+  "scenarioCounts": {
+    "expectedRows": 83,
+    "completedRows": 26,
+    "enteredRows": 27,
+    "failedRows": 1,
+    "unrunRows": 56,
+    "expectedBoundaries": 249,
+    "enteredBoundaries": 79,
+    "completedBoundaries": 78,
+    "failedBoundaries": 1,
+    "unrunBoundaries": 170
+  },
+  "sourceAndToolFinalBinding": {
+    "sourceStable": true,
+    "preparedToolsStable": true,
+    "hostConfigStable": true,
+    "infraStable": true,
+    "integrationRuntimeSha256": "f17777d236dc2704ca8f953b1a4b555477b4dc376a5d19f850bc01a82b8b4ac8",
+    "ownedSampledRemaining": [],
+    "exactOwnedHttpsPeers": [],
+    "rootInfrastructureRetained": true
+  },
+  "noFurtherRetry": true,
+  "sourceEditsByAcceptanceWorker": [],
+  "unrequestedAdditions": [],
+  "newProductionGuards": [],
+  "remainingUnverified": [
+    "NativeAnthropic graph routes andremainingmatrix",
+    "GoogleAI/Vertex/Cohere/BedrockHTTPSnativeprotocols",
+    "56scenario rows unrun",
+    "Runtimecorrection sufficiency",
+    "No transitiveclosure/crossprocess/release/Tier2/Tier3 claim"
+  ]
+}

@@ -68,7 +68,6 @@ fn make_ctx(run_id: &str) -> GraphContext {
         llm_config: universal_agent_runtime::config::LlmConfig::default(),
         driver,
         cache_strategy: None,
-        persistence: None,
         thread_delegate: None,
         tool_host: None,
     }
@@ -125,7 +124,6 @@ async fn router_inherits_cache_strategy_and_llm_node_requires_tool_host() {
         llm_config: universal_agent_runtime::config::LlmConfig::default(),
         driver: driver.clone(),
         cache_strategy: Some(CacheStrategy::default()),
-        persistence: None,
         thread_delegate: None,
         tool_host: None,
     };

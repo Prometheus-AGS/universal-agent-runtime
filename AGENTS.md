@@ -294,33 +294,81 @@ yourself across every root, not just this folder.
 
 Outside the managed region. Re-running the bootstrap will not touch this.
 
-### Hourly delivery verification boundary
+### Full-phase verification boundary
 
-For the Agent Fabric Convergence hourly delivery cadence, finish the entire
-current-hour production slice before testing it. A slice includes the usable
-runtime behavior, persistence and contracts, and the settings or UI needed to
-operate it. If the hour ends with incomplete functionality, continue the work
-in the next hour; do not test or release a partial slice.
+Finish the entire active KBD phase's planned production implementation before
+running any verification. A completed change, task, subsystem, hourly slice, or
+calendar boundary is never permission to test. An unfinished phase stays
+unfinished across hours and sessions. This rule overrides the managed base
+instructions for “Tier 0 every edit,” “Tier 1 unit complete,” and “one edit and
+its cheap check,” as well as any skill or plan that places verification earlier.
 
-This project rule overrides the managed base instructions to run “Tier 0 every
-edit,” “Tier 1 unit complete,” and “one edit and its cheap check” during the
-hourly implementation. Use source inspection and reasoning while writing code.
-Do not run unit or mock tests, lint, typechecks, Cargo checks, review-driven
-verification, or standalone builds before the whole slice is implemented. A
-narrow compiler invocation is permitted only when an observed compiler error
-blocks further implementation; stop after resolving that blocker.
+Before the full implementation boundary, use source inspection and reasoning to
+continue work. Tests may be authored but not executed. Do not start or delegate
+unit, mock, integration, end-to-end, conformance, or regression tests; lint,
+format, typecheck, Cargo check, compiler probes, review-driven verification,
+standalone or customer builds, packaging validation, or scripts that invoke any
+of these indirectly. Do not launch them locally, in CI, through a subagent, or
+through an external gate. There is no automatic compiler-error exception. Stop
+an already running early gate and record its incomplete result; do not count it
+as phase acceptance.
 
-At the completed hourly boundary, run one serialized production integration
-gate that exercises the current-hour functionality through its real path and
-includes the customer build for an independently usable delivery. When the
-slice includes The Boss, that gate includes `pnpm build:mac:arm64`. Record the
-command, result, and produced artifact. Fix a failure and rerun only its failed
-gate. Do not rerun accepted prior-hour tests or gates unless this hour changed
-their behavior or an observed regression requires it. Do not expand a passing
-gate into broader checks. Earlier acceptance never certifies new work.
+The boundary is reached only when every planned change's usable production
+behavior, persistence, contracts, migrations, operational settings or UI, and
+required documentation are implemented for the active phase. Inspect the
+authoritative KBD waypoint and the phase's complete plan/task ledger, identify
+every implementation item, and record an explicit implementation-complete
+inventory before issuing a verification command. Verification tasks may remain
+pending at that point; an implementation item may not. Uncertainty about any
+item means the boundary has not been reached. A plan revision adds its work to
+the same boundary.
 
-This scheduling override preserves trust-boundary requirements, single-writer
-build discipline, and truthful reporting of what was actually verified.
+After that boundary, run the planned production integration gate serially
+through the real path, including the customer build needed for independently
+usable delivery. When the phase includes The Boss, include
+`pnpm build:mac:arm64`. Record the exact command, result, and produced artifact.
+Fix a failure and rerun only its failed gate; do not expand a passing gate into
+broader checks. Earlier acceptance never certifies new work.
+
+If an agent believes any verification must run before full phase implementation,
+it must stop and ask the operator for explicit permission first. The request
+must name the exact command, the unfinished implementation items, why source
+inspection cannot resolve the blocker, and what the result would and would not
+prove. Silence, a prior exception, an hourly deadline, and approval for a
+different command are not permission. Wait for an explicit answer before running
+that command. This exception process preserves trust-boundary requirements,
+single-writer build discipline, and truthful reporting.
+
+### Agent-team execution and context continuity
+
+Use an agent team for this Dot phase and every multi-change KBD development
+phase. The lead owns the authoritative waypoint, phase plan, integration order,
+source ownership map, and full-phase verification boundary. Delegate bounded
+implementation, research, and independent review to teammates; do not silently
+replace team execution with one agent carrying the entire phase in its context.
+Use the existing `.agent-team/uar-core` roles when they fit the assigned work.
+If team tools are unavailable, stop, report the limitation, and ask the operator
+how to proceed before doing multi-change implementation alone.
+
+Give each teammate a specific outcome, owned files or subsystem, relevant
+contracts, and a concise handoff location. Tell teammates that others share the
+checkout and that they must preserve others' edits. Assign one writer per file
+and one writer per build target. Teammates may inspect source and implement
+their assigned work, but the full-phase verification boundary above applies to
+every teammate and any process they start. No teammate may start an early test,
+check, build, or external gate on the lead's behalf.
+
+Keep context bounded by reading the waypoint and only the relevant phase
+artifacts and source for the next task. Send small, explicit task packets to
+fresh-context teammates rather than copying the entire conversation. Require
+each handoff to state files changed, unresolved decisions, current source state,
+and what remains unverified. Record decisions and progress in the KBD phase's
+authoritative artifacts so a new lead context can resume without reconstructing
+the phase from chat history. Summarize tool output; preserve exact commands and
+receipts in artifacts rather than flooding the lead context. Before context
+exhaustion, stop at a safe boundary, update the handoff, and resume from that
+record. Do not claim that team use removes context limits; manage those limits
+explicitly.
 
 ### UI design skill precedence
 
@@ -506,10 +554,11 @@ Always use `rust-best-practices` for general implementation and review. Add
 `rust-mcp-server-generator` for Rust MCP server or transport work. Repository
 dependency pins and protocol contracts override generator examples.
 
-Skill activation does not authorize immediate Cargo execution. Finish a meaningful
-set of production functionality, then run one serialized validation batch at the
-completed change or phase boundary. Start with the smallest integration target that
-exercises the real production path and collaborators. Unit, module-local, mock-only,
-and filtered function tests do not count as completion evidence. Defer broader,
-specialized, release, and feature-matrix checks until the applicable final boundary.
+Skill activation does not authorize immediate Cargo execution. Finish the entire
+active phase's production implementation under the full-phase verification boundary
+above, then run one serialized validation batch. Start with the smallest
+integration target that exercises the real production path and collaborators.
+Unit, module-local, mock-only, and filtered function tests do not count as
+completion evidence. Defer broader, specialized, release, and feature-matrix
+checks until the applicable final boundary.
 Read the skill's phase-gated verification reference before the first Cargo command.

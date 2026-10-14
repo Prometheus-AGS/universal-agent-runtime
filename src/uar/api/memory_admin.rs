@@ -19,7 +19,7 @@
 use crate::AppState;
 use axum::{
     Json, Router,
-    extract::{Path, Query, State},
+    extract::{Extension, Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::get,
@@ -79,8 +79,7 @@ fn default_limit() -> usize {
 fn memory_to_json(m: &surreal_memory::Memory) -> serde_json::Value {
     let id =
         m.id.as_ref()
-            .and_then(|r| serde_json::to_value(r).ok())
-            .and_then(|v| v.as_str().map(str::to_string))
+            .and_then(|r| crate::uar::memory::owned::record_id(r).ok())
             .unwrap_or_default();
     json!({
         "id": id,
@@ -96,25 +95,6 @@ fn memory_to_json(m: &surreal_memory::Memory) -> serde_json::Value {
     })
 }
 
-/// Build an anonymous-style UserContext for admin queries (no scope enforcement).
-fn admin_ctx(user_id: Option<&str>) -> crate::uar::security::claims::UserContext {
-    use crate::uar::security::claims::{UserClaims, UserContext};
-    let uid = user_id.unwrap_or("anonymous").to_string();
-    UserContext {
-        host_authority: None, authority: None,
-        user_id: uid.clone(),
-        tenant_id: None,
-        claims: UserClaims {
-            sub: uid,
-            name: None,
-            roles: None,
-            tenant_id: None,
-            uar_instance_id: None,
-            exp: 0,
-        },
-    }
-}
-
 // ---------------------------------------------------------------------------
 // Handlers
 // ---------------------------------------------------------------------------
@@ -122,8 +102,12 @@ fn admin_ctx(user_id: Option<&str>) -> crate::uar::security::claims::UserContext
 /// `GET /api/admin/memories` — paginated list filtered by scope
 pub async fn list_memories_handler(
     State(state): State<AppState>,
+    Extension(user): Extension<crate::uar::security::claims::UserContext>,
     Query(query): Query<ListMemoriesQuery>,
 ) -> impl IntoResponse {
+    if user.trusted_host_id().is_none() {
+        return (StatusCode::FORBIDDEN, "Trusted host memory administration required").into_response();
+    }
     let Some(svc) = &state.memory_service else {
         // Disabled memory is a valid administrative state, not an outage.  A
         // settings client must be able to render the empty collection and let
@@ -131,13 +115,20 @@ pub async fn list_memories_handler(
         return Json(json!({"enabled": false, "total": 0, "items": []})).into_response();
     };
 
-    let ctx = admin_ctx(query.user_id.as_deref());
+    let storage = match svc.admin_storage(&user) {
+        Ok(storage) => storage,
+        Err(error) => return (StatusCode::FORBIDDEN, error.to_string()).into_response(),
+    };
 
-    match svc
-        .list(&ctx, query.agent_id.as_deref(), query.session_id.as_deref())
+    match storage
+        .get_all_memories(query.user_id.as_deref(), query.agent_id.as_deref(), query.session_id.as_deref())
         .await
     {
         Ok(memories) => {
+            let memories = match svc.visible_memories(memories).await {
+                Ok(memories) => memories,
+                Err(error) => return (StatusCode::SERVICE_UNAVAILABLE, error.to_string()).into_response(),
+            };
             let items: Vec<serde_json::Value> = memories.iter().map(memory_to_json).collect();
             Json(json!({
                 "total": items.len(),
@@ -154,7 +145,10 @@ pub async fn list_memories_handler(
 }
 
 /// `GET /api/admin/memories/stats` — count + scope breakdown
-pub async fn memory_stats_handler(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn memory_stats_handler(State(state): State<AppState>, Extension(user): Extension<crate::uar::security::claims::UserContext>) -> impl IntoResponse {
+    if user.trusted_host_id().is_none() {
+        return (StatusCode::FORBIDDEN, "Trusted host memory administration required").into_response();
+    }
     let Some(svc) = &state.memory_service else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -163,9 +157,16 @@ pub async fn memory_stats_handler(State(state): State<AppState>) -> impl IntoRes
             .into_response();
     };
 
-    let ctx = admin_ctx(None);
-    match svc.list(&ctx, None, None).await {
+    let storage = match svc.admin_storage(&user) {
+        Ok(storage) => storage,
+        Err(error) => return (StatusCode::FORBIDDEN, error.to_string()).into_response(),
+    };
+    match storage.get_all_memories(None, None, None).await {
         Ok(memories) => {
+            let memories = match svc.visible_memories(memories).await {
+                Ok(memories) => memories,
+                Err(error) => return (StatusCode::SERVICE_UNAVAILABLE, error.to_string()).into_response(),
+            };
             let total = memories.len();
             let mut by_scope: std::collections::HashMap<String, usize> = Default::default();
             for m in &memories {
@@ -188,8 +189,12 @@ pub async fn memory_stats_handler(State(state): State<AppState>) -> impl IntoRes
 /// `GET /api/admin/memories/search?q=...` — text/semantic search
 pub async fn search_memories_handler(
     State(state): State<AppState>,
+    Extension(user): Extension<crate::uar::security::claims::UserContext>,
     Query(query): Query<SearchMemoriesQuery>,
 ) -> impl IntoResponse {
+    if user.trusted_host_id().is_none() {
+        return (StatusCode::FORBIDDEN, "Trusted host memory administration required").into_response();
+    }
     let Some(svc) = &state.memory_service else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -198,19 +203,26 @@ pub async fn search_memories_handler(
             .into_response();
     };
 
-    let ctx = admin_ctx(query.user_id.as_deref());
-    match svc
-        .search(
+    let storage = match svc.admin_storage(&user) {
+        Ok(storage) => storage,
+        Err(error) => return (StatusCode::FORBIDDEN, error.to_string()).into_response(),
+    };
+    match storage
+        .search_memories(
             &query.q,
-            &ctx,
+            query.user_id.as_deref(),
             query.agent_id.as_deref(),
             query.session_id.as_deref(),
-            query.limit,
             None,
+            query.limit,
         )
         .await
     {
         Ok(results) => {
+            let results = match svc.visible_memories(results).await {
+                Ok(results) => results,
+                Err(error) => return (StatusCode::SERVICE_UNAVAILABLE, error.to_string()).into_response(),
+            };
             let items: Vec<serde_json::Value> = results.iter().map(memory_to_json).collect();
             Json(json!({ "items": items, "count": items.len() })).into_response()
         }
@@ -225,8 +237,12 @@ pub async fn search_memories_handler(
 /// `GET /api/admin/memories/:id`
 pub async fn get_memory_handler(
     State(state): State<AppState>,
+    Extension(user): Extension<crate::uar::security::claims::UserContext>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
+    if user.trusted_host_id().is_none() {
+        return (StatusCode::FORBIDDEN, "Trusted host memory administration required").into_response();
+    }
     let Some(svc) = &state.memory_service else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -235,7 +251,7 @@ pub async fn get_memory_handler(
             .into_response();
     };
 
-    match svc.get(&id).await {
+    match crate::uar::admin::memory::get(Some(svc), &id, &user).await {
         Ok(Some(m)) => Json(memory_to_json(&m)).into_response(),
         Ok(None) => (
             StatusCode::NOT_FOUND,
@@ -253,8 +269,12 @@ pub async fn get_memory_handler(
 /// `DELETE /api/admin/memories/:id`
 pub async fn delete_memory_handler(
     State(state): State<AppState>,
+    Extension(user): Extension<crate::uar::security::claims::UserContext>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
+    if user.trusted_host_id().is_none() {
+        return (StatusCode::FORBIDDEN, "Trusted host memory administration required").into_response();
+    }
     let Some(svc) = &state.memory_service else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -263,7 +283,7 @@ pub async fn delete_memory_handler(
             .into_response();
     };
 
-    match svc.delete(&id).await {
+    match crate::uar::admin::memory::delete(Some(svc), &id, &user).await {
         Ok(_) => Json(json!({"status": "deleted", "id": id})).into_response(),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -281,8 +301,12 @@ pub async fn delete_memory_handler(
 /// erase it, but never correct it — the two containers were not at parity.
 pub async fn create_memory_handler(
     State(state): State<AppState>,
+    Extension(user): Extension<crate::uar::security::claims::UserContext>,
     Json(body): Json<CreateMemoryRequest>,
 ) -> impl IntoResponse {
+    if user.trusted_host_id().is_none() {
+        return (StatusCode::FORBIDDEN, "Trusted host memory administration required").into_response();
+    }
     let Some(svc) = &state.memory_service else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -291,17 +315,17 @@ pub async fn create_memory_handler(
             .into_response();
     };
 
-    let ctx = admin_ctx(body.user_id.as_deref());
+    // An admin filter is never converted to a forged owner capability. Shared
+    // creation remains explicit; per-owner creation uses the ordinary endpoint.
+    if body.user_id.is_some() {
+        return (StatusCode::BAD_REQUEST, "Use the authenticated owner memory endpoint for per-owner creation").into_response();
+    }
     match crate::uar::admin::memory::add(
-        Some(svc),
-        body.content,
-        crate::uar::domain::memory::MemoryScope::default(),
+        Some(svc), body.content,
+        crate::uar::domain::memory::MemoryScope::Global,
         crate::uar::domain::memory::MemoryType::default(),
-        &ctx,
-        body.agent_id.as_deref(),
-        body.session_id.as_deref(),
-    )
-    .await
+        &user, body.agent_id.as_deref(), body.session_id.as_deref(),
+    ).await
     {
         Ok(memory) => (StatusCode::CREATED, Json(memory_to_json(&memory))).into_response(),
         Err(e) => (
@@ -318,9 +342,13 @@ pub async fn create_memory_handler(
 /// destructive: the previous text stays recoverable.
 pub async fn update_memory_handler(
     State(state): State<AppState>,
+    Extension(user): Extension<crate::uar::security::claims::UserContext>,
     Path(id): Path<String>,
     Json(body): Json<UpdateMemoryRequest>,
 ) -> impl IntoResponse {
+    if user.trusted_host_id().is_none() {
+        return (StatusCode::FORBIDDEN, "Trusted host memory administration required").into_response();
+    }
     let Some(svc) = &state.memory_service else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -329,7 +357,7 @@ pub async fn update_memory_handler(
             .into_response();
     };
 
-    match crate::uar::admin::memory::update(Some(svc), &id, body.content).await {
+    match crate::uar::admin::memory::update(Some(svc), &id, body.content, &user).await {
         Ok(memory) => Json(memory_to_json(&memory)).into_response(),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -342,8 +370,12 @@ pub async fn update_memory_handler(
 /// `DELETE /api/admin/memories` — bulk delete by scope filters
 pub async fn bulk_delete_memories_handler(
     State(state): State<AppState>,
+    Extension(user): Extension<crate::uar::security::claims::UserContext>,
     Query(query): Query<BulkDeleteQuery>,
 ) -> impl IntoResponse {
+    if user.trusted_host_id().is_none() {
+        return (StatusCode::FORBIDDEN, "Trusted host memory administration required").into_response();
+    }
     let Some(svc) = &state.memory_service else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -352,12 +384,28 @@ pub async fn bulk_delete_memories_handler(
             .into_response();
     };
 
-    let ctx = admin_ctx(query.user_id.as_deref());
-    match svc
-        .delete_all(&ctx, query.agent_id.as_deref(), query.session_id.as_deref())
+    let storage = match svc.admin_storage(&user) {
+        Ok(storage) => storage,
+        Err(error) => return (StatusCode::FORBIDDEN, error.to_string()).into_response(),
+    };
+    match storage
+        .get_all_memories(query.user_id.as_deref(), query.agent_id.as_deref(), query.session_id.as_deref())
         .await
     {
-        Ok(deleted) => Json(json!({ "deleted": deleted })).into_response(),
+        Ok(memories) => {
+            let mut deleted = 0;
+            for memory in memories {
+                let id = match memory.id.as_ref().map(crate::uar::memory::owned::record_id).transpose() {
+                    Ok(Some(id)) => id,
+                    _ => return (StatusCode::INTERNAL_SERVER_ERROR, "Memory identity unavailable").into_response(),
+                };
+                if let Err(error) = crate::uar::admin::memory::delete(Some(svc), &id, &user).await {
+                    return (StatusCode::SERVICE_UNAVAILABLE, error.to_string()).into_response();
+                }
+                deleted += 1;
+            }
+            Json(json!({ "deleted": deleted })).into_response()
+        },
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"error": format!("{e}")})),
@@ -366,12 +414,46 @@ pub async fn bulk_delete_memories_handler(
     }
 }
 
+/// The second credential proves the mapping target. It is never persisted or
+/// printed; this request deliberately has no Debug implementation.
+#[derive(Deserialize)]
+#[expect(missing_debug_implementations, reason = "Contains a migration owner bearer credential that must never be logged")]
+pub struct ImportLegacyMemoryRequest {
+    pub id: String,
+    pub evidence: String,
+    pub owner_bearer: Option<String>,
+}
+
+#[cfg(feature = "surreal-backend")]
+pub async fn import_legacy_memory_handler(
+    State(state): State<AppState>,
+    Extension(administrator): Extension<crate::uar::security::claims::UserContext>,
+    Json(body): Json<ImportLegacyMemoryRequest>,
+) -> impl IntoResponse {
+    if administrator.trusted_host_id().is_none() {
+        return (StatusCode::FORBIDDEN, "Trusted host memory administration required").into_response();
+    }
+    let Some(service) = &state.memory_service else {
+        return (StatusCode::SERVICE_UNAVAILABLE, "Memory system not enabled").into_response();
+    };
+    let owner = if let Some(bearer) = body.owner_bearer.as_deref() {
+        match crate::uar::security::middleware::authenticate_bearer_context(&state.config.security, bearer).await {
+            Ok(owner) => owner,
+            Err(status) => return (status, "Verified migration owner credential required").into_response(),
+        }
+    } else { administrator.clone() };
+    match service.import_legacy_memory(&administrator, &body.id, &owner, &body.evidence).await {
+        Ok(memory) => (StatusCode::CREATED, Json(memory_to_json(&memory))).into_response(),
+        Err(error) => (StatusCode::CONFLICT, Json(json!({ "error": error.to_string() }))).into_response(),
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
 
 pub fn build_router() -> Router<AppState> {
-    Router::new()
+    let router = Router::new()
         .route(
             "/",
             get(list_memories_handler)
@@ -385,5 +467,8 @@ pub fn build_router() -> Router<AppState> {
             get(get_memory_handler)
                 .patch(update_memory_handler)
                 .delete(delete_memory_handler),
-        )
+        );
+    #[cfg(feature = "surreal-backend")]
+    let router = router.route("/import-legacy", axum::routing::post(import_legacy_memory_handler));
+    router
 }

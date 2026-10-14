@@ -19,7 +19,7 @@ pub fn build_agent_card(base_url: &str) -> AgentCard {
         )
         .into(),
         url: format!("{base_url}/a2a/compiler"),
-        version: "0.1.0".into(),
+        version: env!("CARGO_PKG_VERSION").into(),
         documentation_url: Some(
             "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/COMPILER.md"
                 .into(),

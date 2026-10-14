@@ -1,0 +1,1098 @@
+{
+  "schema_version": 1,
+  "phase": "dot-feature-support",
+  "recorded_at": "2026-10-14T00:35:20.889991+00:00",
+  "source_status": "source_complete_validation_authorized",
+  "sequencing_sha256": "f9077faf1e35566c1cb1daa73bfd0eae935edded57af6a74e3675a5640fab34e",
+  "source": {
+    "git_head": "3e6af7c4a81b9406c11dc3886d3626232f037375",
+    "dirty_patch_sha256": "92725c86845ca8ac093260cf018aec69fa5d70d34f4370d827d3370f8e968f6d",
+    "untracked_files": [
+      {
+        "path": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot17-scenario-matrix.json",
+        "sha256": "c0d3088d6f48062fcfd13259021fbf51a038175eb96a2947cd4522b3a68e4f20"
+      },
+      {
+        "path": "deploy/supervisor/com.prometheus.uar-supervisor.plist",
+        "sha256": "6742472af94aff940b44967dd076ac14b8a52e0280893094511d5c8218405a86"
+      },
+      {
+        "path": "deploy/supervisor/controller.example.json",
+        "sha256": "cc4999e9b8bfef30612cf8ae900e2167641025e4320d950e865e918561d8ebab"
+      },
+      {
+        "path": "deploy/supervisor/install-windows.ps1",
+        "sha256": "12f2bf964e4b3ae2c90596ef5f843ee9f805fd32ede72eab39732fba79703e4d"
+      },
+      {
+        "path": "deploy/supervisor/kubernetes-controller.example.json",
+        "sha256": "5283ca08dc6f645571395632a0f9ce5f5a1c53b643414745792ea55ee09defa4"
+      },
+      {
+        "path": "deploy/supervisor/kubernetes-node.conf",
+        "sha256": "7d477e6314cc6b269f708d09d351b03e499f74102f63b9f1adaee271578ecf5e"
+      },
+      {
+        "path": "deploy/supervisor/kubernetes-rbac.yaml",
+        "sha256": "3a169dbe0362202876407309e0c4a03d4f3da904df4f7ea63ff08f9fad150087"
+      },
+      {
+        "path": "deploy/supervisor/recovery-scenarios.example.json",
+        "sha256": "722bf722fde049cff31bf142067e89345c1250841b91cb557a6a07bc412249ef"
+      },
+      {
+        "path": "deploy/supervisor/runtime.example.json",
+        "sha256": "3ec7c3d5874ca1b17633b92d45a446ca9f535d26152394a45669e2622a8020a8"
+      },
+      {
+        "path": "deploy/supervisor/uar-supervisor.service",
+        "sha256": "ccd58cb629a4f04e4e6d2f8247b107abafaba4504d1acda1b888d867cc931b5e"
+      },
+      {
+        "path": "docs/A2A_V1.md",
+        "sha256": "e332d880633c37ce9d4faa9f8e79b252a30a9839068c4faea0250162e6d5dee6"
+      },
+      {
+        "path": "docs/AGUI_V1.md",
+        "sha256": "8d587970ed761abca1c94d6bc8367c0c915746d1b2d4e921a87a8ae7263384b1"
+      },
+      {
+        "path": "docs/config/safe-host-defaults.md",
+        "sha256": "cbdd164218589a694ee2d04ff1cf63020f71c325d090330211482e7b1f0daeb0"
+      },
+      {
+        "path": "docs/dot-calendar-qualification.md",
+        "sha256": "fc10d881840e810ed2848e541345b4889f2c6c97c072c7a5b01150dafb0030a5"
+      },
+      {
+        "path": "docs/dot-memory-capture-qualification.md",
+        "sha256": "9a8a5438423df95a85f26ee3234318529d642a5722d20bc7b90a63b2c4148d3f"
+      },
+      {
+        "path": "docs/durable-schedules.md",
+        "sha256": "6c96c483757ce405f48506f30db27fc5f31f9a59719128edeaf2180aaf757f5d"
+      },
+      {
+        "path": "docs/operations/approval-recovery.md",
+        "sha256": "0318c3c66c3200d02b864802a3eb05884fc00415d497f6782391ea56a4559a89"
+      },
+      {
+        "path": "docs/operations/assistant-capabilities.md",
+        "sha256": "2f6001530245ea18cdfa561e6f2a075157299d95557f31c4af77d9133d858eb8"
+      },
+      {
+        "path": "docs/operations/dot-governance-qualification.md",
+        "sha256": "8fb1f778c95e9d60820c7ec06222a853be2c1bb2bb657c206ee4bc177e93baa2"
+      },
+      {
+        "path": "docs/operations/dot-http-capability-qualification.md",
+        "sha256": "c3cdf7039fabafc41baee82dcfaba1c7b50d12a1bce4c85eba2cfee19d67408d"
+      },
+      {
+        "path": "docs/operations/dot-installed-pod-qualification.md",
+        "sha256": "d2c35d6fb4bf743a43b6796500592382b848aafe614fa63a09a09db1ff99e064"
+      },
+      {
+        "path": "docs/operations/dot-mcp-child-qualification.md",
+        "sha256": "ec4cff73b82a2d626626b0ed55ca018dcd52c21e87af61b8dd3cb9bf7c1ee194"
+      },
+      {
+        "path": "docs/operations/dot-mcp-lke-qualification.md",
+        "sha256": "e3deea8e329e3b3aca074df775b3e1116d04004a4cdab974553eff9f5cf1133e"
+      },
+      {
+        "path": "docs/operations/dot-recovery-fault-qualification.md",
+        "sha256": "d0ce59947fa69748bc12884901532c8b257782a020a1774e6810604ac04d77e6"
+      },
+      {
+        "path": "docs/operations/dot-release-acceptance.md",
+        "sha256": "0e21558587b0e753c18b4e6ec359e7b1b363e2711514ca680fa00b2135360d36"
+      },
+      {
+        "path": "docs/operations/dot-supervisor-qualification.md",
+        "sha256": "b0a416ed4cc48a2a3372d02cf38a23a6967b13cf986627fe35c1c27f4b5625df"
+      },
+      {
+        "path": "docs/operations/dot-unsupported-qualification.md",
+        "sha256": "2d94922197ac0f18e0516d8eeeec90a222f0650e0c34049c0bd3428a88640540"
+      },
+      {
+        "path": "docs/operations/dot-upgrade-qualification.md",
+        "sha256": "f23fe13762215f454e568d5138ef484c365f8b0cefd0055116b50e9d69cf26c3"
+      },
+      {
+        "path": "docs/operations/dot-validation-targets.md",
+        "sha256": "527ea1755a70adfc948d4ebaad9fb836c023b323ee18bebaf783dbf2d6d55100"
+      },
+      {
+        "path": "docs/operations/durable-accounting.md",
+        "sha256": "b21ea7fba816dce43f92ae7591a5ba785f32cbf1a536297b3c89c345983994dc"
+      },
+      {
+        "path": "docs/operations/durable-api-keys.md",
+        "sha256": "3da7e6848f2113c839dfcc4010e65bf0f23f670535e74c883b9c14c6b0d5f924"
+      },
+      {
+        "path": "docs/operations/durable-ingestion.md",
+        "sha256": "b0a6e4a4f113f39d4f6b6120f5812df684d54e347f7ccd11c689d530dde03724"
+      },
+      {
+        "path": "docs/operations/effective-settings.md",
+        "sha256": "34fab9039da66aa71ce748429583a46f7be6ddeb9830c41d6fb0c9b1555a9866"
+      },
+      {
+        "path": "docs/operations/fresh-process-resume.md",
+        "sha256": "901ba5f4b0c2bfa3443a44360af4785823665a7d2d14aac2d75cd2ed1f43d651"
+      },
+      {
+        "path": "docs/operations/knowledge-principal-isolation.md",
+        "sha256": "1d2cbd9b5a321d4746c02ee835ba6c470b80ceb8a7cc9ee434bcf9d9e07f9ece"
+      },
+      {
+        "path": "docs/operations/principal-provider-credentials.md",
+        "sha256": "cef87a75edd8a8c884470df9ab478d794920ff05589317354d52a3ea489dd318"
+      },
+      {
+        "path": "docs/operations/provider-stream-completion.md",
+        "sha256": "097385d5e3389d724b1cc2a5135f22e55c320aa334b846d37f8d8d14283eee63"
+      },
+      {
+        "path": "docs/operations/session-principal-isolation.md",
+        "sha256": "3395ee844f979838b29c5c83e118b7cbe9ad6f5e18020cdbba5f0d9c146551a7"
+      },
+      {
+        "path": "docs/operations/supervisor-recovery.md",
+        "sha256": "d6e65b1facd4118aae8ad680ed8c8f878c68d410c5d2b811b167c16b7db9b982"
+      },
+      {
+        "path": "docs/operations/truthful-tool-outcomes.md",
+        "sha256": "f5d3d32d6773c14672482e49d06404b3c7f3ba51adad4b5fd56e6783bd042b35"
+      },
+      {
+        "path": "docs/proactive-followups.md",
+        "sha256": "1c4ba1d5c3562bd93955a4f06dce74309868f6225b9d65b7fb9cb9147ba30d22"
+      },
+      {
+        "path": "docs/protocols/mcp-elicitation.md",
+        "sha256": "0db7243ca79fd3e2d8ad0f910381b1351288a8197317ccca3cb99825458fcb1f"
+      },
+      {
+        "path": "k8s/dot-qualification/peer-config.example.json",
+        "sha256": "9dbbc9352211ec115868d3839b49c435725508b9bb603af9e72483b25bbf4d16"
+      },
+      {
+        "path": "k8s/dot-qualification/render.py",
+        "sha256": "322c89992e0c129660bec8efe6f7c7aa5cba95b2f64332b8b63e2eafe9ba3d84"
+      },
+      {
+        "path": "k8s/helm/uar/values-dot-know-me.yaml",
+        "sha256": "7338c3cbfca7378a9a19646076992af88f3778f817f75bb94659115ddfe1b7b5"
+      },
+      {
+        "path": "migrations/20261011000000_principal_credentials.sql",
+        "sha256": "2ef5f0b377acc362b1e75b3b9d179c70bd52e04f2011c8dbc34b4e8b34bfd69b"
+      },
+      {
+        "path": "migrations/20261011100000_durable_api_keys.sql",
+        "sha256": "f8b91ca02320bf1710fb5072b93b62b0bac62414a0d1a09d172969c32804663a"
+      },
+      {
+        "path": "migrations/20261012000000_durable_ingestion.sql",
+        "sha256": "b5a1bedf24eba396b3c85bbef2013996f0fc9f96c9e261bc180cb822a5ae44b9"
+      },
+      {
+        "path": "migrations/20261012010000_durable_accounting.sql",
+        "sha256": "697190a3e320ab4edd60245e9eac499203aa6dd26d21d38c721dd88058fb180e"
+      },
+      {
+        "path": "migrations/20261012020000_a2a_bindings.sql",
+        "sha256": "1fe651044cb5a68d61b91bd15e4c88caa2c3bb18897f9c199e2ee64801c1b6f8"
+      },
+      {
+        "path": "migrations/20261012030000_agui_runs.sql",
+        "sha256": "e61aa34641418ba8c797a0d0e32b6432064ff1032a7faf2789d854b60c00f6a4"
+      },
+      {
+        "path": "migrations/20261012040000_mcp_elicitations.sql",
+        "sha256": "73c5db06793e81d7c0b73039f101e10cc8772a8c198690acd99d49d35e2383d4"
+      },
+      {
+        "path": "migrations/20261013010000_principal_knowledge.sql",
+        "sha256": "c373cf647577bd0dfe28d255b1affbf3a3790c824f726cd6c3e7455c55595378"
+      },
+      {
+        "path": "migrations/surrealdb/a2a_bindings.surql",
+        "sha256": "27ca41892ac5712d7e337dcb0385d05d84bb836d636cedc0ac5288cae301f566"
+      },
+      {
+        "path": "migrations/surrealdb/agui_runs.surql",
+        "sha256": "4ca82ae363157245048822477e173f06b81b638a4971e9fb02fb2ed008d5b318"
+      },
+      {
+        "path": "migrations/surrealdb/durable_accounting.surql",
+        "sha256": "e165f1b0ed61592085323c123d12c5685926ee3f9692ce16cfac49d3f82414d0"
+      },
+      {
+        "path": "migrations/surrealdb/durable_api_keys.surql",
+        "sha256": "a8689d39fd1ecac0a4e1e2f9ffbb6f255a3161c5f1dc9c6a495a184636c608d7"
+      },
+      {
+        "path": "migrations/surrealdb/durable_ingestion.surql",
+        "sha256": "2272f2aeb03b4a35f6356b926fa5d94445d0d0aeac3c2d0402bc6bc36363c823"
+      },
+      {
+        "path": "migrations/surrealdb/mcp_elicitations.surql",
+        "sha256": "464019eb64513802b227fdabd130ec8a97b14c8d63e963ea4f4e4ad9c84da819"
+      },
+      {
+        "path": "migrations/surrealdb/principal_credentials.surql",
+        "sha256": "faf21e44189bc574b530b0a60ab80452d525648c9f5f1baebb7a112ce4c42d01"
+      },
+      {
+        "path": "migrations/surrealdb/principal_knowledge.surql",
+        "sha256": "9097c5f31f32da2bf8edb3db90f916f19b68f77fe5bba621d5488dc666492b61"
+      },
+      {
+        "path": "migrations/surrealdb/supervisor_fencing.surql",
+        "sha256": "527712e93668ee6f476a75753820ffbcb2e7a129d294998bdd7957e624722ea8"
+      },
+      {
+        "path": "scripts/dot/acceptance.py",
+        "sha256": "e629aa60ea28348f2d5b94a491457c79c2226d2ba32e170091bb673b79b32b09"
+      },
+      {
+        "path": "scripts/dot/budget_journey.py",
+        "sha256": "9fcf26c4365b6795614f1201df3b644ce8f28f081294ecf982a251873dc4db7b"
+      },
+      {
+        "path": "scripts/dot/build_delivery.py",
+        "sha256": "168b65083168088a01314a934dcd64c86ac7c0ba542eeafb7cde424dd8d141ef"
+      },
+      {
+        "path": "scripts/dot/calendar_journey.py",
+        "sha256": "359c3371e49cef49b7384e51772c1bb7506e9487d1b9aba402894c6ad4fd2504"
+      },
+      {
+        "path": "scripts/dot/capabilities.py",
+        "sha256": "b85f6bacc7ce18730cbc4374eea56d405e899038883453f8cf438a341bc362ed"
+      },
+      {
+        "path": "scripts/dot/credentials_journey.py",
+        "sha256": "aab17d2703630bff564fb2ac1e4e1e212d9fcecf44c66bf71d753d3d15f96b2f"
+      },
+      {
+        "path": "scripts/dot/deployment_health.py",
+        "sha256": "9327d335cddf09ac39157745335370a28d80f13ad4d378377dadc961c4b08105"
+      },
+      {
+        "path": "scripts/dot/egress_capture.py",
+        "sha256": "870a170879c9c4c5f442861415ff9674e71fd0f08e81240d6ba20e086052c8dd"
+      },
+      {
+        "path": "scripts/dot/finalize_source.py",
+        "sha256": "be61c5c621a21ea3578ed90048ac4923e1f6765a51c7d1426b85f19d5c7f2e2f"
+      },
+      {
+        "path": "scripts/dot/followup_clock_journey.py",
+        "sha256": "45ec83e9fd563d83b924681be4a499794e7e6cb78a84e4da828e5dd8a268b3e3"
+      },
+      {
+        "path": "scripts/dot/governance_journey.py",
+        "sha256": "c3d7d50568e47ecdc06878e3416bc0b04329e28042996f4554ead35aee048ded"
+      },
+      {
+        "path": "scripts/dot/http_capability_journey.py",
+        "sha256": "1377f368956fdd16c0c22ee0ffb5e34bddf9530952eeb120fd81fd2c606ad360"
+      },
+      {
+        "path": "scripts/dot/journeys.py",
+        "sha256": "37c1dcb3cd95fbcdd29fcbb6df7748ccd9b9deddd83a9e6c2e4b9d240dc46834"
+      },
+      {
+        "path": "scripts/dot/kubernetes.py",
+        "sha256": "7ea8736f9e6c6c51069c874f3b4be0d41080eb090c87e106fd8a0650e0b8dece"
+      },
+      {
+        "path": "scripts/dot/mcp_child_journey.py",
+        "sha256": "956f0f3030f499f2a2d1a46ca42f6ba4c5cb1bfe8bb2c0ef5b39a53b4f11df81"
+      },
+      {
+        "path": "scripts/dot/mcp_journey.py",
+        "sha256": "46d30d90bdfa8a70f941f9c41a63f12ec3d2878885fc93f22adb16e590c01a1b"
+      },
+      {
+        "path": "scripts/dot/memory_capture_journey.py",
+        "sha256": "5c69fe8b68c15080f525a44813b8818978ed2de5a344e2d4c88b79b9d4253c1c"
+      },
+      {
+        "path": "scripts/dot/oci_build.py",
+        "sha256": "aa385d129e1b036b5d28f719134fc75b9e3f28b040c7075d40df718e5c1d0e78"
+      },
+      {
+        "path": "scripts/dot/owner_isolation_journey.py",
+        "sha256": "7b5b5359f8705937101ddbd5491de5b6762c94edf5ddd576d3cbf3822a7b955c"
+      },
+      {
+        "path": "scripts/dot/provider.py",
+        "sha256": "7005f4b1f7d607a53bb42359d927b4e0181f4caa22bcafd4ae8607345a8857e7"
+      },
+      {
+        "path": "scripts/dot/provider_peer.py",
+        "sha256": "890930f64bcef0e6f6bba4be84f14734199da3729a8923bd06c3f989a86d2bf6"
+      },
+      {
+        "path": "scripts/dot/publication.py",
+        "sha256": "beedde4b7f5cb69662f8c6c85ec9e39f4f7c54a79ab8da1f15f868bcbde240ea"
+      },
+      {
+        "path": "scripts/dot/qualification-profile.example.json",
+        "sha256": "d92a9a48f9104fb43819e5d432a6e5b58c53f10c59a95ec7dd0b08448d8a2a70"
+      },
+      {
+        "path": "scripts/dot/reconcile.py",
+        "sha256": "9c97f71c5f4ecb20a45a0e7e596ce7de2b8e5bc309b4be2a1bb5c946efd3a45a"
+      },
+      {
+        "path": "scripts/dot/recovery_fault_journey.py",
+        "sha256": "d5a7fd13bde30943be205d7ceb7759528577d9b08de3fa2eb4f2cc86f39d6c0d"
+      },
+      {
+        "path": "scripts/dot/recovery_fault_probe.py",
+        "sha256": "6df1f679380f3a2358b94073c16aaa7f3edb446b0d6e4ff48621d94e05303972"
+      },
+      {
+        "path": "scripts/dot/schedule_release_journey.py",
+        "sha256": "49ab58e6a56f2653ce91804f2a24e9bf0b01dc4bd0f42cbc737cea2a63dab043"
+      },
+      {
+        "path": "scripts/dot/settings_journey.py",
+        "sha256": "a1b962ddbec83009165b581229f75ca9414803817874ec01abe9c9983ce38f1c"
+      },
+      {
+        "path": "scripts/dot/supervisor_journey.py",
+        "sha256": "7002566d3525d6ba531b9b81240dc65b57a34b5bb5baf4bf5876a243b2a0729e"
+      },
+      {
+        "path": "scripts/dot/supervisor_probe.py",
+        "sha256": "80e601bfd3cdfe44af59da73407d93b27b448e8ad0197782d05f66c81a400e11"
+      },
+      {
+        "path": "scripts/dot/unsupported_journey.py",
+        "sha256": "01acfc20326763dde8f42e5be70f996821474fe8ed79a1c9c5f908a395c624be"
+      },
+      {
+        "path": "scripts/dot/upgrade_journey.py",
+        "sha256": "1f93f28b7c5b4123129576545076763753981c44c90d7dc0d1d22085578f4742"
+      },
+      {
+        "path": "scripts/generate-release-input-provenance.mjs",
+        "sha256": "b3350eedb1dc80df78ca23229bd3d49c9aab66bab3b6b3d08816db64a7551d51"
+      },
+      {
+        "path": "scripts/supervisor/controller.py",
+        "sha256": "7f6b629276b8a17dc0726522a8eaa897c4c07c59b01934471eafc8cf66c57cb5"
+      },
+      {
+        "path": "scripts/supervisor/recovery_scenarios.py",
+        "sha256": "dd31e0ebe35f5b03aad87cedbd9951d748088627b60cd0b2c708d1059b5c8249"
+      },
+      {
+        "path": "scripts/test-release-input-provenance.mjs",
+        "sha256": "33da62862955567088fce052e78c0a04119cd434708684285753372a05a2eba2"
+      },
+      {
+        "path": "src/mcp/interaction.rs",
+        "sha256": "e76dd7d381bca0b307c96f9c23fd7f16a526b93935a35dc896166f89a6f4b204"
+      },
+      {
+        "path": "src/mcp/outcome.rs",
+        "sha256": "632bc50c2b6fe3b09f8ed0b30d368acc9b76c6fe406f6d4a24be8a8aa60c4978"
+      },
+      {
+        "path": "src/uar/api/a2a/durable.rs",
+        "sha256": "c2ccda3c028dad4827902f33e32e83135b99886ac0fcaa6385aa6deeb9d3e50c"
+      },
+      {
+        "path": "src/uar/api/a2a/v1.rs",
+        "sha256": "15b07347e84bd45fcc78358a62a755543f640336156b6318bd06b6181cf3ce8c"
+      },
+      {
+        "path": "src/uar/api/accounting.rs",
+        "sha256": "bf51d2cdc64124e61428f5d7d778125016ee3d28965dfb232463e0e5d695e25c"
+      },
+      {
+        "path": "src/uar/api/agui.rs",
+        "sha256": "2cfd1e5c16a42bfc18376292d0379d986a4f3a151c4e3d19c337fca4989d32d2"
+      },
+      {
+        "path": "src/uar/api/assistant_capabilities.rs",
+        "sha256": "1ad0d6754a804e55f6bcffde8bcafd0c2b56704f9955dd102ddacdfdfad30647"
+      },
+      {
+        "path": "src/uar/api/effective_settings.rs",
+        "sha256": "120ef3443eabc7608f785044e183636ee3392a1e516ea606f301e31f3ee1a222"
+      },
+      {
+        "path": "src/uar/api/followups.rs",
+        "sha256": "01d09dc44d7469c8edb469ccbaca0565acf2ff210404f12c5cbfe290c4a530b8"
+      },
+      {
+        "path": "src/uar/api/mcp_interactions.rs",
+        "sha256": "910dd6e2a4b55d148e7e438991d1a8a183612c9fbf71d606f933d4651c802274"
+      },
+      {
+        "path": "src/uar/api/schedules.rs",
+        "sha256": "fab6fff369d708f8036a4f114619305fa2e9caf81b2b710f88ad9e55c38beed7"
+      },
+      {
+        "path": "src/uar/api/supervisor.rs",
+        "sha256": "26d4d5a7324bd9df4b300525361d19a230295ae1adb30bc104974d56bfb97209"
+      },
+      {
+        "path": "src/uar/compiler/collaboration/followups.rs",
+        "sha256": "ca4e7175018b4085a701b9ef69ec5540c889d8cba43982f06fcf14e30dcca437"
+      },
+      {
+        "path": "src/uar/compiler/collaboration/schedules.rs",
+        "sha256": "725aed903023c26f1126443d3c9ff169e71b3fbe73fe2e2fe0f7228a65188349"
+      },
+      {
+        "path": "src/uar/domain/followups.rs",
+        "sha256": "303bc6bf8427388633ce3c2a661299a6f99003f86c22b9c4516de295f9241f2c"
+      },
+      {
+        "path": "src/uar/domain/schedules.rs",
+        "sha256": "62d4e8f2ee2d2b2b7a9796aca979a50b0559ebf18b47e1a5b6811faf63fb26fc"
+      },
+      {
+        "path": "src/uar/memory/controls.rs",
+        "sha256": "b86c4c22c376f1d54d808cb9f48cddb20f3a2e04a78759633ac22e0dbdf3dab4"
+      },
+      {
+        "path": "src/uar/memory/controls_store.rs",
+        "sha256": "437938ec303af5fb046a9e8bd7f20ed2ac1a6792bfe28f6a39deec530c355c8c"
+      },
+      {
+        "path": "src/uar/memory/migration.rs",
+        "sha256": "14962ed7272a8a2055362666b411a144868bd3ef14105aa3b538f63438a5dad0"
+      },
+      {
+        "path": "src/uar/memory/owned.rs",
+        "sha256": "e0051c15b244c61e6d2bd516138c3e78dc9221d65bc4034763959c3cea64d7f8"
+      },
+      {
+        "path": "src/uar/persistence/accounting.rs",
+        "sha256": "8dd36f0abb330f54028a1561c525e4e67b5a4dbc3cec803388657d8c2288b196"
+      },
+      {
+        "path": "src/uar/persistence/agui_runs.rs",
+        "sha256": "c5fbb6f95615bfa1c79da24025f4a8d40d374f18ae2c3c6a9ebc15c4b5aa6cd9"
+      },
+      {
+        "path": "src/uar/persistence/checkpoint_resume.rs",
+        "sha256": "c64126e0fcb66dd80d45bc11c63238ad6914e11163d04d89d0f912c9697ea116"
+      },
+      {
+        "path": "src/uar/persistence/ingestion_records/mod.rs",
+        "sha256": "af3b500dcf7f5d0368a287a613a41e835957f397764c99085f63d02a0607197b"
+      },
+      {
+        "path": "src/uar/persistence/knowledge_namespace.rs",
+        "sha256": "339199f4becf6cbb46a858633dd01ab31308464d381f402ec33bc947887ac887"
+      },
+      {
+        "path": "src/uar/persistence/mcp_elicitations.rs",
+        "sha256": "634d49d2aa10bbcd112ce4fca9653a3dcf695365a6a7ec44c5e2a0bbec2a9186"
+      },
+      {
+        "path": "src/uar/persistence/providers/a2a_bindings/postgres.rs",
+        "sha256": "87a5715396919057af27f355dce2f5e057e2749f12e7a87c1e83cca38cfb7eec"
+      },
+      {
+        "path": "src/uar/persistence/providers/a2a_bindings/surreal.rs",
+        "sha256": "054d8fee81fbd650573d0b86da974994311c0e9da6f30a14eb746eb5b3d12d29"
+      },
+      {
+        "path": "src/uar/persistence/providers/accounting/postgres.rs",
+        "sha256": "7b68cee9b3ca703fca32ea0c564869d7f97bfe4655db1ea6c329d302f5704ff9"
+      },
+      {
+        "path": "src/uar/persistence/providers/accounting/surreal.rs",
+        "sha256": "383c2b81f736af0c6a796f96eaf3d34ede92ac2b1a8c10d3c4dd0d4f28c2a66f"
+      },
+      {
+        "path": "src/uar/persistence/providers/accounting_remote_grants/postgres.rs",
+        "sha256": "a30d93ac31580d5ae89c66cb471ee1f1a53648c1ed523f49c12d7f18cde35e19"
+      },
+      {
+        "path": "src/uar/persistence/providers/accounting_remote_grants/surreal.rs",
+        "sha256": "6f2805457cf73c489979708082de90f84145587ad9df46d6e2f8f3f79e2c502b"
+      },
+      {
+        "path": "src/uar/persistence/providers/agui_runs/postgres.rs",
+        "sha256": "0cb90e9fc19cb7599fdf289df27f318643f4c62dd3f647971887baed2aac7aa6"
+      },
+      {
+        "path": "src/uar/persistence/providers/agui_runs/surreal.rs",
+        "sha256": "929f59ea983d00c01baee2b0310cfd7de898d5574bb1faeba067a128469e7b8b"
+      },
+      {
+        "path": "src/uar/persistence/providers/checkpoint_records/surreal.rs",
+        "sha256": "ef2895ed035dd31d116db1fdff20a13f696591537705ac3016274ec4660cb780"
+      },
+      {
+        "path": "src/uar/persistence/providers/ingestion_records/postgres.rs",
+        "sha256": "fc6b637e4d28dd076c95f75abe52fd9d490dec27f5c561e2e708e0e792469cdd"
+      },
+      {
+        "path": "src/uar/persistence/providers/ingestion_records/surreal.rs",
+        "sha256": "92613018468f97df0f5f7269258c6648fcde6d9c91e3a15eb30867c08c1544a8"
+      },
+      {
+        "path": "src/uar/persistence/providers/mcp_elicitations/postgres.rs",
+        "sha256": "f86624de5ff4e63818a9967c2dc5c75ebbaf0445aafb7bc91061ff9b8b998078"
+      },
+      {
+        "path": "src/uar/persistence/providers/mcp_elicitations/surreal.rs",
+        "sha256": "1595286ff35ac12b93acaa65fe32988a627df78117be79936029c2d0a175f8a0"
+      },
+      {
+        "path": "src/uar/persistence/providers/supervisor/surreal.rs",
+        "sha256": "3a9fac252f6d21275451345f7056489d65d10c48aaa182dd5953168361f8e60b"
+      },
+      {
+        "path": "src/uar/runtime/checkpoint_host.rs",
+        "sha256": "b024f654bd00a24a3d514ea0d6550f400e567cff1fb8e07eb2489ae060f99409"
+      },
+      {
+        "path": "src/uar/runtime/followups/controller.rs",
+        "sha256": "db848614689d909a2fe1ccdef667a6b78689db82204c99327ece1de29405d333"
+      },
+      {
+        "path": "src/uar/runtime/followups/mod.rs",
+        "sha256": "4eb8801aeabb86381213b7ca3e9a3727c34ff54fcaef3fc51f9bc971c912707f"
+      },
+      {
+        "path": "src/uar/runtime/followups/quiet_hours.rs",
+        "sha256": "86051807f0269a7b8f77f6c4b908a59513506ab3f5f0a9f672a5371fc8d011ca"
+      },
+      {
+        "path": "src/uar/runtime/instance/schedules.rs",
+        "sha256": "919ebfae37a23cf5ed5a444ea410f787d4722d200730b76ed3dd1b44ae06713c"
+      },
+      {
+        "path": "src/uar/runtime/native_skills/followups.rs",
+        "sha256": "81f32a4c2ef8ea347d31c24b6d3c71298c7816e8afaa40463c66cfc1b8b63e14"
+      },
+      {
+        "path": "src/uar/runtime/native_skills/schedules.rs",
+        "sha256": "f0ddfe55140f7fb2ab5881a2a8a61d2cfe2def7764ce98b9b2060fd65ebe73e1"
+      },
+      {
+        "path": "src/uar/runtime/schedules/calendar.rs",
+        "sha256": "80dc77662151b5b78d98658f6fdbff2bea0db5e565648c7c9ca802f3f788d60d"
+      },
+      {
+        "path": "src/uar/runtime/schedules/controller.rs",
+        "sha256": "f163e2c361c98bc6c28a921d36ff3242a56d46621253c0dfdb366efd3b611daf"
+      },
+      {
+        "path": "src/uar/runtime/schedules/mod.rs",
+        "sha256": "ef54cbe5bd8e82e5427008e9963b25aed257decccbbc523c490ecff192815d2a"
+      },
+      {
+        "path": "src/uar/runtime/supervisor.rs",
+        "sha256": "548d6c2c21b6ba5407094c295181e7d3e56e93bcd97126f09dfc7443b400ff53"
+      },
+      {
+        "path": "src/uar/runtime/thread/approvals/recovery.rs",
+        "sha256": "6dd40459c0ba76f7b3d8683626b56527cd5ae2acb0694e20d59dfea198695a47"
+      },
+      {
+        "path": "src/uar/security/api_keys/storage.rs",
+        "sha256": "01d424a7f3becfa53861d5ae3ecbc8d380328b7cf79efc9d661c0e3102a2701e"
+      },
+      {
+        "path": "src/uar/security/credentials/principal_store.rs",
+        "sha256": "c1f5a9fd844b6624c979d65ac8dc0eee53cf002aa353a85f4d476ec6b1b1ed8a"
+      },
+      {
+        "path": "tests/approval_recovery.rs",
+        "sha256": "66d485b26b99b9f570530b55120779adde77a6245b9f88adcacc429ca213b36a"
+      },
+      {
+        "path": "tests/dot_followup_quiet_hours.rs",
+        "sha256": "00c1caf3666114835ddbd53eca23f2e694ff6341ee15cc8226de3b521b999dcf"
+      },
+      {
+        "path": "tests/dot_memory_controls.rs",
+        "sha256": "edd69ca7a5e89c7cb01884b170423d3a309bab0099c33ec99b4397b8a217a824"
+      },
+      {
+        "path": "tests/dot_memory_owner_contract.rs",
+        "sha256": "67c7561c724673411239ba7c12966d5870b8ea2b639d35314ef70603a59764d7"
+      },
+      {
+        "path": "tests/dot_owner_adjacent_contract.rs",
+        "sha256": "6750795d53a6f13f2b8357d9fbc9aec6e7d9d24b57bfe17016fb9a5fb70db7f6"
+      },
+      {
+        "path": "tests/dot_schedule_calendar.rs",
+        "sha256": "7469b4cbfe564047f384047934ad6904a75d67deb6f29ad230f78d67900ef40d"
+      },
+      {
+        "path": "tests/dot_stale_epoch_contract.rs",
+        "sha256": "1c1d563c69a84dc77f279ba203b4a8c49f26fdba6c8cfa99ba725e88fba1179e"
+      },
+      {
+        "path": "tests/durable_api_keys_integration.rs",
+        "sha256": "f8c78fe2cdcf56ce82fcbb1285976d2b5f77b60f3d28251ba47bf21d16c229e3"
+      },
+      {
+        "path": "tests/durable_ingestion.rs",
+        "sha256": "a667dff66263c968e29298c723c1e8561ac3ea3b3f67d1ec160759e2709cd55f"
+      },
+      {
+        "path": "tests/fixtures/dot14_calendar_cases.json",
+        "sha256": "318def96bf1f84b7520434b0d4ba43093b8f139631b0a140e471ce20d6ddf313"
+      },
+      {
+        "path": "tests/fixtures/dot14_schedules_real_path.py",
+        "sha256": "565e9fb375b4361d0f9d5da1f286eaee4c557c93b61858c57d209122b429be16"
+      },
+      {
+        "path": "tests/fixtures/dot15_followups_real_path.py",
+        "sha256": "0549c58a847f57a6554674474ee0fcc48d9b48beb6245ebf4a869d962565ca8a"
+      },
+      {
+        "path": "tests/fixtures/dot16_capability_inventory.py",
+        "sha256": "2f644f25cecdb73d0413f09031258545eec9cf5c220957af26f32a9cc316e267"
+      },
+      {
+        "path": "tests/fixtures/dot17_effect_mcp.py",
+        "sha256": "0b38e68f690fb54d3c9e1da9d1e14fa654cae7c3e981cf814968889c5bd77355"
+      },
+      {
+        "path": "tests/fixtures/dot18_a2a_real_path.py",
+        "sha256": "317805b005f46640e894e6a2274bbc9f7ee3fc64206ad33d413269412e8b2a06"
+      },
+      {
+        "path": "tests/fixtures/dot18_a2a_wire.json",
+        "sha256": "1c94d4370f4302709749b36fd65353579b993609b3325ca1200986319209bb88"
+      },
+      {
+        "path": "tests/fixtures/dot19_agui_real_path.py",
+        "sha256": "63b4b2c81bfb68edb71330d4803e3ca00b9e2cd18163fc742b05eee6639ace1e"
+      },
+      {
+        "path": "tests/fixtures/dot19_mcp_peer.py",
+        "sha256": "4190f8a78d6d18fb0b7e5b911ad2404b06c75b4699813eb4a211786eb6385977"
+      },
+      {
+        "path": "tests/fixtures/dot19_mcp_wire.json",
+        "sha256": "bf5ec74fc4a6a8f6325d802f3837f6a5e6bd734dd1275eb7f7cee80eb31e7b09"
+      },
+      {
+        "path": "tests/fixtures/dot20_effective_settings.py",
+        "sha256": "0e38c10fa9a76b7a8f0e7640b1ad0e04fcad88aab7d1172bdf276f25972da9aa"
+      },
+      {
+        "path": "tests/fixtures/fresh_process_resume_mcp.py",
+        "sha256": "f77a76d81a93bf40fe579fb9e2d28f16d2835903ecef44ddecb88e0681b73059"
+      },
+      {
+        "path": "tests/fixtures/stream_terminal_https.py",
+        "sha256": "5a8553a1ed4257bf2cd387364b544ca5b9f965fa5d146362d3036f412125b566"
+      },
+      {
+        "path": "tests/fixtures/truthful_tool_outcome_mcp.py",
+        "sha256": "965e3d78fbacd53c412c750882e27c7e79947df9729cc0f4ed6c211578190864"
+      },
+      {
+        "path": "tests/fresh_process_resume.rs",
+        "sha256": "8094ed222888f76638eefb9b3d6dc539cdcddb8d3d8353b29005fc383f0afbe4"
+      },
+      {
+        "path": "tests/principal_knowledge_namespace.rs",
+        "sha256": "eaf7f1049af401fe37378d4b50cbbf3e07caaa14f3c1e6887c34e962fd4322f4"
+      },
+      {
+        "path": "tests/stream_terminal_contract.rs",
+        "sha256": "cf2ad7da984c08c24e3cab11fdbac1e7d0c0fb0f18f1439e536b971903953f9b"
+      },
+      {
+        "path": "tests/support/api_key_process.rs",
+        "sha256": "084da5a43f9b38e0ca30f08de713b1a97f27630cbd1bed021b2e3312180928ef"
+      },
+      {
+        "path": "tests/support/approval_recovery_process.rs",
+        "sha256": "6e68558fbdfc791a5c05d4115d912ecae9239b392555b88a1264bdf90bd8bb50"
+      },
+      {
+        "path": "tests/support/credential_process.rs",
+        "sha256": "41aaf30d63cdbc20551fd8349a5a77edd12b11267f9ce5c6b795e3f7eb35747c"
+      },
+      {
+        "path": "tests/support/fresh_process_resume_process.rs",
+        "sha256": "e6b44614e943b95fcc12444c87fd86310582a5439e1a838a6ed28ade8566ed46"
+      },
+      {
+        "path": "tests/support/stream_terminal_peer.rs",
+        "sha256": "7b068fed21d39c5c3fc20b7d17bd2e14beeef97b1b10b545756c963f46d3b589"
+      },
+      {
+        "path": "tests/support/truthful_tool_outcome_peer.rs",
+        "sha256": "3c7e1b29c3f9d1813812d7060d56b4be74ad4da5a611d6be0f15805f595ef60c"
+      },
+      {
+        "path": "tests/support/truthful_tool_outcome_process.rs",
+        "sha256": "5ed2ac52c7b3ba58ad669834b568bbc2fe2477db1dafb3bd5f4f0204d6c89795"
+      },
+      {
+        "path": "tests/truthful_tool_outcomes.rs",
+        "sha256": "ec925e0ef9b0393ce76faf5063350acf1e5430e469c236e5a9aecf5ea7a27fc4"
+      }
+    ],
+    "submodules": [
+      {
+        "path": "crates/prometheus-skill-system",
+        "identity": {
+          "git_head": "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2",
+          "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "untracked_files": [],
+          "submodules": [
+            {
+              "path": "skills/imported/artifact-refiner",
+              "identity": {
+                "git_head": "18d000f3e46952418f682159b227dbf71ce61dcb",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [
+                  {
+                    "path": "shared/sycophancy-correction",
+                    "identity": {
+                      "git_head": "bc348fffb4b622c142c1082b281dd2f44b74d37b",
+                      "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "untracked_files": [],
+                      "submodules": [],
+                      "content_sha256": "0e7d02ea9183ea2952d0efec3dbe0d705d883a0e30e8754ff00fcead9bd8b228"
+                    }
+                  },
+                  {
+                    "path": "tools/rust-mcp-filesystem",
+                    "identity": {
+                      "git_head": "ef808b7d0ccf7f56c4e8d125091d8d0115725a60",
+                      "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "untracked_files": [],
+                      "submodules": [],
+                      "content_sha256": "8346b801762d7910e9acd55dbb97398d7aeae398099a1edf9a0732b71067e84b"
+                    }
+                  }
+                ],
+                "content_sha256": "40f0e20d0f8a474de6175f82289f43a52f6becaa05cc56b13e96628efe835f87"
+              }
+            },
+            {
+              "path": "skills/imported/prometheus-entity-management",
+              "identity": {
+                "git_head": "34a211563fe7f06118996a40cc398c4c3af953ef",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "e2a8b0edc202ed7ce396a0dcb91dad939b2db5ff7fe2107075e797d89eae3d86"
+              }
+            },
+            {
+              "path": "skills/imported/sycophancy-correction",
+              "identity": {
+                "git_head": "bc348fffb4b622c142c1082b281dd2f44b74d37b",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "0e7d02ea9183ea2952d0efec3dbe0d705d883a0e30e8754ff00fcead9bd8b228"
+              }
+            },
+            {
+              "path": "tools/cowork-skills",
+              "identity": {
+                "git_head": "77edcf8a49237dc9b8f6733e794c48fa4e6da832",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "273815b0c166e683c1833ea7c03881e53c1ab225165c08533aaf92bcd6174e46"
+              }
+            },
+            {
+              "path": "tools/disk-space-guardian",
+              "identity": {
+                "git_head": "26487db64d5c44b00b57d19a649a82632dfe94d3",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "48f4af0f068010d120d6740f1934fc0458e28bbb722452c4e6798579b46ccf6e"
+              }
+            },
+            {
+              "path": "tools/liter-llm",
+              "identity": {
+                "git_head": "a6047386cc9fae4258b4a8577f6a016022095586",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "187ac05916b0a7f036de408f81fd7c895222565bc441817deaaccc2fd6075cdf"
+              }
+            },
+            {
+              "path": "tools/openai-proxy",
+              "identity": {
+                "git_head": "b68861e0a6672f5ece900c58fd44b9e23a6b5691",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "65363d385cb29081788b5bcbd756ca21074d724b23f02fa01de6e0f0d60ec420"
+              }
+            },
+            {
+              "path": "tools/prometheus-knowledge",
+              "identity": {
+                "git_head": "4b3a6744a4211512ff88a1cb96cf1e2a7db4c3ef",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "a917389a016378f959838c3c2f19689f5f505bbe707bd3831d17ca99d8f3f327"
+              }
+            },
+            {
+              "path": "tools/surreal-memory-server",
+              "identity": {
+                "git_head": "63eb413ebf520a4a525ffd3b8d1d07f1389d48d4",
+                "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "untracked_files": [],
+                "submodules": [],
+                "content_sha256": "9a5e90a9fc08dd10b77b554a798326f0777e9adb0841528b44f045c985c6ac6a"
+              }
+            }
+          ],
+          "content_sha256": "21a203e53600b908651b5271273a0fdaeea6b19ef9252446094a66aa4fdb27ce"
+        }
+      },
+      {
+        "path": "frontend/packages/prometheus-entity-management",
+        "identity": {
+          "git_head": "34a211563fe7f06118996a40cc398c4c3af953ef",
+          "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "untracked_files": [],
+          "submodules": [],
+          "content_sha256": "e2a8b0edc202ed7ce396a0dcb91dad939b2db5ff7fe2107075e797d89eae3d86"
+        }
+      },
+      {
+        "path": "models.dev",
+        "identity": {
+          "git_head": "4a0154da2410bca18e97be812fecb9e8f85466e8",
+          "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "untracked_files": [],
+          "submodules": [],
+          "content_sha256": "1ac99bf56d8c8e09d20abfd13785e5c863be9827f95eea0fb81172639b484453"
+        }
+      },
+      {
+        "path": "vendor/git/liter-llm",
+        "identity": {
+          "git_head": "e446f5ef91003bbec5fce6b2f45fb94559dff335",
+          "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "untracked_files": [],
+          "submodules": [],
+          "content_sha256": "19f0b810e89f9c36fd36c2de73376159bab41a693c357293989991e03d10a7f3"
+        }
+      },
+      {
+        "path": "vendor/git/rust-mcp-filesystem",
+        "identity": {
+          "git_head": "01ae76b99db4b818458efe2dc5d76e70fa5eadb4",
+          "dirty_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "untracked_files": [],
+          "submodules": [],
+          "content_sha256": "d86b2abf2c7f1ef15650ece9bc5e22a75e471c50973c46f4b088b17f37869777"
+        }
+      }
+    ],
+    "content_sha256": "db2f2839c734c9e72986732c056ef75bc81f4a1815e5482f307da3355896bec4"
+  },
+  "production": [
+    {
+      "change": "dot-01-release-provenance",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/source-completion-catalog.md"
+    },
+    {
+      "change": "dot-02-principal-credentials",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/source-completion-catalog.md"
+    },
+    {
+      "change": "dot-03-durable-api-keys",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/source-completion-catalog.md"
+    },
+    {
+      "change": "dot-04-truthful-tool-outcomes",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/source-completion-catalog.md"
+    },
+    {
+      "change": "dot-05-stream-terminal-contract",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/source-completion-catalog.md"
+    },
+    {
+      "change": "dot-06-fresh-process-resume",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/source-completion-catalog.md"
+    },
+    {
+      "change": "dot-07-approval-recovery",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/source-completion-catalog.md"
+    },
+    {
+      "change": "dot-08-durable-ingestion",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot08-handoff.md"
+    },
+    {
+      "change": "dot-09-idempotent-settlement",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot09-accounting-handoff.md"
+    },
+    {
+      "change": "dot-10-durable-budget-admission",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot10-budget-handoff.md"
+    },
+    {
+      "change": "dot-11-supervisor-fencing",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot11-fencing-handoff.md"
+    },
+    {
+      "change": "dot-12-memory-isolation",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot12-handoff.md"
+    },
+    {
+      "change": "dot-13-memory-controls",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot13-controls-handoff.md"
+    },
+    {
+      "change": "dot-14-durable-schedules",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot14-timing-fit.md"
+    },
+    {
+      "change": "dot-14-durable-schedules",
+      "backendTaskId": "2",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot14-schedules-handoff.md"
+    },
+    {
+      "change": "dot-15-proactive-followups",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot15-followups-handoff.md"
+    },
+    {
+      "change": "dot-16-assistant-capability-surface",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot16-capabilities-handoff.md"
+    },
+    {
+      "change": "dot-17-assistant-release-acceptance",
+      "backendTaskId": "3",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot17-runner-handoff.md"
+    },
+    {
+      "change": "dot-18-a2a-conformance",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot18-a2a-handoff.md"
+    },
+    {
+      "change": "dot-19-interactive-protocols",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot19-interactive-handoff.md"
+    },
+    {
+      "change": "dot-19-interactive-protocols",
+      "backendTaskId": "2",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot19-mcp-handoff.md"
+    },
+    {
+      "change": "dot-20-safe-host-settings",
+      "backendTaskId": "1",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot20-defaults-handoff.md"
+    },
+    {
+      "change": "dot-20-safe-host-settings",
+      "backendTaskId": "2",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot20-effective-handoff.md"
+    },
+    {
+      "change": "dot-12-memory-isolation",
+      "backendTaskId": "3",
+      "status": "source_complete",
+      "handoff": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot12-owner-adjacent-handoff.md"
+    }
+  ],
+  "verification_authorized": true,
+  "acceptance": "unverified",
+  "matrix_scenarios": 109,
+  "validation_targets": {
+    "local": "this machine",
+    "shared": "kubectl context know-me; existing Envoy/TLS"
+  },
+  "claim_limits": [
+    "Every24 planned production item and entire four-file corrective batch source-complete. Operator full-phase validation authorization remains applicable; acceptance unverified.",
+    "Run only failed whole MCP and unfinished suffix; genuine R2/R7 passes retained underoriginal inventory15. No casefilter or arbitrary targetselection.",
+    "Cooperative helper cancellation does not qualify hard descendant containment. Installed/native/shared and final release acceptance remain pending.",
+    "Separate macOS/Windows qualification environments unresolved; continue available non-disruptiveMac/Linux/LKE gates without paid resources."
+  ],
+  "authorization": {
+    "instruction": "Operator Approved reply explicitly authorizes exact Liter e446f5ef policy/gitlink and one protected survivor <=48h/$1.73base+tax, in addition to full-phase serial validation on this machine and know-me.",
+    "source": "2026-10-13 current operator reply and prior full-phase gate authorization"
+  },
+  "source_correction": {
+    "previous_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-15.json",
+    "previous_inventory_sha256": "9b7c1e6d7a906f3a50ccadb83fa4bbfa79e2516503a6d9245339001ad72ec248",
+    "files": [
+      "tests/truthful_tool_outcomes.rs",
+      "scripts/dot/acceptance.py",
+      "scripts/dot/reconcile.py",
+      "scripts/dot/finalize_source.py"
+    ],
+    "reason": "Completed observed MCP whole-sequence deadline/cooperative helper cancellation and fixed-prefix genuine-evidence continuation; source inspection also corrected byte-hash retention of non-JSON evidence. All corrective source implementation complete before any gate.",
+    "prior_passes": "Original R2/R7 inventory15 observations remain immutable and are not relabelled. Their reuse requires actual fixed input equivalence proof.",
+    "no_new_acceptance_claim": true
+  }
+}

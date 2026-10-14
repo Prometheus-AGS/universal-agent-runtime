@@ -1,0 +1,11 @@
+--- before/tests/support/truthful_tool_outcome_process.rs
++++ current/tests/support/truthful_tool_outcome_process.rs
+@@ -582,7 +582,7 @@
+     if ordinary {
+         let mut instance = node
+             .post(
+-                "/api/uar/agent-instances/v1/",
++                "/api/uar/agent-instances/v1",
+                 json!({
+             "deploymentBindingId":binding["id"],"profile":"request"}),
+                 201,

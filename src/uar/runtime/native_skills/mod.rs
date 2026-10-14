@@ -17,6 +17,8 @@ pub mod search_tools;
 #[cfg(feature = "bauar-native-admission-gate")]
 pub(crate) mod search_tools_gate;
 pub mod system_info;
+pub mod schedules;
+pub mod followups;
 
 use std::sync::Arc;
 

@@ -80,7 +80,6 @@ impl ProviderRegistry {
                 identity.qualified_model()?;
                 let catalog = super::catalog::ModelCatalog::global().model(&identity.provider_id, &identity.model_id)
                     .ok_or_else(|| anyhow::anyhow!("TEAM_ROUTE_PROFILE_MISMATCH"))?;
-                use sha2::{Digest, Sha256};
                 let digest = Sha256::digest(serde_json::to_vec(&serde_json::json!({
                     "provider": identity.provider_id, "model": identity.model_id, "price": catalog.cost,
                 }))?);

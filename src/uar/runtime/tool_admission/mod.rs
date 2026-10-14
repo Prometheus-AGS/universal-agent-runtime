@@ -557,6 +557,8 @@ pub struct ToolApprovalRequest {
     pub admission_id: String,
     pub host_requires_approval: bool,
     pub action_display: Value,
+    /// Read-only checkpoint intent supplied by the ordinary tool loop to its host.
+    pub checkpoint_history: Option<Vec<crate::llm::Message>>,
 }
 
 /// Exact host receipt carried to dispatch with the prepared invocation.

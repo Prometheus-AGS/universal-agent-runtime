@@ -1,0 +1,18 @@
+{
+  "recordedAt": "2026-10-12T00:11:48.051799+00:00",
+  "cause": "Global masking of generic postgres username changed known PostgreSQL scenario name in sanitized progress, creating false allExpectedTestsPassed result. Raw harness and source-drift records were unchanged.",
+  "productRerun": false,
+  "previousReceiptStatus": "invalid-attribution",
+  "correctedReceiptStatus": "passed",
+  "rawLogSha256Unchanged": "161b8d219a8e1409d12f98860cfef82476842455e5250095e3d24d536e8838e6",
+  "oldPublicLogSha256": "a09db892c672c23786b0f5c3709181f1cafc5b49ad28de5e121705add9cf180e",
+  "newPublicLogSha256": "161b8d219a8e1409d12f98860cfef82476842455e5250095e3d24d536e8838e6",
+  "actualHarnessCounts": {
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered": 0
+  },
+  "allFiveExactHarnessIdentitiesPassed": true
+}

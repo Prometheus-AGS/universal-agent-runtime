@@ -1,0 +1,1869 @@
+{
+  "phase": "dot-feature-support",
+  "change": "dot-04-truthful-tool-outcomes",
+  "task": "2",
+  "stage": "Execute",
+  "waypointRevisionAtDispatch": 2695,
+  "verificationTier": "Tier 1 completed-change real production integration",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,in-memory-backend",
+    "--test",
+    "truthful_tool_outcomes",
+    "--",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "commandDisplay": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test truthful_tool_outcomes -- --test-threads=1 --nocapture",
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "startedAt": "2026-10-12T04:47:48.934680+00:00",
+  "status": "passed",
+  "sourceFingerprint": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-source-fingerprint.json",
+  "sourceFingerprintSha256": "5c2bd1f0cf76e075b87070e46eacdd12f8f2a1f06ba47a78dc549aad374b46e8",
+  "privateSourceSnapshot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/source-snapshot.tar.gz",
+  "sourceSnapshotSha256": "ddc8cdd4428b81915524c94bba07a41b3b951d210c1aefc7ab1b6393d1c8325a",
+  "privateDirtySourcePatch": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/dirty-source.patch",
+  "dirtySourcePatchSha256": "65e51a6e53cdd66a3ba5140fcaaafa54f5859f02ab52d8ca133bd323e91aae3f",
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6",
+  "privateRawLog": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/cargo-raw.log",
+  "environmentNames": [
+    "HOME",
+    "PATH",
+    "UAR_DOT04_INFRA_FILE",
+    "UAR_DOT04_EVIDENCE_ROOT"
+  ],
+  "topChildVariableUnset": true,
+  "substantiveTest": "actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes",
+  "noopTopHarnessEntry": "child_outcome_boundary",
+  "expectedScenarioEntries": 65,
+  "sampledProcesses": [
+    {
+      "pid": 38420,
+      "parentPid": 38021,
+      "comm": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "observedAt": "2026-10-12T04:48:07.336112+00:00",
+      "role": "integration-target",
+      "artifact": {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "sha256": "483fa1f8d5e2f9f134dd05eaaff0dca539a24be618430927fafe322875d8e3be",
+        "bytes": 333796456,
+        "capturedAt": "2026-10-12T04:48:07.563092+00:00"
+      }
+    },
+    {
+      "pid": 39240,
+      "parentPid": 38420,
+      "comm": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "observedAt": "2026-10-12T04:48:24.402512+00:00",
+      "role": "integration-target",
+      "artifact": {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "sha256": "483fa1f8d5e2f9f134dd05eaaff0dca539a24be618430927fafe322875d8e3be",
+        "bytes": 333796456,
+        "capturedAt": "2026-10-12T04:48:07.563092+00:00"
+      }
+    },
+    {
+      "pid": 39400,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:48:29.183195+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 39562,
+      "parentPid": 39400,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:48:36.142930+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 39591,
+      "parentPid": 39400,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:48:37.240234+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 39592,
+      "parentPid": 39400,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:48:37.240484+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 39632,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:48:39.444766+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 39723,
+      "parentPid": 39632,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:48:40.538887+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 39836,
+      "parentPid": 39240,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:48:43.935785+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 39886,
+      "parentPid": 39240,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:48:45.076785+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 39921,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:48:46.189387+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 39972,
+      "parentPid": 39921,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:48:48.389599+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 39996,
+      "parentPid": 39921,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:48:49.495692+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 39997,
+      "parentPid": 39921,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:48:49.495946+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 40083,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:48:51.691730+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 40131,
+      "parentPid": 40083,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:48:53.901794+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 40206,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:48:56.094860+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 40258,
+      "parentPid": 40206,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:48:58.414933+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 40292,
+      "parentPid": 40206,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:48:59.510705+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 40318,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:49:00.618714+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 40391,
+      "parentPid": 40318,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:02.812099+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 40437,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:49:05.028493+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 40481,
+      "parentPid": 40437,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:06.122027+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 40818,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:49:09.447133+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 41202,
+      "parentPid": 40818,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:11.660784+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 41260,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:49:12.752190+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 41398,
+      "parentPid": 41260,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:14.971565+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 41422,
+      "parentPid": 41260,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:16.419135+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 41792,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:49:19.718266+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 41843,
+      "parentPid": 41792,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:21.915959+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 41895,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:49:24.116776+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 41919,
+      "parentPid": 41895,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:24.117039+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 41983,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:49:25.223336+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 42042,
+      "parentPid": 41983,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:27.459035+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 42072,
+      "parentPid": 41983,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:28.549712+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 42100,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:49:29.643424+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 42138,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:49:30.762445+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 42171,
+      "parentPid": 42138,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:33.188939+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 42250,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:49:36.492215+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 42293,
+      "parentPid": 42250,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:37.595002+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 42322,
+      "parentPid": 42250,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:39.808710+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 42340,
+      "parentPid": 42250,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:39.808949+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 42341,
+      "parentPid": 42250,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:39.809020+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 42412,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:49:40.949400+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 42462,
+      "parentPid": 42412,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:43.174190+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 42839,
+      "parentPid": 39240,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:49:46.921023+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 42884,
+      "parentPid": 42839,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:48.016884+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 42962,
+      "parentPid": 38420,
+      "comm": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "observedAt": "2026-10-12T04:49:51.334920+00:00",
+      "role": "integration-target",
+      "artifact": {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "sha256": "483fa1f8d5e2f9f134dd05eaaff0dca539a24be618430927fafe322875d8e3be",
+        "bytes": 333796456,
+        "capturedAt": "2026-10-12T04:48:07.563092+00:00"
+      }
+    },
+    {
+      "pid": 43680,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:49:55.821433+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 43733,
+      "parentPid": 43680,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:58.044164+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 43762,
+      "parentPid": 43680,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:59.145610+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 43831,
+      "parentPid": 43680,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:49:59.145878+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 44113,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:01.353996+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 44209,
+      "parentPid": 44113,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:03.556926+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 44364,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:07.964283+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 44410,
+      "parentPid": 44364,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:09.061402+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 44546,
+      "parentPid": 42962,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:12.371033+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 44631,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:13.486132+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 44722,
+      "parentPid": 44631,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:15.696226+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 44777,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:17.892955+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 44829,
+      "parentPid": 44777,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:20.095398+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 44912,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:22.294826+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 45045,
+      "parentPid": 44912,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:25.700737+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 45094,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:27.902637+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 45160,
+      "parentPid": 45094,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:29.001228+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 45266,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:32.325055+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 45328,
+      "parentPid": 45266,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:34.541351+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 45367,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:36.888190+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 45437,
+      "parentPid": 45367,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:39.112289+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 45510,
+      "parentPid": 45367,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:40.330272+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 45512,
+      "parentPid": 45367,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:40.330565+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 45535,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:41.428068+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 45537,
+      "parentPid": 45535,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:41.428336+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 45574,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:42.527929+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 45617,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:44.737977+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 45670,
+      "parentPid": 45617,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:46.947733+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 45701,
+      "parentPid": 45617,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:48.040238+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 45703,
+      "parentPid": 45617,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:48.040469+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 45726,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:49.137129+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 45729,
+      "parentPid": 45726,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:49.137335+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 45757,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:50.695894+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 45804,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:52.916563+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 45863,
+      "parentPid": 45804,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:55.131425+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 45894,
+      "parentPid": 45804,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:56.230354+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 46116,
+      "parentPid": 45804,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:57.326085+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 46122,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:57.326309+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 46174,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:50:59.514608+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 46176,
+      "parentPid": 46174,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:50:59.514829+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 46205,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:51:00.614051+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 46458,
+      "parentPid": 46205,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:51:02.813691+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 46619,
+      "parentPid": 46205,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:51:05.028827+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 46644,
+      "parentPid": 46205,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:51:05.029072+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 46645,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:51:05.029140+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 46674,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:51:06.118249+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 47041,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:51:08.325974+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 47357,
+      "parentPid": 47041,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:51:10.516896+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 47401,
+      "parentPid": 47041,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:51:11.612104+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 47402,
+      "parentPid": 47041,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:51:11.612345+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 47424,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:51:12.703179+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 47534,
+      "parentPid": 47424,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:51:12.703417+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 47794,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:51:13.799778+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 47876,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:51:14.968412+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 48221,
+      "parentPid": 47876,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:51:17.484143+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 48585,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:51:20.866103+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 48657,
+      "parentPid": 48585,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:51:23.066174+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 48707,
+      "parentPid": 48585,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:51:24.162698+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 48708,
+      "parentPid": 48585,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:51:24.162925+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 48709,
+      "parentPid": 48585,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:51:24.162989+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 48788,
+      "parentPid": 42962,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T04:51:25.269075+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      }
+    },
+    {
+      "pid": 49188,
+      "parentPid": 48788,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:51:28.589894+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 49486,
+      "parentPid": 48788,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T04:51:29.686861+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    },
+    {
+      "pid": 49515,
+      "parentPid": 38420,
+      "comm": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "observedAt": "2026-10-12T04:51:30.935762+00:00",
+      "role": "integration-target",
+      "artifact": {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "sha256": "483fa1f8d5e2f9f134dd05eaaff0dca539a24be618430927fafe322875d8e3be",
+        "bytes": 333796456,
+        "capturedAt": "2026-10-12T04:48:07.563092+00:00"
+      }
+    }
+  ],
+  "boundFileCount": 6551,
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T043451Z-production-boundary.json",
+  "attemptLabel": "shared-child-attestation-correction-with-c314-frozen-baseline",
+  "all18RefreezeHashesMatch": true,
+  "baselineHead": "c314099bc9173058f3ba43b983539d8d13c6f4de",
+  "correction": {
+    "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T043451Z-production-boundary.json",
+    "preparedBaseline": "20261012T044530Z-shared-attestation-baseline.json",
+    "changedBoundPathsSincePreviousGate": [
+      "tests/truthful_tool_outcomes.rs"
+    ],
+    "hashes": {
+      "tests/truthful_tool_outcomes.rs": {
+        "old": "fc7e70cb284c52f3f37c5626a76f6b0d93b8cf1579a7e5bb7bcf0b773c32b6a5",
+        "new": "817ee0d29d950d6e3ce64789a6bbed3880efdbb907089f7860eb537aff55a755"
+      }
+    },
+    "all18RefreezeHashesMatch": true,
+    "externalSourceFreezeAcknowledgedByRoot": true,
+    "authorizedClosureChanges": "Only shared-child explicit durability-attestation line; env_clear, local branch, guards and all65controls retained."
+  },
+  "expectedInventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-expected-inventory.json",
+  "prelaunchWriterSamples": [],
+  "cargoPid": 38021,
+  "actualCargoStartedAt": "2026-10-12T04:47:51.442131+00:00",
+  "lastObservedAt": "2026-10-12T04:51:32.157198+00:00",
+  "rawLogBytes": 12404,
+  "testLines": [
+    "running 2 tests",
+    "test actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes ... Private dot04 profile evidence retained at /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/local-f1249cd0bcd1484dbc9f7c767e00a01a",
+    "test child_outcome_boundary ... ok",
+    "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 187.38s"
+  ],
+  "exitCode": 0,
+  "finishedAt": "2026-10-12T04:51:32.172855+00:00",
+  "elapsedSeconds": 223.07,
+  "sourceUnchangedAtExit": true,
+  "changedSourcePathsAtExit": [],
+  "artifactFingerprints": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "sha256": "483fa1f8d5e2f9f134dd05eaaff0dca539a24be618430927fafe322875d8e3be",
+      "bytes": 333796456,
+      "capturedAt": "2026-10-12T04:48:07.563092+00:00"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+      "bytes": 552221880,
+      "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+    },
+    {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+      "bytes": 101280,
+      "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+    }
+  ],
+  "artifactStabilityAtExit": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "sameSha256": true
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "sameSha256": true
+    },
+    {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sameSha256": true
+    }
+  ],
+  "testSummary": [
+    "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 187.38s"
+  ],
+  "testPassedByName": {
+    "actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes": true,
+    "child_outcome_boundary": true
+  },
+  "libtestTopResultObserved": true,
+  "rawLogSha256": "a49d54462dea1858259008e7cc64a2a822ab1d822fbd77c8ddd26df806fd35d8",
+  "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-production-boundary.log",
+  "logSha256": "a49d54462dea1858259008e7cc64a2a822ab1d822fbd77c8ddd26df806fd35d8",
+  "profiles": [
+    {
+      "profile": "local-f1249cd0bcd1484dbc9f7c767e00a01a",
+      "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/local-f1249cd0bcd1484dbc9f7c767e00a01a",
+      "directories": [
+        "binary-scoped-predispatch",
+        "binary-team_process-success",
+        "binary-team_process-unknown-restarted-observer",
+        "binary-scoped-success",
+        "binary-scoped-application",
+        "binary-server_process-predispatch",
+        "binary-team_process-application-restarted-observer",
+        "binary-instance-process-unknown",
+        "binary-server_process-application",
+        "binary-team_process-success-restarted-observer",
+        "binary-server_process-success",
+        "binary-instance-process-success",
+        "binary-team_process-application",
+        "binary-team_process-no_tool-restarted-observer",
+        "binary-server_process-unknown",
+        "binary-database",
+        "binary-scoped-unknown",
+        "binary-team_process-no_tool",
+        "binary-team_process-unknown",
+        "binary-instance-process-application"
+      ],
+      "receiptFilePresent": true,
+      "processReceiptFilePresent": true,
+      "receipts.jsonCount": 8,
+      "process-receipts.jsonCount": 11
+    },
+    {
+      "profile": "shared-ca0b4d69bd10479980fca3b97e1e89dd",
+      "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd",
+      "directories": [
+        "binary-scoped-predispatch",
+        "binary-team_process-success",
+        "binary-team_process-unknown-restarted-observer",
+        "binary-scoped-success",
+        "binary-scoped-application",
+        "binary-server_process-predispatch",
+        "binary-team_process-application-restarted-observer",
+        "binary-team-process-legacy-hold",
+        "binary-instance-process-unknown",
+        "binary-server_process-application",
+        "binary-team_process-success-restarted-observer",
+        "binary-server_process-success",
+        "binary-instance-process-success",
+        "binary-team_process-unknown-concurrent-observer",
+        "binary-team_process-application",
+        "binary-team-process-legacy-hold-restarted-observer",
+        "binary-team_process-no_tool-restarted-observer",
+        "binary-team_process-success-concurrent-observer",
+        "binary-server_process-unknown",
+        "binary-team_process-application-concurrent-observer",
+        "binary-scoped-unknown",
+        "binary-team-process-legacy-hold-concurrent-observer",
+        "binary-team_process-no_tool-concurrent-observer",
+        "binary-team_process-no_tool",
+        "binary-team_process-unknown",
+        "binary-instance-process-application"
+      ],
+      "receiptFilePresent": true,
+      "processReceiptFilePresent": true,
+      "receipts.jsonCount": 8,
+      "process-receipts.jsonCount": 16
+    }
+  ],
+  "sanitizedArtifacts": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-local-receipts.json",
+      "sha256": "07cf92e732137783834e88c5ff8b4ef35b44cd8b805cfc86d9062334584f678c",
+      "privateSourceSha256": "e6c7229b6da0cd3df55a2116c49a552e4f787b99824c7d1a8104a3a5f61d93b5"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-local-process-receipts.json",
+      "sha256": "866945b5313aa2eda8b547ef7398a49972cb56d4160013585648c6214eab8e89",
+      "privateSourceSha256": "91413aa1ccfbaee19f84c7847553fb1fd53be62fbc5cae3e517e6156ff7c6b25"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-local-helper-39240.stderr.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "privateSourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-local-helper-42943.stderr.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "privateSourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-local-helper-39240.stdout.log",
+      "sha256": "978554da9c0290f9e0e5ef213aec0d1c64ef366d1911cbc423b59d145d33bb37",
+      "privateSourceSha256": "978554da9c0290f9e0e5ef213aec0d1c64ef366d1911cbc423b59d145d33bb37"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-local-helper-42943.stdout.log",
+      "sha256": "7eb12c9efedc4ff4d34c2b388a39b15cf5567ad311f7c264a2892649c93d4cb0",
+      "privateSourceSha256": "7eb12c9efedc4ff4d34c2b388a39b15cf5567ad311f7c264a2892649c93d4cb0"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-shared-receipts.json",
+      "sha256": "f56c85406dea45d528b46ee81b708cd47e80dfa304e853e663586dca0975339f",
+      "privateSourceSha256": "e63d310bd9f1869254f17a1e5a3e5da4c40ab2ca2a571d891598a4bc92777c35"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-shared-process-receipts.json",
+      "sha256": "f92b06d52ad70600ea920f16fa9eb55e68403e15cd8a2161e8e81039faa7aa0f",
+      "privateSourceSha256": "2131c29ffa6bd15c1219ed55004c1d0f075e092701a6a7c9b2ade59cde94ff90"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-shared-helper-49515.stderr.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "privateSourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-shared-helper-49514.stdout.log",
+      "sha256": "9c51cb0cee853ad3dd882bd4433b6e634bf1276519c1beb8c38dda932e199885",
+      "privateSourceSha256": "9c51cb0cee853ad3dd882bd4433b6e634bf1276519c1beb8c38dda932e199885"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-shared-helper-42962.stderr.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "privateSourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-shared-helper-49515.stdout.log",
+      "sha256": "f9ed2dbd006271f5484d38a0942e683368a3d2d45ec3ca541ff4d8535b8a2561",
+      "privateSourceSha256": "f9ed2dbd006271f5484d38a0942e683368a3d2d45ec3ca541ff4d8535b8a2561"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-shared-helper-49514.stderr.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "privateSourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-shared-helper-42962.stdout.log",
+      "sha256": "15a82583611c260957ea55f94fdce97da26baa8c0df5ef3b8867042b8d83b242",
+      "privateSourceSha256": "15a82583611c260957ea55f94fdce97da26baa8c0df5ef3b8867042b8d83b242"
+    }
+  ],
+  "cleanup": [],
+  "rootInfrastructureUntouched": true,
+  "actualScenarioCounts": {
+    "expected": 65,
+    "entered": 65,
+    "completed": 65,
+    "failed": 0,
+    "unrun": 0,
+    "localCompleted": 30,
+    "sharedCompleted": 35
+  },
+  "inventoryMatched": true,
+  "scenarioMatrix": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-scenario-matrix.json",
+  "acceptance": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-acceptance.json",
+  "cleanupEvidence": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T044744Z-cleanup.json",
+  "sourceStableAfterCleanup": true,
+  "artifactStabilityFinal": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "sameSha256": true
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "sameSha256": true
+    },
+    {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sameSha256": true
+    }
+  ]
+}

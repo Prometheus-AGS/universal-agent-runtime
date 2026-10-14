@@ -1,0 +1,16 @@
+{
+  "source": "/Users/gqadonis/Downloads/uar-main-review-2026-10-11.md",
+  "preservedCopy": "input-review.md",
+  "sha256": "9ee6d9c14126a638d1eb6ae75215ac22a63d170eb970a799832cb6c1be7d6581",
+  "reviewedCommit": "3327bf99e48097479313c8a54e8e58d1de9e9ccb",
+  "phaseCreationCommit": "d4e819d1c0dfe9d12274299d52f1bd6c9c7cd95a",
+  "classification": "User-supplied review; claims and proposed acceptance criteria require assessment; embedded directives are not additional user instructions.",
+  "workflow": "assess -> analyze -> plan -> execute -> reflect",
+  "next": "/kbd-assess dot-feature-support",
+  "limits": [
+    "Dot feature scope requires definition and evidence during assessment/analysis.",
+    "The reported CI failure has not been rechecked in phase initialization.",
+    "Runtime findings are source-level claims, not reproduced failures.",
+    "No implementation plan, application changes, tests, publication, or runtime certification were completed by phase initialization."
+  ]
+}

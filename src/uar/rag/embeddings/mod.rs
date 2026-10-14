@@ -24,6 +24,12 @@ pub trait EmbeddingBackend: Send + Sync + Debug {
         "unknown"
     }
 
+    /// Actual remote endpoint, if this backend sends embedding requests over
+    /// HTTP. Host settings inspection exposes only its host, never credentials.
+    fn endpoint(&self) -> Option<&str> {
+        None
+    }
+
     /// Embed a batch of texts. The returned outer vector has the same length as
     /// `texts` (unless `texts` is empty, in which case an empty vector is
     /// returned). Each inner vector has `vector_dimension()` elements.

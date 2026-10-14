@@ -42,6 +42,7 @@ pub(crate) enum Presented {
 /// Identity produced only after the presented material has been authenticated.
 pub(crate) struct Principal {
     credential_kind: CredentialKind,
+    api_key_id: Option<String>,
     pub(crate) host_authority: Option<HostAuthority>,
     pub(crate) authority: Option<VerifiedIdentity>,
     pub(crate) subject: String,
@@ -55,6 +56,8 @@ struct VerifiedJwtClaims {
     user: UserClaims,
     #[serde(default)]
     uar_credential_kind: Option<String>,
+    #[serde(default)]
+    uar_api_key_id: Option<String>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -161,6 +164,7 @@ impl TokenVerifier for SharedSecretVerifier<'_> {
 
         Ok(Principal {
             credential_kind,
+            api_key_id: token_data.claims.uar_api_key_id,
             host_authority: None,
             authority: None,
             subject: claims.sub.clone(),
@@ -274,6 +278,7 @@ impl TokenVerifier for JwksVerifier {
         let claims = token_data.claims.user;
         Ok(Principal {
             credential_kind,
+            api_key_id: token_data.claims.uar_api_key_id,
             host_authority: None,
             authority: None,
             subject: claims.sub.clone(),
@@ -323,7 +328,7 @@ pub(crate) async fn verify_token(
     {
         return Err(VerificationError::MissingRemoteIdentity);
     }
-    principal.authority = Some(VerifiedIdentity::new(config.jwt_issuer.as_deref(), &principal.claims, principal.tenant_id.clone(), principal.credential_kind));
+    principal.authority = Some(VerifiedIdentity::new(config.jwt_issuer.as_deref(), &principal.claims, principal.tenant_id.clone(), principal.credential_kind).with_api_key_id(principal.api_key_id.clone()));
     principal.host_authority = principal.authority.as_ref().and_then(|identity| HostAuthority::for_service(identity, config));
     Ok(principal)
 }

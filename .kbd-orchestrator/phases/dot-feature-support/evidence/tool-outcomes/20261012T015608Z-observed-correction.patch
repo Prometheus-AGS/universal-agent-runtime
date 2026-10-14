@@ -1,0 +1,26 @@
+--- failed-source/tests/support/truthful_tool_outcome_process.rs
++++ refrozen-source/tests/support/truthful_tool_outcome_process.rs
+@@ -476,20 +476,9 @@
+     agent["skills"] = json!([skill["skillRef"].clone()]);
+     agent["input"] = json!({});
+     agent["output"] = json!({});
+-    for field in [
+-        "sourceIdentity",
+-        "renameMapping",
+-        "authoredFields",
+-        "modelRequirements",
+-        "promptDialect",
+-        "ragConfiguration",
+-        "contextStrategy",
+-        "apiHarness",
+-        "legacySections",
+-        "sourceDescriptor",
+-    ] {
+-        agent.as_object_mut().unwrap().remove(field);
+-    }
++    // Draft.2 requires the retained source and semantic metadata. Keep the
++    // valid fixture values and bind its explicit rename to this scenario ID.
++    agent["renameMapping"]["targetId"] = agent["id"].clone();
+     finalize(&mut agent);
+     let mut team: Value = serde_json::from_str(include_str!(
+         "../fixtures/collaboration/team-definition.json"

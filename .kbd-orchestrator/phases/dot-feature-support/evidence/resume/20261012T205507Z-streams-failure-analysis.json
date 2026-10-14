@@ -1,0 +1,100 @@
+{
+  "observedAt": "2026-10-12T20:55:07.673579+00:00",
+  "phase": "Execute",
+  "change": "dot-06-fresh-process-resume",
+  "task": "2",
+  "gate": "streams",
+  "status": "whole_affected_stream_gate_failed",
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-stream-principal-retry-bvkuxxno",
+  "sourceSetSha256": "1eb27185a624fa5f9f29bde7ecc5ee71b3476e53c1bfb533656d9fab1dc7c142",
+  "command": [
+    "env",
+    "-i",
+    "HOME=/Users/gqadonis",
+    "PATH=/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.local/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/64179_1791838319645/bin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.pyenv/shims:/Users/gqadonis/.minimax/bin:/Users/gqadonis/.local/bin:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/usr/local/share/dotnet:~/.dotnet/tools:/usr/local/go/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/opt/podman/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/gqadonis/.codex/tmp/arg0/codex-arg08wZZjw:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/29547_1791811184470/bin:/Users/gqadonis/miniconda3/condabin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.the-boss/commands:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/opt/zerobrew/prefix/bin:/Users/gqadonis/.pochi/bin:/Users/gqadonis/.antigravity/antigravity/bin:/Users/gqadonis/.codeium/windsurf/bin:/opt/homebrew/opt/openssl@3/bin:/opt/homebrew/opt/bison/bin:/Users/gqadonis/.opencode/bin:/Users/gqadonis/.console-ninja/.bin:/Users/gqadonis/.wasmedge/bin:/Users/gqadonis/.wasmtime/bin:/Users/gqadonis/.deno/bin:/Users/gqadonis/.paperspace/bin:/Users/gqadonis/.groundcover/bin:/Users/gqadonis/.rd/bin:/Users/gqadonis/google-cloud-sdk/bin:/Users/gqadonis/.shorebird/bin:/Applications/Android Studio/Contents/MacOS:/Users/gqadonis/development/flutter/bin:/Users/gqadonis/.rust-mcp-stack/bin:/Users/gqadonis/.cargo/bin:/Users/gqadonis/.bun/bin:/Users/gqadonis/Library/pnpm:/opt/homebrew/opt/go/libexec/bin:/Users/gqadonis/go/bin:/opt/local/bin:/opt/local/sbin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Users/gqadonis/.pub-cache/bin:/Users/gqadonis/development/flutter/.pub-cache/bin:/Users/gqadonis/Library/Android/sdk/platform-tools:/Users/gqadonis/Library/Android/sdk/tools:/Users/gqadonis/Library/Android/sdk/tools/bin:/Users/gqadonis/Library/Android/sdk/emulator:/Users/gqadonis/.rvm/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.modular/bin:/Users/gqadonis/bin:/Users/gqadonis/Projects/ide/bin:/Users/gqadonis/.dotnet/tools:/Users/gqadonis/.orbstack/bin:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/gqadonis/.dotnet/tools:/usr/local/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.orbstack/bin",
+    "VERTEXAI_PROJECT=dot05-fixture",
+    "VERTEXAI_LOCATION=us-central1",
+    "UAR_DOT05_INFRA_FILE=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "UAR_DOT05_NAMESPACE=dot05_affected06_20261012T205218_625fc3c91e",
+    "RUSTC_WRAPPER=",
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full",
+    "--test",
+    "stream_terminal_contract",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exitCode": 101,
+  "buildDurationObserved": "11.24s",
+  "testSummary": [
+    "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.10s"
+  ],
+  "gateElapsedSeconds": 18.71,
+  "failureSpan": [
+    {
+      "path": "tests/stream_terminal_contract.rs",
+      "line": 670,
+      "operation": "store.list_checkpoints(run).await.unwrap()",
+      "reason": "durable checkpoint resume is unsupported by this backend"
+    },
+    {
+      "path": "tests/stream_terminal_contract.rs",
+      "line": 896,
+      "reason": "worker thread join unwrap after prior panic"
+    }
+  ],
+  "enteredStage": "First OpenAi/valid legacy boundary completed in fixture; local graph passed its terminal state wait and failed checkpoint readback. This path statement follows the observed failing operation and bound fixture source.",
+  "completedRows": 0,
+  "matchedBoundaries": 0,
+  "privateFixtureRoot": [
+    "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-29U4fD"
+  ],
+  "privateStdout": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-stream-principal-retry-bvkuxxno/streams.stdout",
+  "privateStderr": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-stream-principal-retry-bvkuxxno/streams.stderr",
+  "privateResponseQualification": "Direct store method error; no HTTPresponse exists.",
+  "knownPidCount": 1,
+  "cleanupObservations": [
+    {
+      "pid": 65459,
+      "basis": "exact-child-of-cargo",
+      "state": "gone"
+    }
+  ],
+  "cleanupUnknown": false,
+  "exactOwnedGroupGone": true,
+  "targetLocksNoHolder": true,
+  "sourceStableAtExit": true,
+  "sourceStableAfterCleanup": true,
+  "sourceStableAtFinalSeal": true,
+  "environmentStableAtExit": true,
+  "environmentStableAtFinalSeal": true,
+  "executableStableAtExit": true,
+  "rootInfrastructurePreserved": true,
+  "upstreamResumeCustomerArtifactStableAtFinalSeal": true,
+  "actualTestArtifact": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "sha256": "e93413a28cd18369434c9923ee53012c2fb913fa3df14500f62d4e95d5d2ef00",
+      "bytes": 329831400,
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-stream-principal-retry-bvkuxxno/streams-accepted-stream_terminal_contract-a0db6587c4848919",
+      "retainedSha256": "e93413a28cd18369434c9923ee53012c2fb913fa3df14500f62d4e95d5d2ef00"
+    }
+  ],
+  "rawStdoutSha256": "ac984bcdf1747c886e3cb38680c72c393f19643fb671f3ef154cdb75778d6a49",
+  "rawStderrSha256": "30140a1a931bc009c1874308c5244ee082866eb4ca5af2221083acdba92162bd",
+  "sourceEdits": [],
+  "unrequestedAdditions": [],
+  "limits": [
+    "0 completed rows does not imply no production path executed.",
+    "No83/249 affectedstream acceptance.",
+    "Accepted resume production artifact/result remain separate.",
+    "Short-lived processes may evade sampling; exact dedicated group now gone.",
+    "No broadcheck or genuine inference/release/publication claim."
+  ]
+}

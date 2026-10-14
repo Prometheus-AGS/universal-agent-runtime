@@ -15,19 +15,18 @@ zod = "3.25.76"
 # Vite resolves entity-graph-core's optional Loro import during browser startup;
 # 1.13.9 is the entity package's tested peer version.
 loro_crdt = "1.13.9"
-# Liter 1.18.2 is the provider/model routing baseline. The accepted remote head
-# adds only generated knowledge records after the 1.18.2 source release.
-liter_llm = "1.18.2"
-liter_llm_commit = "c5c6caac617eb931cd5009146a70831422ec236c"
+# Operator approved corrected Dot Liter source on 2026-10-13.
+# Migration and locked production-path acceptance remain required.
+liter_llm = "2.1.1"
+liter_llm_commit = "e446f5ef91003bbec5fce6b2f45fb94559dff335"
 # Surreal Memory is pinned to the exact dependency commit rebased on the
 # reviewed documentation and native-MLX remote head.
 surreal_memory_server_base_commit = "e5f48916048a8e26d3ace83c44746b8105f0696c"
 surreal_memory_server_commit = "432eaa1ebbef66fc02b9bb1a1e63cc2fdb2149e8"
-# The Skill System accepted head already contains the reviewed Liter and
-# Surreal Memory pointer refresh; its final UAR pin is recorded after the
-# exact-pin pointer commit is created.
+# Operator approved UAR main 2cc9a182's exact skill-resource gitlink on 2026-10-11.
+# Effective runtime overrides and migration acceptance are recorded separately.
 prometheus_skill_system_base_commit = "f0df1e0121d176c9467e5c71022737b845af6a20"
-prometheus_skill_system_commit = "ad5c82c6c16145637c589a3ddfa06e0f20d603e7"
+prometheus_skill_system_commit = "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2"
 # Keep the SDK, schema types, native server, and deployed container in lockstep.
 surrealdb = "3.3.0"
 surrealdb_types = "3.3.0"

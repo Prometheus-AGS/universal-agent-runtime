@@ -1,0 +1,57 @@
+{
+  "status": "blocked-before-cargo-unexpected-handler-drift",
+  "phase": "dot-feature-support",
+  "change": "dot-04-truthful-tool-outcomes",
+  "task": "2",
+  "stage": "Execute",
+  "capturedAt": "2026-10-12T03:59:28.673214+00:00",
+  "cargoLaunched": false,
+  "productFailure": false,
+  "headBefore": "536df169d8a5774812b01595fec67e9faa9c30d1",
+  "headCurrent": "c314099bc9173058f3ba43b983539d8d13c6f4de",
+  "branch": "main",
+  "indexEmpty": true,
+  "closureCount": 6551,
+  "gitlinksUnchanged": true,
+  "expectedChangedPaths": [
+    "src/uar/runtime/team_execution/execution.rs",
+    "src/uar/runtime/team_execution/recovery.rs",
+    "tests/support/truthful_tool_outcome_process.rs"
+  ],
+  "actualChangedPaths": [
+    "src/uar/api/full_harness/handlers.rs",
+    "src/uar/runtime/team_execution/execution.rs",
+    "src/uar/runtime/team_execution/recovery.rs",
+    "tests/support/truthful_tool_outcome_process.rs"
+  ],
+  "unexpectedChangedPaths": [
+    "src/uar/api/full_harness/handlers.rs"
+  ],
+  "hashDelta": {
+    "src/uar/api/full_harness/handlers.rs": {
+      "old": "272674200f21e10cd924ac3a708f6ca947f45d6f92a6f9621563867ccf137edb",
+      "new": "c170eca0ee5d25b308335cc662585d9248fc11fb4ca4fa9073a552d5528a01cb"
+    },
+    "src/uar/runtime/team_execution/execution.rs": {
+      "old": "3ebd93e59887cee51c8b99d5814f86e45baee0023e21f766b84d831d42111248",
+      "new": "d1c1e5c97f9acc5f844a040ab11ee2af002783b00556f905ad5ea31a41bc4787"
+    },
+    "src/uar/runtime/team_execution/recovery.rs": {
+      "old": "bfee94c414e949729b9bd13dd2cb5b0502a47d06fa810f64f4fc6bf46b6dc3a4",
+      "new": "57f6088481eeb318bb3d1d723fa5053365075228b1ca91926e4b10e1339069c3"
+    },
+    "tests/support/truthful_tool_outcome_process.rs": {
+      "old": "8ee690457922daceac592abdcba270d2257f74b624f4e42439b86140674c55fc",
+      "new": "02801380d11170d1a43769c9af585742622ca9c8ea8a7068772bda6706de752c"
+    }
+  },
+  "all3AuthorizedHashesMatch": true,
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-handler-drift-cy0fysw9",
+  "privateCurrentFingerprint": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-handler-drift-cy0fysw9/source-current.json",
+  "privateCurrentFingerprintSha256": "37bd51884f58cc4ed0f780e1d94af5fa0a3829d72a1c472165c10cc5aa78964a",
+  "privateBeforeCurrentPatch": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-handler-drift-cy0fysw9/exact-before-current.patch",
+  "privatePatchSha256": "7264a8ddfddb0b4fbf58443a7c3819077ffcaf621aa60cd2740377dfd6b6a337",
+  "sourceChangesByExecutor": [],
+  "rootInfrastructureUntouched": true,
+  "nextRequirement": "Root reconcile additional handler source and authorize frozen baseline; no silent rebaseline."
+}

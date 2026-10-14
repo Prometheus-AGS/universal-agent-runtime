@@ -1,9 +1,8 @@
-//! Cost settlement for a finished run.
+//! Cost reporting for a finished run; provider calls settle in the host driver.
 //!
-//! Both terminal paths of a run (completed and cancelled) settle the cost of
-//! the model calls that reported usage: estimate the USD cost from the pricing
-//! catalog, record the metric, write the durable cost-ledger rows and surface a
-//! `BudgetAlert` for the first scope that crossed its threshold.
+//! Durable settlement belongs to individual calls. This terminal helper awaits
+//! their accounting state and reports the live root/team total without a second
+//! append-only charge. A pending liability is independent of execution success.
 
 use std::sync::Arc;
 
@@ -22,35 +21,46 @@ pub struct RunCostInputs<'a> {
     pub input_tokens: u32,
     pub output_tokens: u32,
     pub cache_read_tokens: u32,
-    /// `run_llm_config.cost_tracking`; when false nothing is estimated or recorded.
+    /// `run_llm_config.cost_tracking`; controls terminal cost display, not durable admission.
     pub cost_tracking_enabled: bool,
 }
 
-/// Estimate the run's cost, write the durable ledger rows and emit a
-/// `BudgetAlert` when a scope crossed its threshold.
+/// Report per-call cost and emit a budget alert plus unresolved-accounting diagnostic.
 ///
 /// Returns the estimated cost, or `None` when cost tracking is disabled or the
-/// model is unpriced. Ledger writes are fire-and-forget so the hot path never
-/// blocks on a database write. The caller emits the terminal event afterwards,
-/// so a `BudgetAlert` always precedes it.
+/// model is unpriced. This does not charge again: the host driver owns stable
+/// per-call settlements. Execution completion and accounting completion are separate.
 pub async fn settle_run_cost(
     inputs: RunCostInputs<'_>,
     cost_budget: &CostBudgetTracker,
     persistence: Option<&Arc<dyn PersistenceLayer>>,
     sink: &dyn RuntimeEventSink,
 ) -> Option<f64> {
-    let cost = if inputs.cost_tracking_enabled {
-        crate::llm::catalog::estimate_cost(
-            inputs.model,
-            u64::from(inputs.input_tokens),
-            u64::from(inputs.output_tokens),
-            u64::from(inputs.cache_read_tokens),
-        )
-    } else {
-        None
-    }?;
-    let (provider, model_id) = inputs.model.split_once('/')?;
-    crate::uar::telemetry::metrics::record_llm_cost(provider, model_id, cost);
+    // Await inspection before terminal publication. A failed read is unresolved,
+    // never evidence that the pending pre-dispatch liability disappeared.
+    let owner = cost_budget.accounting_owner(inputs.run_id);
+    // Explicit untracked/unlimited development mode has no accounting claim.
+    if owner.is_none() && !inputs.cost_tracking_enabled { return None; }
+    let accounting = match (persistence, owner) {
+        (Some(db), Some(owner)) => db.list_accounting_calls(&owner, inputs.run_id).await,
+        _ => Err(crate::uar::persistence::accounting::AccountingError::Unsupported.into()),
+    };
+    let settled = match &accounting {
+        Ok(calls) => calls.iter().all(|call| call.state == crate::uar::persistence::accounting::AccountingState::Settled),
+        Err(_) => false,
+    };
+    if !settled {
+        sink.emit(NormalizedEvent::PresentationDiagnostic {
+            run_id: inputs.run_id.to_owned(), code: "accounting_unresolved".into(),
+            message: "Execution outcome is independent of accounting; durable usage remains pending reconciliation".into(),
+        }).await;
+    }
+    if !inputs.cost_tracking_enabled { return None; }
+    let usage = cost_budget.run_usage(inputs.run_id);
+    let cost = if usage.usage_reports > 0 && !usage.unpriced_usage { Some(usage.cost_usd) } else { None }?;
+    if let Some((provider,model_id)) = inputs.model.split_once('/') {
+        crate::uar::telemetry::metrics::record_llm_cost(provider,model_id,cost);
+    }
 
     // Driver wrappers already charged every model call. Surface a `BudgetAlert`
     // for the first scope (in priority order) that crosses its configured
@@ -67,18 +77,6 @@ pub async fn settle_run_cost(
     let mut alert: Option<(BudgetScope, String, f64, f64, bool)> = None;
     for (scope, scope_id) in scopes {
         let status = cost_budget.status(scope, scope_id).await;
-        if let Some(db) = persistence.cloned() {
-            let scope_str = scope.as_str().to_string();
-            let scope_id_owned = scope_id.to_string();
-            tokio::spawn(async move {
-                if let Err(e) = db
-                    .record_cost_entry(&scope_str, &scope_id_owned, cost)
-                    .await
-                {
-                    tracing::warn!(error = %e, scope = %scope_str, "Failed to persist cost ledger entry");
-                }
-            });
-        }
         if alert.is_none()
             && let BudgetStatus::Warning {
                 spent_usd,

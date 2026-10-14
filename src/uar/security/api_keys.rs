@@ -30,6 +30,12 @@ use secrecy::ExposeSecret;
 mod policy;
 pub use policy::ApiKeyAuthorityError;
 use policy::{AUTHORITY_VERSION, KeyPolicy};
+mod storage;
+pub use storage::ApiKeyStorageError;
+#[cfg(feature = "surreal-backend")]
+pub use storage::SurrealApiKeyStorage;
+#[cfg(feature = "postgres-backend")]
+pub use storage::PostgresApiKeyStorage;
 
 /// Proof created only after a stored API key hash and its authority are validated.
 pub(in crate::uar::security) struct VerifiedKeyTenantClaim<'a>(&'a str);
@@ -219,6 +225,7 @@ pub struct ApiKeyService {
 #[derive(Serialize)]
 struct IssuedJwtClaims<'a> {
     uar_credential_kind: &'static str,
+    uar_api_key_id: &'a str,
     #[serde(flatten)]
     user: &'a UserClaims,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -230,6 +237,15 @@ struct IssuedJwtClaims<'a> {
 pub struct ExchangedJwt {
     pub token: String,
     pub expires_in: u64,
+}
+
+impl std::fmt::Debug for ExchangedJwt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ExchangedJwt")
+            .field("token", &"[REDACTED]")
+            .field("expires_in", &self.expires_in)
+            .finish()
+    }
 }
 
 impl ApiKeyService {
@@ -313,43 +329,31 @@ impl ApiKeyService {
 
     pub async fn exchange_with_expiry(&self, raw_key: &str) -> anyhow::Result<Option<ExchangedJwt>> {
         if !self.policy.exchange_supported { return Err(ApiKeyAuthorityError::UnsupportedExchange.into()); }
-        let active = self.db.all_active().await?;
-        let now = now_unix();
-
-        for record in active {
-            // Check expiry
-            if let Some(exp) = record.expires_at {
-                if now >= exp {
-                    continue;
-                }
-            }
-
-            // Verify hash
-            if verify_key(raw_key, &record.key_hash)? {
-                self.policy.validate_record(&record)?;
-                let Some(exp) = self.token_expiry(&record, now) else { return Ok(None); };
-                let claims = UserClaims {
-                    sub: record.subject.clone(),
-                    name: Some(record.name.clone()),
-                    roles: Some(record.roles.clone()),
-                    tenant_id: record.tenant_id.clone(),
-                    uar_instance_id: None,
-                    exp,
-                };
-                let issued_claims = IssuedJwtClaims {
-                    uar_credential_kind: "api_key",
-                    user: &claims,
-                    iss: record.issuer.as_deref(),
-                    aud: self.policy.audience.as_deref(),
-                };
-                let token = jwt::encode(
-                    &Header::default(),
-                    &issued_claims,
-                    &EncodingKey::from_secret(self.jwt_secret.expose_secret().as_bytes()),
-                )
-                .map_err(|error| anyhow::anyhow!("issuing API-key exchange JWT: {error}"))?;
-                return Ok(Some(ExchangedJwt { token, expires_in: (exp as i64 - now) as u64 }));
-            }
+        if let Some(record) = self.matching_record(raw_key).await? {
+            let now = now_unix();
+            let Some(exp) = self.token_expiry(&record, now) else { return Ok(None); };
+            let claims = UserClaims {
+                sub: record.subject.clone(),
+                name: Some(record.name.clone()),
+                roles: Some(record.roles.clone()),
+                tenant_id: record.tenant_id.clone(),
+                uar_instance_id: None,
+                exp,
+            };
+            let issued_claims = IssuedJwtClaims {
+                uar_credential_kind: "api_key",
+                uar_api_key_id: &record.id,
+                user: &claims,
+                iss: record.issuer.as_deref(),
+                aud: self.policy.audience.as_deref(),
+            };
+            let token = jwt::encode(
+                &Header::default(),
+                &issued_claims,
+                &EncodingKey::from_secret(self.jwt_secret.expose_secret().as_bytes()),
+            )
+            .map_err(|error| anyhow::anyhow!("issuing API-key exchange JWT: {error}"))?;
+            return Ok(Some(ExchangedJwt { token, expires_in: (exp as i64 - now) as u64 }));
         }
 
         Ok(None)
@@ -385,36 +389,69 @@ impl ApiKeyService {
     ///
     /// Returns verified user context if valid, or `None` if invalid/expired/revoked.
     pub async fn validate_key(&self, raw_key: &str) -> anyhow::Result<Option<UserContext>> {
-        let active = self.db.all_active().await?;
-        let now = now_unix();
-
-        for record in active {
-            if let Some(exp) = record.expires_at {
-                if now >= exp {
-                    continue;
-                }
-            }
-            if verify_key(raw_key, &record.key_hash)? {
-                self.policy.validate_record(&record)?;
-                let Some(exp) = self.token_expiry(&record, now) else { return Ok(None); };
-                let claims = UserClaims {
-                    sub: record.subject.clone(),
-                    name: Some(record.name.clone()),
-                    roles: Some(record.roles.clone()),
-                    tenant_id: record.tenant_id.clone(),
-                    uar_instance_id: None,
-                    exp,
-                };
-                let tenant_id = record.tenant_id.as_deref().map(|tenant| TenantId::from_verified_key(VerifiedKeyTenantClaim(tenant)));
-                let authority = Some(VerifiedIdentity::new(record.issuer.as_deref(), &claims, tenant_id.clone(), super::claims::CredentialKind::ApiKey));
-                return Ok(Some(UserContext {
-                    host_authority: None, authority, user_id: record.subject.clone(),
-                    tenant_id,
-                    claims,
-                }));
-            }
+        if let Some(record) = self.matching_record(raw_key).await? {
+            let now = now_unix();
+            let Some(exp) = self.token_expiry(&record, now) else { return Ok(None); };
+            let claims = UserClaims {
+                sub: record.subject.clone(),
+                name: Some(record.name.clone()),
+                roles: Some(record.roles.clone()),
+                tenant_id: record.tenant_id.clone(),
+                uar_instance_id: None,
+                exp,
+            };
+            let tenant_id = record.tenant_id.as_deref().map(|tenant| TenantId::from_verified_key(VerifiedKeyTenantClaim(tenant)));
+            let authority = Some(VerifiedIdentity::new(record.issuer.as_deref(), &claims, tenant_id.clone(), super::claims::CredentialKind::ApiKey).with_api_key_id(Some(record.id.clone())));
+            return Ok(Some(UserContext {
+                host_authority: None, authority, user_id: record.subject.clone(),
+                tenant_id,
+                claims,
+            }));
         }
         Ok(None)
+    }
+
+    // Hash verification can take longer than a concurrent revocation. Read the
+    // matching immutable record again after verification before admitting it.
+    async fn matching_record(&self, raw_key: &str) -> anyhow::Result<Option<ApiKeyRecord>> {
+        for candidate in self.db.all_active().await? {
+            if candidate.expires_at.is_some_and(|expiry| now_unix() >= expiry) {
+                continue;
+            }
+            if !verify_key(raw_key, &candidate.key_hash)? { continue; }
+            let Some(current) = self.db.get_by_id(&candidate.id).await? else { return Ok(None); };
+            if current.revoked || current.expires_at.is_some_and(|expiry| now_unix() >= expiry)
+                || current.key_hash != candidate.key_hash {
+                return Ok(None);
+            }
+            self.policy.validate_record(&current)?;
+            return Ok(Some(current));
+        }
+        Ok(None)
+    }
+
+    /// Recheck a verified key-derived identity against current storage on each
+    /// new request. Ordinary issuer credentials need no key lookup.
+    ///
+    /// # Errors
+    /// Storage failure is explicit; signature verification never substitutes
+    /// for current revocation and expiry. Legacy exchange tokens require reissue.
+    pub async fn validate_admission(&self, context: &UserContext) -> anyhow::Result<bool> {
+        let identity = context.verified_identity().ok_or(ApiKeyAuthorityError::CallerRequired)?;
+        if !identity.is_api_key_credential() { return Ok(true); }
+        let id = identity.api_key_id().ok_or(ApiKeyAuthorityError::ReissueRequired)?;
+        let Some(record) = self.db.get_by_id(id).await? else { return Ok(false); };
+        let now = now_unix();
+        if record.revoked || record.expires_at.is_some_and(|expiry| now >= expiry)
+            || now >= context.claims.exp as i64 {
+            return Ok(false);
+        }
+        self.policy.validate_record(&record)?;
+        Ok(record.subject == identity.subject()
+            && record.issuer.as_deref() == identity.issuer()
+            && record.tenant_id.as_deref() == identity.tenant_id()
+            && record.roles.as_slice() == identity.roles()
+            && record.expires_at.is_none_or(|expiry| context.claims.exp as i64 <= expiry))
     }
 }
 

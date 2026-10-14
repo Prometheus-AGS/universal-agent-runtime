@@ -1,0 +1,342 @@
+{
+  "change": "dot-05-stream-terminal-contract",
+  "task": "2",
+  "phase": "Execute",
+  "tier": "Tier1 completed-change real integration",
+  "command": [
+    "env",
+    "-u",
+    "BEDROCK_BASE_URL",
+    "-u",
+    "BEDROCK_CROSS_REGION",
+    "VERTEXAI_PROJECT=dot05-fixture",
+    "VERTEXAI_LOCATION=us-central1",
+    "UAR_DOT05_INFRA_FILE=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "UAR_DOT05_NAMESPACE=dot05_20261012T060639_29b105fefee3",
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full",
+    "--test",
+    "stream_terminal_contract",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "status": "failed",
+  "sourceSetSha256": "b55ee3a6f57da0ee10292674ef15012b571a6a5438def7c3ca59238c1bd05ef9",
+  "boundInputs": 6558,
+  "head": "b4244aeaa7e931240ae0f09ae31bae3f45bda244",
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-retry-preparation-q5o1ge51",
+  "privateRawStdout": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-retry-preparation-q5o1ge51/cargo.stdout",
+  "privateRawStderr": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-retry-preparation-q5o1ge51/cargo.stderr",
+  "environmentKeys": [
+    "HOME",
+    "PATH"
+  ],
+  "startedAt": "2026-10-12T06:08:23.247116+00:00",
+  "toolsBefore": {
+    "cargo": {
+      "path": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/cargo",
+      "resolvedPath": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/cargo",
+      "sha256": "65ba2b36bd365d1da4c7958515b63070a483d393316160db8f309bf4082765cf",
+      "bytes": 31822984
+    },
+    "rustc": {
+      "path": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/rustc",
+      "resolvedPath": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/rustc",
+      "sha256": "57f1d2c5bf4a0de46f2cc14c41e7562bff5eddf9e0f9a6200c7b950c56684895",
+      "bytes": 412504
+    },
+    "cargoDispatch": {
+      "path": "/Users/gqadonis/.cargo/bin/cargo",
+      "resolvedPath": "/Users/gqadonis/.cargo/bin/rustup",
+      "sha256": "ec1b9233e7f72990ecd8e62063fa7f6c3dfc2bec8e97f88bff165f9100ac696a",
+      "bytes": 11319056
+    },
+    "rustup": {
+      "path": "/Users/gqadonis/.cargo/bin/rustup",
+      "resolvedPath": "/Users/gqadonis/.cargo/bin/rustup",
+      "sha256": "ec1b9233e7f72990ecd8e62063fa7f6c3dfc2bec8e97f88bff165f9100ac696a",
+      "bytes": 11319056
+    },
+    "fixturePythonLauncher": {
+      "path": "/usr/bin/python3",
+      "resolvedPath": "/usr/bin/python3",
+      "sha256": "1632eb8de8409ac0bf8d35c2d52ea8222fd7d091344bba3fa0f998bfac2ddfda",
+      "bytes": 118640
+    },
+    "fixturePythonResolved": {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/usr/bin/python3",
+      "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "sha256": "5ab108d5c2faa403d86a5918a7ff73c8afdbec2a0f6b62d932f77a078ee93d7c",
+      "bytes": 102352
+    },
+    "openssl": {
+      "path": "/usr/bin/openssl",
+      "resolvedPath": "/usr/bin/openssl",
+      "sha256": "e202adb4a58f5b891c1f2ea4f037a201acc64b0fe10e23053e6da1f3aeadbdb1",
+      "bytes": 1130832
+    },
+    "opensslVersion": "LibreSSL 3.3.6",
+    "pythonVersion": "3.9.6 (default, Aug 13 2026, 04:25:06) \n[Clang 21.0.0 (clang-2100.3.33.1)]"
+  },
+  "expectedRows": 83,
+  "expectedBoundaries": 249,
+  "processes": [
+    {
+      "pid": 61141,
+      "parentPid": 61043,
+      "comm": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "sampledAt": "2026-10-12T06:08:33.778915+00:00",
+      "role": "integration-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+        "sha256": "f17777d236dc2704ca8f953b1a4b555477b4dc376a5d19f850bc01a82b8b4ac8",
+        "bytes": 326627672
+      }
+    }
+  ],
+  "fixtureRoots": [
+    "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-qpCIcH"
+  ],
+  "cargoPid": 61043,
+  "lastObservedAt": "2026-10-12T06:09:30.085848+00:00",
+  "elapsedSeconds": 66.7,
+  "stdoutBytes": 2004,
+  "stderrBytes": 12315,
+  "completedRowsObserved": 26,
+  "exitCode": 101,
+  "finishedAt": "2026-10-12T06:09:30.089473+00:00",
+  "sourceStableAtExit": true,
+  "changedPathsAtExit": [],
+  "observedRows": [
+    {
+      "protocol": "OpenAi",
+      "case": "valid"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "split"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "empty"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "partial_after_terminal"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "partial_event"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "malformed"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "invalid_utf8"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "malformed_after_terminal"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "tool"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "tool_missing_terminal"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "cancel"
+    },
+    {
+      "protocol": "Azure",
+      "case": "valid"
+    },
+    {
+      "protocol": "Azure",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "valid"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "split"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "empty"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "partial_after_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "partial_event"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "malformed"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "invalid_utf8"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "malformed_after_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "tool"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "tool_missing_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "cancel"
+    }
+  ],
+  "inventoryMatched": false,
+  "completedRows": 26,
+  "completedBoundaries": 78,
+  "enteredBoundaries": 79,
+  "requestObservedBoundaries": 79,
+  "testSummary": [
+    "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 53.35s"
+  ],
+  "actualExecutableArtifacts": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "sha256": "f17777d236dc2704ca8f953b1a4b555477b4dc376a5d19f850bc01a82b8b4ac8",
+      "bytes": 326627672
+    }
+  ],
+  "executableStabilityAtExit": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "sameSha256": true
+    }
+  ],
+  "rawStdoutSha256": "b487636312b84e63559adb73c3475cd6f5ca7e887402afe08afa8f96f99e85ea",
+  "rawStderrSha256": "43532ac97bced1a297f9c80c91c8426c53027ce389bd8db129bfb7028890c1ad",
+  "sampledOwnedProcessesRemaining": [],
+  "cleanupInventoryState": "observed",
+  "cleanupActions": [],
+  "cleanupObservations": [
+    {
+      "pid": 61141,
+      "state": "gone"
+    }
+  ],
+  "sourceStableAfterCleanup": true,
+  "rootInfrastructureUntouched": true,
+  "limits": [
+    "No registry/toolchain/native full transitive closure",
+    "No per-alias runtime qualification",
+    "No genuine inference, cross-process recovery, release, Tier2 or Tier3 qualification",
+    "Sampler can miss short-lived children; actual request files/counts qualify boundaries, not sampledPID totals"
+  ],
+  "sourceEdits": [],
+  "newGuards": [],
+  "unrequestedAdditions": [],
+  "sanitizedStdout": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/streams/20261012T060823Z-cargo.stdout.log",
+    "sha256": "b487636312b84e63559adb73c3475cd6f5ca7e887402afe08afa8f96f99e85ea"
+  },
+  "sanitizedStderr": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/streams/20261012T060823Z-cargo.stderr.log",
+    "sha256": "43532ac97bced1a297f9c80c91c8426c53027ce389bd8db129bfb7028890c1ad"
+  },
+  "preparedToolStabilityFinal": [
+    {
+      "name": "cargo",
+      "path": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/cargo",
+      "sameSha256": true
+    },
+    {
+      "name": "rustc",
+      "path": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/rustc",
+      "sameSha256": true
+    },
+    {
+      "name": "cargoDispatch",
+      "path": "/Users/gqadonis/.cargo/bin/rustup",
+      "sameSha256": true
+    },
+    {
+      "name": "rustup",
+      "path": "/Users/gqadonis/.cargo/bin/rustup",
+      "sameSha256": true
+    },
+    {
+      "name": "fixturePythonLauncher",
+      "path": "/usr/bin/python3",
+      "sameSha256": true
+    },
+    {
+      "name": "fixturePythonResolved",
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "sameSha256": true
+    },
+    {
+      "name": "openssl",
+      "path": "/usr/bin/openssl",
+      "sameSha256": true
+    }
+  ],
+  "hostConfigStableFinal": true,
+  "infraManifestStableFinal": true,
+  "certificateSubprocessSampling": "Configured OpenSSL pre/final identity and generatedcertificate files bound; no OpenSSL orPython HTTPSchild sampled/entered in thisattempt beforefailure.",
+  "exactOwnedHttpsPeerMatchesFinal": [],
+  "rootSurrealPidAliveFinal": true,
+  "rootPostgresIdentityStableFinal": true,
+  "sourceStableAtFinalSeal": true,
+  "scenarioCounts": {
+    "expectedRows": 83,
+    "completedRows": 26,
+    "enteredRows": 27,
+    "failedRows": 1,
+    "unrunRows": 56,
+    "expectedBoundaries": 249,
+    "enteredBoundaries": 79,
+    "completedBoundaries": 78,
+    "failedBoundaries": 1,
+    "unrunBoundaries": 170
+  },
+  "warningSummary": [
+    "warning: `universal-agent-runtime` (manifest) generated 1 warning",
+    "warning: `universal-agent-runtime` (lib) generated 31 warnings (run `cargo fix --lib -p universal-agent-runtime` to apply 1 suggestion)",
+    "warning: `universal-agent-runtime` (bin \"stub-llm\") generated 2 warnings"
+  ],
+  "retainedFailedIntegrationRuntime": {
+    "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-retry-preparation-q5o1ge51/failed-integration-runtime",
+    "sha256": "f17777d236dc2704ca8f953b1a4b555477b4dc376a5d19f850bc01a82b8b4ac8",
+    "bytes": 326627672,
+    "reason": "preserveexactfailedexecutablebytes before later sanctionedCargo retry rewritesoriginalartifactpath"
+  }
+}

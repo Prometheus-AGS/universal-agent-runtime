@@ -1,0 +1,27 @@
+{
+  "isolatedTestData": true,
+  "productTestsRun": false,
+  "surreal": {
+    "pid": 57075,
+    "processGroup": 57075,
+    "binary": "/Users/gqadonis/.prometheus/bin/surreal",
+    "version": "3.3.0",
+    "cwd": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc",
+    "url": "ws://127.0.0.1:50811",
+    "username": "root",
+    "log": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/surreal.log"
+  },
+  "postgres": {
+    "containerName": "uar-dot-api-keys-vector-bc90262901e1",
+    "containerId": "07ef103a85a3d12996ea1a8d10eb6e7500389129100f0c0d027f010693c1beba",
+    "imageId": "sha256:602869708669013b15b978ad81409a43a2f9dca6cccaab37a361d76ea1426d45",
+    "port": 32770,
+    "version": "postgres (PostgreSQL) 17.6",
+    "availableVectorExtension": "vector|0.8.0"
+  },
+  "reason": "Full PostgresProvider migrations require vector extension; plain fixture replaced before product gate",
+  "supersededContainerRemoved": true,
+  "infrastructureProbeCorrection": "Initial psql used default /run/postgresql socket; server socket was deliberately /tmp. Explicit /tmp probe succeeds. No product test executed.",
+  "privateManifest": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+  "healthReady": true
+}

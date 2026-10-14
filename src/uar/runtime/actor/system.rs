@@ -146,7 +146,7 @@ impl ActorSession {
         self.submit_captured_prompt(run_id, content, AuthenticatedCredentialCapture::default())
     }
 
-    fn submit_captured_prompt(
+    pub(crate) fn submit_captured_prompt(
         &self,
         run_id: String,
         content: String,
@@ -222,6 +222,11 @@ impl std::fmt::Debug for ActorCollaboration {
 }
 
 impl ActorCollaboration {
+    /// Host persistence for transport correlation; this is not a kernel capability.
+    pub(crate) fn persistence(&self) -> anyhow::Result<Arc<dyn PersistenceLayer>> {
+        self.persistence.clone().ok_or_else(|| anyhow::anyhow!("Actor persistence unavailable"))
+    }
+
     pub(crate) fn run_usage(
         &self,
         run_id: &str,
@@ -270,7 +275,7 @@ impl ActorCollaboration {
         agent_id: String,
         system_prompt: Option<String>,
     ) -> anyhow::Result<ActorSession> {
-        self.spawn_session_inner(owner, actor_name, agent_id, system_prompt, None, None)
+        self.spawn_session_inner(owner, actor_name, agent_id, system_prompt, None, None, None)
             .await
     }
 
@@ -290,6 +295,7 @@ impl ActorCollaboration {
             None,
             None,
             Some((session_id, instance)),
+            None,
         )
         .await
     }
@@ -322,8 +328,37 @@ impl ActorCollaboration {
                 accounting_id,
             )),
             None,
+            None,
         )
         .await
+    }
+
+    /// Restore only the durable session bound to this full-principal context.
+    /// The A2A store reserves context exclusivity before entering this method.
+    pub(crate) async fn spawn_a2a_session(
+        &self, owner: &ActorOwner, task_id: &str, agent_id: &str, context_id: &str,
+        contract: Option<&crate::uar::api::a2a::contract::UarDelegationContract>,
+    ) -> anyhow::Result<ActorSession> {
+        let principal = owner.credential_principal().ok_or_else(|| anyhow::anyhow!("A2A principal unavailable"))?;
+        let owner_key = principal.storage_key();
+        let persistence = self.persistence()?;
+        let session_id = format!("a2a-context-{}", crate::uar::api::a2a::durable::A2aBinding::storage_key_for(&owner_key, agent_id, context_id));
+        let predecessors = persistence.list_a2a_bindings(&owner_key, agent_id).await?;
+        let has_previous = predecessors.iter().any(|record| record.context_id == context_id && record.task_id != task_id);
+        let saved = persistence.load_session(&owner_key, &session_id).await?;
+        anyhow::ensure!(!has_previous || saved.is_some(), "A2A context history persistence is unconfirmed");
+        let history = match saved {
+            Some(session) => {
+                anyhow::ensure!(session.owner_id() == owner_key && session.id() == session_id, "A2A context identity mismatch");
+                session.messages()
+            }
+            None => Vec::new(),
+        };
+        let constraints = contract.map(|contract| Ok::<_, anyhow::Error>((contract.execution_policy(),
+            contract.presentation_negotiation.clone(), contract.budgets.clone(), contract.usage_grant.clone(),
+            contract.sandbox.clone(), format!("a2a:{}", contract.digest()?)))).transpose()?;
+        self.spawn_session_inner(owner, format!("a2a-{task_id}"), agent_id.to_owned(), None,
+            constraints, None, Some((session_id, history, contract.cloned()))).await
     }
 
     async fn spawn_session_inner(
@@ -344,6 +379,7 @@ impl ActorCollaboration {
             String,
             crate::uar::runtime::thread::actor_host::InstanceRootConstraints,
         )>,
+        a2a_context: Option<(String, Vec<crate::llm::Message>, Option<crate::uar::api::a2a::contract::UarDelegationContract>)>,
     ) -> anyhow::Result<ActorSession> {
         let persistence = self.persistence.as_ref().ok_or_else(|| {
             anyhow::anyhow!("Actor threads require a configured persistence provider")
@@ -369,9 +405,8 @@ impl ActorCollaboration {
             anyhow::bail!("Actor with name '{actor_name}' already exists");
         }
 
-        let session_id = instance
-            .as_ref()
-            .map_or_else(|| uuid::Uuid::new_v4().to_string(), |(id, _)| id.clone());
+        let session_id = a2a_context.as_ref().map(|(id, _, _)| id.clone()).unwrap_or_else(|| instance
+            .as_ref().map_or_else(|| uuid::Uuid::new_v4().to_string(), |(id, _)| id.clone()));
         let constraints = match constraints {
             Some((
                 policy,
@@ -388,6 +423,7 @@ impl ActorCollaboration {
                     );
                 Some(
                     crate::uar::runtime::thread::actor_host::RemoteRootConstraints {
+                        a2a_delegation: a2a_context.as_ref().and_then(|(_, _, contract)| contract.clone()),
                         policy: self
                             .manager
                             .resolve_remote_policy_constraint(&artifact, owner, &session_id, policy)
@@ -420,7 +456,7 @@ impl ActorCollaboration {
                 Arc::clone(&owned_root),
                 constraints,
                 instance.map(|(_, activation)| activation),
-            ),
+            ).with_a2a_context(a2a_context.map(|(_, history, _)| history)),
         ));
         let args = AgentActorArgs {
             agent_id: agent_id.clone(),

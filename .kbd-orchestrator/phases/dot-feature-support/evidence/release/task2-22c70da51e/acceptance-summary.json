@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "phase": "dot-feature-support",
+  "change": "dot-01-release-provenance",
+  "backend_task": "2",
+  "tier": "completed-change production integration",
+  "source_sha": "22c70da51e5aad357e679553fd3dc2e79df2b378",
+  "source_tree": "825522f8b710e7c2158aabae600a693bb89066b9",
+  "status": "passed",
+  "source_provenance": "release-input-provenance.json",
+  "public_cli_integration": {
+    "exit_code": 0,
+    "tests": 8,
+    "passed": 8,
+    "log": "public-cli-integration.log"
+  },
+  "frozen_installs": [
+    {
+      "workspace": "/Users/gqadonis/.claude/worktrees/uar-dot-release-20261011-22c70da51e",
+      "exit_code": 0,
+      "command": [
+        "pnpm",
+        "install",
+        "--frozen-lockfile"
+      ],
+      "log": "root-frozen-install.log"
+    },
+    {
+      "workspace": "/Users/gqadonis/.claude/worktrees/uar-dot-release-20261011-22c70da51e/frontend",
+      "exit_code": 0,
+      "command": [
+        "pnpm",
+        "install",
+        "--frozen-lockfile"
+      ],
+      "log": "frontend-frozen-install.log"
+    },
+    {
+      "workspace": "/Users/gqadonis/.claude/worktrees/uar-dot-release-20261011-22c70da51e/frontend/packages/prometheus-entity-management",
+      "exit_code": 0,
+      "command": [
+        "pnpm",
+        "install",
+        "--frozen-lockfile"
+      ],
+      "log": "entity-frozen-install.log"
+    }
+  ],
+  "locked_packaging": {
+    "platform": "linux/arm64",
+    "image_id": "sha256:08f9f35da53d30f79a444205bf89c90bed5bfc154fd0598103fbb983958b81de",
+    "command_receipt": "docker-build-command.json",
+    "raw_log": "docker-build.log",
+    "metadata": "build-metadata.json",
+    "exit_code": 0,
+    "application_library_warnings": 30
+  },
+  "launched_provenance": "runtime-attempt-2/runtime-provenance-gate.json",
+  "first_launch_failure": "runtime-attempt-1/diagnosis.json",
+  "first_launch_correction": "required ephemeral test-only settings admin key; existing settings mutation authorization preserved; immutable image reused",
+  "source_inputs": {
+    "source_sha": "22c70da51e5aad357e679553fd3dc2e79df2b378",
+    "checked_at": "2026-10-11T23:29:28.146704+00:00",
+    "input_count": 79,
+    "changed_inputs": [],
+    "git_status_porcelain": "",
+    "passed": true
+  },
+  "packaged_skills": {
+    "count": 194,
+    "root": "/opt/uar/skills/builtin",
+    "version": "<unknown>",
+    "inventory_sha256": "f1794aa2e6ddc663c0c643f14f4ee299197f9025fb1fa72bf7338ee2deebd872",
+    "entries": 10830,
+    "omitted_generated_or_archive_dist_entries": 37,
+    "full_source_inventory_equal": false
+  },
+  "binary": {
+    "path": "/usr/local/bin/universal-agent-runtime",
+    "sha256": "a09894914c1b39b097ec218a22806e1d2968be6bc3b947d46ffbf54268a761bc"
+  },
+  "unrequested_production_changes": [],
+  "unverified": [
+    "amd64 or final multiarch build/publication",
+    "offline empty-cache network-disabled rebuild",
+    "genuine provider inference",
+    "other deployment profiles, final phase certification and deployment health"
+  ],
+  "completed_at": "2026-10-11T23:29:28.148924+00:00",
+  "historical_failed_launch_receipt": "runtime-provenance-gate.json",
+  "historical_failed_launch_receipt_status": "failed; first attempt only, not final acceptance outcome",
+  "final_launched_provenance": "runtime-attempt-2/runtime-provenance-gate.json",
+  "credential_redactions": {
+    "docker_build": 0,
+    "runtime_attempt_2": 2
+  },
+  "full_reviewed_resource_coverage_verified": false
+}

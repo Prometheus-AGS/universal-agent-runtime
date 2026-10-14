@@ -462,7 +462,7 @@ fastembed = { version = "5", optional = true, default-features = false, features
   "ort-download-binaries",
 ] }
 ort = { version = "=2.0.0-rc.13", optional = true, default-features = false, features = ["std", "ndarray"] }
-ort-tract = { version = "=0.4.1+0.23", optional = true }
+ort-tract = { version = "=0.4.1", optional = true }
 # Local embedding inference via Candle (optional, gated by `candle-embeddings`).
 candle-core = { version = "0.11.0", optional = true }
 candle-nn = { version = "0.11.0", optional = true }
@@ -487,6 +487,7 @@ sqlx = { version = "0.8.6", default-features = false, optional = true, features 
 pgvector = { version = "=0.4.2", optional = true, features = ["sqlx"] }
 text-splitter = { version = "0.32.0", features = ["markdown"] }
 chrono = { version = "0.4.44", features = ["serde"] }
+jiff = "=0.2.35"
 walkdir = "2.5.0"
 serde_yaml = "0.9"
 jsonwebtoken.workspace = true

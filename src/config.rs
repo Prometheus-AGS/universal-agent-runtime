@@ -232,6 +232,9 @@ pub struct AppConfig {
     /// Identity and advertised endpoint roles of this logical UAR instance.
     #[serde(default)]
     pub service_instance: ServiceInstanceConfig,
+    /// Qualified trusted supervisor connection; absent means no abrupt reclaim.
+    #[serde(default)]
+    pub supervisor_recovery: Option<crate::uar::runtime::supervisor::SupervisorConfig>,
     pub resilience: ResilienceConfig,
     /// Bounded in-process run state retained for stream replay and diagnostics.
     #[serde(default)]
@@ -556,6 +559,9 @@ impl ServiceInstanceConfig {
 pub struct ServerConfig {
     pub port: u16,
     pub host: String,
+    /// Exact browser origins allowed by CORS. Empty means no cross-origin access.
+    #[serde(default)]
+    pub cors_allowed_origins: Vec<String>,
     #[serde(default = "ServerConfig::default_shutdown_timeout_secs")]
     pub shutdown_timeout_secs: u64,
     #[serde(default = "ServerConfig::default_log_format")]
@@ -1317,7 +1323,7 @@ pub struct MemoryConfig {
     /// Path to the SurrealKV data directory for embedded mode.
     #[serde(default = "MemoryConfig::default_db_path")]
     pub db_path: String,
-    /// Embedding provider: "openai" | "cohere" | "local"
+    /// Embedding provider: "local" (default) | "openai" | "cohere".
     #[serde(default = "MemoryConfig::default_embedding_provider")]
     pub embedding_provider: String,
     /// Embedding model identifier (provider-specific).
@@ -1400,10 +1406,10 @@ impl MemoryConfig {
         "./data/memory.db".to_string()
     }
     fn default_embedding_provider() -> String {
-        "openai".to_string()
+        "local".to_string()
     }
     fn default_embedding_model() -> String {
-        "text-embedding-3-small".to_string()
+        "BAAI/bge-small-en-v1.5".to_string()
     }
     fn default_auto_capture() -> bool {
         true
@@ -1526,7 +1532,7 @@ impl AppConfig {
         // 1. Default Defaults
         builder = builder
             .set_default("server.port", 1906)?
-            .set_default("server.host", "0.0.0.0")?
+            .set_default("server.host", "127.0.0.1")?
             .set_default("security.jwt_required", true)?
             .set_default("security.settings_mutation_auth_required", true)?
             .set_default("security.jwt_secret", FALLBACK_JWT_SECRET)?
@@ -1578,8 +1584,8 @@ impl AppConfig {
             // Memory system defaults
             .set_default("memory.enabled", false)?
             .set_default("memory.db_path", "./data/memory.db")?
-            .set_default("memory.embedding_provider", "openai")?
-            .set_default("memory.embedding_model", "text-embedding-3-small")?
+            .set_default("memory.embedding_provider", "local")?
+            .set_default("memory.embedding_model", "BAAI/bge-small-en-v1.5")?
             .set_default("memory.auto_capture", true)?
             .set_default("memory.vector_weight", 0.7)?
             .set_default("memory.bm25_weight", 0.3)?
@@ -1590,7 +1596,7 @@ impl AppConfig {
             .set_default("memory.namespace", "uar")?
             .set_default("memory.database", "memory")?
             // LLM defaults
-            .set_default("llm.model", "openai/gpt-4o")?
+            .set_default("llm.model", "")?
             .set_default("llm.protocol", "auto")?
             .set_default("llm.timeout_secs", 60_i64)?
             .set_default("llm.max_retries", 3_i64)?
@@ -1723,6 +1729,8 @@ impl AppConfig {
             Environment::with_prefix("UAR")
                 .prefix_separator("_")
                 .separator("__")
+                .list_separator(",")
+                .with_list_parse_key("server.cors_allowed_origins")
                 .try_parsing(true),
         );
 
@@ -1946,7 +1954,7 @@ impl ReasoningEffort {
 /// `LLM_*` legacy env vars → CLI arguments.
 #[derive(Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct LlmConfig {
-    /// Default model in `provider/model` format (e.g., `"openai/gpt-4o"`).
+    /// Explicit default model in `provider/model` format; empty until selected.
     #[serde(default = "LlmConfig::default_model")]
     pub model: String,
     /// Authoritative provider identity attached by runtime provider resolution.
@@ -2083,7 +2091,7 @@ impl std::fmt::Debug for LlmConfig {
 
 impl LlmConfig {
     fn default_model() -> String {
-        "openai/gpt-4o".to_string()
+        String::new()
     }
     fn default_protocol() -> String {
         "auto".to_string()
@@ -2343,6 +2351,19 @@ persistence:
 "#;
         fs::write(&path, yaml).expect("test config should be writable");
         path
+    }
+
+    #[test]
+    fn safe_component_defaults_require_explicit_model_and_origins() {
+        assert!(LlmConfig::default().model.is_empty());
+        let memory = MemoryConfig::default();
+        assert!(!memory.enabled);
+        assert_eq!(memory.embedding_provider, "local");
+        assert_eq!(memory.embedding_model, "BAAI/bge-small-en-v1.5");
+        let server: ServerConfig = serde_json::from_value(serde_json::json!({
+            "host": "127.0.0.1", "port": 1906
+        })).expect("server config should accept an omitted origin allowlist");
+        assert!(server.cors_allowed_origins.is_empty());
     }
 
     #[test]

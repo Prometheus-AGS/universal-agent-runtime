@@ -1,0 +1,189 @@
+{
+  "sampledOwnedProcesses": [
+    {
+      "pid": 53499,
+      "role": "integration-target",
+      "presentAtSample": false
+    },
+    {
+      "pid": 53566,
+      "role": "integration-target",
+      "presentAtSample": false
+    },
+    {
+      "pid": 53740,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 53925,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 54027,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 54147,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 54299,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 54357,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 54486,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 54521,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 54585,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 54659,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 54727,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 54858,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 55010,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 55044,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 55071,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 55156,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 55262,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 55349,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 55697,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 55776,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 56121,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 56220,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 56315,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 56409,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 56442,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 56723,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 56824,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 56874,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 56982,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 56984,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 57020,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 57074,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    },
+    {
+      "pid": 57221,
+      "role": "ordinary-runtime",
+      "presentAtSample": false
+    },
+    {
+      "pid": 57539,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false
+    }
+  ],
+  "exactOwnedPythonTraceMatches": [],
+  "cleanupActions": [],
+  "allSampledOwnedProcessesGone": true,
+  "scope": "Sampled owned PIDs and exact unique private trace argv only; not exhaustive system-process closure",
+  "rootInfrastructureUntouched": true
+}

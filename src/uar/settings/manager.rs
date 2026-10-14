@@ -2721,11 +2721,14 @@ fn build_core_schema(
             "required": ["model"]
         });
         let llm = &config.llm;
-        let default_provider_seed = llm
-            .model
-            .split_once('/')
-            .map(|(p, _)| p.to_string())
-            .unwrap_or_else(|| "default".to_string());
+        let default_provider_seed = if llm.model.trim().is_empty() {
+            String::new()
+        } else {
+            llm.model
+                .split_once('/')
+                .map(|(p, _)| p.to_string())
+                .unwrap_or_else(|| "default".to_string())
+        };
         let st = make_type("LLM Configuration", "llm", schema);
         let settings = vec![
             make_setting(&st, "llm.model", "Default Model", json!(llm.model)),

@@ -1,0 +1,72 @@
+{
+  "phase": "dot-feature-support",
+  "change": "dot-04-truthful-tool-outcomes",
+  "task": "2",
+  "stage": "Execute",
+  "waypointRevisionAtDispatch": 2695,
+  "verificationTier": "Tier 1 completed-change real production integration",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,in-memory-backend",
+    "--test",
+    "truthful_tool_outcomes",
+    "--",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "commandDisplay": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test truthful_tool_outcomes -- --test-threads=1 --nocapture",
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "startedAt": "2026-10-12T04:25:18.777540+00:00",
+  "status": "prelaunch-stopped-no-cargo",
+  "sourceFingerprint": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T042353Z-source-fingerprint.json",
+  "sourceFingerprintSha256": "6d13b5eae2c800160dc78fc8a6dfa64f9a862ea687470f4bef1d64748e0854ea",
+  "privateSourceSnapshot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-instance-route-gate-0z85c98a/source-snapshot.tar.gz",
+  "sourceSnapshotSha256": "16125ae7f86ee306b96952131ec96167ea269a5828a0a70a183276b194781e7c",
+  "privateDirtySourcePatch": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-instance-route-gate-0z85c98a/dirty-source.patch",
+  "dirtySourcePatchSha256": "65e51a6e53cdd66a3ba5140fcaaafa54f5859f02ab52d8ca133bd323e91aae3f",
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-instance-route-gate-0z85c98a",
+  "privateRawLog": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-instance-route-gate-0z85c98a/cargo-raw.log",
+  "environmentNames": [
+    "HOME",
+    "PATH",
+    "UAR_DOT04_INFRA_FILE",
+    "UAR_DOT04_EVIDENCE_ROOT"
+  ],
+  "topChildVariableUnset": true,
+  "substantiveTest": "actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes",
+  "noopTopHarnessEntry": "child_outcome_boundary",
+  "expectedScenarioEntries": 65,
+  "sampledProcesses": [],
+  "boundFileCount": 6551,
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T040704Z-production-boundary.json",
+  "attemptLabel": "instance-route-correction-with-c314-frozen-baseline",
+  "all18RefreezeHashesMatch": true,
+  "baselineHead": "c314099bc9173058f3ba43b983539d8d13c6f4de",
+  "correction": {
+    "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T040704Z-production-boundary.json",
+    "preparedBaseline": "20261012T041610Z-instance-route-baseline.json",
+    "changedBoundPathsSincePreviousGate": [
+      "tests/support/truthful_tool_outcome_process.rs"
+    ],
+    "hashes": {
+      "tests/support/truthful_tool_outcome_process.rs": {
+        "old": "02801380d11170d1a43769c9af585742622ca9c8ea8a7068772bda6706de752c",
+        "new": "bddaa960de9973abc094446d725cd6b0c7fae25853fad8c84553fec271af3088"
+      }
+    },
+    "all18RefreezeHashesMatch": true,
+    "externalSourceFreezeAcknowledgedByRoot": true,
+    "authorizedClosureChanges": "Only the one-line instance-creation URL trailing-slash correction; all65semantic assertions unchanged."
+  },
+  "expectedInventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T042353Z-expected-inventory.json",
+  "cargoLaunched": false,
+  "prelaunchStop": {
+    "pid": 77699,
+    "reason": "Writer target unresolved by initial narrow classifier",
+    "subsequentResolution": "Observed librefang workspace and distinct release cargo-lock paths; no UAR target conflict"
+  }
+}

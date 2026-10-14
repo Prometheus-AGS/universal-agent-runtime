@@ -6,24 +6,26 @@
 #   mkdir -p ~/.uar/data ~/.uar/uploads
 #   cp docs/config/home.uar.embedded-openai.example.yaml ~/.uar/config.yaml
 #
-# Required secret (no API keys in this file):
+# Required secrets (no credentials in this file):
+#   export UAR_SECURITY__JWT_SECRET="<generated signing secret>"
+#   export UAR_SECURITY__SETTINGS_ADMIN_KEY="<generated admin secret>"
 #   export OPENAI_API_KEY="sk-..."
-# UAR maps OPENAI_API_KEY to the default LLM and to OpenAI embeddings (memory + KB).
+# OPENAI_API_KEY supplies credentials only; it does not select a chat model.
 #
 # Persistence + vectors: embedded SurrealDB (SurrealKV files under ~/.uar/data).
-# Default chat model: openai/gpt-5.4
-# Default embeddings: OpenAI text-embedding-3-small (1536 dims)
+# Choose a chat model explicitly: UAR_LLM__MODEL=openai/<chosen-model>
+# KB example opts into OpenAI embeddings; agent memory is off by default.
 #
 # Load order: CLI > env (UAR_*) > this file > compiled defaults
 # =============================================================================
 
 server:
   port: 3002
-  host: "0.0.0.0"
+  host: "127.0.0.1"
+  cors_allowed_origins: []
 
 security:
-  jwt_required: false
-  jwt_secret: "secret_key_change_me"
+  jwt_required: true
 
 resilience:
   rate_limit_enabled: false
@@ -51,7 +53,7 @@ persistence:
   external_cache_enabled: false
 
 llm:
-  model: "openai/gpt-5.4"
+  model: ""
   protocol: "auto"
   timeout_secs: 60
   max_retries: 3
@@ -137,10 +139,10 @@ intent_classifier:
   margin_threshold: 0.05
 
 memory:
-  enabled: true
+  enabled: false
   db_path: "./.uar/data/memory.db"
-  embedding_provider: "openai"
-  embedding_model: "text-embedding-3-small"
+  embedding_provider: "local"
+  embedding_model: "BAAI/bge-small-en-v1.5"
   auto_capture: true
   vector_weight: 0.7
   bm25_weight: 0.3

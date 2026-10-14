@@ -109,7 +109,6 @@ async fn start_grpc_server() -> (String, tempfile::TempDir, String) {
         },
         base_url: format!("http://127.0.0.1:{port}"),
     });
-    let service = GrpcAgentService::new(state);
     // Seed only the isolated test store, then obtain proof through real key validation.
     use argon2::{Argon2, password_hash::{PasswordHasher, SaltString, rand_core::OsRng}};
     let storage = Arc::new(InMemoryApiKeyStorage::new());
@@ -121,7 +120,7 @@ async fn start_grpc_server() -> (String, tempfile::TempDir, String) {
         subject: "a2a-grpc-user".to_owned(), authority_version: 1, issuer: None,
         tenant_id: None, roles: vec!["user".to_owned()], created_at: 0, expires_at: None, revoked: false,
     }).await.unwrap();
-    let api_keys = ApiKeyService::new(storage, "test-secret");
+    let api_keys = Arc::new(ApiKeyService::new(storage, "test-secret"));
     let caller = api_keys.validate_key(seed).await.unwrap().unwrap();
     let key = api_keys
         .create_key(
@@ -139,6 +138,7 @@ async fn start_grpc_server() -> (String, tempfile::TempDir, String) {
         .await
         .expect("A2A gRPC test API key exchange succeeds")
         .expect("A2A gRPC test API key returns a token");
+    let service = GrpcAgentService::new(state).with_api_key_service(api_keys);
 
     tokio::spawn(async move {
         tonic::transport::Server::builder()

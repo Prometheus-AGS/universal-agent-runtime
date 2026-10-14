@@ -1,0 +1,151 @@
+{
+  "status": "blocked-before-cargo-unexpected-source-drift",
+  "phase": "dot-feature-support",
+  "change": "dot-04-truthful-tool-outcomes",
+  "task": "2",
+  "stage": "Execute",
+  "attemptLabel": "fourteenth-preflight-only",
+  "expectedScenarios": 65,
+  "gateExecuted": false,
+  "cargoLaunched": false,
+  "testHarnessEntriesExecuted": 0,
+  "scenarioEntriesExecuted": 0,
+  "intendedCommand": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test truthful_tool_outcomes -- --test-threads=1 --nocapture",
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T030632Z-production-boundary.json",
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-drift-preflight-l79_45tt",
+  "privateSnapshot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-drift-preflight-l79_45tt/current-source-snapshot.tar.gz",
+  "privateSnapshotSha256": "2671354f2f95fe3339146495e3d9e71812245488341ae93123eb27edddecfd70",
+  "privateDirtyPatch": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-drift-preflight-l79_45tt/current-dirty-source.patch",
+  "privateDirtyPatchSha256": "cec4c3542e3a25160c06b9a2e85b306a08f8c58ce382e3b8e20a09d9e7e71bdb",
+  "privateCurrentFingerprint": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-drift-preflight-l79_45tt/source-current.json",
+  "privateCurrentFingerprintSha256": "d0116a8fe2b8f48a2c29be1cbd9149647b35ac23cf84245b61faae2a609acf7c",
+  "sourceDrift": {
+    "previousBoundSource": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/source-before.json",
+    "capturedAt": "2026-10-12T03:28:17.734003+00:00",
+    "head": "a42f23bbc8c83beb2f0a362633c0b769206b1027",
+    "headTree": "79caa2f1e07e4bc8d0ec9b54405e7053060a6423",
+    "branch": "main",
+    "beforeSourceSetSha256": "0f725b55f00212af6f4f62c89ce99994c56a5c3d1885fa6deff213a623cee504",
+    "afterSourceSetSha256": "989f53b1ae579c25cc49d6adf36d37601f2ac04af7f3881848bff84aabd7da15",
+    "expectedChangedPaths": [
+      "tests/support/truthful_tool_outcome_process.rs"
+    ],
+    "actualChangedPaths": [
+      "src/server.rs",
+      "src/uar/api/capabilities.rs",
+      "src/uar/api/full_harness.rs",
+      "src/uar/api/full_harness/handlers.rs",
+      "src/uar/api/full_harness/host_context.rs",
+      "src/uar/api/full_harness/types.rs",
+      "src/uar/api/mod.rs",
+      "src/uar/api/model_verification.rs",
+      "src/uar/api/providers.rs",
+      "src/uar/api/routes.rs",
+      "src/uar/api/targets.rs",
+      "src/uar/runtime/manager.rs",
+      "src/uar/runtime/turn/request.rs",
+      "src/uar/security/delegation_grants.rs",
+      "src/uar/settings/manager.rs",
+      "tests/support/truthful_tool_outcome_process.rs"
+    ],
+    "unexpectedChangedPaths": [
+      "src/server.rs",
+      "src/uar/api/capabilities.rs",
+      "src/uar/api/full_harness.rs",
+      "src/uar/api/full_harness/handlers.rs",
+      "src/uar/api/full_harness/host_context.rs",
+      "src/uar/api/full_harness/types.rs",
+      "src/uar/api/mod.rs",
+      "src/uar/api/model_verification.rs",
+      "src/uar/api/providers.rs",
+      "src/uar/api/routes.rs",
+      "src/uar/api/targets.rs",
+      "src/uar/runtime/manager.rs",
+      "src/uar/runtime/turn/request.rs",
+      "src/uar/security/delegation_grants.rs",
+      "src/uar/settings/manager.rs"
+    ],
+    "hashDelta": {
+      "src/server.rs": {
+        "before": "0c806a77890dd530a26b2acafda8d1125c48a346f9346336deecdbddb04466af",
+        "after": "90dce5f70813ab59567215def139a73845c5fb15bd81dc31fa820e20e9110993"
+      },
+      "src/uar/api/capabilities.rs": {
+        "before": "ec952b2173ad2416b6ffd73afd6bf1d699f5094c5295f4a4a1e960beafca1db0",
+        "after": "470a5eaadaacfe3645c99064b4bb266b598726aefc07804df18f53210b0e05ab"
+      },
+      "src/uar/api/full_harness.rs": {
+        "before": "3e6b21e22351d6b3f9dd1929212f8a35feb56eed47ed655713bcb6fccadc5af8",
+        "after": "dacb4e585304b4ab497182978cf7fd38bf113bf5f7f458b0edefb962e4b540d7"
+      },
+      "src/uar/api/full_harness/handlers.rs": {
+        "before": "b75203d352ad877411533825df78af156177ffda40439abd4994786292a29dd0",
+        "after": "272674200f21e10cd924ac3a708f6ca947f45d6f92a6f9621563867ccf137edb"
+      },
+      "src/uar/api/full_harness/host_context.rs": {
+        "before": "88a7d90016a140753b5115bb460ebbb8abaa121466a4a0795d8c4ee24fd06ffa",
+        "after": "8a906fa136208c9de8389d8ae01e7d453073d8eb044207573443b656d0efc8bb"
+      },
+      "src/uar/api/full_harness/types.rs": {
+        "before": "02a2623c079725c15019b3c6769cbb82614e1e6523f1b421c958f79e0ee11897",
+        "after": "ca4e25a191759de30eeaae252faba804523d6fe4dba14a422b5588dbf425162b"
+      },
+      "src/uar/api/mod.rs": {
+        "before": "b2a1935da9cb7e688d451eeec3dbf07d6d9a418d78d1404332d215a280f1dfbd",
+        "after": "242b7ecd75fe3bb30c7b33ef0c3475f1524a9b5d09041933dcb7ccd1ce09644c"
+      },
+      "src/uar/api/model_verification.rs": {
+        "before": null,
+        "after": "c9093c0c6af72c981278fca1f857a5e396220fda86daef6567ad4fb37e1523b0"
+      },
+      "src/uar/api/providers.rs": {
+        "before": "6970e72a55b4f6a91aab94a28a5025f83ce5ee0abada4eb4cd368d0ff9bde997",
+        "after": "8553a181e8e5b27c1b090adc11e0d5c762980a1e8682f431e1077e74c4c231bd"
+      },
+      "src/uar/api/routes.rs": {
+        "before": "2765eee3fde62e4715b76c3151c318b66529236f5af64356407d9a41cb6ea4f6",
+        "after": "1831ab4c546cc885570296bf4da44d6fcb00c3046689067ce2c5036578ed0fc0"
+      },
+      "src/uar/api/targets.rs": {
+        "before": null,
+        "after": "e119687ce32f1f43c1c6f2ead46302c93c9f91c5ebc573a92b4c09a746c33424"
+      },
+      "src/uar/runtime/manager.rs": {
+        "before": "bcc6461b334113f771886965d655c4d964fa77f3703405a6f9ff3522b402d562",
+        "after": "ffbeaa9fa3e90fdd7f5a0d62fc2348315cf4b832f4f81dfaad5d8c5b509d4c6f"
+      },
+      "src/uar/runtime/turn/request.rs": {
+        "before": "f00a94813ab22873e3f418d541a5546d387f44e5fa0b5acfa1e3ed1c71b50119",
+        "after": "8c0941b424e746d82d587360a3d3fee2aa1815350d20037aeee6f03420056ec2"
+      },
+      "src/uar/security/delegation_grants.rs": {
+        "before": "74f7b686e2636a1cb9924e32de6c91c8fda63570d5e54571dd07abe215807dd4",
+        "after": "7e037d86e09a3f65d4f7f7a1cbd7270d1fa3f28baf04bcde2c794c6bbbe12efa"
+      },
+      "src/uar/settings/manager.rs": {
+        "before": "7590a4981992d222adb703050977492368798e3274478d1a7db477542e61dcbd",
+        "after": "265ed8b84a43ed8fe55513f96b99f19bf4d164e2447cff55e3b1a44bce634860"
+      },
+      "tests/support/truthful_tool_outcome_process.rs": {
+        "before": "523a5c91bb3c82b0c2f1eb854b3b7b3a2b807f53e7a2415150f952611a55532a",
+        "after": "8ee690457922daceac592abdcba270d2257f74b624f4e42439b86140674c55fc"
+      }
+    },
+    "gitlinksUnchanged": true,
+    "boundFileCountBefore": 6549,
+    "boundFileCountAfter": 6551,
+    "headBefore": "4ee38989a7ed542193341cb995c6993719e3ee4b"
+  },
+  "sourceChangesByGateExecutor": [],
+  "rootInfrastructureUntouched": true,
+  "nextRequirement": "Root reconciles writer/source freeze and explicitly authorizes exact broadened source baseline; no silent rebaseline or Cargo retry.",
+  "snapshotMatchesCollectedFingerprint": true,
+  "snapshotFingerprintMismatches": [],
+  "privateSnapshotContentsHashManifest": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-drift-preflight-l79_45tt/snapshot-content-hashes.json",
+  "privateSnapshotContentsHashManifestSha256": "715ba98022efbf8e58b9e9e90bcaa84914351c9a0e89985afd7d0ef2846b0204",
+  "headChangedSincePreviousGate": true,
+  "privateExactBeforeToCurrentPatch": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-drift-preflight-l79_45tt/exact-before-to-current.patch",
+  "privateExactBeforeToCurrentPatchSha256": "3760d68cb0f167f3b5cd4758984da98eca5f0bad5b7093cc387e0bd8484184c1",
+  "privateBeforeSnapshot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/source-snapshot.tar.gz",
+  "privateBeforeSnapshotSha256": "8d4812a612b60afd0a9aad5c6c1c0ae6107e108ebae5426260a475a6641233bf"
+}

@@ -1,0 +1,12 @@
+{
+  "specification": "https://a2a-protocol.org/v1.0.0/specification/",
+  "schema": "https://raw.githubusercontent.com/a2aproject/A2A/v1.0.0/specification/a2a.proto",
+  "protocolVersion": "1.0",
+  "binding": "JSONRPC",
+  "methods": ["SendMessage", "GetTask", "CancelTask", "ListTasks"],
+  "roles": ["ROLE_USER", "ROLE_AGENT"],
+  "states": ["TASK_STATE_UNSPECIFIED", "TASK_STATE_SUBMITTED", "TASK_STATE_WORKING", "TASK_STATE_COMPLETED", "TASK_STATE_FAILED", "TASK_STATE_CANCELED", "TASK_STATE_INPUT_REQUIRED", "TASK_STATE_REJECTED", "TASK_STATE_AUTH_REQUIRED"],
+  "partContent": ["text", "raw", "url", "data"],
+  "send": {"jsonrpc": "2.0", "id": "submit", "method": "SendMessage", "params": {"message": {"messageId": "fixture-message-id", "role": "ROLE_USER", "parts": [{"text": "fixture-input"}]}, "configuration": {"returnImmediately": true}}},
+  "errors": {"TaskNotFoundError": -32001, "TaskNotCancelableError": -32002, "PushNotificationNotSupportedError": -32003, "UnsupportedOperationError": -32004, "ContentTypeNotSupportedError": -32005, "InvalidAgentResponseError": -32006, "ExtendedAgentCardNotConfiguredError": -32007, "ExtensionSupportRequiredError": -32008, "VersionNotSupportedError": -32009}
+}

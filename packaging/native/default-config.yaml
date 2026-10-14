@@ -1,15 +1,16 @@
 # Prometheus Universal Agent Runtime native-service defaults.
-# Secrets belong in the platform service environment file, never in YAML.
+# Set UAR_SECURITY__JWT_SECRET and UAR_SECURITY__SETTINGS_ADMIN_KEY in the
+# platform service environment file before starting. No secrets belong in YAML.
 
 server:
   host: "127.0.0.1"
+  cors_allowed_origins: []
   port: 1906
   grpc_port: 50051
 
 security:
-  jwt_required: false
-  jwt_secret: "unused_loopback_only"
-  settings_mutation_auth_required: false
+  jwt_required: true
+  settings_mutation_auth_required: true
 
 resilience:
   rate_limit_enabled: true

@@ -1,0 +1,54 @@
+--- failed-source/src/mcp/runtime.rs
++++ refrozen-source/src/mcp/runtime.rs
+@@ -418,7 +418,7 @@
+     }
+ }
+ 
+-/// Failure before or during a projected host tool call, without secret payloads.
++/// Failure before or during a projected host tool call, with sanitized diagnostics.
+ #[derive(Debug, Clone, PartialEq, Eq, Error)]
+ pub enum McpRuntimeError {
+     /// Invalidated, unauthenticated, failed or closed binding.
+@@ -445,7 +445,7 @@
+         server: String,
+         tool: String,
+         #[source]
+-        source: anyhow::Error,
++        source: super::outcome::McpToolFailure,
+     },
+ }
+ 
+@@ -908,7 +908,12 @@
+                 .map_err(|source| McpRuntimeError::InvocationFailed {
+                     server: server.clone(),
+                     tool: name.clone(),
+-                    source,
++                    source: super::outcome::McpToolFailure::find(&source)
++                        .cloned()
++                        .unwrap_or(super::outcome::McpToolFailure {
++                            outcome: super::outcome::ToolOutcome::TransportFailed,
++                            result: None,
++                        }),
+                 })
+         })
+         .await
+@@ -920,7 +925,7 @@
+                     source: super::outcome::McpToolFailure {
+                         outcome: super::outcome::ToolOutcome::OutcomeUnknown,
+                         result: None,
+-                    }.into(),
++                    },
+                 }
+             } else {
+                 McpRuntimeError::TimedOut {
+--- failed-source/src/mcp/outcome.rs
++++ refrozen-source/src/mcp/outcome.rs
+@@ -38,7 +38,7 @@
+ 
+ /// A failed MCP invocation with its complete SDK-represented response, when received.
+ /// Formatting deliberately excludes server content and transport diagnostics.
+-#[derive(Clone)]
++#[derive(Clone, PartialEq, Eq)]
+ pub struct McpToolFailure {
+     pub outcome: ToolOutcome,
+     pub result: Option<Value>,

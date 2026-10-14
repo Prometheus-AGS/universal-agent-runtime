@@ -14,6 +14,7 @@ use secrecy::SecretString;
 
 use super::encryption::CredentialEncryption;
 use super::store::{CredentialScope, CredentialStore};
+use crate::uar::security::claims::CredentialPrincipal;
 
 /// A successfully resolved credential. The plaintext key is wrapped in
 /// [`SecretString`]; call [`secrecy::ExposeSecret::expose_secret`] only at the
@@ -38,13 +39,13 @@ impl CredentialResolver {
         Self { store, encryption }
     }
 
-    /// Resolve the credential for `(user_id, provider_id)` with no session/agent context.
+    /// Resolve a verified principal's provider key with no session/agent context.
     pub async fn resolve(
         &self,
-        user_id: &str,
+        principal: &CredentialPrincipal,
         provider_id: &str,
     ) -> anyhow::Result<Option<ResolvedCredential>> {
-        self.resolve_with_context(user_id, provider_id, None, None)
+        self.resolve_with_context(principal, provider_id, None, None)
             .await
     }
 
@@ -54,7 +55,7 @@ impl CredentialResolver {
     /// `None` if every scope misses (caller falls through to env/config).
     pub async fn resolve_with_context(
         &self,
-        user_id: &str,
+        principal: &CredentialPrincipal,
         provider_id: &str,
         session_id: Option<&str>,
         agent_id: Option<&str>,
@@ -67,11 +68,10 @@ impl CredentialResolver {
         if let Some(aid) = agent_id {
             candidates.push((CredentialScope::Agent, aid));
         }
-        candidates.push((CredentialScope::User, user_id));
-        candidates.push((CredentialScope::System, "system"));
+        candidates.push((CredentialScope::User, principal.subject()));
 
         for (scope, scope_id) in candidates {
-            if let Some(row) = self.store.get(scope, scope_id, provider_id).await? {
+            if let Some(row) = self.store.get_principal(principal, scope, scope_id, provider_id).await? {
                 // Decrypt only the matched row. The original crypto error is
                 // intentionally discarded (`_decrypt_err`) so no ciphertext or
                 // key material can leak through the error chain; we surface only
@@ -94,7 +94,19 @@ impl CredentialResolver {
             }
         }
 
-        Ok(None)
+        self.resolve_system(provider_id).await
+    }
+
+    /// Resolve only the explicitly operator-owned platform credential. Callers
+    /// without verified principal proof may never probe user/session/agent rows.
+    pub async fn resolve_system(&self, provider_id: &str) -> anyhow::Result<Option<ResolvedCredential>> {
+        let Some(row) = self.store.get(CredentialScope::System, "system", provider_id).await? else {
+            return Ok(None);
+        };
+        let plaintext = self.encryption.decrypt(&row.api_key_encrypted)
+            .map_err(|_| anyhow::anyhow!("failed to decrypt system credential"))?;
+        Ok(Some(ResolvedCredential { provider_id: provider_id.to_owned(),
+            scope: CredentialScope::System, api_key: SecretString::from(plaintext) }))
     }
 }
 
@@ -102,6 +114,7 @@ impl CredentialResolver {
 mod tests {
     use super::*;
     use crate::uar::security::credentials::store::{CredentialRecord, InMemoryCredentialStore};
+    use crate::uar::security::credentials::PrincipalCredentialStore;
     use chrono::Utc;
     use secrecy::ExposeSecret;
 
@@ -117,7 +130,7 @@ mod tests {
         for (scope, scope_id, provider, plaintext) in entries {
             let now = Utc::now();
             store
-                .put(CredentialRecord {
+                .put_principal(&CredentialPrincipal::for_test("userA"), CredentialRecord {
                     scope: *scope,
                     scope_id: (*scope_id).to_string(),
                     provider_id: (*provider).to_string(),
@@ -145,7 +158,7 @@ mod tests {
         .await;
         let r = CredentialResolver::new(store, e);
         let got = r
-            .resolve_with_context("userA", "openai", Some("sess1"), None)
+            .resolve_with_context(&CredentialPrincipal::for_test("userA"), "openai", Some("sess1"), None)
             .await
             .unwrap()
             .unwrap();
@@ -163,7 +176,7 @@ mod tests {
         .await;
         let r = CredentialResolver::new(store, e);
         let got = r
-            .resolve_with_context("userA", "openai", Some("sess1"), Some("agent1"))
+            .resolve_with_context(&CredentialPrincipal::for_test("userA"), "openai", Some("sess1"), Some("agent1"))
             .await
             .unwrap()
             .unwrap();
@@ -177,7 +190,7 @@ mod tests {
         let store = store_with(&e, &[]).await;
         let r = CredentialResolver::new(store, e);
         let got = r
-            .resolve_with_context("userA", "openai", None, None)
+            .resolve_with_context(&CredentialPrincipal::for_test("userA"), "openai", None, None)
             .await
             .unwrap();
         assert!(got.is_none(), "no stored credential => None (env fallback)");
@@ -193,7 +206,7 @@ mod tests {
         .await;
         let r = CredentialResolver::new(store, e);
         let got = r
-            .resolve_with_context("userA", "anthropic", None, None)
+            .resolve_with_context(&CredentialPrincipal::for_test("userA"), "anthropic", None, None)
             .await
             .unwrap();
         assert!(got.is_none(), "must not return another provider's key");

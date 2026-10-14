@@ -1,0 +1,202 @@
+[
+  {
+    "boundary": "server_process",
+    "mode": "success",
+    "run": "151b09b0-3401-48b1-8bf6-a19f911df584",
+    "tool": "outcomes__effect",
+    "outcome": "succeeded",
+    "teamEvidence": null,
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": null,
+    "database": "outcomes",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-server_process-success"
+  },
+  {
+    "boundary": "server_process",
+    "mode": "application",
+    "run": "5e271e61-d8fc-43b6-949a-ede180f24d31",
+    "tool": "outcomes__effect",
+    "outcome": "application_failed",
+    "teamEvidence": null,
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": null,
+    "database": "outcomes",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-server_process-application"
+  },
+  {
+    "boundary": "server_process",
+    "mode": "predispatch",
+    "run": "c31ddda9-7685-4f2f-8cfa-2e7f935825f9",
+    "tool": "outcomes__effect",
+    "outcome": "transport_failed",
+    "teamEvidence": null,
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": null,
+    "database": "outcomes",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-server_process-predispatch"
+  },
+  {
+    "boundary": "server_process",
+    "mode": "unknown",
+    "run": "621d43df-89b5-4c65-ac14-e06b5ef355c4",
+    "tool": "outcomes__effect",
+    "outcome": "outcome_unknown",
+    "teamEvidence": null,
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": null,
+    "database": "outcomes",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-server_process-unknown"
+  },
+  {
+    "boundary": "team_process",
+    "mode": "success",
+    "run": "b709a3a7-4297-4d44-a4a2-9943a58c8911",
+    "tool": "dot04__outcomes__effect",
+    "outcome": "succeeded",
+    "teamEvidence": {
+      "team": "5ac099a5-03b9-43eb-85d9-95831773a54b",
+      "attempt": "e05bef06-9f22-4e15-bf73-da1543ea4139",
+      "teamOutcome": "succeeded",
+      "legacyHold": false,
+      "admissionOwner": "v1:s:19:dot04-outcome-owner"
+    },
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 13180,
+      "restartedPid": 13427,
+      "startedAt": "2026-10-12T04:36:55.542846+00:00",
+      "database": "outcomes",
+      "teamOutcome": "succeeded",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-team_process-success-restarted-observer"
+    },
+    "database": "outcomes",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-team_process-success"
+  },
+  {
+    "boundary": "team_process",
+    "mode": "application",
+    "run": "004ee82d-8fc2-4525-9fc5-81e119a3e841",
+    "tool": "dot04__outcomes__effect",
+    "outcome": "application_failed",
+    "teamEvidence": {
+      "team": "81da2942-d3e9-484d-889e-a3fa32b42592",
+      "attempt": "38b62089-fff2-4d42-82c2-abe420150997",
+      "teamOutcome": "failed",
+      "legacyHold": false,
+      "admissionOwner": "v1:s:19:dot04-outcome-owner"
+    },
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 13466,
+      "restartedPid": 13677,
+      "startedAt": "2026-10-12T04:37:02.789243+00:00",
+      "database": "outcomes",
+      "teamOutcome": "failed",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-team_process-application-restarted-observer"
+    },
+    "database": "outcomes",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-team_process-application"
+  },
+  {
+    "boundary": "team_process",
+    "mode": "unknown",
+    "run": "63fd3426-e76a-4e65-915f-5cae1c535770",
+    "tool": "dot04__outcomes__effect",
+    "outcome": "outcome_unknown",
+    "teamEvidence": {
+      "team": "a91d6e73-de3a-4e76-ae3b-a004fd47ca22",
+      "attempt": "c6a03180-576c-485a-8c3b-ba9257e661dd",
+      "teamOutcome": "uncertain",
+      "legacyHold": false,
+      "admissionOwner": "v1:s:19:dot04-outcome-owner"
+    },
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 13817,
+      "restartedPid": 13946,
+      "startedAt": "2026-10-12T04:37:10.145550+00:00",
+      "database": "outcomes",
+      "teamOutcome": "uncertain",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-team_process-unknown-restarted-observer"
+    },
+    "database": "outcomes",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-team_process-unknown"
+  },
+  {
+    "boundary": "team_process",
+    "mode": "no_tool",
+    "run": "bae3a9c0-89f2-4e8b-bae2-26d519edc7ae",
+    "tool": "dot04__outcomes__effect",
+    "outcome": null,
+    "teamEvidence": {
+      "team": "66e5d3aa-a715-4315-824f-79822b681e61",
+      "attempt": "fe220de7-0f59-4a4a-848d-a3b152fd81cf",
+      "teamOutcome": "succeeded",
+      "legacyHold": false,
+      "admissionOwner": "v1:s:19:dot04-outcome-owner"
+    },
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 13982,
+      "restartedPid": 14274,
+      "startedAt": "2026-10-12T04:37:16.148306+00:00",
+      "database": "outcomes",
+      "teamOutcome": "succeeded",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-team_process-no_tool-restarted-observer"
+    },
+    "database": "outcomes",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-team_process-no_tool"
+  },
+  {
+    "boundary": "instance_process",
+    "mode": "success",
+    "run": "6c0f2ade-1b2a-4753-b50a-6f83a60e665d",
+    "tool": "dot04__outcomes__effect",
+    "outcome": "succeeded",
+    "instanceEvidence": {
+      "instance": "9236bb88-a8af-4871-a5bd-13012e0eca34",
+      "owner": "v1:s:19:dot04-outcome-owner",
+      "command": "ac56f0f7-f251-46c0-ac3e-0354ea2a3353",
+      "recovery": "ready",
+      "lifecycle": "dormant"
+    },
+    "database": "outcomes",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-instance-process-success"
+  },
+  {
+    "boundary": "instance_process",
+    "mode": "application",
+    "run": "32cc0410-172b-4713-87c1-8a43a3e0b03a",
+    "tool": "dot04__outcomes__effect",
+    "outcome": "application_failed",
+    "instanceEvidence": {
+      "instance": "ac10553c-16d7-4702-bb28-256dd2faf204",
+      "owner": "v1:s:19:dot04-outcome-owner",
+      "command": "f7e9f979-e551-49fd-a9a7-8f2028f84e80",
+      "recovery": "ready",
+      "lifecycle": "dormant"
+    },
+    "database": "outcomes",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-instance-process-application"
+  },
+  {
+    "boundary": "instance_process",
+    "mode": "unknown",
+    "run": "58065b5f-9153-4bca-856f-1b74668f1d70",
+    "tool": "dot04__outcomes__effect",
+    "outcome": "outcome_unknown",
+    "instanceEvidence": {
+      "instance": "1f264ee9-08d3-48b7-923b-29e4f8e3f859",
+      "owner": "v1:s:19:dot04-outcome-owner",
+      "command": "00604e47-9085-4001-a91e-0b4ec0c334ba",
+      "recovery": "effect_uncertain",
+      "lifecycle": "active"
+    },
+    "database": "outcomes",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/local-cd265ec310dd4aa49d537e26468409d0/binary-instance-process-unknown"
+  }
+]

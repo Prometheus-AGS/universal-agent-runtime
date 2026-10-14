@@ -40,7 +40,7 @@ impl AgentGraph {
     /// Returns the final [`GraphState`] after execution completes (normally,
     /// via a `Finished` signal, or after an error).
     pub async fn execute(&self, initial_state: GraphState, ctx: &GraphContext) -> GraphState {
-        self.execute_inner(initial_state, ctx, None).await
+        self.execute_inner(initial_state, ctx, None, None).await
     }
 
     /// Execute with live step boundaries on the trusted host's ordered run sink.
@@ -51,7 +51,19 @@ impl AgentGraph {
         ctx: &GraphContext,
         events: &dyn RuntimeEventSink,
     ) -> GraphState {
-        self.execute_inner(initial_state, ctx, Some(events)).await
+        self.execute_inner(initial_state, ctx, Some(events), None).await
+    }
+
+    /// Execute through the trusted host's checkpoint and event boundaries.
+    /// The checkpoint host is never passed to a node or placed in GraphContext.
+    pub(crate) async fn execute_with_checkpoint_host(
+        &self,
+        initial_state: GraphState,
+        ctx: &GraphContext,
+        events: &dyn RuntimeEventSink,
+        checkpoints: &crate::uar::runtime::checkpoint_host::CheckpointHost,
+    ) -> GraphState {
+        self.execute_inner(initial_state, ctx, Some(events), Some(checkpoints)).await
     }
 
     async fn execute_inner(
@@ -59,6 +71,7 @@ impl AgentGraph {
         initial_state: GraphState,
         ctx: &GraphContext,
         events: Option<&dyn RuntimeEventSink>,
+        checkpoints: Option<&crate::uar::runtime::checkpoint_host::CheckpointHost>,
     ) -> GraphState {
         let mut state = initial_state;
         let mut current_id = self.entry_node.clone();
@@ -120,6 +133,19 @@ impl AgentGraph {
             }
             state = match result {
                 NodeResult::Continue(s) => s,
+                NodeResult::Checkpoint(mut s) => {
+                    s.iteration = step;
+                    let result = match checkpoints {
+                        Some(host) => host.persist(&current_id, &s).await,
+                        None => Err(anyhow::anyhow!("trusted checkpoint host is unavailable")),
+                    };
+                    if let Err(error) = result {
+                        error!(run_id = %ctx.run_id, node_id = %current_id, %error, "Checkpoint host refused save");
+                        s.set("_error", "checkpoint_persistence_failed");
+                        return s;
+                    }
+                    s
+                }
                 NodeResult::Finished(mut s) => {
                     s.iteration = step;
                     info!(run_id = %ctx.run_id, node_id = %current_id, "Graph finished");

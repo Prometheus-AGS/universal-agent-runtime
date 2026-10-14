@@ -1,0 +1,38 @@
+{
+  "recorded_at": "2026-10-13T10:48:11.766231+00:00",
+  "operator_answers": [
+    "Approve one worker and its isolated fault tests (Recommended)",
+    "Approve the isolated Linux VM and guest fault tests (Recommended)"
+  ],
+  "worker": {
+    "cluster": "know-me",
+    "cluster_id": 653426,
+    "type": "g6-standard-4",
+    "count": 1,
+    "maximum_billed_hours": 48,
+    "base_compute_usd_cap": 3.46,
+    "tax_extra": true,
+    "delete_after_evidence_export": true,
+    "fault_operations_only_on_new_worker": [
+      "qualification-controller partition",
+      "qualification-Pod deletion",
+      "kubelet inhibition and controlled container exclusion"
+    ],
+    "existing_workers_or_applications_disruption_authorized": false,
+    "additional_volumes_or_load_balancers_authorized": false
+  },
+  "linux_guest": {
+    "paid": false,
+    "vcpus": 4,
+    "memory_gib": 8,
+    "root_disk_gib": 24,
+    "fault_disk_mib": 512,
+    "guest_clock_change_authorized": true,
+    "guest_reboot_authorized": true,
+    "bounded_fault_disk_exhaustion_authorized": true,
+    "mac_clock_change_authorized": false,
+    "mac_reboot_authorized": false
+  },
+  "private_reviewable_configuration": "/tmp/dot17-private-preparation-20261013/additional-resource-authorization.md",
+  "previous_10Gi_volume_authorization_remains_separate": true
+}

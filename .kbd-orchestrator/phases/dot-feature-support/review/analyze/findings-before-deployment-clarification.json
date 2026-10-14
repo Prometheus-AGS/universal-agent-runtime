@@ -1,0 +1,25 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "gpt-6.1-sol",
+  "producer_model": "unknown",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "unverified-producer-unknown",
+  "findings": [],
+  "judge_identity": {
+    "providerConnectionId": "openai-proxy-8181",
+    "providerId": "openai",
+    "modelId": "gpt-6.1-sol"
+  },
+  "checked_classes": [
+    "Build-versus-adopt blind spots \u2014 The artifact compares the existing UAR runtime with a timing library, a durable job library, and a workflow platform. It distinguishes library-provided timing from UAR-owned authority and transactional guarantees, records maintenance evidence for external candidates, and requires an exact-version fit gate before scheduler adoption.",
+    "Unevaluated candidates \u2014 All seven candidates have explicit verdicts, evidence, risks, and decision rationales. Reference-only alternatives are distinguished from conditional adaptation recommendations.",
+    "Stale or unverifiable landscape claims and missing solution categories \u2014 The comparison covers timing adapters, persistent job queues, workflow orchestration, and existing domain infrastructure. Tagged scheduler and Apalis documentation and registry endpoints support the stated landscape; main-branch evidence is explicitly bounded, the stale Temporal preview description is excluded, and unresolved licensing is disclosed rather than treated as settled.",
+    "Contradictions with assessment, goals, or constraints \u2014 The dependency-pin warning in the assessment handoff is addressed through explicit effective-input tracing without approving policy divergence. Runtime findings remain source-level and unreproduced, publication is separated from deployment health, reliability foundations precede unattended features, and OpenSpec deltas remain required for Plan. The packet supplies no additional project constraints."
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

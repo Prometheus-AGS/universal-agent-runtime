@@ -1,0 +1,68 @@
+{
+  "recorded_at": "2026-10-14T08:20:16.968379+00:00",
+  "decision": "operator selected Linux guest native qualification only for this release; LKE unchanged",
+  "files": [
+    {
+      "path": ".kbd-orchestrator/phases/dot-feature-support/plan.md",
+      "sha256": "181cf58593ad76137855f125b1dbcd24cbcd45a22a29d70dfcc66aaad871abcb"
+    },
+    {
+      "path": "openspec/changes/dot-11-supervisor-fencing/proposal.md",
+      "sha256": "2a3900fb509458352b38de5196398c7b7a86fd4676ea169a9d9b5822d75b85fd"
+    },
+    {
+      "path": "openspec/changes/dot-11-supervisor-fencing/design.md",
+      "sha256": "4b1c8d8858a9e9a5147411bac7e20e9e61f72bc71845e9a334d024d74ac68151"
+    },
+    {
+      "path": "openspec/changes/dot-11-supervisor-fencing/tasks.md",
+      "sha256": "c8a6a1306f37ffe307bfc952472c017380ff14791fb12975274139752746fc71"
+    },
+    {
+      "path": "openspec/changes/dot-11-supervisor-fencing/specs/dot-supervisor-recovery/spec.md",
+      "sha256": "cfe7c4d35738469abb1afef633f725ef49c7c25fbe3dd1b257275a96a81985c3"
+    },
+    {
+      "path": "openspec/changes/dot-17-assistant-release-acceptance/design.md",
+      "sha256": "d0e598afcbc5f21ea99b45f7256eecbe4abbd07eb4e1f9d8e953c7ba0c87df18"
+    },
+    {
+      "path": "openspec/changes/dot-17-assistant-release-acceptance/tasks.md",
+      "sha256": "72fe748c753a55346ca022df41a3e1cc8030c2eaf4b7690a473453ebfc0318d9"
+    },
+    {
+      "path": "openspec/changes/dot-17-assistant-release-acceptance/specs/product-validation-evidence/spec.md",
+      "sha256": "54665cd85807afd152db29017824814a27ffeb96b69b9cc19358462ca9d9c31d"
+    },
+    {
+      "path": "docs/operations/supervisor-recovery.md",
+      "sha256": "23fb5f255ab74783bace8b79ec87b94f4b61b77047d0e8c542b5678f95fe6e17"
+    },
+    {
+      "path": "docs/operations/dot-supervisor-qualification.md",
+      "sha256": "f3ce3e3d598608ec0409682f6a13f97910fb3c308bb83b2dfe75fed2b7f44e84"
+    },
+    {
+      "path": "docs/operations/dot-validation-targets.md",
+      "sha256": "59563a5f71b1620578195852f5b05dee8f73b6e30d8c97cba7f1818f355b1b0a"
+    },
+    {
+      "path": "docs/operations/dot-release-acceptance.md",
+      "sha256": "00c2eae7f5b01c9a4edf2ddc5277ff951bb4d6becbf708628a4b517472e39266"
+    },
+    {
+      "path": "docs/durable-schedules.md",
+      "sha256": "9edb81a723cbbfba34cc0b3a964e9957de1af343a5b1167f41303cf0ff1a0c06"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/dot-feature-support/implementation/linux-native-qualification-scope-20261014.md",
+      "sha256": "6ca31868a8348ca58c7bc804d339f1456dcbbce14430e0cd5ff11ef2704667ed"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/dot-feature-support/implementation/dot17-scenario-matrix.json",
+      "sha256": "f4aa0e05885bc9233911f5b5591debca9d8eed72795037364ec2bc462864f7ea"
+    }
+  ],
+  "scenario_count": 109,
+  "verification_run": false
+}

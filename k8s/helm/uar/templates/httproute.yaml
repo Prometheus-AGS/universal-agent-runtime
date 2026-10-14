@@ -10,6 +10,56 @@ spec:
   parentRefs:
     - name: {{ .Values.gateway.gatewayRef.name }}
       namespace: {{ .Values.gateway.gatewayRef.namespace }}
+      {{- if .Values.gateway.gatewayRef.sectionName }}
+      sectionName: {{ .Values.gateway.gatewayRef.sectionName }}
+      {{- end }}
+  hostnames:
+    - {{ .Values.gateway.hostname | quote }}
+  rules:
+    {{- range .Values.uar.instanceRoutes }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ .pathPrefix | quote }}
+      {{- with $.Values.gateway.timeouts }}
+      timeouts:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: {{ include "uar.fullname" $ }}-{{ .name }}
+          port: {{ $.Values.uar.service.port }}
+    {{- end }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      {{- with .Values.gateway.timeouts }}
+      timeouts:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      backendRefs:
+        - name: {{ include "uar.fullname" . }}
+          port: {{ .Values.uar.service.port }}
+{{- if .Values.gateway.redirect.enabled }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "uar.fullname" . }}-https-redirect
+  namespace: {{ include "uar.namespace" . }}
+  labels:
+    {{- include "uar.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ .Values.gateway.gatewayRef.name }}
+      namespace: {{ .Values.gateway.gatewayRef.namespace }}
+      sectionName: {{ required "gateway.redirect.sectionName must name the existing HTTP listener" .Values.gateway.redirect.sectionName }}
   hostnames:
     - {{ .Values.gateway.hostname | quote }}
   rules:
@@ -17,7 +67,10 @@ spec:
         - path:
             type: PathPrefix
             value: /
-      backendRefs:
-        - name: {{ include "uar.fullname" . }}
-          port: {{ .Values.uar.service.port }}
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+{{- end }}
 {{- end }}

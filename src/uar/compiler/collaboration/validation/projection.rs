@@ -1,4 +1,4 @@
-use anyhow::{Result, bail};
+use anyhow::Result;
 use serde_json::Value;
 
 use crate::uar::defaults::default_agent;
@@ -175,37 +175,3 @@ pub(super) fn project_agent(document: &Value) -> Result<AgentArtifact> {
     Ok(agent.with_catalog_metadata("collaboration-package"))
 }
 
-pub(super) fn reject_portable_authority(value: &Value, path: &str) -> Result<()> {
-    match value {
-        Value::Object(object) => {
-            for (key, child) in object {
-                let normalized = key.to_ascii_lowercase().replace(['-', '_'], "");
-                if matches!(
-                    normalized.as_str(),
-                    "apikey"
-                        | "password"
-                        | "secret"
-                        | "token"
-                        | "credentialref"
-                        | "connectionref"
-                        | "ownerid"
-                        | "workspaceid"
-                        | "runtimeinstanceid"
-                        | "representationgrantrefs"
-                        | "approvaltoken"
-                        | "consentevidence"
-                ) {
-                    bail!("portable document contains private authority field '{path}.{key}'");
-                }
-                reject_portable_authority(child, &format!("{path}.{key}"))?;
-            }
-        }
-        Value::Array(values) => {
-            for (index, child) in values.iter().enumerate() {
-                reject_portable_authority(child, &format!("{path}[{index}]"))?;
-            }
-        }
-        _ => {}
-    }
-    Ok(())
-}

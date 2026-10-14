@@ -1,0 +1,12 @@
+{
+  "source_sha": "22c70da51e5aad357e679553fd3dc2e79df2b378",
+  "image_id": "sha256:08f9f35da53d30f79a444205bf89c90bed5bfc154fd0598103fbb983958b81de",
+  "container_id": "1ebae811351116aa06df8684cb5f1a5b73b354ee64f50c41d80dcae7eebe42c4",
+  "exit_code": 1,
+  "started_at": "2026-10-11T23:25:18.411347147Z",
+  "finished_at": "2026-10-11T23:25:18.669886242Z",
+  "observed_error": "security.settings_admin_key must be configured when security.settings_mutation_auth_required=true",
+  "classification": "launch fixture omitted required settings admin key",
+  "production_changes": [],
+  "accepted_prior_gates_rerun": false
+}

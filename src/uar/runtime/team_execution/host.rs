@@ -79,6 +79,15 @@ pub struct TeamHostContextInput {
     pub tool_admission: RunToolAdmissionInput,
 }
 
+impl std::fmt::Debug for TeamHostContextInput {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // MCP configuration and admission input may contain credentials.
+        f.debug_struct("TeamHostContextInput")
+            .field("expected_binding_revision", &self.expected_binding_revision)
+            .finish_non_exhaustive()
+    }
+}
+
 #[derive(Clone)]
 pub(super) struct TeamHostContext {
     binding_revision: u64,

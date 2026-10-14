@@ -56,6 +56,7 @@ impl CredentialKind {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VerifiedIdentity {
     credential_kind: CredentialKind,
+    api_key_id: Option<String>,
     issuer: Option<String>,
     subject: String,
     tenant_id: Option<TenantId>,
@@ -64,8 +65,18 @@ pub struct VerifiedIdentity {
 
 impl VerifiedIdentity {
     pub(in crate::uar::security) fn new(issuer: Option<&str>, claims: &UserClaims, tenant_id: Option<TenantId>, credential_kind: CredentialKind) -> Self {
-        Self { credential_kind, issuer: issuer.map(str::to_owned), subject: claims.sub.clone(), tenant_id, roles: claims.roles.clone() }
+        Self { credential_kind, api_key_id: None, issuer: issuer.map(str::to_owned), subject: claims.sub.clone(), tenant_id, roles: claims.roles.clone() }
     }
+
+    pub(in crate::uar::security) fn with_api_key_id(mut self, id: Option<String>) -> Self {
+        self.api_key_id = id;
+        self
+    }
+
+    /// True only for credentials whose signed provenance identifies an API key.
+    pub fn is_api_key_credential(&self) -> bool { self.credential_kind == CredentialKind::ApiKey }
+
+    pub(in crate::uar::security) fn api_key_id(&self) -> Option<&str> { self.api_key_id.as_deref() }
 
     pub(in crate::uar::security) fn is_issuer_credential(&self) -> bool { self.credential_kind == CredentialKind::Issuer }
 
@@ -136,11 +147,160 @@ pub struct UserContext {
 }
 
 impl UserContext {
+    /// Conversation storage uses the entire verified credential identity.
+    /// Anonymous compatibility is restricted to the actual anonymous boundary.
+    pub fn session_owner_key(&self) -> anyhow::Result<String> {
+        if self.user_id == crate::session::ANONYMOUS_SESSION_OWNER
+            && self.claims.sub == self.user_id && self.tenant_id.is_none()
+            && self.claims.tenant_id.is_none() && self.authority.is_none()
+            && self.host_authority.is_none()
+        {
+            return Ok(crate::session::ANONYMOUS_SESSION_OWNER.to_owned());
+        }
+        Ok(CredentialPrincipal::from_verified_context(self)?.storage_key())
+    }
+
     pub fn trusted_host_id(&self) -> Option<&str> {
         self.host_authority.as_ref().filter(|proof| proof.matches(self)).map(|proof| proof.host_id.as_str())
     }
 
     pub fn verified_identity(&self) -> Option<&VerifiedIdentity> {
         self.authority.as_ref().filter(|authority| authority.matches(self))
+    }
+}
+
+/// Complete credential owner captured at a trusted authentication boundary.
+/// This capability is never deserialized from a request or a persisted row.
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct CredentialPrincipal {
+    issuer_kind: &'static str,
+    issuer: String,
+    tenant: Option<String>,
+    subject: String,
+}
+
+impl CredentialPrincipal {
+    /// Capture verified JWT/API-key identity or an authenticated local launch.
+    ///
+    /// # Errors
+    /// Rejects synthetic, anonymous and inconsistent contexts.
+    pub fn from_verified_context(context: &UserContext) -> anyhow::Result<Self> {
+        if context.user_id.trim().is_empty() || context.user_id == "anonymous" {
+            anyhow::bail!("verified credential principal required");
+        }
+        if let Some(identity) = context.verified_identity() {
+            let (issuer_kind, issuer) = match identity.issuer() {
+                Some(issuer) if !issuer.trim().is_empty() => ("issuer", issuer),
+                Some(_) => anyhow::bail!("verified credential issuer required"),
+                None => ("local-jwt", "urn:uar:local:jwt"),
+            };
+            if identity.tenant_id().is_some_and(|tenant| tenant.trim().is_empty()) {
+                anyhow::bail!("verified credential tenant required");
+            }
+            return Ok(Self {
+                issuer_kind,
+                issuer: issuer.to_owned(),
+                tenant: identity.tenant_id().map(str::to_owned),
+                subject: identity.subject().to_owned(),
+            });
+        }
+        if context.trusted_host_id().is_some() && context.tenant_id.is_none() {
+            return Ok(Self {
+                issuer_kind: "local-host",
+                issuer: "urn:uar:local:host".to_owned(),
+                tenant: None,
+                subject: context.user_id.clone(),
+            });
+        }
+        anyhow::bail!("verified credential principal required")
+    }
+
+    /// Canonical versioned owner key. Length framing prevents delimiter collisions;
+    /// storage must additionally use a namespace disjoint from legacy subjects.
+    pub fn storage_key(&self) -> String {
+        let tenant = match &self.tenant {
+            Some(value) => format!("t:{}:{}", value.len(), value),
+            None => "local".to_owned(),
+        };
+        format!("v1:k:{}:i:{}:{}:{}:s:{}:{}", self.issuer_kind,
+            self.issuer.len(), self.issuer, tenant, self.subject.len(), self.subject)
+    }
+
+    /// Verified issuer, including the explicit local authentication namespace.
+    pub fn issuer(&self) -> &str { &self.issuer }
+
+    /// Verified tenant; absence is the explicit local tenant namespace.
+    pub fn tenant_id(&self) -> Option<&str> { self.tenant.as_deref() }
+
+    /// Verified subject.
+    pub fn subject(&self) -> &str { &self.subject }
+
+    #[cfg(test)]
+    pub(crate) fn for_test(subject: &str) -> Self {
+        Self { issuer_kind: "local-jwt", issuer: "urn:uar:local:jwt".to_owned(),
+            tenant: None, subject: subject.to_owned() }
+    }
+}
+
+/// Host-issued delegation for one durable schedule and destination. This is
+/// protected catalog state, never an API request or a general identity token.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ScheduleOwnerGrant {
+    issuer_kind: String,
+    issuer: String,
+    tenant: Option<String>,
+    subject: String,
+    owner_key: String,
+    schedule_id: String,
+    workspace_id: String,
+    instance_id: String,
+}
+
+/// Separate protected authority for one follow-up rule and conversation target.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(transparent)]
+pub struct FollowupOwnerGrant(ScheduleOwnerGrant);
+
+impl FollowupOwnerGrant {
+    pub(crate) fn capture(owner: &CredentialPrincipal, rule: &str, workspace: &str, instance: &str) -> Self {
+        Self(ScheduleOwnerGrant::capture(owner, rule, workspace, instance))
+    }
+    pub(crate) fn restore(&self, key: &str, rule: &str, workspace: &str, instance: &str) -> anyhow::Result<CredentialPrincipal> {
+        self.0.restore(key, rule, workspace, instance)
+    }
+}
+
+impl ScheduleOwnerGrant {
+    pub(crate) fn capture(
+        owner: &CredentialPrincipal, schedule_id: &str, workspace: &str, instance: &str,
+    ) -> Self {
+        Self { issuer_kind: owner.issuer_kind.into(), issuer: owner.issuer.clone(),
+            tenant: owner.tenant.clone(), subject: owner.subject.clone(),
+            owner_key: owner.storage_key(), schedule_id: schedule_id.into(),
+            workspace_id: workspace.into(), instance_id: instance.into() }
+    }
+
+    /// Only the schedule host calls this after loading the exact protected
+    /// record and checking its claim/revision and current destination binding.
+    pub(crate) fn restore(
+        &self, owner_key: &str, schedule_id: &str, workspace: &str, instance: &str,
+    ) -> anyhow::Result<CredentialPrincipal> {
+        anyhow::ensure!(self.owner_key == owner_key && self.schedule_id == schedule_id
+            && self.workspace_id == workspace && self.instance_id == instance,
+            "schedule delegation scope mismatch");
+        let issuer_kind = match self.issuer_kind.as_str() {
+            "issuer" => "issuer",
+            "local-jwt" if self.issuer == "urn:uar:local:jwt" => "local-jwt",
+            "local-host" if self.issuer == "urn:uar:local:host" && self.tenant.is_none() => "local-host",
+            _ => anyhow::bail!("schedule delegation issuer is invalid"),
+        };
+        anyhow::ensure!(!self.issuer.trim().is_empty() && !self.subject.trim().is_empty()
+            && self.subject != "anonymous" && self.tenant.as_deref().is_none_or(|t| !t.trim().is_empty()),
+            "schedule delegation principal is invalid");
+        let principal = CredentialPrincipal { issuer_kind, issuer: self.issuer.clone(),
+            tenant: self.tenant.clone(), subject: self.subject.clone() };
+        anyhow::ensure!(principal.storage_key() == self.owner_key, "schedule delegation owner mismatch");
+        Ok(principal)
     }
 }

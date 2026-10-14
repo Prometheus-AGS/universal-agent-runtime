@@ -209,9 +209,16 @@ impl StreamState {
         events
     }
 
-    fn handle_message_delta(&mut self, usage: Option<UsageResponse>) {
+    fn handle_message_delta(&mut self, usage: Option<MessageDeltaUsage>) {
         if let Some(usage) = usage {
-            self.merge_usage(&usage);
+            // The delta omits input counts when unchanged. Preserve the full
+            // message_start validation and existing cumulative/cache merger.
+            self.merge_usage(&UsageResponse {
+                input_tokens: usage.input_tokens.unwrap_or(0),
+                output_tokens: usage.output_tokens,
+                cache_creation_input_tokens: usage.cache_creation_input_tokens,
+                cache_read_input_tokens: usage.cache_read_input_tokens,
+            });
         }
     }
 
@@ -428,8 +435,8 @@ mod tests {
                 stop_reason: Some("end_turn".to_string()),
                 stop_sequence: None,
             },
-            usage: Some(UsageResponse {
-                input_tokens: 0,
+            usage: Some(MessageDeltaUsage {
+                input_tokens: None,
                 output_tokens: 30,
                 cache_read_input_tokens: None,
                 cache_creation_input_tokens: None,

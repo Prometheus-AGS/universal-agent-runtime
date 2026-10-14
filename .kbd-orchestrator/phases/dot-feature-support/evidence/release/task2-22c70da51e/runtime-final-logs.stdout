@@ -1,0 +1,1 @@
+{"timestamp":"2026-10-11T23:25:18.664313Z","level":"ERROR","fields":{"message":"Failed to load configuration: Config(security.settings_admin_key must be configured when security.settings_mutation_auth_required=true)"},"target":"universal_agent_runtime","line_number":91,"threadId":"ThreadId(1)"}

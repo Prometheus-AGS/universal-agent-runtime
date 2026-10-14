@@ -1,0 +1,944 @@
+{
+  "change": "dot-05-stream-terminal-contract",
+  "task": "2",
+  "phase": "Execute",
+  "tier": "Tier1 completed-change real integration",
+  "command": [
+    "env",
+    "-u",
+    "BEDROCK_BASE_URL",
+    "-u",
+    "BEDROCK_CROSS_REGION",
+    "VERTEXAI_PROJECT=dot05-fixture",
+    "VERTEXAI_LOCATION=us-central1",
+    "UAR_DOT05_INFRA_FILE=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "UAR_DOT05_NAMESPACE=dot05_20261012T062056_ac6a5219ed20",
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full",
+    "--test",
+    "stream_terminal_contract",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "status": "failed",
+  "sourceSetSha256": "dc44a45f2ab951563420b7d26505ea8519250d3930053fb1be76e0c6df0ff62a",
+  "boundInputs": 6558,
+  "head": "b4244aeaa7e931240ae0f09ae31bae3f45bda244",
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-native-usage-gate-mw8l9lxi",
+  "privateRawStdout": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-native-usage-gate-mw8l9lxi/cargo.stdout",
+  "privateRawStderr": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-native-usage-gate-mw8l9lxi/cargo.stderr",
+  "environmentKeys": [
+    "HOME",
+    "PATH"
+  ],
+  "startedAt": "2026-10-12T06:22:43.211871+00:00",
+  "toolsBefore": {
+    "cargo": {
+      "path": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/cargo",
+      "resolvedPath": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/cargo",
+      "sha256": "65ba2b36bd365d1da4c7958515b63070a483d393316160db8f309bf4082765cf",
+      "bytes": 31822984
+    },
+    "rustc": {
+      "path": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/rustc",
+      "resolvedPath": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/rustc",
+      "sha256": "57f1d2c5bf4a0de46f2cc14c41e7562bff5eddf9e0f9a6200c7b950c56684895",
+      "bytes": 412504
+    },
+    "cargoDispatch": {
+      "path": "/Users/gqadonis/.cargo/bin/cargo",
+      "resolvedPath": "/Users/gqadonis/.cargo/bin/rustup",
+      "sha256": "ec1b9233e7f72990ecd8e62063fa7f6c3dfc2bec8e97f88bff165f9100ac696a",
+      "bytes": 11319056
+    },
+    "rustup": {
+      "path": "/Users/gqadonis/.cargo/bin/rustup",
+      "resolvedPath": "/Users/gqadonis/.cargo/bin/rustup",
+      "sha256": "ec1b9233e7f72990ecd8e62063fa7f6c3dfc2bec8e97f88bff165f9100ac696a",
+      "bytes": 11319056
+    },
+    "fixturePythonLauncher": {
+      "path": "/usr/bin/python3",
+      "resolvedPath": "/usr/bin/python3",
+      "sha256": "1632eb8de8409ac0bf8d35c2d52ea8222fd7d091344bba3fa0f998bfac2ddfda",
+      "bytes": 118640
+    },
+    "fixturePythonResolved": {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/usr/bin/python3",
+      "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "sha256": "5ab108d5c2faa403d86a5918a7ff73c8afdbec2a0f6b62d932f77a078ee93d7c",
+      "bytes": 102352
+    },
+    "openssl": {
+      "path": "/usr/bin/openssl",
+      "resolvedPath": "/usr/bin/openssl",
+      "sha256": "e202adb4a58f5b891c1f2ea4f037a201acc64b0fe10e23053e6da1f3aeadbdb1",
+      "bytes": 1130832
+    },
+    "opensslVersion": "LibreSSL 3.3.6",
+    "pythonVersion": "3.9.6 (default, Aug 13 2026, 04:25:06) \n[Clang 21.0.0 (clang-2100.3.33.1)]"
+  },
+  "expectedRows": 83,
+  "expectedBoundaries": 249,
+  "processes": [
+    {
+      "pid": 73388,
+      "parentPid": 71626,
+      "comm": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "sampledAt": "2026-10-12T06:25:11.803729+00:00",
+      "role": "integration-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+        "sha256": "c8b12cb4c4113d98d66bf7d47a78e4aa488dedcdc29864330cdd762949faeb95",
+        "bytes": 326664376
+      }
+    },
+    {
+      "pid": 74019,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:35.972625+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74022,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:36.356713+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74026,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:36.730177+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74032,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:37.887861+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74313,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:39.015638+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74340,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:39.862312+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74424,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:40.268694+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74430,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:41.004856+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74434,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:41.380968+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74442,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:42.127210+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74446,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:42.501774+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74452,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:43.249695+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74458,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:43.643518+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74499,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:44.423312+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74502,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:44.802990+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74515,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:46.735803+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74610,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:48.646622+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74621,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:50.921585+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74628,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:51.313281+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74648,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:52.066215+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74653,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:52.432065+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74656,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:52.805183+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74661,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:53.949770+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74667,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:54.711738+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74676,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:55.895994+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74693,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:56.528767+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74714,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:56.924940+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    },
+    {
+      "pid": 74717,
+      "parentPid": 73388,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sampledAt": "2026-10-12T06:26:57.292193+00:00",
+      "role": "controlled-https-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280
+      }
+    }
+  ],
+  "fixtureRoots": [
+    "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-mBiOMw"
+  ],
+  "cargoPid": 71626,
+  "lastObservedAt": "2026-10-12T06:26:57.326449+00:00",
+  "elapsedSeconds": 253.99,
+  "stdoutBytes": 3840,
+  "stderrBytes": 12308,
+  "completedRowsObserved": 53,
+  "exitCode": 101,
+  "finishedAt": "2026-10-12T06:26:57.327707+00:00",
+  "sourceStableAtExit": true,
+  "changedPathsAtExit": [],
+  "observedRows": [
+    {
+      "protocol": "OpenAi",
+      "case": "valid"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "split"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "empty"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "partial_after_terminal"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "partial_event"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "malformed"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "invalid_utf8"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "malformed_after_terminal"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "tool"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "tool_missing_terminal"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "cancel"
+    },
+    {
+      "protocol": "Azure",
+      "case": "valid"
+    },
+    {
+      "protocol": "Azure",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "valid"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "split"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "empty"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "partial_after_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "partial_event"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "malformed"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "invalid_utf8"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "malformed_after_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "tool"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "tool_missing_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "cancel"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "valid"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "split"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "empty"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "partial_after_terminal"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "partial_event"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "malformed"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "invalid_utf8"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "malformed_after_terminal"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "tool"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "tool_missing_terminal"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "cancel"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "valid"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "split"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "empty"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "partial_after_terminal"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "partial_event"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "malformed"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "invalid_utf8"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "malformed_after_terminal"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "tool"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "tool_missing_terminal"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "cancel"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "valid"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "split"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "empty"
+    }
+  ],
+  "inventoryMatched": false,
+  "completedRows": 53,
+  "completedBoundaries": 161,
+  "enteredBoundaries": 162,
+  "requestObservedBoundaries": 161,
+  "testSummary": [
+    "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 102.96s"
+  ],
+  "actualExecutableArtifacts": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "sha256": "c8b12cb4c4113d98d66bf7d47a78e4aa488dedcdc29864330cdd762949faeb95",
+      "bytes": 326664376
+    },
+    {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+      "bytes": 101280
+    }
+  ],
+  "executableStabilityAtExit": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "sameSha256": true
+    },
+    {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sameSha256": true
+    }
+  ],
+  "rawStdoutSha256": "3281f5227a046ec2da071c366ce55248bf68414900ee908d1c0f6d6ad1626fdc",
+  "rawStderrSha256": "72ef42403edfccff8e841b5fabe07fc271b5152bb131962d4151fb72887f57b4",
+  "sampledOwnedProcessesRemaining": [],
+  "cleanupInventoryState": "observed",
+  "cleanupActions": [
+    {
+      "pid": 74717,
+      "action": "TERM",
+      "basis": "sampled descendant and exact newlycreated fixture root plus exact script in currentargv"
+    }
+  ],
+  "cleanupObservations": [
+    {
+      "pid": 73388,
+      "state": "gone"
+    },
+    {
+      "pid": 74019,
+      "state": "gone"
+    },
+    {
+      "pid": 74022,
+      "state": "gone"
+    },
+    {
+      "pid": 74026,
+      "state": "gone"
+    },
+    {
+      "pid": 74032,
+      "state": "gone"
+    },
+    {
+      "pid": 74313,
+      "state": "gone"
+    },
+    {
+      "pid": 74340,
+      "state": "gone"
+    },
+    {
+      "pid": 74424,
+      "state": "gone"
+    },
+    {
+      "pid": 74430,
+      "state": "gone"
+    },
+    {
+      "pid": 74434,
+      "state": "gone"
+    },
+    {
+      "pid": 74442,
+      "state": "gone"
+    },
+    {
+      "pid": 74446,
+      "state": "gone"
+    },
+    {
+      "pid": 74452,
+      "state": "gone"
+    },
+    {
+      "pid": 74458,
+      "state": "gone"
+    },
+    {
+      "pid": 74499,
+      "state": "gone"
+    },
+    {
+      "pid": 74502,
+      "state": "gone"
+    },
+    {
+      "pid": 74515,
+      "state": "gone"
+    },
+    {
+      "pid": 74610,
+      "state": "gone"
+    },
+    {
+      "pid": 74621,
+      "state": "gone"
+    },
+    {
+      "pid": 74628,
+      "state": "gone"
+    },
+    {
+      "pid": 74648,
+      "state": "gone"
+    },
+    {
+      "pid": 74653,
+      "state": "gone"
+    },
+    {
+      "pid": 74656,
+      "state": "gone"
+    },
+    {
+      "pid": 74661,
+      "state": "gone"
+    },
+    {
+      "pid": 74667,
+      "state": "gone"
+    },
+    {
+      "pid": 74676,
+      "state": "gone"
+    },
+    {
+      "pid": 74693,
+      "state": "gone"
+    },
+    {
+      "pid": 74714,
+      "state": "gone"
+    },
+    {
+      "pid": 74717,
+      "state": "alive",
+      "ownedHttps": true
+    }
+  ],
+  "sourceStableAfterCleanup": true,
+  "rootInfrastructureUntouched": true,
+  "limits": [
+    "No registry/toolchain/native full transitive closure",
+    "No per-alias runtime qualification",
+    "No genuine inference, cross-process recovery, release, Tier2 or Tier3 qualification",
+    "Sampler can miss short-lived children; actual request files/counts qualify boundaries, not sampledPID totals"
+  ],
+  "sourceEdits": [],
+  "newGuards": [],
+  "unrequestedAdditions": [],
+  "sanitizedStdout": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/streams/20261012T062243Z-cargo.stdout.log",
+    "sha256": "3281f5227a046ec2da071c366ce55248bf68414900ee908d1c0f6d6ad1626fdc"
+  },
+  "sanitizedStderr": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/streams/20261012T062243Z-cargo.stderr.log",
+    "sha256": "72ef42403edfccff8e841b5fabe07fc271b5152bb131962d4151fb72887f57b4"
+  },
+  "preparedToolStabilityFinal": [
+    {
+      "name": "cargo",
+      "path": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/cargo",
+      "sameSha256": true
+    },
+    {
+      "name": "rustc",
+      "path": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/rustc",
+      "sameSha256": true
+    },
+    {
+      "name": "cargoDispatch",
+      "path": "/Users/gqadonis/.cargo/bin/rustup",
+      "sameSha256": true
+    },
+    {
+      "name": "rustup",
+      "path": "/Users/gqadonis/.cargo/bin/rustup",
+      "sameSha256": true
+    },
+    {
+      "name": "fixturePythonLauncher",
+      "path": "/usr/bin/python3",
+      "sameSha256": true
+    },
+    {
+      "name": "fixturePythonResolved",
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "sameSha256": true
+    },
+    {
+      "name": "openssl",
+      "path": "/usr/bin/openssl",
+      "sameSha256": true
+    }
+  ],
+  "hostConfigStableFinal": true,
+  "infraManifestStableFinal": true,
+  "exactOwnedHttpsPeerMatchesFinal": [],
+  "rootSurrealPidAliveFinal": true,
+  "rootPostgresIdentityStableFinal": true,
+  "sourceStableAtFinalSeal": true,
+  "completedWholeRowBoundaries": 159,
+  "scenarioCounts": {
+    "expectedRows": 83,
+    "completedRows": 53,
+    "enteredRows": 54,
+    "failedSetupRows": 1,
+    "unrunRows": 29,
+    "expectedBoundaries": 249,
+    "fixtureEnteredBoundaries": 162,
+    "wireRequestEnteredBoundaries": 161,
+    "completedBoundaries": 161,
+    "failedSetupBoundaries": 1,
+    "notStartedBoundaries": 87
+  },
+  "countBasis": "53whole row receipts=159complete. Row54shared Endpointsetupbeganonlyafter row54legacyandlocalreturned, proving2additionalcompleteboundaries. Shared peerportparsefailedbefore request/graphadmission; it is fixtureentered, not productionwireentered.",
+  "warningSummary": [
+    "warning: `universal-agent-runtime` (manifest) generated 1 warning",
+    "warning: `universal-agent-runtime` (lib) generated 31 warnings (run `cargo fix --lib -p universal-agent-runtime` to apply 1 suggestion)",
+    "warning: `universal-agent-runtime` (bin \"stub-llm\") generated 2 warnings"
+  ],
+  "retainedFailedIntegrationRuntime": {
+    "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-native-usage-gate-mw8l9lxi/failed-integration-runtime",
+    "bytes": 326664376,
+    "sha256": "c8b12cb4c4113d98d66bf7d47a78e4aa488dedcdc29864330cdd762949faeb95"
+  }
+}

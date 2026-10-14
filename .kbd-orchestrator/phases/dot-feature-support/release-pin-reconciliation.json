@@ -1,0 +1,352 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-11T21:34:01.793007+00:00",
+  "phase": "dot-feature-support",
+  "stage": "execute",
+  "change": "dot-01-release-provenance",
+  "task": "1",
+  "status": "awaiting_operator_pin_decision",
+  "producer": {
+    "model": "gpt-6.1-sol",
+    "reasoning_effort": "high",
+    "runtime": "native"
+  },
+  "root_source_commit": "2cc9a1829167411e01a8198072f60892d70a233d",
+  "scope": "prerequisite reconciliation only; no packaging or policy mutation",
+  "decision_question": "Adopt main 2cc9a182 Liter 2.1.1/a6047386 and skill gitlink f4bef455 while retaining memory upstream commit 432eaa1, or restore policy gitlinks c5c6caac/ad5c82c6 and reconcile consuming locks?",
+  "recommendation": {
+    "option": "adopt_current_main_baseline",
+    "reason": "Consuming manifest and lock already select Liter 2.1.1; restore introduces an unqualified downgrade into the implementation baseline. Current published-image evidence is historical, not acceptance of this change.",
+    "migration_fully_reviewed": false,
+    "requires_operator_decision": true
+  },
+  "pins": [
+    {
+      "name": "liter_llm",
+      "policy_version": "1.18.2",
+      "policy_commit": "c5c6caac617eb931cd5009146a70831422ec236c",
+      "gitlink": "a6047386cc9fae4258b4a8577f6a016022095586",
+      "checkout_commit": "a6047386cc9fae4258b4a8577f6a016022095586",
+      "effective_manifest_version": "2.1.1",
+      "lock_version": "2.1.1",
+      "source_type": "path_dependency_git_submodule",
+      "path": "vendor/git/liter-llm/crates/liter-llm",
+      "classification": "confirmed_policy_drift",
+      "tracked_changes": [],
+      "diff_summary": "4555 files changed, 264211 insertions(+), 170103 deletions(-)",
+      "consumed_crate_diff_summary": "70 files changed, 100219 insertions(+), 66530 deletions(-)"
+    },
+    {
+      "name": "prometheus_skill_system",
+      "policy_commit": "ad5c82c6c16145637c589a3ddfa06e0f20d603e7",
+      "gitlink": "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2",
+      "checkout_commit": "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2",
+      "skills_tree": "00ffc15ef16d5bcfe36244fffe5d91dca7ce1ebd",
+      "source_type": "resource_git_submodule_excluded_from_cargo_workspace",
+      "classification": "confirmed_policy_drift",
+      "tracked_changes": [],
+      "diff_summary": "6928 files changed, 1265781 insertions(+), 76736 deletions(-); exhaustive rename detection skipped",
+      "skills_diff_summary_no_renames": "1120 files changed, 179129 insertions(+), 7717 deletions(-)"
+    },
+    {
+      "name": "surreal_memory",
+      "policy_commit": "432eaa1ebbef66fc02b9bb1a1e63cc2fdb2149e8",
+      "root_export_tree": "f9215a067a0e5dd3be0569ab687272c264748d5b",
+      "root_entry_type": "tree",
+      "source_type": "path_dependency_filtered_export",
+      "lock_version": "0.1.0",
+      "classification": "verified_export_with_manifest_adaptation",
+      "comparison_upstream_repo": "/Users/gqadonis/Projects/prometheus/surreal-memory-server",
+      "comparison_used_exact_commit": true,
+      "upstream_working_head_not_used": "1184156d9cf2fb576faf83284cb7339f42011ef5",
+      "comparison_file_count": 20,
+      "byte_identical_count": 19,
+      "different_files": [
+        "vendor/git/surreal-memory-server/crates/surreal-memory/Cargo.toml"
+      ],
+      "files": [
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/Cargo.toml",
+          "upstream_path": "crates/surreal-memory/Cargo.toml",
+          "sha256": "7423a95a88e2a23dc12587d3864b79ae813238b34731858f95577409cabc42b3",
+          "upstream_sha256": "68b51b8143548c8c2660fd2778dedef1f598795bf1fd1a08bf8fe34b189c2736",
+          "byte_identical": false
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/README.md",
+          "upstream_path": "crates/surreal-memory/README.md",
+          "sha256": "eb8b57c2a86b64c04539c3703b9184dbb08d43643e4be22ddfe4bc5f76afcc46",
+          "upstream_sha256": "eb8b57c2a86b64c04539c3703b9184dbb08d43643e4be22ddfe4bc5f76afcc46",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/embeddings/candle.rs",
+          "upstream_path": "crates/surreal-memory/src/embeddings/candle.rs",
+          "sha256": "8e49891272adb8671958b43c717fcf50c6fc76e0c0ab5f4caf5a993ce942b38e",
+          "upstream_sha256": "8e49891272adb8671958b43c717fcf50c6fc76e0c0ab5f4caf5a993ce942b38e",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/embeddings/cohere.rs",
+          "upstream_path": "crates/surreal-memory/src/embeddings/cohere.rs",
+          "sha256": "420b2883ddeb3c0d6e5e3213e2fa9325fbc165a5e094d0aa007acdd76e617d33",
+          "upstream_sha256": "420b2883ddeb3c0d6e5e3213e2fa9325fbc165a5e094d0aa007acdd76e617d33",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/embeddings/mod.rs",
+          "upstream_path": "crates/surreal-memory/src/embeddings/mod.rs",
+          "sha256": "19a3758ab7555c4514db57f415c1cebe8dae5551f02acb045b5d882640e822b7",
+          "upstream_sha256": "19a3758ab7555c4514db57f415c1cebe8dae5551f02acb045b5d882640e822b7",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/embeddings/openai.rs",
+          "upstream_path": "crates/surreal-memory/src/embeddings/openai.rs",
+          "sha256": "5f78a19305636a5f5944e60019159a2e37643606c3bd84b8960568ec227a865e",
+          "upstream_sha256": "5f78a19305636a5f5944e60019159a2e37643606c3bd84b8960568ec227a865e",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/entity.rs",
+          "upstream_path": "crates/surreal-memory/src/entity.rs",
+          "sha256": "8ca78136258e32416349a872d2549ba54a11db04fe3555ef7d38d5e4f57ac97c",
+          "upstream_sha256": "8ca78136258e32416349a872d2549ba54a11db04fe3555ef7d38d5e4f57ac97c",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/lib.rs",
+          "upstream_path": "crates/surreal-memory/src/lib.rs",
+          "sha256": "49df1aa6da46d313deeb0eee94c68f58c119de7a4f3ab289412a3ebce2586a52",
+          "upstream_sha256": "49df1aa6da46d313deeb0eee94c68f58c119de7a4f3ab289412a3ebce2586a52",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/memory.rs",
+          "upstream_path": "crates/surreal-memory/src/memory.rs",
+          "sha256": "b5073e42421ca853117274f67ecb987d001ec82fbc34b64f5e16bc93104536e3",
+          "upstream_sha256": "b5073e42421ca853117274f67ecb987d001ec82fbc34b64f5e16bc93104536e3",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/mindmap.rs",
+          "upstream_path": "crates/surreal-memory/src/mindmap.rs",
+          "sha256": "cc66fddc0a525f0a5530892cbdf8c2534f58d9ba31ac08206ff2187a51c988e5",
+          "upstream_sha256": "cc66fddc0a525f0a5530892cbdf8c2534f58d9ba31ac08206ff2187a51c988e5",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/model_profiles.rs",
+          "upstream_path": "crates/surreal-memory/src/model_profiles.rs",
+          "sha256": "9f5f830562f5ca294b094b5f358ff42fac248cc326c6814b26279799ac17d884",
+          "upstream_sha256": "9f5f830562f5ca294b094b5f358ff42fac248cc326c6814b26279799ac17d884",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/palace/adapter.rs",
+          "upstream_path": "crates/surreal-memory/src/palace/adapter.rs",
+          "sha256": "be5e811af48a5037f3977efa2af2bde52f9798fc74cfaba42ec665b969abf7bd",
+          "upstream_sha256": "be5e811af48a5037f3977efa2af2bde52f9798fc74cfaba42ec665b969abf7bd",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/palace/context.rs",
+          "upstream_path": "crates/surreal-memory/src/palace/context.rs",
+          "sha256": "1f46fab6202bb7365e63b13220583e4534a6e5b20e343f0712aae0d52e88abf7",
+          "upstream_sha256": "1f46fab6202bb7365e63b13220583e4534a6e5b20e343f0712aae0d52e88abf7",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/palace/embedding.rs",
+          "upstream_path": "crates/surreal-memory/src/palace/embedding.rs",
+          "sha256": "4313fbda44d09e3ac0a1bfb75e45c8c032cbf09c289bd06bd1269ea9673a494a",
+          "upstream_sha256": "4313fbda44d09e3ac0a1bfb75e45c8c032cbf09c289bd06bd1269ea9673a494a",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/palace/mod.rs",
+          "upstream_path": "crates/surreal-memory/src/palace/mod.rs",
+          "sha256": "544cb8a6fa58e243d5e2cac98a6176d84a10973a1273fee1d95a76d2e0cf9531",
+          "upstream_sha256": "544cb8a6fa58e243d5e2cac98a6176d84a10973a1273fee1d95a76d2e0cf9531",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/storage/migrations/mod.rs",
+          "upstream_path": "crates/surreal-memory/src/storage/migrations/mod.rs",
+          "sha256": "fe92c101ab85efa73d265e9befdde72e55cf5a9b34352339b43f8e506876bf8b",
+          "upstream_sha256": "fe92c101ab85efa73d265e9befdde72e55cf5a9b34352339b43f8e506876bf8b",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/storage/mod.rs",
+          "upstream_path": "crates/surreal-memory/src/storage/mod.rs",
+          "sha256": "5a9340d3ab58202a910bbbc60770d795467bfa07dabf8b73cf6e6421be04367c",
+          "upstream_sha256": "5a9340d3ab58202a910bbbc60770d795467bfa07dabf8b73cf6e6421be04367c",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/storage/surreal.rs",
+          "upstream_path": "crates/surreal-memory/src/storage/surreal.rs",
+          "sha256": "8ffd8957a54f9a3a828a5d0248d866d17d9e6913e932410473710324f2a8bcf7",
+          "upstream_sha256": "8ffd8957a54f9a3a828a5d0248d866d17d9e6913e932410473710324f2a8bcf7",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/task_step.rs",
+          "upstream_path": "crates/surreal-memory/src/task_step.rs",
+          "sha256": "e6ead354d671d62e921c4bd85b6fdc04693eca782f49187d4e402acfa1eaa4a1",
+          "upstream_sha256": "e6ead354d671d62e921c4bd85b6fdc04693eca782f49187d4e402acfa1eaa4a1",
+          "byte_identical": true
+        },
+        {
+          "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/task_stream.rs",
+          "upstream_path": "crates/surreal-memory/src/task_stream.rs",
+          "sha256": "354470be0e97d1f09a60e45448c18502414ef3ed3a76e68ee94d18b06d4d36e3",
+          "upstream_sha256": "354470be0e97d1f09a60e45448c18502414ef3ed3a76e68ee94d18b06d4d36e3",
+          "byte_identical": true
+        }
+      ],
+      "preserve_policy_commit": true
+    }
+  ],
+  "skill_resolution": {
+    "verification": "source-evaluated filesystem and allowlisted path-environment inspection; no runtime launched",
+    "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+    "source": "embedded_submodule",
+    "absolute_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system/skills",
+    "declared_version": null,
+    "content_commit": "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2",
+    "content_tree": "00ffc15ef16d5bcfe36244fffe5d91dca7ce1ebd",
+    "environment_path_keys_present": {
+      "UAR_BUILTIN_SKILLS_DIR": false,
+      "PROMETHEUS_SKILL_SYSTEM_DIR": false,
+      "UAR_EXTRA_BUILTIN_SKILL_DIRS": false,
+      "UAR_SKILLS_WASM_BUILTIN_DIR": false
+    },
+    "dotenv_skill_path_keys_present": [],
+    "sibling_candidate_exists": false,
+    "installed_matching_candidates": [],
+    "searched_cache_roots": [
+      "/Users/gqadonis/.claude/plugins/cache",
+      "/Users/gqadonis/.claude-code/skills",
+      "/Users/gqadonis/.config/uar/skills"
+    ],
+    "runtime_launcher_environment_verified": false,
+    "verified_extra_roots_verified": false,
+    "actual_launched_receipt_verified": false
+  },
+  "historical_evidence": {
+    "operator_report_root": "3327bf99e48097479313c8a54e8e58d1de9e9ccb",
+    "operator_report_recheck_utc": "2026-10-11 13:47\u201313:48",
+    "failed_image_run": "38101260912",
+    "subsequent_recorded_success_run": "38154340213",
+    "index_digest": "sha256:e955789aa6aea70853d4e19ce95b5c5774750d232472c048bd4763c96e5513f5",
+    "fresh_network_recheck_performed": false,
+    "landed_schema_build_order_commit": "54e96c33",
+    "landed_frontend_lock_schema_commit": "d4e819d1"
+  },
+  "policy_patch_candidate": {
+    "operator_only": true,
+    "path": "versions.toml",
+    "changes": {
+      "liter_llm": {
+        "from": "1.18.2",
+        "to": "2.1.1"
+      },
+      "liter_llm_commit": {
+        "from": "c5c6caac617eb931cd5009146a70831422ec236c",
+        "to": "a6047386cc9fae4258b4a8577f6a016022095586"
+      },
+      "prometheus_skill_system_commit": {
+        "from": "ad5c82c6c16145637c589a3ddfa06e0f20d603e7",
+        "to": "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2"
+      }
+    },
+    "unchanged": [
+      "surreal_memory_server_base_commit",
+      "surreal_memory_server_commit",
+      "prometheus_skill_system_base_commit"
+    ],
+    "applied": false
+  },
+  "restore_alternative": {
+    "policy_file_change_required": false,
+    "gitlinks": {
+      "vendor/git/liter-llm": "c5c6caac617eb931cd5009146a70831422ec236c",
+      "crates/prometheus-skill-system": "ad5c82c6c16145637c589a3ddfa06e0f20d603e7"
+    },
+    "must_reconcile": [
+      "Cargo.lock Liter 1.18.2 and affected transitive resolution",
+      "affected immutable source and skill provenance"
+    ],
+    "rollback_compatibility_verified": false,
+    "applied": false
+  },
+  "packaging": {
+    "frozen_pnpm_installs_present": true,
+    "schema_exception_present": true,
+    "schema_context_execution_verified": false,
+    "docker_production_cargo_locked": false,
+    "native_deploy_cargo_locked": true,
+    "intended_minimum_docker_patch": "add --locked to production Cargo build after policy resolution",
+    "commands_inspected_not_run": [
+      "pnpm install --frozen-lockfile",
+      "pnpm -C frontend install --frozen-lockfile",
+      "cargo build --locked --release --no-default-features --bin universal-agent-runtime --features server-full",
+      "cargo build --release --locked --no-default-features --features <matrix platform features> --bin uar-sidecar --target <matrix target>",
+      "cargo vendor --quiet --locked vendor/crates"
+    ],
+    "workflow_policy_precheck": "parent reported PASS; not run by this worker",
+    "workflow_policy_postcheck": "not applicable: no packaging/workflow script mutation"
+  },
+  "source_file_sha256": {
+    "versions.toml": "262e5864da030bb4c5107fe5a7aed2a5ea03818304a34c7abf01c6c932645e48",
+    "Cargo.toml": "092c71d9b07c7198607ee810d35f9be2c4ec3e2fc9df90e6ead650a6e21b0d20",
+    "Cargo.lock": "dfb5e43446e3a605406a56289572279dfe4e2ef19561c72c65ed26c2a913d852",
+    "Dockerfile": "860b086f0d3cef97144dff73f469afa78dd12876bccbea686dde42a34d8336ad",
+    ".dockerignore": "fd14a64e2699637e18b70be5b9943b285732903af67bddc87102132ba2052896",
+    "pnpm-lock.yaml": "02d991258aaf26b948a5507ab65389040ea7b7ee5c5cdf34eec51adf2bc582af",
+    "frontend/pnpm-lock.yaml": "b9b62f17deecf6726ae5fca5eb950a06eafebb4b68ecdb0593247e45b751fc6e",
+    "package.json": "b3966ff889173de076d57d01c32be9ff823f6bac59a46a45710e6a677e5e4f7c",
+    "frontend/package.json": "3ca98094dc5d7c87eee9548a9c391be0d389a2e56f94fd4851120e43ff112d13",
+    "vendor/git/README.md": "ecc5f89f774c504dd001d11626a2dfc2b16298a578e4bc96f9f1de7259e8f24b",
+    "src/uar/runtime/skills/pack_detection.rs": "dd70e55dfa178ebae673465de8dfe014846d762b37a8e2a6f96433369d2974a2",
+    "scripts/package-offline-source.sh": "2c80218326767e9a78e0807b6ca238bf99e3e764a5291a18d8a169875486f513",
+    "scripts/package-boss-sidecar.mjs": "9b6800d0cb47147b3ce63cf0c7fba46f8de8f03112f1b61ba1375d83dfc0b135"
+  },
+  "checks": {
+    "tier": 0,
+    "product_tests_run": false,
+    "cargo_run": false,
+    "builds_run": false,
+    "installs_run": false,
+    "network_auth_run": false,
+    "policy_file_edited": false,
+    "json_parse": {
+      "command": "python3 -m json.tool .kbd-orchestrator/phases/dot-feature-support/release-pin-reconciliation.json >/dev/null",
+      "exit_code": 0,
+      "output": "no output"
+    },
+    "diff_whitespace": {
+      "commands": [
+        "git diff --no-index --check /dev/null .kbd-orchestrator/phases/dot-feature-support/release-pin-reconciliation.md",
+        "git diff --no-index --check /dev/null .kbd-orchestrator/phases/dot-feature-support/release-pin-reconciliation.json"
+      ],
+      "exit_code": 0,
+      "output": "no output"
+    }
+  },
+  "changed_files": [
+    ".kbd-orchestrator/phases/dot-feature-support/release-pin-reconciliation.md",
+    ".kbd-orchestrator/phases/dot-feature-support/release-pin-reconciliation.json"
+  ],
+  "unrequested_additions": [],
+  "guards_added": [],
+  "unverified": [
+    "full behavioral migration compatibility",
+    "fresh clean transitive closure",
+    "Docker/native packaging",
+    "actual launched skill provenance",
+    "publication and deployment health at a new revision"
+  ]
+}

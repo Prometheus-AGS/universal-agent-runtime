@@ -56,13 +56,23 @@ impl TeamExecutionRuntime {
             }
             let effects = self
                 .manager
-                .tool_admission_evidence_for_user(owner.user_id(), &attempt.run_id)
+                .tool_admission_evidence_for_user(&owner.presentation_owner_key(), &attempt.run_id)
                 .await
                 .map_err(|_| {
                     CollaborationError::Storage(
                         "Team recovery effect evidence could not be read".into(),
                     )
                 })?;
+            let mut runs = std::collections::BTreeSet::from([attempt.run_id.clone()]);
+            runs.extend(effects.iter().map(|record| record.run_id.clone()));
+            let mut canonical = Vec::new();
+            for run in runs {
+                canonical.extend(self.persistence.list_canonical_tool_receipts(owner.user_id(), &run)
+                    .await.map_err(|_| CollaborationError::Storage("Team recovery canonical outcomes could not be read".into()))?);
+            }
+            if crate::uar::persistence::agent_threads::has_ambiguous_legacy_tool_outcomes(&canonical, &effects) {
+                continue;
+            }
             if effects
                 .iter()
                 .filter(|e| {
@@ -79,6 +89,8 @@ impl TeamExecutionRuntime {
                                 e.state,
                                 ToolAdmissionEvidenceState::Succeeded
                                     | ToolAdmissionEvidenceState::Failed
+                                    | ToolAdmissionEvidenceState::ApplicationFailed
+                                    | ToolAdmissionEvidenceState::TransportFailed
                             )
                     })
                 })

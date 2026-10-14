@@ -1,0 +1,17 @@
+{
+  "recorded_at": "2026-10-13T08:32:38.035865+00:00",
+  "gate": "candidate-build",
+  "command_exit": 0,
+  "receipt_path": "/tmp/uar-dot17-validation-20261013/candidate-attempt-06/candidate_build/receipt.json",
+  "receipt_sha256": "160fa83750f62fdcb410c26171b06ef54b162d47f399b528a27bb89496db00ca",
+  "log_path": "/tmp/uar-dot17-validation-20261013/candidate-attempt-06/candidate_build/candidate-build-4.log",
+  "log_sha256": "e1a35c56a74b8c5e4e5b03ee80419dc30986c9ea578241a953638423e5b95973",
+  "inventory_path": "/tmp/dot17-validation-20261013T064622Z/authorized-inventory-07.json",
+  "inventory_sha256": "62693cb795e2196e1cb5332ea6e59f1e0d0c6d7c69cd47100b535953b5538071",
+  "binary_sha256": "9b222d771252226159672ef9dbca868ae92832a9c58a3683a05851bab56b6676",
+  "rust_warnings": 0,
+  "linker_warning": "ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected",
+  "quality_status": "zero-warning rule unmet; operator decision pending",
+  "subsequent_gate_started": false,
+  "claim_limits": "Compilation succeeded. No runtime acceptance scenarios verified by this build. Exception performance unverified."
+}

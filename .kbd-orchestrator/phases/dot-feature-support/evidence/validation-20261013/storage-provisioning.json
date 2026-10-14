@@ -1,0 +1,15 @@
+{
+  "recorded_at": "2026-10-13T11:39:47.474149+00:00",
+  "approved_scope": "one retained10Gi PVC in dot17-uar/know-me",
+  "namespace_uid": "8e717c6e-ff89-4f75-992b-306b4ad6b7dc",
+  "pvc_name": "surrealdb-data-surrealdb-0",
+  "pvc_uid": "6f0c7093-9768-4a84-baab-898f4635db0b",
+  "status": "Bound",
+  "pv_name": "pvc-6f0c709397684a84",
+  "pv_uid": "660a2be7-4e8c-494a-9c17-7aa4d14fb05e",
+  "capacity": "10Gi",
+  "reclaim_policy": "Retain",
+  "private_receipt": "/tmp/dot17-private-preparation-20261013/storage-provisioning/receipt-later.json",
+  "private_receipt_sha256": "6a2c85ecab623547a97ae135b8677a6b8cc327f0efeb055cad88e045501cd080",
+  "claim_limits": "Actual provisioning only. No mount/durability/runtime qualification. No worker pool, load balancer or additional PVC created."
+}

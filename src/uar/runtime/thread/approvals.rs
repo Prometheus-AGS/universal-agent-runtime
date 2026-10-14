@@ -3,6 +3,7 @@
 
 #[path = "approvals/records.rs"]
 mod records;
+pub(crate) mod recovery;
 use records::ApprovalLedger;
 use crate::uar::persistence::approval_decisions::{ApprovalRecord, ApprovalState};
 use chrono::Utc;
@@ -65,6 +66,8 @@ struct RootLane {
     workspace_id: Option<String>,
     ledger: Arc<ApprovalLedger>,
     pending: Mutex<Option<PendingApproval>>,
+    recovery: std::sync::OnceLock<recovery::ApprovalRecoveryHost>,
+    cleanup: Mutex<HashMap<String, recovery::PendingAdmissionCleanup>>,
 }
 
 /// Host-only resolver index. Weak entries do not retain completed run emitters.
@@ -110,6 +113,8 @@ impl ApprovalBroker {
             resolution: AsyncMutex::new(()),
             owner_key, workspace_id, ledger: Arc::clone(&self.ledger),
             pending: Mutex::new(None),
+            recovery: std::sync::OnceLock::new(),
+            cleanup: Mutex::new(HashMap::new()),
         });
         roots.insert(run_id, Arc::downgrade(&lane));
         Ok(RootApprovalChannel {
@@ -180,31 +185,7 @@ impl RootApprovalChannel {
     /// in-flight persistence write is allowed to settle before cancellation. A
     /// dropped gate clears its own slot synchronously before another caller
     /// acquires the queue, so cancellation cannot leave an approvable orphan.
-    pub(crate) async fn request(
-        &self,
-        admission_id: Option<String>,
-        call_index: usize,
-        tool_call_id: String,
-        name: String,
-        arguments_json: String,
-        risk_reason: String,
-        caller_cancel: &CancellationToken,
-    ) -> ApprovalOutcome {
-        self.request_with_admission_owner(
-            admission_id,
-            crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost,
-            crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost,
-            call_index,
-            tool_call_id,
-            name,
-            arguments_json,
-            risk_reason,
-            caller_cancel,
-        )
-        .await
-    }
-
-    pub(crate) async fn request_with_admission_owner(
+    async fn request_with_continuation(
         &self,
         admission_id: Option<String>,
         admission_owner: crate::uar::persistence::tool_admission::AdmissionOwner,
@@ -215,6 +196,8 @@ impl RootApprovalChannel {
         arguments_json: String,
         risk_reason: String,
         caller_cancel: &CancellationToken,
+        id: String,
+        continuation: Option<crate::uar::persistence::approval_decisions::ApprovalContinuation>,
     ) -> ApprovalOutcome {
         let deadline = tokio::time::Instant::now() + Duration::from_secs(300);
         let expires_at = Utc::now() + chrono::Duration::seconds(300);
@@ -229,7 +212,6 @@ impl RootApprovalChannel {
                 }
             }
         };
-        let id = uuid::Uuid::new_v4().to_string();
         let created_at = Utc::now();
         let record = ApprovalRecord {
             version: 1, issuer_id: self.lane.ledger.issuer_id.clone(), challenge_id: id.clone(),
@@ -238,6 +220,7 @@ impl RootApprovalChannel {
             tool_call_id: tool_call_id.clone(), tool_name: name.clone(), created_at,
             expires_at, state: ApprovalState::Pending,
             decision: None, updated_at: created_at,
+            continuation,
         };
         // Finish the storage write before observing cancellation: dropping a
         // database request can leave an inserted challenge with unknown status.
@@ -319,7 +302,11 @@ impl RootApprovalChannel {
             ApprovalOutcome::ChannelClosed => Some(ApprovalState::Interrupted),
             _ => None,
         };
-        if let Some(state) = terminal { self.lane.finish_record(&record, state).await; }
+        if let Some(state) = terminal {
+            let preserving = state == ApprovalState::Cancelled && record.continuation.is_some()
+                && self.lane.recovery.get().is_some_and(|host| host.shutdown.is_cancelled());
+            if !preserving { self.lane.finish_record(&record, state).await; }
+        }
         outcome
     }
 }

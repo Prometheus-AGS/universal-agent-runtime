@@ -1,0 +1,482 @@
+[
+  {
+    "scenarioDirectory": "binary-scoped-application",
+    "scopedEntrypoint": {
+      "kind": "authenticated_scoped_runtime_binary",
+      "pid": 29972,
+      "startedAt": "2026-10-12T02:25:56.495875+00:00",
+      "run": "6998cf10-0a7f-4593-a9a5-c028a33c8850",
+      "mode": "application",
+      "database": "outcomes",
+      "route": "POST /api/uar/runs",
+      "events": "run-events.json",
+      "serverExited": true,
+      "mcpChildrenExited": true
+    },
+    "terminalEvents": [
+      {
+        "event": "agui.done",
+        "code": null,
+        "message": null
+      }
+    ],
+    "toolEnds": [
+      {
+        "name": "outcomes__effect",
+        "success": false,
+        "content": {
+          "status": "error",
+          "outcome": "application_failed",
+          "tool_call_id": "dot04-call",
+          "tool": "outcomes__effect",
+          "provenance": {
+            "source": "mcp",
+            "terminal_state": "failed",
+            "observed_by": "trusted_host"
+          },
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "fixture-response-control:\u03bb"
+              },
+              {
+                "type": "image",
+                "data": "iVBORw0KGgo=",
+                "mimeType": "image/png"
+              },
+              {
+                "type": "resource",
+                "resource": {
+                  "uri": "fixture://outcomes/result",
+                  "mimeType": "text/plain",
+                  "text": "embedded-resource-control"
+                }
+              }
+            ],
+            "structuredContent": {
+              "mode": "application",
+              "nested": {
+                "control": 42
+              }
+            },
+            "isError": true,
+            "_meta": {
+              "fixture": "metadata-control"
+            }
+          },
+          "message": "MCP application failure"
+        }
+      }
+    ],
+    "privateRawEventsSha256": "153f6f59211de916f0142cc774d43b88a444400b83996cef02591869330418e6",
+    "effects": [
+      {
+        "mode": "application",
+        "pid": 30952,
+        "effect": true
+      }
+    ]
+  },
+  {
+    "scenarioDirectory": "binary-scoped-predispatch",
+    "scopedEntrypoint": {
+      "kind": "authenticated_scoped_runtime_binary",
+      "pid": 30994,
+      "startedAt": "2026-10-12T02:26:03.478269+00:00",
+      "run": "0f2a4570-0440-4fae-a2fa-d4ae278c1bc0",
+      "mode": "predispatch",
+      "database": "outcomes",
+      "route": "POST /api/uar/runs",
+      "events": "run-events.json",
+      "serverExited": true,
+      "mcpChildrenExited": true
+    },
+    "terminalEvents": [
+      {
+        "event": "agui.done",
+        "code": null,
+        "message": null
+      }
+    ],
+    "toolEnds": [
+      {
+        "name": "outcomes__effect",
+        "success": false,
+        "content": {
+          "status": "error",
+          "outcome": "transport_failed",
+          "tool_call_id": "dot04-call",
+          "tool": "outcomes__effect",
+          "provenance": {
+            "source": "mcp",
+            "terminal_state": "failed",
+            "observed_by": "trusted_host"
+          },
+          "result": null,
+          "message": "MCP failed before dispatch"
+        }
+      }
+    ],
+    "privateRawEventsSha256": "f1bbcbba3ce1e9eab93bd1ad94be492654ff453c0c934320d8aefad5be4229c3"
+  },
+  {
+    "scenarioDirectory": "binary-scoped-success",
+    "scopedEntrypoint": {
+      "kind": "authenticated_scoped_runtime_binary",
+      "pid": 27013,
+      "startedAt": "2026-10-12T02:25:45.447345+00:00",
+      "run": "59eee9bf-4d1d-4d3c-bf49-7e0fae45ed39",
+      "mode": "success",
+      "database": "outcomes",
+      "route": "POST /api/uar/runs",
+      "events": "run-events.json",
+      "serverExited": true,
+      "mcpChildrenExited": true
+    },
+    "terminalEvents": [
+      {
+        "event": "agui.done",
+        "code": null,
+        "message": null
+      }
+    ],
+    "toolEnds": [
+      {
+        "name": "outcomes__effect",
+        "success": true,
+        "content": {
+          "content": [
+            {
+              "type": "text",
+              "text": "fixture-response-control:\u03bb"
+            },
+            {
+              "type": "image",
+              "data": "iVBORw0KGgo=",
+              "mimeType": "image/png"
+            },
+            {
+              "type": "resource",
+              "resource": {
+                "uri": "fixture://outcomes/result",
+                "mimeType": "text/plain",
+                "text": "embedded-resource-control"
+              }
+            }
+          ],
+          "structuredContent": {
+            "mode": "success",
+            "nested": {
+              "control": 42
+            }
+          },
+          "isError": false,
+          "_meta": {
+            "fixture": "metadata-control"
+          }
+        }
+      }
+    ],
+    "privateRawEventsSha256": "95755b6a873ef2fc179d0fca33084af08d50cb456194ac278fc5490ca3b9cbe7",
+    "effects": [
+      {
+        "mode": "success",
+        "pid": 29472,
+        "effect": true
+      }
+    ]
+  },
+  {
+    "scenarioDirectory": "binary-scoped-unknown",
+    "scopedEntrypoint": {
+      "kind": "authenticated_scoped_runtime_binary",
+      "pid": 32551,
+      "startedAt": "2026-10-12T02:26:08.885915+00:00",
+      "run": "0164fb20-f03e-4a90-acf2-11d3fc40ac4c",
+      "mode": "unknown",
+      "database": "outcomes",
+      "route": "POST /api/uar/runs",
+      "events": "run-events.json",
+      "serverExited": true,
+      "mcpChildrenExited": true
+    },
+    "terminalEvents": [
+      {
+        "event": "agui.error",
+        "code": "TOOL_OUTCOME_UNKNOWN",
+        "message": "MCP outcome unknown; reconcile before another attempt"
+      }
+    ],
+    "toolEnds": [
+      {
+        "name": "outcomes__effect",
+        "success": false,
+        "content": {
+          "status": "error",
+          "outcome": "outcome_unknown",
+          "tool_call_id": "dot04-call",
+          "tool": "outcomes__effect",
+          "provenance": {
+            "source": "mcp",
+            "terminal_state": "outcome_unknown",
+            "observed_by": "trusted_host"
+          },
+          "result": null,
+          "message": "MCP response lost after dispatch; reconcile before another attempt"
+        }
+      }
+    ],
+    "privateRawEventsSha256": "08f10a60744834dabe787ba4a71ff6b717ab3cb031b60d0b19fbebb539a26979",
+    "effects": [
+      {
+        "mode": "unknown",
+        "pid": 33635,
+        "effect": true
+      }
+    ]
+  },
+  {
+    "scenarioDirectory": "binary-server_process-application",
+    "terminalEvents": [
+      {
+        "event": "agui.done",
+        "code": null,
+        "message": null
+      }
+    ],
+    "toolEnds": [
+      {
+        "name": "outcomes__effect",
+        "success": false,
+        "content": {
+          "status": "error",
+          "outcome": "application_failed",
+          "tool_call_id": "dot04-call",
+          "tool": "outcomes__effect",
+          "provenance": {
+            "source": "mcp",
+            "terminal_state": "failed",
+            "observed_by": "trusted_host"
+          },
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "fixture-response-control:\u03bb"
+              },
+              {
+                "type": "image",
+                "data": "iVBORw0KGgo=",
+                "mimeType": "image/png"
+              },
+              {
+                "type": "resource",
+                "resource": {
+                  "uri": "fixture://outcomes/result",
+                  "mimeType": "text/plain",
+                  "text": "embedded-resource-control"
+                }
+              }
+            ],
+            "structuredContent": {
+              "mode": "application",
+              "nested": {
+                "control": 42
+              }
+            },
+            "isError": true,
+            "_meta": {
+              "fixture": "metadata-control"
+            }
+          },
+          "message": "MCP application failure"
+        }
+      }
+    ],
+    "privateRawEventsSha256": "f9cdc930b00cab778aa7e45f048386d2bb6d7fdd31a4d59231bcaff78a0da0ec",
+    "effects": [
+      {
+        "mode": "application",
+        "pid": 35348,
+        "effect": true
+      }
+    ]
+  },
+  {
+    "scenarioDirectory": "binary-server_process-predispatch",
+    "terminalEvents": [
+      {
+        "event": "agui.done",
+        "code": null,
+        "message": null
+      }
+    ],
+    "toolEnds": [
+      {
+        "name": "outcomes__effect",
+        "success": false,
+        "content": {
+          "status": "error",
+          "outcome": "transport_failed",
+          "tool_call_id": "dot04-call",
+          "tool": "outcomes__effect",
+          "provenance": {
+            "source": "mcp",
+            "terminal_state": "failed",
+            "observed_by": "trusted_host"
+          },
+          "result": null,
+          "message": "MCP failed before dispatch"
+        }
+      }
+    ],
+    "privateRawEventsSha256": "2663a147195148dc24f13b8561c78b5ac7b2d1ef2df6259aec16079013ef2583"
+  },
+  {
+    "scenarioDirectory": "binary-server_process-success",
+    "terminalEvents": [
+      {
+        "event": "agui.done",
+        "code": null,
+        "message": null
+      }
+    ],
+    "toolEnds": [
+      {
+        "name": "outcomes__effect",
+        "success": true,
+        "content": {
+          "content": [
+            {
+              "type": "text",
+              "text": "fixture-response-control:\u03bb"
+            },
+            {
+              "type": "image",
+              "data": "iVBORw0KGgo=",
+              "mimeType": "image/png"
+            },
+            {
+              "type": "resource",
+              "resource": {
+                "uri": "fixture://outcomes/result",
+                "mimeType": "text/plain",
+                "text": "embedded-resource-control"
+              }
+            }
+          ],
+          "structuredContent": {
+            "mode": "success",
+            "nested": {
+              "control": 42
+            }
+          },
+          "isError": false,
+          "_meta": {
+            "fixture": "metadata-control"
+          }
+        }
+      }
+    ],
+    "privateRawEventsSha256": "8d7c821bd996ac353b24b8ba5d804b1ee6a1ba5e0027505495ea78579c72b0ba",
+    "effects": [
+      {
+        "mode": "success",
+        "pid": 35059,
+        "effect": true
+      }
+    ]
+  },
+  {
+    "scenarioDirectory": "binary-server_process-unknown",
+    "terminalEvents": [
+      {
+        "event": "agui.error",
+        "code": "TOOL_OUTCOME_UNKNOWN",
+        "message": "MCP outcome unknown; reconcile before another attempt"
+      }
+    ],
+    "toolEnds": [
+      {
+        "name": "outcomes__effect",
+        "success": false,
+        "content": {
+          "status": "error",
+          "outcome": "outcome_unknown",
+          "tool_call_id": "dot04-call",
+          "tool": "outcomes__effect",
+          "provenance": {
+            "source": "mcp",
+            "terminal_state": "outcome_unknown",
+            "observed_by": "trusted_host"
+          },
+          "result": null,
+          "message": "MCP response lost after dispatch; reconcile before another attempt"
+        }
+      }
+    ],
+    "privateRawEventsSha256": "684dcbd714c21331fca0ca2ee31393debee0e69b60e0b5ee593ef2665da547b6",
+    "effects": [
+      {
+        "mode": "unknown",
+        "pid": 35528,
+        "effect": true
+      }
+    ]
+  },
+  {
+    "scenarioDirectory": "binary-team_process-success",
+    "bindingPreflight": {
+      "activationSupported": true,
+      "diagnostics": [
+        {
+          "field": "/skills/0",
+          "disposition": "exact",
+          "message": "The complete SkillRef resolves to the exact enabled installed artifact."
+        },
+        {
+          "field": "/models/0",
+          "disposition": "exact",
+          "message": "The model role resolves through a declared preferred alias."
+        },
+        {
+          "field": "/modelRequirements",
+          "disposition": "exact",
+          "message": "Every selected configured model satisfies the authored capability requirements."
+        },
+        {
+          "field": "/promptDialect",
+          "disposition": "exact",
+          "message": "The bound model uses the authored dialect in ordinary prompt and request assembly."
+        },
+        {
+          "field": "/contextStrategy",
+          "disposition": "exact",
+          "message": "The authored context strategy is installed as the ordinary turn policy."
+        },
+        {
+          "field": "/ragConfiguration",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        },
+        {
+          "field": "/apiHarness",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        }
+      ]
+    },
+    "privateRawBindingResponseSha256": "472195f09006324881efa557f4353dac1648af91cc02b72d10dc3937c804d799",
+    "terminalEvents": [
+      {
+        "event": "agui.error",
+        "code": "thread_attachment_failed",
+        "message": "Actor root thread service could not attach"
+      }
+    ],
+    "toolEnds": [],
+    "privateRawEventsSha256": "e4fbf49f56cb457ddfe7ded2affeec507f86515a7408e3b8db33a4b6b6a581c5",
+    "hostAttachmentDiagnostic": "Root tool 'outcomes__effect' has no captured executable binding"
+  }
+]

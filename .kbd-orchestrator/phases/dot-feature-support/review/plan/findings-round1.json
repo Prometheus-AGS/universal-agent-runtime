@@ -1,0 +1,29 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "gpt-6.1-sol",
+  "producer_model": "unknown",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "unverified-producer-unknown",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "plan.md",
+      "claim": "Fresh-process checkpoint recovery lacks a required atomic, single-consumer resume claim, allowing two shared runtimes to reconstruct and execute the same continuation.",
+      "evidence": "Change 06 requires: \u201cPersist a complete owner-bound resume envelope atomically with the checkpoint and load it before live-manager lookup,\u201d but specifies no atomic claim or competing-resume test. Its acceptance exercises only launching \u201ca new manager.\u201d Change 07 claims approved continuations once, while change 11 addresses team-owner exclusion; neither explicitly covers ordinary checkpoint continuations resumed concurrently through the checkpoint API. The shared profile requires \u201cAt least two runtime processes using the same durable networked SurrealDB.\u201d",
+      "suggested_fix": "Require a durable CAS-based claim bound to checkpoint revision, run identity and executor incarnation before any resumed execution. Define how it interoperates with existing team ownership and supervisor exclusion without rebuilding those mechanisms. Add a production-boundary test racing two authenticated resume requests on separate runtimes, proving only one continuation can execute and that an uncertain predecessor cannot be replayed."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The scheduling and quiet-hours contracts leave calendar expression and timezone semantics undefined, so implementation and acceptance can disagree while satisfying the written plan.",
+      "evidence": "The product defaults specify \u201crecurring IANA-zone schedules\u201d and \u201cQuiet hours defer delivery until the next permitted instant,\u201d while change 14 calls for \u201crecurring calendar schedules, IANA timezone.\u201d No accepted recurrence grammar, supported calendar fields, timezone-change behavior, or quiet-hours timezone and interval-boundary rules are defined. Excluding \u201carbitrary RRULE compatibility\u201d does not establish which recurrence expressions are supported.",
+      "suggested_fix": "Define the first-release recurrence input schema and supported forms, including validation and timezone revision behavior. Define quiet-hours timezone, inclusive/exclusive boundaries, overnight intervals and DST behavior. Add concrete acceptance examples to the relevant OpenSpec deltas before implementing the timing adapter and delivery policy."
+    }
+  ],
+  "judge_identity": {
+    "providerConnectionId": "openai-proxy-8181",
+    "providerId": "openai",
+    "modelId": "gpt-6.1-sol"
+  }
+}

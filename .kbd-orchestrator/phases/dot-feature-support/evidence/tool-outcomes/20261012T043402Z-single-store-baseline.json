@@ -1,0 +1,129 @@
+{
+  "status": "baseline-prepared-awaiting-freeze-and-cargo-authorization",
+  "cargoLaunched": false,
+  "head": "c314099bc9173058f3ba43b983539d8d13c6f4de",
+  "branch": "main",
+  "indexEmpty": true,
+  "boundCount": 6551,
+  "sourceSetSha256": "7f399ae17be3f4819643e9630e7cdc8ca050a100eb81afec9d1f2765ac65484b",
+  "gitlinksUnchanged": true,
+  "all18RefreezeHashesMatch": true,
+  "sourceStableDuringCollection": true,
+  "sourceFingerprint": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T043402Z-source-fingerprint.json",
+  "expectedInventoryCount": 65,
+  "changedPathsSince042639": [
+    "tests/support/truthful_tool_outcome_process.rs"
+  ],
+  "exactPatchHunks": 4,
+  "oldNewHashes": {
+    "tests/support/truthful_tool_outcome_process.rs": {
+      "old": "bddaa960de9973abc094446d725cd6b0c7fae25853fad8c84553fec271af3088",
+      "new": "bc62ca5428e05b018395d8974eed6023226531392d0d6637d852b9cf7639c9df"
+    }
+  },
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-baseline-c5zj_myq",
+  "sourceSnapshotSha256": "86340501b2bd8ac29d1e28ab7825291cd766751e91d07052a88567e251718eb6",
+  "exactCorrectionPatchSha256": "432264cd039a210f85a52017ba85cbaa0af1ca964d4328acead8abb807a9222a",
+  "previousOwnedProcessSamples": [
+    {
+      "pid": 91334,
+      "role": "integration-target",
+      "present": false
+    },
+    {
+      "pid": 91403,
+      "role": "integration-target",
+      "present": false
+    },
+    {
+      "pid": 91533,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 92915,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 93445,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 93599,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 93967,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 94077,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 94206,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 94332,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 94490,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 94594,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 94626,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 94795,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 94835,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 95420,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 95471,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 95644,
+      "role": "ordinary-runtime",
+      "present": false
+    },
+    {
+      "pid": 95701,
+      "role": "ordinary-runtime",
+      "present": false
+    }
+  ],
+  "previousExactOwnedPythonTraceMatches": [],
+  "allSampledOwnedPIDsGone": true,
+  "cleanupActions": [],
+  "rootInfrastructureUntouched": true,
+  "processScope": "Sampled17runtime+2integrationPIDs and exactuniquePythontraceargv; not exhaustive system process closure"
+}

@@ -759,9 +759,9 @@ pub async fn load_persisted_conversation_policy(
     }
 }
 
-/// Read a verified principal's conversation policy with non-destructive legacy fallback.
+/// Read a verified principal's conversation policy without adopting subject-only rows.
 /// The boolean reports a principal-scoped row, including an explicit reset marker.
-/// Legacy subject-only rows preserve old settings, never Presentation selections.
+/// Only the local anonymous boundary may read legacy anonymous settings.
 ///
 /// # Errors
 /// Propagates storage failures and rejects a mismatched host owner stamp.
@@ -776,7 +776,7 @@ pub(crate) async fn load_owner_scoped_conversation_policy(
             owner.user_id() == owner_id,
             "Conversation policy owner mismatch"
         );
-        let key = owner.presentation_owner_key();
+        let key = owner.session_owner_key()?;
         if let Some(record) = persistence
             .load_principal_conversation_policy(&key, conversation_id)
             .await?
@@ -789,7 +789,10 @@ pub(crate) async fn load_owner_scoped_conversation_policy(
             let policy = (record.policy != RunPolicy::default()).then_some(record.policy);
             return Ok((policy, true));
         }
+        return Ok((None, true));
     }
+    anyhow::ensure!(owner_id == crate::session::ANONYMOUS_SESSION_OWNER,
+        "Verified conversation owner required");
     let legacy = persistence
         .load_conversation_policy(owner_id, conversation_id)
         .await?

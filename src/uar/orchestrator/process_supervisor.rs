@@ -45,7 +45,7 @@ pub enum AdoptionResult {
     /// The supervisor spawned the binary itself and owns its lifetime.
     Spawned {
         endpoint: String,
-        child: tokio::sync::Mutex<Option<Child>>,
+        child: Arc<tokio::sync::Mutex<Option<Child>>>,
         pidfile: PathBuf,
     },
 }
@@ -73,7 +73,7 @@ pub struct Supervisor {
 #[derive(Debug)]
 struct OwnedChild {
     name: String,
-    child: tokio::sync::Mutex<Option<Child>>,
+    child: Arc<tokio::sync::Mutex<Option<Child>>>,
     pidfile: PathBuf,
 }
 
@@ -117,10 +117,10 @@ impl Supervisor {
         let endpoint = format!("http://{}:{}", binary.host, binary.port);
         info!(name = %binary.name, %endpoint, "spawned new instance");
 
-        let child_slot = tokio::sync::Mutex::new(Some(child));
+        let child_slot = Arc::new(tokio::sync::Mutex::new(Some(child)));
         let owned = OwnedChild {
             name: binary.name.clone(),
-            child: tokio::sync::Mutex::new(None), // placeholder; real child below
+            child: Arc::clone(&child_slot),
             pidfile: pidfile.clone(),
         };
         self.owned.lock().await.push(owned);
@@ -138,7 +138,14 @@ impl Supervisor {
         for entry in owned.drain(..) {
             warn!(name = %entry.name, "shutting down owned child");
             if let Some(mut child) = entry.child.lock().await.take() {
-                let _ = child.start_kill();
+                if let Err(error) = child.start_kill() {
+                    warn!(name = %entry.name, error_kind = ?error.kind(), "owned child termination request failed");
+                }
+                // Join the exact owned root. This alone is never descendant
+                // containment evidence and cannot authorize supervisor reclaim.
+                if let Err(error) = child.wait().await {
+                    warn!(name = %entry.name, error_kind = ?error.kind(), "owned child join failed");
+                }
             }
             let _ = std::fs::remove_file(&entry.pidfile);
         }

@@ -1,0 +1,58 @@
+{
+  "listen_host": "0.0.0.0",
+  "listen_port": 9447,
+  "controller_id": "node-supervisor-1",
+  "mechanism": "kubernetes-cri-containment-v1",
+  "qualification_id": "replace-with-retained-node-runtime-receipt-id",
+  "qualification_file": "/etc/uar-supervisor/qualification.json",
+  "qualification_sha256": "replace-with-exact-qualified-file-sha256",
+  "journal": "/var/lib/uar-supervisor/exclusions.sqlite3",
+  "server_certificate": "/etc/uar-supervisor/controller.crt",
+  "server_key": "/etc/uar-supervisor/controller.key",
+  "client_ca": "/etc/uar-supervisor/runtime-ca.crt",
+  "kubernetes_api": "https://kubernetes.default.svc",
+  "kubernetes_ca": "/etc/uar-supervisor/kubernetes-ca.crt",
+  "kubernetes_token": "/etc/uar-supervisor/kubernetes-token",
+  "cluster_id": "operator-bound-cluster-identity",
+  "node_uid": "replace-with-exact-node-uid",
+  "cri_endpoint": "unix:///run/containerd/containerd.sock",
+  "crictl": "/usr/local/bin/crictl",
+  "systemctl": "/usr/bin/systemctl",
+  "kubelet_unit": "kubelet.service",
+  "clients": {
+    "replace-with-runtime-a-certificate-der-sha256": {
+      "actions": [
+        "register",
+        "exclude"
+      ],
+      "deployments": [
+        "runtime-a",
+        "runtime-b"
+      ],
+      "registration_deployment": "runtime-a"
+    },
+    "replace-with-runtime-b-certificate-der-sha256": {
+      "actions": [
+        "register",
+        "exclude"
+      ],
+      "deployments": [
+        "runtime-b",
+        "runtime-a"
+      ],
+      "registration_deployment": "runtime-b"
+    }
+  },
+  "deployments": {
+    "runtime-a": {
+      "namespace": "uar",
+      "pod_name": "uar-a",
+      "pod_uid": "replace-with-a-uid"
+    },
+    "runtime-b": {
+      "namespace": "uar",
+      "pod_name": "uar-b",
+      "pod_uid": "replace-with-b-uid"
+    }
+  }
+}

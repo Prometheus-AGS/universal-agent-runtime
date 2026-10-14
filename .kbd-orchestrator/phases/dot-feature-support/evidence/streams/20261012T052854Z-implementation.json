@@ -1,0 +1,172 @@
+{
+  "change": "dot-05-stream-terminal-contract",
+  "task": "1",
+  "phase": "Execute",
+  "kbd_revision_at_assignment": 2701,
+  "source_status": "implementation_complete_acceptance_not_run",
+  "git_head": "b4244aeaa7e931240ae0f09ae31bae3f45bda244",
+  "liter_pin": "2.1.1/a6047386cc9fae4258b4a8577f6a016022095586",
+  "pins_modified_by_this_task": false,
+  "private_artifact_root": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-source-u5qrcb35",
+  "owned_files": [
+    {
+      "path": "docs/operations/provider-stream-completion.md",
+      "before_sha256": null,
+      "sha256": "097385d5e3389d724b1cc2a5135f22e55c320aa334b846d37f8d8d14283eee63",
+      "bytes": 8108
+    },
+    {
+      "path": "src/llm/anthropic_driver.rs",
+      "before_sha256": "ed1c06ee5cddab76394f3ba583eed5ddc4793215ea8c85197156b3bb32a78e32",
+      "sha256": "b9a6646b115cd99b47780ff78dafba709f9f91434c8b445feb297d225155bbf2",
+      "bytes": 21743
+    },
+    {
+      "path": "src/llm/liter_driver.rs",
+      "before_sha256": "a7da2ed758cc3a334f659adba2becffc11b545d48867d97a32c6e94ff5c065a5",
+      "sha256": "2b083bf93a5e940d85893e880266ac89edba6d3f6364dec0d8604646926b433c",
+      "bytes": 40438
+    },
+    {
+      "path": "src/llm/orchestrator.rs",
+      "before_sha256": "2e44b3087a01b30351eb63d316e849268086a783af8f9b00a7ee7792e97b8595",
+      "sha256": "2a268c4735bb4e022e3e39023c8d0dcc3de7a6943e41a3385217159a4f1583f7",
+      "bytes": 160790
+    },
+    {
+      "path": "tests/fixtures/stream_terminal_https.py",
+      "before_sha256": null,
+      "sha256": "a026a3f919db17b134e76e4db11f8e202bd70911e7803ad3e2cacc2d4ce37226",
+      "bytes": 2117
+    },
+    {
+      "path": "tests/stream_terminal_contract.rs",
+      "before_sha256": null,
+      "sha256": "aaeb987125ac63dc6904bfcfb99eabdc83412d35b889e1ad45a3dbd860533b6f",
+      "bytes": 27965
+    },
+    {
+      "path": "tests/support/stream_terminal_peer.rs",
+      "before_sha256": null,
+      "sha256": "7b068fed21d39c5c3fc20b7d17bd2e14beeef97b1b10b545756c963f46d3b589",
+      "bytes": 12409
+    },
+    {
+      "path": "vendor/git/liter-llm/crates/liter-llm/src/client/mod.rs",
+      "before_sha256": "3dba810817b36e7712f0ada80a22f7c7e8f27e30ea68a6b062b488cab4bce79c",
+      "sha256": "34843410ea3b7146463161794543ffd734e66037801e2ed1e1335cd7b9b4fa8d",
+      "bytes": 123471
+    },
+    {
+      "path": "vendor/git/liter-llm/crates/liter-llm/src/http/chat_streaming.rs",
+      "before_sha256": null,
+      "sha256": "5f85250cc654d01a2f88cb629f725bf33030051cae1b06bd994e841d23d5cfa9",
+      "bytes": 6568
+    },
+    {
+      "path": "vendor/git/liter-llm/crates/liter-llm/src/http/mod.rs",
+      "before_sha256": "0da71078817041fd976d45d04f8607c140d24d9a0f1b2a89d191779e1e0674b0",
+      "sha256": "bea90f759809285a4b0f2bbbf6f0c0f7368f62ff4ec824bf4cef0cb0aeae0983",
+      "bytes": 518
+    },
+    {
+      "path": "vendor/git/liter-llm/crates/liter-llm/src/http/streaming.rs",
+      "before_sha256": "39291f9d8ba916c0feeda5624debb7a6a8b95295b2704a5e280d012462054b1a",
+      "sha256": "864ae619c4ec36ceb718801e32b1c5d2cc89af25080455d81bd055d618b3e742",
+      "bytes": 30090
+    },
+    {
+      "path": "vendor/git/liter-llm/crates/liter-llm/src/lib.rs",
+      "before_sha256": "c0c29545c0cc0563916a77cfee0ccec63c7a3b64eeb31e47d48dcfd7d58893e0",
+      "sha256": "94a2a34f1f648ee7f5c6e18d468b13acd814940e910e9c70a04ad595eb264004",
+      "bytes": 8373
+    },
+    {
+      "path": "vendor/git/liter-llm/crates/liter-llm/src/provider/anthropic.rs",
+      "before_sha256": "c1aa8823a511fbeb63fbe54069a175bd7b9809b262f61e383740f951ce998ed1",
+      "sha256": "de0e98c9ff238b1fafddc742ddf05875ef415d919902287376ee24da4d700828",
+      "bytes": 12170
+    },
+    {
+      "path": "vendor/git/liter-llm/crates/liter-llm/src/provider/bedrock/stream.rs",
+      "before_sha256": "a2a257112a08fb5dad80209f0267685cdc6a07c7dbe40c68fdb9c0497654d279",
+      "sha256": "5bac5d01d5fe407c358f8537aa1de3ac3506608075110e19736d6e3f3efd8d02",
+      "bytes": 6692
+    },
+    {
+      "path": "vendor/git/liter-llm/crates/liter-llm/src/provider/cohere.rs",
+      "before_sha256": "d7732dca0caed9331eabe8834102da03e0c8deca53b5e447434267c1ef3d9674",
+      "sha256": "230d25aec8e55aab4e76b8558aadce1856b43c8f29fc275d61c5d0163e1df048",
+      "bytes": 41578
+    },
+    {
+      "path": "vendor/git/liter-llm/crates/liter-llm/src/provider/google_ai.rs",
+      "before_sha256": "422371c9e76ee3ad946b59eb66f6d1a779e74327146203bdb37fd8a2258cbb6d",
+      "sha256": "5b3065ec43ad7dbd9f4dae172b7639092657e66ed4f9a4cb889e2841d04d4ba2",
+      "bytes": 12339
+    },
+    {
+      "path": "vendor/git/liter-llm/crates/liter-llm/src/provider/mod.rs",
+      "before_sha256": "21e8eb563368198baf4ad50410f1366d1768895ffecc77d2e1a4e5d45073bb82",
+      "sha256": "b0d0eedd88c765be3b29a77fa971dd7a0311cf15a6d93bff698835a58bbf6200",
+      "bytes": 45567
+    },
+    {
+      "path": "vendor/git/liter-llm/crates/liter-llm/src/provider/vertex.rs",
+      "before_sha256": "11c1c2a30b0d2231af5abac19426ca6579d6d880024adeccd15687c863e143c8",
+      "sha256": "adf8516c68fe76d097f60c754621e0c2b8004494eb954180b05c11e645ba9efb",
+      "bytes": 15937
+    }
+  ],
+  "tier0": {
+    "rust_parse": "16 files passed",
+    "changed_span_format": "16/16 passed; pre-existing unowned findings retained",
+    "whitespace": "all 18 owned files passed",
+    "python_ast": "passed",
+    "source_wiring": "passed",
+    "historical_failure": "Azure fixture case filter inserted into content-type expression; rustfmt parse exit1; corrected and parse/format recheck exit0; exact reproduced diagnostic and failed bytes retained privately"
+  },
+  "production_acceptance": "NOT RUN; compilation/TLS/runtime assertions unverified",
+  "proposed_command": "env -u BEDROCK_BASE_URL -u BEDROCK_CROSS_REGION VERTEXAI_PROJECT=dot05-fixture VERTEXAI_LOCATION=us-central1 UAR_DOT05_INFRA_FILE=<private-existing-infrastructure-manifest> UAR_DOT05_NAMESPACE=<fresh-isolated-namespace> cargo test --locked --no-default-features --features server-full --test stream_terminal_contract -- --nocapture --test-threads=1",
+  "scenario_rows": 83,
+  "route_boundaries": 249,
+  "tested_provider_selections_planned": [
+    "generic OpenAI-compatible",
+    "Azure (valid/missing-terminal controls only)",
+    "Liter Anthropic",
+    "native Anthropic",
+    "Google AI Gemini",
+    "Vertex Gemini",
+    "Cohere v2",
+    "Bedrock ConverseStream"
+  ],
+  "compatible_alias_status": "source-wired shared default protocol; not each independently runtime-exercised",
+  "unsupported_or_unqualified": [
+    "external host callbacks: normalized Done only, unseen wire unqualified",
+    "non-chat Responses/realtime/Liter consumers: unchanged and outside guarantee",
+    "DashScope multimodal embeddings: not a chat route",
+    "genuine provider inference/release packaging/cross-process recovery: outside controlled endpoint proof"
+  ],
+  "guard_traces": [
+    "R4 empty EOF and finish-before-protocol-terminal: mandatory terminal",
+    "R4 arbitrary byte and CRLF/JSON boundaries: reused UTF8 buffer and complete SSE framing",
+    "R4 partial/malformed/trailing stream: reject incomplete events, malformed JSON/UTF8, inconsistent event name, data after terminal",
+    "Bedrock wire terminal boundary: messageStop requires actual nonempty stopReason, no default success",
+    "R4 premature tool dispatch: complete validated stream before Liter ToolCallComplete; orchestrator Done required on both routes",
+    "trusted-host client boundary: explicit supplied client ownership, existing default transport behavior preserved"
+  ],
+  "unrequested_additions": [],
+  "additional_authorized_scope": "Root approved narrow with_http_client seam for real fixed-HTTPS provider qualification; Azure alias controls preserve scoped coverage; no new dependencies/UI/CI/kernel mutation",
+  "release_provenance_required": "Effective vendor source patch + hashes must accompany approved pin; dependency pin was not altered",
+  "retained_tier0_formatter_provenance": {
+    "original_command": "python3 /tmp/uar-dot05-format-spans.py >/tmp/uar-dot05-final-format-output.jsonl",
+    "observed_exit_code": 0,
+    "source": "Captured stdout from the final Tier0 helper invocation before source freeze; helper was not rerun during this evidence-only correction.",
+    "retained_helper": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-source-u5qrcb35/tier0-format-spans.py",
+    "helper_sha256": "98904d05c1f276614f9d394319e780cb83593407c1d0caba9312962a824fe624",
+    "retained_stdout": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-source-u5qrcb35/tier0-format-spans.stdout.jsonl",
+    "stdout_sha256": "868e5241b4210252a9ae711f3ed5f0078e7b381131447dc8ba89e79f3dc1cec7",
+    "retained_stderr": null,
+    "observed_classification": "16/16 changed-span formatting passed; 0 applied edits and 0 mixed hunks in final check; prior unowned findings retained."
+  }
+}

@@ -49,6 +49,15 @@ pub struct ObserverController {
     // The local phase has one scheduler. This also linearizes revocation with dispatch.
     pub(super) delivery_lock: Mutex<()>,
     pub(super) scan_offset: AtomicUsize,
+    pub(super) schedules: tokio::sync::RwLock<Option<Arc<crate::uar::runtime::schedules::ScheduleController>>>,
+    pub(super) followups: tokio::sync::RwLock<Option<Arc<crate::uar::runtime::followups::FollowupController>>>,
+}
+
+impl std::fmt::Debug for ObserverController {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Do not traverse host state, stores, or attached control planes.
+        f.debug_struct("ObserverController").finish_non_exhaustive()
+    }
 }
 
 impl ObserverController {
@@ -62,7 +71,18 @@ impl ObserverController {
             store,
             delivery_lock: Mutex::new(()),
             scan_offset: AtomicUsize::new(0),
+            schedules: tokio::sync::RwLock::new(None),
+            followups: tokio::sync::RwLock::new(None),
         })
+    }
+
+    /// Attach durable schedules to the existing observer wakeup loop.
+    pub async fn attach_schedules(&self, schedules: Arc<crate::uar::runtime::schedules::ScheduleController>) {
+        *self.schedules.write().await = Some(schedules);
+    }
+
+    pub async fn attach_followups(&self, followups: Arc<crate::uar::runtime::followups::FollowupController>) {
+        *self.followups.write().await = Some(followups);
     }
 
     pub async fn create(

@@ -1,11 +1,15 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: {{ .Values.uar.workloadKind }}
 metadata:
   name: {{ include "uar.fullname" . }}
   namespace: {{ include "uar.namespace" . }}
   labels:
     {{- include "uar.appLabels" . | nindent 4 }}
 spec:
+  {{- if eq .Values.uar.workloadKind "StatefulSet" }}
+  serviceName: {{ include "uar.fullname" . }}-headless
+  podManagementPolicy: Parallel
+  {{- end }}
   replicas: {{ .Values.uar.replicaCount }}
   selector:
     matchLabels:
@@ -16,12 +20,22 @@ spec:
         {{- include "uar.appSelectorLabels" . | nindent 8 }}
         app.kubernetes.io/part-of: universal-agent-runtime
     spec:
+      {{- with .Values.uar.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       serviceAccountName: {{ include "uar.fullname" . }}-app
       terminationGracePeriodSeconds: {{ .Values.uar.terminationGracePeriodSeconds }}
       containers:
         - name: uar
-          image: "{{ .Values.uar.image.repository }}{{- if .Values.uar.image.tag }}:{{ .Values.uar.image.tag }}{{- end }}"
+          image: "{{ .Values.uar.image.repository }}{{- if .Values.uar.image.digest }}@{{ .Values.uar.image.digest }}{{- else if .Values.uar.image.tag }}:{{ .Values.uar.image.tag }}{{- end }}"
           imagePullPolicy: {{ .Values.uar.image.pullPolicy }}
+          {{- if .Values.uar.existingConfigSecret }}
+          args:
+            - universal-agent-runtime
+            - --config
+            - /etc/uar/runtime.yaml
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.uar.service.port }}
@@ -33,7 +47,7 @@ spec:
             - configMapRef:
                 name: {{ include "uar.fullname" . }}-config
             - secretRef:
-                name: {{ include "uar.fullname" . }}-secrets
+                name: {{ default (printf "%s-secrets" (include "uar.fullname" .)) .Values.uar.existingSecret }}
           livenessProbe:
             {{- toYaml .Values.uar.livenessProbe | nindent 12 }}
           readinessProbe:
@@ -41,12 +55,40 @@ spec:
           resources:
             {{- toYaml .Values.uar.resources | nindent 12 }}
           volumeMounts:
+            {{- if .Values.uar.existingConfigSecret }}
+            - name: runtime-config
+              mountPath: /etc/uar
+              readOnly: true
+            {{- end }}
+            {{- if .Values.uar.qualificationFixtureConfigMap }}
+            - name: qualification-fixtures
+              mountPath: /opt/dot17
+              readOnly: true
+            {{- end }}
             - name: data
               mountPath: /data
+            {{- if .Values.uar.runtimeDataMountEnabled }}
+            - name: runtime-data
+              mountPath: /var/lib/uar
+            {{- end }}
             - name: skills
               mountPath: /app/skills
       volumes:
+        {{- if .Values.uar.existingConfigSecret }}
+        - name: runtime-config
+          secret:
+            secretName: {{ .Values.uar.existingConfigSecret }}
+        {{- end }}
+        {{- if .Values.uar.qualificationFixtureConfigMap }}
+        - name: qualification-fixtures
+          configMap:
+            name: {{ .Values.uar.qualificationFixtureConfigMap }}
+        {{- end }}
         - name: data
           emptyDir: {}
+        {{- if .Values.uar.runtimeDataMountEnabled }}
+        - name: runtime-data
+          emptyDir: {}
+        {{- end }}
         - name: skills
           emptyDir: {}

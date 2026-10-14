@@ -1,0 +1,19 @@
+--- failed-source/tests/support/truthful_tool_outcome_process.rs
++++ refrozen-source/tests/support/truthful_tool_outcome_process.rs
+@@ -131,7 +131,16 @@
+         std::fs::write(directory.join("work/skills/dot04/SKILL.md"),
+             "---\nname: dot04\nversion: 1.0.0\ndescription: Controlled tool outcome production acceptance\ntools:\n  - dot04__outcomes__effect\n---\nUse the selected effect tool exactly once.\n").unwrap();
+         let port = unused_port();
++        // A/B and restarts share this logical backend identity, while their
++        // process IDs and catalog execution-owner claims remain independent.
++        let service_instance_id = format!(
++            "urn:uar:dot04:service:{}",
++            sha256(
++                &serde_json::to_vec(&(&database.url, &database.namespace, &database.name)).unwrap()
++            )
++        );
+         let config = json!({
++            "service_instance":{"instance_id":service_instance_id},
+             "security":{"jwt_required":true,"jwt_secret":JWT_SECRET,
+                 "settings_mutation_auth_required":false,"settings_admin_key":ADMIN_KEY},
+             "resilience":{"rate_limit_enabled":false},

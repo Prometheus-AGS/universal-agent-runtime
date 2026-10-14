@@ -1,0 +1,15 @@
+{
+  "recorded_at": "2026-10-13T19:57:01.261671+00:00",
+  "status": "five_databases_created_and_metadata_reconciled",
+  "container_id": "88ae91a01e150d13987539b77d99a225393c8e64f86118205be3d8202536eaba",
+  "actual_host_port": 32768,
+  "scope": "Five new isolated empty databases only; existing data/roles/passwords unchanged.",
+  "source_of_role": "Owner-created initdb wrapper explicitly selects postgres and ignores POSTGRES_USER environment metadata.",
+  "vector_available_version": "0.8.0",
+  "original_helper_returncode": 1,
+  "failure_after_successful_sql": "System Python rejected zip(strict=True) in receipt serialization. All five CREATE commands had returned0; not replayed.",
+  "actual_reconciliation_receipt": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/postgres-bootstrap-preparation/postgres-bootstrap-created-databases-observation-receipt.json",
+  "formal12_config": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/source-integration-preparation/formal12-source-stage-config.private.json",
+  "production_migrations_run": false,
+  "product_gate_run": false
+}

@@ -1,0 +1,17 @@
+{
+  "recorded_at": "2026-10-14T00:22:11.893220+00:00",
+  "status": "failed",
+  "inventory_sha256": "9b7c1e6d7a906f3a50ccadb83fa4bbfa79e2516503a6d9245339001ad72ec248",
+  "receipt": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory15-attempt02/source_integration/receipt.json",
+  "receipt_sha256": "528844951c11b93efea430f299d67de4da18010f6c5cc4b53b732b0938d49aa2",
+  "failed_target": "truthful_tool_outcomes",
+  "returncode": 101,
+  "whole_target_result": "1 passed; 1 failed; shared exercise deadline at600s",
+  "retained_passes": [
+    "credentials_api_integration_test",
+    "durable_api_keys_integration"
+  ],
+  "remaining_targets": "not executed",
+  "diagnosis": "Shared parent600s budget expired mid real26-boot sequence; helper continued startup/shutdown after parent failure. No production-provider defect proved. Fixture correction pending.",
+  "final_acceptance": "0/9"
+}

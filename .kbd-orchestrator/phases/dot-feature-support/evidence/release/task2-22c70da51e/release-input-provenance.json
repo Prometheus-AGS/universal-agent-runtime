@@ -1,0 +1,590 @@
+{
+  "schema_version": 1,
+  "source_sha": "22c70da51e5aad357e679553fd3dc2e79df2b378",
+  "source_tree": "825522f8b710e7c2158aabae600a693bb89066b9",
+  "scope": "approved source inputs; not build, offline closure or launched runtime certification",
+  "policy": {
+    "path": "versions.toml",
+    "sha256": "cc64e8f3081f5af2f3c4f62cbc01c7844d320656b60892ebf066e95b20004054"
+  },
+  "submodules": [
+    {
+      "path": "crates/prometheus-skill-system",
+      "gitlink": "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2",
+      "checkout_commit": "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2",
+      "checkout_tree": "8b131954efeb6cc882936a33147e2d2e38aedc4a"
+    },
+    {
+      "path": "crates/prometheus-skill-system/skills/imported/artifact-refiner",
+      "gitlink": "18d000f3e46952418f682159b227dbf71ce61dcb",
+      "checkout_commit": "18d000f3e46952418f682159b227dbf71ce61dcb",
+      "checkout_tree": "d5325797e2e177cff33cf4a3f8c830e32f56aa03"
+    },
+    {
+      "path": "crates/prometheus-skill-system/skills/imported/artifact-refiner/shared/sycophancy-correction",
+      "gitlink": "bc348fffb4b622c142c1082b281dd2f44b74d37b",
+      "checkout_commit": "bc348fffb4b622c142c1082b281dd2f44b74d37b",
+      "checkout_tree": "06829508f2b617f8b46c1d0ab8bc659397e3c3b6"
+    },
+    {
+      "path": "crates/prometheus-skill-system/skills/imported/artifact-refiner/tools/rust-mcp-filesystem",
+      "gitlink": "ef808b7d0ccf7f56c4e8d125091d8d0115725a60",
+      "checkout_commit": "ef808b7d0ccf7f56c4e8d125091d8d0115725a60",
+      "checkout_tree": "2914c6bd4aafa0d5ec678e059020604ca01eb0ef"
+    },
+    {
+      "path": "crates/prometheus-skill-system/skills/imported/prometheus-entity-management",
+      "gitlink": "34a211563fe7f06118996a40cc398c4c3af953ef",
+      "checkout_commit": "34a211563fe7f06118996a40cc398c4c3af953ef",
+      "checkout_tree": "aefbf2377827ed5324ac107938c250200bfcbe3a"
+    },
+    {
+      "path": "crates/prometheus-skill-system/skills/imported/sycophancy-correction",
+      "gitlink": "bc348fffb4b622c142c1082b281dd2f44b74d37b",
+      "checkout_commit": "bc348fffb4b622c142c1082b281dd2f44b74d37b",
+      "checkout_tree": "06829508f2b617f8b46c1d0ab8bc659397e3c3b6"
+    },
+    {
+      "path": "crates/prometheus-skill-system/tools/cowork-skills",
+      "gitlink": "77edcf8a49237dc9b8f6733e794c48fa4e6da832",
+      "checkout_commit": "77edcf8a49237dc9b8f6733e794c48fa4e6da832",
+      "checkout_tree": "b853e36321945e5dba5f38b535ea7dd95639e343"
+    },
+    {
+      "path": "crates/prometheus-skill-system/tools/disk-space-guardian",
+      "gitlink": "26487db64d5c44b00b57d19a649a82632dfe94d3",
+      "checkout_commit": "26487db64d5c44b00b57d19a649a82632dfe94d3",
+      "checkout_tree": "0bbe3f0c46ff6c66fb106e1b3c3b43db37c366ce"
+    },
+    {
+      "path": "crates/prometheus-skill-system/tools/liter-llm",
+      "gitlink": "a6047386cc9fae4258b4a8577f6a016022095586",
+      "checkout_commit": "a6047386cc9fae4258b4a8577f6a016022095586",
+      "checkout_tree": "2550c09240107f34e5d629b74c9f0f07c89157de"
+    },
+    {
+      "path": "crates/prometheus-skill-system/tools/openai-proxy",
+      "gitlink": "b68861e0a6672f5ece900c58fd44b9e23a6b5691",
+      "checkout_commit": "b68861e0a6672f5ece900c58fd44b9e23a6b5691",
+      "checkout_tree": "667df196c05a6e237f2939af1243f600af3aa823"
+    },
+    {
+      "path": "crates/prometheus-skill-system/tools/prometheus-knowledge",
+      "gitlink": "4b3a6744a4211512ff88a1cb96cf1e2a7db4c3ef",
+      "checkout_commit": "4b3a6744a4211512ff88a1cb96cf1e2a7db4c3ef",
+      "checkout_tree": "069857a66e7d99ae886ce747d562e6a1ec0557bb"
+    },
+    {
+      "path": "crates/prometheus-skill-system/tools/surreal-memory-server",
+      "gitlink": "63eb413ebf520a4a525ffd3b8d1d07f1389d48d4",
+      "checkout_commit": "63eb413ebf520a4a525ffd3b8d1d07f1389d48d4",
+      "checkout_tree": "53135952bb22626029008ec40253a181000790da"
+    },
+    {
+      "path": "frontend/packages/prometheus-entity-management",
+      "gitlink": "34a211563fe7f06118996a40cc398c4c3af953ef",
+      "checkout_commit": "34a211563fe7f06118996a40cc398c4c3af953ef",
+      "checkout_tree": "aefbf2377827ed5324ac107938c250200bfcbe3a"
+    },
+    {
+      "path": "models.dev",
+      "gitlink": "4a0154da2410bca18e97be812fecb9e8f85466e8",
+      "checkout_commit": "4a0154da2410bca18e97be812fecb9e8f85466e8",
+      "checkout_tree": "898b5255ea9d3ee10feef8a0e297e826d890ce5b"
+    },
+    {
+      "path": "vendor/git/liter-llm",
+      "gitlink": "a6047386cc9fae4258b4a8577f6a016022095586",
+      "checkout_commit": "a6047386cc9fae4258b4a8577f6a016022095586",
+      "checkout_tree": "2550c09240107f34e5d629b74c9f0f07c89157de"
+    },
+    {
+      "path": "vendor/git/rust-mcp-filesystem",
+      "gitlink": "01ae76b99db4b818458efe2dc5d76e70fa5eadb4",
+      "checkout_commit": "01ae76b99db4b818458efe2dc5d76e70fa5eadb4",
+      "checkout_tree": "6082a1c5765f833299faf642d4ec3e89caa8506a"
+    }
+  ],
+  "liter": {
+    "path": "vendor/git/liter-llm",
+    "gitlink": "a6047386cc9fae4258b4a8577f6a016022095586",
+    "checkout_commit": "a6047386cc9fae4258b4a8577f6a016022095586",
+    "checkout_tree": "2550c09240107f34e5d629b74c9f0f07c89157de",
+    "policy_commit": "a6047386cc9fae4258b4a8577f6a016022095586",
+    "policy_version": "2.1.1",
+    "crate_version": "2.1.1",
+    "lock_version": "2.1.1",
+    "manifest": {
+      "path": "vendor/git/liter-llm/crates/liter-llm/Cargo.toml",
+      "sha256": "9ad9bdac4e4425765d5a1a1ef7636908b0ac18093cc1499c7454b973d4e1804d"
+    }
+  },
+  "skills": {
+    "path": "crates/prometheus-skill-system",
+    "gitlink": "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2",
+    "checkout_commit": "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2",
+    "checkout_tree": "8b131954efeb6cc882936a33147e2d2e38aedc4a",
+    "policy_commit": "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2",
+    "source": "embedded_submodule",
+    "relative_root": "crates/prometheus-skill-system/skills",
+    "content_tree": "00ffc15ef16d5bcfe36244fffe5d91dca7ce1ebd",
+    "launched_runtime_verified": false
+  },
+  "memory_export": {
+    "path": "vendor/git/surreal-memory-server",
+    "policy_upstream_commit": "432eaa1ebbef66fc02b9bb1a1e63cc2fdb2149e8",
+    "recorded_upstream_commit": "432eaa1ebbef66fc02b9bb1a1e63cc2fdb2149e8",
+    "root_entry_type": "tree",
+    "exported_tree": "f9215a067a0e5dd3be0569ab687272c264748d5b",
+    "crate_version": "0.1.0",
+    "lock_version": "0.1.0",
+    "adapted_manifest": {
+      "path": "vendor/git/surreal-memory-server/crates/surreal-memory/Cargo.toml",
+      "sha256": "7423a95a88e2a23dc12587d3864b79ae813238b34731858f95577409cabc42b3"
+    },
+    "upstream_byte_comparison_performed": false,
+    "files": [
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/Cargo.toml",
+        "sha256": "7423a95a88e2a23dc12587d3864b79ae813238b34731858f95577409cabc42b3"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/README.md",
+        "sha256": "eb8b57c2a86b64c04539c3703b9184dbb08d43643e4be22ddfe4bc5f76afcc46"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/embeddings/candle.rs",
+        "sha256": "8e49891272adb8671958b43c717fcf50c6fc76e0c0ab5f4caf5a993ce942b38e"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/embeddings/cohere.rs",
+        "sha256": "420b2883ddeb3c0d6e5e3213e2fa9325fbc165a5e094d0aa007acdd76e617d33"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/embeddings/mod.rs",
+        "sha256": "19a3758ab7555c4514db57f415c1cebe8dae5551f02acb045b5d882640e822b7"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/embeddings/openai.rs",
+        "sha256": "5f78a19305636a5f5944e60019159a2e37643606c3bd84b8960568ec227a865e"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/entity.rs",
+        "sha256": "8ca78136258e32416349a872d2549ba54a11db04fe3555ef7d38d5e4f57ac97c"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/lib.rs",
+        "sha256": "49df1aa6da46d313deeb0eee94c68f58c119de7a4f3ab289412a3ebce2586a52"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/memory.rs",
+        "sha256": "b5073e42421ca853117274f67ecb987d001ec82fbc34b64f5e16bc93104536e3"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/mindmap.rs",
+        "sha256": "cc66fddc0a525f0a5530892cbdf8c2534f58d9ba31ac08206ff2187a51c988e5"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/model_profiles.rs",
+        "sha256": "9f5f830562f5ca294b094b5f358ff42fac248cc326c6814b26279799ac17d884"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/palace/adapter.rs",
+        "sha256": "be5e811af48a5037f3977efa2af2bde52f9798fc74cfaba42ec665b969abf7bd"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/palace/context.rs",
+        "sha256": "1f46fab6202bb7365e63b13220583e4534a6e5b20e343f0712aae0d52e88abf7"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/palace/embedding.rs",
+        "sha256": "4313fbda44d09e3ac0a1bfb75e45c8c032cbf09c289bd06bd1269ea9673a494a"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/palace/mod.rs",
+        "sha256": "544cb8a6fa58e243d5e2cac98a6176d84a10973a1273fee1d95a76d2e0cf9531"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/storage/migrations/mod.rs",
+        "sha256": "fe92c101ab85efa73d265e9befdde72e55cf5a9b34352339b43f8e506876bf8b"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/storage/mod.rs",
+        "sha256": "5a9340d3ab58202a910bbbc60770d795467bfa07dabf8b73cf6e6421be04367c"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/storage/surreal.rs",
+        "sha256": "8ffd8957a54f9a3a828a5d0248d866d17d9e6913e932410473710324f2a8bcf7"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/task_step.rs",
+        "sha256": "e6ead354d671d62e921c4bd85b6fdc04693eca782f49187d4e402acfa1eaa4a1"
+      },
+      {
+        "path": "vendor/git/surreal-memory-server/crates/surreal-memory/src/task_stream.rs",
+        "sha256": "354470be0e97d1f09a60e45448c18502414ef3ed3a76e68ee94d18b06d4d36e3"
+      }
+    ]
+  },
+  "pnpm_workspaces": [
+    {
+      "directory": "frontend/packages/prometheus-entity-management",
+      "definition": {
+        "path": "frontend/packages/prometheus-entity-management/pnpm-workspace.yaml",
+        "sha256": "ab94d70ccf04da894bad15db2b047bbf3be9e23f6074c0017411f07ae2f7e798"
+      },
+      "lock": {
+        "path": "frontend/packages/prometheus-entity-management/pnpm-lock.yaml",
+        "sha256": "186d0951ded92b76ebcfe0c62a088f8aed5546dd7195771eeaa97a7f850c23d6"
+      },
+      "manifests": [
+        {
+          "path": "frontend/packages/prometheus-entity-management/examples/agentic-a2ui-app/package.json",
+          "sha256": "6eefe33c44418fb80c12d2121b36223b9bf4119a9866cae16c2ebc99e91b35e9"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/examples/agentic-a2ui/package.json",
+          "sha256": "db474be0d1fc5b8f40ff119b215f2d93c07700a61d80a1f26798a247aa0994ba"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/examples/nextjs-app/package.json",
+          "sha256": "dd27127f75753ada216c9c95ced3c851c1ee1740ab93162923ba936c858ad6ec"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/examples/tauri-app/package.json",
+          "sha256": "e444f147f803a6b61648a7ac4f421876ac2c780625be82a609aa407c03eef889"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/examples/tauri-universal/package.json",
+          "sha256": "8786e62fa400be9ea60f28ebe2385199acb385f7d4980c425170cb6b42541d8e"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/examples/vite-app/package.json",
+          "sha256": "ca7f9ec2b746b4c2fe72ff462f0730c71c8630b7a0403b83ca0be45cbf995b30"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/extension/package.json",
+          "sha256": "36b0f737115fbd3d21f93d8ede2a9bda3de503981e1c28dcde8076281d81c685"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/package.json",
+          "sha256": "f463d678c481295b6575b69f77473f52306525d8d518d101e9f2e4a227467a42"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/a2ui-react/package.json",
+          "sha256": "bf3cb2de97524d74e2fca3a9701f93230be37d6cb26243a0253570da14f3d898"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-a2a/package.json",
+          "sha256": "f65ca2afc1d5b159251214b6c08b66200210566359e428673295a888e7b5d89a"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-alpine/package.json",
+          "sha256": "93140af7b35601e50ca6c7211cd8c33175ed92da6620c0600ab3cfaeaf9b589c"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-core/package.json",
+          "sha256": "af93890675dc7c67d58438f3a344cfe02810c0c5cf68f5c7a539fbba5225c80e"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-htmx/package.json",
+          "sha256": "33fddb69a1901ea2a11d34562b62dc773140446a917753901b2bdf9546161a94"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-react/package.json",
+          "sha256": "67968b34260a8a8f9dfba4fcecbe61ef47dde4c3a17fe97df066010e5b9c2079"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-sdl/package.json",
+          "sha256": "8db10ad93c80823e32d8d6d96ea245852317022fb72a66350d7e7a1d797e5edf"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-solid/package.json",
+          "sha256": "b7136fec6532cca0bca375c5682eaf37509b7bf5704d7455ad56c4f250c12c64"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-svelte/package.json",
+          "sha256": "141c8e53f103c0f422e482f5e7811e010e924c06f579201a25a4ea797a628710"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-sync/package.json",
+          "sha256": "e73c787420e6e67c9e386f430cd75d81fd96e677715145d376165927f35e4958"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-tauri/package.json",
+          "sha256": "dcb3848b411c5d923453e7092c349c639d05cd5d04b7647b579312cad69378f3"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-web-components/package.json",
+          "sha256": "c075ecb5054cea099274e6280dbfb59947d6899e26339ecbaaf853dcaad896ed"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/prometheus-entity-management/package.json",
+          "sha256": "1d595d3f427bd4d071ebf829941076a67ff641c9e50aef52b6687e02e7a2451d"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/site/package.json",
+          "sha256": "b0fb779d9a9e28b4849472168b6d88880f4972a529536dcf33409e0ec091ad33"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/website/package.json",
+          "sha256": "608c671da8bc33c715a361c4abb0e9d4d705ec89b7e3e0d8fe4c244c6d78e901"
+        }
+      ]
+    },
+    {
+      "directory": "frontend",
+      "definition": {
+        "path": "frontend/pnpm-workspace.yaml",
+        "sha256": "65fa2f4893e5c9c143066e50406d8e2b90415412cab70ed2e53ae9a638412fc2"
+      },
+      "lock": {
+        "path": "frontend/pnpm-lock.yaml",
+        "sha256": "b9b62f17deecf6726ae5fca5eb950a06eafebb4b68ecdb0593247e45b751fc6e"
+      },
+      "manifests": [
+        {
+          "path": "frontend/package.json",
+          "sha256": "3ca98094dc5d7c87eee9548a9c391be0d389a2e56f94fd4851120e43ff112d13"
+        },
+        {
+          "path": "frontend/packages/a2ui-core/package.json",
+          "sha256": "b644d4b5f7f3ec335e83c0eb9228698895d670359aef1a36c930e95fbf1f164b"
+        },
+        {
+          "path": "frontend/packages/a2ui-inspector/package.json",
+          "sha256": "19585e59b42d269c3f6c5b156a9b3be2387956596c8a4d10b0ba513e8b89573e"
+        },
+        {
+          "path": "frontend/packages/a2ui-lit/package.json",
+          "sha256": "0b7e8347883b2dfaf7bd47cac54384435c428f7e12498b4b15deb04246802d85"
+        },
+        {
+          "path": "frontend/packages/a2ui-react/package.json",
+          "sha256": "427be3fcaf80face63194970a6b07051f1a0112324175c951371f3c703ca1b50"
+        },
+        {
+          "path": "frontend/packages/a2ui-svelte/package.json",
+          "sha256": "644944af3ad110657050d747c083eb968adca4df915445ab1a2305cf93442d5a"
+        },
+        {
+          "path": "frontend/packages/a2ui-uar/package.json",
+          "sha256": "38902dcef9e50b9dd00d00c3071e4161f7e72122453c3e2f0ae81122b57d4cd0"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/package.json",
+          "sha256": "f463d678c481295b6575b69f77473f52306525d8d518d101e9f2e4a227467a42"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-core/package.json",
+          "sha256": "af93890675dc7c67d58438f3a344cfe02810c0c5cf68f5c7a539fbba5225c80e"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-react/package.json",
+          "sha256": "67968b34260a8a8f9dfba4fcecbe61ef47dde4c3a17fe97df066010e5b9c2079"
+        },
+        {
+          "path": "frontend/packages/uar-ui/package.json",
+          "sha256": "0b952f8086637a306e4ca3087fb07dc8ff443f524576472dcf7197f6c1a5eed7"
+        }
+      ]
+    },
+    {
+      "directory": ".",
+      "definition": {
+        "path": "pnpm-workspace.yaml",
+        "sha256": "f23a0392691b57df438077b64669c278563664815b49250d70dd9fa40ce0d8eb"
+      },
+      "lock": {
+        "path": "pnpm-lock.yaml",
+        "sha256": "02d991258aaf26b948a5507ab65389040ea7b7ee5c5cdf34eec51adf2bc582af"
+      },
+      "manifests": [
+        {
+          "path": "frontend/package.json",
+          "sha256": "3ca98094dc5d7c87eee9548a9c391be0d389a2e56f94fd4851120e43ff112d13"
+        },
+        {
+          "path": "frontend/packages/a2ui-core/package.json",
+          "sha256": "b644d4b5f7f3ec335e83c0eb9228698895d670359aef1a36c930e95fbf1f164b"
+        },
+        {
+          "path": "frontend/packages/a2ui-inspector/package.json",
+          "sha256": "19585e59b42d269c3f6c5b156a9b3be2387956596c8a4d10b0ba513e8b89573e"
+        },
+        {
+          "path": "frontend/packages/a2ui-lit/package.json",
+          "sha256": "0b7e8347883b2dfaf7bd47cac54384435c428f7e12498b4b15deb04246802d85"
+        },
+        {
+          "path": "frontend/packages/a2ui-react/package.json",
+          "sha256": "427be3fcaf80face63194970a6b07051f1a0112324175c951371f3c703ca1b50"
+        },
+        {
+          "path": "frontend/packages/a2ui-svelte/package.json",
+          "sha256": "644944af3ad110657050d747c083eb968adca4df915445ab1a2305cf93442d5a"
+        },
+        {
+          "path": "frontend/packages/a2ui-uar/package.json",
+          "sha256": "38902dcef9e50b9dd00d00c3071e4161f7e72122453c3e2f0ae81122b57d4cd0"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/package.json",
+          "sha256": "f463d678c481295b6575b69f77473f52306525d8d518d101e9f2e4a227467a42"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/a2ui-react/package.json",
+          "sha256": "bf3cb2de97524d74e2fca3a9701f93230be37d6cb26243a0253570da14f3d898"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-a2a/package.json",
+          "sha256": "f65ca2afc1d5b159251214b6c08b66200210566359e428673295a888e7b5d89a"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-alpine/package.json",
+          "sha256": "93140af7b35601e50ca6c7211cd8c33175ed92da6620c0600ab3cfaeaf9b589c"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-core/package.json",
+          "sha256": "af93890675dc7c67d58438f3a344cfe02810c0c5cf68f5c7a539fbba5225c80e"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-htmx/package.json",
+          "sha256": "33fddb69a1901ea2a11d34562b62dc773140446a917753901b2bdf9546161a94"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-react/package.json",
+          "sha256": "67968b34260a8a8f9dfba4fcecbe61ef47dde4c3a17fe97df066010e5b9c2079"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-sdl/package.json",
+          "sha256": "8db10ad93c80823e32d8d6d96ea245852317022fb72a66350d7e7a1d797e5edf"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-solid/package.json",
+          "sha256": "b7136fec6532cca0bca375c5682eaf37509b7bf5704d7455ad56c4f250c12c64"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-svelte/package.json",
+          "sha256": "141c8e53f103c0f422e482f5e7811e010e924c06f579201a25a4ea797a628710"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-sync/package.json",
+          "sha256": "e73c787420e6e67c9e386f430cd75d81fd96e677715145d376165927f35e4958"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-tauri/package.json",
+          "sha256": "dcb3848b411c5d923453e7092c349c639d05cd5d04b7647b579312cad69378f3"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/entity-graph-web-components/package.json",
+          "sha256": "c075ecb5054cea099274e6280dbfb59947d6899e26339ecbaaf853dcaad896ed"
+        },
+        {
+          "path": "frontend/packages/prometheus-entity-management/packages/prometheus-entity-management/package.json",
+          "sha256": "1d595d3f427bd4d071ebf829941076a67ff641c9e50aef52b6687e02e7a2451d"
+        },
+        {
+          "path": "frontend/packages/uar-ui/package.json",
+          "sha256": "0b952f8086637a306e4ca3087fb07dc8ff443f524576472dcf7197f6c1a5eed7"
+        },
+        {
+          "path": "package.json",
+          "sha256": "b3966ff889173de076d57d01c32be9ff823f6bac59a46a45710e6a677e5e4f7c"
+        }
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "path": "versions.toml",
+      "sha256": "cc64e8f3081f5af2f3c4f62cbc01c7844d320656b60892ebf066e95b20004054"
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "092c71d9b07c7198607ee810d35f9be2c4ec3e2fc9df90e6ead650a6e21b0d20"
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "dfb5e43446e3a605406a56289572279dfe4e2ef19561c72c65ed26c2a913d852"
+    },
+    {
+      "path": "Dockerfile",
+      "sha256": "05d4062a7ce93e42cd53028e6a3fd47f4d5656b2ac80b1306786635df127927a"
+    },
+    {
+      "path": ".dockerignore",
+      "sha256": "fd14a64e2699637e18b70be5b9943b285732903af67bddc87102132ba2052896"
+    },
+    {
+      "path": "catalog/provider_catalog.json",
+      "sha256": "ea7e74b3ba7d335e5710aec713e88972aa18825512f2c16030b9aeab95694276"
+    },
+    {
+      "path": "vendor/git/README.md",
+      "sha256": "ecc5f89f774c504dd001d11626a2dfc2b16298a578e4bc96f9f1de7259e8f24b"
+    },
+    {
+      "path": "vendor/git/liter-llm/Cargo.toml",
+      "sha256": "55bd433da99c085fd2164a7434065bf79d91da2c0fdc299a1d702b315498097f"
+    },
+    {
+      "path": "vendor/git/liter-llm/crates/liter-llm/Cargo.toml",
+      "sha256": "9ad9bdac4e4425765d5a1a1ef7636908b0ac18093cc1499c7454b973d4e1804d"
+    },
+    {
+      "path": "vendor/git/surreal-memory-server/crates/surreal-memory/Cargo.toml",
+      "sha256": "7423a95a88e2a23dc12587d3864b79ae813238b34731858f95577409cabc42b3"
+    }
+  ],
+  "compiled_schemas": [
+    {
+      "path": "docs/agents/collaboration/v0.1.0-draft.2/schemas/agent-definition.schema.json",
+      "sha256": "a5e0573b5323accec7e25766287af897cee34f689d77a2b6eb9d9367d41f179c"
+    },
+    {
+      "path": "docs/agents/collaboration/v0.1.0-draft.2/schemas/collaboration-document.schema.json",
+      "sha256": "e7f8215d6e177f3ab00374df0ab34d0f19e24552af34c69aaf5b049260ccc2d1"
+    },
+    {
+      "path": "docs/agents/collaboration/v0.1.0-draft.2/schemas/common.schema.json",
+      "sha256": "a832c0018f11abf564b341cc0ba9ed6d87172968fe2f43bdbcb0b4fb6fcfc2ef"
+    },
+    {
+      "path": "docs/agents/collaboration/v0.1.0-draft.2/schemas/conversion-report.schema.json",
+      "sha256": "4a013291e1768a5f0b98f6c99d3ec746f6a863cfd55d50d73863161943fb82cb"
+    },
+    {
+      "path": "docs/agents/collaboration/v0.1.0-draft.2/schemas/deployment-binding-template.schema.json",
+      "sha256": "73432b4f73217b166d13013cfdda63f0b139dd191196f009fc7e629886a2c22b"
+    },
+    {
+      "path": "docs/agents/collaboration/v0.1.0-draft.2/schemas/deployment-binding.schema.json",
+      "sha256": "44f91ff1ebd6f6b31bd4d60dd1a928f5969033f2e218dec5d3eb36d111ad15f9"
+    },
+    {
+      "path": "docs/agents/collaboration/v0.1.0-draft.2/schemas/effective-binding-receipt.schema.json",
+      "sha256": "b19661c1f662e2133cd884b0104dfe0e8330f132ced8064b5c6ff89bf8aa01da"
+    },
+    {
+      "path": "docs/agents/collaboration/v0.1.0-draft.2/schemas/package-manifest.schema.json",
+      "sha256": "bb96cd181790f391f9a543799f93369f8c53125ba9b3f70355f5f4c06fc1bd71"
+    },
+    {
+      "path": "docs/agents/collaboration/v0.1.0-draft.2/schemas/representation-grant.schema.json",
+      "sha256": "b856385bb5d1ab40fdb1e7e28d62ee0c9a0843e2fe46dd9162224d70c7ed8b01"
+    },
+    {
+      "path": "docs/agents/collaboration/v0.1.0-draft.2/schemas/team-definition.schema.json",
+      "sha256": "0fee47de55de762c09c158c73cda481c5b3857c5f999253885069b35daa58bcc"
+    },
+    {
+      "path": "docs/agents/collaboration/v0.1.0-draft.2/schemas/workflow-definition.schema.json",
+      "sha256": "6129578c9c54d5fd7134ea11ef149ba1d629841b205856f6b151be6ff03a9abb"
+    },
+    {
+      "path": "docs/agents/collaboration/workflow-execution/1.0.0/extension.schema.json",
+      "sha256": "5e83f58ed3d9352635a8f1937d0bf32bb48a847ef6caeb299b1a5684d3002890"
+    }
+  ]
+}

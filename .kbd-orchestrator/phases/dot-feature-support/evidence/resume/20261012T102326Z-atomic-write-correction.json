@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-12T10:23:26.527071+00:00",
+  "change": "dot-06-fresh-process-resume",
+  "phase": "Execute",
+  "rootWaypoint": {
+    "revision": 2715,
+    "planRevision": 9,
+    "change": "dot-06-fresh-process-resume",
+    "currentTask": "2",
+    "stageId": "execute"
+  },
+  "head": "b4244aeaa7e931240ae0f09ae31bae3f45bda244",
+  "status": "candidate_source_correction_ready_for_whole_failed_gate",
+  "accepted": false,
+  "correctedBehaviorVerified": false,
+  "observedFailure": {
+    "receipt": ".kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T100921Z-resume-production-boundary.json",
+    "compiled": true,
+    "exitCode": 101,
+    "passedTests": 0,
+    "failedTests": 1,
+    "acceptedScenarioGroups": 0,
+    "enteredBoundary": "First local-resume predecessor, before orderly shutdown and fresh-manager resume.",
+    "publicErrorCode": "checkpoint_persistence_failed",
+    "actualRunStatus": "error",
+    "underlyingErrorAvailable": false,
+    "privateAttempt": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-acceptance-46bdim9t"
+  },
+  "changes": [
+    {
+      "path": "src/uar/persistence/providers/checkpoint_records/surreal.rs",
+      "beforeSha256": "3a1ef3de3643922fcbeb1e0ae18f6cb2bb2114c884fc5fcf3a82e054bcdb6d9f",
+      "afterSha256": "3335aab0da066cd201ef6742c23747694177e8081fe1b90a1048fe21bbbcd2ea",
+      "bytes": 12606
+    },
+    {
+      "path": "src/uar/runtime/checkpoint_host.rs",
+      "beforeSha256": "36b66bf02e66a585077322e155dac6667fdcab4dce49121eb571415baedddd54",
+      "afterSha256": "0b72b80d3cf0d3adf3c01b1a8145ef1d04b78d6153646837aa165a27ed213a9d",
+      "bytes": 4975
+    }
+  ],
+  "allOwnedAfterSha256": {
+    "src/uar/api/routes.rs": "3ad526ab66218fa0a68bc0c045a2ba11c123152d5656c15103ceb2f19c34c1de",
+    "src/uar/runtime/manager.rs": "14186ae9d6771d7718cfa17bb10360214451349e6bf9e1b08d16b4a3348607f4",
+    "src/uar/persistence/mod.rs": "01f7fdc2994297fd11abadc40ee25279c6802277cc2548f436c62f759c648e9a",
+    "src/uar/persistence/providers/surreal.rs": "464ac4ffa44b398663a526d72b8aad21561c9a6af0b8a06d00235361874c65b9",
+    "src/uar/runtime/graph/types.rs": "1d9e822fb79f354fbc82eaa0a477812cefdb33f0fdbe98c385f7f83d6d8d2d7e",
+    "src/uar/runtime/graph/engine.rs": "5af0ceaf4563372a09172c8a9fb8a22263ad7b93ef32df7102b505ab4653c9c8",
+    "src/uar/runtime/graph/nodes/checkpoint_node.rs": "14929d954d5c8aa4702aebe4e25e1f4d44f4c7676df164645942f763a5a1996d",
+    "src/uar/runtime/mod.rs": "f07515f5abec2fdb8714a9f0f32976c8effea29ecd5cc4a12ed3d51955d8bde0",
+    "tests/test_checkpoint.rs": "c1fd41e0662836856e21a11057ba9ecc1130b9c5d6870a75cbf39d4293ba91f4",
+    "tests/context_history_integrity.rs": "514c1b3f80573930eb9f8668b291225505391bf59bf9e42841a9cf98a3effa2e",
+    "tests/test_agent_node.rs": "6252694d4be13c388450f57088c34bdc80f892cdeda4b5a8e6dbfed64a9dc52d",
+    "tests/test_graph_execution.rs": "644ce0173fafcc142844d8af9812e707a34bfc63a844a3903feb969d6bf779d4",
+    "tests/stream_terminal_contract.rs": "bb69dfa9889ee7de1c478174db38de6705b543fd065bf16a7f3b44a6e83be031",
+    "src/uar/persistence/checkpoint_resume.rs": "37d392a97e9900b62a784d908dac80d1e7e90c11e1c9d672b7cf06053ff63523",
+    "src/uar/persistence/providers/checkpoint_records/surreal.rs": "3335aab0da066cd201ef6742c23747694177e8081fe1b90a1048fe21bbbcd2ea",
+    "src/uar/runtime/checkpoint_host.rs": "0b72b80d3cf0d3adf3c01b1a8145ef1d04b78d6153646837aa165a27ed213a9d",
+    "tests/fresh_process_resume.rs": "8d712e5168bd4c079c5cf7c6d1dec063a5456cddcb8fc94eb16ebe45652a8eed",
+    "tests/support/fresh_process_resume_process.rs": "266752c74b00e558c942f557b943978f3e972119f42d29c09dfefaf2ef2652dd",
+    "tests/fixtures/fresh_process_resume_mcp.py": "f77a76d81a93bf40fe579fb9e2d28f16d2835903ecef44ddecb88e0681b73059",
+    "docs/operations/fresh-process-resume.md": "2f7c71f6d34606b6d4ddf0ca402354db422cc2e31edb87f21c29cb15e9f089b7"
+  },
+  "privateSnapshotRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-write-correction-u1um5x03",
+  "privatePatch": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-write-correction-u1um5x03/correction.patch",
+  "patchSha256": "98c95adaaad84b1aaf8cabb22cf1b4bece1c5a2ffb5c7e914120db48914ed981",
+  "changedBehavior": [
+    "Remove the Checkpoint.id string from Surreal CONTENT while retaining _cp_id and the explicit record identifier; existing load/list restore paths stay intact.",
+    "Log fixed checkpoint stage/error class labels for envelope validation, query submission, transaction result, readback identity and host save. Never log raw error Display/Debug, query, protected state, credentials or principal."
+  ],
+  "causeAssessment": {
+    "status": "candidate_only",
+    "evidence": "The atomic payload retained a serialized id field, unlike the existing tenant_record_payload logical-ID helper. Retained failure logs lacked an underlying database error. No narrower causal assertion is made before the whole gate."
+  },
+  "sourceReferences": [
+    "src/uar/persistence/providers/surreal.rs:tenant_record_payload",
+    "src/uar/persistence/providers/surreal.rs:load_checkpoint",
+    "src/uar/persistence/providers/surreal.rs:list_checkpoints"
+  ],
+  "upstreamReferences": [
+    "https://github.com/surrealdb/surrealdb/issues/2487",
+    "https://github.com/surrealdb/docs.surrealdb.com/blob/main/src/content/reference/query-language/statements/create.mdx"
+  ],
+  "guards": [
+    {
+      "name": "reserved_record_id_not_checkpoint_payload",
+      "trace": "Observed atomic checkpoint write failure and existing logical-ID storage convention; candidate correction."
+    },
+    {
+      "name": "bounded_checkpoint_diagnostics",
+      "trace": "Actual failure could not be localized because the host discarded the underlying checkpoint error; privacy boundary forbids raw database error output."
+    }
+  ],
+  "verification": {
+    "currentChecksRun": [],
+    "testsRun": false,
+    "cargoRun": false,
+    "compilerRun": false,
+    "probeRun": false,
+    "reason": "Root authorized source correction only; completed correction awaits the failed whole production gate."
+  },
+  "nextGate": {
+    "owner": "root/resume_acceptance",
+    "sameWholeTarget": true,
+    "command": "cargo test --locked --no-default-features --features server-full,postgres-backend --test fresh_process_resume -- --nocapture --test-threads=1",
+    "environment": "Fresh root-owned isolated namespace/evidence directory and retained private qualified infrastructure.",
+    "streams": "Held until resume gate passes; prior failed logs/source snapshot remain historical."
+  },
+  "unrequestedAdditions": [],
+  "newDependencies": false,
+  "pinsEdited": false,
+  "legacyInspectionPreserved": true,
+  "limits": [
+    "Candidate root cause and corrected runtime behavior remain unverified until the complete failed gate reruns.",
+    "No unentered scenario result is inferred from the successful compile or initial run."
+  ]
+}

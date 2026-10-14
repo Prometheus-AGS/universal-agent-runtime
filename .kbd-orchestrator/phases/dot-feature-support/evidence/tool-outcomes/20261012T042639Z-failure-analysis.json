@@ -1,0 +1,318 @@
+{
+  "verdict": "failed",
+  "exitCode": 101,
+  "command": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test truthful_tool_outcomes -- --test-threads=1 --nocapture",
+  "startedAt": "2026-10-12T04:26:41.266307+00:00",
+  "finishedAt": "2026-10-12T04:28:33.676223+00:00",
+  "elapsedSeconds": 114.29,
+  "topHarness": {
+    "actualResult": [
+      "test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 91.62s"
+    ],
+    "substantiveEntries": 1,
+    "substantiveStatus": "failed",
+    "topNoopChildEntries": 1,
+    "topNoopChildStatus": "passed",
+    "internalChildInvocations": "Fixture orchestration only, not extra completion evidence"
+  },
+  "scenarioCounts": {
+    "expected": 65,
+    "entered": 28,
+    "completed": 27,
+    "failed": 1,
+    "unrun": 37,
+    "localCompleted": 27,
+    "sharedEntered": 0
+  },
+  "failure": {
+    "location": "tests/support/truthful_tool_outcome_process.rs:77",
+    "observedError": "binary durable store: Database at <private profile>/binary-database/instance-process-success/LOCK is already locked by another process",
+    "sequence": [
+      "instance publiccreate/turn/settlement and ownruntimeexit",
+      "durable_result: Database.connect success; canonical/fullcontent/admission assertions passed",
+      "durable_instance: second Database.connect fails before load_agent_instance"
+    ],
+    "rootCauseScope": "Two immediate independent KV connections in same isolated helper readback. Actual runtime was awaited exited before the first successful readback. Exact retained in-process holder/drop release timing at failure was not sampled; no live-runtime lock-holder claim.",
+    "proposedNarrowCorrection": "Reuse a single opened store for durable_result and durable_instance assertions; preserve both assertion sets. Sufficiency unverified.",
+    "privateHelperLog": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-instance-route-gate-0z85c98a/profiles/local-bc60fa76a2e94f648e4026969cdbb388/helper-91403.stderr.log",
+    "postExitLockHolderSample": {
+      "privateLog": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-instance-route-gate-0z85c98a/post-exit-instance-lock-holder.log",
+      "noHolderObserved": true
+    }
+  },
+  "sourceAndArtifacts": {
+    "head": "c314099bc9173058f3ba43b983539d8d13c6f4de",
+    "boundInputs": 6551,
+    "all18RefreezeMatch": true,
+    "sourceUnchangedAtExit": true,
+    "artifactStabilityAtExit": [
+      {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "sameSha256": true
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sameSha256": true
+      },
+      {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sameSha256": true
+      }
+    ],
+    "sampledRuntimeLaunches": 17,
+    "sidecarLaunched": false
+  },
+  "prelaunchStop": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T042353Z-production-boundary.json",
+  "prelaunchStopResolution": "Observed distinct librefang cwd/build cargo-lock paths, no crossproject intervention",
+  "cleanup": {
+    "sampledOwnedProcesses": [
+      {
+        "pid": 91334,
+        "role": "integration-target",
+        "presentAtSample": false
+      },
+      {
+        "pid": 91403,
+        "role": "integration-target",
+        "presentAtSample": false
+      },
+      {
+        "pid": 91533,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 92327,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 92915,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 93216,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 93313,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 93396,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 93445,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 93497,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 93522,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 93599,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 93654,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 93967,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94006,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94077,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94139,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94206,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94252,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94305,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94332,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94403,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94452,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94453,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94490,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94540,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94567,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94569,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94594,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94595,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94626,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94740,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94795,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 94835,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 95342,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 95394,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 95420,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 95424,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 95471,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 95525,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 95618,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 95620,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 95644,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 95701,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 95772,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 95797,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      }
+    ],
+    "allSampledOwnedPIDsGone": true,
+    "ordinaryRuntimePIDCount": 17,
+    "integrationPIDCount": 2,
+    "exactOwnedPythonTraceMatches": [],
+    "cleanupActions": [],
+    "rootInfrastructureUntouched": true,
+    "scope": "Sampled PIDs and exactowned private-traceargv, not exhaustive system process closure"
+  },
+  "limits": [
+    "Instance row incomplete; all35shared rows and other2localinstance rows unrun",
+    "No PG receipt roundtrip or observer/checkpoint parity",
+    "Controlled Liter/MCP fault injection, no genuine external inference",
+    "SDK-represented scrubbed MCP content, not unknownwirefields",
+    "Shared B observer paths unrun here, no takeover-denial control",
+    "No full transitive registry/toolchain/native closure",
+    "No Tier2/cumulative QA/independent review/featurematrix/Tier3 release claims"
+  ],
+  "cargoHeldAfterFailure": true
+}

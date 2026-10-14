@@ -1,0 +1,835 @@
+{
+  "verdict": "passed",
+  "command": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test truthful_tool_outcomes -- --test-threads=1 --nocapture",
+  "actualSummary": [
+    "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 187.38s"
+  ],
+  "exitCode": 0,
+  "startedAt": "2026-10-12T04:47:51.442131+00:00",
+  "finishedAt": "2026-10-12T04:51:32.172855+00:00",
+  "elapsedSeconds": 223.07,
+  "tier": "Completed-change real production integration only",
+  "libtest": {
+    "topEntries": 2,
+    "substantiveFullgateEntries": 1,
+    "topNoopChildEntries": 1,
+    "internalChildExerciseObserveStages": "Fixture orchestration, not additional meaningful tests"
+  },
+  "scenarioCounts": {
+    "expected": 65,
+    "entered": 65,
+    "completed": 65,
+    "failed": 0,
+    "unrun": 0,
+    "localCompleted": 30,
+    "sharedCompleted": 35
+  },
+  "inventoryMatched": true,
+  "profiles": [
+    {
+      "profile": "shared",
+      "protocolReceiptRows": 8,
+      "registryManagerScopedScenarioEntries": 16,
+      "activationControls": 3,
+      "binaryRows": 16,
+      "totalScenarios": 35,
+      "actualBootNodeConfigurations": 26,
+      "retainedHelperLogPIDs": [
+        49514,
+        49515,
+        42962
+      ],
+      "ready": true,
+      "release": true
+    },
+    {
+      "profile": "local",
+      "protocolReceiptRows": 8,
+      "registryManagerScopedScenarioEntries": 16,
+      "activationControls": 3,
+      "binaryRows": 11,
+      "totalScenarios": 30,
+      "actualBootNodeConfigurations": 19,
+      "retainedHelperLogPIDs": [
+        39240,
+        42943
+      ],
+      "ready": false,
+      "release": false
+    }
+  ],
+  "verifiedClaims": [
+    "Full SDKrepresented MCP content under existing scrub projection across actualreachableconsumers",
+    "Success/applicationfailure/predispatchtransportfailure/postfsyncedeffectunknown certainty agrees with canonical and admission persistence",
+    "Unknown held and not replayed or continued",
+    "Success alone advances catalog dependencies; appfailure/unknown/legacyheld do not",
+    "Local and shared actual scoped/ordinary/team/instance production paths passed",
+    "ExistingoptionalNone staysNone, no receipt promotion",
+    "Four historical public recovery controls passed including same-name distinct invocation and unrelatednativecall binding",
+    "Five actualconcurrentA/B readonlyroute observations and realrestartreadbacks passed",
+    "Instance settlement/passivation and postshutdown durable lifecycle/recovery readback passed"
+  ],
+  "finalIndependentHelperObservers": {
+    "localAfterWriterExit": "passed",
+    "sharedWhileExerciseHelperAlive": "passed",
+    "sharedAfterExerciseHelperExit": "passed",
+    "role": "Integration harness store observers; separate from actual runtimeB"
+  },
+  "sourceAndArtifacts": {
+    "head": "c314099bc9173058f3ba43b983539d8d13c6f4de",
+    "branch": "main",
+    "indexEmpty": true,
+    "boundInputs": 6551,
+    "all18RefreezeMatched": true,
+    "sourceStableAtExitAndAfterCleanup": true,
+    "sourceSetSha256": "5fc3a595390de1504aa0091f51f3eedd00cea139bc0925b6906e64db98ccbb9a",
+    "gitlinksStable": true,
+    "artifacts": [
+      {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "sha256": "483fa1f8d5e2f9f134dd05eaaff0dca539a24be618430927fafe322875d8e3be",
+        "bytes": 333796456,
+        "capturedAt": "2026-10-12T04:48:07.563092+00:00"
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "698b24c371421c86b55ddb35066bcfd88b34991c6979cacc47594a271c7dbb48",
+        "bytes": 552221880,
+        "capturedAt": "2026-10-12T04:48:29.498687+00:00"
+      },
+      {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T04:48:36.143405+00:00"
+      }
+    ],
+    "artifactStabilityFinal": [
+      {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "sameSha256": true
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sameSha256": true
+      },
+      {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sameSha256": true
+      }
+    ],
+    "sidecarLaunched": false,
+    "privateSnapshot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/source-snapshot.tar.gz"
+  },
+  "cleanup": {
+    "ownedProcessSamples": [
+      {
+        "pid": 38420,
+        "role": "integration-target",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 39240,
+        "role": "integration-target",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 39400,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 39562,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 39591,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 39592,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 39632,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 39723,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 39836,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 39886,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 39921,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 39972,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 39996,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 39997,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 40083,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 40131,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 40206,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 40258,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 40292,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 40318,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 40391,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 40437,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 40481,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 40818,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 41202,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 41260,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 41398,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 41422,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 41792,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 41843,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 41895,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 41919,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 41983,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42042,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42072,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42100,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42138,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42171,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42250,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42293,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42322,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42340,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42341,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42412,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42462,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42839,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42884,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 42962,
+        "role": "integration-target",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 43680,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 43733,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 43762,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 43831,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 44113,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 44209,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 44364,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 44410,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 44546,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 44631,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 44722,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 44777,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 44829,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 44912,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45045,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45094,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45160,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45266,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45328,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45367,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45437,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45510,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45512,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45535,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45537,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45574,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45617,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45670,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45701,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45703,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45726,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45729,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45757,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45804,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45863,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 45894,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 46116,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 46122,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 46174,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 46176,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 46205,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 46458,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 46619,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 46644,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 46645,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 46674,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 47041,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 47357,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 47401,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 47402,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 47424,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 47534,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 47794,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 47876,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 48221,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 48585,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 48657,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 48707,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 48708,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 48709,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 48788,
+        "role": "ordinary-runtime",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 49188,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 49486,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 49515,
+        "role": "integration-target",
+        "presentAtSample": false,
+        "basis": "Live sampled descendant"
+      },
+      {
+        "pid": 49514,
+        "role": "integration-helper",
+        "presentAtSample": false,
+        "basis": "Retained actual helper stdout log, missed by live sampling"
+      },
+      {
+        "pid": 42943,
+        "role": "integration-helper",
+        "presentAtSample": false,
+        "basis": "Retained actual helper stdout log, missed by live sampling"
+      }
+    ],
+    "allSampledAndRetainedHelperPIDsGone": true,
+    "sampledOrdinaryRuntimePIDs": 43,
+    "sampledIntegrationPIDs": 4,
+    "additionalRetainedHelperPIDs": 2,
+    "actualRuntimeBootNodeCount": 45,
+    "exactOwnedPythonTraceMatches": [],
+    "cleanupActions": [],
+    "rootInfrastructureUntouched": true,
+    "scope": "43runtimePID samples versus45successful actualnodeboots inferred from target receipts/configs; not exhaustive process closure. Missing shortlived runtime samples do not change executable identity, same fixed production binary for every Node boot."
+  },
+  "limits": [
+    "No genuine external inference; controlled Liter/MCP peers are fault injection",
+    "SDKrepresentedresponse only, no wireunknownfield preservation",
+    "Actual runtimeB made readonlypublicrequests; no deniedtakeover test or broaderownershipcertification",
+    "No PG receipt roundtrip or missingobserver/checkpoint parity",
+    "No fulltransitive registry/toolchain/nativeclosure",
+    "No Tier2 composition/cumulativeQA/independentreview/wholephase/featurematrix/Tier3publication"
+  ],
+  "sourceEditsByExecutor": [],
+  "additionalUnrequestedWork": [],
+  "newGuardsByExecutor": []
+}

@@ -1902,3 +1902,81 @@ Install one seven-role project roster with a default lead/specialist/verifier wo
 Use pinned project Vercel React/Composition and SurrealQL skills with UAR entity/pin precedence. MiniMax uses a child-only project data directory; generated credential/session state is ignored. No new product security behavior or foreign-repository ownership was added.
 
 Evidence: .agent-team/uar-core/verification.json and reviews/. Manifest/state, 35 export/installed files, 16 skill paths and existing config digests pass static checks; OpenCode discovers all seven roles. Other native activation/inference remains unverified, and mcode is absent. Cross-model design review produced corrections; both final cross-model requests timed out. Fresh artifact-only same-family fallback passed with limitations, not cross-model certification.
+
+## 2026-10-11 — Dot Execute policy and retention
+Operator explicitly authorized versions.toml to adopt current-main Liter 2.1.1/a6047386 and skill f4bef455 rather than downgrade the active baseline; integration/locked packaging acceptance remains required. Exact memory export audit found19 of20 files unchanged from upstream432eaa; manifest adaptation alone differs, so memory pins remain unchanged and exportTREE is not used as COMMIT. Operator selects fixed7/30/90/365 day automatic capture retention oruntil-deleted, anchored to first durable capture; shortening constrains existing records, extension neverrevives. Bounded spec strictvalidation and isolatedcritic PASS after splitting one longrequirement. No runtime guarantee is inferred from this artifact gate.
+
+
+### 2026-10-11T23:44:07.566652+00:00 — API-key acceptance profile and isolated PostgreSQL
+
+The completed dot-03 change gate uses server-full,postgres-backend,in-memory-backend in one serialized integration target. The added in-memory-backend flag exercises the explicit development-mode requirement; it is not a broader feature matrix. Full PostgresProvider startup runs existing migrations requiring pgvector. Replaced only the disposable root-owned plain PostgreSQL fixture with an already installed PostgreSQL 17.6 image, immutable sha256:602869708669013b15b978ad81409a43a2f9dca6cccaab37a361d76ea1426d45. The actual database reports vector 0.8.0 available. No production dependencies or pins changed. Infrastructure readiness is not product acceptance. An initial psql probe used the wrong default Unix socket; corrected it to the fixture's /tmp socket before reporting readiness. The plain-container log and initial infrastructure receipt remain preserved.
+
+
+### 2026-10-12T00:06:27.061951+00:00 — Bound API-key authority waits after observed disconnect
+
+The actual disconnected-database gate returned HTTP 408 because authority operations remained pending until the general request timeout. The host-owned durable key stores now bound every read and mutation await and map elapsed waits to their existing sanitized Unavailable outcome. Startup supplies the existing request_timeout_ms; the formula is min(5000ms,max(request_timeout_ms,1000)/8), with 3750ms for direct constructor helpers. The /8 divisor provides deliberate headroom for chained operations, not a universal route-budget guarantee. Global request timeout, constructor signatures, configuration fields and dependencies are unchanged. No retries, rollback assertions or stale/memory fallback were added. A timed-out mutation may already have committed; operator metadata reconciliation is required before retrying. This guard traces to the observed authority outage at a real authentication boundary.
+
+Only src/uar/security/api_keys/storage.rs, src/server.rs and docs/operations/durable-api-keys.md changed. Targeted formatting, per-file diff whitespace and explicit all-three-file whitespace checks each exited 0. Tokio timeout behavior was verified against locked 1.53.1 documentation; database rollback is not inferred. Source is refrozen for the third same-command gate, independently snapshot before rerun. PostgreSQL ingress correction is separate disposable infrastructure. Neither correction is a passing runtime result.
+
+
+## 2026-10-12 — Keep Dot resume memory negative at the release startup boundary
+
+The first Dot-06 gate's in-memory negative failed at startup with the pinned SurrealDB 3.3.0 SDK's explicit `Unsupported scheme: memory` message. Enabling its existing `kv-mem` feature in the otherwise unchanged full acceptance command failed locked dependency resolution (`surrealmx` required `papaya ^0.2.5` while the selected types crate used 0.2.4). The plan requires explicit unsupported PostgreSQL checkpoint APIs; memory is development-only and is not promised durability. We therefore left `versions.toml`, `Cargo.toml`, and `Cargo.lock` unchanged, kept the release feature selector, and qualified memory as a failed production-runtime startup with zero requests/effects and no checkpoint-API or durability certification. Unattested remote and PostgreSQL still require real 503 responses. The final whole resume gate passed all 24 scenario identities, including these distinct negative contracts.
+
+## 2026-10-12 — Require teams and compact handoffs for multi-change KBD work
+
+The Dot phase spans many changes and shared source files. Relying on one lead's
+chat context obscured work ownership and test timing. `AGENTS.md` now requires a
+team, bounded file ownership, concise fresh-context task packets, and durable
+KBD handoffs for Dot and future multi-change phases. The lead retains phase
+integration and the full-phase verification boundary; delegation cannot open
+an early test gate. `CLAUDE.md` is the same file through a symlink.
+
+## 2026-10-12 — Dot combined-release architecture review
+
+All nine issue379 requirements join the first Dot release. GPT-6 Astra source audit supports targeted lifecycle/durability/policy/protocol repair and reuse of existing host/actor/approval/checkpoint authorities, not a whole-runtime rewrite. M3 first-packet BLOCK led to corrected citations and expanded evidence; K3 revised-packet PASS (0 critical, 0 warning) supports plan reconciliation only. K3's characterization of addressed M3 evidence gaps as overreach is not adopted. Preserve both packets. No product testing/building before full combined production implementation; current architecture review was an explicit operator exception. Details: `.kbd-orchestrator/phases/dot-feature-support/children/issue-379-dot-replan/analysis.md`.
+
+Operator-approved recovery availability (2026-10-12): native takeover may require a confirmed reboot of the same stable host when descendant exclusion cannot be proven. Same-boot takeover is available only through an implemented, qualified containment mechanism. Service stopped, PID absence, timeout, lease expiry and Pod deletion are insufficient. Kubernetes requires actual execution-domain/container/node fencing. A reboot proves prior execution excluded, not the outcome of external actions; uncertain effects and unsettled accounting remain held. Ship the concrete controller/observation path, not merely a receipt schema. Qualification runs only at the full-phase boundary.
+
+## 2026-10-12 — Dot16 receipt disclosure requires full principal provenance
+The new owner-facing outcome API found canonical receipts partitioned by TurnEnvironment.owner_id (subject), while ActorOwner.presentation_owner_key is legacy tenant/subject. A new API must not expose rows on those keys alone. New receipts retain optional verified CredentialPrincipal.storage_key provenance from the resolved turn; it participates in immutable payload equality. Public reads filter that provenance and expose no raw tool data. Legacy rows without provenance require the exact live verified run owner and remain inaccessible after cold restart. No legacy identity is inferred or migrated; recovery/storage keys are unchanged. Existing JSON payload storage carries the optional field without a schema migration. Integration fixture authored for colliding issuer/tenant subject and repeated cold read; not executed before full-phase boundary. This guard is a real new disclosure trust boundary.
+
+### 2026-10-13 — Dot supervisor qualification bootstrap
+
+Observed source dependency: the controller required a completed production
+qualification record before its first real platform gate could start. Added an
+explicit operator-only isolated candidate startup option accepting only a
+hash-bound unqualified candidate record and candidate-scoped deployment names.
+It never manufactures or promotes qualification. Ordinary production startup
+retains its qualified-record requirement. This resolves a concrete gate setup
+cycle, not a relaxation of physical exclusion or effect reconciliation.
+No verification was executed; full Dot implementation boundary remains closed.
+
+### 2026-10-13 — Explicit governance precedence reconciliation
+
+While composing the installed driver, the Dot19 governance delta still described
+bypassing effective-policy denial. Parent plan.md:297 explicitly preserves
+Ask/Deny/current authority, and manager.rs implements that precedence. Corrected
+the stale delta to the approved plan; no admission semantics changed. Corrected
+the structured warning's bypass vocabulary to avoid implying explicit policy is
+ignored. Its existing test-source expectation was updated without execution.
+All external MCP descriptors are Required, including readOnlyHint tools. The
+installed bypass driver uses the actual non-Required native_system_info tool and
+does not claim an unavailable native web_search implementation was exercised.
+
+2026-10-12 operator goal: complete expanded Dot production implementation with testing pending. Final validation targets are this machine and existing LKE context know-me, using existing Envoy/TLS HTTPRoutes. Read-only Gateway/route/StorageClass/deployment configuration inspection identified argocd/argocd-gateway runtime listeners and linode-block-storage-retain. No resources provisioned, workloads applied, clock changed, node inhibited or tests run. This replaces the earlier unspecified shared target; it does not certify or waive disruptive native/clock/node qualification.
+
+
+## Dot full source boundary — 2026-10-13 UTC
+
+All24 expanded production tasks across20 changes have source handoffs; all nine issue379 requirements remain. Final runner packets are frozen and109 scenario entries remain not_executed. Root recorded source-only completion for17/3 and a codecomplete-pendingtesting next step. The exact inventory retains verification_authorized false; no tests/checks/builds/probes/validators/product review/deployment/publication ran in this closure. Existingmain and all unrelated changes remain preserved. Later normal targets are this machine and know-me through existing Envoy/TLS. Ordinary incremental cloud storage proposal ~$1/month; isolated recovery resources and native hardware remain separate prerequisites. Compilation, runtime behavior, migrations, customer/container artifacts and final acceptance remain unverified.
+
+
+## 2026-10-14T08:24:03.303785+00:00 — Dot native qualification scope
+
+Operator selected “Just use the Linux guest.” The approved isolated Linux guest is this release’s native recovery/timezone qualification environment; existing two-runtime LKE remains shared. Supersedes prior macOS/Windows qualification obligations for this release while preserving implementations and history. Linux evidence does not certify those platforms. Both durable profiles, 109 scenario obligations, dual Linux architectures and the Mac customer build remain. No development-Mac reboot/clock change or additional paid resource is authorized. Rationale: use available approved environments and close all reliability/issue379 requirements without pretending untested platform coverage. Scope reconciled across OpenSpec, plan, operations docs and matrix; no verification ran during reconciliation.
+
+
+## 2026-10-14T08:55:53.853375+00:00 — Consumer-use acceptance replaces qualification release gates
+
+Operator explicitly cancelled qualification blocking of code-complete UAR consumers and asked to certify UAR through real use. New authoritative phase acceptance requires current-source artifact, actual installation and useful configured-agent/provider task. Preserve prior evidence; unused edge cases/protocols remain unverified. Necessary builds/deployment and actual known defects remain actionable. Reuse genuine build cache namespace with independently bound current source; no source relabeling/cache cleanup. Existing resource deadlines stay fixed.

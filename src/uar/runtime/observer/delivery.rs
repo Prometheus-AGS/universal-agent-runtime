@@ -34,6 +34,18 @@ impl ObserverController {
                 let Some(controller) = weak.upgrade() else {
                     break;
                 };
+                let schedules = controller.schedules.read().await.clone();
+                if let Some(schedules) = schedules {
+                    if let Err(error) = schedules.scan_once().await {
+                        tracing::warn!(code = error.code(), "Schedule delivery cycle failed");
+                    }
+                }
+                let followups = controller.followups.read().await.clone();
+                if let Some(followups) = followups {
+                    if let Err(error) = followups.scan_once().await {
+                        tracing::warn!(code = error.code(), "Follow-up delivery cycle failed");
+                    }
+                }
                 if let Err(error) = controller.deliver_once().await {
                     tracing::warn!(code = error.code(), "Observer delivery cycle failed");
                 }

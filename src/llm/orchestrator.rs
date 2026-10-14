@@ -36,6 +36,7 @@ use crate::mcp::registry::McpRegistry;
 use crate::normalized::{NormalizedEvent, RuntimeStepKind};
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
 use crate::uar::runtime::tool_admission::ToolExecutionKind;
+use crate::mcp::outcome::{McpToolFailure, ToolOutcome};
 use crate::uar::tools::descriptor::{
     ApprovalClass, Exposure, ToolCollision, ToolDescriptor, ToolEffect,
 };
@@ -86,6 +87,10 @@ fn build_driver_inner(
     llm_config: &LlmConfig,
     capture: &mut crate::uar::runtime::turn::host::RunSecretScrubber,
 ) -> anyhow::Result<Arc<dyn LlmDriver>> {
+    anyhow::ensure!(
+        !llm_config.model.trim().is_empty(),
+        "No LLM model configured; select a provider model or set UAR_LLM__MODEL explicitly"
+    );
     // ADR-010 §1a (b)+(c). Every inference path -- primary, failover, server,
     // turn bindings -- constructs its driver here, so this is the one place
     // that can make "local-only" a guarantee rather than a configuration
@@ -482,6 +487,18 @@ impl Orchestrator {
         validated_arguments: serde_json::Value,
         call_index: usize,
     ) -> Result<crate::uar::runtime::tool_admission::AdmittedToolInvocation, String> {
+        self.prepare_and_admit_tool_with_history(model_tool_call_id, descriptor,
+            validated_arguments, call_index, None).await
+    }
+
+    async fn prepare_and_admit_tool_with_history(
+        &self,
+        model_tool_call_id: String,
+        descriptor: &crate::uar::tools::descriptor::ToolDescriptor,
+        validated_arguments: serde_json::Value,
+        call_index: usize,
+        checkpoint_history: Option<Vec<Message>>,
+    ) -> Result<crate::uar::runtime::tool_admission::AdmittedToolInvocation, String> {
         use crate::uar::runtime::tool_admission::{
             HostAdmissionDisposition, LocalAdmissionDisposition, ToolApprovalRequest,
         };
@@ -514,6 +531,7 @@ impl Orchestrator {
             admission_id: host.admission_id.clone(),
             host_requires_approval: host.host_disposition == HostAdmissionDisposition::Ask,
             action_display: host.action_display.clone(),
+            checkpoint_history,
         };
         let local_disposition = match &self.tool_approval_gate {
             Some(gate) => match gate(request).await {
@@ -585,6 +603,31 @@ impl Orchestrator {
         Ok(admitted)
     }
 
+    /// The trusted host supplies data from a protected checkpoint. Every effect
+    /// still receives a new descriptor, preparation, decision, claim and receipt.
+    pub(crate) async fn execute_recovered_tool_call(
+        &self, call: &crate::llm::ToolCall, call_index: usize, history: Vec<Message>,
+    ) -> anyhow::Result<(String, String, ToolOutcome)> {
+        let descriptors = self.assembled_descriptors().await?;
+        let descriptor = descriptors.get(&call.function.name)
+            .ok_or_else(|| anyhow::anyhow!("Recovered tool descriptor is unavailable"))?;
+        anyhow::ensure!(!self.requires_sandbox(descriptor), "Recovered tool requires unavailable sandbox renewal");
+        let arguments = validate::validate(&descriptor.validator, &call.function.arguments)?;
+        let admitted = self.prepare_and_admit_tool_with_history(call.id.clone(), descriptor, arguments, call_index, Some(history))
+            .await.map_err(anyhow::Error::msg)?;
+        let outcome = self.execute_direct_tool((1_u64 << 32) | call_index as u64, &admitted,
+            descriptor.output_limit.unwrap_or(self.tool_output_policy)).await;
+        self.finish_tool_execution(&admitted, outcome).await
+    }
+
+    /// Replace the complete canonical history after host recovery produced real results.
+    pub(crate) fn with_recovered_history(mut self, history: Vec<Message>) -> Self {
+        let unrendered = history.iter().filter(|message| message.role != MessageRole::System).cloned().collect::<Vec<_>>();
+        if let Some((_, shadow_history)) = &mut self.shadow_turn { *shadow_history = unrendered.clone(); }
+        self.canonical_history = Some(if self.destination_preparations.is_some() { unrendered } else { history });
+        self
+    }
+
     async fn ensure_tool_dispatch(
         &self,
         admitted: &crate::uar::runtime::tool_admission::AdmittedToolInvocation,
@@ -636,17 +679,17 @@ impl Orchestrator {
     async fn finish_tool_execution(
         &self,
         admitted: &crate::uar::runtime::tool_admission::AdmittedToolInvocation,
-        outcome: anyhow::Result<(String, String, bool)>,
-    ) -> anyhow::Result<(String, String, bool)> {
+        outcome: anyhow::Result<(String, String, ToolOutcome)>,
+    ) -> anyhow::Result<(String, String, ToolOutcome)> {
         if outcome.as_ref().err().is_some_and(|error| error.is::<ToolDispatchBlocked>()) {
             // Preserve the cancelled/unknown lifecycle; no body produced a
             // terminal execution result to acknowledge to the host.
             return outcome;
         }
         let succeeded = outcome.as_ref()
-            .map(|(_, _, succeeded)| *succeeded)
-            .unwrap_or(false);
-        self.tool_admission.finish(admitted, succeeded).await
+            .map(|(_, _, outcome)| *outcome)
+            .unwrap_or(ToolOutcome::OutcomeUnknown);
+        self.tool_admission.finish_outcome(admitted, succeeded.into()).await
             .map_err(|_| anyhow::anyhow!("Tool terminal receipt was not persisted"))?;
         outcome
     }
@@ -656,7 +699,7 @@ impl Orchestrator {
         sequence: u64,
         admitted: &crate::uar::runtime::tool_admission::AdmittedToolInvocation,
         output_policy: crate::uar::runtime::context::truncate::TruncationPolicy,
-    ) -> anyhow::Result<(String, String, bool)> {
+    ) -> anyhow::Result<(String, String, ToolOutcome)> {
         let call_id = admitted.prepared.model_tool_call_id.as_str();
         let provider_name = admitted.prepared.provider_tool_name.as_str();
         let arguments = &admitted.prepared.validated_arguments;
@@ -680,7 +723,7 @@ impl Orchestrator {
                             error.to_string(),
                         )
                         .await?;
-                    return Ok((content.clone(), content, false));
+                    return Ok((content.clone(), content, ToolOutcome::ApplicationFailed));
                 }
             };
             let source = if provider_name == "terminal_exec" {
@@ -694,6 +737,7 @@ impl Orchestrator {
                     call_id,
                     provider_name,
                     source,
+                    ToolOutcome::Succeeded,
                     execution.value,
                     execution.canonical.raw_segments,
                     execution.canonical.acquisition_complete,
@@ -702,7 +746,7 @@ impl Orchestrator {
                 .await?;
             let canonical = serde_json::to_string(&value)?;
             let display = native.format_result(&value, output_policy, &self.llm_config.model);
-            Ok((canonical, display, true))
+            Ok((canonical, display, ToolOutcome::Succeeded))
         } else {
             let source = if self.mcp.is_native_tool(provider_name) {
                 crate::uar::persistence::agent_threads::CanonicalReceiptSource::Native
@@ -715,17 +759,14 @@ impl Orchestrator {
             {
                 Ok(value) => value,
                 Err(error) if error.is::<ToolDispatchBlocked>() => return Err(error),
+                Err(error) if self.mcp.is_native_tool(provider_name) => {
+                    let content = self.preserve_terminal_tool_failure(
+                        sequence, call_id, provider_name, source, error.to_string(),
+                    ).await?;
+                    return Ok((content.clone(), content, ToolOutcome::ApplicationFailed));
+                },
                 Err(error) => {
-                    let content = self
-                        .preserve_terminal_tool_failure(
-                            sequence,
-                            call_id,
-                            provider_name,
-                            source,
-                            error.to_string(),
-                        )
-                        .await?;
-                    return Ok((content.clone(), content, false));
+                    return self.preserve_mcp_failure(sequence, call_id, provider_name, source, &error).await;
                 }
             };
             let value = self
@@ -734,6 +775,7 @@ impl Orchestrator {
                     call_id,
                     provider_name,
                     source,
+                    ToolOutcome::Succeeded,
                     value,
                     Vec::new(),
                     true,
@@ -746,7 +788,7 @@ impl Orchestrator {
                 output_policy,
                 &self.llm_config.model,
             );
-            Ok((canonical, display, true))
+            Ok((canonical, display, ToolOutcome::Succeeded))
         }
     }
 
@@ -1027,6 +1069,7 @@ impl Orchestrator {
         call_id: &str,
         tool: &str,
         source: crate::uar::persistence::agent_threads::CanonicalReceiptSource,
+        outcome: ToolOutcome,
         value: serde_json::Value,
         raw_segments: Vec<crate::uar::persistence::agent_threads::CanonicalRawSegment>,
         acquisition_complete: bool,
@@ -1053,6 +1096,9 @@ impl Orchestrator {
                 acquisition_complete,
                 observed_bytes,
             )?;
+        receipt.principal_key = turn.verified_owner()
+            .and_then(|owner| owner.credential_principal()).map(|principal| principal.storage_key());
+        receipt.outcome = Some(outcome);
         receipt.secret_projection = Some(projected.secret_projection);
         let stored = store.save_canonical_tool_receipt(&receipt).await?;
         stored.typed_value.ok_or_else(|| {
@@ -1088,6 +1134,7 @@ impl Orchestrator {
                 call_id,
                 tool,
                 source,
+                ToolOutcome::ApplicationFailed,
                 value,
                 Vec::new(),
                 true,
@@ -1095,6 +1142,50 @@ impl Orchestrator {
             )
             .await?;
         serde_json::to_string(&stored).map_err(Into::into)
+    }
+
+    async fn preserve_mcp_failure(
+        &self,
+        sequence: u64,
+        call_id: &str,
+        tool: &str,
+        source: crate::uar::persistence::agent_threads::CanonicalReceiptSource,
+        error: &anyhow::Error,
+    ) -> anyhow::Result<(String, String, ToolOutcome)> {
+        let failure = McpToolFailure::find(error);
+        let outcome = failure.map_or(ToolOutcome::TransportFailed, |failure| failure.outcome);
+        let value = serde_json::json!({
+            "status": "error",
+            "outcome": outcome,
+            "tool_call_id": call_id,
+            "tool": tool,
+            "provenance": {
+                "source": source,
+                "terminal_state": if outcome == ToolOutcome::OutcomeUnknown { "outcome_unknown" } else { "failed" },
+                "observed_by": "trusted_host"
+            },
+            "result": failure.and_then(|failure| failure.result.as_ref()),
+            "message": match outcome {
+                ToolOutcome::ApplicationFailed => "MCP application failure",
+                ToolOutcome::OutcomeUnknown => "MCP response lost after dispatch; reconcile before another attempt",
+                _ => "MCP failed before dispatch",
+            },
+        });
+        let stored = self
+            .preserve_canonical_tool_result(
+                sequence,
+                call_id,
+                tool,
+                source,
+                outcome,
+                value,
+                Vec::new(),
+                true,
+                0,
+            )
+            .await?;
+        let content = serde_json::to_string(&stored)?;
+        Ok((content.clone(), content, outcome))
     }
 
     fn canonical_source_for(
@@ -1247,13 +1338,14 @@ impl Orchestrator {
         if result.as_ref().err().is_some_and(|error| error.is::<ToolDispatchBlocked>()) {
             return Err(anyhow::anyhow!("Graph tool dispatch was blocked before execution"));
         }
-        let (canonical_content, success) = match result {
+        let (canonical_content, execution_outcome) = match result {
             Ok(result) => match host
                 .preserve_canonical_tool_result(
                     u64::from(step) << 32,
                     &call_id,
                     name,
                     crate::uar::persistence::agent_threads::CanonicalReceiptSource::Graph,
+                    ToolOutcome::Succeeded,
                     result,
                     Vec::new(),
                     true,
@@ -1261,13 +1353,20 @@ impl Orchestrator {
                 )
                 .await
             {
-                Ok(result) => (serde_json::to_string(&result)?, true),
-                Err(error) => (format!("Canonical receipt error: {error}"), false),
+                Ok(result) => (serde_json::to_string(&result)?, ToolOutcome::Succeeded),
+                Err(error) => (format!("Canonical receipt error: {error}"), ToolOutcome::OutcomeUnknown),
             },
-            Err(_) => ("Graph MCP tool execution failed".to_owned(), false),
+            Err(error) => {
+                let (canonical, _, outcome) = host.preserve_mcp_failure(
+                    u64::from(step) << 32, &call_id, name,
+                    crate::uar::persistence::agent_threads::CanonicalReceiptSource::Graph,
+                    &error,
+                ).await?;
+                (canonical, outcome)
+            },
         };
         host.tool_admission
-            .finish(&admitted, success)
+            .finish_outcome(&admitted, execution_outcome.into())
             .await
             .map_err(|error| anyhow::anyhow!(
                 "Graph tool terminal receipt was not persisted: {error}"
@@ -1284,10 +1383,10 @@ impl Orchestrator {
                 tool_call_id: call_id,
                 tool: name.to_owned(),
                 output: serde_json::Value::String(display_content.clone()),
-                ok: success,
+                ok: execution_outcome.succeeded(),
             })
             .await;
-        anyhow::ensure!(success, "{display_content}");
+        anyhow::ensure!(execution_outcome.succeeded(), "{display_content}");
         Ok(canonical_content)
     }
 
@@ -2343,9 +2442,9 @@ impl Orchestrator {
                     {
                         Ok(Some(result)) => result,
                         Ok(None) => {
-                            if require_terminal && !saw_terminal {
+                            if !saw_terminal {
                                 yield NormalizedEvent::Error {
-                                    message: "Graph provider stream ended without a terminal event".into(),
+                                    message: "Provider stream ended without a terminal event".into(),
                                     code: Some("provider_stream_incomplete".into()),
                                 };
                                 return;
@@ -2558,11 +2657,12 @@ impl Orchestrator {
                             }
                         };
                         let admitted = match orchestrator
-                            .prepare_and_admit_tool(
+                            .prepare_and_admit_tool_with_history(
                                 call.id.clone(),
                                 descriptor,
                                 arguments,
                                 index,
+                                serde_json::from_value(serde_json::Value::Array(canonical_message_json.clone())).ok(),
                             )
                             .await
                         {
@@ -2622,7 +2722,7 @@ impl Orchestrator {
                                             error,
                                         )
                                         .await
-                                        .map(|content| (content.clone(), content, false));
+                                        .map(|content| (content.clone(), content, ToolOutcome::ApplicationFailed));
                                     return (call, outcome);
                                 }
                             };
@@ -2672,7 +2772,7 @@ impl Orchestrator {
                     .await;
 
                     for (call, outcome) in executions {
-                        let (canonical_content, content, success) = match outcome {
+                        let (canonical_content, content, execution_outcome) = match outcome {
                             Ok(outcome) => outcome,
                             Err(error) => {
                                 yield NormalizedEvent::Error {
@@ -2686,12 +2786,17 @@ impl Orchestrator {
                                 return;
                             }
                         };
+                        let success = execution_outcome.succeeded();
                         yield NormalizedEvent::ToolResult {
                             id: call.id.clone(),
                             name: call.function.name.clone(),
                             content: content.clone(),
                             success,
                         };
+                        if execution_outcome == ToolOutcome::OutcomeUnknown {
+                            yield NormalizedEvent::Error { message: "MCP outcome unknown; reconcile before another attempt".into(), code: Some("TOOL_OUTCOME_UNKNOWN".into()) };
+                            return;
+                        }
                         message_json.push(serde_json::json!({
                             "role": "tool",
                             "tool_call_id": call.id,
@@ -2733,11 +2838,12 @@ impl Orchestrator {
                             &tool_call.function.arguments,
                         ) {
                             Ok(arguments) => orchestrator
-                                .prepare_and_admit_tool(
+                                .prepare_and_admit_tool_with_history(
                                     tool_call.id.clone(),
                                     descriptor,
                                     arguments,
                                     idx,
+                                    serde_json::from_value(serde_json::Value::Array(canonical_message_json.clone())).ok(),
                                 )
                                 .await
                                 .map_err(|reason| format!("Tool call rejected: {reason}")),
@@ -2808,7 +2914,7 @@ impl Orchestrator {
                     let sandbox_attempt = sandbox_required.then(|| orchestrator.sandbox_runner.clone()).flatten()
                         .filter(|runner| runner.enforces_isolation());
 
-                    let outcome: anyhow::Result<(String, String, bool)> = if sandbox_required && sandbox_attempt.is_none() {
+                    let outcome: anyhow::Result<(String, String, ToolOutcome)> = if sandbox_required && sandbox_attempt.is_none() {
                         let error = "Tool execution rejected: required sandbox isolation is unavailable";
                         orchestrator
                             .preserve_terminal_tool_failure(
@@ -2819,7 +2925,7 @@ impl Orchestrator {
                                 error.to_string(),
                             )
                             .await
-                            .map(|content| (content.clone(), content, false))
+                            .map(|content| (content.clone(), content, ToolOutcome::ApplicationFailed))
                     } else if let Some(runner) = sandbox_attempt {
                         let request = match orchestrator.native_skills.get(tool_name).await {
                             Some(tool) => tool.sandbox_request((*arguments).clone()),
@@ -2856,6 +2962,7 @@ impl Orchestrator {
                                             &tool_call.id,
                                             tool_name,
                                             crate::uar::persistence::agent_threads::CanonicalReceiptSource::Sandbox,
+                                            if result.exit_code == 0 { ToolOutcome::Succeeded } else { ToolOutcome::ApplicationFailed },
                                             value,
                                             Vec::new(),
                                             true,
@@ -2864,7 +2971,7 @@ impl Orchestrator {
                                             let canonical = serde_json::to_string(&stored)?;
                                             if result.exit_code == 0 {
                                                 Ok((canonical, format!("exit_code: {}\nstdout:\n{}\nstderr:\n{}",
-                                                    result.exit_code, result.stdout, result.stderr), true))
+                                                    result.exit_code, result.stdout, result.stderr), ToolOutcome::Succeeded))
                                             } else {
                                                 Ok((canonical, serde_json::json!({
                                                     "status": "error",
@@ -2876,7 +2983,7 @@ impl Orchestrator {
                                                         "observed_by": "trusted_host"
                                                     },
                                                     "result": stored,
-                                                }).to_string(), false))
+                                                }).to_string(), ToolOutcome::ApplicationFailed))
                                             }
                                         })
                                     }
@@ -2889,7 +2996,7 @@ impl Orchestrator {
                                             error.to_string(),
                                         )
                                         .await
-                                        .map(|content| (content.clone(), content, false)),
+                                        .map(|content| (content.clone(), content, ToolOutcome::ApplicationFailed)),
                                 }
                             }
                         } else {
@@ -2903,7 +3010,7 @@ impl Orchestrator {
                                     error.to_string(),
                                 )
                                 .await
-                                .map(|content| (content.clone(), content, false))
+                                .map(|content| (content.clone(), content, ToolOutcome::ApplicationFailed))
                         }
                     } else {
                         orchestrator
@@ -2915,7 +3022,7 @@ impl Orchestrator {
                             .await
                     };
                     let outcome = orchestrator.finish_tool_execution(&admitted, outcome).await;
-                    let (canonical_content, content, success) = match outcome {
+                    let (canonical_content, content, execution_outcome) = match outcome {
                         Ok(outcome) => outcome,
                         Err(error) => {
                             yield NormalizedEvent::Error {
@@ -2929,6 +3036,7 @@ impl Orchestrator {
                             return;
                         }
                     };
+                    let success = execution_outcome.succeeded();
                     let content =
                         crate::uar::runtime::context::truncate::formatted_truncate_for_model(
                             &content,
@@ -2944,6 +3052,10 @@ impl Orchestrator {
                         success,
                     };
 
+                    if execution_outcome == ToolOutcome::OutcomeUnknown {
+                        yield NormalizedEvent::Error { message: "MCP outcome unknown; reconcile before another attempt".into(), code: Some("TOOL_OUTCOME_UNKNOWN".into()) };
+                        return;
+                    }
                     if success && tool_name == "team_wait" {
                         if let Some(tool) = orchestrator.native_skills.get(tool_name).await {
                             let remaining=tool_calls.iter().skip(idx+1).map(|call|crate::uar::domain::team_wait::UnexecutedTeamToolCall{tool_call_id:call.id.clone(),disposition:"not-executed-due-to-yield".into()}).collect();
@@ -3036,11 +3148,16 @@ impl Orchestrator {
         // Stream from the driver and collect message deltas
         let mut stream = self.driver.stream(req).await?;
         let mut content = String::new();
+        let mut saw_terminal = false;
 
         while let Some(event_result) = stream.next().await {
             match event_result {
                 Ok(NormalizedEvent::MessageDelta { text }) => {
                     content.push_str(&text);
+                }
+                Ok(NormalizedEvent::Done) => saw_terminal = true,
+                Ok(NormalizedEvent::Error { message, .. }) => {
+                    return Err(anyhow::anyhow!(self.secret_scrubber.scrub(&message)));
                 }
                 Err(e) => {
                     let message = self.secret_scrubber.scrub(&e.to_string());
@@ -3049,6 +3166,16 @@ impl Orchestrator {
                 }
                 _ => {} // Ignore other events
             }
+        }
+
+        if !saw_terminal {
+            return Err(super::ProviderError::new(
+                None,
+                super::ProviderErrorKind::Stream,
+                None,
+                "Provider stream ended without a terminal event",
+            )
+            .into());
         }
 
         tracing::debug!(
@@ -3241,7 +3368,7 @@ mod tests {
             .execute_direct_tool(1, &admitted, TruncationPolicy::Bytes(256))
             .await
             .unwrap();
-        assert!(success);
+        assert!(success.succeeded());
         assert_eq!(
             serde_json::from_str::<serde_json::Value>(&canonical).unwrap(),
             serde_json::json!({"payload": "x".repeat(20_000)})

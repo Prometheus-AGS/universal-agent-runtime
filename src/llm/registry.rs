@@ -259,6 +259,10 @@ impl ProviderRegistry {
     /// enriches the entry with catalog metadata (display name, base URL, model
     /// list), and sets it as the default provider.
     pub async fn seed_from_llm_config(&self, config: &LlmConfig) {
+        // Credentials and catalog discovery do not authorize a model selection.
+        if config.model.trim().is_empty() {
+            return;
+        }
         let (provider_id, model_id) = split_model_string(&config.model);
         let catalog = ModelCatalog::global();
         let catalog_provider = catalog.provider(&provider_id);
@@ -353,13 +357,11 @@ impl ProviderRegistry {
         *default = Some(provider_id);
     }
 
-    /// Seed providers from config-file definitions.
     /// Seed providers from the YAML `providers:` array.
     ///
-    /// If the array contains exactly one provider that entry becomes the
-    /// registry default (unless `seed_from_llm_config` was already called and
-    /// set a default from `llm.model`). This ensures YAML-only deployments that
-    /// never set `UAR_LLM__MODEL` still surface a correct default in the UI.
+    /// The first enabled provider with an explicit nonempty `default_model`
+    /// becomes the default unless `llm.model` already selected one. Catalog
+    /// discovery alone never selects a model.
     pub async fn seed_from_configs(&self, configs: Vec<ProviderConfig>) {
         let mut providers = self.providers.write().await;
         let mut first_id: Option<String> = None;
@@ -371,7 +373,10 @@ impl ProviderRegistry {
                 models = config.models.len(),
                 "Registered provider from config"
             );
-            if first_id.is_none() {
+            if first_id.is_none()
+                && config.enabled
+                && config.default_model.as_deref().is_some_and(|model| !model.trim().is_empty())
+            {
                 first_id = Some(config.id.clone());
             }
             providers.insert(config.id.clone(), config);
@@ -499,13 +504,33 @@ impl ProviderRegistry {
         self.default_id.read().await.clone()
     }
 
+    /// Keep default selection and provider configuration stable while a host
+    /// inspection composes its other live authorities. No credentials escape
+    /// unless the inspecting host explicitly copies them.
+    pub(crate) async fn inspect_default<R, F, Fut>(&self, inspect: F) -> R
+    where
+        F: FnOnce(Option<ProviderConfig>) -> Fut,
+        Fut: std::future::Future<Output = R>,
+    {
+        let providers = self.providers.read().await;
+        let default = self.default_id.read().await;
+        let selected = default.as_ref().and_then(|id| providers.get(id)).cloned();
+        inspect(selected).await
+    }
+
     /// Return `(provider_id, model_id)` for the configured default provider,
     /// or `None` if no default is set or the provider has no `default_model`.
     pub async fn default_model(&self) -> Option<(String, String)> {
         let provider_id = self.default_id.read().await.clone()?;
         let providers = self.providers.read().await;
         let config = providers.get(&provider_id)?;
+        if !config.enabled {
+            return None;
+        }
         let model_id = config.default_model.clone()?;
+        if model_id.trim().is_empty() {
+            return None;
+        }
         Some((provider_id, model_id))
     }
 
@@ -545,6 +570,11 @@ impl ProviderRegistry {
         } else {
             model.to_string()
         };
+
+        if resolved_model.trim().is_empty() {
+            tracing::debug!(provider_id, "No model has been explicitly configured");
+            return None;
+        }
 
         if config
             .models
@@ -836,6 +866,32 @@ mod tests {
             models: vec![],
             enabled: true,
         }
+    }
+
+    #[tokio::test]
+    async fn credentials_and_model_discovery_do_not_select_a_default() {
+        let registry = ProviderRegistry::new();
+        registry.seed_from_llm_config(&LlmConfig {
+            api_key: Some("test-key".to_string()),
+            ..LlmConfig::default()
+        }).await;
+        assert!(registry.list().await.is_empty());
+        assert!(registry.default_model().await.is_none());
+
+        let mut discovered = make_test_config("openai", "https://api.openai.com/v1");
+        discovered.default_model = None;
+        registry.seed_from_configs(vec![discovered]).await;
+        assert!(registry.default_id().await.is_none());
+        assert!(registry.resolve_to_llm_config("openai", "").await.is_none());
+    }
+
+    #[tokio::test]
+    async fn explicit_provider_model_survives_an_empty_global_default() {
+        let registry = ProviderRegistry::new();
+        registry.seed_from_configs(vec![make_test_config("saved-provider", "http://127.0.0.1:8181/v1")]).await;
+        registry.seed_from_llm_config(&LlmConfig::default()).await;
+        assert_eq!(registry.default_model().await,
+            Some(("saved-provider".to_string(), "test-model".to_string())));
     }
 
     #[tokio::test]

@@ -1,0 +1,37 @@
+--- failed-source/tests/truthful_tool_outcomes.rs
++++ refrozen-source/tests/truthful_tool_outcomes.rs
+@@ -829,11 +829,32 @@
+     }
+ }
+ 
+-#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+-async fn child_outcome_boundary() {
++#[test]
++fn child_outcome_boundary() {
+     let Ok(stage) = std::env::var(CHILD) else {
+         return;
+     };
++    // The observed child overflow happened on the libtest caller. Match the
++    // shipped runtime's bounded 8 MiB stack for both root polling and workers.
++    const STACK_BYTES: usize = 8 * 1024 * 1024;
++    std::thread::Builder::new()
++        .name("dot04-outcome-child".into())
++        .stack_size(STACK_BYTES)
++        .spawn(move || {
++            tokio::runtime::Builder::new_multi_thread()
++                .worker_threads(2)
++                .thread_stack_size(STACK_BYTES)
++                .enable_all()
++                .build()
++                .expect("bounded outcome fixture runtime builds")
++                .block_on(run_child_outcome_boundary(stage));
++        })
++        .expect("bounded outcome fixture thread starts")
++        .join()
++        .expect("outcome fixture thread completes");
++}
++
++async fn run_child_outcome_boundary(stage: String) {
+     let root = PathBuf::from(std::env::var(ROOT).unwrap());
+     let shared = std::env::var("UAR_DOT04_SHARED").as_deref() == Ok("1");
+     let stores = store(&root, shared).await;

@@ -1,0 +1,72 @@
+{
+  "artifact_boundary": "local_candidate",
+  "candidate_build_receipt": "/PRIVATE/evidence/candidate_build/receipt.json",
+  "oci_build_receipt": "/PRIVATE/evidence/oci_build/receipt.json",
+  "candidate_build": {"target_directory": "/PRIVATE/dot17-target"},
+  "oci_build": {"builder": "REPLACE_WITH_EXISTING_LOCAL_BUILDER", "cargo_cache_key": "REPLACE_WITH_ACTUAL_SOURCE_ARCHIVE_SHA256"},
+  "integration_environment": {},
+  "stale_epoch_cases": {
+    "local_surreal_kv": "/PRIVATE/actual-native-closed-epoch.json",
+    "shared_two_runtime_surreal_db": "/PRIVATE/actual-kubernetes-closed-epoch.json"
+  },
+  "profiles": {
+    "local_surreal_kv": {
+      "provider_port": 18080,
+      "effect_trace": "/PRIVATE/dot17-local/effects.jsonl",
+      "deployment_binding_id": "REPLACE_WITH_ACTUALLY_ADMITTED_BINDING",
+      "artifact": null,
+      "run_credentials": null,
+      "hosts": {
+        "a": {
+          "lifecycle": "child_process",
+          "base_url": "http://127.0.0.1:18081",
+          "binary": "/PRIVATE/dot17-target/release/universal-agent-runtime",
+          "binary_sha256": "REPLACE_WITH_ACTUAL_BUILD_CHECKSUM",
+          "config": "/PRIVATE/dot17-local/runtime.json",
+          "working_directory": "/PRIVATE/dot17-local",
+          "workspace": "dot17",
+          "environment": {},
+          "inherit_environment": [],
+          "credentials": {"owner": "DOT17_OWNER", "other_tenant": "DOT17_OTHER_TENANT", "other_issuer": "DOT17_OTHER_ISSUER", "admin": "DOT17_ADMIN", "host": "DOT17_HOST"}
+        }
+      },
+      "mcp_transports": [],
+      "stage_overrides": {}
+    },
+    "shared_two_runtime_surreal_db": {
+      "provider_port": 18080,
+      "discovery_base_url": "https://runtime.know-me.tools",
+      "deployment_binding_id": "REPLACE_WITH_ACTUALLY_ADMITTED_BINDING",
+      "artifact": null,
+      "run_credentials": null,
+      "durability_evidence": "/PRIVATE/actual-shared-storage-evidence.json",
+      "qualification_peer": {"context": "know-me", "namespace": "dot17-uar", "pod": "dot17-qualification-source", "container": "peer", "image_digest": "sha256:ACTUAL_PEER_ARCHITECTURE_DIGEST"},
+      "effect_trace": [
+        {"kind": "kubernetes_file", "context": "know-me", "namespace": "dot17-uar", "pod": "dot17-uar-0", "container": "uar", "path": "/var/lib/uar/dot17/effects.jsonl"},
+        {"kind": "kubernetes_file", "context": "know-me", "namespace": "dot17-uar", "pod": "dot17-uar-1", "container": "uar", "path": "/var/lib/uar/dot17/effects.jsonl"}
+      ],
+      "hosts": {
+        "a": {
+          "lifecycle": "kubernetes", "architecture": "amd64",
+          "base_url": "https://runtime.know-me.tools/dot17/a",
+          "workspace": "dot17", "image_digest": "sha256:ACTUAL_AMD64_MANIFEST_DIGEST", "binary_sha256": "ACTUAL_LINUX_EXECUTABLE_CHECKSUM",
+          "config": "/PRIVATE/dot17-shared/runtime.json",
+          "environment": {"UAR_REMOTE_SURREAL_DURABILITY_ATTESTED": "1"},
+          "credentials": {"owner": "DOT17_SHARED_OWNER", "other_tenant": "DOT17_SHARED_OTHER_TENANT", "other_issuer": "DOT17_SHARED_OTHER_ISSUER", "admin": "DOT17_SHARED_ADMIN", "host": "DOT17_SHARED_HOST"},
+          "kubernetes": {"context": "know-me", "namespace": "dot17-uar", "pod": "dot17-uar-0", "container": "uar", "statefulset": "dot17-uar", "statefulset_uid": "ACTUAL_INSTALLED_STATEFULSET_UID", "runtime_config_path": "/etc/uar/runtime.yaml", "service": "dot17-uar-a", "http_route": "dot17-uar", "route_prefix": "/dot17/a"}
+        },
+        "b": {
+          "lifecycle": "kubernetes", "architecture": "amd64",
+          "base_url": "https://runtime.know-me.tools/dot17/b",
+          "workspace": "dot17", "image_digest": "sha256:ACTUAL_AMD64_MANIFEST_DIGEST", "binary_sha256": "ACTUAL_LINUX_EXECUTABLE_CHECKSUM",
+          "config": "/PRIVATE/dot17-shared/runtime.json",
+          "environment": {"UAR_REMOTE_SURREAL_DURABILITY_ATTESTED": "1"},
+          "credentials": {"owner": "DOT17_SHARED_OWNER", "other_tenant": "DOT17_SHARED_OTHER_TENANT", "other_issuer": "DOT17_SHARED_OTHER_ISSUER", "admin": "DOT17_SHARED_ADMIN", "host": "DOT17_SHARED_HOST"},
+          "kubernetes": {"context": "know-me", "namespace": "dot17-uar", "pod": "dot17-uar-1", "container": "uar", "statefulset": "dot17-uar", "statefulset_uid": "ACTUAL_INSTALLED_STATEFULSET_UID", "runtime_config_path": "/etc/uar/runtime.yaml", "service": "dot17-uar-b", "http_route": "dot17-uar", "route_prefix": "/dot17/b"}
+        }
+      },
+      "mcp_transports": [],
+      "stage_overrides": {}
+    }
+  }
+}

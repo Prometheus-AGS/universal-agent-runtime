@@ -1,0 +1,176 @@
+{
+  "verdict": "passed",
+  "change": "dot-05-stream-terminal-contract",
+  "task": "2",
+  "tier": "Tier 1 production integration at the completed change boundary",
+  "command": [
+    "env",
+    "-u",
+    "BEDROCK_BASE_URL",
+    "-u",
+    "BEDROCK_CROSS_REGION",
+    "VERTEXAI_PROJECT=dot05-fixture",
+    "VERTEXAI_LOCATION=us-central1",
+    "UAR_DOT05_INFRA_FILE=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "UAR_DOT05_NAMESPACE=dot05_20261012T063228_d037e956db50",
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full",
+    "--test",
+    "stream_terminal_contract",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "startedAt": "2026-10-12T06:34:16.354948+00:00",
+  "finishedAt": "2026-10-12T06:36:49.439523+00:00",
+  "elapsedSeconds": 152.91,
+  "exitCode": 0,
+  "testSummary": [
+    "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 150.63s"
+  ],
+  "scenarioCounts": {
+    "expectedRows": 83,
+    "enteredRows": 83,
+    "completedRows": 83,
+    "failedRows": 0,
+    "unrunRows": 0,
+    "expectedBoundaries": 249,
+    "fixtureEnteredBoundaries": 249,
+    "providerWireEnteredBoundaries": 249,
+    "completedBoundaries": 249,
+    "failedBoundaries": 0,
+    "unrunBoundaries": 0
+  },
+  "source": {
+    "head": "b4244aeaa7e931240ae0f09ae31bae3f45bda244",
+    "indexEmpty": true,
+    "boundInputs": 6558,
+    "gitlinks": 16,
+    "ownedFiles": 20,
+    "sourceSetSha256": "63a93e28e3493d8d80323f3701eb0267f233b7c2555923b4e92782f0b785043b",
+    "stableImmediateAfterAndCleanupAndFinalSeal": true,
+    "privateSnapshot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-port-publication-gate-074q3ti9/source-snapshot.tar.gz"
+  },
+  "artifacts": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "sha256": "c8b12cb4c4113d98d66bf7d47a78e4aa488dedcdc29864330cdd762949faeb95",
+      "bytes": 326664376
+    },
+    {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+      "bytes": 101280
+    }
+  ],
+  "retainedExecutableCopies": [
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-port-publication-gate-074q3ti9/accepted-integration-runtime",
+      "sha256": "c8b12cb4c4113d98d66bf7d47a78e4aa488dedcdc29864330cdd762949faeb95",
+      "bytes": 326664376
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-port-publication-gate-074q3ti9/accepted-https-python-runtime",
+      "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+      "bytes": 101280
+    }
+  ],
+  "boundaries": {
+    "count": 249,
+    "matrix": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/streams/20261012T063416Z-actual-boundary-matrix.json",
+    "matrixSha256": "bf1f9c2fed2545014a777908969dfffe8299697ad21b52f00d0f7092c7a2caaf",
+    "privateHashes": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-port-publication-gate-074q3ti9/boundary-diagnostic-hashes.json",
+    "profileCounts": {
+      "legacy": 83,
+      "local": 83,
+      "shared": 83
+    },
+    "protocolBoundaryCounts": {
+      "OpenAi": 36,
+      "Azure": 6,
+      "LiterAnthropic": 36,
+      "NativeAnthropic": 36,
+      "GoogleAi": 36,
+      "Vertex": 36,
+      "Cohere": 36,
+      "Bedrock": 27
+    },
+    "nativeUsageControls": [
+      {
+        "case": "valid",
+        "observedUsage": [
+          {
+            "prompt_tokens": 2,
+            "completion_tokens": 3,
+            "total_tokens": 5
+          }
+        ],
+        "newProductionAssertionPassed": true
+      },
+      {
+        "case": "split",
+        "observedUsage": [
+          {
+            "prompt_tokens": 2,
+            "completion_tokens": 3,
+            "total_tokens": 5
+          }
+        ],
+        "newProductionAssertionPassed": true
+      }
+    ]
+  },
+  "cleanup": {
+    "sampledOwnedPIDsGone": true,
+    "exactOwnedHTTPSPeerMatches": [],
+    "actions": [],
+    "rootInfrastructureRetained": true,
+    "samplerNonExhaustive": true,
+    "samplingTimeoutsThisAttempt": []
+  },
+  "priorFailures": [
+    "20261012T054303Z-failure-analysis.json",
+    "20261012T060823Z-failure-analysis.json",
+    "20261012T062243Z-failure-analysis.json"
+  ],
+  "corrections": "The fixture checks interrupted history only after observed nonempty ChatDelta. Native Anthropic accepts documented delta usage while preserving full message_start validation and cumulative/cache merging. The HTTPS fixture publishes its port atomically. The root assigned these corrections to the source author; this acceptance worker changed no production or test source.",
+  "warningSummary": [
+    "warning: `universal-agent-runtime` (manifest) generated 1 warning",
+    "warning: `universal-agent-runtime` (lib) generated 31 warnings (run `cargo fix --lib -p universal-agent-runtime` to apply 1 suggestion)",
+    "warning: `universal-agent-runtime` (bin \"stub-llm\") generated 2 warnings"
+  ],
+  "limits": [
+    "Controlled endpoints exercise the public run API, real orchestrators, native tools, local SurrealKV and shared SurrealDB. Genuine provider inference is unverified.",
+    "Compatible aliases share source wiring but are not individually qualified. Azure has valid and EOF controls only. DashScope embeddings are outside the chat contract.",
+    "External host callbacks and non-chat consumers have no wire qualification from this gate.",
+    "Two-process recovery, packaging, final phase quality, Tier 2 and Tier 3 qualification are unverified.",
+    "The full transitive registry, toolchain and native dependency closure is not captured.",
+    "There are 135 actual HTTPS endpoint directories and request traces; 72 HTTPS child PIDs were sampled. Sampling is not exhaustive.",
+    "OpenSSL identity is bound through its fixed child PATH, file hashes before and after, and generated certificates. No live OpenSSL child was sampled."
+  ],
+  "sourceEditsByExecutor": [],
+  "unrequestedAdditions": [],
+  "newProductionGuardsByExecutor": [],
+  "evidenceGuardTrace": "Source identity and writer checks enforce the authorized source freeze and single-writer boundary. Bounded process inspection addresses the observed host process-scan stall; a timeout records unknown state and never reports an empty inventory.",
+  "observedOutcomeCounts": {
+    "graphStatuses": {
+      "done": 44,
+      "error": 108,
+      "cancelled": 14
+    },
+    "legacyDoneRows": 22,
+    "nativeToolEffects": 21,
+    "canonicalSucceededGraphAssertions": 14,
+    "canonicalEmptyGraphAssertions": 152,
+    "actualHttpsEndpoints": 135,
+    "sampledHttpsPIDs": 72,
+    "errorGraphCloseEvents": 108
+  },
+  "canonicalReceiptEvidence": "Fourteen local/shared graph tool boundaries passed real-store assertions for exactly one Succeeded canonical receipt. The other 152 graph boundaries passed empty-receipt assertions. Seven legacy tool boundaries asserted actual native execution, for 21 tool effects total. Raw canonical rows remain in the private durable stores."
+}

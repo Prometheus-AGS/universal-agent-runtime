@@ -1,0 +1,48 @@
+{
+  "runtime_urls": ["https://runtime-a.example.invalid", "https://runtime-b.example.invalid"],
+  "host_token_env": "UAR_RECOVERY_HOST_TOKEN",
+  "ordinary_user_token_env": "UAR_RECOVERY_ORDINARY_TOKEN",
+  "cases": [
+    {
+      "name": "actual-predecessor-excluded-safe-ordinary-resume",
+      "runtime_epoch": "replace-with-retained-source-runtime-uuid",
+      "target": {
+        "kind": "checkpoint_epoch",
+        "runtime_epoch": "replace-with-retained-source-runtime-uuid"
+      },
+      "expect_excluded": true,
+      "resume": {
+        "run_id": "replace-with-real-run-id",
+        "checkpoint_id": "replace-with-real-checkpoint-id",
+        "owner_token_env": "UAR_CHECKPOINT_OWNER_TOKEN",
+        "private_body_file": "/operator-private/safe-resume.json",
+        "expected_successes": 1
+      }
+    },
+    {
+      "name": "actual-predecessor-excluded-unknown-effect-blocks-resume",
+      "runtime_epoch": "replace-with-another-retained-runtime-uuid",
+      "target": {
+        "kind": "checkpoint_epoch",
+        "runtime_epoch": "replace-with-another-retained-runtime-uuid"
+      },
+      "expect_excluded": true,
+      "resume": {
+        "run_id": "replace-with-uncertain-run-id",
+        "checkpoint_id": "replace-with-uncertain-checkpoint-id",
+        "owner_token_env": "UAR_CHECKPOINT_OWNER_TOKEN",
+        "private_body_file": "/operator-private/uncertain-resume.json",
+        "expected_successes": 0
+      }
+    },
+    {
+      "name": "same-boot-native-or-unreachable-node-refuses-exclusion",
+      "runtime_epoch": "replace-with-unproven-runtime-uuid",
+      "target": {
+        "kind": "checkpoint_epoch",
+        "runtime_epoch": "replace-with-unproven-runtime-uuid"
+      },
+      "expect_excluded": false
+    }
+  ]
+}

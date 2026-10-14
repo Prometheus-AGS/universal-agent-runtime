@@ -1,0 +1,11 @@
+--- failed-source/tests/support/truthful_tool_outcome_process.rs
++++ refrozen-source/tests/support/truthful_tool_outcome_process.rs
+@@ -487,6 +487,8 @@
+     agent["output"] = json!({});
+     // Cases use explicit task input and request no inherited context resources.
+     agent["context"] = json!({"mode":"none","artifacts":[],"history":"none","memoryScopes":[]});
++    // One user, assistant call, tool reply, and final prose; system is pinned.
++    agent["contextStrategy"]["value"]["max_messages"] = json!(4);
+     // Draft.2 requires the retained source and semantic metadata. Keep the
+     // valid fixture values and bind its explicit rename to this scenario ID.
+     agent["renameMapping"]["targetId"] = agent["id"].clone();

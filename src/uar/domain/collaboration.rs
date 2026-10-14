@@ -432,6 +432,9 @@ pub struct CollaborationCommandReceipt {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CollaborationCatalogState {
+    #[serde(default)] pub schedules: BTreeMap<String, super::schedules::DurableSchedule>,
+    #[serde(default)] pub followup_rules: BTreeMap<String, super::followups::FollowupRule>,
+    #[serde(default)] pub followup_inbox: BTreeMap<String, super::followups::FollowupInboxItem>,
     #[serde(default)] pub feedback_intakes: BTreeMap<String, super::feedback_intake::FeedbackIntake>,
     #[serde(default)] pub feedback_policies: BTreeMap<String, super::feedback_intake::FeedbackStandingPolicy>,
     #[serde(default)] pub feedback_commands: BTreeMap<String, super::feedback_intake::FeedbackCommandReceipt>,

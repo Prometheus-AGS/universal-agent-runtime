@@ -23,13 +23,10 @@
 //!
 //! ## Scoping
 //!
-//! | Scope   | Who can write    | Who can read   |
-//! |---------|-----------------|----------------|
-//! | Global  | System / admin  | Everyone       |
-//! | Agent   | This agent      | This agent     |
-//! | User    | JWT-auth user   | Same user only |
-//! | Session | Any request     | Same session   |
-//! | Task    | TaskStream API  | Same task      |
+//! Every ordinary operation requires a verified issuer/tenant/subject owner.
+//! Scope, agent and session identifiers only narrow that owner's namespace.
+//! Shared knowledge graph and global administration require trusted host proof.
+//! Legacy records remain in the unsuffixed database until explicitly mapped.
 //!
 //! ## MCP Exposure
 //!
@@ -38,11 +35,15 @@
 //! and optionally as an HTTP endpoint at `/mcp/memory`.
 
 pub mod auto_capture;
+pub mod controls;
 pub mod background;
 pub mod context_builder;
 #[cfg(feature = "server")]
 pub mod mcp_server;
 pub mod scopes;
+pub mod owned;
+#[cfg(feature = "surreal-backend")]
+pub mod migration;
 pub mod service;
 pub mod workflow_mirror;
 

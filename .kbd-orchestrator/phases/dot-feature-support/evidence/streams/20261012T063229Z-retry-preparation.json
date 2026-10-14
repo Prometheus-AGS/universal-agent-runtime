@@ -1,0 +1,121 @@
+{
+  "preparedAt": "2026-10-12T06:32:29.437149+00:00",
+  "phase": "Execute",
+  "change": "dot-05-stream-terminal-contract",
+  "task": "2",
+  "kbdRevision": 2705,
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-port-publication-gate-074q3ti9",
+  "head": "b4244aeaa7e931240ae0f09ae31bae3f45bda244",
+  "indexEmpty": true,
+  "sourceSetSha256": "63a93e28e3493d8d80323f3701eb0267f233b7c2555923b4e92782f0b785043b",
+  "boundInputCount": 6558,
+  "gitlinkCount": 16,
+  "ownedHashesMatched": 20,
+  "sourceSnapshotSha256": "c324c7d06129fb93f97a4b653fab0c4962a4cce46dadb7549f9ce5cf0477feba",
+  "tools": {
+    "cargo": {
+      "path": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/cargo",
+      "resolvedPath": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/cargo",
+      "sha256": "65ba2b36bd365d1da4c7958515b63070a483d393316160db8f309bf4082765cf",
+      "bytes": 31822984
+    },
+    "rustc": {
+      "path": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/rustc",
+      "resolvedPath": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/rustc",
+      "sha256": "57f1d2c5bf4a0de46f2cc14c41e7562bff5eddf9e0f9a6200c7b950c56684895",
+      "bytes": 412504
+    },
+    "cargoDispatch": {
+      "path": "/Users/gqadonis/.cargo/bin/cargo",
+      "resolvedPath": "/Users/gqadonis/.cargo/bin/rustup",
+      "sha256": "ec1b9233e7f72990ecd8e62063fa7f6c3dfc2bec8e97f88bff165f9100ac696a",
+      "bytes": 11319056
+    },
+    "rustup": {
+      "path": "/Users/gqadonis/.cargo/bin/rustup",
+      "resolvedPath": "/Users/gqadonis/.cargo/bin/rustup",
+      "sha256": "ec1b9233e7f72990ecd8e62063fa7f6c3dfc2bec8e97f88bff165f9100ac696a",
+      "bytes": 11319056
+    },
+    "fixturePythonLauncher": {
+      "path": "/usr/bin/python3",
+      "resolvedPath": "/usr/bin/python3",
+      "sha256": "1632eb8de8409ac0bf8d35c2d52ea8222fd7d091344bba3fa0f998bfac2ddfda",
+      "bytes": 118640
+    },
+    "fixturePythonResolved": {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/usr/bin/python3",
+      "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "sha256": "5ab108d5c2faa403d86a5918a7ff73c8afdbec2a0f6b62d932f77a078ee93d7c",
+      "bytes": 102352
+    },
+    "openssl": {
+      "path": "/usr/bin/openssl",
+      "resolvedPath": "/usr/bin/openssl",
+      "sha256": "e202adb4a58f5b891c1f2ea4f037a201acc64b0fe10e23053e6da1f3aeadbdb1",
+      "bytes": 1130832
+    },
+    "opensslVersion": "LibreSSL 3.3.6",
+    "pythonVersion": "3.9.6 (default, Aug 13 2026, 04:25:06) \n[Clang 21.0.0 (clang-2100.3.33.1)]"
+  },
+  "infra": {
+    "manifest": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "sha256": "9cc3b12e63d897003edceedbdcf7783f62170b5f3119c517bada42feabdaf8fc",
+    "bytes": 1442,
+    "mode": "0o600",
+    "surrealSocketReachable": true,
+    "rootSurrealPid": 57075,
+    "rootPostgresContainer": "uar-dot-api-keys-vector-bc90262901e1",
+    "untouched": true
+  },
+  "command": [
+    "env",
+    "-u",
+    "BEDROCK_BASE_URL",
+    "-u",
+    "BEDROCK_CROSS_REGION",
+    "VERTEXAI_PROJECT=dot05-fixture",
+    "VERTEXAI_LOCATION=us-central1",
+    "UAR_DOT05_INFRA_FILE=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "UAR_DOT05_NAMESPACE=dot05_20261012T063228_d037e956db50",
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full",
+    "--test",
+    "stream_terminal_contract",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "environmentKeys": [
+    "HOME",
+    "PATH"
+  ],
+  "buildWriterProcessCount": 0,
+  "buildLockHolderOutputBytes": 0,
+  "sourceFreeze": "Root reports explicit external-session freeze acknowledgment at b424/indexempty; root writers idle. Unrelated unknown sessions excluded only through observed pre/post binding.",
+  "status": "ready_Cargo_held",
+  "limits": [
+    "No registry/toolchain/native full transitive closure",
+    "No per-alias runtime qualification",
+    "No genuine inference, cross-process recovery, release, Tier2 or Tier3 qualification",
+    "Sampler can miss short-lived children; actual request files/counts qualify boundaries, not sampledPID totals"
+  ],
+  "correction": {
+    "onlyChangedInputPathsSincePreviousFailure": [
+      "tests/fixtures/stream_terminal_https.py"
+    ],
+    "hashDelta": {
+      "tests/fixtures/stream_terminal_https.py": {
+        "before": "a026a3f919db17b134e76e4db11f8e202bd70911e7803ad3e2cacc2d4ce37226",
+        "after": "5a8553a1ed4257bf2cd387364b544ca5b9f965fa5d146362d3036f412125b566"
+      }
+    },
+    "expandedOwnedCount": 20,
+    "previousFailedReceipt": "20261012T062243Z-production-boundary.json",
+    "status": "Cargoheld pendingexplicitrootauthorization"
+  }
+}

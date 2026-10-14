@@ -1,0 +1,33 @@
+{
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-production-boundary.json",
+  "changedBoundPathsSincePreviousGate": [
+    "docs/operations/durable-api-keys.md",
+    "src/server.rs",
+    "src/uar/security/api_keys/storage.rs"
+  ],
+  "files": [
+    {
+      "path": "docs/operations/durable-api-keys.md",
+      "oldSha256": "96136bdbe7ae4f2e7a1ace4a5209bd3684aca09360d21de2232d03e7b170e70b",
+      "newSha256": "3da7e6848f2113c839dfcc4010e65bf0f23f670535e74c883b9c14c6b0d5f924"
+    },
+    {
+      "path": "src/server.rs",
+      "oldSha256": "bc413f1392361762efa374697884c2a0b13f5ceb7030fba3384d3a1bba4316db",
+      "newSha256": "0c806a77890dd530a26b2acafda8d1125c48a346f9346336deecdbddb04466af"
+    },
+    {
+      "path": "src/uar/security/api_keys/storage.rs",
+      "oldSha256": "81971efae0cf8e710274050451d70eee9f5efd525487618e4258a1238e719cb7",
+      "newSha256": "80ee64f78fa71389473d9fdf6f76a2c965a28da588171efee7ad501cdc7d4d9b"
+    }
+  ],
+  "correctionPatch": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261012T000635Z-observed-correction.patch",
+  "correctionPatchSha256": "b2899e88a42f1723edca7c44a7c931380cfea8489b5f7ea984bcf721277a3ff5",
+  "observedFailures": [
+    "Postgres fixture gateway pg_hba rejection",
+    "Shared and sidecar outage returned408 instead of503"
+  ],
+  "productionCorrection": "Bound API-key durable operations to min(5000ms,max(request_timeout_ms,1000)/8); pass existing configured timeout from server; document unknown mutation commit outcome.",
+  "infrastructureCorrectionReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/infrastructure-hba-correction.json"
+}

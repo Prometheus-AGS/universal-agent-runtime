@@ -1,0 +1,10 @@
+--- before/tests/truthful_tool_outcomes.rs
++++ current/tests/truthful_tool_outcomes.rs
+@@ -998,6 +998,7 @@
+     if shared {
+         command
+             .env("UAR_DOT04_SHARED", "1")
++            .env("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED", "1")
+             .env("UAR_DOT04_NAMESPACE", namespace)
+             .env(
+                 "UAR_DOT04_INFRA_FILE",

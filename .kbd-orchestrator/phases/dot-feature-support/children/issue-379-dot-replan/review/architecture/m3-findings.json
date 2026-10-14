@@ -1,0 +1,82 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "MiniMax-M3",
+  "producer_model": "gpt-6",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "Many specific file:line citations supporting reuse claims have no source_evidence excerpts and are unverifiable in the packet",
+      "evidence": "Findings cite `src/server.rs:1458` for A2AThreadService construction, `api/a2a/types.rs:116,262` and `agent_card.rs:21` for wire/card versions, `src/server.rs:4698` for OpenAI-shaped ingress, `llm/registry.rs:502,650` for live provider registry, `settings/provider_sync.rs:7` for persisted settings sync, `mcp/registry.rs:698,779,834,1400` for unit handlers, `mcp/runtime.rs:831` for run-scoped bindings, `api/a2a/mod.rs:63` for transport isolation, `thread/approvals/records.rs:45` and `thread/approvals/recovery.rs:44` for durable approval CAS/protected continuation, `server.rs:2616` for exact-approval-ID host route. None of these files appears in the source_evidence excerpt list, which only covers thread_service.rs (lines 35-509), manager.rs (lines 1733-1780), run_cost.rs (lines 1-113), cost_budget.rs (lines 100-211), surreal.rs (lines 199-252), adapters.rs (lines 360-382), settings.rs (lines 302-376), and task_execution.rs (lines 437-572).",
+      "suggested_fix": "Either provide code excerpts in source_evidence that verify each cited location, or replace specific line citations with descriptive claims that can be verified independently."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "Working-tree line counts are conflated between baseline HEAD and Dot-related dirty changes, undermining scope-size reasoning",
+      "evidence": "Analysis states \"Source inventory observed 47 tracked source files with +2,058/-626 lines, plus seven untracked source files totaling 1,609 lines. Six tracked test files have +744/-380 lines; 15 untracked test/support files total 7,260 lines. These figures exclude other categories and do not distinguish all inline tests.\" Then uses these figures to argue \"show significant test/support expansion\" before concluding \"No arbitrary line-count reduction target is justified.\" The figures include everything in `git status` without separating pre-existing dirty state, operator-required scope, and Dot-attributable changes.",
+      "suggested_fix": "Decompose the dirty figures into baseline, prior-Dot-attributable, and Dot-attributable sources so each category's necessity can be evaluated against the requirement traceability."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "\"This ordering also exists in HEAD\" claim for the approval precedence bug is unsupported and changes severity assessment",
+      "evidence": "Finding 2 states \"In `src/uar/runtime/manager.rs:6147`, verified-local governance bypass can return before descriptor `ApprovalClass::Required` is included in `approval_required` at `6180\u20136182`.\" Then claims \"The branch already guards host-required, recovered, child and explicit Ask/Deny cases. This ordering also exists in HEAD.\" But no evidence is provided (no HEAD SHA excerpt, no diff). If the bypass issue is Dot-introduced, scope; if pre-existing in HEAD, then a separate fix-not-needed-in-Dot rationale applies. The analysis provides no comparison.",
+      "suggested_fix": "Either show the HEAD-main excerpt that exhibits the same bypass, or remove the HEAD comparison and let the next stage decide which side of the fix this represents."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "\"task_execution.rs:568 setting Auto is inside the test module starting at 437\" is partially supported",
+      "evidence": "source_evidence excerpt for task_execution.rs shows line 437 as `UAR_CLEANUP_CLOSED_METADATA, UAR_DELEGATION_ACK_METADATA, UAR_DELEGATION_CONTRACT_METADATA,` and line 440 as `use crate::uar::context::ContextStrategy;`, with line 568 as `tool_approval: ToolApprovalPolicy::Auto,`. The excerpt does not include a `#[cfg(test)]` or `mod tests` declaration that anchors line 437 as a test-module start. The imports' scheme (UarDelegationAcknowledgement) is consistent with test fixtures but not dispositive.",
+      "suggested_fix": "Provide the `#[cfg(test)]` or `mod tests` line preceding 437 (or its absence) so the test-only classification is direct rather than inferred."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "Several \"real dependencies\" / ordering constraints are stated without justification and may be artificial",
+      "evidence": "\"Keep real dependencies: durable accounting before enforceable budgets; owner exclusion before safe schedule recovery; memory controls and schedules before complete proactive behavior.\" \"Pin external contract versions and effective-settings acceptance shape before their implementation.\" \"Complete every production item in the combined phase, including migrations, operational controls, documentation and acceptance-runner implementation, before any product verification.\" None of these dependencies explain WHY (e.g., what breaks if contract versioning happens after implementation) \u2014 they are asserted as facts.",
+      "suggested_fix": "Replace each assertion with the smallest counter-factual that demonstrates the dependency (e.g., \"A2A handler routed before contract version is pinned would have to revert its error mapping once protocol changes ship\")."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "The \"no second authority / reuse existing\" mandate is not audited against the dirty tree",
+      "evidence": "Analysis says \"Do not infer a need for new approval, execution, recovery or settings authorities\" and \"Correct stale production citations and remove the separate-release recommendation.\" It does not enumerate or audit the dirty source files for already-introduced parallel authorities (e.g., whether the seven untracked source files include a parallel approval, execution, recovery or settings path that would contradict the reuse mandate).",
+      "suggested_fix": "List the dirty/untracked source files that touch approval, execution, recovery, or settings with one-line classification (reuses existing authority / adds parallel authority / orthogonal) so the reuse claim is verified rather than asserted."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "A2A thread binding concurrency contract is not analyzed despite HashMap+Mutex structure being presented as authoritative state",
+      "evidence": "Finding 1 cites process-local bindings `tasks: HashMap<Key, Arc<Mutex<Entry>>>` and the `entry()` lookup at lines 497-510. No analysis of (a) what serializes concurrent turns against the same `(owner, agent, task)` key, (b) what prevents a follow-up submission from interleaving with an in-flight turn's `refresh()`, (c) whether the Mutex is held across `.await` points that could cause re-entrancy on actor completion.",
+      "suggested_fix": "Add a short concurrency / re-entrancy section that names the lock scope around each `entry.refresh()` and the mailbox receive, so the plan knows whether additional synchronization is a necessary change."
+    }
+  ],
+  "judge_identity": {
+    "providerConnectionId": "minimax-direct",
+    "providerId": "minimax",
+    "modelId": "MiniMax-M3"
+  },
+  "producer_identity": {
+    "providerConnectionId": "codex-session",
+    "providerId": "openai",
+    "modelId": "gpt-6"
+  },
+  "checked_classes": [],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

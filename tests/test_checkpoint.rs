@@ -116,7 +116,7 @@ async fn test_list_checkpoints_for_run() {
 }
 
 #[tokio::test]
-async fn test_checkpoint_node_persists_via_graph_context() {
+async fn test_checkpoint_node_requires_a_trusted_host() {
     use universal_agent_runtime::{
         llm::mock_driver::MockLlmDriver,
         normalized::NormalizedEvent,
@@ -145,13 +145,13 @@ async fn test_checkpoint_node_persists_via_graph_context() {
         llm_config: universal_agent_runtime::config::LlmConfig::default(),
         driver,
         cache_strategy: None,
-        persistence: Some(Arc::clone(&db)),
         thread_delegate: None,
         tool_host: None,
     };
 
     let state = GraphState::default();
-    graph.execute(state, &ctx).await;
+    let result = graph.execute(state, &ctx).await;
+    assert_eq!(result.get::<String>("_error").as_deref(), Some("checkpoint_persistence_failed"));
 
     // Verify a checkpoint was saved
     let checkpoints = db
@@ -161,9 +161,7 @@ async fn test_checkpoint_node_persists_via_graph_context() {
 
     assert_eq!(
         checkpoints.len(),
-        1,
-        "CheckpointNode should have saved one checkpoint"
+        0,
+        "A graph kernel cannot persist without trusted checkpoint admission"
     );
-    assert_eq!(checkpoints[0].run_id, "run-cp-test");
-    assert_eq!(checkpoints[0].node_id, "entry");
 }

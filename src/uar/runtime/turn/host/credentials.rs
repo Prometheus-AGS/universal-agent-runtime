@@ -203,11 +203,6 @@ impl RunCredentials {
         Ok(base)
     }
 
-    #[must_use]
-    pub(crate) fn scrub(&self, text: &str) -> String {
-        self.scrubber().scrub(text)
-    }
-
     pub(crate) fn scrubber(&self) -> super::RunSecretScrubber {
         super::RunSecretScrubber::from_values(
             self.0

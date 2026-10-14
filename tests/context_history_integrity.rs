@@ -864,7 +864,6 @@ async fn graph_llm_node_refuses_unhosted_provider_dispatch() {
         llm_config: LlmConfig::default(),
         driver: driver.clone(),
         cache_strategy: None,
-        persistence: None,
         thread_delegate: None,
         tool_host: None,
     };
@@ -2149,259 +2148,104 @@ fn checkpoint_resume_restores_state_and_messages_or_errors() {
 }
 
 #[tokio::test]
-async fn checkpoint_resume_reassembles_trusted_system_and_preserves_checkpoint_dialogue() {
+async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mutating_history() {
     use std::sync::Arc;
 
     use axum::Extension;
     use axum_test::TestServer;
     use tokio::sync::RwLock;
-    use universal_agent_runtime::config::LlmConfig;
+    use universal_agent_runtime::config::{LlmConfig, SecurityConfig, ServiceInstanceConfig};
     use universal_agent_runtime::llm::mock_driver::MockLlmDriver;
     use universal_agent_runtime::mcp::registry::McpRegistry;
     use universal_agent_runtime::normalized::NormalizedEvent;
     use universal_agent_runtime::session::SessionStore;
+    use universal_agent_runtime::uar::api::routes::RunApiState;
+    use universal_agent_runtime::uar::compiler::collaboration::CollaborationCatalogService;
     use universal_agent_runtime::uar::defaults;
-    use universal_agent_runtime::uar::persistence::{
-        PersistenceLayer, providers::surreal::SurrealDbProvider,
-    };
-    use universal_agent_runtime::uar::rag::embeddings::{
-        EmbeddingBackend, UnavailableEmbeddingBackend,
-    };
+    use universal_agent_runtime::uar::persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider};
+    use universal_agent_runtime::uar::rag::embeddings::{EmbeddingBackend, UnavailableEmbeddingBackend};
     use universal_agent_runtime::uar::runtime::checkpoint::Checkpoint;
     use universal_agent_runtime::uar::runtime::graph::{AgentGraph, GraphState};
     use universal_agent_runtime::uar::runtime::manager::RunManager;
     use universal_agent_runtime::uar::runtime::matching::VectorMatcher;
     use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
-    use universal_agent_runtime::uar::security::claims::{UserClaims, UserContext};
+    use universal_agent_runtime::uar::security::claims::UserClaims;
+    use universal_agent_runtime::uar::service_instance::ServiceInstanceAuthority;
 
     let tempdir = tempfile::tempdir().expect("checkpoint tempdir");
     let url = format!("surrealkv://{}", tempdir.path().display());
     let persistence: Arc<dyn PersistenceLayer> = Arc::new(
-        SurrealDbProvider::new(&url, None, None, None, None)
-            .await
-            .expect("SurrealDB checkpoint store"),
+        SurrealDbProvider::new(&url, None, None, None, None).await.expect("checkpoint store"),
     );
     let (capture_tx, mut capture_rx) = tokio::sync::mpsc::unbounded_channel();
     let executions = Arc::new(std::sync::atomic::AtomicUsize::new(0));
-    let graph = AgentGraph::builder("capture")
-        .add_node(CaptureResumeNode {
-            sender: capture_tx,
-            executions: Arc::clone(&executions),
-        })
-        .build();
+    let graph = AgentGraph::builder("capture").add_node(CaptureResumeNode {
+        sender: capture_tx, executions: Arc::clone(&executions),
+    }).build();
     let embedding_backend: Arc<dyn EmbeddingBackend> = Arc::new(UnavailableEmbeddingBackend::new(
-        384,
-        "embeddings are not exercised by this test",
+        384, "embeddings are not exercised by this legacy denial fixture",
     ));
     let driver = Arc::new(MockLlmDriver::new(vec![vec![NormalizedEvent::Done]]));
-    let manager = Arc::new(
-        RunManager::new(
-            LlmConfig {
-                model: "openai/gpt-4o".to_string(),
-                api_key: Some("test-key".to_string()),
-                ..LlmConfig::default()
-            },
-            Arc::new(McpRegistry::new_empty()),
-            SessionStore::new(),
-            Arc::new(RwLock::new(SkillRegistry::new(None, None))),
-            Arc::new(VectorMatcher::new(embedding_backend, 0.75)),
-            Some(persistence.clone()),
-        )
-        .await
-        .with_llm_driver(driver)
-        .with_agent_graph(graph),
-    );
-
-    let user = UserContext {
-        host_authority: None, authority: None,
-        user_id: "alice".to_string(),
-        tenant_id: None,
-        claims: UserClaims {
-            sub: "alice".to_string(),
-            name: None,
-            roles: Some(vec!["user".to_string()]),
-            tenant_id: None,
-            uar_instance_id: None,
-            exp: usize::MAX,
-        },
+    let sessions = SessionStore::new();
+    let manager = Arc::new(RunManager::new(
+        LlmConfig { model: "openai/gpt-4o".into(), api_key: Some("test-key".into()), ..LlmConfig::default() },
+        Arc::new(McpRegistry::new_empty()), sessions.clone(),
+        Arc::new(RwLock::new(SkillRegistry::new(None, None))),
+        Arc::new(VectorMatcher::new(embedding_backend, 0.75)), Some(persistence.clone()),
+    ).await.with_llm_driver(driver.clone()).with_agent_graph(graph));
+    let secret = "legacy-checkpoint-signed-fixture";
+    let security = SecurityConfig {
+        deployment_profile: Default::default(), jwt_algorithm: None, workspace_authorities: Vec::new(),
+        api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(), api_key_admin_principals: Vec::new(),
+        trusted_host_principals: Vec::new(), jwt_required: true, jwt_secret: secret.to_owned().into(),
+        jwks_url: None, jwt_issuer: None, jwt_audience: None, jwt_validate_nbf: true,
+        settings_mutation_auth_required: true, settings_admin_key: None,
     };
-    let mut initial_request =
-        universal_agent_runtime::uar::runtime::turn::RunExecutionRequest::new(
-            defaults::orchestrator_agent(),
-            "message after checkpoint".to_string(),
-        )
-        .with_user_context(&user)
-        .expect("verified test user");
-    initial_request.session_id = Some("thread-1".to_string());
-    let original_run_id = manager.execute_request(initial_request).await;
-    let initial_state = tokio::time::timeout(std::time::Duration::from_secs(3), capture_rx.recv())
-        .await
-        .expect("initial graph executes")
-        .expect("capture channel remains open");
-    let checkpoint_authorization_digest = initial_state
-        .get::<String>(
-            universal_agent_runtime::uar::runtime::checkpoint::CHECKPOINT_AUTHORIZATION_DIGEST_KEY,
-        )
-        .expect("graph state carries immutable checkpoint authorization");
-
-    let checkpoint_messages = vec![
-        text(MessageRole::System, "checkpoint system"),
-        text(MessageRole::User, "review this"),
-        assistant_with_calls(&["checkpoint-call"]),
-        tool_result("checkpoint-call", "checkpoint result"),
-    ];
-    let mut checkpoint_state = GraphState::default();
-    checkpoint_state.iteration = 3;
-    checkpoint_state.set("restored-key", "restored-value".to_string());
-    checkpoint_state.set("normalization-sensitive", "Null".to_string());
-    checkpoint_state.messages = checkpoint_messages
-        .iter()
-        .map(serde_json::to_value)
-        .collect::<Result<_, _>>()
-        .expect("serialize checkpoint history");
-    let checkpoint = Checkpoint::new(
-        &original_run_id,
-        "thread-1",
-        "capture",
-        &checkpoint_state,
-        &checkpoint_authorization_digest,
-    );
-    persistence
-        .save_checkpoint(&checkpoint)
-        .await
-        .expect("persist checkpoint");
-
-    let app = universal_agent_runtime::uar::api::routes::build_router()
-        .with_state(manager.clone())
-        .layer(Extension(user));
+    let token = jsonwebtoken::encode(&jsonwebtoken::Header::default(), &UserClaims {
+        sub: "alice".into(), name: None, roles: Some(vec!["user".into()]), tenant_id: None, uar_instance_id: None,
+        exp: (chrono::Utc::now().timestamp() + 3600) as usize,
+    }, &jsonwebtoken::EncodingKey::from_secret(secret.as_bytes())).unwrap();
+    let user = universal_agent_runtime::uar::security::middleware::authenticate_bearer_context(&security, &token)
+        .await.expect("actual verified legacy-test principal");
+    let mut artifact = defaults::default_agent(); artifact.id = "orchestrator-agent".into(); artifact.memory.kb.enabled = false;
+    let mut request = universal_agent_runtime::uar::runtime::turn::RunExecutionRequest::new(
+        artifact.clone(), "original conversation".to_owned(),
+    ).with_user_context(&user).unwrap();
+    request.session_id = Some("thread-1".to_owned());
+    let original_run_id = manager.execute_request(request).await;
+    let state = tokio::time::timeout(std::time::Duration::from_secs(3), capture_rx.recv()).await.unwrap().unwrap();
+    manager.shutdown_graph_roots().await.unwrap();
+    let authorization = state.get::<String>(universal_agent_runtime::uar::runtime::checkpoint::CHECKPOINT_AUTHORIZATION_DIGEST_KEY).unwrap();
+    let checkpoint_messages = vec![text(MessageRole::User, "protected legacy dialogue"),
+        assistant_with_calls(&["checkpoint-call"]), tool_result("checkpoint-call", "checkpoint result")];
+    let mut checkpoint_state = GraphState::default(); checkpoint_state.iteration = 3;
+    checkpoint_state.set("restored-key", "restored-value");
+    checkpoint_state.messages = checkpoint_messages.iter().map(serde_json::to_value).collect::<Result<_, _>>().unwrap();
+    let checkpoint = Checkpoint::new(&original_run_id, "thread-1", "capture", &checkpoint_state, &authorization);
+    persistence.save_checkpoint(&checkpoint).await.unwrap();
+    let retained = sessions.get_for_user("thread-1", "alice").unwrap();
+    let before = serde_json::to_value(retained.to_state()).unwrap();
+    let calls_before = driver.call_count();
+    let app = universal_agent_runtime::uar::api::routes::build_router().with_state(Arc::new(RunApiState {
+        manager: manager.clone(), collaboration_catalog: Arc::new(CollaborationCatalogService::in_memory()),
+        service_instance: Arc::new(ServiceInstanceAuthority::new(&ServiceInstanceConfig::default(),
+            "legacy-checkpoint-instance", "http://127.0.0.1", false, &[])),
+    })).layer(Extension(user));
     let server = TestServer::new(app);
-    let response = server
-        .post(&format!("/runs/{original_run_id}/resume/{}", checkpoint.id))
-        .json(&serde_json::json!({
-            "artifact": defaults::orchestrator_agent(),
-            "session_id": "thread-1"
-        }))
-        .await;
-    response.assert_status_ok();
-
-    let observed = tokio::time::timeout(std::time::Duration::from_secs(3), capture_rx.recv())
-        .await
-        .expect("resumed graph executes")
-        .expect("capture channel returns state");
-    assert_eq!(
-        observed.iteration, 4,
-        "checkpoint iteration resumes at three"
-    );
-    assert_eq!(
-        observed.get::<String>("restored-key").as_deref(),
-        Some("restored-value")
-    );
-    assert_eq!(
-        observed.get::<String>("normalization-sensitive").as_deref(),
-        Some("Null"),
-        "protected raw state wins over database value normalization"
-    );
-    let observed_messages: Vec<Message> = observed
-        .messages
-        .iter()
-        .cloned()
-        .map(serde_json::from_value)
-        .collect::<Result<_, _>>()
-        .expect("resumed graph history remains typed");
-    assert_eq!(observed_messages.len(), checkpoint_messages.len() + 4);
-    let trusted_system = observed_messages[0]
-        .content
-        .as_text()
-        .expect("resume begins with current trusted system assembly");
-    assert!(trusted_system.contains("You coordinate specialist sub-agents."));
-    assert!(trusted_system.contains("[EFFECTIVE RUN POLICY]"));
-    assert!(trusted_system.contains("<uar-host-content>"));
-    assert!(
-        observed_messages
-            .iter()
-            .all(|message| message.content.as_text() != Some("checkpoint system")),
-        "checkpoint system text must not override current trusted assembly"
-    );
-    assert!(
-        observed_messages.iter().any(|message| {
-            message.role == MessageRole::User && message.content.as_text() == Some("review this")
-        }),
-        "checkpoint user dialogue must survive resume"
-    );
-    assert_eq!(
-        observed_messages
-            .iter()
-            .filter(|message| {
-                message
-                    .content
-                    .as_text()
-                    .is_some_and(|content| content.contains("[WORLD STATE:"))
-            })
-            .count(),
-        4
-    );
-    let assistant_index = observed_messages
-        .iter()
-        .position(|message| {
-            message
-                .tool_calls
-                .as_ref()
-                .is_some_and(|calls| calls.iter().any(|call| call.id == "checkpoint-call"))
-        })
-        .expect("checkpoint assistant tool call survives resume");
-    assert_eq!(
-        observed_messages
-            .get(assistant_index + 1)
-            .and_then(|message| message.tool_call_id.as_deref()),
-        Some("checkpoint-call")
-    );
-    assert!(
-        observed_messages.iter().all(|message| {
-            message.role != MessageRole::User || message.content.as_text() != Some("")
-        }),
-        "absent resume input must not append an empty user message"
-    );
-    assert_eq!(executions.load(std::sync::atomic::Ordering::SeqCst), 2);
-
-    let revoked_state = checkpoint_state;
-    let revoked = Checkpoint::new(
-        &original_run_id,
-        "thread-1",
-        "capture",
-        &revoked_state,
-        &"f".repeat(64),
-    );
-    persistence
-        .save_checkpoint(&revoked)
-        .await
-        .expect("persist revoked checkpoint fixture");
-    let revoked_response = server
-        .post(&format!("/runs/{original_run_id}/resume/{}", revoked.id))
-        .json(&serde_json::json!({
-            "artifact": defaults::orchestrator_agent(),
-            "session_id": "thread-1"
-        }))
-        .await;
-    revoked_response.assert_status_ok();
-    let revoked_body: serde_json::Value = revoked_response.json();
-    let revoked_run_id = revoked_body["run_id"]
-        .as_str()
-        .expect("revoked response run id");
-    tokio::time::timeout(std::time::Duration::from_secs(3), async {
-        loop {
-            if manager.get_run(revoked_run_id).await.is_some_and(|run| {
-                run.status == universal_agent_runtime::uar::domain::runs::RunStatus::Error
-            }) {
-                break;
-            }
-            tokio::task::yield_now().await;
-        }
-    })
-    .await
-    .expect("revoked resume reaches blocked error");
-    assert_eq!(
-        executions.load(std::sync::atomic::Ordering::SeqCst),
-        2,
-        "revoked checkpoint must not reach graph or model dispatch"
-    );
+    for checkpoint in [&checkpoint, &Checkpoint::new(&original_run_id, "thread-1", "revoked", &checkpoint_state, &"f".repeat(64))] {
+        persistence.save_checkpoint(checkpoint).await.unwrap();
+        let response = server.post(&format!("/runs/{original_run_id}/resume/{}", checkpoint.id))
+            .json(&serde_json::json!({"artifact":artifact,"session_id":"thread-1"})).await;
+        response.assert_status_not_found();
+        let body: serde_json::Value = response.json(); assert_eq!(body["code"], "checkpoint_resume_evidence_unavailable");
+    }
+    let legacy_run = manager.start_run_from_checkpoint(defaults::default_agent(), None, Some("thread-1".into()),
+        Some("alice".into()), Vec::new(), checkpoint_messages, checkpoint_state, authorization).await;
+    assert_eq!(manager.get_run(&legacy_run).await.unwrap().status, universal_agent_runtime::uar::domain::runs::RunStatus::Error);
+    let events = manager.history_since(&legacy_run, None).await.unwrap();
+    assert!(events.iter().any(|event| matches!(&event.event,
+        universal_agent_runtime::uar::domain::events::NormalizedEvent::Error { code, .. } if code == "checkpoint_admission_required")));
+    assert_eq!(executions.load(std::sync::atomic::Ordering::SeqCst), 1);
+    assert_eq!(driver.call_count(), calls_before);
+    assert_eq!(serde_json::to_value(retained.to_state()).unwrap(), before, "denied resume cannot mutate warm history");
 }

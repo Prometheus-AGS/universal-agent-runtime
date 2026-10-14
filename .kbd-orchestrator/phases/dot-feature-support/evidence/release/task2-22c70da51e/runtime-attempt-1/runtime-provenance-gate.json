@@ -1,0 +1,9 @@
+{
+  "cleanup": {
+    "stop_exit_code": 0,
+    "remove_container_and_anonymous_volumes_exit_code": 0
+  },
+  "status": "failed",
+  "error": "packaged runtime did not reach health within observed120-second startup bound",
+  "finished_at": "2026-10-11T23:25:19.929471+00:00"
+}

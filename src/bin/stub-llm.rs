@@ -16,6 +16,10 @@ use serde::Deserialize;
 use tokio::net::TcpListener;
 
 #[path = "../../tests/integration/live/stub_llm.rs"]
+#[expect(
+    dead_code,
+    reason = "This exact-fingerprint CLI omits the shared fixture's DelayedContent and with_prompt_prefix cases used by live integration tests"
+)]
 mod stub_llm;
 
 use stub_llm::{FixtureResponse, FixtureSet, RequestFingerprint};

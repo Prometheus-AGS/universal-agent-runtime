@@ -1,0 +1,103 @@
+{
+  "sourceCommit": "22c70da51e5aad357e679553fd3dc2e79df2b378",
+  "worktree": "/Users/gqadonis/.claude/worktrees/uar-dot-release-20261011-22c70da51e",
+  "clean": true,
+  "submodules": [
+    {
+      "path": "crates/prometheus-skill-system",
+      "gitlink": "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2",
+      "checkout": "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system"
+    },
+    {
+      "path": "crates/prometheus-skill-system/skills/imported/artifact-refiner",
+      "gitlink": "18d000f3e46952418f682159b227dbf71ce61dcb",
+      "checkout": "18d000f3e46952418f682159b227dbf71ce61dcb",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system/skills/imported/artifact-refiner"
+    },
+    {
+      "path": "crates/prometheus-skill-system/skills/imported/artifact-refiner/shared/sycophancy-correction",
+      "gitlink": "bc348fffb4b622c142c1082b281dd2f44b74d37b",
+      "checkout": "bc348fffb4b622c142c1082b281dd2f44b74d37b",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system/skills/imported/artifact-refiner/shared/sycophancy-correction"
+    },
+    {
+      "path": "crates/prometheus-skill-system/skills/imported/artifact-refiner/tools/rust-mcp-filesystem",
+      "gitlink": "ef808b7d0ccf7f56c4e8d125091d8d0115725a60",
+      "checkout": "ef808b7d0ccf7f56c4e8d125091d8d0115725a60",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system/skills/imported/artifact-refiner/tools/rust-mcp-filesystem"
+    },
+    {
+      "path": "crates/prometheus-skill-system/skills/imported/prometheus-entity-management",
+      "gitlink": "34a211563fe7f06118996a40cc398c4c3af953ef",
+      "checkout": "34a211563fe7f06118996a40cc398c4c3af953ef",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system/skills/imported/prometheus-entity-management"
+    },
+    {
+      "path": "crates/prometheus-skill-system/skills/imported/sycophancy-correction",
+      "gitlink": "bc348fffb4b622c142c1082b281dd2f44b74d37b",
+      "checkout": "bc348fffb4b622c142c1082b281dd2f44b74d37b",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system/skills/imported/sycophancy-correction"
+    },
+    {
+      "path": "crates/prometheus-skill-system/tools/cowork-skills",
+      "gitlink": "77edcf8a49237dc9b8f6733e794c48fa4e6da832",
+      "checkout": "77edcf8a49237dc9b8f6733e794c48fa4e6da832",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system/tools/cowork-skills"
+    },
+    {
+      "path": "crates/prometheus-skill-system/tools/disk-space-guardian",
+      "gitlink": "26487db64d5c44b00b57d19a649a82632dfe94d3",
+      "checkout": "26487db64d5c44b00b57d19a649a82632dfe94d3",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system/tools/disk-space-guardian"
+    },
+    {
+      "path": "crates/prometheus-skill-system/tools/liter-llm",
+      "gitlink": "a6047386cc9fae4258b4a8577f6a016022095586",
+      "checkout": "a6047386cc9fae4258b4a8577f6a016022095586",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system/tools/liter-llm"
+    },
+    {
+      "path": "crates/prometheus-skill-system/tools/openai-proxy",
+      "gitlink": "b68861e0a6672f5ece900c58fd44b9e23a6b5691",
+      "checkout": "b68861e0a6672f5ece900c58fd44b9e23a6b5691",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system/tools/openai-proxy"
+    },
+    {
+      "path": "crates/prometheus-skill-system/tools/prometheus-knowledge",
+      "gitlink": "4b3a6744a4211512ff88a1cb96cf1e2a7db4c3ef",
+      "checkout": "4b3a6744a4211512ff88a1cb96cf1e2a7db4c3ef",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system/tools/prometheus-knowledge"
+    },
+    {
+      "path": "crates/prometheus-skill-system/tools/surreal-memory-server",
+      "gitlink": "63eb413ebf520a4a525ffd3b8d1d07f1389d48d4",
+      "checkout": "63eb413ebf520a4a525ffd3b8d1d07f1389d48d4",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/crates/prometheus-skill-system/tools/surreal-memory-server"
+    },
+    {
+      "path": "frontend/packages/prometheus-entity-management",
+      "gitlink": "34a211563fe7f06118996a40cc398c4c3af953ef",
+      "checkout": "34a211563fe7f06118996a40cc398c4c3af953ef",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/packages/prometheus-entity-management"
+    },
+    {
+      "path": "models.dev",
+      "gitlink": "4a0154da2410bca18e97be812fecb9e8f85466e8",
+      "checkout": "4a0154da2410bca18e97be812fecb9e8f85466e8",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/models.dev"
+    },
+    {
+      "path": "vendor/git/liter-llm",
+      "gitlink": "a6047386cc9fae4258b4a8577f6a016022095586",
+      "checkout": "a6047386cc9fae4258b4a8577f6a016022095586",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/git/liter-llm"
+    },
+    {
+      "path": "vendor/git/rust-mcp-filesystem",
+      "gitlink": "01ae76b99db4b818458efe2dc5d76e70fa5eadb4",
+      "checkout": "01ae76b99db4b818458efe2dc5d76e70fa5eadb4",
+      "localReadOnlyObjectReference": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/vendor/git/rust-mcp-filesystem"
+    }
+  ]
+}

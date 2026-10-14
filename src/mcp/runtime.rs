@@ -418,7 +418,7 @@ impl McpConnector for StdioMcpConnector {
     }
 }
 
-/// Failure before or during a projected host tool call, without secret payloads.
+/// Failure before or during a projected host tool call, with sanitized diagnostics.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum McpRuntimeError {
     /// Invalidated, unauthenticated, failed or closed binding.
@@ -439,6 +439,14 @@ pub enum McpRuntimeError {
     /// The transport call failed; no automatic replay is authorized here.
     #[error("MCP tool {tool:?} failed on server {server:?}")]
     ToolFailed { server: String, tool: String },
+    /// Typed execution evidence retained without exposing content in diagnostics.
+    #[error("MCP tool {tool:?} failed on server {server:?}")]
+    InvocationFailed {
+        server: String,
+        tool: String,
+        #[source]
+        source: super::outcome::McpToolFailure,
+    },
 }
 
 /// Shared host manager for exact-key connection reuse and lazy preparation.
@@ -448,6 +456,7 @@ pub struct McpRuntimeManager {
     connector: Arc<dyn McpConnector>,
     readiness_timeout: Duration,
     call_timeout: Duration,
+    interactions: Option<Arc<super::interaction::McpInteractionChannel>>,
 }
 
 impl fmt::Debug for McpRuntimeManager {
@@ -511,6 +520,17 @@ impl McpRunResources {
             run_scoped_names: Some(Arc::new(names)),
             run_grants: Some(run_grants),
         }
+    }
+
+    /// Bind authenticated human input to this native run before any preflight.
+    pub fn with_interactions(mut self, channel: Arc<super::interaction::McpInteractionChannel>) -> Self {
+        self.runtime.interactions = Some(channel);
+        self
+    }
+
+    /// Root-owned lifetime guard. Local children inherit bindings, not this owner.
+    pub fn interaction_guard(&self) -> Option<McpInteractionRunGuard> {
+        self.runtime.interactions.as_ref().map(|_|McpInteractionRunGuard {runtime:self.runtime.clone(),finished:false})
     }
 
     /// Principal whose credentials and environment the host captured.
@@ -606,7 +626,53 @@ impl McpRunResources {
     }
 }
 
+/// Retire run-partitioned connections on every root exit. The root task moves
+/// this guard with its execution and awaits `finish` before terminal publication.
+pub struct McpInteractionRunGuard { runtime: McpRuntimeManager, finished: bool }
+impl fmt::Debug for McpInteractionRunGuard {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("McpInteractionRunGuard")
+            .field("finished", &self.finished)
+            .finish_non_exhaustive()
+    }
+}
+impl McpInteractionRunGuard {
+    pub async fn finish(&mut self) -> anyhow::Result<()> {
+        if let Some(channel) = &self.runtime.interactions {
+            channel.close();
+            self.runtime.cache.retire_interaction(channel.id()).await;
+            channel.settle_closed().await?;
+        }
+        self.finished = true;
+        Ok(())
+    }
+}
+impl Drop for McpInteractionRunGuard {
+    fn drop(&mut self) {
+        if self.finished { return; }
+        let Some(channel) = &self.runtime.interactions else { return; };
+        channel.close();
+        self.runtime.cache.invalidate_interaction(channel.id());
+        // An early admission return or dropped root task still revokes binding
+        // authority synchronously. Retired resources stay in the shared cache
+        // until this cleanup or application shutdown joins them.
+        if let Ok(handle) = tokio::runtime::Handle::try_current() {
+            let runtime = self.runtime.clone();
+            handle.spawn(async move {
+                if let Some(channel) = &runtime.interactions {
+                    runtime.cache.retire_interaction(channel.id()).await;
+                    if channel.settle_closed().await.is_err() { tracing::warn!("MCP run interaction cleanup unconfirmed"); }
+                }
+            });
+        }
+    }
+}
+
 impl McpRuntimeManager {
+    pub(crate) fn interactions(&self) -> Option<&Arc<super::interaction::McpInteractionChannel>> {
+        self.interactions.as_ref()
+    }
+
     /// Subscribe before preflight/readiness to retain that binding's transitions.
     ///
     /// # Errors
@@ -691,6 +757,7 @@ impl McpRuntimeManager {
             connector,
             readiness_timeout,
             call_timeout,
+            interactions: None,
         })
     }
 
@@ -889,21 +956,42 @@ impl PreparedMcpServer {
                 tool: name.clone(),
             });
         }
-        tokio::time::timeout(self.manager.call_timeout, async {
+        let dispatched = std::sync::atomic::AtomicBool::new(false);
+        super::interaction::interaction_timeout(self.request.interactions(), self.manager.call_timeout, async {
             let binding = self.ready_binding().await?;
-            binding
-                .registry()?
+            let registry = binding.registry()?;
+            dispatched.store(true, std::sync::atomic::Ordering::Release);
+            registry
                 .call_namespaced_tool_with_meta(name, arguments, meta)
                 .await
-                .map_err(|_| McpRuntimeError::ToolFailed {
+                .map_err(|source| McpRuntimeError::InvocationFailed {
                     server: server.clone(),
                     tool: name.clone(),
+                    source: super::outcome::McpToolFailure::find(&source)
+                        .cloned()
+                        .unwrap_or(super::outcome::McpToolFailure {
+                            outcome: super::outcome::ToolOutcome::TransportFailed,
+                            result: None,
+                        }),
                 })
         })
         .await
-        .map_err(|_| McpRuntimeError::TimedOut {
-            server,
-            operation: "call (including readiness)",
+        .map_err(|_| {
+            if dispatched.load(std::sync::atomic::Ordering::Acquire) {
+                McpRuntimeError::InvocationFailed {
+                    server: server.clone(),
+                    tool: name.clone(),
+                    source: super::outcome::McpToolFailure {
+                        outcome: super::outcome::ToolOutcome::OutcomeUnknown,
+                        result: None,
+                    },
+                }
+            } else {
+                McpRuntimeError::TimedOut {
+                    server,
+                    operation: "call (including readiness)",
+                }
+            }
         })?
     }
 

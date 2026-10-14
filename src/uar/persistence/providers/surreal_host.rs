@@ -18,6 +18,18 @@ impl SurrealDbProvider {
 }
 pub(super) async fn migrate(db: &Surreal<Any>) -> Result<()> {
     db.query(include_str!(
+        "../../../../migrations/surrealdb/durable_api_keys.surql"
+    ))
+    .await?
+    .check()?;
+
+    db.query(include_str!(
+        "../../../../migrations/surrealdb/principal_credentials.surql"
+    ))
+    .await?
+    .check()?;
+
+    db.query(include_str!(
         "../../../../migrations/surrealdb/agent_threads.surql"
     ))
     .await?
@@ -73,6 +85,13 @@ pub(super) async fn migrate(db: &Surreal<Any>) -> Result<()> {
     .await?
     .check()?;
 
+    db.query(include_str!("../../../../migrations/surrealdb/supervisor_fencing.surql")).await?.check()?;
+    super::checkpoint_records::initialize(db).await?;
+    super::ingestion_records::initialize(db).await?;
+    super::accounting_records::initialize(db).await?;
+    db.query(include_str!("../../../../migrations/surrealdb/a2a_bindings.surql")).await?.check()?;
+    db.query(include_str!("../../../../migrations/surrealdb/agui_runs.surql")).await?.check()?;
+    db.query(include_str!("../../../../migrations/surrealdb/mcp_elicitations.surql")).await?.check()?;
 
     Ok(())
 }

@@ -1,0 +1,60 @@
+{
+  "observedAt": "2026-10-12T20:56:02.833765+00:00",
+  "supersedesStageInferenceIn": ".kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T205507Z-streams-failure-analysis.json",
+  "correction": "local boundary completed with done/admission/terminal diagnostics. Failure at checkpoint readback occurs shared graph; no shared diagnostics exist.",
+  "actualProfileEvidence": [
+    {
+      "route": "legacy",
+      "directoryPresent": true,
+      "diagnosticsPresent": true,
+      "retainedFileNames": [
+        "requests.jsonl",
+        "first.bin",
+        "boundary-diagnostics.json",
+        "second.bin"
+      ],
+      "sha256": "ed7c7b3e9704693276c399fe61507951ec7f6e32e6aac2a21bc3fce997f56e71",
+      "protocol": "OpenAi",
+      "case": "valid",
+      "providerRequests": 1,
+      "toolEffects": 0,
+      "checkpointNodes": [],
+      "terminalStateStatus": null
+    },
+    {
+      "route": "local",
+      "directoryPresent": true,
+      "diagnosticsPresent": true,
+      "retainedFileNames": [
+        "requests.jsonl",
+        "first.bin",
+        "boundary-diagnostics.json",
+        "second.bin"
+      ],
+      "sha256": "d880a697dc6110d534f458ecd55ff682f69bf0f35eaa7532e173d6f9b7dba070",
+      "protocol": "OpenAi",
+      "case": "valid",
+      "providerRequests": 1,
+      "toolEffects": 0,
+      "checkpointNodes": [
+        "admission",
+        "terminal"
+      ],
+      "terminalStateStatus": "done"
+    },
+    {
+      "route": "shared",
+      "directoryPresent": true,
+      "diagnosticsPresent": false,
+      "retainedFileNames": [
+        "first.bin",
+        "second.bin"
+      ]
+    }
+  ],
+  "remoteDurabilityAttestationAbsent": true,
+  "gateResultUnchanged": "failed/0completedrows/0matchedfullrowboundaries",
+  "rawPrivateQualification": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-stream-principal-retry-bvkuxxno/failure-profile-qualification.json",
+  "sourceEdits": [],
+  "rerun": false
+}

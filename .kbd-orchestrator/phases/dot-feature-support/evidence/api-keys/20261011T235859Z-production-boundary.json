@@ -1,0 +1,319 @@
+{
+  "phase": "dot-feature-support",
+  "change": "dot-03-durable-api-keys",
+  "task": "2",
+  "stage": "Execute",
+  "verificationTier": "Tier 1 completed-change production integration",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,in-memory-backend",
+    "--test",
+    "durable_api_keys_integration",
+    "--",
+    "--include-ignored",
+    "--test-threads=1"
+  ],
+  "commandDisplay": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test durable_api_keys_integration -- --include-ignored --test-threads=1",
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "profile": "test inherits dev; debug=line-tables-only; split-debuginfo=unpacked",
+  "startedAt": "2026-10-11T23:59:15.928037+00:00",
+  "status": "failed",
+  "expectedTests": [
+    "explicit_local_development_memory_remains_volatile",
+    "local_surreal_kv_keys_exchange_and_revocation_survive_restart",
+    "postgres_modified_key_paths_restart_revocation_and_outage",
+    "shared_surreal_two_processes_current_authority_and_transport_outage",
+    "sidecar_delegated_key_admission_rechecks_revocation_and_outage"
+  ],
+  "sourceFingerprint": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-source-fingerprint.json",
+  "sourceFingerprintSha256": "2d25c8637bb3a5adcdf489033785a7cd35d360dde3c6081d9150bc0810b35bd5",
+  "sourceSnapshot": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-source-snapshot.tar.gz",
+  "sourceSnapshotSha256": "f5d9c01fcf375013ae6c4659683c4dbb5ebba16b19d05349b088fcdb61a47d4a",
+  "dirtySourcePatch": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-dirty-source.patch",
+  "dirtySourcePatchSha256": "9dc785ca26e64157a9ced5a2db7ce9191f0643711106d7e99fb5b2a4fe15f8cb",
+  "privateRawLog": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-api-key-gate-012sh2zf/20261011T235859Z-raw.log",
+  "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-production-boundary.log",
+  "environmentNames": [
+    "HOME",
+    "PATH",
+    "UAR_API_KEY_TEST_SURREAL_URL",
+    "UAR_API_KEY_TEST_SURREAL_USER",
+    "UAR_API_KEY_TEST_SURREAL_PASS",
+    "UAR_API_KEY_TEST_POSTGRES_URL"
+  ],
+  "sourceFreezeRequired": true,
+  "argvProfileUnmodified": true,
+  "launchedProcesses": [
+    {
+      "pid": 72455,
+      "parentPid": 72339,
+      "observedAt": "2026-10-11T23:59:26.200268+00:00",
+      "argv": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067 --include-ignored --test-threads=1",
+      "binaryPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067",
+      "role": "integration-target",
+      "artifact": {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067",
+        "sha256": "510ca649c7ca73c8ee239397cb7d4e46e1f3cd3bd1aad3723a1fe235b8d36ad4",
+        "bytes": 236395312,
+        "capturedAt": "2026-10-11T23:59:26.319267+00:00"
+      }
+    },
+    {
+      "pid": 72481,
+      "parentPid": 72455,
+      "observedAt": "2026-10-11T23:59:28.523901+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpgE3Efh/config.yaml --port 56611",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "ec0067dd9bec8e8d0bd783355742da6c442bea6f2009c1976cc75b63ec749434",
+        "bytes": 551676824,
+        "capturedAt": "2026-10-11T23:59:28.852683+00:00"
+      }
+    },
+    {
+      "pid": 72506,
+      "parentPid": 72455,
+      "observedAt": "2026-10-11T23:59:34.347815+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpbBz0aJ/config.yaml --port 56699",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "ec0067dd9bec8e8d0bd783355742da6c442bea6f2009c1976cc75b63ec749434",
+        "bytes": 551676824,
+        "capturedAt": "2026-10-11T23:59:28.852683+00:00"
+      }
+    },
+    {
+      "pid": 72585,
+      "parentPid": 72455,
+      "observedAt": "2026-10-11T23:59:50.871088+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpXGWEGC/config.yaml --port 56799",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "ec0067dd9bec8e8d0bd783355742da6c442bea6f2009c1976cc75b63ec749434",
+        "bytes": 551676824,
+        "capturedAt": "2026-10-11T23:59:28.852683+00:00"
+      }
+    },
+    {
+      "pid": 72594,
+      "parentPid": 72455,
+      "observedAt": "2026-10-11T23:59:51.981994+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpWzgOE6/config.yaml --port 56821",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "ec0067dd9bec8e8d0bd783355742da6c442bea6f2009c1976cc75b63ec749434",
+        "bytes": 551676824,
+        "capturedAt": "2026-10-11T23:59:28.852683+00:00"
+      }
+    },
+    {
+      "pid": 72639,
+      "parentPid": 72455,
+      "observedAt": "2026-10-11T23:59:55.295392+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpL765ha/config.yaml --port 56852",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "ec0067dd9bec8e8d0bd783355742da6c442bea6f2009c1976cc75b63ec749434",
+        "bytes": 551676824,
+        "capturedAt": "2026-10-11T23:59:28.852683+00:00"
+      }
+    },
+    {
+      "pid": 72811,
+      "parentPid": 72455,
+      "observedAt": "2026-10-12T00:00:09.639596+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmp0AqOeL/config.yaml --port 56938",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "ec0067dd9bec8e8d0bd783355742da6c442bea6f2009c1976cc75b63ec749434",
+        "bytes": 551676824,
+        "capturedAt": "2026-10-11T23:59:28.852683+00:00"
+      }
+    },
+    {
+      "pid": 72819,
+      "parentPid": 72455,
+      "observedAt": "2026-10-12T00:00:10.742060+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpuGtWI3/config.yaml --port 56954",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "ec0067dd9bec8e8d0bd783355742da6c442bea6f2009c1976cc75b63ec749434",
+        "bytes": 551676824,
+        "capturedAt": "2026-10-11T23:59:28.852683+00:00"
+      }
+    },
+    {
+      "pid": 73108,
+      "parentPid": 72455,
+      "observedAt": "2026-10-12T00:00:42.998006+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpPfUlQu/config.yaml --port 57191",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "ec0067dd9bec8e8d0bd783355742da6c442bea6f2009c1976cc75b63ec749434",
+        "bytes": 551676824,
+        "capturedAt": "2026-10-11T23:59:28.852683+00:00"
+      }
+    },
+    {
+      "pid": 73161,
+      "parentPid": 72455,
+      "observedAt": "2026-10-12T00:00:46.336848+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpaJUzTK/config.yaml --port 57216",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar",
+      "role": "sidecar",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar",
+        "sha256": "b828691a0534f2f9990eeee7faccd34530d83cb9ae6b3c93a264ba3024d381ef",
+        "bytes": 550305088,
+        "capturedAt": "2026-10-12T00:00:46.727339+00:00"
+      }
+    }
+  ],
+  "deferredChecks": [
+    "Postgres checkpoint/observer parity",
+    "Tier 2 phase composition and cumulative independent review",
+    "Tier 3 both-architecture publication/certification",
+    "Other phase tasks"
+  ],
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235337Z-production-boundary.json",
+  "fixtureCorrection": {
+    "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235337Z-production-boundary.json",
+    "changedBoundPathsSincePreviousGate": [
+      "tests/support/api_key_process.rs"
+    ],
+    "path": "tests/support/api_key_process.rs",
+    "oldSha256": "620b5e78d6897de6aa00d06129cdcc3f6dfac7cd1f9c1e0bf62760c4d544319b",
+    "newSha256": "084da5a43f9b38e0ca30f08de713b1a97f27630cbd1bed021b2e3312180928ef",
+    "correctionPatch": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-fixture-correction.patch",
+    "correctionPatchSha256": "93d5472ec8c5eeb3dc409c63bfbf9e0a8621b4d28089025f455893c28d04a9ee",
+    "observedFailure": "E0603 crate-private fixture JWT encoder",
+    "correction": "Use existing public jsonwebtoken::encode; Header/claims/EncodingKey/expect unchanged."
+  },
+  "pid": 72339,
+  "lastObservedAt": "2026-10-12T00:01:22.190191+00:00",
+  "logBytes": 13639,
+  "testLines": [
+    "running 5 tests",
+    "test explicit_local_development_memory_remains_volatile ... ok",
+    "test local_surreal_kv_keys_exchange_and_revocation_survive_restart ... ok",
+    "test postgres_modified_key_paths_restart_revocation_and_outage ... FAILED",
+    "test shared_surreal_two_processes_current_authority_and_transport_outage ... FAILED",
+    "test sidecar_delegated_key_admission_rechecks_revocation_and_outage ... FAILED",
+    "test result: FAILED. 2 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 114.02s"
+  ],
+  "exitCode": 101,
+  "finishedAt": "2026-10-12T00:01:22.190686+00:00",
+  "sourceUnchangedAtExit": true,
+  "changedSourcePathsAtExit": [],
+  "sourceDrift": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-source-drift.json",
+  "sourceDriftSha256": "b674cf1751fc362ff78cae88d620399c2b743b5268fc7397aa25756cf2899789",
+  "logSha256": "26e97d2fc70f7b2817e796582e654112338b44f4a3b5e6402f95a94947c7a4ab",
+  "rawLogSha256": "26e97d2fc70f7b2817e796582e654112338b44f4a3b5e6402f95a94947c7a4ab",
+  "testSummary": [
+    "test result: FAILED. 2 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 114.02s"
+  ],
+  "testPassedByName": {
+    "explicit_local_development_memory_remains_volatile": true,
+    "local_surreal_kv_keys_exchange_and_revocation_survive_restart": true,
+    "postgres_modified_key_paths_restart_revocation_and_outage": false,
+    "shared_surreal_two_processes_current_authority_and_transport_outage": false,
+    "sidecar_delegated_key_admission_rechecks_revocation_and_outage": false
+  },
+  "artifactFingerprints": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067",
+      "sha256": "510ca649c7ca73c8ee239397cb7d4e46e1f3cd3bd1aad3723a1fe235b8d36ad4",
+      "bytes": 236395312,
+      "capturedAt": "2026-10-11T23:59:26.319267+00:00"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "sha256": "ec0067dd9bec8e8d0bd783355742da6c442bea6f2009c1976cc75b63ec749434",
+      "bytes": 551676824,
+      "capturedAt": "2026-10-11T23:59:28.852683+00:00"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar",
+      "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar",
+      "sha256": "b828691a0534f2f9990eeee7faccd34530d83cb9ae6b3c93a264ba3024d381ef",
+      "bytes": 550305088,
+      "capturedAt": "2026-10-12T00:00:46.727339+00:00"
+    }
+  ],
+  "allExpectedTestsPassed": false,
+  "retainedSanitizedChildLogs": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpEXYGbU-stdout.log",
+      "sha256": "993a44abb25c477191d15cf50c7c187e8f11031ab752ad25db8ade95e25be7de"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpEXYGbU-stderr.log",
+      "sha256": "2ed9ec4b2d6772031a675c2c932f9b8da69bb9633e68489f2b1ee1545ad080fd"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpuGtWI3-stdout.log",
+      "sha256": "ee72e15744983483817e172aef69ce78c12ad1c642ca3b54cafb7421a72f0e53"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpuGtWI3-stderr.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmp0AqOeL-stdout.log",
+      "sha256": "b2eae80179ea08cb447a1afd8620cca6911efdf3a164ca8a9c3511f2aa2a4a07"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmp0AqOeL-stderr.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpaJUzTK-stdout.log",
+      "sha256": "0b0ea55b5d4c9af0c7fcceb91bf22ec88fcf7e41567e4c1ccc7bb7a2b069708d"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpaJUzTK-stderr.log",
+      "sha256": "d52366db53ce68dce29340cecf164c669518c3bd4b272bcb080706f220714461"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpPfUlQu-stdout.log",
+      "sha256": "755a35d45612fd34535dc6d5d0a55742c71ecd04086e3564201eaa897df29e9c"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-.tmpPfUlQu-stderr.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    }
+  ],
+  "sanitization": "Known synthetic DB URL/user/password components, fixture secrets, JWTs, raw key patterns, 64-hex grants/launch tokens, and hash-bearing lines redacted."
+}

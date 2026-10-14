@@ -357,7 +357,7 @@ impl AgentInstanceController {
         Ok(outcome)
     }
 
-    async fn has_unsettled_effect_claim(
+    pub(crate) async fn has_unsettled_effect_claim(
         &self,
         owner: &ActorOwner,
         run_id: &str,
@@ -367,18 +367,36 @@ impl AgentInstanceController {
             .list_tool_admission_evidence(owner.user_id())
             .await
             .map_err(super::controller::store_error)?;
-        let mut claimed = HashSet::new();
-        let mut confirmed = HashSet::new();
-        for record in evidence
+        let evidence = evidence
             .into_iter()
             .filter(|record| record.root_run_id == run_id)
-        {
+            .collect::<Vec<_>>();
+        let mut runs = std::collections::BTreeSet::from([run_id.to_owned()]);
+        runs.extend(evidence.iter().map(|record| record.run_id.clone()));
+        let mut canonical = Vec::new();
+        for run in runs {
+            canonical.extend(
+                self.store
+                    .list_canonical_tool_receipts(owner.user_id(), &run)
+                    .await
+                    .map_err(super::controller::store_error)?,
+            );
+        }
+        if crate::uar::persistence::agent_threads::has_ambiguous_legacy_tool_outcomes(
+            &canonical, &evidence,
+        ) {
+            return Ok(true);
+        }
+        let mut claimed = HashSet::new();
+        let mut confirmed = HashSet::new();
+        for record in evidence {
             match record.state {
                 ToolAdmissionEvidenceState::ClaimIntent
                 | ToolAdmissionEvidenceState::OutcomeUnknown => {
                     claimed.insert(record.invocation_id);
                 }
-                ToolAdmissionEvidenceState::Succeeded | ToolAdmissionEvidenceState::Failed => {
+                ToolAdmissionEvidenceState::Succeeded | ToolAdmissionEvidenceState::Failed
+                | ToolAdmissionEvidenceState::ApplicationFailed | ToolAdmissionEvidenceState::TransportFailed => {
                     confirmed.insert(record.invocation_id);
                 }
                 _ => {}

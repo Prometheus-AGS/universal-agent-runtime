@@ -1,0 +1,95 @@
+{
+  "recordedAt": "2026-10-12T01:04:41.944003+00:00",
+  "tier": 0,
+  "source": "implementation executor actual command observations; root collected retained-file hashes",
+  "rustSyntax": {
+    "reportedExitCode": 0,
+    "stderrBytes": 0,
+    "fileCount": 15,
+    "edition": 2024
+  },
+  "changedSpanFormatting": {
+    "reportedExitCode": 0,
+    "stdoutBytes": 0,
+    "stderrBytes": 0,
+    "importsAndModulesReordered": false
+  },
+  "trackedWhitespace": {
+    "reportedExitCode": 0,
+    "diagnostics": 0
+  },
+  "newFileWhitespace": {
+    "fileCount": 6,
+    "reportedExitCode": 1,
+    "diagnostics": 0,
+    "exitInterpretation": "normal no-index new-file diff"
+  },
+  "pythonFixture": "AST parse passed; no protocol execution",
+  "productionTestsRun": false,
+  "initialRustfmtFailuresRetained": true,
+  "privateFiles": [
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-rust-parse-bqp07cfc/commands.final.json",
+      "bytes": 13060,
+      "sha256": "e8e5a1b9be761cf9f308b445031293172db94b33e8e3725b6794ad3c6f725f87"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-rust-parse-bqp07cfc/changed-lines.final.json",
+      "bytes": 9201,
+      "sha256": "96bde2f10c9199058908aa01362a4bbd2bcbc963f2177d263454955065ae6a68"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-rust-parse-bqp07cfc/parse.final.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-rust-parse-bqp07cfc/parse.final.stdout",
+      "bytes": 516011,
+      "sha256": "035313ff9350d9ce2e06d3bce66d15b8b18ff95b3480b46f4f360e2f521843a1"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-rust-parse-bqp07cfc/targeted_format.final.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-rust-parse-bqp07cfc/targeted_format.final.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-rust-parse-bqp07cfc/syntax.stderr",
+      "bytes": 71,
+      "sha256": "ab2aacf8b9e990d57e509acfb77f0ceb2c5f1a68b5c4e78d38d29daa47849f39"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-rust-parse-bqp07cfc/syntax.retry.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-rust-parse-bqp07cfc/targeted-format.retry.stdout",
+      "bytes": 159018,
+      "sha256": "d967518367a7b159a0739a88310686002c59ceae0a46f7f0a0a4c70f1f0dd0e0"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-rust-parse-bqp07cfc/targeted-format.apply.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-rust-parse-bqp07cfc/targeted-format.apply.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "plannedScenarios": {
+    "protocol": 32,
+    "binaryLocal": 11,
+    "binaryShared": 16,
+    "total": 59
+  },
+  "postgresReceiptRoundTrip": "unverified",
+  "externalSdkExhaustiveMatches": "unverified; additive variants documented"
+}

@@ -1,0 +1,17 @@
+{
+  "manifest": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+  "root": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc",
+  "surrealPid": 57075,
+  "surrealProcessGroup": 57075,
+  "surrealBinary": "/Users/gqadonis/.prometheus/bin/surreal",
+  "surrealVersion": "3.3.0",
+  "surrealPort": 50811,
+  "postgresContainerName": "uar-dot-api-keys-4555c1fe3dec",
+  "postgresContainerId": "98c61950a74151002721d6f1d4e54822a0cf9f53cbdbda7bdc44c6c51720bb80",
+  "postgresImageId": "sha256:d9d449b64180c58414326ad6f6e8650d50a0830c350c23f3607ee97594a93ddb",
+  "postgresPort": 32769,
+  "isolatedTestData": true,
+  "productTestsRun": false,
+  "ready": true,
+  "postgresVersion": "postgres (PostgreSQL) 15.2"
+}

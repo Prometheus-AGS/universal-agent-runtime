@@ -1,0 +1,2221 @@
+{
+  "change": "dot-06-fresh-process-resume",
+  "task": "2",
+  "gate": "resume",
+  "tier": "Tier1 completed-change production integration",
+  "command": [
+    "env",
+    "-i",
+    "HOME=/Users/gqadonis",
+    "PATH=/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/gqadonis/.minimax/bin:/Users/gqadonis/.local/bin:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/97288_1791831174106/bin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.pyenv/shims:/Users/gqadonis/.minimax/bin:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/usr/local/share/dotnet:~/.dotnet/tools:/usr/local/go/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/opt/podman/bin:/Users/gqadonis/.codex/tmp/arg0/codex-arg08wZZjw:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/29547_1791811184470/bin:/Users/gqadonis/miniconda3/condabin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.the-boss/commands:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/opt/zerobrew/prefix/bin:/Users/gqadonis/.pochi/bin:/Users/gqadonis/.antigravity/antigravity/bin:/Users/gqadonis/.codeium/windsurf/bin:/opt/homebrew/opt/openssl@3/bin:/opt/homebrew/opt/bison/bin:/Users/gqadonis/.opencode/bin:/Users/gqadonis/.console-ninja/.bin:/Users/gqadonis/.wasmedge/bin:/Users/gqadonis/.wasmtime/bin:/Users/gqadonis/.deno/bin:/Users/gqadonis/.paperspace/bin:/Users/gqadonis/.groundcover/bin:/Users/gqadonis/.rd/bin:/Users/gqadonis/google-cloud-sdk/bin:/Users/gqadonis/.shorebird/bin:/Applications/Android Studio/Contents/MacOS:/Users/gqadonis/development/flutter/bin:/Users/gqadonis/.rust-mcp-stack/bin:/Users/gqadonis/.cargo/bin:/Users/gqadonis/.bun/bin:/Users/gqadonis/Library/pnpm:/opt/homebrew/opt/go/libexec/bin:/Users/gqadonis/go/bin:/opt/local/bin:/opt/local/sbin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Users/gqadonis/.pub-cache/bin:/Users/gqadonis/development/flutter/.pub-cache/bin:/Users/gqadonis/Library/Android/sdk/platform-tools:/Users/gqadonis/Library/Android/sdk/tools:/Users/gqadonis/Library/Android/sdk/tools/bin:/Users/gqadonis/Library/Android/sdk/emulator:/Users/gqadonis/.rvm/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.modular/bin:/Users/gqadonis/bin:/Users/gqadonis/Projects/ide/bin:/Users/gqadonis/.dotnet/tools:/Users/gqadonis/.orbstack/bin:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/gqadonis/.dotnet/tools:/usr/local/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.orbstack/bin",
+    "UAR_DOT06_INFRA_FILE=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "UAR_DOT06_NAMESPACE=dot06_20261012T200103_7bce5970a2",
+    "UAR_DOT06_EVIDENCE_ROOT=/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures",
+    "UAR_REMOTE_SURREAL_DURABILITY_ATTESTED=1",
+    "RUSTC_WRAPPER=",
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend",
+    "--test",
+    "fresh_process_resume",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "privateRoot": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_",
+  "startedAt": "2026-10-12T20:02:41.518549+00:00",
+  "status": "failed",
+  "sourceSetSha256": "bdcf532635a4a3a22673041909931ae4395dedd652bb4cc739fdf2d06bd52019",
+  "boundInputCount": 6565,
+  "gitlinkCount": 16,
+  "sourceEdits": [],
+  "unrequestedAdditions": [],
+  "newProductionGuards": [],
+  "cargoWrapperPid": 19293,
+  "sampledFixtureExecutableBindings": [
+    {
+      "pid": 21080,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 21287,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 21480,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 21637,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 21745,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 21785,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 21981,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 22136,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 22283,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 22663,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 22971,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 23183,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 23400,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 23480,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 23684,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 23764,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 24009,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 24234,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 24689,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 24872,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 25005,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 25176,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 25384,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 25723,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    },
+    {
+      "pid": 25966,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    }
+  ],
+  "elapsedSeconds": 212.46,
+  "stdoutBytes": 262,
+  "stderrBytes": 13155,
+  "actualExecutableArtifacts": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "sha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "bytes": 235613496,
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-accepted-fresh_process_resume-1accb410428be83b",
+      "retainedSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "sha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+      "bytes": 551079464,
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-accepted-production-runtime",
+      "retainedSha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4"
+    }
+  ],
+  "fixtureRoots": [
+    "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures"
+  ],
+  "knownFixturePidCount": 218,
+  "observedPrintedScenarios": 20,
+  "verifiedScenarioFiles": 21,
+  "exitCode": 101,
+  "finishedAt": "2026-10-12T20:06:13.986992+00:00",
+  "sourceStableAtExit": true,
+  "environmentStableAtExit": true,
+  "testSummary": [
+    "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 133.85s"
+  ],
+  "warningLines": [
+    "warning: Cargo.toml: version requirement `=0.4.1+0.23` for dependency `ort-tract` includes semver metadata which will be ignored, removing the metadata is recommended to avoid confusion",
+    "warning: `universal-agent-runtime` (manifest) generated 1 warning",
+    "warning: the item `Digest` is imported redundantly",
+    "warning: the item `Sha256` is imported redundantly",
+    "warning: unused import: `context::SelectedTeamContext`",
+    "warning: the item `IntoFuture` is imported redundantly",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: function `build_full_harness_sse_response` is never used",
+    "warning: function `reject_portable_authority` is never used",
+    "warning: struct `Draft1Migration` is never constructed",
+    "warning: function `migrate_draft1_document` is never used",
+    "warning: function `required_string` is never used",
+    "warning: function `has_markdown_structure` is never used",
+    "warning: method `request` is never used",
+    "warning: method `scrub` is never used",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: unused `axum::Extension` that must be used",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: `universal-agent-runtime` (lib) generated 31 warnings (run `cargo fix --lib -p universal-agent-runtime` to apply 1 suggestion)",
+    "warning: variant `DelayedContent` is never constructed",
+    "warning: method `with_prompt_prefix` is never used",
+    "warning: `universal-agent-runtime` (bin \"stub-llm\") generated 2 warnings"
+  ],
+  "executedScenarios": [
+    {
+      "directory": "local-abrupt",
+      "profile": "local",
+      "case": "abrupt",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-abrupt/acceptance.json",
+      "sha256": "d098dedecbb5d8556195d31aa3a708a627c3e9c21a70336c44e51c0ddfc11e60"
+    },
+    {
+      "directory": "local-binding",
+      "profile": "local",
+      "case": "binding",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-binding/acceptance.json",
+      "sha256": "beb8f3b0e88012d0ce524f7c399b9ba7212ca0f05534fce6030ea80594cd8b94"
+    },
+    {
+      "directory": "local-corrupt",
+      "profile": "local",
+      "case": "corrupt",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-corrupt/acceptance.json",
+      "sha256": "c088f819a23a7a69e29f996abb5f394450a818db39bf0c49498e25934edf814b"
+    },
+    {
+      "directory": "local-kill-after",
+      "profile": "local",
+      "case": "kill-after",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-kill-after/acceptance.json",
+      "sha256": "e630bb7fad4ddb57d7a86d72eee8b5aecd7ed3de3dfbe6c8dd364db232cfbcad"
+    },
+    {
+      "directory": "local-kill-before",
+      "profile": "local",
+      "case": "kill-before",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-kill-before/acceptance.json",
+      "sha256": "0e00fd8bc8122990dd40c6e650fefb9fb488b7063be034d5ed5d18f9cb05fad5"
+    },
+    {
+      "directory": "local-negative",
+      "profile": "local",
+      "case": "negative",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-negative/acceptance.json",
+      "sha256": "2f72cec80e2e2b0ec081026771d83d1b9c9a4640d082b1a08a129402e0878030"
+    },
+    {
+      "directory": "local-policy",
+      "profile": "local",
+      "case": "policy",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-policy/acceptance.json",
+      "sha256": "e486708dfc5023d2ed5686756d4674da399201525c818ddf5703791ddcaf6f36"
+    },
+    {
+      "directory": "local-resume",
+      "profile": "local",
+      "case": "resume",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-resume/acceptance.json",
+      "sha256": "f29486efcc959a6b0d5a529d528adc6c2eaee427ed2d8aa83439d55bd121283d"
+    },
+    {
+      "directory": "local-target",
+      "profile": "local",
+      "case": "target",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-target/acceptance.json",
+      "sha256": "d4d3a8f900699487ab451de4cf4aa8673c35fe8ed652bc83544f2dcf50661849"
+    },
+    {
+      "directory": "local-uncertain",
+      "profile": "local",
+      "case": "uncertain",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-uncertain/acceptance.json",
+      "sha256": "73e6c1ebab210bbba17525602d46a7202700d08391c15e1efa5289dca94837fc"
+    },
+    {
+      "directory": "shared-abrupt",
+      "profile": "shared",
+      "case": "abrupt",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-abrupt/acceptance.json",
+      "sha256": "b36edcce4f29b7498d917a953b8596ba4ab4f60096d8754f591aaafe51e4021f"
+    },
+    {
+      "directory": "shared-binding",
+      "profile": "shared",
+      "case": "binding",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-binding/acceptance.json",
+      "sha256": "20e23e54f5cbb5f6f2b75d3ac2256a0dcfb343faec273ad836a69fbcfce45467"
+    },
+    {
+      "directory": "shared-corrupt",
+      "profile": "shared",
+      "case": "corrupt",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-corrupt/acceptance.json",
+      "sha256": "4bb1cedfe80f5fb4e8bda1bcefde454cbd98634909b4ea855ed4ad25a860045f"
+    },
+    {
+      "directory": "shared-kill-after",
+      "profile": "shared",
+      "case": "kill-after",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-kill-after/acceptance.json",
+      "sha256": "e3ad67fe8bf2b460fa2127dc390b5e7e56cf4a36406cc3621235540e69251582"
+    },
+    {
+      "directory": "shared-kill-before",
+      "profile": "shared",
+      "case": "kill-before",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-kill-before/acceptance.json",
+      "sha256": "cae4ae940b7daead355a7a0aada45c7d85b1eb3ea3dbbbd77383c0c8b92abb59"
+    },
+    {
+      "directory": "shared-negative",
+      "profile": "shared",
+      "case": "negative",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-negative/acceptance.json",
+      "sha256": "2d1ff0369b92f74c8af315307ab52ba89396609a7c6549b36537557a970e3883"
+    },
+    {
+      "directory": "shared-policy",
+      "profile": "shared",
+      "case": "policy",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-policy/acceptance.json",
+      "sha256": "d91a3ab7cb1392f6d7305ca02f15c2780d466f0eec275702a6140d43844688dd"
+    },
+    {
+      "directory": "shared-race",
+      "profile": "shared",
+      "case": "race",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-race/acceptance.json",
+      "sha256": "cb2970340cb465de6ec9ed12e370e4b5e5744c7ae7d7f5fc03eb1f679cbe5a06"
+    },
+    {
+      "directory": "shared-resume",
+      "profile": "shared",
+      "case": "resume",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-resume/acceptance.json",
+      "sha256": "27d9ae80b18e8be9b1e169e4fe4088a2657d126a8238852c69c8e8580701da29"
+    },
+    {
+      "directory": "shared-target",
+      "profile": "shared",
+      "case": "target",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-target/acceptance.json",
+      "sha256": "8eff8ba81996c4c4cff52e9a01332ef8b921d1393881a72b7e5280c9b08e454a"
+    },
+    {
+      "directory": "shared-uncertain",
+      "profile": "shared",
+      "case": "uncertain",
+      "verified": true,
+      "evidence": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-uncertain/acceptance.json",
+      "sha256": "483cf149d6f72c0db4de9d52fc09f23fdfe0c2c5feb3f98983538ae45a8cadc2"
+    }
+  ],
+  "executedScenarioCount": 21,
+  "actualScenarioInventoryMatched": false,
+  "missingScenarioIdentities": [
+    [
+      "memory",
+      "memory",
+      null
+    ],
+    [
+      "postgres",
+      "postgres",
+      null
+    ],
+    [
+      "unattested",
+      "shared",
+      null
+    ]
+  ],
+  "unexpectedScenarioIdentities": [],
+  "customerRuntimePathMatched": true,
+  "actualReadbackChildren": [
+    {
+      "case": "local-abrupt",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 22120,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-abrupt/final-readback/readback-process.json",
+      "privateRecordSha256": "46b2e1bd1d172c4ed81c8af83298ad80b7cd7cdcf6760f94b53a180ad82f241d"
+    },
+    {
+      "case": "local-abrupt",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 22090,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-abrupt/source-readback/readback-process.json",
+      "privateRecordSha256": "f4df435f9e0dea56d687eaafd1a182ef850c0b2d357648e242d9927068eb2bcf"
+    },
+    {
+      "case": "local-binding",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 21964,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-binding/final-readback/readback-process.json",
+      "privateRecordSha256": "5f165b14abd4c202791e43624131b7a05b9cd186422a1a7d7da4fee965710f96"
+    },
+    {
+      "case": "local-binding",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 21930,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-binding/source-readback/readback-process.json",
+      "privateRecordSha256": "897c56f28b2f21254262434983df94777acb0aa3cc84634dd1c8bbe9593688d8"
+    },
+    {
+      "case": "local-corrupt",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 22952,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-corrupt/final-readback/readback-process.json",
+      "privateRecordSha256": "7f4aadc95f057fec90a0d265d6ca44f5dc046b3c1cc55adcbe9decf3226065f9"
+    },
+    {
+      "case": "local-corrupt",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 22896,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-corrupt/source-readback/readback-process.json",
+      "privateRecordSha256": "72db0e6457863071ef1235c2bb793231c74d282f5f4efe1e47cedf2b156610cd"
+    },
+    {
+      "case": "local-kill-after",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 22713,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-kill-after/final-readback/readback-process.json",
+      "privateRecordSha256": "6462d06625960b91b9b0a1efb618728e2610a8b7bde0093545974eec9b702dea"
+    },
+    {
+      "case": "local-kill-after",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 22626,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-kill-after/source-readback/readback-process.json",
+      "privateRecordSha256": "11822432a6dfd3091f2cc786e4100f2ec1dd827539194d82fb552a74a95951ec"
+    },
+    {
+      "case": "local-kill-before",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 22466,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-kill-before/final-readback/readback-process.json",
+      "privateRecordSha256": "d982d4d3cf6e88d491adc69da041b89e611ffc3c4e63dae5d1ebaf2a47fd436a"
+    },
+    {
+      "case": "local-kill-before",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 22397,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-kill-before/source-readback/readback-process.json",
+      "privateRecordSha256": "1b289c9468304e3119601c80f7a7cf65cd8642d9d17bd8b9564a4611f7e895cd"
+    },
+    {
+      "case": "local-negative",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 21607,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-negative/final-readback/readback-process.json",
+      "privateRecordSha256": "b458879270697762eb58c2547be179e18b87ba356bd0452ae314ec9e8dcc3f65"
+    },
+    {
+      "case": "local-negative",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 21569,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-negative/source-readback/readback-process.json",
+      "privateRecordSha256": "aa8f6195235cfbb7e6491550b1a5d3f2a6b6bdcb9f87d13a8292cacfc78943fc"
+    },
+    {
+      "case": "local-policy",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 21759,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-policy/final-readback/readback-process.json",
+      "privateRecordSha256": "d259253f3361ae2692ed4ccd95fd079568c1fb1c1e9879e1b1084bd37daee1c9"
+    },
+    {
+      "case": "local-policy",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 21744,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-policy/source-readback/readback-process.json",
+      "privateRecordSha256": "308e5ee6f8c2d11933cd4579db206426e345c0df1c2e3dfa8a9ae339df06e542"
+    },
+    {
+      "case": "local-resume",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 21266,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-resume/final-readback/readback-process.json",
+      "privateRecordSha256": "c788c9709dc0e1cb599da8f483b6300e5b2ad1691dbc5b146270c6612bcf07eb"
+    },
+    {
+      "case": "local-resume",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 21233,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-resume/source-readback/readback-process.json",
+      "privateRecordSha256": "c723050d49af5146497d5cc2fdf847144e986a308f2cb1de1e82e2c5af56ad11"
+    },
+    {
+      "case": "local-target",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 21458,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-target/final-readback/readback-process.json",
+      "privateRecordSha256": "5e0b48740c4b20830b2f0cca88e02735bf8c316208055ec353168a62d430c4f4"
+    },
+    {
+      "case": "local-target",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 21398,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-target/source-readback/readback-process.json",
+      "privateRecordSha256": "b69cfd77f29fb9e6f13e4a421f19039304d1a17703ce50e56bf4a441eed9aedd"
+    },
+    {
+      "case": "local-uncertain",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 22264,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-uncertain/final-readback/readback-process.json",
+      "privateRecordSha256": "9a6fa25a745dbc9272f3492508fbfa87f7a857fbdd1d8ec2c91bb21131b01f85"
+    },
+    {
+      "case": "local-uncertain",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 22242,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/local-uncertain/source-readback/readback-process.json",
+      "privateRecordSha256": "d6ba64c2c24ef3d78176ebb39d5e846b97d9c71adcf01a19eaa92a9cb5ce7f71"
+    },
+    {
+      "case": "shared-abrupt",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 24424,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-abrupt/final-readback/readback-process.json",
+      "privateRecordSha256": "64afce5aad492da8a21900122ff06c8d95135cb29e4a5165560503144b6b27f7"
+    },
+    {
+      "case": "shared-abrupt",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 24393,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-abrupt/source-readback/readback-process.json",
+      "privateRecordSha256": "05625459c9c4906ba7228b6c1a64f3a190fcedd1203357404bde75731ab0cb8b"
+    },
+    {
+      "case": "shared-binding",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 24207,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-binding/final-readback/readback-process.json",
+      "privateRecordSha256": "a54be574037507a565bfb4f4662e7286a101c1596ca1d9c25764a0c762ab8223"
+    },
+    {
+      "case": "shared-binding",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 24162,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-binding/source-readback/readback-process.json",
+      "privateRecordSha256": "44a7c77bc49ad188b45fc2462325300d196fab666b0f29867590d1952cfab9c6"
+    },
+    {
+      "case": "shared-corrupt",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 25669,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-corrupt/final-readback/readback-process.json",
+      "privateRecordSha256": "38a8eb74f1ce0d807cf933f4046ba045bfaecbc708b4a53cec265c6ddf88b541"
+    },
+    {
+      "case": "shared-corrupt",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 25578,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-corrupt/source-readback/readback-process.json",
+      "privateRecordSha256": "aea690be41ffe24866b0d093a5e7217742f2b17f553a4da5f57640cc0461083b"
+    },
+    {
+      "case": "shared-kill-after",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 25339,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-kill-after/final-readback/readback-process.json",
+      "privateRecordSha256": "6f5b6a9087eb1be4c78977b50e26a6254b32f258a64d8f7f873fbe272b8d18ff"
+    },
+    {
+      "case": "shared-kill-after",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 25175,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-kill-after/source-readback/readback-process.json",
+      "privateRecordSha256": "dc8f7027e208bf949ff8bb62d85557d3c44548f93efc5c939b50894050022354"
+    },
+    {
+      "case": "shared-kill-before",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 24963,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-kill-before/final-readback/readback-process.json",
+      "privateRecordSha256": "b94dbb6e9e9e73c0a82c12ff74ac75263525939c336718aee010394848d7e9fa"
+    },
+    {
+      "case": "shared-kill-before",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 24862,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-kill-before/source-readback/readback-process.json",
+      "privateRecordSha256": "66a15b8a6a4cdac0a36c8afb7c4ccd1949407b756bbe236df4f6a47498666ddf"
+    },
+    {
+      "case": "shared-negative",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 23743,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-negative/final-readback/readback-process.json",
+      "privateRecordSha256": "d413f663bd622bd36aa255cc7cdf26e61a8dbea37b5b9d4a1314f9ad7f844b21"
+    },
+    {
+      "case": "shared-negative",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 23673,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-negative/source-readback/readback-process.json",
+      "privateRecordSha256": "42d0e13ea13e6cb2dfc4865c43fa50da0e0471ce1a1637c04b3ea99e854fda6a"
+    },
+    {
+      "case": "shared-policy",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 23975,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-policy/final-readback/readback-process.json",
+      "privateRecordSha256": "41ff7c0d2f3d80717b5c48fc29feb82cbb8f5fb774232082add42b1e01a08157"
+    },
+    {
+      "case": "shared-policy",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 23929,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-policy/source-readback/readback-process.json",
+      "privateRecordSha256": "ed6c69b96906c550627d833232e42b6a2141a8a90173b74b69770221bb17b3c0"
+    },
+    {
+      "case": "shared-race",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 26092,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-race/final-readback/readback-process.json",
+      "privateRecordSha256": "c59810457fb67742cb68dd87479f2b5fd57c33c412da3db253053ea3dc0070ec"
+    },
+    {
+      "case": "shared-race",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 25965,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-race/source-readback/readback-process.json",
+      "privateRecordSha256": "02dcbc1dc71dcb02c6ce02b7c580513a4b9e08ef64828dc8b298d9d2ce92b465"
+    },
+    {
+      "case": "shared-resume",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 23233,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-resume/final-readback/readback-process.json",
+      "privateRecordSha256": "b077b4986aca9591ce6bc5ea2c97e2201d3244cc7272fb32977d9d5a5513fdf2"
+    },
+    {
+      "case": "shared-resume",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 23171,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-resume/source-readback/readback-process.json",
+      "privateRecordSha256": "288fbc138f7882b579cadd00df707e0ae89846e50766650bb235b198f7fc5c58"
+    },
+    {
+      "case": "shared-target",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 23446,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-target/final-readback/readback-process.json",
+      "privateRecordSha256": "ea4a87904637cce04f0aa885daf5abba0e5a65e4caf1440233234e942f550223"
+    },
+    {
+      "case": "shared-target",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 23398,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-target/source-readback/readback-process.json",
+      "privateRecordSha256": "ff99844f10094447f6ae16b23231aba75ca228f26965faf13133fdcd9e4c3e7b"
+    },
+    {
+      "case": "shared-uncertain",
+      "phase": "final-readback",
+      "role": "durable-readback",
+      "pid": 24659,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-uncertain/final-readback/readback-process.json",
+      "privateRecordSha256": "8a3f4548ecbe2921c94f7acfefe71118cd4c06bb90f0fdcac1cda557208b4339"
+    },
+    {
+      "case": "shared-uncertain",
+      "phase": "source-readback",
+      "role": "durable-readback",
+      "pid": 24607,
+      "joined": true,
+      "exitCode": 0,
+      "declaredExecutable": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "matchesRetainedTestImage": true,
+      "declaredExecutableSha256": "985d832d75743273c13b1edf93b628841787a27dd53873a004c32c1c4f6bda97",
+      "privateProcessRecord": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-readback-retry-0jufile_/resume-fixtures/shared-uncertain/source-readback/readback-process.json",
+      "privateRecordSha256": "fd4281fff46bbddc066b1d61d7275a4e7d72fd2f75753ee19ee6e72c8a16f037"
+    }
+  ],
+  "observedReadbackChildCount": 42,
+  "readbackInventoryMatched": true,
+  "allReadbackChildrenJoined": true,
+  "rawStdoutSha256": "bba88c0aa9e69cce4dafbfef5e636246895fd5fb6a0f0083e86df5a4a2778b73",
+  "rawStderrSha256": "d13c98dcb0e01ff4c62254a34e23677167dc2c3cba1574b7b28f06499f6d6d6d",
+  "executableStableAtExit": true,
+  "cleanupObservations": [
+    {
+      "pid": 21012,
+      "basis": "exact-child-of-cargo",
+      "state": "gone"
+    },
+    {
+      "pid": 21080,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 21181,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21214,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21223,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21233,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21234,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21240,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21257,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21264,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21266,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21287,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 21319,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21375,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21392,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21398,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21399,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21400,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21410,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21416,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21458,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21480,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 21509,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21544,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21554,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21569,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21570,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21573,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21578,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21584,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21607,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21637,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 21703,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21733,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21737,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21744,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21745,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21746,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21748,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21759,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21785,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 21857,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21910,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21926,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21930,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21931,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21932,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21942,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 21964,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 21981,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 22053,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22081,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22082,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22090,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22096,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22118,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22119,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22120,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22136,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22194,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22224,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22225,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22234,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22242,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22253,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22261,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22263,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22264,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22283,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 22346,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22380,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22381,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22397,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22407,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22419,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22420,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22429,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22440,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22451,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22452,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22466,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22508,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22566,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22615,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22621,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22626,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22627,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22650,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22661,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22662,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22663,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 22675,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22702,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22713,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22739,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22857,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22892,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22894,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22896,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22910,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22946,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22950,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 22952,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 22971,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 23068,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23139,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23140,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23171,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 23183,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 23190,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23229,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23230,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23233,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 23252,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 23324,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23388,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23395,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23398,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 23400,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 23432,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23442,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23443,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23446,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 23480,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 23572,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23660,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23661,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23673,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 23684,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 23705,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23706,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23707,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23743,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 23764,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 23836,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23902,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23903,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23929,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 23946,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 23948,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23949,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 23975,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 24009,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 24085,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24127,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24129,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24162,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 24175,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 24177,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24182,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24207,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 24234,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 24311,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24370,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24372,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24393,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 24399,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 24417,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24418,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24424,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 24459,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 24525,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24599,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24600,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24601,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24607,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 24623,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 24646,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24648,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24659,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 24689,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 24773,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24843,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24844,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24862,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 24872,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 24897,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24899,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24901,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24924,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 24945,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24947,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 24963,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 25005,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 25094,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25171,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25172,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25175,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 25176,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 25220,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25254,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25255,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25288,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 25317,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25318,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25339,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 25384,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 25476,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25573,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25576,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25578,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 25579,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 25624,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25667,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25669,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 25723,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 25868,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25947,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25959,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 25965,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 25966,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 25983,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 26015,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 26016,
+      "basis": "fixture-process-json",
+      "state": "gone"
+    },
+    {
+      "pid": 26036,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 26073,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 26081,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 26092,
+      "basis": "fixture-readback-process-json",
+      "state": "gone"
+    }
+  ],
+  "cleanupUnknown": false,
+  "sourceStableAfterCleanup": true,
+  "privateDiagnosticFileCount": 733,
+  "sanitizedStdout": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T200241Z-resume-stdout.log",
+    "sha256": "bba88c0aa9e69cce4dafbfef5e636246895fd5fb6a0f0083e86df5a4a2778b73"
+  },
+  "sanitizedStderr": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T200241Z-resume-stderr.log",
+    "sha256": "d13c98dcb0e01ff4c62254a34e23677167dc2c3cba1574b7b28f06499f6d6d6d"
+  },
+  "sourceStableAtFinalSeal": true,
+  "environmentStableAtFinalSeal": true,
+  "rootInfrastructurePreserved": true,
+  "limits": [
+    "Synthetic protocol peers do not certify genuine provider inference.",
+    "No abrupt-owner takeover, publication or release claim.",
+    "Registry/native transitive/toolchain library closure not bound.",
+    "Short lived children can evade process sampling; fixture trace/completion evidence determines counts."
+  ]
+}

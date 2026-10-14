@@ -1,0 +1,246 @@
+[
+  {
+    "mode": "success",
+    "teamStatus": "inactive",
+    "executionOutcome": "succeeded",
+    "effectDisposition": "confirmed",
+    "artifactCount": 1,
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "9079fa93-f9dd-4ae7-b1f1-316900bc258f",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "succeeded"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "succeeded"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": true,
+        "content": "{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"success\",\"nested\":{\"control\":42}},\"isError\":false,\"_meta\":{\"fixture\":\"metadata-control\"}}"
+      }
+    ],
+    "actualBinaryRestartAndDurableAssertionsCompleted": true,
+    "concurrentBinaryEvidence": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 19158,
+      "observerPid": 19411,
+      "writerStartedAt": "2026-10-12T04:38:25.140446+00:00",
+      "observerStartedAt": "2026-10-12T04:38:30.211460+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:38:31.381548+00:00",
+      "database": "truthful_outcomes_binary_team_process_success",
+      "namespace": "dot04_a0ae5a1dbd3f42d6b4b1e045efa795f2",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/shared-a40d13f5dbff45eb9a111ee68afdfbe4/binary-team_process-success-concurrent-observer"
+    },
+    "observerRequestRole": "Authenticated read-only public team/execution/persistence/capability/ownership requests; no attempted takeover"
+  },
+  {
+    "mode": "application",
+    "teamStatus": "inactive",
+    "executionOutcome": "failed",
+    "effectDisposition": "confirmed",
+    "artifactCount": 0,
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "9200066c-7f21-4556-b7b2-56e5ca4a3259",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "application_failed"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "claim_intent",
+      "claim_intent",
+      "claim_intent",
+      "claim_intent",
+      "claim_intent",
+      "failed",
+      "failed",
+      "application_failed",
+      "application_failed",
+      "failed",
+      "application_failed"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": false,
+        "content": "{\"status\":\"error\",\"outcome\":\"application_failed\",\"tool_call_id\":\"dot04-call\",\"tool\":\"dot04__outcomes__effect\",\"provenance\":{\"source\":\"mcp\",\"terminal_state\":\"failed\",\"observed_by\":\"trusted_host\"},\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"application\",\"nested\":{\"control\":42}},\"isError\":true,\"_meta\":{\"fixture\":\"metadata-control\"}},\"message\":\"MCP application failure\"}"
+      }
+    ],
+    "actualBinaryRestartAndDurableAssertionsCompleted": true,
+    "concurrentBinaryEvidence": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 19475,
+      "observerPid": 19599,
+      "writerStartedAt": "2026-10-12T04:38:33.091172+00:00",
+      "observerStartedAt": "2026-10-12T04:38:38.272767+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:38:39.337896+00:00",
+      "database": "truthful_outcomes_binary_team_process_application",
+      "namespace": "dot04_a0ae5a1dbd3f42d6b4b1e045efa795f2",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/shared-a40d13f5dbff45eb9a111ee68afdfbe4/binary-team_process-application-concurrent-observer"
+    },
+    "observerRequestRole": "Authenticated read-only public team/execution/persistence/capability/ownership requests; no attempted takeover"
+  },
+  {
+    "mode": "unknown",
+    "teamStatus": "inactive",
+    "executionOutcome": "uncertain",
+    "effectDisposition": "uncertain",
+    "artifactCount": 0,
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "db65440c-a22a-41e7-be47-08ab5344d1ec",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "outcome_unknown"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "outcome_unknown"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": false,
+        "content": "{\"status\":\"error\",\"outcome\":\"outcome_unknown\",\"tool_call_id\":\"dot04-call\",\"tool\":\"dot04__outcomes__effect\",\"provenance\":{\"source\":\"mcp\",\"terminal_state\":\"outcome_unknown\",\"observed_by\":\"trusted_host\"},\"result\":null,\"message\":\"MCP response lost after dispatch; reconcile before another attempt\"}"
+      }
+    ],
+    "actualBinaryRestartAndDurableAssertionsCompleted": true,
+    "concurrentBinaryEvidence": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 19746,
+      "observerPid": 19890,
+      "writerStartedAt": "2026-10-12T04:38:41.711075+00:00",
+      "observerStartedAt": "2026-10-12T04:38:46.789490+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:38:47.878312+00:00",
+      "database": "truthful_outcomes_binary_team_process_unknown",
+      "namespace": "dot04_a0ae5a1dbd3f42d6b4b1e045efa795f2",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/shared-a40d13f5dbff45eb9a111ee68afdfbe4/binary-team_process-unknown-concurrent-observer"
+    },
+    "observerRequestRole": "Authenticated read-only public team/execution/persistence/capability/ownership requests; no attempted takeover"
+  },
+  {
+    "mode": "no_tool",
+    "teamStatus": "inactive",
+    "executionOutcome": "succeeded",
+    "effectDisposition": "confirmed",
+    "artifactCount": 1,
+    "canonical": [],
+    "admissionStates": [],
+    "ToolEnd": [],
+    "actualBinaryRestartAndDurableAssertionsCompleted": true,
+    "concurrentBinaryEvidence": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 19976,
+      "observerPid": 20089,
+      "writerStartedAt": "2026-10-12T04:38:49.639316+00:00",
+      "observerStartedAt": "2026-10-12T04:38:54.460746+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:38:55.516302+00:00",
+      "database": "truthful_outcomes_binary_team_process_no_tool",
+      "namespace": "dot04_a0ae5a1dbd3f42d6b4b1e045efa795f2",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/shared-a40d13f5dbff45eb9a111ee68afdfbe4/binary-team_process-no_tool-concurrent-observer"
+    },
+    "observerRequestRole": "Authenticated read-only public team/execution/persistence/capability/ownership requests; no attempted takeover"
+  },
+  {
+    "mode": "legacy-hold",
+    "teamStatus": "inactive",
+    "executionOutcome": "uncertain",
+    "effectDisposition": "uncertain",
+    "artifactCount": 0,
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "ae4cee7e-3742-4bd6-bf55-227658971203",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "succeeded"
+      },
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "ae4cee7e-3742-4bd6-bf55-227658971203",
+        "callId": "legacy-process-call",
+        "tool": "legacy__historical",
+        "source": "mcp",
+        "outcome": null
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "succeeded"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": true,
+        "content": "{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"success\",\"nested\":{\"control\":42}},\"isError\":false,\"_meta\":{\"fixture\":\"metadata-control\"}}"
+      }
+    ],
+    "actualBinaryRestartAndDurableAssertionsCompleted": true,
+    "concurrentBinaryEvidence": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 20419,
+      "observerPid": 20643,
+      "writerStartedAt": "2026-10-12T04:38:57.863386+00:00",
+      "observerStartedAt": "2026-10-12T04:39:02.504338+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:39:03.528778+00:00",
+      "database": "truthful_outcomes_binary_team_process_legacy_hold",
+      "namespace": "dot04_a0ae5a1dbd3f42d6b4b1e045efa795f2",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-single-store-gate-qs5pyh0g/profiles/shared-a40d13f5dbff45eb9a111ee68afdfbe4/binary-team-process-legacy-hold-concurrent-observer"
+    },
+    "observerRequestRole": "Authenticated read-only public team/execution/persistence/capability/ownership requests; no attempted takeover"
+  }
+]

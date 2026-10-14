@@ -1,177 +1,144 @@
-//! Cost settlement writes the durable ledger and raises budget alerts.
-//!
-//! Before this was a free function it lived inside the completed-run branch of
-//! the run manager, so a cancelled run's spend never reached the ledger.
+//! Real persistence-boundary accounting acceptance. Authored during implementation;
+//! execute only at the complete expanded Dot phase boundary.
+#![cfg(any(feature="surreal-backend", feature="postgres-backend"))]
 
-#![cfg(feature = "in-memory-backend")]
+use std::{path::Path, process::Command, sync::Arc};
+use universal_agent_runtime::uar::persistence::{PersistenceLayer, accounting::{AccountingState, CallAdmission, CallIdentity, CallUsage, ScopeBinding, ScopeIdentity, ScopeLimits, ScopeUpdate}};
 
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
-
-use async_trait::async_trait;
-use universal_agent_runtime::llm::catalog::estimate_cost;
-use universal_agent_runtime::uar::domain::events::{NormalizedEvent, RuntimeEventSink};
-use universal_agent_runtime::uar::persistence::PersistenceLayer;
-use universal_agent_runtime::uar::persistence::providers::memory::InMemoryProvider;
-use universal_agent_runtime::uar::runtime::cost_budget::{
-    BudgetLimit, BudgetScope, CostBudgetTracker,
-};
-use universal_agent_runtime::uar::runtime::run_cost::{RunCostInputs, settle_run_cost};
-
-const MODEL: &str = "openai/gpt-4.1-mini";
-
-#[derive(Default)]
-struct CollectingSink(Mutex<Vec<NormalizedEvent>>);
-
-#[async_trait]
-impl RuntimeEventSink for CollectingSink {
-    async fn emit(&self, event: NormalizedEvent) {
-        self.0.lock().unwrap().push(event);
-    }
+fn child(mode: &str, backend: &str, endpoint: &str, namespace: &str, result: &Path) -> Command {
+    let mut command = Command::new(std::env::current_exe().unwrap());
+    command.args(["--exact", "accounting_process", "--nocapture"])
+        .env("UAR_ACCOUNTING_FIXTURE_MODE",mode).env("UAR_ACCOUNTING_FIXTURE_BACKEND",backend)
+        .env("UAR_ACCOUNTING_FIXTURE_ENDPOINT",endpoint).env("UAR_ACCOUNTING_FIXTURE_NAMESPACE",namespace)
+        .env("UAR_ACCOUNTING_FIXTURE_RESULT",result);
+    command
+}
+fn restart(backend: &str, endpoint: &str) {
+    let directory = tempfile::tempdir().unwrap();
+    let namespace = uuid::Uuid::new_v4().to_string();
+    let result = directory.path().join("receipt");
+    assert!(child("pending",backend,endpoint,&namespace,&result).status().unwrap().success());
+    assert!(child("settle",backend,endpoint,&namespace,&result).status().unwrap().success());
+    assert_eq!(std::fs::read_to_string(&result).unwrap(),"one settlement; unknown liability retained; generation and owner enforced");
+}
+fn race(backend: &str, endpoint: &str) {
+    let directory = tempfile::tempdir().unwrap();
+    let namespace = uuid::Uuid::new_v4().to_string();
+    let one = directory.path().join("one");
+    let two = directory.path().join("two");
+    assert!(child("initialize",backend,endpoint,&namespace,&one).status().unwrap().success());
+    let mut first = child("race-one",backend,endpoint,&namespace,&one).spawn().unwrap();
+    let mut second = child("race-two",backend,endpoint,&namespace,&two).spawn().unwrap();
+    assert!(first.wait().unwrap().success());
+    assert!(second.wait().unwrap().success());
+    let receipts = [std::fs::read_to_string(one).unwrap(),std::fs::read_to_string(two).unwrap()];
+    assert_eq!(receipts.iter().filter(|value| value.as_str()=="admitted").count(),1);
+    assert_eq!(receipts.iter().filter(|value| value.as_str()=="refused").count(),1);
 }
 
-fn inputs(model: &str, tracking: bool) -> RunCostInputs<'_> {
-    RunCostInputs {
-        run_id: "run-1",
-        session_id: "session-1",
-        agent_id: "agent-1",
-        model,
-        input_tokens: 1_000,
-        output_tokens: 500,
-        cache_read_tokens: 0,
-        cost_tracking_enabled: tracking,
-    }
+#[cfg(feature="surreal-backend")]
+#[test]
+fn surrealkv_pending_liability_survives_process_exit() {
+    let directory = tempfile::tempdir().unwrap();
+    restart("surreal",&format!("surrealkv://{}",directory.path().join("accounting").display()));
+}
+#[cfg(feature="surreal-backend")]
+#[test]
+#[ignore = "requires dedicated real durable networked SurrealDB and explicit supervisor attestation"]
+fn shared_surreal_two_process_budget_admission() {
+    let endpoint = std::env::var("UAR_ACCOUNTING_SURREAL_URL").expect("dedicated SurrealDB endpoint required");
+    assert_eq!(std::env::var("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED").as_deref(),Ok("1"));
+    restart("surreal",&endpoint);
+    race("surreal",&endpoint);
+}
+#[cfg(feature="postgres-backend")]
+#[test]
+#[ignore = "requires a dedicated real Postgres database with pgvector"]
+fn postgres_restart_and_two_process_budget_admission() {
+    let endpoint = std::env::var("UAR_ACCOUNTING_POSTGRES_URL").expect("dedicated Postgres endpoint required");
+    restart("postgres",&endpoint);
+    race("postgres",&endpoint);
 }
 
-/// The ledger write is spawned, so poll briefly for it.
-async fn rows(db: &InMemoryProvider, scope: &str, id: &str, want: usize) -> Vec<f64> {
-    for _ in 0..100 {
-        let found = db.list_cost_history(scope, id).await.unwrap();
-        if found.len() >= want {
-            return found.iter().map(|e| e.cost_usd).collect();
+async fn store(backend: &str, endpoint: &str, namespace: &str) -> Arc<dyn PersistenceLayer> {
+    match backend {
+        #[cfg(feature="surreal-backend")]
+        "surreal" => Arc::new(universal_agent_runtime::uar::persistence::providers::surreal::SurrealDbProvider::new(
+            endpoint,std::env::var("SURREAL_USER").ok().as_deref(),std::env::var("SURREAL_PASS").ok().as_deref(),
+            Some("accounting_fixture"),Some(namespace)).await.unwrap()),
+        #[cfg(feature="postgres-backend")]
+        "postgres" => Arc::new(universal_agent_runtime::uar::persistence::providers::postgres::PostgresProvider::new(endpoint).await.unwrap()),
+        _ => panic!("accounting backend feature is unavailable: {backend}, namespace={namespace}, endpoint configured={}",!endpoint.is_empty()),
+    }
+}
+fn identity(namespace: &str, call: &str) -> CallIdentity {
+    CallIdentity { owner: format!("verified-issuer-tenant-owner:{namespace}"), run_id: namespace.into(), call_id: call.into(), attempt: 1 }
+}
+async fn admission(store: &dyn PersistenceLayer, namespace: &str, call: &str, amount: f64) -> CallAdmission {
+    let identity = identity(namespace,call);
+    let mut scopes = Vec::new();
+    for kind in ["run","session","agent"] {
+        let id = ScopeIdentity { owner: identity.owner.clone(),scope:kind.into(),scope_id:namespace.into() };
+        let row = store.ensure_accounting_scope(&id,&ScopeLimits { cost_usd:Some(2.0),tokens:Some(100) }).await.unwrap();
+        scopes.push(ScopeBinding { identity:id,generation:row.generation });
+    }
+    CallAdmission { identity,model:"fixture/provider".into(),scopes,reserved_cost_usd:Some(amount),reserved_tokens:Some(10),source_reservation:None }
+}
+
+#[tokio::test]
+async fn accounting_process() {
+    let Ok(mode) = std::env::var("UAR_ACCOUNTING_FIXTURE_MODE") else { return; };
+    let namespace = std::env::var("UAR_ACCOUNTING_FIXTURE_NAMESPACE").unwrap();
+    let store = store(&std::env::var("UAR_ACCOUNTING_FIXTURE_BACKEND").unwrap(),&std::env::var("UAR_ACCOUNTING_FIXTURE_ENDPOINT").unwrap(),&namespace).await;
+    let receipt = std::env::var("UAR_ACCOUNTING_FIXTURE_RESULT").unwrap();
+    match mode.as_str() {
+        "initialize" => { admission(store.as_ref(),&namespace,"initialize",1.5).await; }
+        "pending" => {
+            let mut request = admission(store.as_ref(),&namespace,"call",1.5).await;
+            request.model = "remote-delegation".into();
+            store.admit_accounting_call(&request).await.unwrap();
+            store.bind_accounting_delegation(&universal_agent_runtime::uar::persistence::accounting::AccountingDelegation {
+                contract_digest:format!("contract-{namespace}"),source:request.identity.clone(),
+            }).await.unwrap();
+            store.record_accounting_usage(&CallUsage { identity:request.identity,cost_usd:Some(0.25),tokens:2,terminal:false,evidence:None }).await.unwrap();
+            // Leave with an admitted partial call; no same-handle reconstruction.
         }
-        tokio::time::sleep(Duration::from_millis(10)).await;
-    }
-    Vec::new()
-}
-
-#[tokio::test]
-async fn a_run_with_usage_writes_one_ledger_row_per_scope() {
-    let expected = estimate_cost(MODEL, 1_000, 500, 0).expect("model is priced in the catalog");
-    let db = Arc::new(InMemoryProvider::new());
-    let persistence: Arc<dyn PersistenceLayer> = db.clone();
-    let sink = CollectingSink::default();
-
-    let cost = settle_run_cost(
-        inputs(MODEL, true),
-        &CostBudgetTracker::new(),
-        Some(&persistence),
-        &sink,
-    )
-    .await;
-
-    assert_eq!(cost, Some(expected));
-    for (scope, id) in [
-        ("run", "run-1"),
-        ("session", "session-1"),
-        ("agent", "agent-1"),
-        ("global", "global"),
-    ] {
-        assert_eq!(rows(&db, scope, id, 1).await, vec![expected], "{scope}");
-    }
-    assert!(sink.0.lock().unwrap().is_empty(), "no budget, no alert");
-}
-
-#[tokio::test]
-async fn cost_tracking_off_records_nothing() {
-    let db = Arc::new(InMemoryProvider::new());
-    let persistence: Arc<dyn PersistenceLayer> = db.clone();
-
-    let cost = settle_run_cost(
-        inputs(MODEL, false),
-        &CostBudgetTracker::new(),
-        Some(&persistence),
-        &CollectingSink::default(),
-    )
-    .await;
-
-    assert_eq!(cost, None);
-    assert!(
-        db.list_cost_history("run", "run-1")
-            .await
-            .unwrap()
-            .is_empty()
-    );
-}
-
-#[tokio::test]
-async fn an_unpriced_model_records_nothing() {
-    let db = Arc::new(InMemoryProvider::new());
-    let persistence: Arc<dyn PersistenceLayer> = db.clone();
-
-    let cost = settle_run_cost(
-        inputs("nobody/not-a-model", true),
-        &CostBudgetTracker::new(),
-        Some(&persistence),
-        &CollectingSink::default(),
-    )
-    .await;
-
-    assert_eq!(cost, None);
-    assert!(
-        db.list_cost_history("run", "run-1")
-            .await
-            .unwrap()
-            .is_empty()
-    );
-}
-
-#[tokio::test]
-async fn an_exceeded_budget_raises_exactly_one_alert() {
-    let budget = CostBudgetTracker::new();
-    budget
-        .set_limit(
-            BudgetScope::Run,
-            "run-1",
-            BudgetLimit {
-                limit_usd: 0.000_001,
-                warn_at: 0.8,
-            },
-        )
-        .await;
-    // The driver wrapper charges each call as it happens; settlement only reads.
-    budget.record(BudgetScope::Run, "run-1", 0.001).await;
-    let sink = CollectingSink::default();
-
-    settle_run_cost(inputs(MODEL, true), &budget, None, &sink).await;
-
-    let events = sink.0.lock().unwrap();
-    assert_eq!(events.len(), 1);
-    match &events[0] {
-        NormalizedEvent::BudgetAlert {
-            run_id,
-            scope,
-            scope_id,
-            exceeded,
-            ..
-        } => {
-            assert_eq!(run_id, "run-1");
-            assert_eq!(scope, "run");
-            assert_eq!(scope_id, "run-1");
-            assert!(*exceeded);
+        "settle" => {
+            let request = admission(store.as_ref(),&namespace,"call",1.5).await;
+            let calls = store.list_accounting_calls(&request.identity.owner,&namespace).await.unwrap();
+            assert_eq!(calls.len(),1); assert_eq!(calls[0].state,AccountingState::Pending);
+            let shared = store.get_accounting_delegation(&format!("contract-{namespace}")).await.unwrap().unwrap();
+            assert_eq!(shared.admission.identity,request.identity);
+            assert!(store.get_accounting_delegation(&format!("foreign-contract-{namespace}")).await.unwrap().is_none());
+            let blocked = admission(store.as_ref(),&namespace,"blocked",1.0).await;
+            assert!(store.admit_accounting_call(&blocked).await.is_err());
+            let usage = CallUsage { identity:request.identity.clone(),cost_usd:Some(0.5),tokens:5,terminal:true,evidence:Some("confirmed provider final receipt".into()) };
+            store.record_accounting_usage(&usage).await.unwrap();
+            store.record_accounting_usage(&usage).await.unwrap();
+            for binding in &request.scopes {
+                let row = store.get_accounting_scope(&binding.identity).await.unwrap().unwrap();
+                assert_eq!(row.settled_cost_usd,0.5); assert_eq!(row.settled_tokens,5);
+                assert_eq!(row.pending_calls,0); assert_eq!(row.reserved_cost_usd,0.0);
+            }
+            let scope = &request.scopes[0];
+            store.update_accounting_scope(&ScopeUpdate { identity:scope.identity.clone(),expected_generation:scope.generation,
+                limits:ScopeLimits{cost_usd:Some(0.5),tokens:Some(100)},opening_cost_usd:None,opening_tokens:None,evidence:"operator policy update".into() }).await.unwrap();
+            assert!(store.admit_accounting_call(&blocked).await.is_err());
+            let mut foreign = usage.clone(); foreign.identity.owner="other verified issuer".into();
+            assert!(store.record_accounting_usage(&foreign).await.is_err());
+            let legacy_id = format!("legacy-{namespace}");
+            store.record_cost_entry("session",&legacy_id,0.7).await.unwrap();
+            let legacy = ScopeIdentity{owner:request.identity.owner.clone(),scope:"session".into(),scope_id:legacy_id};
+            let row = store.ensure_accounting_scope(&legacy,&ScopeLimits::default()).await.unwrap();
+            assert!(!row.reconciled); assert_eq!(row.settled_cost_usd,0.0);
+            assert_eq!(store.list_cost_history("session",&legacy.scope_id).await.unwrap().len(),1);
+            std::fs::write(receipt,"one settlement; unknown liability retained; generation and owner enforced").unwrap();
         }
-        other => panic!("expected BudgetAlert, got {other:?}"),
+        "race-one" | "race-two" => {
+            let request = admission(store.as_ref(),&namespace,&mode,1.5).await;
+            let result = if store.admit_accounting_call(&request).await.is_ok() { "admitted" } else { "refused" };
+            std::fs::write(receipt,result).unwrap();
+        }
+        _ => panic!("unknown accounting fixture mode"),
     }
-}
-
-#[tokio::test]
-async fn settling_without_persistence_still_returns_the_cost() {
-    let cost = settle_run_cost(
-        inputs(MODEL, true),
-        &CostBudgetTracker::new(),
-        None,
-        &CollectingSink::default(),
-    )
-    .await;
-    assert!(cost.is_some());
 }

@@ -1,0 +1,20 @@
+--- failed-source/tests/support/truthful_tool_outcome_process.rs
++++ refrozen-source/tests/support/truthful_tool_outcome_process.rs
+@@ -25,7 +25,7 @@
+ const JWT_SECRET: &str = "dot04-process-jwt-fixture";
+ const ADMIN_KEY: &str = "dot04-process-admin-fixture";
+ const WORKSPACE: &str = "dot04-process-workspace";
+-const TEAM_TOOL: &str = "dot04__outcomes__effect";
++const TEAM_TOOL: &str = peer::TOOL;
+ const WAIT: Duration = Duration::from_secs(120);
+ 
+ struct Database {
+@@ -129,7 +129,7 @@
+         std::fs::write(directory.join("mcp.json"), &configuration).unwrap();
+         std::fs::write(directory.join("work/skills/dot04/mcp.json"), &configuration).unwrap();
+         std::fs::write(directory.join("work/skills/dot04/SKILL.md"),
+-            "---\nname: dot04\nversion: 1.0.0\ndescription: Controlled tool outcome production acceptance\ntools:\n  - dot04__outcomes__effect\n---\nUse the selected effect tool exactly once.\n").unwrap();
++            "---\nname: dot04\nversion: 1.0.0\ndescription: Controlled tool outcome production acceptance\ntools:\n  - outcomes__effect\n---\nUse the selected effect tool exactly once.\n").unwrap();
+         let port = unused_port();
+         // A/B and restarts share this logical backend identity, while their
+         // process IDs and catalog execution-owner claims remain independent.

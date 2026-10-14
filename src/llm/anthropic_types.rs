@@ -180,6 +180,22 @@ pub struct UsageResponse {
     pub cache_read_input_tokens: Option<u32>,
 }
 
+/// Cumulative usage carried by a streaming `message_delta` event.
+/// Input and cache counts may be omitted; output tokens remain required.
+#[derive(Debug, Clone, Deserialize)]
+pub struct MessageDeltaUsage {
+    /// Updated number of input tokens, when supplied.
+    pub input_tokens: Option<u32>,
+    /// Cumulative number of output tokens.
+    pub output_tokens: u32,
+    /// Updated tokens written into the prompt cache, when supplied.
+    #[serde(default)]
+    pub cache_creation_input_tokens: Option<u32>,
+    /// Updated tokens read from the prompt cache, when supplied.
+    #[serde(default)]
+    pub cache_read_input_tokens: Option<u32>,
+}
+
 // === Streaming SSE Event Types ===
 
 /// A streaming SSE event from the Anthropic Messages API.
@@ -219,8 +235,8 @@ pub enum StreamEvent {
     MessageDelta {
         /// Delta data.
         delta: MessageDeltaData,
-        /// Updated usage information.
-        usage: Option<UsageResponse>,
+        /// Updated cumulative usage; input/cache counts may be omitted.
+        usage: Option<MessageDeltaUsage>,
     },
     /// The message has completed.
     #[serde(rename = "message_stop")]

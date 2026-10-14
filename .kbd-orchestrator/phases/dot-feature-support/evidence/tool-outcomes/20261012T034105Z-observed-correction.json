@@ -1,0 +1,118 @@
+{
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T030632Z-production-boundary.json",
+  "previousDriftReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T032814Z-preflight-source-drift.json",
+  "changedBoundPathsSincePreviousGate": [
+    "src/server.rs",
+    "src/uar/api/capabilities.rs",
+    "src/uar/api/full_harness.rs",
+    "src/uar/api/full_harness/handlers.rs",
+    "src/uar/api/full_harness/host_context.rs",
+    "src/uar/api/full_harness/types.rs",
+    "src/uar/api/mod.rs",
+    "src/uar/api/model_verification.rs",
+    "src/uar/api/providers.rs",
+    "src/uar/api/routes.rs",
+    "src/uar/api/targets.rs",
+    "src/uar/runtime/manager.rs",
+    "src/uar/runtime/turn/request.rs",
+    "src/uar/security/delegation_grants.rs",
+    "src/uar/settings/manager.rs",
+    "tests/support/truthful_tool_outcome_process.rs"
+  ],
+  "hashes": {
+    "src/uar/api/full_harness/types.rs": {
+      "old": "02a2623c079725c15019b3c6769cbb82614e1e6523f1b421c958f79e0ee11897",
+      "new": "ca4e25a191759de30eeaae252faba804523d6fe4dba14a422b5588dbf425162b"
+    },
+    "src/uar/api/full_harness/host_context.rs": {
+      "old": "88a7d90016a140753b5115bb460ebbb8abaa121466a4a0795d8c4ee24fd06ffa",
+      "new": "8a906fa136208c9de8389d8ae01e7d453073d8eb044207573443b656d0efc8bb"
+    },
+    "src/uar/settings/manager.rs": {
+      "old": "7590a4981992d222adb703050977492368798e3274478d1a7db477542e61dcbd",
+      "new": "265ed8b84a43ed8fe55513f96b99f19bf4d164e2447cff55e3b1a44bce634860"
+    },
+    "src/uar/api/mod.rs": {
+      "old": "b2a1935da9cb7e688d451eeec3dbf07d6d9a418d78d1404332d215a280f1dfbd",
+      "new": "242b7ecd75fe3bb30c7b33ef0c3475f1524a9b5d09041933dcb7ccd1ce09644c"
+    },
+    "tests/support/truthful_tool_outcome_process.rs": {
+      "old": "523a5c91bb3c82b0c2f1eb854b3b7b3a2b807f53e7a2415150f952611a55532a",
+      "new": "8ee690457922daceac592abdcba270d2257f74b624f4e42439b86140674c55fc"
+    },
+    "src/uar/runtime/manager.rs": {
+      "old": "bcc6461b334113f771886965d655c4d964fa77f3703405a6f9ff3522b402d562",
+      "new": "ffbeaa9fa3e90fdd7f5a0d62fc2348315cf4b832f4f81dfaad5d8c5b509d4c6f"
+    },
+    "src/uar/api/full_harness/handlers.rs": {
+      "old": "b75203d352ad877411533825df78af156177ffda40439abd4994786292a29dd0",
+      "new": "272674200f21e10cd924ac3a708f6ca947f45d6f92a6f9621563867ccf137edb"
+    },
+    "src/uar/api/routes.rs": {
+      "old": "2765eee3fde62e4715b76c3151c318b66529236f5af64356407d9a41cb6ea4f6",
+      "new": "1831ab4c546cc885570296bf4da44d6fcb00c3046689067ce2c5036578ed0fc0"
+    },
+    "src/server.rs": {
+      "old": "0c806a77890dd530a26b2acafda8d1125c48a346f9346336deecdbddb04466af",
+      "new": "90dce5f70813ab59567215def139a73845c5fb15bd81dc31fa820e20e9110993"
+    },
+    "src/uar/api/model_verification.rs": {
+      "old": null,
+      "new": "b2a2cb7686fc95b27f6929fcdc9b0173288f70ae66e0ab4b80e927aa0b2ca568"
+    },
+    "src/uar/security/delegation_grants.rs": {
+      "old": "74f7b686e2636a1cb9924e32de6c91c8fda63570d5e54571dd07abe215807dd4",
+      "new": "7e037d86e09a3f65d4f7f7a1cbd7270d1fa3f28baf04bcde2c794c6bbbe12efa"
+    },
+    "src/uar/api/targets.rs": {
+      "old": null,
+      "new": "e119687ce32f1f43c1c6f2ead46302c93c9f91c5ebc573a92b4c09a746c33424"
+    },
+    "src/uar/api/providers.rs": {
+      "old": "6970e72a55b4f6a91aab94a28a5025f83ce5ee0abada4eb4cd368d0ff9bde997",
+      "new": "8553a181e8e5b27c1b090adc11e0d5c762980a1e8682f431e1077e74c4c231bd"
+    },
+    "src/uar/api/capabilities.rs": {
+      "old": "ec952b2173ad2416b6ffd73afd6bf1d699f5094c5295f4a4a1e960beafca1db0",
+      "new": "470a5eaadaacfe3645c99064b4bb266b598726aefc07804df18f53210b0e05ab"
+    },
+    "src/uar/runtime/turn/request.rs": {
+      "old": "f00a94813ab22873e3f418d541a5546d387f44e5fa0b5acfa1e3ed1c71b50119",
+      "new": "8c0941b424e746d82d587360a3d3fee2aa1815350d20037aeee6f03420056ec2"
+    },
+    "src/uar/api/full_harness.rs": {
+      "old": "3e6b21e22351d6b3f9dd1929212f8a35feb56eed47ed655713bcb6fccadc5af8",
+      "new": "dacb4e585304b4ab497182978cf7fd38bf113bf5f7f458b0edefb962e4b540d7"
+    }
+  },
+  "authorizedCommits": [
+    "a42f23bbc8c83beb2f0a362633c0b769206b1027",
+    "536df169d8a5774812b01595fec67e9faa9c30d1"
+  ],
+  "all18RefreezeHashesMatch": true,
+  "authorizedClosureChanges": "13existingcommittedproductionpaths+2newcommittedfiles+1authorizedfixturecorrection; root explicitly reconciled source baseline before this gate.",
+  "privateFullReconciledPatch": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/exact-thirteenth-to-reconciled.patch",
+  "privateFullReconciledPatchSha256": "7e28e0ea7a78d4feab162232e785f53efe3f85aefb383b05012f6e5a67b46d47",
+  "fixtureCorrectionPatch": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T034105Z-fixture-correction.patch",
+  "fixtureCorrectionPatchSha256": "0fb986408102d4bb1efeaa0787e23c7145cfe639b9ea23e3db0edea56d15197a",
+  "refreezeHashes": {
+    "src/mcp/mod.rs": "721b4f981010205daec1d044850e0a923b7b1660f590c6c40c23e6a27e8784bd",
+    "src/mcp/outcome.rs": "632bc50c2b6fe3b09f8ed0b30d368acc9b76c6fe406f6d4a24be8a8aa60c4978",
+    "src/mcp/preflight.rs": "754aa630bfc3d23995c97909b9926b1d57bcea755dc3ff1d8f5a9d899ae46f54",
+    "src/mcp/registry.rs": "41e11ff3c7056d13e18edbf0e26335eab5e432377b67b0005b850a87ee5cf655",
+    "src/mcp/runtime.rs": "3b9bf9e64773e1035d915be96f03ad3a3c92e43a5a5449aff56a0e55d9f278c6",
+    "src/llm/orchestrator.rs": "2e44b3087a01b30351eb63d316e849268086a783af8f9b00a7ee7792e97b8595",
+    "src/uar/persistence/agent_threads.rs": "bcbda283c2f1b314b5ff44ed47c18d2b1cdf6e4b240546b4a1e623d4a2346d11",
+    "src/uar/persistence/tool_admission.rs": "5234c4ac77c3380369d3748482c40c34ba89d1d2752f901e34e04f6c97a93491",
+    "src/uar/runtime/tool_admission/lifecycle.rs": "2c9f2ecdb60291de97ffd0ccd81cb0f75c394b5705d18e91f801cadbba092c2e",
+    "src/uar/runtime/team_execution/execution.rs": "3ebd93e59887cee51c8b99d5814f86e45baee0023e21f766b84d831d42111248",
+    "src/uar/runtime/team_execution/recovery.rs": "bfee94c414e949729b9bd13dd2cb5b0502a47d06fa810f64f4fc6bf46b6dc3a4",
+    "src/uar/runtime/instance/pump.rs": "9d652c855d807d469b6eedcaf52418f2051f46fd5fec53bf900d5e94ac3de99b",
+    "tests/truthful_tool_outcomes.rs": "fc7e70cb284c52f3f37c5626a76f6b0d93b8cf1579a7e5bb7bcf0b773c32b6a5",
+    "tests/support/truthful_tool_outcome_peer.rs": "ecbfc448b3095150a189703db26812a981472a9567b68df2b167a077986a341d",
+    "tests/support/truthful_tool_outcome_process.rs": "8ee690457922daceac592abdcba270d2257f74b624f4e42439b86140674c55fc",
+    "tests/fixtures/truthful_tool_outcome_mcp.py": "965e3d78fbacd53c412c750882e27c7e79947df9729cc0f4ed6c211578190864",
+    "docs/operations/truthful-tool-outcomes.md": "f5d3d32d6773c14672482e49d06404b3c7f3ba51adad4b5fd56e6783bd042b35",
+    "src/uar/runtime/skills/activation.rs": "f31420f83a7d9f8a32a942a3e7c4d83c50e76567b916a9fd425134c6c36de908"
+  }
+}

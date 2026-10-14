@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 1,
+  "phase": "dot-feature-support",
+  "dispatchedAt": "2026-10-11T21:28:09.687549+00:00",
+  "backend": "hybrid",
+  "planRevision": 13,
+  "assignedChanges": [
+    "dot-01-release-provenance",
+    "dot-02-principal-credentials",
+    "dot-03-durable-api-keys",
+    "dot-04-truthful-tool-outcomes",
+    "dot-05-stream-terminal-contract",
+    "dot-06-fresh-process-resume",
+    "dot-08-durable-ingestion",
+    "dot-12-memory-isolation",
+    "dot-20-safe-host-settings"
+  ],
+  "pendingChanges": [
+    "dot-07-approval-recovery",
+    "dot-08-durable-ingestion",
+    "dot-09-idempotent-settlement",
+    "dot-10-durable-budget-admission",
+    "dot-11-supervisor-fencing",
+    "dot-12-memory-isolation",
+    "dot-13-memory-controls",
+    "dot-14-durable-schedules",
+    "dot-15-proactive-followups",
+    "dot-16-assistant-capability-surface",
+    "dot-18-a2a-conformance",
+    "dot-19-interactive-protocols",
+    "dot-20-safe-host-settings",
+    "dot-17-assistant-release-acceptance"
+  ],
+  "pendingTasks": 28,
+  "stageStatus": "in-progress",
+  "actualWorkers": [
+    {
+      "task": "dot-02-principal-credentials/1",
+      "agent": "/root/principal_credentials",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "xhigh",
+      "route": "native Codex collaboration.spawn_agent",
+      "dispatchedAt": "2026-10-11T21:30:05.084980+00:00"
+    },
+    {
+      "task": "dot-01-release-provenance/1",
+      "scope": "policy reconciliation prerequisite only",
+      "agent": "/root/release_reconciliation",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "route": "native Codex collaboration.spawn_agent",
+      "dispatchedAt": "2026-10-11T21:30:05.085172+00:00"
+    },
+    {
+      "task": "dot-02-principal-credentials/2",
+      "agent": "/root/credential_acceptance",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "route": "native Codex collaboration.spawn_agent",
+      "dispatchedAt": "2026-10-11T21:46:55.380126+00:00",
+      "scope": "one serialized real integration profile, server-full+postgres-backend"
+    },
+    {
+      "task": "dot-01-release-provenance/1",
+      "agent": "/root/release_provenance",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "route": "native Codex collaboration.spawn_agent",
+      "dispatchRecordedAt": "2026-10-11T22:37:47.685911+00:00",
+      "scope": "approved narrow locked packaging/provenance implementation; task2 gates held"
+    },
+    {
+      "task": "dot-01-release-provenance/2",
+      "agent": "/root/release_provenance",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "route": "native Codex collaboration.followup_task",
+      "dispatchRecordedAt": "2026-10-11T22:49:35.792756+00:00",
+      "scope": "serialized clean source, frozen installs, locked arm64 Docker production packaging and actual launched skill provenance"
+    },
+    {
+      "task": "dot-03-durable-api-keys/1",
+      "agent": "/root/durable_api_keys",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "route": "native Codex collaboration.spawn_agent",
+      "dispatchRecordedAt": "2026-10-11T23:32:15.548550+00:00",
+      "scope": "durable API-key production slice; task2 gates held"
+    },
+    {
+      "task": "dot-03-durable-api-keys/2",
+      "agent": "/root/api_key_acceptance",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "route": "native Codex collaboration.spawn_agent",
+      "dispatchRecordedAt": "2026-10-11T23:51:35.738605+00:00",
+      "scope": "one serialized actual five-scenario HTTP/gRPC/sidecar gate across local/shared durable authority plus modified Postgres and explicit dev-memory mode"
+    },
+    {
+      "task": "dot-04-truthful-tool-outcomes/1",
+      "agent": "/root/truthful_tool_outcomes",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "route": "native Codex collaboration.spawn_agent",
+      "dispatchRecordedAt": "2026-10-12T00:16:35.007673+00:00",
+      "scope": "real scoped/direct MCP application failure and unknown effect outcome propagation, fixture/docs; task2 gates held"
+    },
+    {
+      "task": "dot-04-truthful-tool-outcomes/1",
+      "agent": "/root/truthful_tool_outcomes/process_fixture",
+      "route": "native collaboration child executor",
+      "scope": "sole new process fixture helper; parent-held Cargo",
+      "requestedInheritedModel": "gpt-6.1-sol",
+      "requestedInheritedReasoning": "high",
+      "actualIdentityMetadata": "not independently exposed",
+      "dispatchTime": "unavailable; record time is not dispatch time",
+      "recordedAt": "2026-10-12T01:06:29.663617+00:00"
+    },
+    {
+      "task": "dot-04-truthful-tool-outcomes/2",
+      "agent": "/root/tool_outcome_acceptance",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "route": "native Codex collaboration.spawn_agent",
+      "dispatchRecordedAt": "2026-10-12T01:06:29.663617+00:00",
+      "scope": "one serialized whole real MCP/host/team/instance/recovery target;59 authored scenarioentries; source+runtime binding"
+    },
+    {
+      "task": "dot-05-stream-terminal-contract/1",
+      "agent": "/root/stream_terminal_contract",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "route": "native Codex collaboration.spawn_agent fork_turns=none",
+      "dispatchRecordedAt": "2026-10-12T04:59:07.301687+00:00",
+      "scope": "valid provider stream terminal evidence and incremental framing on selected graph/legacy paths; task2 Cargo held"
+    },
+    {
+      "task": "dot-05-stream-terminal-contract/2",
+      "agent": "/root/stream_acceptance",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "route": "native Codex collaboration.spawn_agent fork_turns=none",
+      "dispatchRecordedAt": "2026-10-12T05:37:18.958880+00:00",
+      "scope": "whole83-row/249-route-boundary real integration; source/executable/cleanup binding; Cargo held for preflight"
+    },
+    {
+      "task": "dot-06-fresh-process-resume/1",
+      "agent": "/root/fresh_process_resume",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "xhigh",
+      "route": "native Codex collaboration.spawn_agent fork_turns=none",
+      "dispatchRecordedAt": "2026-10-12T08:30:37.715516+00:00",
+      "scope": "durable authorized fresh-process resume envelope/CAS and production fixtures/docs; task2 Cargo held",
+      "initialTurnOutcome": "model_capacity_error_before_execution",
+      "retryRoute": "collaboration.followup_task same agent and model",
+      "retryRecordedAt": "2026-10-12T08:32:22.045933+00:00",
+      "operatorContinuationRecordedAt": "2026-10-12T09:04:43.154933+00:00",
+      "resumptionRoute": "collaboration.followup_task, same interrupted executor and assignment"
+    },
+    {
+      "task": "dot-06-fresh-process-resume/2",
+      "agent": "/root/resume_acceptance",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "route": "native Codex collaboration.spawn_agent",
+      "dispatchRecordedAt": "2026-10-12T09:58:59.302427+00:00",
+      "scope": "complete-slice production process acceptance and affected whole stream target; root gate authorization held pending acknowledged source freeze"
+    }
+  ],
+  "blockers": [],
+  "operatorDecisions": [
+    "dot-execute-main-pins",
+    "dot-execute-retention-contract"
+  ],
+  "currentPlanRevision": 18,
+  "canonicalRevision": 2804,
+  "updatedAt": "2026-10-13T02:43:57.175686+00:00",
+  "verificationBoundary": "CLOSED: all24 production entries source complete;109 scenarios not_executed. Goal codecomplete pendingtesting; inventory verification_authorized false.",
+  "activeAssignments": [
+    {
+      "agent": "/root/dot_supervisor_fencing",
+      "task": "dot-11-supervisor-fencing/1",
+      "model": "gpt-6-astra",
+      "ownership": "supervisor host/controller, checkpoint/team exclusion, provider contracts"
+    },
+    {
+      "agent": "/root/dot_schedule_fit",
+      "task": "dot-14-durable-schedules/2",
+      "model": "gpt-6-astra",
+      "ownership": "schedule calendar/catalog/host/API, narrow protected schedule grant"
+    },
+    {
+      "agent": "/root/dot_a2a_conformance",
+      "task": "dot-18-a2a-conformance/1",
+      "model": "gpt-6-astra",
+      "ownership": "A2A durable/context/wire, actorhost, manager A2A continuation helper"
+    },
+    {
+      "agent": "/root",
+      "task": "dot-20-safe-host-settings/2",
+      "ownership": "effective settings, server composition, KBD/source ledger"
+    }
+  ],
+  "sequencingManifest": "implementation-sequencing.json",
+  "childDisposition": "issue-379-dot-replan complete, planning-only, no product acceptance",
+  "implementationHandoffs": [
+    "implementation/dot08-handoff.md",
+    "implementation/dot12-handoff.md",
+    "implementation/dot20-defaults-handoff.md",
+    "implementation/dot09-accounting-handoff.md",
+    "implementation/dot10-budget-handoff.md",
+    "implementation/dot13-controls-handoff.md",
+    "implementation/dot14-timing-fit.md",
+    "implementation/dot12-owner-adjacent-handoff.md",
+    "implementation/dot12-knowledge-namespace-handoff.md"
+  ],
+  "currentSourceAssignments": [
+    {
+      "agent": "/root",
+      "scope": "Dot17 mandatory supervisor continuation roles, LKE Helm configuration, canonical ledger and closed testing boundary",
+      "status": "source_complete_frozen"
+    },
+    {
+      "agent": "/root/dot_phase_runner",
+      "scope": "Dot17 complete fixed production scenario runner and actual know-me installedPod/controlledpeer adapters; no execution",
+      "status": "source_complete_frozen"
+    },
+    {
+      "agent": "/root/dot_a2a_conformance",
+      "scope": "Dot17/3 exhaustive actual HTTP capability operation journey;12/3 handedoff sourcecomplete, fixtures unexecuted",
+      "status": "source_complete_frozen"
+    },
+    {
+      "agent": "/root/dot_mcp_elicitation",
+      "scope": "Dot17/3 embeddedKV actualisolatedguest diskfault and MCP LKEpeer adapters;knowledge namespace handedoff sourcecomplete",
+      "status": "source_complete_frozen"
+    }
+  ],
+  "validationTargets": {
+    "local": "this machine; isolated childprocess stores only",
+    "shared": {
+      "kubectlContext": "know-me",
+      "gateway": "argocd/argocd-gateway",
+      "httpsListener": "knowme-runtime-https",
+      "httpListener": "knowme-runtime-http",
+      "hostname": "runtime.know-me.tools",
+      "storageClass": "linode-block-storage-retain"
+    },
+    "status": "configuration inspected; no deployment or product verification"
+  },
+  "sourceCompletion": {
+    "productionComplete": 24,
+    "productionTotal": 24,
+    "changes": 20,
+    "scenarios": 109,
+    "verificationAuthorized": false,
+    "inventory": "implementation/production-complete-inventory.json"
+  }
+}

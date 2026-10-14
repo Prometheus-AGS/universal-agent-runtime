@@ -116,6 +116,7 @@ pub(crate) struct ActorThreadSession {
     owned_root: Arc<tokio::sync::Mutex<Option<ActorRootBinding>>>,
     remote_constraints: Option<RemoteRootConstraints>,
     instance: Option<InstanceRootConstraints>,
+    a2a_context: Option<Vec<crate::llm::Message>>,
 }
 
 /// A verified activation's immutable catalog, epoch, and cold-start history.
@@ -131,6 +132,7 @@ pub(crate) struct InstanceRootConstraints {
 
 #[derive(Clone)]
 pub(crate) struct RemoteRootConstraints {
+    pub(crate) a2a_delegation: Option<crate::uar::api::a2a::contract::UarDelegationContract>,
     pub(crate) presentation_negotiation:
         Option<crate::uar::a2ui::presentation_selection::PresentationNegotiation>,
     pub(crate) policy: crate::uar::domain::policy::EffectiveRunPolicy,
@@ -189,7 +191,13 @@ impl ActorThreadSession {
             owned_root,
             remote_constraints,
             instance,
+            a2a_context: None,
         }
+    }
+
+    pub(crate) fn with_a2a_context(mut self, history: Option<Vec<crate::llm::Message>>) -> Self {
+        self.a2a_context = history;
+        self
     }
 
     /// Execute one direct user turn through RunManager with an exact artifact.
@@ -247,8 +255,10 @@ impl ActorThreadSession {
             None => RunExecutionRequest::new(self.artifact.clone(), content)
                 .with_verified_owner(self.owner.clone()),
         };
+        if let Some(history) = self.a2a_context.take() { request.host_history = Some(history); }
         request = request.with_credential_capture(Some(credential_capture));
         if let Some(constraints) = &self.remote_constraints {
+            request.a2a_delegation = constraints.a2a_delegation.clone();
             request.presentation_negotiation = constraints
                 .presentation_negotiation
                 .clone()
@@ -369,10 +379,19 @@ impl ActorThreadSession {
         } else {
             self.owned_root.lock().await.take();
         }
+        if let Err(error) = self.persist_a2a_outputs(&root).await {
+            tracing::error!(%error, "A2A output persistence is unconfirmed");
+            if !matches!(&result, AgentThreadResult::Failed { code, .. } if code == "thread_cleanup_unconfirmed") {
+                result = AgentThreadResult::Failed {
+                    code: "a2a_persistence_unconfirmed".into(),
+                    message: "A2A conversation or artifact persistence could not be confirmed".into(),
+                };
+            }
+        }
         if self.instance.is_some()
             && let Err(error) = self
                 .manager
-                .persist_instance_session(self.owner.user_id(), &self.session_id)
+                .persist_instance_session(&self.owner, &self.session_id)
                 .await
         {
             tracing::error!(%error, "Logical instance conversation persistence is unconfirmed");
@@ -402,6 +421,49 @@ impl ActorThreadSession {
         self.persist(next)
             .await
             .context("actor_root_terminal_persistence_failed")
+    }
+
+    /// Commit transport-owned artifacts and host conversation before a durable
+    /// terminal thread can release its context. The binding is correlation only.
+    async fn persist_a2a_outputs(&self, root: &ActorRootBinding) -> anyhow::Result<()> {
+        if !self.persistence.supports_durable_a2a_bindings() { return Ok(()); }
+        let Some(principal) = self.owner.credential_principal() else { return Ok(()); };
+        let owner_key = principal.storage_key();
+        let records = self.persistence.list_a2a_bindings(&owner_key, &self.artifact.id).await?;
+        let Some(mut before) = records.into_iter().find(|record| record.run_id == root.record.thread.root_run_id) else {
+            return Ok(());
+        };
+        let expected_session = format!("a2a-context-{}", crate::uar::api::a2a::durable::A2aBinding::storage_key_for(
+            &owner_key, &self.artifact.id, &before.context_id));
+        anyhow::ensure!(self.session_id == expected_session, "A2A host context identity mismatch");
+        self.manager.persist_instance_session(&self.owner, &self.session_id).await?;
+        let artifacts = if let Some(collector) = &root.artifacts {
+            collector.check_binding(&self.owner, &before.run_id)?;
+            collector.close()?;
+            collector.snapshot()?
+        } else { Vec::new() };
+        if artifacts.is_empty() { return Ok(()); }
+        loop {
+            let mut after = before.clone();
+            after.revision = after.revision.checked_add(1).ok_or_else(|| anyhow::anyhow!("A2A revision exhausted"))?;
+            for artifact in &artifacts {
+                if !after.task.artifacts.iter().any(|existing| existing.artifact_id == artifact.artifact_id) {
+                    after.task.artifacts.push(crate::uar::api::a2a::types::Artifact {
+                        artifact_id: artifact.artifact_id.clone(), name: Some(artifact.name.clone()),
+                        description: Some(artifact.description.clone()),
+                        parts: vec![crate::uar::api::a2a::types::Part::Data { data: artifact.data.clone() }],
+                        metadata: std::collections::HashMap::new(),
+                    });
+                }
+            }
+            if self.persistence.compare_and_swap_a2a_binding(&before, &after).await? { return Ok(()); }
+            // Cancellation intent and projection can race this final receipt.
+            // Reload the same run; never move receipts to a successor run.
+            let current = self.persistence.load_a2a_binding(&owner_key, &self.artifact.id, &before.task_id).await?
+                .ok_or_else(|| anyhow::anyhow!("A2A binding disappeared"))?;
+            anyhow::ensure!(current.run_id == before.run_id, "A2A output run changed");
+            before = current;
+        }
     }
 
     /// After the owning worker has ended, settle its exact receipts and close

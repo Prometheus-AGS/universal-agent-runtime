@@ -22,6 +22,7 @@ pub(crate) struct LegacyMigration {
     pub conversion_report: ConversionReport,
 }
 
+#[expect(dead_code, reason = "Retained draft.1 conversion result; no current runtime caller")]
 pub(crate) struct Draft1Migration {
     pub canonical_document: Value,
     pub receipt: MigrationReceipt,
@@ -215,6 +216,7 @@ pub(crate) fn migrate_legacy_agent(ir: &AgentDescriptorIR) -> LegacyMigration {
 }
 
 /// Migrate a draft.1 JSON definition without modifying its source identity or digest.
+#[expect(dead_code, reason = "Retained explicit draft.1 conversion helper; runtime migration is not wired")]
 pub(crate) fn migrate_draft1_document(document: &Value) -> Result<Draft1Migration> {
     let object = document
         .as_object()
@@ -406,6 +408,7 @@ fn normalize_semver(version: &str) -> String {
     }
 }
 
+#[expect(dead_code, reason = "Used only by the retained draft.1 conversion helper without a runtime caller")]
 fn required_string<'a>(object: &'a Map<String, Value>, key: &str) -> Result<&'a str> {
     object
         .get(key)

@@ -98,9 +98,9 @@ struct RemoteChild {
 }
 
 impl RemoteChild {
-    fn release_if_never_dispatched(&self) -> anyhow::Result<()> {
+    async fn release_if_never_dispatched(&self) -> anyhow::Result<()> {
         if !self.execution_admitted {
-            self.reservation.release_confirmed()?;
+            self.reservation.release_confirmed().await?;
         }
         Ok(())
     }
@@ -314,7 +314,7 @@ impl ThreadService {
             controls.permits("spawn_agent"),
             "Actor root policy denies delegation"
         );
-        self.inner.kernel.admit_host_tool()?;
+        self.inner.kernel.remote_budget().admit_tool_durable().await?;
         let child = controls.spawn(request).await?;
         let handle = {
             let entries = self.inner.entries.lock().await;
@@ -788,7 +788,8 @@ impl ThreadService {
         let budget_reservation = self
             .inner
             .kernel
-            .reserve_remote_budget(&requested_budgets)?;
+            .remote_budget()
+            .reserve_remote(&requested_budgets).await?;
         let presentation_negotiation = self.inner.kernel.remote_presentation_negotiation(&policy);
         let contract = crate::uar::api::a2a::contract::UarDelegationContract {
             version: crate::uar::api::a2a::contract::UAR_DELEGATION_CONTRACT_VERSION,
@@ -809,7 +810,18 @@ impl ThreadService {
             presentation_negotiation,
         };
         if let Err(error) = contract.validate() {
-            budget_reservation.release_confirmed()?;
+            budget_reservation.release_confirmed().await?;
+            return Err(error);
+        }
+        let contract_digest = match contract.digest() {
+            Ok(digest) => digest,
+            Err(error) => {
+                budget_reservation.release_confirmed().await?;
+                return Err(error);
+            }
+        };
+        if let Err(error) = budget_reservation.bind_contract(contract_digest).await {
+            budget_reservation.release_confirmed().await?;
             return Err(error);
         }
         let entry = Entry {
@@ -845,7 +857,7 @@ impl ThreadService {
             .ok_or_else(|| anyhow::anyhow!("Remote child registration missing"))?;
         if let Err(error) = self.persist(entry, child.clone()).await {
             if let ChildTarget::Remote(remote) = &entry.target {
-                remote.release_if_never_dispatched()?;
+                remote.release_if_never_dispatched().await?;
             }
             if !entry.confirmed && entry.pending.is_none() {
                 entries.remove(&child.thread_id);
@@ -859,7 +871,7 @@ impl ThreadService {
             .commit()?;
         if let Err(error) = self.launch(entry, messages, permit) {
             if let ChildTarget::Remote(remote) = &entry.target {
-                remote.release_if_never_dispatched()?;
+                remote.release_if_never_dispatched().await?;
             }
             return Err(error);
         }
@@ -897,7 +909,7 @@ impl ThreadService {
             if let Err(error) = outcome {
                 tracing::error!(%thread_id, %error, "Child thread host operation failed");
                 if let ChildTarget::Remote(remote) = &entry.target
-                    && let Err(error) = remote.release_if_never_dispatched()
+                    && let Err(error) = remote.release_if_never_dispatched().await
                 {
                     tracing::error!(%thread_id, %error, "Undispatched remote budget release failed");
                 }
@@ -945,7 +957,7 @@ impl ThreadService {
                 && entry.record.thread.status == AgentThreadStatus::Pending
             {
                 if let ChildTarget::Remote(remote) = &entry.target {
-                    remote.release_if_never_dispatched()?;
+                    remote.release_if_never_dispatched().await?;
                 }
                 let mut next = entry.record.thread.clone();
                 next.finish_turn(AgentThreadResult::Cancelled)?;
@@ -1104,7 +1116,7 @@ impl ThreadService {
                 };
                 match outcome {
                     Ok(task) => {
-                        let result = self.remote_task_result(&task, &reservation);
+                        let result = self.remote_task_result(&task, &reservation).await;
                         match result {
                             Ok(result) => {
                                 let execution = execution.lock().await;
@@ -1156,7 +1168,7 @@ impl ThreadService {
                 remote.execution = None;
             }
             if cancelled && remote_cleanup {
-                remote.reservation.release_confirmed()?;
+                remote.reservation.release_confirmed().await?;
             }
         }
         let mut next = entry.record.thread.clone();
@@ -1164,13 +1176,13 @@ impl ThreadService {
         self.persist(entry, next).await
     }
 
-    fn remote_task_result(
+    async fn remote_task_result(
         &self,
         task: &crate::uar::api::a2a::types::Task,
         reservation: &crate::uar::runtime::cost_budget::RemoteBudgetReservation,
     ) -> anyhow::Result<AgentThreadResult> {
         let usage = remote_usage(task)?;
-        reservation.record_cumulative(usage)?;
+        reservation.record_cumulative(usage).await?;
         Ok(match task.status.state {
             crate::uar::api::a2a::types::TaskState::Completed => {
                 let output = remote_task_text(task)
@@ -1368,7 +1380,7 @@ impl ThreadService {
                 return Ok(());
             }
             if !remote.execution_admitted {
-                return remote.release_if_never_dispatched();
+                return remote.release_if_never_dispatched().await;
             }
             let execution = match &remote.execution {
                 Some(execution) => Arc::clone(execution),
@@ -1396,26 +1408,28 @@ impl ThreadService {
                     if reservation.is_released() {
                         Ok(())
                     } else {
-                        let status = match remote_usage(&task) {
-                            Ok(usage) => reservation.record_cumulative(usage),
-                            Err(error) => match reservation.charge_reserved_capacity() {
-                                Ok(()) => Err(anyhow::anyhow!(
-                                    "Remote usage receipt was unavailable; reserved capacity was charged: {error}"
-                                )),
-                                Err(charge) => Err(anyhow::anyhow!(
-                                    "Remote usage receipt was unavailable and reserved capacity could not be charged: {error}; {charge}"
-                                )),
+                        match remote_usage(&task) {
+                            Ok(usage) => match reservation.record_cumulative(usage).await {
+                                Ok(()) => reservation.release_confirmed().await,
+                                Err(error) => {
+                                    reservation.charge_reserved_capacity().await?;
+                                    Err(error)
+                                }
                             },
-                        };
-                        reservation.release_confirmed()?;
-                        status
+                            Err(error) => {
+                                reservation.charge_reserved_capacity().await?;
+                                Err(anyhow::anyhow!(
+                                    "Remote usage receipt was unavailable; unresolved liability retained: {error}"
+                                ))
+                            }
+                        }
                     }
                 }
                 Err(crate::uar::api::a2a::task_execution::A2AExecutionError::NotStarted)
                     if execution.cleanup_confirmed() =>
                 {
                     if !reservation.is_released() {
-                        reservation.release_confirmed()?;
+                        reservation.release_confirmed().await?;
                     }
                     Ok(())
                 }

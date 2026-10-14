@@ -1,0 +1,214 @@
+{
+  "change": "dot-06-fresh-process-resume",
+  "task": "2",
+  "gate": "resume",
+  "tier": "Tier1 completed-change production integration",
+  "command": [
+    "env",
+    "-i",
+    "HOME=/Users/gqadonis",
+    "PATH=/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.local/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/30086_1791836093551/bin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.pyenv/shims:/Users/gqadonis/.minimax/bin:/Users/gqadonis/.local/bin:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/usr/local/share/dotnet:~/.dotnet/tools:/usr/local/go/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/opt/podman/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/gqadonis/.codex/tmp/arg0/codex-arg08wZZjw:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/29547_1791811184470/bin:/Users/gqadonis/miniconda3/condabin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.the-boss/commands:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/opt/zerobrew/prefix/bin:/Users/gqadonis/.pochi/bin:/Users/gqadonis/.antigravity/antigravity/bin:/Users/gqadonis/.codeium/windsurf/bin:/opt/homebrew/opt/openssl@3/bin:/opt/homebrew/opt/bison/bin:/Users/gqadonis/.opencode/bin:/Users/gqadonis/.console-ninja/.bin:/Users/gqadonis/.wasmedge/bin:/Users/gqadonis/.wasmtime/bin:/Users/gqadonis/.deno/bin:/Users/gqadonis/.paperspace/bin:/Users/gqadonis/.groundcover/bin:/Users/gqadonis/.rd/bin:/Users/gqadonis/google-cloud-sdk/bin:/Users/gqadonis/.shorebird/bin:/Applications/Android Studio/Contents/MacOS:/Users/gqadonis/development/flutter/bin:/Users/gqadonis/.rust-mcp-stack/bin:/Users/gqadonis/.cargo/bin:/Users/gqadonis/.bun/bin:/Users/gqadonis/Library/pnpm:/opt/homebrew/opt/go/libexec/bin:/Users/gqadonis/go/bin:/opt/local/bin:/opt/local/sbin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Users/gqadonis/.pub-cache/bin:/Users/gqadonis/development/flutter/.pub-cache/bin:/Users/gqadonis/Library/Android/sdk/platform-tools:/Users/gqadonis/Library/Android/sdk/tools:/Users/gqadonis/Library/Android/sdk/tools/bin:/Users/gqadonis/Library/Android/sdk/emulator:/Users/gqadonis/.rvm/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.modular/bin:/Users/gqadonis/bin:/Users/gqadonis/Projects/ide/bin:/Users/gqadonis/.dotnet/tools:/Users/gqadonis/.orbstack/bin:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/gqadonis/.dotnet/tools:/usr/local/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.orbstack/bin",
+    "UAR_DOT06_INFRA_FILE=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "UAR_DOT06_NAMESPACE=dot06_20261012T201512_098134a4eb",
+    "UAR_DOT06_EVIDENCE_ROOT=/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-memory-feature-rweavdrj/resume-fixtures",
+    "UAR_REMOTE_SURREAL_DURABILITY_ATTESTED=1",
+    "RUSTC_WRAPPER=",
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,surrealdb/kv-mem",
+    "--test",
+    "fresh_process_resume",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "privateRoot": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-memory-feature-rweavdrj",
+  "startedAt": "2026-10-12T20:16:08.531489+00:00",
+  "status": "failed",
+  "sourceSetSha256": "bdcf532635a4a3a22673041909931ae4395dedd652bb4cc739fdf2d06bd52019",
+  "boundInputCount": 6565,
+  "gitlinkCount": 16,
+  "sourceEdits": [],
+  "unrequestedAdditions": [],
+  "newProductionGuards": [],
+  "cargoWrapperPid": 31168,
+  "sampledFixtureExecutableBindings": [],
+  "elapsedSeconds": 1.15,
+  "stdoutBytes": 0,
+  "stderrBytes": 1861,
+  "actualExecutableArtifacts": [],
+  "fixtureRoots": [
+    "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-memory-feature-rweavdrj/resume-fixtures"
+  ],
+  "knownFixturePidCount": 0,
+  "observedPrintedScenarios": 0,
+  "verifiedScenarioFiles": 0,
+  "exitCode": 101,
+  "finishedAt": "2026-10-12T20:16:09.682291+00:00",
+  "sourceStableAtExit": true,
+  "environmentStableAtExit": true,
+  "testSummary": [],
+  "warningLines": [
+    "warning: Cargo.toml: version requirement `=0.4.1+0.23` for dependency `ort-tract` includes semver metadata which will be ignored, removing the metadata is recommended to avoid confusion",
+    "warning: `universal-agent-runtime` (manifest) generated 1 warning"
+  ],
+  "executedScenarios": [],
+  "executedScenarioCount": 0,
+  "actualScenarioInventoryMatched": false,
+  "missingScenarioIdentities": [
+    [
+      "local-abrupt",
+      "local",
+      "abrupt"
+    ],
+    [
+      "local-binding",
+      "local",
+      "binding"
+    ],
+    [
+      "local-corrupt",
+      "local",
+      "corrupt"
+    ],
+    [
+      "local-kill-after",
+      "local",
+      "kill-after"
+    ],
+    [
+      "local-kill-before",
+      "local",
+      "kill-before"
+    ],
+    [
+      "local-negative",
+      "local",
+      "negative"
+    ],
+    [
+      "local-policy",
+      "local",
+      "policy"
+    ],
+    [
+      "local-resume",
+      "local",
+      "resume"
+    ],
+    [
+      "local-target",
+      "local",
+      "target"
+    ],
+    [
+      "local-uncertain",
+      "local",
+      "uncertain"
+    ],
+    [
+      "memory",
+      "memory",
+      null
+    ],
+    [
+      "postgres",
+      "postgres",
+      null
+    ],
+    [
+      "shared-abrupt",
+      "shared",
+      "abrupt"
+    ],
+    [
+      "shared-binding",
+      "shared",
+      "binding"
+    ],
+    [
+      "shared-corrupt",
+      "shared",
+      "corrupt"
+    ],
+    [
+      "shared-kill-after",
+      "shared",
+      "kill-after"
+    ],
+    [
+      "shared-kill-before",
+      "shared",
+      "kill-before"
+    ],
+    [
+      "shared-negative",
+      "shared",
+      "negative"
+    ],
+    [
+      "shared-policy",
+      "shared",
+      "policy"
+    ],
+    [
+      "shared-race",
+      "shared",
+      "race"
+    ],
+    [
+      "shared-resume",
+      "shared",
+      "resume"
+    ],
+    [
+      "shared-target",
+      "shared",
+      "target"
+    ],
+    [
+      "shared-uncertain",
+      "shared",
+      "uncertain"
+    ],
+    [
+      "unattested",
+      "shared",
+      null
+    ]
+  ],
+  "unexpectedScenarioIdentities": [],
+  "customerRuntimePathMatched": false,
+  "actualReadbackChildren": [],
+  "observedReadbackChildCount": 0,
+  "readbackInventoryMatched": false,
+  "allReadbackChildrenJoined": false,
+  "rawStdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "rawStderrSha256": "17d4616ea31c35ca2623b7d048bf1941bd2a02434a89532f737d8b3f274d5d19",
+  "executableStableAtExit": true,
+  "cleanupObservations": [],
+  "cleanupUnknown": false,
+  "sourceStableAfterCleanup": true,
+  "privateDiagnosticFileCount": 0,
+  "sanitizedStdout": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T201608Z-resume-stdout.log",
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  "sanitizedStderr": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T201608Z-resume-stderr.log",
+    "sha256": "d78881a0e813ec320888e8aa9dd6ddbb852bb3a0cc2b9828d787634267f546de"
+  },
+  "sourceStableAtFinalSeal": true,
+  "environmentStableAtFinalSeal": true,
+  "rootInfrastructurePreserved": true,
+  "limits": [
+    "Synthetic protocol peers do not certify genuine provider inference.",
+    "No abrupt-owner takeover, publication or release claim.",
+    "Registry/native transitive/toolchain library closure not bound.",
+    "Short lived children can evade process sampling; fixture trace/completion evidence determines counts."
+  ]
+}

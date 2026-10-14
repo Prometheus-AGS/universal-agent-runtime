@@ -9,10 +9,12 @@ metadata:
 data:
   UAR_SERVER__PORT: "1906"
   UAR_SERVER__GRPC_PORT: "50051"
+  # Deliberate shared-pod listener; JWT credentials are supplied by secrets.
   UAR_SERVER__HOST: "0.0.0.0"
+  UAR_SECURITY__JWT_REQUIRED: "true"
   UAR_SERVER__LOG_FORMAT: "json"
   UAR_SERVER__SHUTDOWN_TIMEOUT_SECS: "30"
-  UAR_MEMORY__ENABLED: "true"
+  UAR_MEMORY__ENABLED: "false"
   UAR_MEMORY__SURREAL_ENDPOINT: "ws://surrealdb:8000"
   DATABASE_URL: "postgres://uar:CHANGEME@postgres:5432/uar"
   RUST_LOG: "info,universal_agent_runtime=debug"

@@ -4,7 +4,23 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum ApprovalState { Pending, Approved, Denied, Cancelled, Expired, Interrupted }
+pub enum ApprovalState { Pending, Approved, Denied, Cancelled, Expired, Interrupted, Invalidated }
+
+#[derive(Debug, thiserror::Error)]
+pub enum ApprovalRecoveryError {
+    #[error("recovered approval persistence is unavailable; continuation ownership remains held")]
+    PersistenceUnavailable,
+}
+
+/// Protected checkpoint identity and digests are evidence, never runnable authority.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ApprovalContinuation {
+    pub checkpoint_id: String,
+    pub checkpoint_revision: String,
+    pub binding_digest: String,
+    pub call_index: usize,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -33,6 +49,8 @@ pub struct ApprovalRecord {
     pub state: ApprovalState,
     pub decision: Option<ApprovalDecision>,
     pub updated_at: DateTime<Utc>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub continuation: Option<ApprovalContinuation>,
 }
 
 /// Read-time availability is local to this broker, never persisted authority.
@@ -42,6 +60,8 @@ pub struct ApprovalRecordView {
     #[serde(flatten)]
     pub record: ApprovalRecord,
     pub resolvable: bool,
+    /// Recovery still requires trusted predecessor exclusion and current admission.
+    pub recovery_available: bool,
 }
 
 impl ApprovalRecord {
@@ -51,6 +71,11 @@ impl ApprovalRecord {
 
     pub fn finish(&self, state: ApprovalState, decision: Option<ApprovalDecision>) -> Self {
         Self { state, decision, updated_at: Utc::now(), ..self.clone() }
+    }
+
+    /// Expiry occurs at the immutable deadline, even when a delayed CAS observes it later.
+    pub(crate) fn expire(&self) -> Self {
+        Self { state: ApprovalState::Expired, decision: None, updated_at: self.expires_at, ..self.clone() }
     }
 
     pub fn validate_transition(&self, next: &Self) -> anyhow::Result<()> {

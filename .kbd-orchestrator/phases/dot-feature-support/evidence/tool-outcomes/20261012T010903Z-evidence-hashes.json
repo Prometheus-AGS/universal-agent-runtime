@@ -1,0 +1,72 @@
+{
+  "publicArtifacts": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T010903Z-failure-analysis.json",
+      "sha256": "a444aaeb68e6b70786bd4e1c74ef1122f5a11bc1689cbd46e2b4a492154c259a",
+      "bytes": 2685
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T010903Z-production-boundary.json",
+      "sha256": "653519565c1e2e4a88558a23f180f57d93ef0528956eae4988395b373fc7fd31",
+      "bytes": 3670
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T010903Z-production-boundary.log",
+      "sha256": "a4d55659a194d008b694c0c2895afe5aef7b65246c05bbe911c5caea80e6a6dd",
+      "bytes": 5484
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T010903Z-source-fingerprint-at-exit.json",
+      "sha256": "cb06b6b12c278a58c36c0d06fb42bfdeaa34ebf175cfc874da7deb7973068606",
+      "bytes": 940565
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T010903Z-source-fingerprint.json",
+      "sha256": "f0104986707fb381cdfd8b708fb3402352f00a7bcd33200372e21120fef682d9",
+      "bytes": 940565
+    }
+  ],
+  "privateArtifacts": [
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-asmdnvpv/driver.py",
+      "sha256": "84f410ba52499e4a25fb1362c5be5e88cffddc39d04dc000223d9c91d5f38693",
+      "bytes": 12359,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-asmdnvpv/source-before.json",
+      "sha256": "f0104986707fb381cdfd8b708fb3402352f00a7bcd33200372e21120fef682d9",
+      "bytes": 940565,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-asmdnvpv/source-snapshot.tar.gz",
+      "sha256": "9f209cdc7832078575b99f3df48acbafd3a2ddb53a6795e925561741f177e529",
+      "bytes": 71143297,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-asmdnvpv/dirty-source.patch",
+      "sha256": "8b0676bfe18747d9cb54f8b03b44e8063c80074560163e05fc73f9d83584549c",
+      "bytes": 139594,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-asmdnvpv/cargo-raw.log",
+      "sha256": "a4d55659a194d008b694c0c2895afe5aef7b65246c05bbe911c5caea80e6a6dd",
+      "bytes": 5484,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-asmdnvpv/sampled-descendants.json",
+      "sha256": "5044a48639af7753f7962b3528c7cb39af38f66155c2e33ef467a7352f9b71a4",
+      "bytes": 685,
+      "mode": "0o600"
+    }
+  ],
+  "privateRootMode": "0o700",
+  "task1Tier0Preserved": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/task1-tier0.json",
+    "sha256": "644fdd827eca59e24828c041594fdff5d5f334986d7b12fef66451012b26ee45"
+  }
+}

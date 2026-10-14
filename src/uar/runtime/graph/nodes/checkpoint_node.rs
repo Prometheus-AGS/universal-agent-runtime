@@ -1,15 +1,11 @@
 //! Checkpoint graph node — records execution progress for resumability.
 //!
-//! The node logs the checkpoint, stores metadata in state, and persists it
-//! via the `PersistenceLayer` when one is available in the `GraphContext`.
+//! The node emits checkpoint intent. Only the trusted host persists it.
 
 use async_trait::async_trait;
-use tracing::{info, warn};
+use tracing::info;
 
-use crate::uar::runtime::{
-    checkpoint::Checkpoint,
-    graph::types::{GraphContext, GraphNode, GraphState, NodeResult},
-};
+use crate::uar::runtime::graph::types::{GraphContext, GraphNode, GraphState, NodeResult};
 
 /// A graph node that marks a checkpoint in the execution flow.
 ///
@@ -64,33 +60,6 @@ impl GraphNode for CheckpointNode {
             state.iteration,
         );
 
-        // Persist checkpoint if a persistence layer is available.
-        if let Some(db) = &ctx.persistence {
-            let thread_id = ctx.session_id.as_deref().unwrap_or(&ctx.run_id);
-            let cp = Checkpoint::new(
-                &ctx.run_id,
-                thread_id,
-                &self.id,
-                &state,
-                &ctx.checkpoint_authorization_digest,
-            );
-            if let Err(e) = db.save_checkpoint(&cp).await {
-                warn!(
-                    run_id = %ctx.run_id,
-                    node_id = %self.id,
-                    error = %e,
-                    "Failed to persist checkpoint — continuing"
-                );
-            } else {
-                info!(
-                    run_id = %ctx.run_id,
-                    checkpoint_id = %cp.id,
-                    node_id = %self.id,
-                    "Checkpoint persisted"
-                );
-            }
-        }
-
-        NodeResult::Continue(state)
+        NodeResult::Checkpoint(state)
     }
 }

@@ -1,0 +1,83 @@
+{
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T021011Z-production-boundary.json",
+  "changedBoundPathsSincePreviousGate": [
+    "tests/support/truthful_tool_outcome_process.rs"
+  ],
+  "hashes": {
+    "tests/support/truthful_tool_outcome_process.rs": {
+      "old": "3dcc50fa686845e09ae6ae55d94a4123e7fb718cceaae4b7793ac3a81e39baf5",
+      "new": "b6c90b26de8cacf791a081feb075c7f94c5f6943df84037cf064e8970e0d4cef"
+    }
+  },
+  "correctionPatchSha256": "ff332de95b04cb0aab0e8b175957bf404024545f2d8ca1409ce3b75e0578c37d",
+  "patch": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T021812Z-observed-correction.patch",
+  "tier0Commands": [
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--no-index",
+        "--check",
+        "/dev/null",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--emit",
+        "stdout",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 66962,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--check",
+        "--config",
+        "reorder_imports=false,reorder_modules=false",
+        "--file-lines",
+        "[{\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs\", \"range\": [488, 489]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs\", \"range\": [565, 575]}]",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "python3",
+        "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-binding-preflight-correction-83dpqyuc/validate_shapes.py"
+      ],
+      "exit": 0,
+      "stdout_bytes": 309,
+      "stderr_bytes": 0
+    }
+  ],
+  "staticCheckOutput": "PASS: 50 static schema documents across 10 transformed package/binding shapes; reference/lock/digest closure; operator-empty-list negative control rejected.\nLIMIT: existing C03 dynamic skill/owner shapes substituted; no production install, authority, activation, persistence, or scenario execution certified.\n",
+  "tier0Attribution": "Original author commands/static shapes; exact source change and broad stability independently verified. Prior actual rejection reason was unobserved; source identified inherited-context blocker and this gate now directly observes activation supported."
+}

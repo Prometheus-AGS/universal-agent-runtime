@@ -1,0 +1,115 @@
+{
+  "status": "baseline-prepared-awaiting-external-freeze-and-cargo-authorization",
+  "preparedAt": "2026-10-12T04:05:02.765552+00:00",
+  "phase": "dot-feature-support",
+  "change": "dot-04-truthful-tool-outcomes",
+  "task": "2",
+  "stage": "Execute",
+  "head": "c314099bc9173058f3ba43b983539d8d13c6f4de",
+  "branch": "main",
+  "indexEmpty": true,
+  "closureCount": 6551,
+  "sourceSetSha256": "77c2a4034e6000b3ca18c16def691ce8699dec4521de3060598358f4c165362a",
+  "all18RefreezeHashesMatch": true,
+  "refreezeHashes": {
+    "src/mcp/mod.rs": "721b4f981010205daec1d044850e0a923b7b1660f590c6c40c23e6a27e8784bd",
+    "src/mcp/outcome.rs": "632bc50c2b6fe3b09f8ed0b30d368acc9b76c6fe406f6d4a24be8a8aa60c4978",
+    "src/mcp/preflight.rs": "754aa630bfc3d23995c97909b9926b1d57bcea755dc3ff1d8f5a9d899ae46f54",
+    "src/mcp/registry.rs": "41e11ff3c7056d13e18edbf0e26335eab5e432377b67b0005b850a87ee5cf655",
+    "src/mcp/runtime.rs": "3b9bf9e64773e1035d915be96f03ad3a3c92e43a5a5449aff56a0e55d9f278c6",
+    "src/llm/orchestrator.rs": "2e44b3087a01b30351eb63d316e849268086a783af8f9b00a7ee7792e97b8595",
+    "src/uar/persistence/agent_threads.rs": "bcbda283c2f1b314b5ff44ed47c18d2b1cdf6e4b240546b4a1e623d4a2346d11",
+    "src/uar/persistence/tool_admission.rs": "5234c4ac77c3380369d3748482c40c34ba89d1d2752f901e34e04f6c97a93491",
+    "src/uar/runtime/tool_admission/lifecycle.rs": "2c9f2ecdb60291de97ffd0ccd81cb0f75c394b5705d18e91f801cadbba092c2e",
+    "src/uar/runtime/team_execution/execution.rs": "d1c1e5c97f9acc5f844a040ab11ee2af002783b00556f905ad5ea31a41bc4787",
+    "src/uar/runtime/team_execution/recovery.rs": "57f6088481eeb318bb3d1d723fa5053365075228b1ca91926e4b10e1339069c3",
+    "src/uar/runtime/instance/pump.rs": "9d652c855d807d469b6eedcaf52418f2051f46fd5fec53bf900d5e94ac3de99b",
+    "tests/truthful_tool_outcomes.rs": "fc7e70cb284c52f3f37c5626a76f6b0d93b8cf1579a7e5bb7bcf0b773c32b6a5",
+    "tests/support/truthful_tool_outcome_peer.rs": "ecbfc448b3095150a189703db26812a981472a9567b68df2b167a077986a341d",
+    "tests/support/truthful_tool_outcome_process.rs": "02801380d11170d1a43769c9af585742622ca9c8ea8a7068772bda6706de752c",
+    "tests/fixtures/truthful_tool_outcome_mcp.py": "965e3d78fbacd53c412c750882e27c7e79947df9729cc0f4ed6c211578190864",
+    "docs/operations/truthful-tool-outcomes.md": "f5d3d32d6773c14672482e49d06404b3c7f3ba51adad4b5fd56e6783bd042b35",
+    "src/uar/runtime/skills/activation.rs": "f31420f83a7d9f8a32a942a3e7c4d83c50e76567b916a9fd425134c6c36de908"
+  },
+  "actualChangedSince034105": [
+    "src/uar/api/full_harness/handlers.rs",
+    "src/uar/runtime/team_execution/execution.rs",
+    "src/uar/runtime/team_execution/recovery.rs",
+    "tests/support/truthful_tool_outcome_process.rs"
+  ],
+  "expectedOnly4PathsMatched": true,
+  "gitlinksUnchanged": true,
+  "sourceStableDuringBinding": true,
+  "cargoLaunched": false,
+  "sourceChangesByExecutor": [],
+  "rootInfrastructureUntouched": true,
+  "priorHandlerDriftReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T035928Z-preflight-handler-drift.json",
+  "sourceFingerprint": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T040502Z-c314-source-fingerprint.json",
+  "sourceFingerprintSha256": "b84882bcf8e78783d5aa0d48d84784843bd6b92c9ea098d192e3268148e2fcca",
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-c314-baseline-6qjvxowb",
+  "privateSnapshot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-c314-baseline-6qjvxowb/source-snapshot.tar.gz",
+  "privateSnapshotSha256": "de7c068778c5f88e2080899078857c4c22bda052d5dfd7b5b0b662caf0ff3fcc",
+  "privateExactPatch": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-c314-baseline-6qjvxowb/exact-034105-to-c314.patch",
+  "privateExactPatchSha256": "d53dc1bfcf63538b591242528f798cb6df7141c4bb31e0b54575d3556cecb2f1",
+  "previous11RuntimePidSamples": [
+    {
+      "pid": 19899,
+      "aliveAtSample": false,
+      "privateSample": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-c314-baseline-6qjvxowb/old-runtime-19899-sample.log"
+    },
+    {
+      "pid": 23617,
+      "aliveAtSample": false,
+      "privateSample": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-c314-baseline-6qjvxowb/old-runtime-23617-sample.log"
+    },
+    {
+      "pid": 25042,
+      "aliveAtSample": false,
+      "privateSample": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-c314-baseline-6qjvxowb/old-runtime-25042-sample.log"
+    },
+    {
+      "pid": 25414,
+      "aliveAtSample": false,
+      "privateSample": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-c314-baseline-6qjvxowb/old-runtime-25414-sample.log"
+    },
+    {
+      "pid": 25533,
+      "aliveAtSample": false,
+      "privateSample": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-c314-baseline-6qjvxowb/old-runtime-25533-sample.log"
+    },
+    {
+      "pid": 25939,
+      "aliveAtSample": false,
+      "privateSample": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-c314-baseline-6qjvxowb/old-runtime-25939-sample.log"
+    },
+    {
+      "pid": 27213,
+      "aliveAtSample": false,
+      "privateSample": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-c314-baseline-6qjvxowb/old-runtime-27213-sample.log"
+    },
+    {
+      "pid": 28412,
+      "aliveAtSample": false,
+      "privateSample": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-c314-baseline-6qjvxowb/old-runtime-28412-sample.log"
+    },
+    {
+      "pid": 29030,
+      "aliveAtSample": false,
+      "privateSample": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-c314-baseline-6qjvxowb/old-runtime-29030-sample.log"
+    },
+    {
+      "pid": 29737,
+      "aliveAtSample": false,
+      "privateSample": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-c314-baseline-6qjvxowb/old-runtime-29737-sample.log"
+    },
+    {
+      "pid": 29968,
+      "aliveAtSample": false,
+      "privateSample": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-c314-baseline-6qjvxowb/old-runtime-29968-sample.log"
+    }
+  ],
+  "previousRuntimePidsAllGoneAtSample": true,
+  "previousOwnedMcpMatches": 0,
+  "cleanupActions": [],
+  "cleanupScope": "Samples of11known priorruntimePIDs and exactoldprofiles/script peer matches; not exhaustive process closure."
+}

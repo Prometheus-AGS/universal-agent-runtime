@@ -197,7 +197,7 @@ pub(crate) async fn prepare_servers(
                     owner.clone(),
                     Arc::clone(definition),
                     Arc::new(environment),
-                ));
+                ).with_interactions(runtime.interactions()));
                 let outcome = match observation {
                     Some((events, cancellation)) => {
                         runtime
@@ -278,6 +278,7 @@ fn availability_failure(error: &McpRuntimeError) -> Option<McpServerFailure> {
         )
         | McpRuntimeError::CatalogChanged { .. }
         | McpRuntimeError::ToolNotProjected { .. }
-        | McpRuntimeError::ToolFailed { .. } => None,
+        | McpRuntimeError::ToolFailed { .. }
+        | McpRuntimeError::InvocationFailed { .. } => None,
     }
 }

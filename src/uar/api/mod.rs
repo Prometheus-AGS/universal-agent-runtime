@@ -2,6 +2,10 @@
 
 pub mod a2a;
 #[cfg(feature = "server")]
+pub mod agui;
+#[cfg(feature = "server")]
+pub mod accounting;
+#[cfg(feature = "server")]
 pub mod acp;
 #[cfg(feature = "server")]
 pub mod actors;
@@ -9,11 +13,17 @@ pub mod adapters;
 #[cfg(feature = "server")]
 pub mod administration_capabilities;
 #[cfg(feature = "server")]
+pub mod assistant_capabilities;
+#[cfg(feature = "server")]
 pub mod agent_instances;
 #[cfg(feature = "server")]
 pub mod channel_observers;
 #[cfg(feature = "server")]
 pub mod observers;
+#[cfg(feature = "server")]
+pub mod schedules;
+#[cfg(feature = "server")]
+pub mod followups;
 #[cfg(feature = "server")]
 pub mod auth;
 #[cfg(feature = "server")]
@@ -27,6 +37,8 @@ pub mod credentials;
 #[cfg(feature = "server")]
 pub mod discovery;
 #[cfg(feature = "server")]
+pub mod effective_settings;
+#[cfg(feature = "server")]
 pub mod full_harness;
 #[cfg(feature = "server")]
 pub mod ingest;
@@ -36,6 +48,8 @@ pub mod knowledge;
 pub mod live;
 #[cfg(feature = "server")]
 pub mod mcp_admin;
+#[cfg(feature = "server")]
+pub mod mcp_interactions;
 #[cfg(feature = "server")]
 pub mod memory;
 #[cfg(feature = "server")]
@@ -54,6 +68,8 @@ pub mod routes;
 pub mod run_events;
 #[cfg(feature = "server")]
 pub mod settings;
+#[cfg(feature = "server")]
+pub mod supervisor;
 #[cfg(feature = "server")]
 pub mod skills;
 #[cfg(feature = "server")]

@@ -1,0 +1,49 @@
+{
+  "status": "failed-compilation",
+  "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T010903Z-production-boundary.json",
+  "command": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test truthful_tool_outcomes -- --test-threads=1 --nocapture",
+  "exitCode": 101,
+  "observedErrors": [
+    {
+      "code": "E0277",
+      "path": "src/mcp/runtime.rs",
+      "line": 448,
+      "detail": "anyhow::Error does not implement Clone; McpRuntimeError derives Clone at line422"
+    },
+    {
+      "code": "E0369",
+      "path": "src/mcp/runtime.rs",
+      "line": 448,
+      "detail": "anyhow::Error does not implement PartialEq; McpRuntimeError derives PartialEq at line422"
+    },
+    {
+      "code": "E0277",
+      "path": "src/mcp/runtime.rs",
+      "line": 448,
+      "detail": "anyhow::Error does not implement Eq; McpRuntimeError derives Eq at line422"
+    }
+  ],
+  "rootCause": "Additive InvocationFailed stores anyhow::Error while retaining derived Clone/PartialEq/Eq of public McpRuntimeError. McpPreflightError also derives these traits and contains McpRuntimeError, so dropping runtime derives alone propagates a compatibility/compiler issue.",
+  "proposedNarrowCorrection": "Original author must preserve typed host failure source and existing public error trait contract using cloneable/equatable typed or wrapper evidence; choose implementation from actual callers. Do not stringify away certainty or weaken acceptance. Refreeze affected source and rerun only this same target after root authorization.",
+  "harnessEntriesExecuted": 0,
+  "substantiveTestsExecuted": 0,
+  "expectedScenarioEntries": 59,
+  "executedScenarioEntries": 0,
+  "unrunScenarioEntries": 59,
+  "actualExecutableLaunches": 0,
+  "sourceStable": true,
+  "sourceBoundFiles": 6549,
+  "sourceSetSha256": "dc2bd00b89b4062c5835db639c40af10d2b177480f0a47620728ba6b4221afe2",
+  "runtimeClaimsUnverified": [
+    "All dot04 production scenarios because compilation prevented launch",
+    "Postgres receipt round-trip and observer/checkpoint parity",
+    "Explicit shared B denied takeover request (not authored control)",
+    "Genuine external provider inference",
+    "Full transitive registry/toolchain/native closure",
+    "Tier2 composition/cumulative review/whole phase and Tier3 publication"
+  ],
+  "sourceChangesByGateExecutor": [],
+  "addedUnrequestedChanges": [],
+  "newProductionGuards": [],
+  "warningsObserved": "Cargo manifest warning and 10 library warnings emitted; retained exact sanitized compiler log; not corrected by evidence-only executor."
+}

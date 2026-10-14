@@ -1,0 +1,261 @@
+{
+  "change": "dot-05-stream-terminal-contract",
+  "task": "2",
+  "phase": "Execute",
+  "tier": "Tier1 completed-change real integration",
+  "command": [
+    "env",
+    "-u",
+    "BEDROCK_BASE_URL",
+    "-u",
+    "BEDROCK_CROSS_REGION",
+    "VERTEXAI_PROJECT=dot05-fixture",
+    "VERTEXAI_LOCATION=us-central1",
+    "UAR_DOT05_INFRA_FILE=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "UAR_DOT05_NAMESPACE=dot05_20261012T054047_2f959d07cf90",
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full",
+    "--test",
+    "stream_terminal_contract",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "status": "failed",
+  "sourceSetSha256": "2fd50ee53c731939277e84e29e20ed8d4167de3301298502910e46d50830ffd0",
+  "boundInputs": 6558,
+  "head": "b4244aeaa7e931240ae0f09ae31bae3f45bda244",
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-acceptance-hv2q20ro",
+  "privateRawStdout": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-acceptance-hv2q20ro/cargo.stdout",
+  "privateRawStderr": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-acceptance-hv2q20ro/cargo.stderr",
+  "environmentKeys": [
+    "HOME",
+    "PATH"
+  ],
+  "startedAt": "2026-10-12T05:43:03.564486+00:00",
+  "toolsBefore": {
+    "cargo": {
+      "path": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/cargo",
+      "resolvedPath": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/cargo",
+      "sha256": "65ba2b36bd365d1da4c7958515b63070a483d393316160db8f309bf4082765cf",
+      "bytes": 31822984
+    },
+    "rustc": {
+      "path": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/rustc",
+      "resolvedPath": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/rustc",
+      "sha256": "57f1d2c5bf4a0de46f2cc14c41e7562bff5eddf9e0f9a6200c7b950c56684895",
+      "bytes": 412504
+    },
+    "cargoDispatch": {
+      "path": "/Users/gqadonis/.cargo/bin/cargo",
+      "resolvedPath": "/Users/gqadonis/.cargo/bin/rustup",
+      "sha256": "ec1b9233e7f72990ecd8e62063fa7f6c3dfc2bec8e97f88bff165f9100ac696a",
+      "bytes": 11319056
+    },
+    "rustup": {
+      "path": "/Users/gqadonis/.cargo/bin/rustup",
+      "resolvedPath": "/Users/gqadonis/.cargo/bin/rustup",
+      "sha256": "ec1b9233e7f72990ecd8e62063fa7f6c3dfc2bec8e97f88bff165f9100ac696a",
+      "bytes": 11319056
+    },
+    "fixturePythonLauncher": {
+      "path": "/usr/bin/python3",
+      "resolvedPath": "/usr/bin/python3",
+      "sha256": "1632eb8de8409ac0bf8d35c2d52ea8222fd7d091344bba3fa0f998bfac2ddfda",
+      "bytes": 118640
+    },
+    "fixturePythonResolved": {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/usr/bin/python3",
+      "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "sha256": "5ab108d5c2faa403d86a5918a7ff73c8afdbec2a0f6b62d932f77a078ee93d7c",
+      "bytes": 102352
+    },
+    "openssl": {
+      "path": "/usr/bin/openssl",
+      "resolvedPath": "/usr/bin/openssl",
+      "sha256": "e202adb4a58f5b891c1f2ea4f037a201acc64b0fe10e23053e6da1f3aeadbdb1",
+      "bytes": 1130832
+    },
+    "opensslVersion": "LibreSSL 3.3.6",
+    "pythonVersion": "3.9.6 (default, Aug 13 2026, 04:25:06) \n[Clang 21.0.0 (clang-2100.3.33.1)]"
+  },
+  "expectedRows": 83,
+  "expectedBoundaries": 249,
+  "processes": [
+    {
+      "pid": 53941,
+      "parentPid": 43248,
+      "comm": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "sampledAt": "2026-10-12T05:59:10.223175+00:00",
+      "role": "integration-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+        "sha256": "c04286e7f2d951f674cd6e91d733f7fb15da7fc68c6dd277f78541337c9d77c2",
+        "bytes": 326225560
+      }
+    }
+  ],
+  "fixtureRoots": [
+    "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-VfEC0O"
+  ],
+  "cargoPid": 43248,
+  "lastObservedAt": "2026-10-12T05:59:22.233778+00:00",
+  "elapsedSeconds": 978.59,
+  "stdoutBytes": 691,
+  "stderrBytes": 18357,
+  "completedRowsObserved": 7,
+  "exitCode": 101,
+  "finishedAt": "2026-10-12T05:59:22.235407+00:00",
+  "sourceStableAtExit": true,
+  "changedPathsAtExit": [],
+  "observedRows": [
+    {
+      "protocol": "OpenAi",
+      "case": "valid"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "split"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "empty"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "partial_after_terminal"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "partial_event"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "malformed"
+    }
+  ],
+  "inventoryMatched": false,
+  "completedRows": 7,
+  "completedBoundaries": 22,
+  "enteredBoundaries": 23,
+  "requestObservedBoundaries": 23,
+  "testSummary": [
+    "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.02s"
+  ],
+  "actualExecutableArtifacts": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "sha256": "c04286e7f2d951f674cd6e91d733f7fb15da7fc68c6dd277f78541337c9d77c2",
+      "bytes": 326225560
+    }
+  ],
+  "executableStabilityAtExit": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "sameSha256": true
+    }
+  ],
+  "rawStdoutSha256": "cdc2d32250b0f2b94b2f32cafa71549b93e8b5c245e38467b6d4f598680353b2",
+  "rawStderrSha256": "2542c5004c8b32559392175dad974890106f9fc629b822e455d1c8c8cd2db4ae",
+  "cleanupActions": [],
+  "sampledOwnedProcessesRemaining": [],
+  "sourceStableAfterCleanup": true,
+  "rootInfrastructureUntouched": true,
+  "limits": [
+    "No registry/toolchain/native full transitive closure",
+    "No per-alias runtime qualification",
+    "No genuine inference, cross-process recovery, release, Tier2 or Tier3 qualification",
+    "Sampler can miss short-lived children; actual request files/counts qualify boundaries, not sampledPID totals"
+  ],
+  "sourceEdits": [],
+  "newGuards": [],
+  "unrequestedAdditions": [],
+  "sanitizedStdout": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/streams/20261012T054303Z-cargo.stdout.log",
+    "sha256": "cdc2d32250b0f2b94b2f32cafa71549b93e8b5c245e38467b6d4f598680353b2"
+  },
+  "sanitizedStderr": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/streams/20261012T054303Z-cargo.stderr.log",
+    "sha256": "8c660b418405cacc4987966d1ca26e97e4a3a8497a080760139310691f6a7dba"
+  },
+  "hostConfigStableFinal": true,
+  "preparedToolStabilityFinal": [
+    {
+      "name": "cargo",
+      "path": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/cargo",
+      "sameSha256": true
+    },
+    {
+      "name": "rustc",
+      "path": "/Users/gqadonis/.rustup/toolchains/nightly-2026-07-18-aarch64-apple-darwin/bin/rustc",
+      "sameSha256": true
+    },
+    {
+      "name": "cargoDispatch",
+      "path": "/Users/gqadonis/.cargo/bin/rustup",
+      "sameSha256": true
+    },
+    {
+      "name": "rustup",
+      "path": "/Users/gqadonis/.cargo/bin/rustup",
+      "sameSha256": true
+    },
+    {
+      "name": "fixturePythonLauncher",
+      "path": "/usr/bin/python3",
+      "sameSha256": true
+    },
+    {
+      "name": "fixturePythonResolved",
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "sameSha256": true
+    },
+    {
+      "name": "openssl",
+      "path": "/usr/bin/openssl",
+      "sameSha256": true
+    }
+  ],
+  "infraManifestStableFinal": true,
+  "samplerObservedGap": "Process scan stalled after05:45:06~123sec; recovered by220sec. Exact gap duration not measured; separate ps scan took >10sec. Child sampling is nonexhaustive.",
+  "certificateSubprocessSampling": "No OpenSSL subprocess sampled; configured /usr/bin/openssl identity bound before/final, generatedCA/serverfiles retained. No actualPythonHTTPSchild entered before failure.",
+  "warningSummary": [
+    "warning: `universal-agent-runtime` (manifest) generated 1 warning",
+    "warning: `universal-agent-runtime` (lib) generated 31 warnings (run `cargo fix --lib -p universal-agent-runtime` to apply 1 suggestion)",
+    "warning: `universal-agent-runtime` (bin \"stub-llm\") generated 2 warnings"
+  ],
+  "scenarioCounts": {
+    "expectedRows": 83,
+    "completedRows": 7,
+    "enteredRows": 8,
+    "unrunRows": 75,
+    "expectedBoundaries": 249,
+    "enteredBoundaries": 23,
+    "completedByWholeRowReceipts": 21,
+    "additionalLegacyReturnedBeforeLocalStarted": 1,
+    "partiallyAssertedFailedLocal": 1,
+    "unrunBoundaries": 226,
+    "completedBoundaries": 22,
+    "failedBoundaries": 1
+  },
+  "completionLimits": "21 route boundaries have whole-row completion receipts; row8legacy return inferred from subsequentlocalentry; row8local reached failure afterstatus/checkpoint/history load checks. No promotion of partialfailedboundary.",
+  "exactOwnedHttpsPeerMatchesFinal": [],
+  "rootSurrealPidAliveFinal": true,
+  "rootPostgresIdentityStableFinal": true,
+  "completedWholeRowBoundaries": 21,
+  "failedBoundaries": 1,
+  "boundaryCountBasis": "7whole-row receipts each after legacy/local/shared assertions =21complete; row8 localendpoint created only after legacyfunction returned, proving row8legacycomplete =1additional. Row8local entered and failed; remaining226notentered.",
+  "failedFixtureSnapshotLimits": "Wirebytes/requestbodies/localSurrealKV retained. Fixture does not save manager event arrays or serialized session snapshot separately. InvalidUTF8 prevented prefix delivery is a source-based possible explanation, not an observed ChatDelta absence.",
+  "sourceStableAtFinalSeal": true
+}

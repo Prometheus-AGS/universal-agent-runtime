@@ -52,11 +52,17 @@ pub async fn list(
 }
 
 /// Load one memory by id.
-pub async fn get(memory: Option<&Arc<MemoryService>>, id: &str) -> Result<Option<Memory>> {
-    require(memory)?
-        .get(id)
-        .await
-        .map_err(|error| UarError::config("E_MEMORY_GET_FAILED", error.to_string()))
+pub async fn get(memory: Option<&Arc<MemoryService>>, id: &str, user_ctx: &UserContext) -> Result<Option<Memory>> {
+    let service = require(memory)?;
+    let result = if user_ctx.trusted_host_id().is_some() {
+        match service.admin_storage(user_ctx)
+            .map_err(|error| UarError::config("E_MEMORY_ADMIN_REQUIRED", error.to_string()))?
+            .get_memory(id).await {
+            Ok(Some(memory)) => service.visible_memory(memory).await,
+            other => other,
+        }
+    } else { service.get(id, user_ctx).await };
+    result.map_err(|error| UarError::config("E_MEMORY_GET_FAILED", error.to_string()))
 }
 
 /// Add a memory.
@@ -73,24 +79,20 @@ pub async fn add(
     agent_id: Option<&str>,
     session_id: Option<&str>,
 ) -> Result<Memory> {
-    require(memory)?
-        // The service API gained categories/metadata/importance; this shim keeps
-        // its original signature, so it forwards the crate's standard defaults
-        // (no categories, no metadata, importance 0.5 — see
-        // `AddMemoryParams::default_importance` in memory/mcp_server.rs).
-        .add(
-            content,
-            scope,
-            memory_type,
-            user_ctx,
-            agent_id,
-            session_id,
-            Vec::new(),
-            None,
-            0.5,
-        )
-        .await
-        .map_err(|error| UarError::config("E_MEMORY_ADD_FAILED", error.to_string()))
+    let service = require(memory)?;
+    if user_ctx.trusted_host_id().is_some() && matches!(scope, MemoryScope::Global | MemoryScope::Agent) {
+        let storage = service.admin_storage(user_ctx)
+            .map_err(|error| UarError::config("E_MEMORY_ADMIN_REQUIRED", error.to_string()))?;
+        let mut memory = Memory::new(content, Some("uar:shared:v1".to_owned()), agent_id.map(str::to_owned), session_id.map(str::to_owned), Vec::new());
+        memory.scope = scope;
+        memory.memory_type = memory_type;
+        let _ = storage;
+        return service.save_controlled_memory(memory, None, None).await
+            .and_then(|memory| memory.ok_or_else(|| anyhow::anyhow!("Memory unavailable after save")))
+            .map_err(|error| UarError::config("E_MEMORY_ADD_FAILED", error.to_string()));
+    }
+    service.add(content, scope, memory_type, user_ctx, agent_id, session_id, Vec::new(), None, 0.5)
+        .await.map_err(|error| UarError::config("E_MEMORY_ADD_FAILED", error.to_string()))
 }
 
 /// Replace a memory's content.
@@ -101,19 +103,34 @@ pub async fn update(
     memory: Option<&Arc<MemoryService>>,
     id: &str,
     content: String,
+    user_ctx: &UserContext,
 ) -> Result<Memory> {
-    require(memory)?
-        .update(id, content)
-        .await
-        .map_err(|error| UarError::config("E_MEMORY_UPDATE_FAILED", error.to_string()))
+    let service = require(memory)?;
+    let result = if user_ctx.trusted_host_id().is_some() {
+        let memory = get(Some(service), id, user_ctx).await?
+            .ok_or_else(|| UarError::config("E_MEMORY_UPDATE_FAILED", "Memory unavailable"))?;
+        let owner = memory.user_id.ok_or_else(|| UarError::config("E_MEMORY_UPDATE_FAILED", "Memory has no owner"))?;
+        service.update_controlled_memory(id, &owner, content).await
+    } else { service.update(id, content, user_ctx).await };
+    result.map_err(|error| UarError::config("E_MEMORY_UPDATE_FAILED", error.to_string()))
 }
 
 /// Delete a single memory.
-pub async fn delete(memory: Option<&Arc<MemoryService>>, id: &str) -> Result<()> {
-    require(memory)?
-        .delete(id)
-        .await
-        .map_err(|error| UarError::config("E_MEMORY_DELETE_FAILED", error.to_string()))
+pub async fn delete(memory: Option<&Arc<MemoryService>>, id: &str, user_ctx: &UserContext) -> Result<()> {
+    let service = require(memory)?;
+    let result = if user_ctx.trusted_host_id().is_some() {
+        let storage = service.admin_storage(user_ctx)
+            .map_err(|error| UarError::config("E_MEMORY_ADMIN_REQUIRED", error.to_string()))?;
+        match storage.get_memory(id).await {
+            Ok(Some(memory)) => match memory.user_id {
+                Some(owner) => service.delete_controlled_memory(id, &owner).await,
+                None => Err(anyhow::anyhow!("Memory has no owner")),
+            },
+            Ok(None) => Ok(()),
+            Err(error) => Err(error),
+        }
+    } else { service.delete(id, user_ctx).await };
+    result.map_err(|error| UarError::config("E_MEMORY_DELETE_FAILED", error.to_string()))
 }
 
 /// Semantic search over a user's memories.
@@ -165,7 +182,7 @@ mod tests {
 
         let listed = list(None, &user, None, None).await;
         assert!(listed.is_err(), "listing must not silently return empty");
-        assert!(get(None, "m1").await.is_err());
+        assert!(get(None, "m1", &user).await.is_err());
         assert!(
             add(
                 None,
@@ -179,8 +196,8 @@ mod tests {
             .await
             .is_err()
         );
-        assert!(update(None, "m1", "x".to_string()).await.is_err());
-        assert!(delete(None, "m1").await.is_err());
+        assert!(update(None, "m1", "x".to_string(), &user).await.is_err());
+        assert!(delete(None, "m1", &user).await.is_err());
         assert!(search(None, "q", &user, None, None, 5, None).await.is_err());
 
         let error = listed.expect_err("checked above").to_string();

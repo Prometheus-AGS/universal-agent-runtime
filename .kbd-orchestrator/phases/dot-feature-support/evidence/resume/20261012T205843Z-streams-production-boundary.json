@@ -1,0 +1,575 @@
+{
+  "change": "dot-06-fresh-process-resume",
+  "task": "2",
+  "gate": "streams",
+  "tier": "Tier1 completed-change production integration",
+  "command": [
+    "env",
+    "-i",
+    "HOME=/Users/gqadonis",
+    "PATH=/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.local/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/67864_1791838617626/bin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.pyenv/shims:/Users/gqadonis/.minimax/bin:/Users/gqadonis/.local/bin:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/usr/local/share/dotnet:~/.dotnet/tools:/usr/local/go/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/opt/podman/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/gqadonis/.codex/tmp/arg0/codex-arg08wZZjw:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/29547_1791811184470/bin:/Users/gqadonis/miniconda3/condabin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.the-boss/commands:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/opt/zerobrew/prefix/bin:/Users/gqadonis/.pochi/bin:/Users/gqadonis/.antigravity/antigravity/bin:/Users/gqadonis/.codeium/windsurf/bin:/opt/homebrew/opt/openssl@3/bin:/opt/homebrew/opt/bison/bin:/Users/gqadonis/.opencode/bin:/Users/gqadonis/.console-ninja/.bin:/Users/gqadonis/.wasmedge/bin:/Users/gqadonis/.wasmtime/bin:/Users/gqadonis/.deno/bin:/Users/gqadonis/.paperspace/bin:/Users/gqadonis/.groundcover/bin:/Users/gqadonis/.rd/bin:/Users/gqadonis/google-cloud-sdk/bin:/Users/gqadonis/.shorebird/bin:/Applications/Android Studio/Contents/MacOS:/Users/gqadonis/development/flutter/bin:/Users/gqadonis/.rust-mcp-stack/bin:/Users/gqadonis/.cargo/bin:/Users/gqadonis/.bun/bin:/Users/gqadonis/Library/pnpm:/opt/homebrew/opt/go/libexec/bin:/Users/gqadonis/go/bin:/opt/local/bin:/opt/local/sbin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Users/gqadonis/.pub-cache/bin:/Users/gqadonis/development/flutter/.pub-cache/bin:/Users/gqadonis/Library/Android/sdk/platform-tools:/Users/gqadonis/Library/Android/sdk/tools:/Users/gqadonis/Library/Android/sdk/tools/bin:/Users/gqadonis/Library/Android/sdk/emulator:/Users/gqadonis/.rvm/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.modular/bin:/Users/gqadonis/bin:/Users/gqadonis/Projects/ide/bin:/Users/gqadonis/.dotnet/tools:/Users/gqadonis/.orbstack/bin:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/gqadonis/.dotnet/tools:/usr/local/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.orbstack/bin",
+    "VERTEXAI_PROJECT=dot05-fixture",
+    "VERTEXAI_LOCATION=us-central1",
+    "UAR_DOT05_INFRA_FILE=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "UAR_DOT05_NAMESPACE=dot05_affected06_20261012T205716_fcf8c1387b",
+    "UAR_REMOTE_SURREAL_DURABILITY_ATTESTED=1",
+    "RUSTC_WRAPPER=",
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full",
+    "--test",
+    "stream_terminal_contract",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "privateRoot": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-stream-attested-retry-m73zefw5",
+  "startedAt": "2026-10-12T20:58:43.557937+00:00",
+  "status": "passed",
+  "sourceSetSha256": "1eb27185a624fa5f9f29bde7ecc5ee71b3476e53c1bfb533656d9fab1dc7c142",
+  "boundInputCount": 6565,
+  "gitlinkCount": 16,
+  "sourceEdits": [],
+  "unrequestedAdditions": [],
+  "newProductionGuards": [],
+  "cargoWrapperPid": 70065,
+  "sampledFixtureExecutableBindings": [],
+  "elapsedSeconds": 163.44,
+  "stdoutBytes": 5860,
+  "stderrBytes": 11703,
+  "actualExecutableArtifacts": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "sha256": "e93413a28cd18369434c9923ee53012c2fb913fa3df14500f62d4e95d5d2ef00",
+      "bytes": 329831400,
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-stream-attested-retry-m73zefw5/streams-accepted-stream_terminal_contract-a0db6587c4848919",
+      "retainedSha256": "e93413a28cd18369434c9923ee53012c2fb913fa3df14500f62d4e95d5d2ef00"
+    },
+    {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+      "bytes": 101280,
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-stream-attested-retry-m73zefw5/streams-accepted-https-python-72517",
+      "retainedSha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d"
+    }
+  ],
+  "fixtureRoots": [
+    "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-8oE8bo"
+  ],
+  "knownFixturePidCount": 14,
+  "observedCompletedRows": 83,
+  "exitCode": 0,
+  "finishedAt": "2026-10-12T21:01:26.998654+00:00",
+  "sourceStableAtExit": true,
+  "environmentStableAtExit": true,
+  "testSummary": [
+    "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 159.62s"
+  ],
+  "warningLines": [
+    "warning: Cargo.toml: version requirement `=0.4.1+0.23` for dependency `ort-tract` includes semver metadata which will be ignored, removing the metadata is recommended to avoid confusion",
+    "warning: `universal-agent-runtime` (manifest) generated 1 warning",
+    "warning: the item `Digest` is imported redundantly",
+    "warning: the item `Sha256` is imported redundantly",
+    "warning: unused import: `context::SelectedTeamContext`",
+    "warning: the item `IntoFuture` is imported redundantly",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: function `build_full_harness_sse_response` is never used",
+    "warning: function `reject_portable_authority` is never used",
+    "warning: struct `Draft1Migration` is never constructed",
+    "warning: function `migrate_draft1_document` is never used",
+    "warning: function `required_string` is never used",
+    "warning: function `has_markdown_structure` is never used",
+    "warning: method `request` is never used",
+    "warning: method `scrub` is never used",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: unused `axum::Extension` that must be used",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: `universal-agent-runtime` (lib) generated 31 warnings (run `cargo fix --lib -p universal-agent-runtime` to apply 1 suggestion)",
+    "warning: variant `DelayedContent` is never constructed",
+    "warning: method `with_prompt_prefix` is never used",
+    "warning: `universal-agent-runtime` (bin \"stub-llm\") generated 2 warnings"
+  ],
+  "executedRows": [
+    {
+      "protocol": "OpenAi",
+      "case": "valid"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "split"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "empty"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "partial_after_terminal"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "partial_event"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "malformed"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "invalid_utf8"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "malformed_after_terminal"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "tool"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "tool_missing_terminal"
+    },
+    {
+      "protocol": "OpenAi",
+      "case": "cancel"
+    },
+    {
+      "protocol": "Azure",
+      "case": "valid"
+    },
+    {
+      "protocol": "Azure",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "valid"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "split"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "empty"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "partial_after_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "partial_event"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "malformed"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "invalid_utf8"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "malformed_after_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "tool"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "tool_missing_terminal"
+    },
+    {
+      "protocol": "LiterAnthropic",
+      "case": "cancel"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "valid"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "split"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "empty"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "partial_after_terminal"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "partial_event"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "malformed"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "invalid_utf8"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "malformed_after_terminal"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "tool"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "tool_missing_terminal"
+    },
+    {
+      "protocol": "NativeAnthropic",
+      "case": "cancel"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "valid"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "split"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "empty"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "partial_after_terminal"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "partial_event"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "malformed"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "invalid_utf8"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "malformed_after_terminal"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "tool"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "tool_missing_terminal"
+    },
+    {
+      "protocol": "GoogleAi",
+      "case": "cancel"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "valid"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "split"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "empty"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "partial_after_terminal"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "partial_event"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "malformed"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "invalid_utf8"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "malformed_after_terminal"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "tool"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "tool_missing_terminal"
+    },
+    {
+      "protocol": "Vertex",
+      "case": "cancel"
+    },
+    {
+      "protocol": "Cohere",
+      "case": "valid"
+    },
+    {
+      "protocol": "Cohere",
+      "case": "split"
+    },
+    {
+      "protocol": "Cohere",
+      "case": "empty"
+    },
+    {
+      "protocol": "Cohere",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "Cohere",
+      "case": "partial_after_terminal"
+    },
+    {
+      "protocol": "Cohere",
+      "case": "partial_event"
+    },
+    {
+      "protocol": "Cohere",
+      "case": "malformed"
+    },
+    {
+      "protocol": "Cohere",
+      "case": "invalid_utf8"
+    },
+    {
+      "protocol": "Cohere",
+      "case": "malformed_after_terminal"
+    },
+    {
+      "protocol": "Cohere",
+      "case": "tool"
+    },
+    {
+      "protocol": "Cohere",
+      "case": "tool_missing_terminal"
+    },
+    {
+      "protocol": "Cohere",
+      "case": "cancel"
+    },
+    {
+      "protocol": "Bedrock",
+      "case": "valid"
+    },
+    {
+      "protocol": "Bedrock",
+      "case": "split"
+    },
+    {
+      "protocol": "Bedrock",
+      "case": "empty"
+    },
+    {
+      "protocol": "Bedrock",
+      "case": "missing_terminal"
+    },
+    {
+      "protocol": "Bedrock",
+      "case": "partial_after_terminal"
+    },
+    {
+      "protocol": "Bedrock",
+      "case": "malformed"
+    },
+    {
+      "protocol": "Bedrock",
+      "case": "tool"
+    },
+    {
+      "protocol": "Bedrock",
+      "case": "tool_missing_terminal"
+    },
+    {
+      "protocol": "Bedrock",
+      "case": "cancel"
+    }
+  ],
+  "executedRowCount": 83,
+  "completedBoundaries": 249,
+  "actualScenarioInventoryMatched": true,
+  "actualBoundaryMatrix": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T205843Z-streams-actual-boundary-matrix.json",
+    "sha256": "18374b25a6180bc53b13c6ef19b049c6b0e7f191d2b7d5b869e6229e80dd8f1a",
+    "observedRows": 249,
+    "matchedBoundaries": 249
+  },
+  "actualBoundaryDiagnosticsMatched": true,
+  "upstreamResumeCustomerArtifact": [
+    {
+      "originalProducedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-release-negative-p0kxlbra/resume-accepted-production-runtime",
+      "retainedSha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+      "retainedCopyStable": true,
+      "productionSourceSetSha256": "f50f80ec67dd369c73bc34fd1b72dfaac4d77139431bc91fa5fc12bf713ab679",
+      "qualification": "Prior accepted resume gate customer artifact with server-full,postgres-backend features; current stream fixture is corrected, production inputs unchanged. Not a new streams artifact or launched streams process."
+    }
+  ],
+  "upstreamResumeSourceQualification": {
+    "priorSourceSetSha256": "f50f80ec67dd369c73bc34fd1b72dfaac4d77139431bc91fa5fc12bf713ab679",
+    "currentSourceSetSha256": "1eb27185a624fa5f9f29bde7ecc5ee71b3476e53c1bfb533656d9fab1dc7c142",
+    "changedPaths": [
+      "tests/stream_terminal_contract.rs"
+    ],
+    "productionSourceUnchanged": true,
+    "limits": [
+      "Whole source input digest differs because stream test helper changed. Resume production behavior was not changed or re-certified."
+    ]
+  },
+  "upstreamResumeCustomerArtifactStable": true,
+  "rawStdoutSha256": "8c09c0641b369910547f31e00e8a4f7d0ee86aa4feffc45cceaa6f1b988702dc",
+  "rawStderrSha256": "9ea2ec9455e492599d96bd16191935e283166481a1121ed31b9d81115af64bf2",
+  "executableStableAtExit": true,
+  "cleanupObservations": [
+    {
+      "pid": 70159,
+      "basis": "exact-child-of-cargo",
+      "state": "gone"
+    },
+    {
+      "pid": 72517,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 72654,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 72752,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 72910,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 73167,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 73311,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 73539,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 73720,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 73882,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 73983,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 74148,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 74277,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 74418,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    }
+  ],
+  "cleanupUnknown": false,
+  "sourceStableAfterCleanup": true,
+  "privateDiagnosticFileCount": 1813,
+  "sanitizedStdout": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T205843Z-streams-stdout.log",
+    "sha256": "8c09c0641b369910547f31e00e8a4f7d0ee86aa4feffc45cceaa6f1b988702dc"
+  },
+  "sanitizedStderr": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T205843Z-streams-stderr.log",
+    "sha256": "9ea2ec9455e492599d96bd16191935e283166481a1121ed31b9d81115af64bf2"
+  },
+  "sourceStableAtFinalSeal": true,
+  "environmentStableAtFinalSeal": true,
+  "rootInfrastructurePreserved": true,
+  "upstreamResumeCustomerArtifactStableAtFinalSeal": true,
+  "limits": [
+    "Synthetic protocol peers do not certify genuine provider inference.",
+    "No abrupt-owner takeover, publication or release claim.",
+    "Registry/native transitive/toolchain library closure not bound.",
+    "Short lived children can evade process sampling; fixture trace/completion evidence determines counts."
+  ]
+}

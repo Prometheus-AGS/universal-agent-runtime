@@ -1,0 +1,29 @@
+{
+  "gate": "locked-production-docker-arm64",
+  "argv": [
+    "docker",
+    "buildx",
+    "build",
+    "--platform",
+    "linux/arm64",
+    "--progress",
+    "plain",
+    "--load",
+    "--iidfile",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/release/task2-22c70da51e/image.id",
+    "--metadata-file",
+    "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/release/task2-22c70da51e/build-metadata.json",
+    "--secret",
+    "id=github_token,env=GITHUB_TOKEN",
+    "-t",
+    "uar-dot01:22c70da51e",
+    "/Users/gqadonis/.claude/worktrees/uar-dot-release-20261011-22c70da51e"
+  ],
+  "cwd": "/Users/gqadonis/.claude/worktrees/uar-dot-release-20261011-22c70da51e",
+  "started_at": "2026-10-11T22:51:51.048166+00:00",
+  "status": "passed",
+  "log": "docker-build.log",
+  "finished_at": "2026-10-11T23:24:11.477126+00:00",
+  "exit_code": 0,
+  "credential_redactions": 0
+}

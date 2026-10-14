@@ -1,8 +1,27 @@
+use crate::uar::persistence::knowledge_namespace::KnowledgeNamespace;
+#[path = "supervisor/surreal.rs"]
+mod supervisor_records;
+#[path = "a2a_bindings/surreal.rs"]
+mod a2a_bindings;
+#[path = "agui_runs/surreal.rs"]
+mod agui_runs;
+#[path = "mcp_elicitations/surreal.rs"]
+mod mcp_elicitations;
+#[path = "accounting/surreal.rs"]
+mod accounting_records;
+#[path = "accounting_remote_grants/surreal.rs"]
+mod accounting_remote_grants;
+use crate::uar::persistence::accounting;
+#[path = "ingestion_records/surreal.rs"]
+mod ingestion_records;
+use crate::uar::persistence::ingestion_records::{IngestionJob, IngestionPublication};
 #[path = "surreal_host.rs"]
 mod host;
 pub use host::HostSurrealBackend;
 #[path = "approval_records/surreal.rs"]
 mod approval_records;
+#[path = "checkpoint_records/surreal.rs"]
+mod checkpoint_records;
 use crate::uar::persistence::approval_decisions::ApprovalRecord;
 use crate::session::Session;
 use crate::uar::a2ui::presentations::{Presentation, PresentationDraft};
@@ -581,6 +600,48 @@ impl SurrealDbProvider {
 
 #[async_trait]
 impl PersistenceLayer for SurrealDbProvider {
+    fn supports_durable_tool_receipts(&self) -> bool { self.durable_instances }
+    fn supports_durable_mcp_elicitations(&self) -> bool { self.durable_instances }
+    async fn create_mcp_elicitation(&self, row: &crate::uar::persistence::mcp_elicitations::McpElicitationRecord) -> Result<()> { mcp_elicitations::create(self,row).await }
+    async fn list_mcp_elicitations(&self, owner: &str, run: &str) -> Result<Vec<crate::uar::persistence::mcp_elicitations::McpElicitationRecord>> { mcp_elicitations::list(self,owner,run).await }
+    async fn compare_and_swap_mcp_elicitation(&self, before: &crate::uar::persistence::mcp_elicitations::McpElicitationRecord, after: &crate::uar::persistence::mcp_elicitations::McpElicitationRecord) -> Result<bool> { mcp_elicitations::transition(self,before,after).await }
+    fn supports_durable_agui_runs(&self) -> bool { self.durable_instances }
+    async fn create_agui_run(&self, row: &crate::uar::persistence::agui_runs::AguiRunBinding, previous: Option<&crate::uar::persistence::agui_runs::AguiRunBinding>) -> Result<bool> { agui_runs::create(self,row,previous).await }
+    async fn load_agui_run(&self, owner: &str, agent: &str, thread: &str, run: &str) -> Result<Option<crate::uar::persistence::agui_runs::AguiRunBinding>> { agui_runs::load(self,owner,agent,thread,run).await }
+    async fn list_agui_runs(&self, owner: &str, agent: &str, thread: &str) -> Result<Vec<crate::uar::persistence::agui_runs::AguiRunBinding>> { agui_runs::list(self,owner,agent,thread).await }
+    async fn compare_and_swap_agui_run(&self, before: &crate::uar::persistence::agui_runs::AguiRunBinding, after: &crate::uar::persistence::agui_runs::AguiRunBinding) -> Result<bool> { agui_runs::transition(self,before,after).await }
+    async fn bind_accounting_delegation(&self, link: &accounting::AccountingDelegation) -> Result<()> { accounting_records::bind_delegation(self,link).await }
+    async fn get_accounting_delegation(&self, digest: &str) -> Result<Option<accounting::AccountingCall>> { accounting_records::delegation(self,digest).await }
+
+    async fn reconcile_a2a_cancellation(&self, owner: &str, user: &str, agent: &str, task: &str) -> Result<Option<crate::uar::api::a2a::durable::A2aBinding>> { a2a_bindings::reconcile_cancellation(self,owner,user,agent,task).await }
+    fn supports_durable_a2a_bindings(&self) -> bool { self.durable_instances }
+    async fn create_a2a_binding(&self, record: &crate::uar::api::a2a::durable::A2aBinding) -> Result<bool> { a2a_bindings::create(self, record).await }
+    async fn load_a2a_binding(&self, owner: &str, agent: &str, task: &str) -> Result<Option<crate::uar::api::a2a::durable::A2aBinding>> { a2a_bindings::load(self, owner, agent, task).await }
+    async fn compare_and_swap_a2a_binding(&self, before: &crate::uar::api::a2a::durable::A2aBinding, after: &crate::uar::api::a2a::durable::A2aBinding) -> Result<bool> { a2a_bindings::transition(self, before, after).await }
+    async fn list_a2a_bindings(&self, owner: &str, agent: &str) -> Result<Vec<crate::uar::api::a2a::durable::A2aBinding>> { a2a_bindings::list(self, owner, agent).await }
+
+    fn supports_durable_accounting(&self) -> bool { self.durable_instances }
+    async fn admit_remote_grant(&self, owner: &str, accounting_id: &str,
+        grant: &crate::uar::api::a2a::contract::UarUsageGrant,
+        activity: accounting::RemoteGrantActivity) -> Result<accounting::RemoteGrantState> {
+        accounting_remote_grants::admit(self, owner, accounting_id, grant, activity).await
+    }
+    async fn ensure_accounting_scope(&self, id: &accounting::ScopeIdentity, limits: &accounting::ScopeLimits) -> Result<accounting::AccountingScope> { accounting_records::ensure(self,id,limits).await }
+    async fn get_accounting_scope(&self, id: &accounting::ScopeIdentity) -> Result<Option<accounting::AccountingScope>> { accounting_records::scope(self,id).await }
+    async fn update_accounting_scope(&self, change: &accounting::ScopeUpdate) -> Result<accounting::AccountingScope> { accounting_records::update(self,change).await }
+    async fn admit_accounting_call(&self, admission: &accounting::CallAdmission) -> Result<accounting::AccountingCall> { accounting_records::admit(self,admission).await }
+    async fn record_accounting_usage(&self, usage: &accounting::CallUsage) -> Result<accounting::AccountingCall> { accounting_records::usage(self,usage).await }
+    async fn list_accounting_calls(&self, owner: &str, run: &str) -> Result<Vec<accounting::AccountingCall>> { accounting_records::list(self,owner,run).await }
+
+    fn supports_durable_ingestion(&self) -> bool { self.durable_instances }
+    async fn accept_ingestion(&self, document: &KnowledgeDocument, source: &[u8]) -> Result<IngestionJob> { ingestion_records::accept(self, document, source).await }
+    async fn discover_ingestion(&self, limit: usize) -> Result<Vec<IngestionJob>> { ingestion_records::discover(self, limit).await }
+    async fn get_ingestion_job(&self, owner: &str, document: &str) -> Result<Option<IngestionJob>> { ingestion_records::get(self, owner, document).await }
+    async fn get_ingestion_source(&self, job: &IngestionJob) -> Result<Option<Vec<u8>>> { ingestion_records::source(self, job).await }
+    async fn transition_ingestion(&self, before: &IngestionJob, after: &IngestionJob) -> Result<bool> { ingestion_records::transition(self, before, after).await }
+    async fn publish_ingestion(&self, job: &IngestionJob, publication: &IngestionPublication) -> Result<()> { ingestion_records::publish(self, job, publication).await }
+    async fn reconcile_ingestion(&self) -> Result<()> { ingestion_records::reconcile(self).await }
+
     fn supports_durable_approvals(&self) -> bool { self.durable_instances }
     async fn create_approval_record(&self, record: &ApprovalRecord) -> Result<()> { approval_records::create(self, record).await }
     async fn transition_approval_record(&self, before: &ApprovalRecord, after: &ApprovalRecord) -> Result<bool> { approval_records::transition(self, before, after).await }
@@ -1640,10 +1701,15 @@ impl PersistenceLayer for SurrealDbProvider {
         let response = self
             .db
             .query(
-                "CREATE type::record('tool_admission_evidence', $record_key)
-                 CONTENT $payload RETURN AFTER",
+                "BEGIN TRANSACTION;
+                 LET $epoch = (SELECT * FROM type::record('checkpoint_runtime_epochs',$runtime_epoch))[0];
+                 IF $new_admission AND $epoch != NONE AND $epoch.state != 'active' { THROW 'supervisor_epoch_closed'; };
+                 CREATE type::record('tool_admission_evidence', $record_key) CONTENT $payload RETURN AFTER;
+                 COMMIT TRANSACTION;",
             )
             .bind(("record_key", record_key.clone()))
+            .bind(("runtime_epoch", evidence.runtime_epoch.clone()))
+            .bind(("new_admission",matches!(evidence.state,crate::uar::persistence::tool_admission::ToolAdmissionEvidenceState::ClaimIntent | crate::uar::persistence::tool_admission::ToolAdmissionEvidenceState::AwaitingApproval)))
             .bind((
                 "payload",
                 serde_json::json!({
@@ -1655,12 +1721,16 @@ impl PersistenceLayer for SurrealDbProvider {
                 }),
             ))
             .await?;
-        match response.check() {
-            Ok(mut checked) => {
-                let _: Option<serde_json::Value> = checked.take(0)?;
-                Ok(evidence.clone())
-            }
-            Err(_) => {
+        let mut response = response;
+        let failures = response.take_errors();
+        // A cancelled transaction can place NotExecuted before the deliberate
+        // refusal. Never let duplicate-evidence readback mask a closed epoch.
+        if failures.values().any(|error| error.to_string().contains("supervisor_epoch_closed")) {
+            return Err(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::ExecutorClosed.into());
+        }
+        match failures.is_empty() {
+            true => Ok(evidence.clone()),
+            false => {
                 let stored = self
                     .list_tool_admission_evidence(&evidence.owner_id)
                     .await?;
@@ -1697,63 +1767,42 @@ impl PersistenceLayer for SurrealDbProvider {
 
     // Session Management
     async fn save_session(&self, session: &Session) -> Result<()> {
-        self.save_tenant_record("sessions", session.owner_id(), session.id(), session)
-            .await
+        let key = crate::uar::persistence::session_storage_key(session.owner_id(), session.id());
+        let payload = tenant_record_payload(session, session.id())?;
+        let _: Option<surrealdb::types::Value> = self.db.upsert(("sessions", key)).content(payload).await?;
+        Ok(())
     }
 
     async fn load_session(&self, owner_id: &str, id: &str) -> Result<Option<Session>> {
-        if let Some(session) = self.fetch_tenant_record("sessions", owner_id, id).await? {
-            return from_db_opt(Some(session));
+        let key = crate::uar::persistence::session_storage_key(owner_id, id);
+        if let Some(value) = self.fetch_one("sessions", &key).await? {
+            let session: Session = from_db_value(restore_tenant_record_id(value))?;
+            anyhow::ensure!(session.owner_id() == owner_id && session.id() == id, "Session partition mismatch");
+            return Ok(Some(session));
         }
-        if owner_id != crate::session::ANONYMOUS_SESSION_OWNER {
-            return Ok(None);
-        }
-        let Some(legacy) = self.fetch_one("sessions", id).await? else {
-            return Ok(None);
-        };
+        if owner_id != crate::session::ANONYMOUS_SESSION_OWNER { return Ok(None); }
+        let Some(legacy) = self.fetch_one("sessions", id).await? else { return Ok(None); };
         let session: Session = from_db_value(legacy)?;
+        if session.owner_id() != crate::session::ANONYMOUS_SESSION_OWNER || session.id() != id {
+            return Ok(None);
+        }
         self.save_session(&session).await?;
         let _: Option<surrealdb::types::Value> = self.db.delete(("sessions", id)).await?;
         Ok(Some(session))
     }
 
     async fn delete_session(&self, owner_id: &str, id: &str) -> Result<bool> {
-        // Check existence first via the tenant-aware fetch path.
-        let existed = self
-            .fetch_tenant_record("sessions", owner_id, id)
-            .await?
-            .is_some();
-        if !existed {
-            return Ok(false);
+        if self.load_session(owner_id, id).await?.is_none() { return Ok(false); }
+        let key = crate::uar::persistence::session_storage_key(owner_id, id);
+        let _: Option<surrealdb::types::Value> = self.db.delete(("sessions", key)).await?;
+        // Accounting and tool evidence have independent host lifecycles. A
+        // session identifier alone cannot authorize their deletion.
+        if owner_id == crate::session::ANONYMOUS_SESSION_OWNER {
+            self.delete_tenant_record("conversation_policies", owner_id, id).await?;
+        } else {
+            let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
+            let _: Option<surrealdb::types::Value> = self.db.delete(("principal_conversation_policies", key)).await?;
         }
-
-        // Delete the session record itself.
-        self.delete_tenant_record("sessions", owner_id, id).await?;
-
-        // Cascade: conversation policy keyed by the same session/conversation id.
-        self.delete_tenant_record("conversation_policies", owner_id, id)
-            .await?;
-
-        // Cascade: cost ledger entries scoped to this session.
-        let _: Vec<surrealdb::types::Value> = self
-            .db
-            .query("DELETE FROM cost_ledger WHERE scope = 'session' AND scope_id = $id")
-            .bind(("id", id.to_string()))
-            .await?
-            .take(0)
-            .unwrap_or_default();
-
-        // Cascade: tool admission evidence owned by this user.
-        // Evidence records are keyed by owner_id without a direct session
-        // reference, so we remove all evidence rows belonging to this owner.
-        let _: Vec<surrealdb::types::Value> = self
-            .db
-            .query("DELETE FROM tool_admission_evidence WHERE owner_id = $owner")
-            .bind(("owner", owner_id.to_string()))
-            .await?
-            .take(0)
-            .unwrap_or_default();
-
         Ok(true)
     }
 
@@ -1844,6 +1893,7 @@ impl PersistenceLayer for SurrealDbProvider {
             return Ok(None);
         };
         let record: crate::uar::domain::policy::ConversationPolicyRecord = from_db_value(legacy)?;
+        if record.owner_id != crate::session::ANONYMOUS_SESSION_OWNER || record.conversation_id != conversation_id { return Ok(None); }
         self.save_conversation_policy(&record).await?;
         let _: Option<surrealdb::types::Value> = self
             .db
@@ -2029,11 +2079,13 @@ impl PersistenceLayer for SurrealDbProvider {
 
     // Knowledge Base Management
     async fn save_knowledge_base(&self, kb: &KnowledgeBase) -> Result<()> {
-        self.save_tenant_record("knowledge_bases", &kb.owner_id, &kb.id, kb)
+        let namespace = KnowledgeNamespace::for_owner(&kb.owner_id)?;
+        self.save_tenant_record(namespace.table("knowledge_bases"), &kb.owner_id, &kb.id, kb)
             .await
     }
 
     async fn save_chunk(&self, chunk: &KnowledgeChunk) -> Result<()> {
+        let namespace = KnowledgeNamespace::for_owner(&chunk.owner_id)?;
         if self
             .get_knowledge_base(&chunk.owner_id, &chunk.kb_id)
             .await?
@@ -2050,7 +2102,7 @@ impl PersistenceLayer for SurrealDbProvider {
             anyhow::bail!("knowledge document is not accessible to chunk owner");
         }
         self.save_tenant_record(
-            "knowledge_chunks",
+            namespace.table("knowledge_chunks"),
             &chunk.owner_id,
             &chunk.id.to_string(),
             chunk,
@@ -2065,9 +2117,10 @@ impl PersistenceLayer for SurrealDbProvider {
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
         let mut response = self
             .db
-            .query("SELECT * FROM knowledge_chunks WHERE owner_id = $owner_id")
+            .query(namespace.query("SELECT * FROM knowledge_chunks WHERE owner_id = $owner_id"))
             .bind(("owner_id", owner_id.to_string()))
             .await?;
         let chunks_raw: Vec<surrealdb::types::Value> = response.take(0)?;
@@ -2187,8 +2240,9 @@ impl PersistenceLayer for SurrealDbProvider {
     // =========================================================================
 
     async fn get_knowledge_base(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeBase>> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
         from_db_opt(
-            self.fetch_tenant_record("knowledge_bases", owner_id, id)
+            self.fetch_tenant_record(namespace.table("knowledge_bases"), owner_id, id)
                 .await?,
         )
     }
@@ -2198,11 +2252,12 @@ impl PersistenceLayer for SurrealDbProvider {
         owner_id: &str,
         name: &str,
     ) -> Result<Option<KnowledgeBase>> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
         let sql =
             "SELECT * FROM knowledge_bases WHERE owner_id = $owner_id AND name = $name LIMIT 1";
         let mut response = self
             .db
-            .query(sql)
+            .query(namespace.query(sql))
             .bind(("owner_id", owner_id.to_string()))
             .bind(("name", name.to_string()))
             .await?;
@@ -2218,9 +2273,10 @@ impl PersistenceLayer for SurrealDbProvider {
     }
 
     async fn list_knowledge_bases(&self, owner_id: &str) -> Result<Vec<KnowledgeBase>> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
         let mut response = self
             .db
-            .query("SELECT * FROM knowledge_bases WHERE owner_id = $owner_id")
+            .query(namespace.query("SELECT * FROM knowledge_bases WHERE owner_id = $owner_id"))
             .bind(("owner_id", owner_id.to_string()))
             .await?;
         let rows: Vec<surrealdb::types::Value> = response.take(0)?;
@@ -2232,23 +2288,7 @@ impl PersistenceLayer for SurrealDbProvider {
     }
 
     async fn delete_knowledge_base(&self, owner_id: &str, id: &str) -> Result<()> {
-        // Delete the KB - SurrealDB doesn't have FK CASCADE, so we delete related records first
-        self.delete_tenant_record("knowledge_bases", owner_id, id)
-            .await?;
-        // Also delete related chunks and documents
-        let sql = "DELETE FROM knowledge_chunks WHERE owner_id = $owner_id AND kb_id = $id";
-        self.db
-            .query(sql)
-            .bind(("owner_id", owner_id.to_string()))
-            .bind(("id", id.to_string()))
-            .await?;
-        let sql = "DELETE FROM knowledge_documents WHERE owner_id = $owner_id AND kb_id = $id";
-        self.db
-            .query(sql)
-            .bind(("owner_id", owner_id.to_string()))
-            .bind(("id", id.to_string()))
-            .await?;
-        Ok(())
+        ingestion_records::delete(self, owner_id, id, true).await
     }
 
     // =========================================================================
@@ -2263,6 +2303,7 @@ impl PersistenceLayer for SurrealDbProvider {
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
         if kb_ids.is_empty() {
             return Ok(vec![]);
         }
@@ -2272,7 +2313,7 @@ impl PersistenceLayer for SurrealDbProvider {
         let sql = "SELECT * FROM knowledge_chunks WHERE owner_id = $owner_id AND kb_id IN $kb_ids";
         let mut res = self
             .db
-            .query(sql)
+            .query(namespace.query(sql))
             .bind(("owner_id", owner_id.to_string()))
             .bind(("kb_ids", kb_ids_vec))
             .await?;
@@ -2315,6 +2356,7 @@ impl PersistenceLayer for SurrealDbProvider {
     // =========================================================================
 
     async fn save_document(&self, doc: &KnowledgeDocument) -> Result<()> {
+        let namespace = KnowledgeNamespace::for_owner(&doc.owner_id)?;
         if self
             .get_knowledge_base(&doc.owner_id, &doc.kb_id)
             .await?
@@ -2322,22 +2364,24 @@ impl PersistenceLayer for SurrealDbProvider {
         {
             anyhow::bail!("knowledge base is not accessible to document owner");
         }
-        self.save_tenant_record("knowledge_documents", &doc.owner_id, &doc.id, doc)
+        self.save_tenant_record(namespace.table("knowledge_documents"), &doc.owner_id, &doc.id, doc)
             .await
     }
 
     async fn get_document(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeDocument>> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
         from_db_opt(
-            self.fetch_tenant_record("knowledge_documents", owner_id, id)
+            self.fetch_tenant_record(namespace.table("knowledge_documents"), owner_id, id)
                 .await?,
         )
     }
 
     async fn list_documents(&self, owner_id: &str, kb_id: &str) -> Result<Vec<KnowledgeDocument>> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
         let sql = "SELECT * FROM knowledge_documents WHERE owner_id = $owner_id AND kb_id = $kb_id ORDER BY created_at";
         let mut res = self
             .db
-            .query(sql)
+            .query(namespace.query(sql))
             .bind(("owner_id", owner_id.to_string()))
             .bind(("kb_id", kb_id.to_string()))
             .await?;
@@ -2356,10 +2400,11 @@ impl PersistenceLayer for SurrealDbProvider {
     }
 
     async fn count_documents(&self, owner_id: &str, kb_id: &str) -> Result<usize> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
         let sql = "SELECT count() AS c FROM knowledge_documents WHERE owner_id = $owner_id AND kb_id = $kb_id GROUP ALL";
         let mut res = self
             .db
-            .query(sql)
+            .query(namespace.query(sql))
             .bind(("owner_id", owner_id.to_string()))
             .bind(("kb_id", kb_id.to_string()))
             .await?;
@@ -2387,9 +2432,10 @@ impl PersistenceLayer for SurrealDbProvider {
         doc_id: &str,
         status: &DocumentStatus,
     ) -> Result<()> {
+        let namespace = KnowledgeNamespace::for_owner(owner_id)?;
         let sql = "UPDATE knowledge_documents SET status = $status, updated_at = time::now() WHERE owner_id = $owner_id AND (logical_id = $id OR id = type::record('knowledge_documents', $id))";
         self.db
-            .query(sql)
+            .query(namespace.query(sql))
             .bind(("id", doc_id.to_string()))
             .bind(("owner_id", owner_id.to_string()))
             .bind(("status", serde_json::to_value(status)?))
@@ -2399,17 +2445,7 @@ impl PersistenceLayer for SurrealDbProvider {
     }
 
     async fn delete_document(&self, owner_id: &str, doc_id: &str) -> Result<()> {
-        // Delete associated chunks first
-        let sql =
-            "DELETE FROM knowledge_chunks WHERE owner_id = $owner_id AND document_id = $doc_id";
-        self.db
-            .query(sql)
-            .bind(("owner_id", owner_id.to_string()))
-            .bind(("doc_id", doc_id.to_string()))
-            .await?;
-
-        self.delete_tenant_record("knowledge_documents", owner_id, doc_id)
-            .await
+        ingestion_records::delete(self, owner_id, doc_id, false).await
     }
 
     // =========================================================================
@@ -2703,10 +2739,39 @@ impl PersistenceLayer for SurrealDbProvider {
     // Checkpoint Persistence
     // =========================================================================
 
+    async fn register_supervisor_domain(&self, registration: &crate::uar::runtime::supervisor::SupervisorRegistration) -> Result<()> { supervisor_records::register(self,registration).await }
+    async fn load_supervisor_domain(&self, epoch: &str) -> Result<Option<crate::uar::runtime::supervisor::SupervisorRegistration>> { supervisor_records::load_domain(self,epoch).await }
+    async fn create_supervisor_challenge(&self, challenge: &crate::uar::runtime::supervisor::SupervisorChallenge) -> Result<()> { supervisor_records::create_challenge(self,challenge).await }
+    async fn load_supervisor_challenge(&self, id: &str) -> Result<Option<crate::uar::runtime::supervisor::SupervisorChallenge>> { supervisor_records::load_challenge(self,id).await }
+    async fn commit_supervisor_checkpoint_exclusion(&self, proof: &crate::uar::runtime::supervisor::VerifiedSupervisorExclusion) -> Result<()> { supervisor_records::checkpoint_exclusion(self,proof).await }
+
+    fn supports_durable_checkpoint_resume(&self) -> bool { self.durable_instances }
+
+    async fn save_resumable_checkpoint(&self, envelope: &crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope) -> Result<()> {
+        checkpoint_records::save(self, envelope).await
+    }
+
+    async fn load_checkpoint_resume(&self, owner: &str, run: &str, checkpoint: &str) -> Result<Option<crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope>> {
+        checkpoint_records::load(self, owner, run, checkpoint).await
+    }
+
+    async fn list_checkpoint_resumes(&self, owner: &str, run: &str) -> Result<Vec<crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope>> {
+        checkpoint_records::list(self, owner, run).await
+    }
+
+    async fn claim_checkpoint_resume(&self, envelope: &crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope, claim: &crate::uar::persistence::checkpoint_resume::CheckpointContinuationClaim) -> Result<crate::uar::persistence::checkpoint_resume::CheckpointClaimOutcome> {
+        checkpoint_records::claim(self, envelope, claim).await
+    }
+
+    async fn exclude_checkpoint_runtime_epoch(&self, epoch: &str) -> Result<()> {
+        checkpoint_records::exclude_epoch(self, epoch).await
+    }
+
     async fn save_checkpoint(
         &self,
         checkpoint: &crate::uar::runtime::checkpoint::Checkpoint,
     ) -> Result<()> {
+        if !self.durable_instances { return Err(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into()); }
         checkpoint.validate_integrity()?;
         let mut payload = to_db_value(checkpoint)?;
         // Store a redundant `_cp_id` field so list queries can recover the id
@@ -2730,6 +2795,7 @@ impl PersistenceLayer for SurrealDbProvider {
         &self,
         id: &str,
     ) -> Result<Option<crate::uar::runtime::checkpoint::Checkpoint>> {
+        if !self.durable_instances { return Err(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into()); }
         let raw = self.fetch_one("checkpoints", id).await?;
         match raw {
             None => Ok(None),
@@ -2751,6 +2817,7 @@ impl PersistenceLayer for SurrealDbProvider {
         &self,
         run_id: &str,
     ) -> Result<Vec<crate::uar::runtime::checkpoint::Checkpoint>> {
+        if !self.durable_instances { return Err(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into()); }
         let run_id_owned = run_id.to_string();
         let mut res = self
             .db
@@ -3176,7 +3243,7 @@ mod tests {
         let now = chrono::Utc::now().to_rfc3339();
         let kb = KnowledgeBase {
             id: "status-kb".into(),
-            owner_id: "status-owner".into(),
+            owner_id: "v1:k:issuer:i:7:fixture:local:s:12:status-owner".into(),
             name: "status-kb".into(),
             description: None,
             config: Default::default(),
@@ -3231,7 +3298,7 @@ mod tests {
         let now = chrono::Utc::now().to_rfc3339();
         let chunk_id = uuid::Uuid::new_v4();
 
-        for owner in ["alice", "bob"] {
+        for owner in ["v1:k:issuer:i:7:fixture:local:s:5:alice", "v1:k:issuer:i:7:fixture:local:s:3:bob"] {
             let kb = KnowledgeBase {
                 id: "shared-kb-id".into(),
                 owner_id: owner.into(),
@@ -3272,7 +3339,7 @@ mod tests {
             provider.save_chunk(&chunk).await.expect("save chunk");
         }
 
-        for owner in ["alice", "bob"] {
+        for owner in ["v1:k:issuer:i:7:fixture:local:s:5:alice", "v1:k:issuer:i:7:fixture:local:s:3:bob"] {
             let kb = provider
                 .get_knowledge_base(owner, "shared-kb-id")
                 .await
@@ -3295,19 +3362,19 @@ mod tests {
         }
 
         provider
-            .delete_knowledge_base("bob", "shared-kb-id")
+            .delete_knowledge_base("v1:k:issuer:i:7:fixture:local:s:3:bob", "shared-kb-id")
             .await
             .expect("delete Bob KB");
         assert!(
             provider
-                .get_knowledge_base("alice", "shared-kb-id")
+                .get_knowledge_base("v1:k:issuer:i:7:fixture:local:s:5:alice", "shared-kb-id")
                 .await
                 .expect("get Alice KB after Bob deletion")
                 .is_some()
         );
         assert_eq!(
             provider
-                .search_knowledge("alice", &[1.0], 10, -1.0)
+                .search_knowledge("v1:k:issuer:i:7:fixture:local:s:5:alice", &[1.0], 10, -1.0)
                 .await
                 .expect("search Alice after Bob deletion")
                 .len(),

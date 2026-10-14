@@ -1,0 +1,116 @@
+{
+  "capturedAt": "2026-10-12T10:29:29.664339+00:00",
+  "change": "dot-06-fresh-process-resume",
+  "task": "2",
+  "gate": "fresh_process_resume wholetarget",
+  "status": "failed_runtime",
+  "exitCode": 101,
+  "testSummary": [
+    "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.13s"
+  ],
+  "enteredCase": "local-resume",
+  "enteredStage": "predecessor initial run finish before orderly shutdown/restart/resume",
+  "failureSpan": "tests/support/fresh_process_resume_process.rs:233",
+  "failure": "RunStatus error instead of done",
+  "observedErrorEvents": [
+    {
+      "eventId": 18,
+      "eventName": "agui.error",
+      "data": {
+        "kind": "error",
+        "request_id": "a209b873-e7ac-45bc-a9bd-6a3e94d4d943",
+        "message": "Atomic checkpoint persistence failed",
+        "code": "checkpoint_persistence_failed"
+      }
+    }
+  ],
+  "observedBoundedCheckpointDiagnostics": [
+    {
+      "checkpoint_stage": "save_transaction",
+      "checkpoint_error_class": "storage_error"
+    },
+    {
+      "checkpoint_stage": "save_conflict_readback",
+      "checkpoint_error_class": "storage_error"
+    },
+    {
+      "checkpoint_stage": "host_save",
+      "checkpoint_error_class": "persistence_error"
+    }
+  ],
+  "underlyingError": "unavailable; bounded storage_error class only, not a specificcause",
+  "privateErrorEvidence": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-write-retry-ijf1xpc5/resume-fixtures/local-resume/predecessor/events-a209b873-e7ac-45bc-a9bd-6a3e94d4d943.json",
+  "privateErrorEvidenceSha256": "13728accb878c2b3f868811c36e9b7865e496b9a542287db65205db518b01d02",
+  "completedScenarioGroups": 0,
+  "unenteredScope": "Remaining23groups and currentcase shutdown/readback/restart/resume stages unverified.",
+  "privateGateReceipt": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-write-retry-ijf1xpc5/resume-receipt.json",
+  "publicGateReceipt": ".kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T102550Z-resume-production-boundary.json",
+  "actualExecutableArtifacts": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "sha256": "896294c76a691b04c08912d35329a95e8d2c2d9470f2491b10ab0a2dd49a3e95",
+      "bytes": 235303848,
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-write-retry-ijf1xpc5/resume-accepted-fresh_process_resume-1accb410428be83b",
+      "retainedSha256": "896294c76a691b04c08912d35329a95e8d2c2d9470f2491b10ab0a2dd49a3e95"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "sha256": "c2759759589f9ee53c615fd62655089dc22f5d3275958c6752d28b1d35fe99f9",
+      "bytes": 551075512,
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-write-retry-ijf1xpc5/resume-accepted-production-runtime",
+      "retainedSha256": "c2759759589f9ee53c615fd62655089dc22f5d3275958c6752d28b1d35fe99f9"
+    }
+  ],
+  "sampledCustomerRuntimePath": [
+    {
+      "pid": 93120,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "c2759759589f9ee53c615fd62655089dc22f5d3275958c6752d28b1d35fe99f9",
+        "bytes": 551075512
+      },
+      "matchesRetainedCustomerPath": true
+    }
+  ],
+  "sourceStableAtExit": true,
+  "sourceStableAfterCleanup": true,
+  "sourceStableAtFinalSeal": true,
+  "rootInfrastructurePreserved": true,
+  "cleanupUnknown": false,
+  "cleanupObservations": [
+    {
+      "pid": 92364,
+      "basis": "exact-child-of-cargo",
+      "state": "gone"
+    },
+    {
+      "pid": 93120,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 96146,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 97023,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 97029,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    }
+  ],
+  "priorFailure": ".kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T101642Z-failure-analysis.json",
+  "candidateCorrection": ".kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T102326Z-atomic-write-correction.json",
+  "sourceEdits": [],
+  "unrequestedAdditions": [],
+  "newGuards": [],
+  "nextAction": "Await root/sourceworker agreement; preserve failedattempt; freshnamespace/sourcebinding before samewholefailedgate retry."
+}

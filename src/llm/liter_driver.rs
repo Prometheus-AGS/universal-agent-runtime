@@ -517,6 +517,24 @@ fn build_chat_request(
 /// handing it to a driver. The leaf repeats this check with its actual endpoint
 /// binding immediately before dispatch; this early pass lets host-owned helper
 /// calls reject an oversized chunk without opening a provider connection.
+/// Compute the reservation from the same validated bytes used by the leaf driver.
+/// Approximate counts are never promoted into enforceable budget evidence.
+pub(crate) fn request_budget_bound(model: &str, req: &LlmRequest) -> anyhow::Result<(u64,u64)> {
+    let contract = req.budget_contract.as_ref()
+        .ok_or_else(|| anyhow::anyhow!("request budget contract is required"))?;
+    let prepared = build_chat_request(model, Some(true), Some(&contract.destination_endpoint_fingerprint), None, req)?;
+    let bytes = prepared.validated_wire.as_ref()
+        .ok_or_else(|| anyhow::anyhow!("validated final request bytes are required"))?;
+    let count = TokenService::count_serialized(contract.counting, bytes)?;
+    anyhow::ensure!(count.quality != crate::uar::runtime::context::token_service::CountQuality::Approximate,
+        "approximate input counts cannot reserve a finite budget");
+    let output = u64::try_from(contract.limits.output_tokens)?;
+    let reasoning = u64::try_from(contract.limits.additional_reasoning_tokens)?;
+    let uncertainty = u64::try_from(contract.limits.count_uncertainty_tokens)?;
+    Ok((count.tokens.checked_add(uncertainty).ok_or_else(|| anyhow::anyhow!("input reservation overflow"))?,
+        output.checked_add(reasoning).ok_or_else(|| anyhow::anyhow!("output reservation overflow"))?))
+}
+
 pub(crate) fn preflight_budgeted_request(model: &str, req: &LlmRequest) -> anyhow::Result<()> {
     let contract = req
         .budget_contract
@@ -597,7 +615,6 @@ impl LlmDriver for LiterLlmDriver {
         // stream immediately so the orchestrator's stream-start timeout covers
         // only request establishment, not the full model completion.
         let metrics_model = self.model.clone();
-        let require_terminal = self.endpoint_profile.is_some();
 
         // Time the full LLM call (request → stream completion) and record it as
         // a per-call latency histogram when the returned stream finishes.
@@ -614,6 +631,7 @@ impl LlmDriver for LiterLlmDriver {
             let mut chunk_count: u64 = 0;
             let mut event_count: u64 = 0;
             let mut saw_terminal = false;
+            let mut saw_tool_finish = false;
 
             loop {
                 let next_chunk = futures::future::poll_fn(|cx| {
@@ -682,19 +700,10 @@ impl LlmDriver for LiterLlmDriver {
 
                     if let Some(ref reason) = choice.finish_reason {
                         saw_terminal = true;
-                        if matches!(reason, FinishReason::ToolCalls) {
-                            for (idx, accum) in &tool_accum {
-                                if let (Some(id), Some(name)) = (&accum.id, &accum.name) {
-                                    event_count += 1;
-                                    yield Ok(NormalizedEvent::ToolCallComplete {
-                                        call_index: *idx as usize,
-                                        id: id.clone(),
-                                        name: name.clone(),
-                                        arguments_json: accum.args.clone(),
-                                    });
-                                }
-                            }
-                        }
+                        // Gemini completes function calls with STOP. The actual
+                        // protocol terminal and trailing framing still gate EOF.
+                        saw_tool_finish |= matches!(reason, FinishReason::ToolCalls)
+                            || (matches!(reason, FinishReason::Stop) && !tool_accum.is_empty());
                     }
                 }
 
@@ -740,6 +749,24 @@ impl LlmDriver for LiterLlmDriver {
 
             record_call_latency(&metrics_model, call_start);
 
+
+            if !saw_terminal {
+                yield Err(ProviderError::new(None, super::ProviderErrorKind::Stream, None, "Provider stream ended without a terminal completion").into());
+                return;
+            }
+            if saw_tool_finish {
+                for (idx, accum) in &tool_accum {
+                    if let (Some(id), Some(name)) = (&accum.id, &accum.name) {
+                        event_count += 1;
+                        yield Ok(NormalizedEvent::ToolCallComplete {
+                            call_index: *idx as usize,
+                            id: id.clone(),
+                            name: name.clone(),
+                            arguments_json: accum.args.clone(),
+                        });
+                    }
+                }
+            }
             call_span.in_scope(|| {
                 tracing::info!(
                     total_chunks = chunk_count,
@@ -748,10 +775,6 @@ impl LlmDriver for LiterLlmDriver {
                 );
             });
 
-            if require_terminal && !saw_terminal {
-                yield Err(ProviderError::invalid_request("Provider stream ended without a terminal completion").into());
-                return;
-            }
             yield Ok(NormalizedEvent::Done);
         };
 

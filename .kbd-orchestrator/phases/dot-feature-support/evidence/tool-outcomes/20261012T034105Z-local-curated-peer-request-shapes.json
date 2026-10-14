@@ -1,0 +1,454 @@
+[
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/profiles/local-25e14cc6d5b048a8b6fd4f4192fc4a1d/liter-requests/0c077adc-30a7-4eb3-8781-58f64c6ad260.jsonl",
+    "sha256": "afcfbed89a02096307fdddbacc127f33a2775d6d39f63f8988d6bf4d8ed202d9",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/profiles/local-25e14cc6d5b048a8b6fd4f4192fc4a1d/liter-requests/24d6a859-24d0-4316-96f8-1ce519444e12.jsonl",
+    "sha256": "fb8b14125eebce83c21032937d375e7118019f21cc36ba3c834863a93ef1f240",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/profiles/local-25e14cc6d5b048a8b6fd4f4192fc4a1d/liter-requests/4afb4cad-32de-4304-a737-476c3556cf91.jsonl",
+    "sha256": "1b0c315642cfcab047c7344a26119507fef6f12bcc0a4de10736a2a3df1848f6",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/profiles/local-25e14cc6d5b048a8b6fd4f4192fc4a1d/liter-requests/50690690-fc3b-4953-9bac-857dd4074bac.jsonl",
+    "sha256": "37bdf26ff73d9872b75753f2c4e1f0fe3530b59f3393c920e36f0a94e78b014a",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/profiles/local-25e14cc6d5b048a8b6fd4f4192fc4a1d/liter-requests/56670035-a6aa-4550-b64f-a25432202e69.jsonl",
+    "sha256": "35505f0c5d9cd1ce3ae7d32efe88102edd38c5d32572ff36f27bb4668c602bd0",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": false,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/profiles/local-25e14cc6d5b048a8b6fd4f4192fc4a1d/liter-requests/65d6d42d-c261-45ed-a4d4-176a34bfaee0.jsonl",
+    "sha256": "3c27c88b5fe5a24947e3468f08f376a1e38be423ccefd665fc6a41026138ddf9",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/profiles/local-25e14cc6d5b048a8b6fd4f4192fc4a1d/liter-requests/7e69b4d5-3d85-4000-9983-74db39ee46ff.jsonl",
+    "sha256": "bf3dc2f8dfd99eb34d91103ac77adf438117d0db64ce39b140f5c198a3ce9100",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/profiles/local-25e14cc6d5b048a8b6fd4f4192fc4a1d/liter-requests/8f066b44-3ae7-4a8c-88fd-55a4f8146c98.jsonl",
+    "sha256": "b9f7b24f9392f745ec78ac3d64647efd65cdcc6e4ad982be9521803b7b680041",
+    "requestCount": 1,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/profiles/local-25e14cc6d5b048a8b6fd4f4192fc4a1d/liter-requests/946e36ea-e68a-4c68-baaf-241a173658d7.jsonl",
+    "sha256": "c75d128bac99d6f62a26330b6c8fb0a9a5f5c1b2040e4db4e8c1b269089d74b3",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/profiles/local-25e14cc6d5b048a8b6fd4f4192fc4a1d/liter-requests/ccdac452-c7dc-480f-8dd9-1aea1a53a5fc.jsonl",
+    "sha256": "fe83d77227a0c2f80d13add1deb512524918ec171c2952d937b9adddc42e9e00",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/profiles/local-25e14cc6d5b048a8b6fd4f4192fc4a1d/liter-requests/d239d577-29c4-4cfc-ba06-2628bdc361c3.jsonl",
+    "sha256": "48515f59a00884281ef029c6ede8efd6686f453d34b974d4563ebba91e131917",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": false,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/profiles/local-25e14cc6d5b048a8b6fd4f4192fc4a1d/liter-requests/e0483356-fc4e-4ed6-ba51-e830eb044b29.jsonl",
+    "sha256": "727f2329818a3f582a333e4a3d3aa4230c974368ce3e1b75cf1751d058163018",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/profiles/local-25e14cc6d5b048a8b6fd4f4192fc4a1d/liter-requests/e5e72a9b-2abf-409c-b0b5-018135432161.jsonl",
+    "sha256": "511d2abc11a832470c6c5da5062605ce1ef481d1f0e5a5538e9d57a44115a17b",
+    "requestCount": 1,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-reconciled-gate-6ut0hupq/profiles/local-25e14cc6d5b048a8b6fd4f4192fc4a1d/liter-requests/f29b7721-2d41-44d8-a346-7303329ff202.jsonl",
+    "sha256": "3dcb3ca6123d1e7f599673b257c937fe9a3b2d8330cc57f30d2f3bee3a0802bc",
+    "requestCount": 1,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      }
+    ]
+  }
+]

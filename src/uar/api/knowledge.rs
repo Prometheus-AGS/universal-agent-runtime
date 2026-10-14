@@ -10,6 +10,7 @@ use axum::{
     routing::{get, post},
 };
 use serde::{Deserialize, Serialize};
+use crate::uar::persistence::ingestion_records::{IngestionJob, IngestionState, IngestionStoreError};
 use std::sync::Arc;
 
 use crate::uar::{
@@ -171,6 +172,8 @@ pub fn build_router() -> Router<Arc<KnowledgeApiState>> {
             "/{id}/documents/{doc_id}",
             get(get_document).delete(delete_document),
         )
+        .route("/{id}/documents/{doc_id}/ingestion", get(get_ingestion_job))
+        .route("/{id}/documents/{doc_id}/retry", post(retry_ingestion))
         // Search
         .route("/{id}/search", post(search_knowledge_base))
 }
@@ -184,9 +187,10 @@ async fn list_knowledge_bases(
     State(state): State<Arc<KnowledgeApiState>>,
     Extension(user): Extension<UserContext>,
 ) -> Result<Json<Vec<KnowledgeBaseResponse>>, (StatusCode, String)> {
+    let owner_key = user.session_owner_key().map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()))?;
     let kbs = state
         .persistence
-        .list_knowledge_bases(&user.user_id)
+        .list_knowledge_bases(&owner_key)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -194,7 +198,7 @@ async fn list_knowledge_bases(
     for kb in kbs {
         let count = state
             .persistence
-            .count_documents(&user.user_id, &kb.id)
+            .count_documents(&owner_key, &kb.id)
             .await
             .unwrap_or_else(|err| {
                 tracing::warn!(kb_id = %kb.id, error = %err, "count_documents failed; reporting 0");
@@ -211,10 +215,11 @@ async fn create_knowledge_base(
     Extension(user): Extension<UserContext>,
     Json(req): Json<CreateKnowledgeBaseRequest>,
 ) -> Result<(StatusCode, Json<KnowledgeBaseResponse>), (StatusCode, String)> {
+    let owner_key = user.session_owner_key().map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()))?;
     // Check if name already exists
     if let Ok(Some(_)) = state
         .persistence
-        .get_knowledge_base_by_name(&user.user_id, &req.name)
+        .get_knowledge_base_by_name(&owner_key, &req.name)
         .await
     {
         return Err((
@@ -234,7 +239,7 @@ async fn create_knowledge_base(
 
     let kb = KnowledgeBase {
         id: uuid::Uuid::new_v4().to_string(),
-        owner_id: user.user_id,
+        owner_id: owner_key,
         name: req.name,
         description: req.description,
         config,
@@ -258,9 +263,10 @@ async fn get_knowledge_base(
     Extension(user): Extension<UserContext>,
     Path(id): Path<String>,
 ) -> Result<Json<KnowledgeBaseResponse>, (StatusCode, String)> {
+    let owner_key = user.session_owner_key().map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()))?;
     let kb = state
         .persistence
-        .get_knowledge_base(&user.user_id, &id)
+        .get_knowledge_base(&owner_key, &id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -270,7 +276,7 @@ async fn get_knowledge_base(
 
     let count = state
         .persistence
-        .count_documents(&user.user_id, &kb.id)
+        .count_documents(&owner_key, &kb.id)
         .await
         .unwrap_or(0);
     Ok(Json(kb_to_response(kb, count)))
@@ -283,9 +289,10 @@ async fn update_knowledge_base(
     Path(id): Path<String>,
     Json(req): Json<UpdateKnowledgeBaseRequest>,
 ) -> Result<Json<KnowledgeBaseResponse>, (StatusCode, String)> {
+    let owner_key = user.session_owner_key().map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()))?;
     let mut kb = state
         .persistence
-        .get_knowledge_base(&user.user_id, &id)
+        .get_knowledge_base(&owner_key, &id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -298,7 +305,7 @@ async fn update_knowledge_base(
         // Check uniqueness
         if let Ok(Some(existing)) = state
             .persistence
-            .get_knowledge_base_by_name(&user.user_id, &name)
+            .get_knowledge_base_by_name(&owner_key, &name)
             .await
             && existing.id != kb.id
         {
@@ -326,7 +333,7 @@ async fn update_knowledge_base(
 
     let count = state
         .persistence
-        .count_documents(&user.user_id, &kb.id)
+        .count_documents(&owner_key, &kb.id)
         .await
         .unwrap_or(0);
     Ok(Json(kb_to_response(kb, count)))
@@ -338,10 +345,11 @@ async fn delete_knowledge_base(
     Extension(user): Extension<UserContext>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, String)> {
+    let owner_key = user.session_owner_key().map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()))?;
     // Check exists
     let _ = state
         .persistence
-        .get_knowledge_base(&user.user_id, &id)
+        .get_knowledge_base(&owner_key, &id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -351,7 +359,7 @@ async fn delete_knowledge_base(
 
     state
         .persistence
-        .delete_knowledge_base(&user.user_id, &id)
+        .delete_knowledge_base(&owner_key, &id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -370,10 +378,11 @@ async fn list_documents(
     Path(kb_id): Path<String>,
     Query(_query): Query<ListQuery>,
 ) -> Result<Json<Vec<DocumentResponse>>, (StatusCode, String)> {
+    let owner_key = user.session_owner_key().map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()))?;
     // Verify KB exists
     let _ = state
         .persistence
-        .get_knowledge_base(&user.user_id, &kb_id)
+        .get_knowledge_base(&owner_key, &kb_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -383,7 +392,7 @@ async fn list_documents(
 
     let docs = state
         .persistence
-        .list_documents(&user.user_id, &kb_id)
+        .list_documents(&owner_key, &kb_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -398,10 +407,14 @@ async fn upload_document(
     Path(kb_id): Path<String>,
     mut multipart: Multipart,
 ) -> Result<(StatusCode, Json<DocumentResponse>), (StatusCode, String)> {
+    let owner_key = user.session_owner_key().map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()))?;
+    if !state.persistence.supports_durable_ingestion() {
+        return Err((StatusCode::SERVICE_UNAVAILABLE, "Durable ingestion storage is unavailable".to_string()));
+    }
     // Verify KB exists
     let _ = state
         .persistence
-        .get_knowledge_base(&user.user_id, &kb_id)
+        .get_knowledge_base(&owner_key, &kb_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -441,10 +454,10 @@ async fn upload_document(
     let now = chrono::Utc::now().to_rfc3339();
     let doc = KnowledgeDocument {
         id: uuid::Uuid::new_v4().to_string(),
-        owner_id: user.user_id,
+        owner_id: owner_key,
         kb_id: kb_id.clone(),
         filename: filename.clone(),
-        file_path: None, // Would be set after saving to storage
+        file_path: None, // Immutable source bytes live in the database.
         mime_type,
         chunk_count: 0,
         status: DocumentStatus::Pending,
@@ -452,36 +465,10 @@ async fn upload_document(
         updated_at: now,
     };
 
-    state
-        .persistence
-        .save_document(&doc)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    // Submit to worker pool for async processing
+    // A 202 means all three records committed: immutable source, document and job.
+    state.persistence.accept_ingestion(&doc, &file_data).await.map_err(ingestion_api_error)?;
     if let Some(pool) = &state.ingestion_pool {
-        match pool.submit(doc.clone(), file_data).await {
-            Ok(job_key) => {
-                tracing::info!(
-                    document_id = %doc.id,
-                    job_key = %job_key,
-                    "Document submitted to ingestion queue"
-                );
-            }
-            Err(e) => {
-                tracing::error!(
-                    document_id = %doc.id,
-                    error = %e,
-                    "Failed to submit to ingestion queue"
-                );
-                // Still return success - document is saved, will be processed later
-            }
-        }
-    } else {
-        tracing::warn!(
-            document_id = %doc.id,
-            "No ingestion pool configured - document saved but not processed"
-        );
+        pool.notify_committed();
     }
 
     tracing::info!("Document uploaded: {} -> KB {}", doc.id, kb_id);
@@ -494,9 +481,10 @@ async fn get_document(
     Extension(user): Extension<UserContext>,
     Path((kb_id, doc_id)): Path<(String, String)>,
 ) -> Result<Json<DocumentResponse>, (StatusCode, String)> {
+    let owner_key = user.session_owner_key().map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()))?;
     let doc = state
         .persistence
-        .get_document(&user.user_id, &doc_id)
+        .get_document(&owner_key, &doc_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -515,16 +503,61 @@ async fn get_document(
     Ok(Json(doc_to_response(doc)))
 }
 
+fn ingestion_api_error(error: anyhow::Error) -> (StatusCode, String) {
+    let code = match error.downcast_ref::<IngestionStoreError>() {
+        Some(IngestionStoreError::Unsupported) => StatusCode::SERVICE_UNAVAILABLE,
+        Some(IngestionStoreError::MissingKnowledgeBase) => StatusCode::NOT_FOUND,
+        Some(IngestionStoreError::Revoked) => StatusCode::CONFLICT,
+        None => StatusCode::INTERNAL_SERVER_ERROR,
+    };
+    (code, error.to_string())
+}
+
+/// Owner-scoped durable job state; immutable source bytes are never returned here.
+async fn get_ingestion_job(
+    State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>,
+    Path((kb_id, doc_id)): Path<(String, String)>,
+) -> Result<Json<IngestionJob>, (StatusCode, String)> {
+    let owner_key = user.session_owner_key().map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()))?;
+    let job = state.persistence.get_ingestion_job(&owner_key, &doc_id).await
+        .map_err(ingestion_api_error)?.filter(|job| job.kb_id == kb_id)
+        .ok_or((StatusCode::NOT_FOUND, "Durable ingestion job not found; legacy documents may require reupload".to_string()))?;
+    Ok(Json(job))
+}
+
+/// Retry committed bytes after an operator has corrected the processing configuration.
+async fn retry_ingestion(
+    State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>,
+    Path((kb_id, doc_id)): Path<(String, String)>,
+) -> Result<(StatusCode, Json<IngestionJob>), (StatusCode, String)> {
+    let owner_key = user.session_owner_key().map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()))?;
+    let before = state.persistence.get_ingestion_job(&owner_key, &doc_id).await
+        .map_err(ingestion_api_error)?.filter(|job| job.kb_id == kb_id)
+        .ok_or((StatusCode::NOT_FOUND, "Durable ingestion job not found; reupload required".to_string()))?;
+    if !matches!(before.state, IngestionState::Failed | IngestionState::Retryable) {
+        return Err((StatusCode::CONFLICT, "Only failed or retryable ingestion can be retried".to_string()));
+    }
+    let after = before.retry();
+    if !state.persistence.transition_ingestion(&before, &after).await.map_err(ingestion_api_error)? {
+        return Err((StatusCode::CONFLICT, "Ingestion changed concurrently".to_string()));
+    }
+    if let Some(pool) = &state.ingestion_pool { pool.notify_committed(); }
+    Ok((StatusCode::ACCEPTED, Json(after)))
+}
+
 /// DELETE `/{id}/documents/{doc_id}` - Delete a document
 async fn delete_document(
     State(state): State<Arc<KnowledgeApiState>>,
     Extension(user): Extension<UserContext>,
     Path((kb_id, doc_id)): Path<(String, String)>,
 ) -> Result<StatusCode, (StatusCode, String)> {
+    let owner_key = user.session_owner_key().map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()))?;
     // Verify document exists and belongs to KB
     let doc = state
         .persistence
-        .get_document(&user.user_id, &doc_id)
+        .get_document(&owner_key, &doc_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -542,7 +575,7 @@ async fn delete_document(
     // Delete document and its chunks
     state
         .persistence
-        .delete_document(&user.user_id, &doc_id)
+        .delete_document(&owner_key, &doc_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -599,10 +632,11 @@ async fn search_knowledge_base(
     Path(kb_id): Path<String>,
     Json(req): Json<SearchRequest>,
 ) -> Result<Json<SearchResponse>, Response> {
+    let owner_key = user.session_owner_key().map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()).into_response())?;
     // Verify KB exists
     let kb = state
         .persistence
-        .get_knowledge_base(&user.user_id, &kb_id)
+        .get_knowledge_base(&owner_key, &kb_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response())?
         .ok_or_else(|| {
@@ -628,7 +662,7 @@ async fn search_knowledge_base(
     let backend = KbSearchBackend {
         persistence: state.persistence.as_ref(),
         vector_matcher: state.vector_matcher.as_ref(),
-        owner_id: user.user_id.as_str(),
+        owner_id: owner_key.as_str(),
         kb_id: kb_id.as_str(),
     };
     let matches = RagRetrievalPipeline::new()

@@ -33,6 +33,12 @@ pub struct FullHarnessApiState {
     pub contexts: Arc<super::host_context::DelegatedHostContexts>,
 }
 
+impl std::fmt::Debug for FullHarnessApiState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FullHarnessApiState").finish_non_exhaustive()
+    }
+}
+
 pub fn build_router() -> Router<Arc<FullHarnessApiState>> {
     Router::new()
         .route("/capabilities", get(get_capabilities))

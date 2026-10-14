@@ -1,0 +1,295 @@
+{
+  "phase": "dot-feature-support",
+  "generated_at": "2026-10-11T20:15:00Z",
+  "research_budget": {
+    "max_queries_per_tier": 8,
+    "max_minutes": 20,
+    "queries_used": {
+      "tier_1": 6,
+      "tier_2": 6,
+      "tier_3": 3,
+      "tier_4": 0
+    }
+  },
+  "gaps_addressed": [
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "D1-scheduling",
+    "D2-proactive-delivery",
+    "D3-memory",
+    "D4-surface-parity"
+  ],
+  "candidates": [
+    {
+      "id": "cand-001",
+      "name": "Existing UAR observers, host admission, approvals and team catalog",
+      "kind": "pattern",
+      "registry": "none",
+      "repo_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/2cc9a1829167411e01a8198072f60892d70a233d/src/uar/runtime/observer/delivery.rs",
+      "fit_for_gap": "D1-scheduling, D2-proactive-delivery, R3, R9",
+      "verdict": "adapt",
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/2cc9a1829167411e01a8198072f60892d70a233d/src/uar/runtime/observer/delivery.rs",
+          "claim": "Durable subscription/inbox recovery and bounded occurrence delivery already exist."
+        },
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/2cc9a1829167411e01a8198072f60892d70a233d/src/uar/compiler/collaboration/team_execution/ownership.rs",
+          "claim": "Catalog claim/reclaim preserves epochs, queued transfers and uncertain running work."
+        }
+      ],
+      "risks": [
+        "Observer polling is not a user recurrence contract.",
+        "Existing owner identity includes tenant/subject but needs issuer policy reconciliation.",
+        "Kernel execution remains behind trusted host admission."
+      ],
+      "decision_rationale": "Extend current contracts with stable scheduled occurrences and a delivery outbox; avoid a second authority or task-state system."
+    },
+    {
+      "id": "cand-002",
+      "name": "tokio-cron-scheduler 0.15.1",
+      "kind": "library",
+      "registry": "crates",
+      "repo_url": "https://github.com/mvniekerk/tokio-cron-scheduler",
+      "fit_for_gap": "D1-scheduling timing adapter",
+      "verdict": "adapt",
+      "license": "MIT OR Apache-2.0",
+      "maintenance": {
+        "last_release": "2025-10-28T06:20:03.269591Z",
+        "evaluated_version": "0.15.1",
+        "downloads_at_retrieval": 6679861
+      },
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/mvniekerk/tokio-cron-scheduler/blob/v0.15.1/README.md",
+          "claim": "Tagged README documents cron, one-shot/repeated jobs, timezone APIs and optional Postgres/Nats stores."
+        },
+        {
+          "tier": 2,
+          "source_url": "https://github.com/mvniekerk/tokio-cron-scheduler/blob/main/_autodocs/api-reference/job-builder.md",
+          "claim": "Context7 documents timezone-aware JobBuilder; main-branch snippets are not pinned API certification."
+        },
+        {
+          "tier": 3,
+          "source_url": "https://crates.io/api/v1/crates/tokio-cron-scheduler",
+          "claim": "Registry reports stable 0.15.1, released 2025-10-28, and dual MIT/Apache licensing."
+        }
+      ],
+      "risks": [
+        "Adoption is conditional on exact-version DST/missed-run/restart tests; no such tests run in Analyze.",
+        "Durable UAR records must remain authoritative; callbacks may request admission, never execute tools directly.",
+        "It adds a scheduler dependency; if its timing adapter duplicates UAR scanning without reducing recurrence complexity, reject it at the planned fit gate."
+      ],
+      "decision_rationale": "Preferred candidate for wrapping timing functionality only. Do not adopt its persistence as a second source of truth. No dependency introduced or final pin authorized by this artifact."
+    },
+    {
+      "id": "cand-003",
+      "name": "Apalis 0.7.4 stable / 1.0.0-rc.12 prerelease",
+      "kind": "library",
+      "registry": "crates",
+      "repo_url": "https://github.com/apalis-dev/apalis",
+      "fit_for_gap": "R6 ingestion and D1 durable job dispatch",
+      "verdict": "reference",
+      "license": "MIT OR Apache-2.0",
+      "maintenance": {
+        "last_release": "2025-11-18T07:36:18.855571Z",
+        "evaluated_version": "0.7.4",
+        "latest_prerelease": "1.0.0-rc.12",
+        "updated_at": "2026-10-09T22:08:35.711008Z"
+      },
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/apalis-dev/apalis/blob/v0.7.4/README.md",
+          "claim": "Stable README lists persistent SQL/Redis jobs and cron piping into backends."
+        },
+        {
+          "tier": 2,
+          "source_url": "https://github.com/apalis-dev/apalis/blob/main/_autodocs/README.md",
+          "claim": "Current indexed docs list multiple backends; those main-branch APIs are not assumed compatible with stable 0.7.4."
+        },
+        {
+          "tier": 3,
+          "source_url": "https://crates.io/api/v1/crates/apalis",
+          "claim": "Registry distinguishes stable 0.7.4 from newer 1.0.0-rc.12."
+        }
+      ],
+      "risks": [
+        "No SurrealDB backend established in inspected docs.",
+        "No evidence that stock queues atomically commit with UAR document metadata or enforce host receipt uncertainty.",
+        "Stable and prerelease APIs differ; do not mix examples."
+      ],
+      "decision_rationale": "Use queue/backoff ideas as a shared-host reference. Local operation and shared hosting are equally required in the first release; any adoption must preserve both profiles and coherent UAR outbox semantics. Adding a second job store is not justified by that requirement alone."
+    },
+    {
+      "id": "cand-004",
+      "name": "Temporal Rust SDK 1.1.0",
+      "kind": "framework",
+      "registry": "crates",
+      "repo_url": "https://github.com/temporalio/sdk-rust",
+      "fit_for_gap": "D1 scheduling and R5/R9 durable orchestration",
+      "verdict": "reference",
+      "maintenance": {
+        "last_release": "2026-10-06T18:37:22.097281Z",
+        "evaluated_version": "1.1.0",
+        "license_review": "Registry returned non-standard; exact license not resolved in this bounded pass."
+      },
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/temporalio/sdk-rust/blob/main/crates/sdk/README.md",
+          "claim": "Current README describes connected workers, workflow replay constraints and activities. It no longer contains the preview label returned by the docs index."
+        },
+        {
+          "tier": 2,
+          "source_url": "https://github.com/temporalio/sdk-rust/blob/main/crates/sdk/README.md",
+          "claim": "Context7 preview snippet conflicts with the current primary document; preview status is not accepted as current evidence."
+        },
+        {
+          "tier": 3,
+          "source_url": "https://crates.io/api/v1/crates/temporalio-sdk",
+          "claim": "Registry reports 1.1.0 released 2026-10-06."
+        }
+      ],
+      "risks": [
+        "Separate server and workflow execution model add operational and migration scope.",
+        "UAR authority, tenant isolation, approvals and unknown effects still need domain integration.",
+        "Current main docs are not exact-tag API certification; licensing remains unresolved."
+      ],
+      "decision_rationale": "Keep as a shared-host orchestration comparison, not the default phase dependency. Both local operation and shared hosting are equally required from the first release; adoption would need to preserve local operation and coherent UAR authority/state. Do not reject on the stale preview claim."
+    },
+    {
+      "id": "cand-005",
+      "name": "Existing UAR MemoryService and vendored surreal-memory 0.1.0",
+      "kind": "library",
+      "registry": "none",
+      "repo_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/2cc9a1829167411e01a8198072f60892d70a233d/src/uar/memory/service.rs",
+      "fit_for_gap": "D3-memory and R2 shared identity",
+      "verdict": "adapt",
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/2cc9a1829167411e01a8198072f60892d70a233d/Cargo.toml",
+          "claim": "Memory is a path dependency under vendor/git/surreal-memory-server; Cargo.lock reports 0.1.0 without registry source."
+        },
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/2cc9a1829167411e01a8198072f60892d70a233d/src/uar/memory/service.rs",
+          "claim": "Service exposes retrieval/capture/mutation helpers but user scoping passes subject IDs without the complete tenant/issuer identity."
+        }
+      ],
+      "risks": [
+        "Vendor tree is committed source, not the historical revision named in versions.toml.",
+        "Every memory surface, including native/MCP, legacy HTTP and embedded SDK, needs current owner enforcement.",
+        "Workflow mirror persistence is not assistant memory privacy certification."
+      ],
+      "decision_rationale": "Preserve the existing memory engine and extend host scoping, consent, deletion and source provenance. A new memory database would not repair the identity boundary."
+    },
+    {
+      "id": "cand-006",
+      "name": "Existing UAR persistence adapters with transactional outbox and settlement records",
+      "kind": "pattern",
+      "registry": "none",
+      "repo_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/2cc9a1829167411e01a8198072f60892d70a233d/src/uar/persistence/mod.rs",
+      "fit_for_gap": "R2, R5, R6, R7, R8, D1, D2",
+      "verdict": "adapt",
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/2cc9a1829167411e01a8198072f60892d70a233d/src/uar/persistence/mod.rs",
+          "claim": "Existing persistence boundary includes durable capabilities and also checkpoint/cost defaults requiring explicit unsupported behavior."
+        },
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/2cc9a1829167411e01a8198072f60892d70a233d/src/uar/persistence/providers/postgres.rs",
+          "claim": "Postgres cost recording currently appends scope/amount rows without a run/call settlement key."
+        }
+      ],
+      "risks": [
+        "Atomicity must be implemented and tested per supported backend, not assumed from a trait.",
+        "Source-blob/outbox coordination requires a durable content-reference protocol if bytes are not in the same transaction.",
+        "Shared-host consistency and single-device restart must be separately proven."
+      ],
+      "decision_rationale": "Keep data and admission state in current stores. Build narrow domain transactions and uniqueness/CAS contracts rather than introduce a generic job framework as a correctness substitute."
+    },
+    {
+      "id": "cand-007",
+      "name": "Pinned Liter 2.1.1 SSE parser and UAR provider boundary",
+      "kind": "pattern",
+      "registry": "none",
+      "repo_url": "https://github.com/GQAdonis/liter-llm/blob/a6047386cc9fae4258b4a8577f6a016022095586/crates/liter-llm/src/http/streaming.rs",
+      "fit_for_gap": "R4 streaming framing and terminal truth",
+      "verdict": "reference",
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/GQAdonis/liter-llm/blob/a6047386cc9fae4258b4a8577f6a016022095586/crates/liter-llm/src/http/streaming.rs",
+          "claim": "Checked-out parser buffers UTF-8/lines and rejects incomplete buffered EOF, but empty-buffer EOF returns no error without a terminal sentinel."
+        },
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/2cc9a1829167411e01a8198072f60892d70a233d/src/llm/liter_driver.rs",
+          "claim": "UAR requires terminal completion conditionally; the native Anthropic parser is a separate route."
+        }
+      ],
+      "risks": [
+        "Do not replace provider-specific message/event parsing with a generic data-line parser without compatibility checks.",
+        "No wire-level reproduction or complete provider matrix ran.",
+        "versions.toml policy pins still require an explicit reconciliation change."
+      ],
+      "decision_rationale": "Reuse proven framing ideas from exact checked-out source while enforcing protocol completion at the host provider boundary. A library upgrade alone does not resolve UAR's conditional success."
+    }
+  ],
+  "build_required": [
+    {
+      "need": "R1 pin manifest reconciliation and exact-image deployment health",
+      "why_no_candidate": "Publication is successful; remaining work is repository pin/provenance policy and deployment evidence, not another build framework.",
+      "capability_gap_id": "R1"
+    },
+    {
+      "need": "Verified issuer/tenant/subject namespace and explicit legacy credential/memory migration",
+      "why_no_candidate": "Existing VerifiedIdentity supplies issuer provenance; only UAR can define ownership and migration semantics.",
+      "capability_gap_id": "R2"
+    },
+    {
+      "need": "Truthful MCP outcomes and protocol-terminal streaming completion",
+      "why_no_candidate": "Libraries cannot decide UAR host receipt success or safely replay uncertain external effects.",
+      "capability_gap_id": "R3-R4"
+    },
+    {
+      "need": "Authorized fresh-process checkpoint reconstruction and persistent API-key service",
+      "why_no_candidate": "Requires UAR bindings, protected history, current authority and backend capability behavior.",
+      "capability_gap_id": "R5-R7"
+    },
+    {
+      "need": "Recoverable uploads plus idempotent durable accounting and aggregate enforcement",
+      "why_no_candidate": "Outbox and settlement records must commit with UAR source/owner state; generic retry middleware is insufficient.",
+      "capability_gap_id": "R6-R8"
+    },
+    {
+      "need": "Trusted dead-owner fencing and safe queued-work recovery",
+      "why_no_candidate": "Exclusion evidence is deployment/host-specific; a scheduler timeout cannot establish it.",
+      "capability_gap_id": "R9"
+    },
+    {
+      "need": "Durable schedule/occurrence contract and proactive delivery policy",
+      "why_no_candidate": "cand-002 can provide timing, but UAR must own schedule revisions, missed-run policy, admission and delivery uncertainty.",
+      "capability_gap_id": "D1-D2"
+    },
+    {
+      "need": "Memory consent/deletion/provenance and supported-surface capability parity",
+      "why_no_candidate": "These are product authority and API contracts over existing storage, not reasons to install a new agent framework.",
+      "capability_gap_id": "D3-D4"
+    }
+  ]
+}

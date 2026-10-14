@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "phase": "dot-feature-support",
+  "scope": "dot-01-release-provenance task1 policy prerequisite only",
+  "reviewedAt": "2026-10-11T21:35:45.716085+00:00",
+  "judge": "/root/release_policy_critic",
+  "context": "fresh artifact-only",
+  "concreteJudgeModel": "unavailable",
+  "crossModelSeparation": "unverified",
+  "verdict": "PASS",
+  "findings": [],
+  "checks": [
+    "exact gitlinks and ancestor relationships",
+    "broad/scoped diff counts",
+    "13 recorded source hashes",
+    "20 memory export comparisons",
+    "policy candidate keys and unchanged memory pin"
+  ],
+  "notCertified": [
+    "migration compatibility",
+    "launched runtime provenance",
+    "locked builds",
+    "release publication",
+    "whole phase"
+  ]
+}

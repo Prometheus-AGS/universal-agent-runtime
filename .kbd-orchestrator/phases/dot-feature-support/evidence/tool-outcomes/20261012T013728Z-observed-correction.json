@@ -1,0 +1,92 @@
+{
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T013104Z-production-boundary.json",
+  "changedBoundPathsSincePreviousGate": [
+    "tests/truthful_tool_outcomes.rs"
+  ],
+  "hashes": {
+    "tests/truthful_tool_outcomes.rs": {
+      "old": "591024bea14d07920430513238f12d583901290cdfc8fc6a335d79916b4de441",
+      "new": "ff1e581a6405d254d24508c713527b9fb76a36755f4bb0097dc5e23a54677599"
+    }
+  },
+  "correctionPatchSha256": "0457bb5b306ba017b9a807591c37098ace891bdeb98ac2da8098283177c8ed53",
+  "patch": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T013728Z-observed-correction.patch",
+  "tier0Commands": [
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--no-index",
+        "--check",
+        "/dev/null",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs"
+      ],
+      "exit": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--emit",
+        "stdout",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 34630,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--check",
+        "--config",
+        "reorder_imports=false,reorder_modules=false",
+        "--file-lines",
+        "[{\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs\", \"range\": [832, 833]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs\", \"range\": [837, 857]}]",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    }
+  ],
+  "authorRefreeze": {
+    "src/mcp/mod.rs": "721b4f981010205daec1d044850e0a923b7b1660f590c6c40c23e6a27e8784bd",
+    "src/mcp/outcome.rs": "632bc50c2b6fe3b09f8ed0b30d368acc9b76c6fe406f6d4a24be8a8aa60c4978",
+    "src/mcp/preflight.rs": "754aa630bfc3d23995c97909b9926b1d57bcea755dc3ff1d8f5a9d899ae46f54",
+    "src/mcp/registry.rs": "41e11ff3c7056d13e18edbf0e26335eab5e432377b67b0005b850a87ee5cf655",
+    "src/mcp/runtime.rs": "3b9bf9e64773e1035d915be96f03ad3a3c92e43a5a5449aff56a0e55d9f278c6",
+    "src/llm/orchestrator.rs": "2e44b3087a01b30351eb63d316e849268086a783af8f9b00a7ee7792e97b8595",
+    "src/uar/persistence/agent_threads.rs": "bcbda283c2f1b314b5ff44ed47c18d2b1cdf6e4b240546b4a1e623d4a2346d11",
+    "src/uar/persistence/tool_admission.rs": "5234c4ac77c3380369d3748482c40c34ba89d1d2752f901e34e04f6c97a93491",
+    "src/uar/runtime/tool_admission/lifecycle.rs": "2c9f2ecdb60291de97ffd0ccd81cb0f75c394b5705d18e91f801cadbba092c2e",
+    "src/uar/runtime/team_execution/execution.rs": "3ebd93e59887cee51c8b99d5814f86e45baee0023e21f766b84d831d42111248",
+    "src/uar/runtime/team_execution/recovery.rs": "bfee94c414e949729b9bd13dd2cb5b0502a47d06fa810f64f4fc6bf46b6dc3a4",
+    "src/uar/runtime/instance/pump.rs": "9d652c855d807d469b6eedcaf52418f2051f46fd5fec53bf900d5e94ac3de99b",
+    "tests/truthful_tool_outcomes.rs": "ff1e581a6405d254d24508c713527b9fb76a36755f4bb0097dc5e23a54677599",
+    "tests/support/truthful_tool_outcome_peer.rs": "121d699f84640932185d59e87aeab4aa6b457db5f2d7df8e482b014741bf14f2",
+    "tests/support/truthful_tool_outcome_process.rs": "17a0c5713cc080156442cf9d026ec1c21baafe41d62e29f1fe9c09b2805ee4f2",
+    "tests/fixtures/truthful_tool_outcome_mcp.py": "965e3d78fbacd53c412c750882e27c7e79947df9729cc0f4ed6c211578190864",
+    "docs/operations/truthful-tool-outcomes.md": "5048b7cdd3dc46c487d10ce969b16f9b1963ba6250d3adb4f43f25d2c89dbb25"
+  },
+  "tier0Attribution": "Original author command receipt; gate executor independently verified exact correction against snapshot and full source before/after stability."
+}

@@ -102,6 +102,7 @@ pub struct McpBindingKey {
     server: String,
     source: ServerSource,
     config: ServerConfigHash,
+    interaction_channel: Option<String>,
     required: bool,
     authentication: ServerAuthentication,
     environment: Arc<McpBindingEnvironment>,
@@ -120,6 +121,7 @@ impl fmt::Debug for McpBindingKey {
 pub struct McpBindingRequest {
     key: McpBindingKey,
     definition: Arc<ServerDefinition>,
+    interactions: Option<Arc<super::interaction::McpInteractionChannel>>,
 }
 
 impl McpBindingRequest {
@@ -135,11 +137,24 @@ impl McpBindingRequest {
             server: definition.name().to_owned(),
             source: definition.source().clone(),
             config: definition.config_hash().clone(),
+            interaction_channel: None,
             required: definition.is_required(),
             authentication: definition.authentication().clone(),
             environment,
         };
-        Self { key, definition }
+        Self { key, definition, interactions: None }
+    }
+
+    pub(crate) fn with_interactions(mut self, channel: Option<&Arc<super::interaction::McpInteractionChannel>>) -> Self {
+        if let Some(channel) = channel.filter(|channel|channel.matches_owner(&self.key.owner)) {
+            self.key.interaction_channel = Some(channel.id().to_owned());
+            self.interactions = Some(Arc::clone(channel));
+        }
+        self
+    }
+
+    pub(crate) fn interactions(&self) -> Option<&Arc<super::interaction::McpInteractionChannel>> {
+        self.interactions.as_ref()
     }
 
     /// Identity used for lookup and explicit invalidation.
@@ -677,6 +692,17 @@ impl McpBindingCache {
         state.retired.extend(retired);
     }
 
+    pub(crate) fn invalidate_interaction(&self, channel: &str) {
+        self.invalidate_matching(|key|key.interaction_channel.as_deref() == Some(channel));
+    }
+
+    pub(crate) async fn retire_interaction(&self, channel: &str) {
+        self.invalidate_interaction(channel);
+        self.reap_retired().await;
+        self.state.write().unwrap_or_else(std::sync::PoisonError::into_inner).entries
+            .retain(|key,entry|key.interaction_channel.as_deref() != Some(channel) || entry.refresh.is_some());
+    }
+
     /// Join retired transports outside the cache lock; safe to cancel and resume.
     /// Newly retired bindings remain queued for the next call.
     pub async fn reap_retired(&self) {
@@ -849,7 +875,7 @@ fn registry_matches(binding: &McpBinding) -> bool {
         request.key.owner.clone(),
         Arc::clone(binding.catalog.definition()),
         Arc::clone(&request.key.environment),
-    );
+    ).with_interactions(request.interactions());
     let descriptors = binding.registry.descriptors();
     if catalog_key.key != request.key
         || !binding.catalog.is_complete()

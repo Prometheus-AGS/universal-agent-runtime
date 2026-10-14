@@ -1,0 +1,242 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-12T19:53:07.905085+00:00",
+  "phase": "Execute",
+  "change": "dot-06-fresh-process-resume",
+  "task": "2",
+  "canonicalRevision": 2715,
+  "status": "failed_fixture_durable_readback",
+  "accepted": false,
+  "command": [
+    "env",
+    "-i",
+    "HOME=/Users/gqadonis",
+    "PATH=/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/gqadonis/.minimax/bin:/Users/gqadonis/.local/bin:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/97288_1791831174106/bin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.pyenv/shims:/Users/gqadonis/.minimax/bin:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/usr/local/share/dotnet:~/.dotnet/tools:/usr/local/go/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/opt/podman/bin:/Users/gqadonis/.codex/tmp/arg0/codex-arg08wZZjw:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/29547_1791811184470/bin:/Users/gqadonis/miniconda3/condabin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.the-boss/commands:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/opt/zerobrew/prefix/bin:/Users/gqadonis/.pochi/bin:/Users/gqadonis/.antigravity/antigravity/bin:/Users/gqadonis/.codeium/windsurf/bin:/opt/homebrew/opt/openssl@3/bin:/opt/homebrew/opt/bison/bin:/Users/gqadonis/.opencode/bin:/Users/gqadonis/.console-ninja/.bin:/Users/gqadonis/.wasmedge/bin:/Users/gqadonis/.wasmtime/bin:/Users/gqadonis/.deno/bin:/Users/gqadonis/.paperspace/bin:/Users/gqadonis/.groundcover/bin:/Users/gqadonis/.rd/bin:/Users/gqadonis/google-cloud-sdk/bin:/Users/gqadonis/.shorebird/bin:/Applications/Android Studio/Contents/MacOS:/Users/gqadonis/development/flutter/bin:/Users/gqadonis/.rust-mcp-stack/bin:/Users/gqadonis/.cargo/bin:/Users/gqadonis/.bun/bin:/Users/gqadonis/Library/pnpm:/opt/homebrew/opt/go/libexec/bin:/Users/gqadonis/go/bin:/opt/local/bin:/opt/local/sbin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Users/gqadonis/.pub-cache/bin:/Users/gqadonis/development/flutter/.pub-cache/bin:/Users/gqadonis/Library/Android/sdk/platform-tools:/Users/gqadonis/Library/Android/sdk/tools:/Users/gqadonis/Library/Android/sdk/tools/bin:/Users/gqadonis/Library/Android/sdk/emulator:/Users/gqadonis/.rvm/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.modular/bin:/Users/gqadonis/bin:/Users/gqadonis/Projects/ide/bin:/Users/gqadonis/.dotnet/tools:/Users/gqadonis/.orbstack/bin:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/gqadonis/.dotnet/tools:/usr/local/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.orbstack/bin",
+    "UAR_DOT06_INFRA_FILE=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "UAR_DOT06_NAMESPACE=dot06_20261012T193032_8e5918c3ac",
+    "UAR_DOT06_EVIDENCE_ROOT=/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-wrapper-bypass-i9wj0878/resume-fixtures",
+    "UAR_REMOTE_SURREAL_DURABILITY_ATTESTED=1",
+    "RUSTC_WRAPPER=",
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend",
+    "--test",
+    "fresh_process_resume",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exitCode": 101,
+  "testSummary": [
+    "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.74s"
+  ],
+  "wholeGateCompleted": true,
+  "compileResult": "Finished test profile in16m27s",
+  "completedScenarioGroups": 0,
+  "enteredScenario": "local-resume",
+  "observedPartialStage": "Predecessor run agui.done, one restorable checkpoint exposed; graceful shutdown logged; Database.connect readback panic.",
+  "exactFailureSpan": "tests/support/fresh_process_resume_process.rs:81:60",
+  "failure": "qualified durable readback reported localdatabase/LOCK already locked",
+  "sameConnectCallerAmbiguity": "envelopes versus following proof; no retained backtrace locates caller",
+  "processTimeline": {
+    "gateStartedAt": "2026-10-12T19:31:57.712290+00:00",
+    "gateFinishedAt": "2026-10-12T19:48:37.085259+00:00",
+    "gateElapsedSeconds": 999.36,
+    "runtimeTestDurationSeconds": 8.74,
+    "runtimeProcessReceipt": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-wrapper-bypass-i9wj0878/resume-fixtures/local-resume/predecessor/process.json",
+    "runtimePid": 12890,
+    "runtimeReadinessFileMtime": "2026-10-12T19:48:36.434570+00:00",
+    "boundedShutdownLogEntries": [
+      {
+        "timestamp": "2026-10-12T19:48:36.741495Z",
+        "level": "INFO",
+        "target": "universal_agent_runtime::server",
+        "message": "Shutdown signal received \u2014 cancelling in-flight runs and draining ingestion pool"
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.741635Z",
+        "level": "INFO",
+        "target": "universal_agent_runtime::server",
+        "message": "Draining in-flight HTTP connections"
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.741595Z",
+        "level": "INFO",
+        "target": "universal_agent_runtime::uar::rag::ingestion_worker",
+        "message": "Signalling ingestion worker pool shutdown"
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.743906Z",
+        "level": "INFO",
+        "target": "universal_agent_runtime::server",
+        "message": "HTTP listeners stopped"
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.789116Z",
+        "level": "INFO",
+        "target": "surrealkv::lsm",
+        "message": "Flushing all memtables on shutdown (flush_on_close=true)"
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.789133Z",
+        "level": "INFO",
+        "target": "surrealkv::lsm",
+        "message": "Flushing all memtables for shutdown..."
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.819013Z",
+        "level": "INFO",
+        "target": "surrealkv::lsm",
+        "message": "All memtables flushed successfully for shutdown"
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.819030Z",
+        "level": "INFO",
+        "target": "surrealkv::lsm",
+        "message": "All memtables flushed successfully on shutdown"
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.829329Z",
+        "level": "INFO",
+        "target": "surrealkv::lsm",
+        "message": "Cleaned up 1 obsolete WAL files during shutdown"
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.846679Z",
+        "level": "INFO",
+        "target": "surrealkv::lsm",
+        "message": "=== LSM tree shutdown complete === log_number=1, last_sequence=676"
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.851587Z",
+        "level": "INFO",
+        "target": "surrealkv::lsm",
+        "message": "Flushing all memtables on shutdown (flush_on_close=true)"
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.851628Z",
+        "level": "INFO",
+        "target": "surrealkv::lsm",
+        "message": "Flushing all memtables for shutdown..."
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.851647Z",
+        "level": "INFO",
+        "target": "surrealkv::lsm",
+        "message": "All memtables flushed successfully for shutdown"
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.851663Z",
+        "level": "INFO",
+        "target": "surrealkv::lsm",
+        "message": "All memtables flushed successfully on shutdown"
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.859226Z",
+        "level": "INFO",
+        "target": "universal_agent_runtime::server",
+        "message": "Server shutdown completed within the graceful deadline"
+      },
+      {
+        "timestamp": "2026-10-12T19:48:36.869003Z",
+        "level": "INFO",
+        "target": "surrealkv::lsm",
+        "message": "=== LSM tree shutdown complete === log_number=1, last_sequence=676"
+      }
+    ],
+    "lastApiResponseSummary": {
+      "execution_restorable": true,
+      "checkpointCount": 1,
+      "keys": [
+        "run_id",
+        "checkpoints",
+        "execution_restorable"
+      ]
+    },
+    "atFailureLockHolder": "notobserved; no retained exactlockholder snapshot untilaftertestexit",
+    "afterTestLockHolder": "bounded lsof exactLOCK returned1/nooutput/nodiagnostic",
+    "predecessorStopEvidence": "Executedfixturecontrolflow awaits successful stop_status before envelopes/proof. Rawexitstatus not independentlypersisted.",
+    "readbackConnectAmbiguity": "panicatsharedDatabase.connectline81 cannot distinguish envelopes from subsequentproof withoutbacktrace/perconnect evidence"
+  },
+  "lockOwnerAtFailure": "unobserved; do not attribute to predecessor",
+  "lockOwnerAfterExit": "bounded exact LOCK lsof returned1/nooutput/noerrors",
+  "actualExecutableArtifacts": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/fresh_process_resume-1accb410428be83b",
+      "sha256": "1d25bb12e0ae3db318e83eb4128e4b4d18b4520304a37ca81359f7988d0f1f64",
+      "bytes": 235370216,
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-wrapper-bypass-i9wj0878/resume-accepted-fresh_process_resume-1accb410428be83b",
+      "retainedSha256": "1d25bb12e0ae3db318e83eb4128e4b4d18b4520304a37ca81359f7988d0f1f64"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "sha256": "094137a14b756a3882d3eb4308bcdae78017be153eb0a906326613f5d1bfdf60",
+      "bytes": 551079464,
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-wrapper-bypass-i9wj0878/resume-accepted-production-runtime",
+      "retainedSha256": "094137a14b756a3882d3eb4308bcdae78017be153eb0a906326613f5d1bfdf60"
+    }
+  ],
+  "sampledCustomerArtifactBinding": [
+    {
+      "pid": 12890,
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "094137a14b756a3882d3eb4308bcdae78017be153eb0a906326613f5d1bfdf60",
+        "bytes": 551079464
+      },
+      "matchesRetainedCustomerPath": true
+    }
+  ],
+  "sourceStableAtExit": true,
+  "sourceStableAfterCleanup": true,
+  "sourceStableAtFinalSeal": true,
+  "environmentStableAtFinalSeal": true,
+  "cleanupUnknown": false,
+  "cleanupObservations": [
+    {
+      "pid": 12863,
+      "basis": "exact-child-of-cargo",
+      "state": "gone"
+    },
+    {
+      "pid": 12890,
+      "basis": "exact-child-of-integration",
+      "state": "gone"
+    },
+    {
+      "pid": 13036,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 13066,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    },
+    {
+      "pid": 13077,
+      "basis": "fixture-effect-trace",
+      "state": "gone"
+    }
+  ],
+  "rootInfrastructurePreserved": true,
+  "privateGateReceipt": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-wrapper-bypass-i9wj0878/resume-receipt.json",
+  "publicGateReceipt": ".kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T193157Z-resume-production-boundary.json",
+  "sourceEdits": [],
+  "unrequestedAdditions": [],
+  "newProductionGuards": [],
+  "streamsRun": false,
+  "nextStep": "Root reviews sourceworker process-owned readback proposal; no correction/retry until completehandoff/rootGO",
+  "limits": [
+    "No scenario group completed; no fresh continuation/race/crash/unsupported acceptance.",
+    "Partial initialrun/checkpoint/shutdown observations do not certify whole capability.",
+    "No at-failure filelockowner process sampling.",
+    "No genuineprovider inference, supervisor takeover, or release acceptance."
+  ]
+}

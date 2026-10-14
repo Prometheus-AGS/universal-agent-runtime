@@ -1,0 +1,103 @@
+[
+  {
+    "mode": "success",
+    "teamStatus": "inactive",
+    "executionOutcome": "succeeded",
+    "effectDisposition": "confirmed",
+    "artifactCount": 1,
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "b709a3a7-4297-4d44-a4a2-9943a58c8911",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "succeeded"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "succeeded"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": true,
+        "content": "{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"success\",\"nested\":{\"control\":42}},\"isError\":false,\"_meta\":{\"fixture\":\"metadata-control\"}}"
+      }
+    ],
+    "actualBinaryRestartAndDurableAssertionsCompleted": true
+  },
+  {
+    "mode": "application",
+    "teamStatus": "inactive",
+    "executionOutcome": "failed",
+    "effectDisposition": "confirmed",
+    "artifactCount": 0,
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "004ee82d-8fc2-4525-9fc5-81e119a3e841",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "application_failed"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "application_failed"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": false,
+        "content": "{\"status\":\"error\",\"outcome\":\"application_failed\",\"tool_call_id\":\"dot04-call\",\"tool\":\"dot04__outcomes__effect\",\"provenance\":{\"source\":\"mcp\",\"terminal_state\":\"failed\",\"observed_by\":\"trusted_host\"},\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"application\",\"nested\":{\"control\":42}},\"isError\":true,\"_meta\":{\"fixture\":\"metadata-control\"}},\"message\":\"MCP application failure\"}"
+      }
+    ],
+    "actualBinaryRestartAndDurableAssertionsCompleted": true
+  },
+  {
+    "mode": "unknown",
+    "teamStatus": "inactive",
+    "executionOutcome": "uncertain",
+    "effectDisposition": "uncertain",
+    "artifactCount": 0,
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "63fd3426-e76a-4e65-915f-5cae1c535770",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "outcome_unknown"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "outcome_unknown"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": false,
+        "content": "{\"status\":\"error\",\"outcome\":\"outcome_unknown\",\"tool_call_id\":\"dot04-call\",\"tool\":\"dot04__outcomes__effect\",\"provenance\":{\"source\":\"mcp\",\"terminal_state\":\"outcome_unknown\",\"observed_by\":\"trusted_host\"},\"result\":null,\"message\":\"MCP response lost after dispatch; reconcile before another attempt\"}"
+      }
+    ],
+    "actualBinaryRestartAndDurableAssertionsCompleted": true
+  },
+  {
+    "mode": "no_tool",
+    "teamStatus": "inactive",
+    "executionOutcome": "succeeded",
+    "effectDisposition": "confirmed",
+    "artifactCount": 1,
+    "canonical": [],
+    "admissionStates": [],
+    "ToolEnd": [],
+    "actualBinaryRestartAndDurableAssertionsCompleted": true
+  }
+]

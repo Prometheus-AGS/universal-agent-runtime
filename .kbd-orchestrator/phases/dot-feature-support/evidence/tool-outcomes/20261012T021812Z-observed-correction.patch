@@ -1,0 +1,29 @@
+--- failed-source/tests/support/truthful_tool_outcome_process.rs
++++ refrozen-source/tests/support/truthful_tool_outcome_process.rs
+@@ -485,6 +485,8 @@
+     agent["skills"] = json!([skill["skillRef"].clone()]);
+     agent["input"] = json!({});
+     agent["output"] = json!({});
++    // Cases use explicit task input and request no inherited context resources.
++    agent["context"] = json!({"mode":"none","artifacts":[],"history":"none","memoryScopes":[]});
+     // Draft.2 requires the retained source and semantic metadata. Keep the
+     // valid fixture values and bind its explicit rename to this scenario ID.
+     agent["renameMapping"]["targetId"] = agent["id"].clone();
+@@ -560,6 +562,17 @@
+             201,
+         )
+         .await;
++    let preflight_path = node.directory.join("binding-install.json");
++    std::fs::write(
++        &preflight_path,
++        serde_json::to_vec_pretty(&installed).unwrap(),
++    )
++    .unwrap();
++    #[cfg(unix)]
++    {
++        use std::os::unix::fs::PermissionsExt;
++        std::fs::set_permissions(&preflight_path, std::fs::Permissions::from_mode(0o600)).unwrap();
++    }
+     assert_eq!(
+         installed["preflight"]["activationSupported"], true,
+         "real team binding must activate"

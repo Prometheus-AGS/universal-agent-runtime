@@ -76,12 +76,29 @@ impl Job {
 }
 
 impl GraphRootSupervisor {
+    /// Projection can observe terminal output only after the owned graph worker
+    /// has also committed its native root/session receipts.
+    pub(crate) fn is_settled(&self, run_id: &str) -> bool {
+        self.jobs.lock().is_ok_and(|jobs| jobs.entries.get(run_id).is_none_or(|job| job.finished()))
+    }
+
     pub(crate) async fn start(
+        &self,
+        manager: RunManager,
+        request: RunExecutionRequest,
+        run_id: String,
+        cancellation: CancellationToken,
+    ) -> anyhow::Result<()> {
+        self.start_with_artifacts(manager, request, run_id, cancellation, None).await
+    }
+
+    pub(crate) async fn start_with_artifacts(
         &self,
         manager: RunManager,
         mut request: RunExecutionRequest,
         run_id: String,
         cancellation: CancellationToken,
+        artifacts: Option<super::artifacts::RunArtifactCollector>,
     ) -> anyhow::Result<()> {
         let mut preparation = PreparationLifetime(Some(cancellation.clone()));
         let owner = request
@@ -136,7 +153,7 @@ impl GraphRootSupervisor {
                     execution_session
                         .lock()
                         .await
-                        .execute_request(request, execution_run_id.clone(), Some(prepared), None)
+                        .execute_request(request, execution_run_id.clone(), Some(prepared), artifacts)
                         .await
                         .map(|_| ())
                 })

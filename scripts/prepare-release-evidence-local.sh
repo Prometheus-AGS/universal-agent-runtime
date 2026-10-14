@@ -54,6 +54,7 @@ for source in "$TEST_EVIDENCE_FILE" "$SECURITY_AUDIT_EVIDENCE_FILE" "$BUILD_RECE
 done
 
 mkdir -p "$evidence_directory"
+node "$root/scripts/generate-release-input-provenance.mjs" "$evidence_directory/release-input-provenance.json" "$root"
 archive_count=0
 while IFS= read -r archive; do
   [[ "$(basename "$archive")" == uar-offline-source.tar.gz ]] && continue

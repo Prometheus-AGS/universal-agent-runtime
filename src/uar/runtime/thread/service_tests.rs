@@ -159,15 +159,16 @@ impl Harness {
         }
     }
 
-    fn assert_capacity_restored(&self) {
+    async fn assert_capacity_restored(&self) {
         let lease = self
             .service
             .inner
             .kernel
-            .reserve_remote_budget(&ThreadBudgets::default())
+            .remote_budget()
+            .reserve_remote(&ThreadBudgets::default()).await
             .expect("root can reserve its full unused allowance again");
         assert_eq!(lease.grant().max_total_tokens, Some(1000));
-        lease.release_confirmed().unwrap();
+        lease.release_confirmed().await.unwrap();
     }
 
     async fn finish(self) {
@@ -267,7 +268,7 @@ async fn remote_admission_refusal_does_not_lease_root_budget() {
         error.to_string().contains("maximum concurrent children"),
         "{error}"
     );
-    harness.assert_capacity_restored();
+    harness.assert_capacity_restored().await;
     drop(occupied);
     harness.finish().await;
 }
@@ -297,7 +298,7 @@ async fn remote_persisted_launch_refusal_releases_capacity_and_shutdown_settles_
     assert!(!remote.execution_admitted);
     assert!(remote.reservation.is_released());
     drop(entries);
-    harness.assert_capacity_restored();
+    harness.assert_capacity_restored().await;
     harness.finish().await;
 }
 
@@ -329,6 +330,6 @@ async fn remote_pending_cancellation_releases_capacity_before_any_dispatch() {
         .unwrap()
         .unwrap();
     assert_eq!(terminal.status, AgentThreadStatus::Cancelled);
-    harness.assert_capacity_restored();
+    harness.assert_capacity_restored().await;
     harness.finish().await;
 }

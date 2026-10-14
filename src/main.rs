@@ -18,8 +18,16 @@ use universal_agent_runtime::config_manager::ConfigManager;
 use universal_agent_runtime::server;
 use universal_agent_runtime::uar;
 
-#[tokio::main]
-async fn main() {
+fn main() {
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .thread_stack_size(8 * 1024 * 1024)
+        .enable_all()
+        .build()
+        .expect("Failed to create UAR async runtime");
+    runtime.block_on(run_main());
+}
+
+async fn run_main() {
     let _ = dotenv();
 
     if let Some(path) = selected_env_file() {

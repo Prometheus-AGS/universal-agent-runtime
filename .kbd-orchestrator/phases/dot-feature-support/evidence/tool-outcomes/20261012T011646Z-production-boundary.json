@@ -1,0 +1,99 @@
+{
+  "phase": "dot-feature-support",
+  "change": "dot-04-truthful-tool-outcomes",
+  "task": "2",
+  "stage": "Execute",
+  "waypointRevisionAtDispatch": 2695,
+  "verificationTier": "Tier 1 completed-change real production integration",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,in-memory-backend",
+    "--test",
+    "truthful_tool_outcomes",
+    "--",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "commandDisplay": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test truthful_tool_outcomes -- --test-threads=1 --nocapture",
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "startedAt": "2026-10-12T01:17:01.733425+00:00",
+  "status": "failed",
+  "sourceFingerprint": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-source-fingerprint.json",
+  "sourceFingerprintSha256": "f9a1acb3f2066145151471795e9eeb94d27404257b74e13a62938e4087b5c399",
+  "privateSourceSnapshot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/source-snapshot.tar.gz",
+  "sourceSnapshotSha256": "b2c75a4e4d63f54c0ad33b3c85f02df46c89a2a78b80d85b82af8b72d97999e2",
+  "privateDirtySourcePatch": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/dirty-source.patch",
+  "dirtySourcePatchSha256": "63ba56e6fe546785ca6b7ba72394e0a3520aa0a406e50296f094b34cd3fcdd91",
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u",
+  "privateRawLog": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/cargo-raw.log",
+  "environmentNames": [
+    "HOME",
+    "PATH",
+    "UAR_DOT04_INFRA_FILE",
+    "UAR_DOT04_EVIDENCE_ROOT"
+  ],
+  "topChildVariableUnset": true,
+  "substantiveTest": "actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes",
+  "noopTopHarnessEntry": "child_outcome_boundary",
+  "expectedScenarioEntries": 59,
+  "sampledProcesses": [],
+  "boundFileCount": 6549,
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T010903Z-production-boundary.json",
+  "correction": {
+    "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T010903Z-production-boundary.json",
+    "changedBoundPathsSincePreviousGate": [
+      "src/mcp/outcome.rs",
+      "src/mcp/runtime.rs"
+    ],
+    "hashes": {
+      "src/mcp/runtime.rs": {
+        "old": "20e588a4cc06d37ce254a35d9931c2b7cf2f6fad7bed07d0336e66502483671a",
+        "new": "3b9bf9e64773e1035d915be96f03ad3a3c92e43a5a5449aff56a0e55d9f278c6"
+      },
+      "src/mcp/outcome.rs": {
+        "old": "129dc02faac5e1bbcd64f4724f91a946e48376d47b27ee2d1315bd8956a1267f",
+        "new": "632bc50c2b6fe3b09f8ed0b30d368acc9b76c6fe406f6d4a24be8a8aa60c4978"
+      }
+    },
+    "correctionPatchSha256": "fb63f80a559716d33749db3e4cef93c0f5e4df9b8f3e18c4aee374521471599a",
+    "tier0CommandsReceipt": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-typed-error-correction-ehq2mbjn/commands.json"
+  },
+  "cargoPid": 17875,
+  "lastObservedAt": "2026-10-12T01:20:04.857063+00:00",
+  "rawLogBytes": 13603,
+  "testLines": [],
+  "exitCode": 101,
+  "finishedAt": "2026-10-12T01:20:04.858369+00:00",
+  "elapsedSeconds": 183.01,
+  "sourceUnchangedAtExit": true,
+  "changedSourcePathsAtExit": [],
+  "artifactFingerprints": [],
+  "artifactStabilityAtExit": [],
+  "testSummary": [],
+  "testPassedByName": {
+    "actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes": false,
+    "child_outcome_boundary": false
+  },
+  "libtestTopResultObserved": false,
+  "rawLogSha256": "b92ac805ea6b47f8785255ea026ccc80d16e2236bab8dea066490100290b39fc",
+  "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-production-boundary.log",
+  "logSha256": "b92ac805ea6b47f8785255ea026ccc80d16e2236bab8dea066490100290b39fc",
+  "profiles": [],
+  "sanitizedArtifacts": [],
+  "cleanup": [],
+  "rootInfrastructureUntouched": true,
+  "failureAnalysis": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-failure-analysis.json",
+  "correctionReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-observed-correction.json",
+  "scenarioInventory": {
+    "expected": 59,
+    "entered": 0,
+    "completed": 0,
+    "unrun": 59,
+    "reason": "external integration fixture failed compilation before target launch"
+  },
+  "processSamplingLimitation": "No integration/runtime/Python peers launched; compiler descendants are retained privately, not claimed as complete toolchain closure."
+}

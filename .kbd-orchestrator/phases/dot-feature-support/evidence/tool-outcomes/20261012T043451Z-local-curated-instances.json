@@ -1,0 +1,138 @@
+[
+  {
+    "mode": "unknown",
+    "rowComplete": true,
+    "lifecycle": "active",
+    "recovery": "effect_uncertain",
+    "commands": [
+      {
+        "commandId": "00604e47-9085-4001-a91e-0b4ec0c334ba",
+        "rootRunId": "58065b5f-9153-4bca-856f-1b74668f1d70",
+        "status": "uncertain"
+      },
+      {
+        "commandId": "138f7e96-dd4b-4431-bf43-f579206f676c",
+        "rootRunId": null,
+        "status": "completed"
+      }
+    ],
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "58065b5f-9153-4bca-856f-1b74668f1d70",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "outcome_unknown"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "outcome_unknown"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": false,
+        "content": "{\"status\":\"error\",\"outcome\":\"outcome_unknown\",\"tool_call_id\":\"dot04-call\",\"tool\":\"dot04__outcomes__effect\",\"provenance\":{\"source\":\"mcp\",\"terminal_state\":\"outcome_unknown\",\"observed_by\":\"trusted_host\"},\"result\":null,\"message\":\"MCP response lost after dispatch; reconcile before another attempt\"}"
+      }
+    ],
+    "fullSDKcontentAndModelEffectCardinalityAssertionsPassed": true,
+    "durableLifecycleAndRecoveryReadbackAssertionsPassed": true
+  },
+  {
+    "mode": "success",
+    "rowComplete": true,
+    "lifecycle": "dormant",
+    "recovery": "ready",
+    "commands": [
+      {
+        "commandId": "ac56f0f7-f251-46c0-ac3e-0354ea2a3353",
+        "rootRunId": "6c0f2ade-1b2a-4753-b50a-6f83a60e665d",
+        "status": "completed"
+      },
+      {
+        "commandId": "e5c0d31a-c476-4934-af99-61defaac9b9d",
+        "rootRunId": null,
+        "status": "completed"
+      },
+      {
+        "commandId": "b42531cd-f10e-400f-972f-3416bc2d6ce8",
+        "rootRunId": null,
+        "status": "completed"
+      }
+    ],
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "6c0f2ade-1b2a-4753-b50a-6f83a60e665d",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "succeeded"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "succeeded"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": true,
+        "content": "{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"success\",\"nested\":{\"control\":42}},\"isError\":false,\"_meta\":{\"fixture\":\"metadata-control\"}}"
+      }
+    ],
+    "fullSDKcontentAndModelEffectCardinalityAssertionsPassed": true,
+    "durableLifecycleAndRecoveryReadbackAssertionsPassed": true
+  },
+  {
+    "mode": "application",
+    "rowComplete": true,
+    "lifecycle": "dormant",
+    "recovery": "ready",
+    "commands": [
+      {
+        "commandId": "f7e9f979-e551-49fd-a9a7-8f2028f84e80",
+        "rootRunId": "32cc0410-172b-4713-87c1-8a43a3e0b03a",
+        "status": "completed"
+      },
+      {
+        "commandId": "4da22488-b1a5-44bb-94e3-7a1b441698d3",
+        "rootRunId": null,
+        "status": "completed"
+      },
+      {
+        "commandId": "cb628024-38d5-44ea-914d-03ed3873db30",
+        "rootRunId": null,
+        "status": "completed"
+      }
+    ],
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "32cc0410-172b-4713-87c1-8a43a3e0b03a",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "application_failed"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "application_failed"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": false,
+        "content": "{\"status\":\"error\",\"outcome\":\"application_failed\",\"tool_call_id\":\"dot04-call\",\"tool\":\"dot04__outcomes__effect\",\"provenance\":{\"source\":\"mcp\",\"terminal_state\":\"failed\",\"observed_by\":\"trusted_host\"},\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"application\",\"nested\":{\"control\":42}},\"isError\":true,\"_meta\":{\"fixture\":\"metadata-control\"}},\"message\":\"MCP application failure\"}"
+      }
+    ],
+    "fullSDKcontentAndModelEffectCardinalityAssertionsPassed": true,
+    "durableLifecycleAndRecoveryReadbackAssertionsPassed": true
+  }
+]

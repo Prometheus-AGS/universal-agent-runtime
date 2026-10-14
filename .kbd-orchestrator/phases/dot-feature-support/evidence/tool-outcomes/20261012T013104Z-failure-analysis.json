@@ -1,0 +1,79 @@
+{
+  "status": "failed-runtime-stack-overflow",
+  "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T013104Z-production-boundary.json",
+  "command": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test truthful_tool_outcomes -- --test-threads=1 --nocapture",
+  "exitCode": 101,
+  "observedFailure": {
+    "helperPid": 24223,
+    "helperHarnessEntry": "child_outcome_boundary",
+    "signal": "SIGABRT",
+    "stderr": "thread child_outcome_boundary has overflowed its stack; fatal runtime error: stack overflow, aborting",
+    "topPanic": "tests/truthful_tool_outcomes.rs:921 isolated outcome helper exited signal6"
+  },
+  "rootCause": "Helper test thread stack exhausted. Exact stack-exhausting frame is not localized by retained stderr. Execution reached two first-mode registry effects; no manager or binary scenario has retained entry evidence.",
+  "proposedNarrowCorrection": "Original author should correct fixture stack allocation/execution for the heavy production integration future (heap-box the heavy future or explicitly configure a supported fixture execution-thread stack after confirming API), preserve all production assertions and environment isolation, then refreeze. Do not weaken checks or bypass failed runtime path.",
+  "testResult": [
+    "test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.57s"
+  ],
+  "topHarnessEntries": 2,
+  "topHarnessPassed": 1,
+  "topHarnessFailed": 1,
+  "noopTopHarnessEntry": "child_outcome_boundary passed because top CHILD unset",
+  "substantiveTestPassed": false,
+  "substantiveTestFailed": true,
+  "scenarioInventory": {
+    "expected": 59,
+    "evidencedEntered": 2,
+    "enteredScenarios": [
+      "local/registry/direct/success",
+      "local/registry/scoped/success"
+    ],
+    "completedMinimum": 1,
+    "completedMinimumScenarios": [
+      "local/registry/direct/success"
+    ],
+    "completionNotCertified": [
+      "local/registry/scoped/success"
+    ],
+    "remainingWithoutEntryEvidence": 57,
+    "actualRuntimeBinaryScenariosEntered": 0,
+    "sharedProfileEntered": false,
+    "legacyReceiptControlCompletedBeforeScenarios": "source sequence establishes control returned before direct registry ran",
+    "effectTraces": [
+      {
+        "scenario": "registry-false-success",
+        "traceSha256": "2f98f6805335e741687c7c6b3cdea619633a26e3389c1cfac0109351ce05f241",
+        "effects": {
+          "mode": "success",
+          "pid": 24231,
+          "effect": true
+        }
+      },
+      {
+        "scenario": "registry-true-success",
+        "traceSha256": "ba317ab24ebb6da395fb2ffa212785fe20f3efea51773782635332eeb3d1ea14",
+        "effects": {
+          "mode": "success",
+          "pid": 24234,
+          "effect": true
+        }
+      }
+    ],
+    "limitation": "Fixture does not emit per-scenario entry/exit rows before its final aggregate manifests. First direct registry returned because later scoped effect executed; scoped effect trace alone does not certify that boundary returned before helper abort. No later scenario entry is evidenced."
+  },
+  "sourceStable": true,
+  "sourceBoundFiles": 6549,
+  "sourceChangesByGateExecutor": [],
+  "addedUnrequestedChanges": [],
+  "newProductionGuards": [],
+  "cleanup": [],
+  "unverified": [
+    "Remaining57scenarioentries and scoped registry completion",
+    "Any ordinary runtime/shared two-runtime/restart/team/instance/recovery gate",
+    "Postgres receipt roundtrip and observer/checkpoint parity",
+    "Explicit shared B denied takeover request not authored by fixture",
+    "Genuine inference",
+    "Complete transitive registry/toolchain/native closure",
+    "Tier2 composition/cumulative independent review/whole phase and Tier3 publication"
+  ]
+}

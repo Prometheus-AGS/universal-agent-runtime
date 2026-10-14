@@ -1,0 +1,76 @@
+# Authored for deferred validation, not an installed or qualified deployment.
+# Use --kube-context know-me and --namespace dot17-uar at the testing boundary.
+fullnameOverride: dot17-uar
+uar:
+  workloadKind: StatefulSet
+  replicaCount: 2
+  runtimeDataMountEnabled: true
+  podSecurityContext:
+    fsGroup: 65532
+  existingSecret: dot17-uar-private
+  existingConfigSecret: dot17-uar-config
+  qualificationFixtureConfigMap: dot17-qualification-source
+  image:
+    # Supply repository and immutable digest in private values after local gates.
+    repository: PLACEHOLDER_IMAGE
+    tag: ""
+    digest: ""
+  instanceRoutes:
+    - name: a
+      ordinal: 0
+      pathPrefix: /dot17/a
+    - name: b
+      ordinal: 1
+      pathPrefix: /dot17/b
+  env:
+    UAR_PERSISTENCE__PROVIDER: surreal
+    UAR_PERSISTENCE__DATABASE_URL: ws://surrealdb:8000
+    UAR_PERSISTENCE__SURREAL_NS: dot17
+    UAR_PERSISTENCE__SURREAL_DB: dot17
+    UAR_PERSISTENCE__EXTERNAL_CACHE_ENABLED: "false"
+    UAR_SERVER__HOST: "0.0.0.0"
+    UAR_SECURITY__JWT_REQUIRED: "true"
+    UAR_MEMORY__ENABLED: "false"
+    UAR_MEMORY__NAMESPACE: dot17
+    UAR_MEMORY__DATABASE: dot17
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 15
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 15
+    periodSeconds: 10
+postgres:
+  enabled: false
+redis:
+  enabled: false
+surrealdb:
+  enabled: true
+  # One retained claim: /surreal for the database, /peer for controlled traces.
+  qualificationSharedVolume: true
+  storage:
+    size: 10Gi
+storageClass:
+  create: false
+  name: linode-block-storage-retain
+gateway:
+  enabled: true
+  # SSE responses and approval waits must not expire at the proxy request limit.
+  timeouts:
+    request: 0s
+    backendRequest: 0s
+  hostname: runtime.know-me.tools
+  gatewayRef:
+    name: argocd-gateway
+    namespace: argocd
+    sectionName: knowme-runtime-https
+  redirect:
+    enabled: true
+    sectionName: knowme-runtime-http
+hpa:
+  enabled: false

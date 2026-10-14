@@ -49,26 +49,6 @@ function Insert-Lines {
     return $result.ToArray()
 }
 
-function Replace-Lines {
-    param([string[]]$Lines, [int]$Start, [int]$Count, [string[]]$Replacement)
-    $result = [System.Collections.Generic.List[string]]::new()
-    for ($position = 0; $position -lt $Start; $position++) { $result.Add($Lines[$position]) }
-    foreach ($line in $Replacement) { $result.Add($line) }
-    for ($position = $Start + $Count; $position -lt $Lines.Count; $position++) {
-        $result.Add($Lines[$position])
-    }
-    return $result.ToArray()
-}
-
-function Test-LineSequenceEqual {
-    param([string[]]$Left, [string[]]$Right)
-    if ($Left.Count -ne $Right.Count) { return $false }
-    for ($index = 0; $index -lt $Left.Count; $index++) {
-        if ($Left[$index] -cne $Right[$index]) { return $false }
-    }
-    return $true
-}
-
 function New-ModelLines {
     param(
         [string]$Id,
@@ -99,7 +79,6 @@ function New-ProviderLines {
         [string]$Id,
         [string]$DisplayName,
         [string]$BaseUrl,
-        [string]$DefaultModel,
         [string[]]$Models
     )
     $lines = [System.Collections.Generic.List[string]]::new()
@@ -107,7 +86,6 @@ function New-ProviderLines {
     $lines.Add('    display_name: ' + ($DisplayName | ConvertTo-Json -Compress))
     $lines.Add('    base_url: ' + ($BaseUrl | ConvertTo-Json -Compress))
     $lines.Add('    protocol: chat')
-    $lines.Add('    default_model: ' + ($DefaultModel | ConvertTo-Json -Compress))
     $lines.Add('    enabled: true')
     $lines.Add('    models:')
     foreach ($line in $Models) { $lines.Add($line) }
@@ -139,67 +117,29 @@ if ($proxyModels.Count -gt 0) {
             $models.Add($line)
         }
     }
-    $providers['local-openai-proxy'] = New-ProviderLines -Id 'local-openai-proxy' -DisplayName 'Local OpenAI Proxy' -BaseUrl $ProxyUrl.TrimEnd('/') -DefaultModel $proxyModels[0] -Models $models.ToArray()
+    $providers['local-openai-proxy'] = New-ProviderLines -Id 'local-openai-proxy' -DisplayName 'Local OpenAI Proxy' -BaseUrl $ProxyUrl.TrimEnd('/') -Models $models.ToArray()
 }
 if ($present.Contains('KIMI_API_KEY')) {
-    $providers['kimi-for-coding'] = New-ProviderLines -Id 'kimi-for-coding' -DisplayName 'Kimi For Coding' -BaseUrl 'https://api.kimi.com/coding/v1' -DefaultModel 'k3' -Models (New-ModelLines -Id 'k3' -DisplayName 'Kimi K3' -ContextWindow 1048576 -MaxOutput 131072 -Vision $true -Tools $true -Reasoning $true -Structured $true)
+    $providers['kimi-for-coding'] = New-ProviderLines -Id 'kimi-for-coding' -DisplayName 'Kimi For Coding' -BaseUrl 'https://api.kimi.com/coding/v1' -Models (New-ModelLines -Id 'k3' -DisplayName 'Kimi K3' -ContextWindow 1048576 -MaxOutput 131072 -Vision $true -Tools $true -Reasoning $true -Structured $true)
 }
 if ($present.Contains('MINIMAX_API_KEY')) {
-    $providers['minimax'] = New-ProviderLines -Id 'minimax' -DisplayName 'MiniMax' -BaseUrl 'https://api.minimax.io/v1' -DefaultModel 'MiniMax-M3' -Models (New-ModelLines -Id 'MiniMax-M3' -DisplayName 'MiniMax M3' -ContextWindow 1000000 -MaxOutput 128000 -Vision $true -Tools $true -Reasoning $true -Structured $false)
+    $providers['minimax'] = New-ProviderLines -Id 'minimax' -DisplayName 'MiniMax' -BaseUrl 'https://api.minimax.io/v1' -Models (New-ModelLines -Id 'MiniMax-M3' -DisplayName 'MiniMax M3' -ContextWindow 1000000 -MaxOutput 128000 -Vision $true -Tools $true -Reasoning $true -Structured $false)
 }
 if ($present.Contains('DASHSCOPE_API_KEY')) {
-    $providers['alibaba'] = New-ProviderLines -Id 'alibaba' -DisplayName 'Alibaba/Qwen' -BaseUrl 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1' -DefaultModel 'qwen3.8-max' -Models (New-ModelLines -Id 'qwen3.8-max' -DisplayName 'Qwen3.8-Max' -ContextWindow 1000000 -MaxOutput 131072 -Vision $true -Tools $true -Reasoning $true -Structured $true)
+    $providers['alibaba'] = New-ProviderLines -Id 'alibaba' -DisplayName 'Alibaba/Qwen' -BaseUrl 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1' -Models (New-ModelLines -Id 'qwen3.8-max' -DisplayName 'Qwen3.8-Max' -ContextWindow 1000000 -MaxOutput 131072 -Vision $true -Tools $true -Reasoning $true -Structured $true)
 }
 if ($present.Contains('ZAI_API_KEY')) {
     $zaiModels = (New-ModelLines -Id 'glm-4.7' -DisplayName 'GLM-4.7' -ContextWindow 204800 -MaxOutput 131072 -Vision $false -Tools $true -Reasoning $true -Structured $false) +
         (New-ModelLines -Id 'glm-5.2' -DisplayName 'GLM-5.2' -ContextWindow 1000000 -MaxOutput 131072 -Vision $false -Tools $true -Reasoning $true -Structured $true)
-    $providers['zai'] = New-ProviderLines -Id 'zai' -DisplayName 'Z.AI' -BaseUrl 'https://api.z.ai/api/paas/v4' -DefaultModel 'glm-5.2' -Models $zaiModels
+    $providers['zai'] = New-ProviderLines -Id 'zai' -DisplayName 'Z.AI' -BaseUrl 'https://api.z.ai/api/paas/v4' -Models $zaiModels
 }
 if ($present.Contains('MOONSHOT_API_KEY')) {
     $moonshotModels = (New-ModelLines -Id 'kimi-k2.5' -DisplayName 'Kimi K2.5' -ContextWindow 262144 -MaxOutput 262144 -Vision $true -Tools $true -Reasoning $true -Structured $true) +
         (New-ModelLines -Id 'kimi-k3' -DisplayName 'Kimi K3' -ContextWindow 1048576 -MaxOutput 131072 -Vision $true -Tools $true -Reasoning $true -Structured $true)
-    $providers['moonshotai'] = New-ProviderLines -Id 'moonshotai' -DisplayName 'Moonshot AI' -BaseUrl 'https://api.moonshot.ai/v1' -DefaultModel 'kimi-k2.5' -Models $moonshotModels
+    $providers['moonshotai'] = New-ProviderLines -Id 'moonshotai' -DisplayName 'Moonshot AI' -BaseUrl 'https://api.moonshot.ai/v1' -Models $moonshotModels
 }
 
 $lines = [IO.File]::ReadAllLines($Config)
-$llmStart = Find-SectionStart -Lines $lines -Name 'llm'
-if ($present.Contains('DASHSCOPE_API_KEY')) {
-    if ($llmStart -lt 0) {
-        $lines = Insert-Lines -Lines $lines -Index $lines.Count -Additions @('', 'llm:', '  model: "alibaba/qwen3.8-max"', '  api_key_env: "DASHSCOPE_API_KEY"')
-    } else {
-        if ($lines[$llmStart].Trim() -ne 'llm:') { throw 'top-level llm must be a block mapping' }
-        $llmEnd = Find-SectionEnd -Lines $lines -Start $llmStart
-        for ($index = $llmStart + 1; $index -lt $llmEnd; $index++) {
-            if ($lines[$index] -match '^  model:\s*["'']?alibaba/qwen3\.7-max["'']?\s*$') {
-                $lines[$index] = '  model: "alibaba/qwen3.8-max"'
-            } elseif ($lines[$index] -match '^  api_key_env:\s*["'']?QWEN_TOKENPLAN_API_KEY["'']?\s*$') {
-                $lines[$index] = '  api_key_env: "DASHSCOPE_API_KEY"'
-            }
-        }
-    }
-}
-
-$providerStart = Find-SectionStart -Lines $lines -Name 'providers'
-if ($providerStart -ge 0) {
-    $providerEnd = Find-SectionEnd -Lines $lines -Start $providerStart
-    $legacyAlibaba = New-ProviderLines -Id 'alibaba' -DisplayName 'Alibaba/Qwen' -BaseUrl 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1' -DefaultModel 'qwen3-coder-plus' -Models (New-ModelLines -Id 'qwen3-coder-plus' -DisplayName 'Qwen3 Coder Plus' -ContextWindow 1048576 -MaxOutput 65536 -Vision $false -Tools $true -Reasoning $false -Structured $false)
-    $qwen38Alibaba = New-ProviderLines -Id 'alibaba' -DisplayName 'Alibaba/Qwen' -BaseUrl 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1' -DefaultModel 'qwen3.8-max' -Models (New-ModelLines -Id 'qwen3.8-max' -DisplayName 'Qwen3.8-Max' -ContextWindow 1000000 -MaxOutput 131072 -Vision $true -Tools $true -Reasoning $true -Structured $true)
-    $providerEntries = [System.Collections.Generic.List[int]]::new()
-    for ($index = $providerStart + 1; $index -lt $providerEnd; $index++) {
-        if ($lines[$index] -match '^  - id:\s*') { $providerEntries.Add($index) }
-    }
-    $providerEntries.Add($providerEnd)
-    for ($position = 0; $position -lt $providerEntries.Count - 1; $position++) {
-        $blockStart = $providerEntries[$position]
-        $blockEnd = $providerEntries[$position + 1]
-        $block = $lines[$blockStart..($blockEnd - 1)]
-        if (Test-LineSequenceEqual -Left $block -Right $legacyAlibaba) {
-            $lines = Replace-Lines -Lines $lines -Start $blockStart -Count ($blockEnd - $blockStart) -Replacement $qwen38Alibaba
-            break
-        }
-    }
-}
-
 $serverStart = Find-SectionStart -Lines $lines -Name 'server'
 if ($serverStart -lt 0) {
     $lines = Insert-Lines -Lines $lines -Index $lines.Count -Additions @('', 'server:', '  host: "127.0.0.1"', '  port: 1906', '  grpc_port: 50051')

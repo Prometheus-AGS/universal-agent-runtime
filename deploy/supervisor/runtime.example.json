@@ -1,0 +1,11 @@
+{
+  "endpoint": "https://localhost:9447/",
+  "controller_id": "host-supervisor-1",
+  "controller_ca": "/etc/uar-supervisor/controller-ca.crt",
+  "client_identity": "/etc/uar-supervisor/runtime-client.pem",
+  "qualification_id": "replace-with-retained-platform-receipt-id",
+  "qualified_mechanism": "native-boot-exclusion-v1",
+  "deployment_id": "native-local",
+  "authorized_recovery_deployments": [],
+  "recovery_peers": []
+}

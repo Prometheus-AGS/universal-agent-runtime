@@ -1,0 +1,364 @@
+[
+  {
+    "boundary": "server_process",
+    "mode": "success",
+    "run": "99635024-568d-4d87-ba0a-c52fa95b586d",
+    "tool": "outcomes__effect",
+    "outcome": "succeeded",
+    "teamEvidence": null,
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": null,
+    "database": "truthful_outcomes_binary_server_process_success",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-server_process-success"
+  },
+  {
+    "boundary": "server_process",
+    "mode": "application",
+    "run": "00d32c88-e94d-40f6-b332-33e0c89dba41",
+    "tool": "outcomes__effect",
+    "outcome": "application_failed",
+    "teamEvidence": null,
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": null,
+    "database": "truthful_outcomes_binary_server_process_application",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-server_process-application"
+  },
+  {
+    "boundary": "server_process",
+    "mode": "predispatch",
+    "run": "c06e9e7f-77cc-4fab-a992-f21aebf6ef0a",
+    "tool": "outcomes__effect",
+    "outcome": "transport_failed",
+    "teamEvidence": null,
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": null,
+    "database": "truthful_outcomes_binary_server_process_predispatch",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-server_process-predispatch"
+  },
+  {
+    "boundary": "server_process",
+    "mode": "unknown",
+    "run": "3757bae1-c829-47f9-9df0-fd8c79d7e74c",
+    "tool": "outcomes__effect",
+    "outcome": "outcome_unknown",
+    "teamEvidence": null,
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": null,
+    "database": "truthful_outcomes_binary_server_process_unknown",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-server_process-unknown"
+  },
+  {
+    "boundary": "team_process",
+    "mode": "success",
+    "run": "e8059d76-d435-4400-836c-df03df190a08",
+    "tool": "dot04__outcomes__effect",
+    "outcome": "succeeded",
+    "teamEvidence": {
+      "team": "794a84e3-a841-4a1f-a58a-beb7ce095acd",
+      "attempt": "064336c7-3832-4801-91d0-0e07444190c0",
+      "teamOutcome": "succeeded",
+      "legacyHold": false,
+      "admissionOwner": "v1:s:19:dot04-outcome-owner"
+    },
+    "concurrentBinaryEvidence": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 45367,
+      "observerPid": 45535,
+      "writerStartedAt": "2026-10-12T04:50:35.769273+00:00",
+      "observerStartedAt": "2026-10-12T04:50:40.635400+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:50:42.119323+00:00",
+      "database": "truthful_outcomes_binary_team_process_success",
+      "namespace": "dot04_5cdf5bb0f23f4848bf90f3078aa2870d",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-success-concurrent-observer"
+    },
+    "restartedBinaryEvidence": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 45367,
+      "restartedPid": 45574,
+      "startedAt": "2026-10-12T04:50:42.422848+00:00",
+      "database": "truthful_outcomes_binary_team_process_success",
+      "teamOutcome": "succeeded",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-success-restarted-observer"
+    },
+    "database": "truthful_outcomes_binary_team_process_success",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-success"
+  },
+  {
+    "boundary": "team_recovery_process",
+    "mode": "known-application-failure",
+    "run": "3e20e875-44aa-4643-917e-88592c68d18a",
+    "team": "e809317e-37f1-4e6c-8bd5-946de054bbb6",
+    "attempt": "98eac6f3-0613-4e27-8a8a-71ffa70ce237",
+    "wait": "1519ff72-dcb6-4a96-b330-78c6ab14720c",
+    "database": "truthful_outcomes_binary_team_process_application",
+    "historicalFixture": true,
+    "claimedInvocationId": "201b9889-7d0b-4a18-a9c6-e20eaa6b38d1",
+    "unrelatedNativeInvocationId": null,
+    "unrelatedCanonicalCallId": null
+  },
+  {
+    "boundary": "team_recovery_process",
+    "mode": "legacy",
+    "run": "e502c428-0f85-4105-981f-68fb3c2c0cc9",
+    "team": "e809317e-37f1-4e6c-8bd5-946de054bbb6",
+    "attempt": "996d96a1-837f-46a7-8733-4c9649791ee2",
+    "wait": "5557a4c3-6ecc-409b-b81e-2fed5613e363",
+    "database": "truthful_outcomes_binary_team_process_application",
+    "historicalFixture": true,
+    "claimedInvocationId": "9dbb3b56-02ce-4dc6-a0f9-39d3252691c8",
+    "unrelatedNativeInvocationId": null,
+    "unrelatedCanonicalCallId": null
+  },
+  {
+    "boundary": "team_recovery_process",
+    "mode": "native-legacy-failure",
+    "run": "750230bf-b6b7-4195-9c63-7ca6d4697a0f",
+    "team": "e809317e-37f1-4e6c-8bd5-946de054bbb6",
+    "attempt": "48088606-ed71-4d16-87b2-c10678207d83",
+    "wait": "b704bdc4-abd3-4354-889b-bf1badc8443c",
+    "database": "truthful_outcomes_binary_team_process_application",
+    "historicalFixture": true,
+    "claimedInvocationId": "b78d2413-48e5-4419-b19e-e3acb2bac0bc",
+    "unrelatedNativeInvocationId": null,
+    "unrelatedCanonicalCallId": null
+  },
+  {
+    "boundary": "team_recovery_process",
+    "mode": "same-name-unrelated-native",
+    "run": "083f35e5-01db-48d6-88fd-8fe6fa548b49",
+    "team": "e809317e-37f1-4e6c-8bd5-946de054bbb6",
+    "attempt": "ddf091f5-33cb-4cdc-b2cd-6e903aff1d3f",
+    "wait": "e9c561a9-1b24-41aa-9ae7-940d631ebbac",
+    "database": "truthful_outcomes_binary_team_process_application",
+    "historicalFixture": true,
+    "claimedInvocationId": "e8b085eb-a439-4f4e-8a08-c35203009fdb",
+    "unrelatedNativeInvocationId": "f7f0bc8c-47e9-43e9-a216-911cca98e6e1",
+    "unrelatedCanonicalCallId": "unrelated-native-call-same-name-unrelated-native"
+  },
+  {
+    "boundary": "team_process",
+    "mode": "application",
+    "run": "012343bd-3028-4a2a-8813-64650b196fa8",
+    "tool": "dot04__outcomes__effect",
+    "outcome": "application_failed",
+    "teamEvidence": {
+      "team": "e809317e-37f1-4e6c-8bd5-946de054bbb6",
+      "attempt": "a6924b0a-6619-49eb-b0fb-eff0042bf18d",
+      "teamOutcome": "failed",
+      "legacyHold": false,
+      "admissionOwner": "v1:s:19:dot04-outcome-owner"
+    },
+    "concurrentBinaryEvidence": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 45617,
+      "observerPid": 45726,
+      "writerStartedAt": "2026-10-12T04:50:43.808655+00:00",
+      "observerStartedAt": "2026-10-12T04:50:48.515287+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:50:49.541752+00:00",
+      "database": "truthful_outcomes_binary_team_process_application",
+      "namespace": "dot04_5cdf5bb0f23f4848bf90f3078aa2870d",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-application-concurrent-observer"
+    },
+    "restartedBinaryEvidence": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 45617,
+      "restartedPid": 45757,
+      "startedAt": "2026-10-12T04:50:49.847253+00:00",
+      "database": "truthful_outcomes_binary_team_process_application",
+      "teamOutcome": "failed",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-application-restarted-observer"
+    },
+    "database": "truthful_outcomes_binary_team_process_application",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-application"
+  },
+  {
+    "boundary": "team_process",
+    "mode": "unknown",
+    "run": "176fb7aa-9ca1-4a06-99e1-c58e8d91aa10",
+    "tool": "dot04__outcomes__effect",
+    "outcome": "outcome_unknown",
+    "teamEvidence": {
+      "team": "6bfc97a1-74f6-4a40-8fe5-0da6f57bccb3",
+      "attempt": "c1573b61-3c1f-4efb-9295-7c8cffee8cc1",
+      "teamOutcome": "uncertain",
+      "legacyHold": false,
+      "admissionOwner": "v1:s:19:dot04-outcome-owner"
+    },
+    "concurrentBinaryEvidence": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 45804,
+      "observerPid": 46122,
+      "writerStartedAt": "2026-10-12T04:50:51.990433+00:00",
+      "observerStartedAt": "2026-10-12T04:50:57.173584+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:50:58.501527+00:00",
+      "database": "truthful_outcomes_binary_team_process_unknown",
+      "namespace": "dot04_5cdf5bb0f23f4848bf90f3078aa2870d",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-unknown-concurrent-observer"
+    },
+    "restartedBinaryEvidence": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 45804,
+      "restartedPid": 46174,
+      "startedAt": "2026-10-12T04:50:58.811658+00:00",
+      "database": "truthful_outcomes_binary_team_process_unknown",
+      "teamOutcome": "uncertain",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-unknown-restarted-observer"
+    },
+    "database": "truthful_outcomes_binary_team_process_unknown",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-unknown"
+  },
+  {
+    "boundary": "team_process",
+    "mode": "no_tool",
+    "run": "6ca15101-8ff6-41e9-abd0-815522d1ee39",
+    "tool": "dot04__outcomes__effect",
+    "outcome": null,
+    "teamEvidence": {
+      "team": "13465040-9b16-49e8-af85-6d8f05844063",
+      "attempt": "f8febf08-6ca9-4949-9e6b-a999d8938a40",
+      "teamOutcome": "succeeded",
+      "legacyHold": false,
+      "admissionOwner": "v1:s:19:dot04-outcome-owner"
+    },
+    "concurrentBinaryEvidence": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 46205,
+      "observerPid": 46645,
+      "writerStartedAt": "2026-10-12T04:51:00.189839+00:00",
+      "observerStartedAt": "2026-10-12T04:51:04.594666+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:51:05.602801+00:00",
+      "database": "truthful_outcomes_binary_team_process_no_tool",
+      "namespace": "dot04_5cdf5bb0f23f4848bf90f3078aa2870d",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-no_tool-concurrent-observer"
+    },
+    "restartedBinaryEvidence": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 46205,
+      "restartedPid": 46674,
+      "startedAt": "2026-10-12T04:51:05.901120+00:00",
+      "database": "truthful_outcomes_binary_team_process_no_tool",
+      "teamOutcome": "succeeded",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-no_tool-restarted-observer"
+    },
+    "database": "truthful_outcomes_binary_team_process_no_tool",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-no_tool"
+  },
+  {
+    "boundary": "team_process",
+    "mode": "legacy-hold",
+    "run": "3ac82975-0fcd-4dd5-86f7-5dfe1fea1594",
+    "tool": "dot04__outcomes__effect",
+    "teamEvidence": {
+      "team": "9b93438d-faf2-4a03-8dd2-67370df36e9f",
+      "attempt": "fe392a95-a01b-4996-8289-123510f214d3",
+      "teamOutcome": "uncertain",
+      "legacyHold": true,
+      "admissionOwner": "v1:s:19:dot04-outcome-owner"
+    },
+    "concurrentBinaryEvidence": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 47041,
+      "observerPid": 47424,
+      "writerStartedAt": "2026-10-12T04:51:07.292495+00:00",
+      "observerStartedAt": "2026-10-12T04:51:11.904105+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:51:12.916271+00:00",
+      "database": "truthful_outcomes_binary_team_process_legacy_hold",
+      "namespace": "dot04_5cdf5bb0f23f4848bf90f3078aa2870d",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team-process-legacy-hold-concurrent-observer"
+    },
+    "restartedBinaryEvidence": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 47041,
+      "restartedPid": 47794,
+      "startedAt": "2026-10-12T04:51:13.225602+00:00",
+      "database": "truthful_outcomes_binary_team_process_legacy_hold",
+      "teamOutcome": "uncertain",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team-process-legacy-hold-restarted-observer"
+    },
+    "database": "truthful_outcomes_binary_team_process_legacy_hold",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team-process-legacy-hold"
+  },
+  {
+    "boundary": "instance_process",
+    "mode": "success",
+    "run": "9cf829e5-1127-4132-b29a-9fc12b25d87c",
+    "tool": "dot04__outcomes__effect",
+    "outcome": "succeeded",
+    "instanceEvidence": {
+      "instance": "edbc25ac-ec17-4a62-b841-889bb67a5494",
+      "owner": "v1:s:19:dot04-outcome-owner",
+      "command": "7f7dc60e-b5e0-4599-aa97-e66325f95816",
+      "recovery": "ready",
+      "lifecycle": "dormant"
+    },
+    "database": "truthful_outcomes_binary_instance_process_success",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-instance-process-success"
+  },
+  {
+    "boundary": "instance_process",
+    "mode": "application",
+    "run": "3d0466d1-5173-4616-9f81-3694c2345b48",
+    "tool": "dot04__outcomes__effect",
+    "outcome": "application_failed",
+    "instanceEvidence": {
+      "instance": "812308b5-98b4-435b-8a29-fd51c6c6a2b5",
+      "owner": "v1:s:19:dot04-outcome-owner",
+      "command": "048ee440-c2d3-42b6-9c23-f103159cb951",
+      "recovery": "ready",
+      "lifecycle": "dormant"
+    },
+    "database": "truthful_outcomes_binary_instance_process_application",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-instance-process-application"
+  },
+  {
+    "boundary": "instance_process",
+    "mode": "unknown",
+    "run": "56b58124-422c-49f6-93c6-a801a006b04a",
+    "tool": "dot04__outcomes__effect",
+    "outcome": "outcome_unknown",
+    "instanceEvidence": {
+      "instance": "38bfa06a-83f6-440d-bea4-04723663002f",
+      "owner": "v1:s:19:dot04-outcome-owner",
+      "command": "4c7d882f-0fc2-4b8a-8604-89a023e323cf",
+      "recovery": "effect_uncertain",
+      "lifecycle": "active"
+    },
+    "database": "truthful_outcomes_binary_instance_process_unknown",
+    "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-instance-process-unknown"
+  }
+]

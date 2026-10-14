@@ -1,0 +1,126 @@
+{
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T013728Z-production-boundary.json",
+  "changedBoundPathsSincePreviousGate": [
+    "docs/operations/truthful-tool-outcomes.md",
+    "tests/support/truthful_tool_outcome_process.rs",
+    "tests/truthful_tool_outcomes.rs"
+  ],
+  "hashes": {
+    "tests/truthful_tool_outcomes.rs": {
+      "old": "ff1e581a6405d254d24508c713527b9fb76a36755f4bb0097dc5e23a54677599",
+      "new": "be770a718e7c1551d7f023639a8c0d175424e17945c9faf347bf1b2be1272fb1"
+    },
+    "tests/support/truthful_tool_outcome_process.rs": {
+      "old": "17a0c5713cc080156442cf9d026ec1c21baafe41d62e29f1fe9c09b2805ee4f2",
+      "new": "96568ef4c404e44bd1c7ae0914d72d8a4f7672e214b2e8c35cf4fd2f63b2f479"
+    },
+    "docs/operations/truthful-tool-outcomes.md": {
+      "old": "5048b7cdd3dc46c487d10ce969b16f9b1963ba6250d3adb4f43f25d2c89dbb25",
+      "new": "175f7e29d4d409df8497cf9165bdaa27fdf7b143c7c0734d90ab8603fcac6b9a"
+    }
+  },
+  "correctionPatchSha256": "a4aee4495498394366eaf9f170178684b54ea47f6fd716381f513bd74799eabe",
+  "entrypointAlteration": "Four scoped modes in each profile now enter through actual startup-composed server JWT/public run/SSE/approval with verified manager turn, replacing invalid manually ownerless resolved turn; 59 total scenario entries retained.",
+  "patch": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T015031Z-observed-correction.patch",
+  "tier0Commands": [
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--no-index",
+        "--check",
+        "/dev/null",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs"
+      ],
+      "exit": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--no-index",
+        "--check",
+        "/dev/null",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--no-index",
+        "--check",
+        "/dev/null",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/docs/operations/truthful-tool-outcomes.md"
+      ],
+      "exit": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--emit",
+        "stdout",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 31179,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--emit",
+        "stdout",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 65700,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--check",
+        "--config",
+        "reorder_imports=false,reorder_modules=false",
+        "--file-lines",
+        "[{\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs\", \"range\": [16, 16]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs\", \"range\": [27, 27]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs\", \"range\": [31, 31]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs\", \"range\": [38, 38]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs\", \"range\": [51, 51]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs\", \"range\": [491, 491]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs\", \"range\": [505, 517]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs\", \"range\": [758, 761]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs\", \"range\": [369, 376]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs\", \"range\": [1460, 1548]}]",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    }
+  ],
+  "tier0Attribution": "Original author command receipt; executor independently verified exact three-file correction and broad source stability. Initial span-format finding retained privately with author artifacts."
+}

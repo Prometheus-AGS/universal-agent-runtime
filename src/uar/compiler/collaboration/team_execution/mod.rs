@@ -6,7 +6,6 @@ mod continuations;
 pub(crate) mod peer;
 mod peer_commands;
 mod waits;
-pub use context::SelectedTeamContext;
 mod dispatch;
 mod model_capture;
 mod ownership;

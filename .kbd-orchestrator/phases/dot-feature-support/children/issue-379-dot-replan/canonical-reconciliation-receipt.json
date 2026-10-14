@@ -1,0 +1,274 @@
+{
+  "commands": [
+    {
+      "arguments": [
+        "change",
+        "register",
+        "--command-id",
+        "dot-reconcile-register-18-20261012",
+        "--phase",
+        "dot-feature-support",
+        "--id",
+        "dot-18-a2a-conformance",
+        "--title",
+        "A2A 1.0 card, tasks and actual release version",
+        "--sequence",
+        "16"
+      ],
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "arguments": [
+        "task",
+        "register",
+        "--command-id",
+        "dot-reconcile-register-18-1-20261012",
+        "--phase",
+        "dot-feature-support",
+        "--change",
+        "dot-18-a2a-conformance",
+        "--id",
+        "1",
+        "--title",
+        "1.1 Pin the authoritative A2A 1.0 card/task/method/part/role/state/auth-error schemas and legacy compatibility disposition. Implement the anonymous public card, authenticated 1.0 task surface, durable owner-bound task/thread correlation with defined atomic submission/restart transitions, and card version from actual package/release provenance. Reuse `A2AThreadService`, actor execution and host admission. Author documentation and conformance fixtures without running them. Record files changed, contracts selected and unverified behavior in the phase handoff. **Type: implementation.**",
+        "--sequence",
+        "1"
+      ],
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "arguments": [
+        "task",
+        "register",
+        "--command-id",
+        "dot-reconcile-register-18-2-20261012",
+        "--phase",
+        "dot-feature-support",
+        "--change",
+        "dot-18-a2a-conformance",
+        "--id",
+        "2",
+        "--title",
+        "2.1 After the lead records the full Dot implementation-complete inventory, exercise the pinned 1.0 card/tasks, auth/errors, restart and competing-runtime correlation through shipped paths; dot-17 separately proves the version against the actual installed published artifact in both profiles. Preserve exact commands, output and source/artifact identities. **Type: verification; blocked until full-phase boundary.**",
+        "--sequence",
+        "2"
+      ],
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "arguments": [
+        "change",
+        "register",
+        "--command-id",
+        "dot-reconcile-register-19-20261012",
+        "--phase",
+        "dot-feature-support",
+        "--id",
+        "dot-19-interactive-protocols",
+        "--title",
+        "A2A approvals, AG-UI interruption and MCP elicitation",
+        "--sequence",
+        "16"
+      ],
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "arguments": [
+        "task",
+        "register",
+        "--command-id",
+        "dot-reconcile-register-19-1-20261012",
+        "--phase",
+        "dot-feature-support",
+        "--change",
+        "dot-19-interactive-protocols",
+        "--id",
+        "1",
+        "--title",
+        "1.1 Pin authoritative AG-UI `RunAgentInput`, SSE interruption and `resume[]` schemas and the approval policy disposition. Correct descriptor Required precedence without changing unrelated governance-Off risk bypass. Project exact host approval IDs as A2A input-required, implement authenticated AG-UI ingress and specified `RUN_FINISHED` interruption/resume against existing approval CAS and protected continuation. Author docs and fixtures without running them. Handoff selected schemas, changed files and unverified behavior. **Type: implementation.**",
+        "--sequence",
+        "1"
+      ],
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "arguments": [
+        "task",
+        "register",
+        "--command-id",
+        "dot-reconcile-register-19-2-20261012",
+        "--phase",
+        "dot-feature-support",
+        "--change",
+        "dot-19-interactive-protocols",
+        "--id",
+        "2",
+        "--title",
+        "2.1 Pin the selected MCP elicitation capability/request/response contract and install a run-scoped handler on every supported client transport path. Persist accept/decline/cancel interaction disposition through the host boundary, keep transport failures/unknown effects truthful, and require normal tool authorization after an accepted elicitation. Author docs and fixtures without executing them. **Type: implementation.**",
+        "--sequence",
+        "2"
+      ],
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "arguments": [
+        "task",
+        "register",
+        "--command-id",
+        "dot-reconcile-register-19-3-20261012",
+        "--phase",
+        "dot-feature-support",
+        "--change",
+        "dot-19-interactive-protocols",
+        "--id",
+        "3",
+        "--title",
+        "3.1 After the lead records the full Dot implementation-complete inventory, exercise pinned A2A/AG-UI/MCP wire behavior, governance On/Off Required precedence, duplicate decisions, restart and each elicitation response through real host and durable paths in local and shared profiles. Record exact commands, output and source/artifact identities. **Type: verification; blocked until full-phase boundary.**",
+        "--sequence",
+        "3"
+      ],
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "arguments": [
+        "change",
+        "register",
+        "--command-id",
+        "dot-reconcile-register-20-20261012",
+        "--phase",
+        "dot-feature-support",
+        "--id",
+        "dot-20-safe-host-settings",
+        "--title",
+        "CORS, safe shipped defaults and effective settings",
+        "--sequence",
+        "16"
+      ],
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "arguments": [
+        "task",
+        "register",
+        "--command-id",
+        "dot-reconcile-register-20-1-20261012",
+        "--phase",
+        "dot-feature-support",
+        "--change",
+        "dot-20-safe-host-settings",
+        "--id",
+        "1",
+        "--title",
+        "1.1 Resolve actual configuration keys, installable profile overrides and no-implicit-model behavior against current source. Implement explicit origin allowlist with empty default, local/off memory embedding, loopback native bind and JWT-enabled shipped configurations while preserving saved operator settings. Document shared-host overrides. Author fixtures without executing them and hand off changed files/unverified behavior. **Type: implementation.**",
+        "--sequence",
+        "1"
+      ],
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "arguments": [
+        "task",
+        "register",
+        "--command-id",
+        "dot-reconcile-register-20-2-20261012",
+        "--phase",
+        "dot-feature-support",
+        "--change",
+        "dot-20-safe-host-settings",
+        "--id",
+        "2",
+        "--title",
+        "2.1 Pin the path, Kubo acceptance schema/translation, aggregate revision/hash policy and existing admin JWT claim shape. Implement one secret-free read-only effective view from live registry, persisted settings synchronization and governance/capability authority; require Bearer admin alone with 401/403 semantics. Preserve existing mutation ownership. Author docs and fixtures without running them. **Type: implementation.**",
+        "--sequence",
+        "2"
+      ],
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "arguments": [
+        "task",
+        "register",
+        "--command-id",
+        "dot-reconcile-register-20-3-20261012",
+        "--phase",
+        "dot-feature-support",
+        "--change",
+        "dot-20-safe-host-settings",
+        "--id",
+        "3",
+        "--title",
+        "3.1 After the lead records the full Dot implementation-complete inventory, exercise default/override CORS, installed sockets/egress/auth/model/embedder behavior and effective Bearer-admin schema/revision/secrecy through actual local and shared profiles. Dot-17 checks the published installed artifact. Record exact commands, output and source/artifact identities. **Type: verification; blocked until full-phase boundary.**",
+        "--sequence",
+        "3"
+      ],
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "arguments": [
+        "task",
+        "register",
+        "--command-id",
+        "dot-reconcile-runner-17-3-20261012",
+        "--phase",
+        "dot-feature-support",
+        "--change",
+        "dot-17-assistant-release-acceptance",
+        "--id",
+        "3",
+        "--title",
+        "3.1 Implement the local and shared assistant profile scenario runner, conformance fixtures, operator instructions and evidence matrix. Connect each spec scenario and all nine issue #379 items to the intended source revision, backend, entry point and expected observation. Prepare installed-artifact and provenance capture instructions. Author the complete memory, schedule, follow-up, connected effect, approval and crash-recovery journeys without executing them. This runner and documentation are production implementation items required before the full-phase boundary; no test, probe, build or validator runs in this task.",
+        "--sequence",
+        "0"
+      ],
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "arguments": [
+        "task",
+        "transition",
+        "--command-id",
+        "dot-defer-verification-07-2-20261012",
+        "--phase",
+        "dot-feature-support",
+        "--change",
+        "dot-07-approval-recovery",
+        "--id",
+        "2",
+        "--status",
+        "blocked",
+        "--summary",
+        "Deferred until every production item in full combined Dot phase is implemented. Earlier interrupted gate is not acceptance; verification remains unpassed."
+      ],
+      "exitCode": 0,
+      "error": ""
+    },
+    {
+      "arguments": [
+        "decision",
+        "record",
+        "--command-id",
+        "dot-sequencing-decision-20261012",
+        "--id",
+        "dot-full-phase-sequencing-20261012",
+        "--summary",
+        "All nine issue379 requirements in first Dot release. Effective task descriptions/prerequisites/categories: .kbd-orchestrator/phases/dot-feature-support/implementation-sequencing.json sha256:5d68fc9f8594da82d5d896d51da4f5b821fcb5f4b26258e38ddcd56448852e69. Immutable older task titles do not authorize early checks. Preserve all historical completions and all pending verification; no cancellation. Explicit source-task starts outrank deferred verification; source prerequisites do not require predecessor tests. Final gate only after full production inventory, including17/3 and18\u201320. Register18\u201320 sequence16 before immutable17 sequence17;17/3 sequence0 is source runner,17/1 local acceptance,17/2 published-artifact acceptance."
+      ],
+      "exitCode": 0,
+      "error": ""
+    }
+  ],
+  "sequencingSha256": "5d68fc9f8594da82d5d896d51da4f5b821fcb5f4b26258e38ddcd56448852e69",
+  "productVerificationRun": false
+}

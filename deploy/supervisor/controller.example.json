@@ -1,0 +1,31 @@
+{
+  "listen_host": "127.0.0.1",
+  "listen_port": 9447,
+  "controller_id": "host-supervisor-1",
+  "mechanism": "native-boot-exclusion-v1",
+  "qualification_id": "replace-with-retained-platform-receipt-id",
+  "qualification_file": "/etc/uar-supervisor/qualification.json",
+  "qualification_sha256": "replace-with-exact-qualified-file-sha256",
+  "journal": "/var/lib/uar-supervisor/exclusions.sqlite3",
+  "server_certificate": "/etc/uar-supervisor/controller.crt",
+  "server_key": "/etc/uar-supervisor/controller.key",
+  "client_ca": "/etc/uar-supervisor/runtime-ca.crt",
+  "clients": {
+    "replace-with-runtime-client-certificate-der-sha256": {
+      "actions": [
+        "register",
+        "exclude"
+      ],
+      "deployments": [
+        "native-local"
+      ],
+      "registration_deployment": "native-local"
+    }
+  },
+  "deployments": {
+    "native-local": {
+      "service_name": "com.prometheus.universal-agent-runtime",
+      "runtime_uid": 501
+    }
+  }
+}

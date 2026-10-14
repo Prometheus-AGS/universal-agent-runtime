@@ -1,0 +1,37 @@
+--- failed-source/tests/support/truthful_tool_outcome_process.rs
++++ refrozen-source/tests/support/truthful_tool_outcome_process.rs
+@@ -486,15 +486,21 @@
+     .unwrap();
+     team["id"] = json!(format!("urn:uar:dot04:team:{mode}"));
+     team["members"][0]["definition"] = reference(&agent);
+-    team["taskAcceptance"]["allowedWorkflows"] = json!([]);
+     team["input"] = json!({});
+     team["output"] = json!({});
+     finalize(&mut team);
++    // Retain operator acceptance and resolve its existing immutable workflow;
++    // this package does not start or activate the workflow.
++    let workflow: Value = serde_json::from_str(include_str!(
++        "../fixtures/collaboration/workflow-definition.json"
++    ))
++    .unwrap();
+     let mut files = serde_json::Map::new();
+     let mut inventory = Vec::new();
+     for (path, document) in [
+         ("agent-definition.json", &agent),
+         ("team-definition.json", &team),
++        ("workflow-definition.json", &workflow),
+     ] {
+         let source = serde_json::to_string_pretty(document).unwrap();
+         inventory.push(json!({"path":path,"kind":document["kind"],"definition":reference(document),"byteDigest":sha256(source.as_bytes())}));
+@@ -507,7 +513,10 @@
+     manifest["id"] = json!(format!("urn:uar:dot04:package:{mode}"));
+     manifest["entrypoints"] = json!([reference(if ordinary { &agent } else { &team })]);
+     manifest["files"] = json!(inventory);
+-    manifest["lock"] = json!([{"requestedBy":team["id"],"reference":reference(&agent),"resolvedPath":"agent-definition.json"}]);
++    manifest["lock"] = json!([
++        {"requestedBy":team["id"],"reference":reference(&agent),"resolvedPath":"agent-definition.json"},
++        {"requestedBy":team["id"],"reference":reference(&workflow),"resolvedPath":"workflow-definition.json"}
++    ]);
+     finalize(&mut manifest);
+     node.post(
+         "/api/v1/collaboration/packages:install",

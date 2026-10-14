@@ -1,0 +1,16 @@
+{
+  "command": [
+    "pnpm",
+    "github-actions-policy:validate"
+  ],
+  "boundary": "full_phase",
+  "observed_tool_result": {
+    "chunk_id": "1a7b39",
+    "wall_time_seconds": 0.00000925,
+    "exit_code": 0,
+    "original_token_count": 37,
+    "output": "$ node scripts/validate-github-actions-policy.mjs\nGitHub Actions policy validation passed (deployment workflows only; Pages publisher: docs.yml).\n"
+  },
+  "source": "b4244aeaa7e931240ae0f09ae31bae3f45bda244",
+  "claim": "deployment-only workflow policy; no product acceptance"
+}

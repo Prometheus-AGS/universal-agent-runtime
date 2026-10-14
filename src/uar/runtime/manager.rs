@@ -341,6 +341,87 @@ impl RetrievalBackend for ChatRagSearchBackend<'_> {
 
 type ActiveRunMap = HashMap<String, RunStreamState>;
 
+/// Existing actors keep their handles; ordinary producers gain a host owner.
+enum CheckpointProducer {
+    Ordinary(Option<tokio::task::JoinHandle<()>>),
+    Actor(crate::uar::runtime::thread::actor_host::ActorRootBinding),
+}
+
+/// Private authority minted only after the exact durable CAS acknowledgment.
+struct CheckpointResumePermit {
+    claim: crate::uar::persistence::checkpoint_resume::CheckpointContinuationClaim,
+    envelope: crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope,
+    owner: crate::uar::runtime::actor::messages::ActorOwner,
+    request_identity: serde_json::Value,
+    approval: Option<crate::uar::persistence::approval_decisions::ApprovalRecord>,
+}
+
+fn checkpoint_request_identity(request: &crate::uar::runtime::turn::RunExecutionRequest) -> anyhow::Result<serde_json::Value> {
+    let resume = request.checkpoint_resume.as_ref()
+        .ok_or(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Invalid)?;
+    Ok(serde_json::json!({
+        "artifact_revision": request.artifact.definition_revision(),
+        "user_id": request.user_id,
+        "session_id": request.session_id,
+        "input": request.input,
+        "state": serde_json::to_value(&resume.state)?,
+        "history": serde_json::to_value(&resume.history)?,
+        "authorization": resume.authorization_digest,
+        "host_policy": request.host_policy_constraint,
+        "a2a_delegation": request.a2a_delegation,
+        "resolved_policy": request.resolved_policy,
+        "host_budget": request.host_budget_constraint,
+        "host_sandbox": request.host_sandbox_constraint,
+        "host_usage": request.host_usage_grant.as_ref().map(|binding| serde_json::json!({
+            "accounting_id": binding.accounting_id, "grant": binding.grant,
+        })),
+        "target": request.target_selection,
+        "resources": request.host_resources_marker,
+        "service_binding": request.service_binding,
+        "collaboration": request.collaboration_binding.as_ref().map(|binding| serde_json::json!({
+            "owner": binding.owner_id, "workspace": binding.workspace_id, "receipt": binding.receipt,
+        })),
+        "working_directory": request.working_directory,
+        "reasoning_effort": request.reasoning_effort,
+        "presentation": request.presentation_negotiation,
+    }))
+}
+
+impl CheckpointResumePermit {
+    fn accepts(&self, request: &crate::uar::runtime::turn::RunExecutionRequest, run_id: &str, epoch: &str) -> bool {
+        self.claim.continuation_run_id == run_id
+            && self.claim.executor_runtime_epoch == epoch
+            && request.verified_owner.as_ref() == Some(&self.owner)
+            && self.owner.credential_principal().is_some_and(|principal| principal.storage_key() == self.claim.owner_key)
+            && self.claim.validate(&self.envelope).is_ok()
+            && checkpoint_request_identity(request).is_ok_and(|identity| identity == self.request_identity)
+    }
+}
+
+/// Only these existing public ingress shapes can renew a host policy on resume.
+/// Other host constraints must not disappear behind an artifact-only restore.
+fn checkpoint_host_policy_renewable(request: &crate::uar::runtime::turn::RunExecutionRequest) -> bool {
+    let Some(policy) = request.host_policy_constraint.as_ref() else { return true; };
+    if request.a2a_delegation.as_ref().is_some_and(|contract| contract.execution_policy() == *policy) {
+        return true;
+    }
+    let expected = if let Some(target) = request.target_selection.as_ref() {
+        let Some(provider_id) = target.get("provider_id").and_then(serde_json::Value::as_str) else { return false; };
+        let Some(model_id) = target.get("model_id").and_then(serde_json::Value::as_str) else { return false; };
+        Some(crate::uar::domain::policy::RunPolicy {
+            model: Some(crate::uar::domain::policy::ModelRoute { provider_id: provider_id.to_owned(), model_id: model_id.to_owned() }),
+            ..Default::default()
+        })
+    } else {
+        request.collaboration_binding.as_ref().and_then(|binding| binding.receipt.effective.get("contextStrategy"))
+            .cloned().and_then(|value| serde_json::from_value(value).ok())
+            .map(|context_strategy| crate::uar::domain::policy::RunPolicy {
+                context_strategy: Some(context_strategy), ..Default::default()
+            })
+    };
+    expected.as_ref() == Some(policy)
+}
+
 /// Extract `budgets.max_cost_per_session_usd` from an `AgentArtifact`'s
 /// `extensions` map (CH-06). `budgets` has no typed home on `AgentPolicy` —
 /// see `to_artifact.rs`'s module doc — so it's preserved losslessly as JSON
@@ -452,6 +533,15 @@ pub struct RunManager {
     /// `start_run` and removed when the run reaches a terminal state, so finished
     /// runs do not accumulate. `cancel_run` cancels the token found here.
     run_cancellations: Arc<RwLock<HashMap<String, CancellationToken>>>,
+    /// Shutdown waits for admission/assembly before joining every producer.
+    checkpoint_assemblies: Arc<RwLock<()>>,
+    checkpoint_producers: Arc<Mutex<HashMap<String, Arc<Mutex<CheckpointProducer>>>>>,
+    /// Canonical receipt partitions and source trees owned by this incarnation.
+    checkpoint_effect_roots: Arc<RwLock<BTreeSet<(String, String)>>>,
+    checkpoint_evidence_owners: Arc<RwLock<BTreeSet<String>>>,
+    /// Minted after durable CAS and consumed once at shared kernel entry.
+    checkpoint_resume_admitted: Arc<Mutex<HashMap<String, CheckpointResumePermit>>>,
+    checkpoint_cleanup_failed: Arc<std::sync::atomic::AtomicBool>,
     /// Message-count based context strategy applied to session history before LLM calls.
     message_context_strategy: crate::uar::context::ContextStrategy,
     /// Optional agent graph for graph-based execution. When set, orchestrator-agent
@@ -498,33 +588,29 @@ const MEMORY_DELETE_TOOLS: &[&str] = &["memory_delete", "memory_delete_all"];
 /// When `provider_service` is `Some` and a per-scope credential resolves for the
 /// run's provider (chain: session → agent → user → system), override
 /// `cfg.api_key` with the decrypted per-tenant key. When `provider_service` is
-/// `None`, no credential resolves, or resolution errors, `cfg.api_key` is left
-/// untouched — i.e. the single-tenant env/config key path is preserved.
+/// `None` or no credential resolves, `cfg.api_key` is left untouched. Storage
+/// failures stop model binding rather than silently using a different account.
 ///
 /// Extracted from `start_run` so the resolution-and-override behavior is unit
 /// testable without constructing an `Orchestrator` or making LLM calls.
 async fn apply_credential_layer(
     mut cfg: LlmConfig,
     provider_service: Option<&Arc<crate::uar::security::credentials::ProviderService>>,
-    user_id: Option<&str>,
+    principal: Option<&crate::uar::security::claims::CredentialPrincipal>,
     session_id: Option<&str>,
     agent_id: &str,
-) -> LlmConfig {
+) -> anyhow::Result<LlmConfig> {
     let Some(provider_service) = provider_service else {
-        return cfg;
+        return Ok(cfg);
     };
     let provider_id = provider_id_for_config(&cfg);
-    match provider_service
-        .resolver()
-        .resolve_with_context(
-            user_id.unwrap_or("anonymous"),
-            &provider_id,
-            session_id,
-            Some(agent_id),
-        )
-        .await
-    {
-        Ok(Some(resolved)) => {
+    let resolver = provider_service.resolver();
+    let resolved = match principal {
+        Some(principal) => resolver.resolve_with_context(principal, &provider_id, session_id, Some(agent_id)).await,
+        None => resolver.resolve_system(&provider_id).await,
+    }.map_err(|_| anyhow::anyhow!("credential resolution unavailable"))?;
+    match resolved {
+        Some(resolved) => {
             use secrecy::ExposeSecret;
             cfg.api_key = Some(resolved.api_key.expose_secret().to_string());
             tracing::debug!(
@@ -533,21 +619,14 @@ async fn apply_credential_layer(
                 "Resolved per-tenant provider credential"
             );
         }
-        Ok(None) => {
+        None => {
             tracing::trace!(
                 provider = %provider_id,
                 "No per-tenant credential; using env/config key"
             );
         }
-        Err(_) => {
-            // Resolver failures have no complete captured credential corpus.
-            tracing::warn!(
-                provider = %provider_id,
-                "Credential resolution failed; falling back to env/config key"
-            );
-        }
     }
-    cfg
+    Ok(cfg)
 }
 
 fn provider_id_for_config(config: &LlmConfig) -> String {
@@ -730,12 +809,13 @@ impl RunManager {
     /// Commit the conversation before a durable logical turn is reported terminal.
     pub(crate) async fn persist_instance_session(
         &self,
-        owner_id: &str,
+        owner: &crate::uar::runtime::actor::messages::ActorOwner,
         session_id: &str,
     ) -> anyhow::Result<()> {
+        let owner_id = owner.session_owner_key()?;
         let session = self
             .sessions
-            .get_for_user(session_id, owner_id)
+            .get_for_user(session_id, &owner_id)
             .ok_or_else(|| anyhow::anyhow!("Instance conversation is unavailable"))?;
         let persistence = self
             .persistence
@@ -753,6 +833,13 @@ impl RunManager {
         tool_name: &str,
         arguments: serde_json::Value,
     ) -> anyhow::Result<serde_json::Value> {
+        let _assembly = tokio::select! {
+            biased;
+            () = self.root_cancellation.cancelled() => anyhow::bail!("runtime is shutting down"),
+            guard = self.checkpoint_assemblies.read() => guard,
+        };
+        anyhow::ensure!(!self.root_cancellation.is_cancelled(), "runtime is shutting down");
+        self.checkpoint_evidence_owners.write().await.insert(owner_id.clone());
         use crate::uar::runtime::tool_admission::{
             LocalAdmissionDisposition, ToolAdmissionContext, ToolAdmissionRuntime,
         };
@@ -971,6 +1058,12 @@ impl RunManager {
             approvals,
             root_cancellation: CancellationToken::new(),
             run_cancellations: Arc::new(RwLock::new(HashMap::new())),
+            checkpoint_assemblies: Arc::new(RwLock::new(())),
+            checkpoint_producers: Arc::new(Mutex::new(HashMap::new())),
+            checkpoint_effect_roots: Arc::new(RwLock::new(BTreeSet::new())),
+            checkpoint_evidence_owners: Arc::new(RwLock::new(BTreeSet::new())),
+            checkpoint_resume_admitted: Arc::new(Mutex::new(HashMap::new())),
+            checkpoint_cleanup_failed: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             message_context_strategy: crate::uar::context::ContextStrategy::default(),
             agent_graph: None,
             governance_engine: None,
@@ -1120,11 +1213,7 @@ impl RunManager {
                 })
                 .filter_map(|state| {
                     let session_id = state.run.conversation_id.clone()?;
-                    let owner = state
-                        .run
-                        .user_id
-                        .clone()
-                        .unwrap_or_else(|| crate::session::ANONYMOUS_SESSION_OWNER.to_owned());
+                    let owner = state.dialogue.0.owner_id().to_owned();
                     Some((owner, session_id))
                 })
                 .collect::<HashSet<_>>()
@@ -1649,10 +1738,65 @@ impl RunManager {
     /// # Errors
     /// Retains and reports unconfirmed backend outcomes instead of replaying them.
     pub async fn shutdown_sandboxes(&self) -> anyhow::Result<()> {
+        self.root_cancellation.cancel();
+        // Losing an HTTP waiter cannot detach a producer from this join set.
+        self.graph_roots.shutdown().await?;
+        let _assembly = self.checkpoint_assemblies.write().await;
+        let producers = self.checkpoint_producers.lock().await.values().cloned().collect::<Vec<_>>();
+        for producer in producers {
+            let mut producer = producer.lock().await;
+            match &mut *producer {
+                CheckpointProducer::Ordinary(handle) => {
+                    if let Some(join) = handle.as_mut() {
+                        join.await.map_err(|_| anyhow::anyhow!("checkpoint producer join failed"))?;
+                        *handle = None;
+                    }
+                }
+                CheckpointProducer::Actor(root) => root.finish().await?,
+            }
+        }
+        self.terminal_operations.shutdown().await.map_err(anyhow::Error::from)?;
         self.sandbox_operations
             .shutdown()
             .await
-            .map_err(anyhow::Error::from)
+            .map_err(anyhow::Error::from)?;
+        anyhow::ensure!(
+            !self.checkpoint_cleanup_failed.load(std::sync::atomic::Ordering::Acquire),
+            "checkpoint predecessor cleanup remains unconfirmed"
+        );
+        if let Some(db) = &self.persistence
+            && db.supports_durable_checkpoint_resume()
+        {
+            use crate::uar::persistence::tool_admission::ToolAdmissionEvidenceState;
+            // Unknown outcomes are deliberately sticky; time never releases them.
+            for owner in self.checkpoint_evidence_owners.read().await.iter() {
+                let mut latest = BTreeMap::new();
+                for evidence in db.list_tool_admission_evidence(owner).await? {
+                    if evidence.runtime_epoch == self.tool_runtime_epoch {
+                        anyhow::ensure!(evidence.state != ToolAdmissionEvidenceState::OutcomeUnknown,
+                            "checkpoint predecessor has an unreconciled unknown effect");
+                        latest.insert(evidence.invocation_id.clone(), evidence.state);
+                    }
+                }
+                anyhow::ensure!(latest.values().all(|state| !matches!(state,
+                    ToolAdmissionEvidenceState::ClaimIntent | ToolAdmissionEvidenceState::OutcomeUnknown
+                    | ToolAdmissionEvidenceState::AwaitingApproval)), "checkpoint predecessor effects remain uncertain");
+            }
+            for (owner, run) in self.checkpoint_effect_roots.read().await.iter() {
+                let mut run_ids = BTreeSet::from([run.clone()]);
+                for thread in db.list_agent_threads(owner, run).await? {
+                    if let Some(run_id) = thread.thread.run_id { run_ids.insert(run_id); }
+                }
+                for run_id in run_ids {
+                    for receipt in db.list_canonical_tool_receipts(owner, &run_id).await? {
+                        anyhow::ensure!(receipt.outcome.is_some_and(|outcome| outcome != crate::mcp::outcome::ToolOutcome::OutcomeUnknown),
+                            "checkpoint canonical effect outcome remains uncertain");
+                    }
+                }
+            }
+            db.exclude_checkpoint_runtime_epoch(&self.tool_runtime_epoch).await?;
+        }
+        Ok(())
     }
 
     /// Cancel and join directly launched terminal processes retained by runs.
@@ -1717,8 +1861,33 @@ impl RunManager {
         &self, user: &crate::uar::security::claims::UserContext, run_id: &str, workspace: Option<&str>,
     ) -> anyhow::Result<(bool, Vec<crate::uar::persistence::approval_decisions::ApprovalRecordView>)> {
         let owner = crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user)?;
-        self.approvals.records(&owner.presentation_owner_key(), run_id, workspace).await
+        let principal = owner.credential_principal().ok_or_else(|| anyhow::anyhow!("Verified approval principal required"))?;
+        self.approvals.records(&principal.storage_key(), run_id, workspace).await
     }
+
+    pub(crate) async fn approval_records_for_owner(
+        &self, owner: &crate::uar::runtime::actor::messages::ActorOwner,
+        run_id: &str, workspace: Option<&str>,
+    ) -> anyhow::Result<(bool, Vec<crate::uar::persistence::approval_decisions::ApprovalRecordView>)> {
+        let principal = owner.credential_principal().ok_or_else(|| anyhow::anyhow!("Verified approval principal required"))?;
+        self.approvals.records(&principal.storage_key(), run_id, workspace).await
+    }
+
+    pub(crate) async fn approval_recovery_record(&self,
+        user: &crate::uar::security::claims::UserContext, run: &str, id: &str, workspace: Option<&str>,
+    ) -> anyhow::Result<Option<crate::uar::persistence::approval_decisions::ApprovalRecord>> {
+        let owner = crate::uar::security::claims::CredentialPrincipal::from_verified_context(user)?;
+        self.approvals.recovery_record(&owner.storage_key(), run, id, workspace).await
+    }
+
+    pub(crate) async fn finish_recovered_approval(&self,
+        record: &crate::uar::persistence::approval_decisions::ApprovalRecord,
+        state: crate::uar::persistence::approval_decisions::ApprovalState,
+    ) -> anyhow::Result<bool> { self.approvals.finish_recovered(record, state).await }
+
+    pub(crate) async fn deny_recovered_approval(&self,
+        record: &crate::uar::persistence::approval_decisions::ApprovalRecord,
+    ) -> anyhow::Result<bool> { self.approvals.deny_recovered(record).await }
 
     /// Return the existing live waiter for an owner. This snapshot is a view of
     /// the current continuation and never creates a replacement approval.
@@ -1771,6 +1940,7 @@ impl RunManager {
             return Ok(Vec::new());
         };
         let mut records = persistence.list_tool_admission_evidence(owner_id).await?;
+        records.retain(|record| record.root_run_id == run_id || record.run_id == run_id);
         let mut latest =
             HashMap::<String, crate::uar::persistence::tool_admission::ToolAdmissionEvidence>::new(
             );
@@ -1943,7 +2113,8 @@ impl RunManager {
         user: &crate::uar::security::claims::UserContext,
         session_id: &str,
     ) -> bool {
-        let session_key = crate::uar::persistence::tenant_storage_key(&user.user_id, session_id);
+        let Ok(owner_key) = user.session_owner_key() else { return false; };
+        let session_key = crate::uar::persistence::tenant_storage_key(&owner_key, session_id);
         let run_id = self
             .session_current_run
             .read()
@@ -1955,6 +2126,9 @@ impl RunManager {
             None => false,
         }
     }
+
+    /// Exact host process identity registered by the external supervisor.
+    pub(crate) fn runtime_epoch(&self) -> &str { &self.tool_runtime_epoch }
 
     /// A clone of the root cancellation token.
     ///
@@ -2031,7 +2205,10 @@ impl RunManager {
             )
             .await;
         let conversation = if let Some(persistence) = &self.persistence {
-            if let Ok(records) = persistence.list_knowledge_bases(owner_id).await {
+            let knowledge_owner = verified_owner.and_then(|owner| owner.session_owner_key().ok())
+                .or_else(|| (owner_id == crate::session::ANONYMOUS_SESSION_OWNER).then(|| owner_id.to_owned()));
+            if let Some(knowledge_owner) = knowledge_owner
+                && let Ok(records) = persistence.list_knowledge_bases(&knowledge_owner).await {
                 for knowledge_base in records {
                     knowledge_bases.insert(knowledge_base.id);
                     knowledge_bases.insert(knowledge_base.name);
@@ -2493,6 +2670,7 @@ impl RunManager {
             host_policy_constraint: None,
             host_budget_constraint: None,
             host_usage_grant: None,
+            a2a_delegation: None,
             host_sandbox_constraint: None,
             seed_history: Vec::new(),
             host_history: None,
@@ -2588,12 +2766,156 @@ impl RunManager {
         Ok(self.execute_request_with_run_id(request, run_id).await)
     }
 
+    pub(crate) async fn execute_checkpoint_approval(
+        &self,
+        request: crate::uar::runtime::turn::RunExecutionRequest,
+        envelope: &crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope,
+        bound: bool,
+        approval: Option<crate::uar::persistence::approval_decisions::ApprovalRecord>,
+    ) -> anyhow::Result<String> {
+        self.execute_checkpoint_admitted(request,envelope,bound,approval,Uuid::new_v4().to_string(),false).await
+    }
+
+    /// A2A has durably correlated this host-reserved ID before entry. Retain the
+    /// same checkpoint authority, but establish the actor-owned durable root.
+    pub(crate) async fn execute_checkpoint_a2a_with_run_id(
+        &self,
+        request: crate::uar::runtime::turn::RunExecutionRequest,
+        envelope: &crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope,
+        bound: bool,
+        approval: Option<crate::uar::persistence::approval_decisions::ApprovalRecord>,
+        run_id: String,
+    ) -> anyhow::Result<String> {
+        self.execute_checkpoint_admitted(request,envelope,bound,approval,run_id,true).await
+    }
+
+    async fn execute_checkpoint_admitted(
+        &self,
+        request: crate::uar::runtime::turn::RunExecutionRequest,
+        envelope: &crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope,
+        bound: bool,
+        approval: Option<crate::uar::persistence::approval_decisions::ApprovalRecord>,
+        continuation_run_id: String,
+        actor_root: bool,
+    ) -> anyhow::Result<String> {
+        use crate::uar::persistence::checkpoint_resume::{CheckpointClaimOutcome,
+            CheckpointContinuationClaim, CheckpointResumeError};
+        anyhow::ensure!(!self.root_cancellation.is_cancelled(), "checkpoint executor is shutting down");
+        envelope.validate()?;
+        if actor_root && let Some(fresh) = &request.a2a_delegation {
+            envelope.require_restorable_a2a(fresh)?;
+        } else {
+            envelope.require_restorable_execution()?;
+        }
+        if self.uses_agent_graph(&request.artifact) || self.primary_driver.is_some() {
+            return Err(CheckpointResumeError::ExecutionUnavailable.into());
+        }
+        let principal = request.verified_owner.as_ref().and_then(|owner| owner.credential_principal())
+            .ok_or(CheckpointResumeError::Invalid)?;
+        let checkpoint = envelope.checkpoint()?;
+        let source = envelope.source_run()?;
+        let source_artifact = crate::uar::domain::artifact::AgentArtifactSnapshot::from_run_context(&source.context)
+            .map_err(|_| CheckpointResumeError::Invalid)?;
+        let restoration = request.checkpoint_resume.as_ref().ok_or(CheckpointResumeError::Invalid)?;
+        if principal.storage_key() != envelope.owner_key
+            || source.user_id.as_deref() != Some(principal.subject())
+            || request.session_id.as_deref() != source.conversation_id.as_deref()
+            || request.artifact.definition_revision() != source_artifact.artifact.definition_revision()
+            || serde_json::to_value(&restoration.state)? != serde_json::to_value(checkpoint.try_restore_state()?)?
+            || serde_json::to_value(&restoration.history)? != serde_json::to_value(crate::uar::runtime::checkpoint::history_from_checkpoint(&checkpoint)?)?
+            || Some(restoration.authorization_digest.as_str()) != checkpoint.validate_integrity()?.authorization_sha256.as_deref()
+        {
+            return Err(CheckpointResumeError::Invalid.into());
+        }
+        let persistence = self.persistence.as_ref().ok_or(CheckpointResumeError::Unsupported)?;
+        let has_pending = restoration.state.data.contains_key(crate::uar::runtime::thread::approvals::recovery::PENDING_APPROVAL_KEY);
+        if let Some(record) = &approval {
+            crate::uar::runtime::thread::approvals::recovery::protected_call(record, envelope)?;
+            if record.state != crate::uar::persistence::approval_decisions::ApprovalState::Pending
+                || record.expires_at <= chrono::Utc::now() { return Err(CheckpointResumeError::Invalid.into()); }
+        } else if has_pending {
+            return Err(CheckpointResumeError::Invalid.into());
+        }
+        let claim = CheckpointContinuationClaim {
+            schema_version: 1, owner_key: envelope.owner_key.clone(), source_run_id: envelope.source_run_id.clone(),
+            checkpoint_id: envelope.checkpoint_id.clone(), checkpoint_revision: envelope.checkpoint_revision.clone(),
+            source_runtime_epoch: envelope.source_runtime_epoch.clone(), executor_runtime_epoch: self.tool_runtime_epoch.clone(),
+            continuation_run_id,
+        };
+        let claim = match persistence.claim_checkpoint_resume(envelope, &claim).await? {
+            CheckpointClaimOutcome::Acquired(claim) => claim,
+            CheckpointClaimOutcome::Existing(_) => return Err(CheckpointResumeError::Conflict.into()),
+        };
+        claim.validate(envelope)?;
+        anyhow::ensure!(!self.root_cancellation.is_cancelled(), "checkpoint executor is shutting down");
+        let continuation_run_id = claim.continuation_run_id.clone();
+        let permit = CheckpointResumePermit {
+            claim,
+            envelope: envelope.clone(),
+            owner: request.verified_owner.clone().ok_or(CheckpointResumeError::Invalid)?,
+            request_identity: checkpoint_request_identity(&request)?,
+            approval,
+        };
+        self.checkpoint_resume_admitted.lock().await.insert(continuation_run_id.clone(), permit);
+        let run_id = if actor_root {
+            let result = async {
+                if bound {
+                    let binding = request.collaboration_binding.as_ref()
+                        .ok_or_else(|| anyhow::anyhow!("bound execution request has no effective binding receipt"))?;
+                    binding.revalidate(&request.artifact).await?;
+                }
+                let artifact_owner = request.verified_owner.clone().ok_or(CheckpointResumeError::Invalid)?;
+                let artifacts = crate::uar::runtime::thread::artifacts::RunArtifactCollector::new(
+                    artifact_owner, continuation_run_id.clone());
+                self.graph_roots.start_with_artifacts(self.clone(),request.clone(),continuation_run_id.clone(),
+                    self.root_cancellation.child_token(), Some(artifacts)).await
+            }.await;
+            if let Err(error) = result {
+                self.checkpoint_resume_admitted.lock().await.remove(&continuation_run_id);
+                self.record_graph_root_failure(&request,&continuation_run_id).await;
+                return Err(error);
+            }
+            continuation_run_id.clone()
+        } else if bound {
+            match self.execute_bound_request_with_run_id(request, continuation_run_id.clone()).await {
+                Ok(run_id) => run_id,
+                Err(error) => {
+                    self.checkpoint_resume_admitted.lock().await.remove(&continuation_run_id);
+                    return Err(error.into());
+                }
+            }
+        } else {
+            self.execute_request_with_run_id(request, continuation_run_id.clone()).await
+        };
+        self.checkpoint_resume_admitted.lock().await.remove(&continuation_run_id);
+        let current = self.get_run(&run_id).await;
+        if current.as_ref().is_some_and(|run| run.context.get("error_code").and_then(serde_json::Value::as_str)
+            == Some("approval_persistence_unavailable")) {
+            return Err(crate::uar::persistence::approval_decisions::ApprovalRecoveryError::PersistenceUnavailable.into());
+        }
+        if current.is_none_or(|run| matches!(run.status, RunStatus::Error | RunStatus::Cancelled)) {
+            return Err(CheckpointResumeError::AdmissionDenied.into());
+        }
+        Ok(run_id)
+    }
+
     /// Preserve an observable failure even when root persistence fails before
     /// kernel assembly creates its ordinary event stream. Never rerun the input.
     pub(crate) async fn record_graph_root_failure(
         &self,
         request: &crate::uar::runtime::turn::RunExecutionRequest,
         run_id: &str,
+    ) {
+        self.record_host_admission_failure(request, run_id, "graph_root_failed",
+            "Graph root could not complete its owned execution and persistence").await;
+    }
+
+    async fn record_host_admission_failure(
+        &self,
+        request: &crate::uar::runtime::turn::RunExecutionRequest,
+        run_id: &str,
+        code: &str,
+        message: &str,
     ) {
         let emitter = {
             let mut runs = self.active_runs.write().await;
@@ -2665,8 +2987,8 @@ impl RunManager {
         emitter
             .emit(NormalizedEvent::Error {
                 run_id: run_id.to_owned(),
-                code: "graph_root_failed".into(),
-                message: "Graph root could not complete its owned execution and persistence".into(),
+                code: code.into(),
+                message: message.into(),
             })
             .await;
         emitter
@@ -2769,6 +3091,7 @@ impl RunManager {
             host_requires_approval: preparation.host_disposition
                 == crate::uar::runtime::tool_admission::HostAdmissionDisposition::Ask,
             action_display: preparation.action_display.clone(),
+            checkpoint_history: None,
         };
         let local_disposition = match (approval_gate.0)(approval).await {
             crate::llm::ToolApprovalResult::Approved => {
@@ -2900,7 +3223,34 @@ impl RunManager {
         inherited: Option<crate::uar::runtime::turn::bindings::InheritedRunBindings>,
         actor_root: Option<crate::uar::runtime::thread::actor_host::ActorRootBinding>,
     ) -> String {
+        let _assembly = tokio::select! {
+            biased;
+            () = self.root_cancellation.cancelled() => return run_id,
+            guard = self.checkpoint_assemblies.read() => guard,
+        };
+        if self.root_cancellation.is_cancelled() { return run_id; }
+        let recovered_approval = if request.checkpoint_resume.is_some() {
+            let permit = self.checkpoint_resume_admitted.lock().await.remove(&run_id);
+            if permit.as_ref().is_none_or(|permit| !permit.accepts(&request, &run_id, &self.tool_runtime_epoch)) {
+                self.record_host_admission_failure(&request, &run_id, "checkpoint_admission_required",
+                    "Checkpoint execution requires its exact durable continuation claim").await;
+                return run_id;
+            }
+            permit.and_then(|permit| permit.approval)
+        } else { None };
         let execution_started_at = std::time::Instant::now();
+        let checkpoint_a2a_renewable = request.a2a_delegation.as_ref().is_some_and(|contract|
+            request.host_budget_constraint.as_ref() == Some(&contract.budgets)
+                && request.host_sandbox_constraint.as_ref() == Some(&contract.sandbox)
+                && request.host_usage_grant.as_ref().is_some_and(|binding|
+                    binding.grant == contract.usage_grant
+                        && contract.digest().is_ok_and(|digest| binding.accounting_id == format!("a2a:{digest}"))));
+        let checkpoint_has_host_resources = request.host_tool_admission.is_some()
+            || (!checkpoint_a2a_renewable && (request.host_usage_grant.is_some() || request.host_budget_constraint.is_some()
+                || request.host_sandbox_constraint.is_some())) || !checkpoint_host_policy_renewable(&request)
+            || request.instance_binding.is_some() || inherited.is_some()
+            || request.collaboration_binding.as_ref().is_some_and(|binding|
+                binding.instance_authority.is_some() || binding.team_attempt.is_some() || binding.team_instructions.is_some());
         let plan = crate::uar::runtime::turn::TurnAssemblyPlan::for_request(&request);
         let harness_config = match &inherited {
             Some(bindings) => bindings.harness.clone(),
@@ -2934,6 +3284,7 @@ impl RunManager {
             host_policy_constraint,
             host_budget_constraint,
             host_usage_grant,
+            a2a_delegation,
             host_sandbox_constraint,
         } = request;
         let collaboration_binding = collaboration_binding.or_else(|| {
@@ -2947,7 +3298,7 @@ impl RunManager {
                 .and_then(|bindings| bindings.instance_binding.clone())
         });
         let is_checkpoint_resume = checkpoint_resume.is_some();
-        let (restored_state, checkpoint_history, checkpoint_authorization_digest) =
+        let (restored_state, mut checkpoint_history, checkpoint_authorization_digest) =
             match checkpoint_resume {
                 Some(resume) => (
                     Some(resume.state),
@@ -2956,6 +3307,13 @@ impl RunManager {
                 ),
                 None => (None, None, None),
             };
+        // The current host assembles only a complete prefix. The protected
+        // unresolved block enters execution after current admission is rebuilt.
+        let pending_history = if let (Some(record), Some(history)) = (&recovered_approval, &mut checkpoint_history) {
+            let index = history.iter().position(|message| message.tool_calls.iter().flatten()
+                .any(|call| call.id == record.tool_call_id));
+            match index { Some(index) => history.split_off(index), None => return run_id }
+        } else { Vec::new() };
         let supplied_history = checkpoint_history.as_ref().or(inherited_history.as_ref());
         let append_input = plan.append_input;
         let skill_attachments = plan.requested_skill_ids;
@@ -3257,10 +3615,30 @@ impl RunManager {
         let owner_id = user_id
             .clone()
             .unwrap_or_else(|| crate::session::ANONYMOUS_SESSION_OWNER.to_string());
+        self.checkpoint_evidence_owners.write().await.insert(owner_id.clone());
+        self.checkpoint_effect_roots.write().await.insert((owner_id.clone(), run_id.clone()));
+        if let Some(owner) = &verified_owner {
+            self.checkpoint_evidence_owners.write().await.insert(owner.presentation_owner_key());
+        }
+        let session_owner = match verified_owner.as_ref() {
+            Some(owner) => owner.session_owner_key(),
+            None if owner_id == crate::session::ANONYMOUS_SESSION_OWNER => Ok(owner_id.clone()),
+            None => Err(anyhow::anyhow!("Verified conversation owner required")),
+        };
+        let session_owner = match session_owner {
+            Ok(owner) => owner,
+            Err(error) => {
+                emitter.emit(NormalizedEvent::Error {
+                    run_id: run_id.clone(), code: "session_owner_invalid".into(), message: error.to_string(),
+                }).await;
+                emitter.emit(NormalizedEvent::RunDone { run_id: run_id.clone() }).await;
+                return run_id;
+            }
+        };
         let retained_session = if let Some(id) = session_id {
-            self.sessions.get_or_create_for_user(&id, &owner_id)
+            self.sessions.get_or_create_for_user(&id, &session_owner)
         } else {
-            self.sessions.create_for_user(&owner_id)
+            self.sessions.create_for_user(&session_owner)
         };
         // Routing reads a private staged view. Admission has not yet captured
         // the selected provider corpus, so shared history must remain untouched.
@@ -3532,6 +3910,14 @@ impl RunManager {
             None => !is_checkpoint_resume,
         };
         if !checkpoint_authorization_valid {
+            let invalidation_unavailable = match &recovered_approval {
+                Some(record) => self.approvals.finish_recovered(record,
+                    crate::uar::persistence::approval_decisions::ApprovalState::Invalidated).await.is_err(),
+                None => false,
+            };
+            let error_code = if invalidation_unavailable { "approval_persistence_unavailable" } else { "checkpoint_authorization_revoked" };
+            let error_message = if invalidation_unavailable { "Recovered approval invalidation could not be persisted; continuation claim remains held" }
+                else { "Checkpoint authorization is no longer valid" };
             let dialogue = redacted_checkpoint_dialogue(&session);
             let run = Run {
                 run_id: run_id.clone(),
@@ -3540,7 +3926,7 @@ impl RunManager {
                 user_id: user_id.clone(),
                 status: RunStatus::Error,
                 context: serde_json::json!({
-                    "error_code": "checkpoint_authorization_revoked",
+                    "error_code": error_code,
                     "agent_snapshot": null,
                 }),
             };
@@ -3570,8 +3956,8 @@ impl RunManager {
             emitter
                 .emit(NormalizedEvent::Error {
                     run_id: run_id.clone(),
-                    code: "checkpoint_authorization_revoked".into(),
-                    message: "Checkpoint authorization is no longer valid".into(),
+                    code: error_code.into(),
+                    message: error_message.into(),
                 })
                 .await;
             emitter
@@ -3601,7 +3987,7 @@ impl RunManager {
 
         // Capture identity for credential resolution before `user_id` is moved
         // into the Run record and the resolved session id is the source of truth.
-        let user_id_for_creds = user_id.clone();
+        let principal_for_creds = verified_owner.as_ref().and_then(|owner| owner.credential_principal()).cloned();
         let session_id_for_creds = Some(session.id().to_string());
 
         let dialogue = redacted_checkpoint_dialogue(&session);
@@ -3713,7 +4099,7 @@ impl RunManager {
         {
             let mut session_runs = self.session_current_run.write().await;
             session_runs.insert(
-                crate::uar::persistence::tenant_storage_key(&owner_id, session.id()),
+                crate::uar::persistence::tenant_storage_key(session.owner_id(), session.id()),
                 run_id.clone(),
             );
         }
@@ -3751,7 +4137,7 @@ impl RunManager {
             None => match self.approvals.register_scoped(
                 run_id.clone(),
                 owner_id.clone(),
-                verified_owner.as_ref().map(|owner| owner.presentation_owner_key())
+                verified_owner.as_ref().and_then(|owner| owner.credential_principal()).map(|owner| owner.storage_key())
                     .unwrap_or_else(|| format!("v1:s:{}:{}", owner_id.len(), owner_id)),
                 collaboration_binding.as_ref().map(|binding| binding.workspace_id.clone()),
                 Arc::new(emitter.clone()),
@@ -3974,14 +4360,14 @@ impl RunManager {
                 Vec::new();
             for id_or_name in &effective_policy.knowledge_bases.ids {
                 let resolved = db
-                    .get_knowledge_base(&owner_id, id_or_name)
+                    .get_knowledge_base(&session_owner, id_or_name)
                     .await
                     .ok()
                     .flatten();
                 let resolved = match resolved {
                     Some(kb) => Some(kb),
                     None => db
-                        .get_knowledge_base_by_name(&owner_id, id_or_name)
+                        .get_knowledge_base_by_name(&session_owner, id_or_name)
                         .await
                         .ok()
                         .flatten(),
@@ -4029,7 +4415,7 @@ impl RunManager {
                 let backend = ChatRagSearchBackend {
                     persistence: db.as_ref(),
                     vector_matcher: self.vector_matcher.as_ref(),
-                    owner_id: &owner_id,
+                    owner_id: &session_owner,
                     kb_ids: &kb_ids,
                 };
                 let kb_config_refs: Vec<&crate::uar::domain::knowledge::KbConfig> =
@@ -4052,7 +4438,7 @@ impl RunManager {
                         for m in &matches {
                             if let Some(did) = &m.chunk.document_id
                                 && seen_document_ids.insert(did.clone())
-                                && let Ok(Some(doc)) = db.get_document(&owner_id, did).await
+                                && let Ok(Some(doc)) = db.get_document(&session_owner, did).await
                             {
                                 document_names.insert(did.clone(), doc.filename);
                             }
@@ -4290,6 +4676,29 @@ impl RunManager {
             .as_ref()
             .map_or(&self.global_mcp, |bindings| &bindings.mcp);
         let native_descriptors = native_skills.descriptors().await;
+        // Elicitation is a governed host interaction, never a tool approval.
+        // Children inherit the root's frozen connection/channel projection.
+        if !child_run && mcp_resources.is_some()
+            && let Some(store) = self.persistence.as_ref().filter(|store| store.supports_durable_mcp_elicitations())
+            && let Some(owner) = verified_owner.as_ref().filter(|owner| owner.credential_principal().is_some())
+        {
+            match crate::mcp::interaction::McpInteractionChannel::new(
+                Arc::clone(store), owner, run_id.clone(), session.id().to_owned(),
+                collaboration_binding.as_ref().map(|binding| binding.workspace_id.clone()),
+                run_cancellation.clone(),
+            ) {
+                Ok(channel) => { mcp_resources = mcp_resources.take().map(|resources| resources.with_interactions(channel)); }
+                Err(error) => {
+                    if let Some(state) = self.active_runs.write().await.get_mut(&run_id) { state.run.status = RunStatus::Error; }
+                    emitter.emit(NormalizedEvent::Error { run_id:run_id.clone(),code:"mcp_interaction_admission_failed".into(),message:error.to_string() }).await;
+                    self.run_cancellations.write().await.remove(&run_id);
+                    return run_id;
+                }
+            }
+        }
+        let mut mcp_interaction_guard = if child_run { None } else {
+            mcp_resources.as_ref().and_then(McpRunResources::interaction_guard)
+        };
         let activation_result = if let Some(resources) = &mcp_resources {
             let host = crate::uar::runtime::skills::activation::ProjectedActivationHost::new(
                 resources.runtime().clone(),
@@ -4578,7 +4987,7 @@ impl RunManager {
         let model_bindings_result = if let Some(bindings) = &inherited {
             bindings.models.for_policy(&bindings.policy)
         } else {
-            let preferred_llm_config = policy_llm_config.unwrap_or_else(|| self.llm_config.clone());
+            let mut preferred_llm_config = policy_llm_config.unwrap_or_else(|| self.llm_config.clone());
             let skill_preferred_model = (collaboration_binding.is_none() && target_selection.is_none())
                 .then(|| {
                     matched_skills.iter().find_map(|skill| {
@@ -4586,13 +4995,23 @@ impl RunManager {
                             .execution_config
                             .preferred_model
                             .as_ref()
+                            .filter(|model| !model.trim().is_empty())
                             .map(|model| (skill.skill_id.as_str(), model.as_str()))
                     })
                 })
                 .flatten();
-            let run_llm_config = if is_team_attempt || target_selection.is_some() {
+            if preferred_llm_config.model.trim().is_empty() && skill_preferred_model.is_none()
+                && let Some(registry) = &self.provider_registry
+                && let Some((provider, model)) = registry.default_model().await
+                && let Some(configured) = registry.resolve_to_llm_config(&provider, &model).await
+            {
+                preferred_llm_config = apply_routed_connection(preferred_llm_config, configured);
+            }
+            let run_llm_config = if is_team_attempt || target_selection.is_some()
+                || (preferred_llm_config.model.trim().is_empty() && skill_preferred_model.is_none())
+            {
                 // Admission selected an exact route. Availability routing may not
-                // replace it with another provider/model after that capture.
+                // replace it, or turn missing operator selection into a model choice.
                 preferred_llm_config
             } else if let Some(ref registry) = self.provider_registry {
                 let policy_preferred_model = qualified_model_name(&preferred_llm_config);
@@ -4671,14 +5090,28 @@ impl RunManager {
             let mut run_llm_config = if run_credentials.is_some() {
                 run_llm_config
             } else {
-                apply_credential_layer(
+                match apply_credential_layer(
                     run_llm_config,
                     self.provider_service.as_ref(),
-                    user_id_for_creds.as_deref(),
+                    principal_for_creds.as_ref(),
                     session_id_for_creds.as_deref(),
                     artifact.id.as_str(),
                 )
-                .await
+                .await {
+                    Ok(config) => config,
+                    Err(_) => {
+                        if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                            state.run.status = RunStatus::Error;
+                        }
+                        activation_context.lock().await.record_outcomes(false);
+                        emitter.emit(NormalizedEvent::Error { run_id: run_id.clone(),
+                            code: "credential_resolution_unavailable".to_owned(),
+                            message: "Provider credential resolution unavailable".to_owned() }).await;
+                        emitter.emit(NormalizedEvent::RunDone { run_id: run_id.clone() }).await;
+                        self.run_cancellations.write().await.remove(&run_id);
+                        return run_id;
+                    }
+                }
             };
             if let Some(credentials) = &run_credentials {
                 let policy_route = effective_policy.model.as_ref();
@@ -4790,7 +5223,7 @@ impl RunManager {
                     let config = match &run_credentials {
                         Some(credentials) => credentials.config_for(&profile.provider_id, Some(&model_id), config)?,
                         None => apply_credential_layer(config, self.provider_service.as_ref(),
-                            user_id_for_creds.as_deref(), session_id_for_creds.as_deref(), artifact.id.as_str()).await,
+                            principal_for_creds.as_ref(), session_id_for_creds.as_deref(), artifact.id.as_str()).await?,
                     };
                     fallback.api_key = config.api_key;
                     fallback.base_url = config.base_url;
@@ -4817,6 +5250,15 @@ impl RunManager {
                         execution_started_at,
                     )
                 });
+
+            let model_budget = match model_budget {
+                Ok(budget) if run_llm_config.cost_tracking || budget.has_configured_limits()
+                    || (self.persistence.as_ref().is_some_and(|store| store.supports_durable_accounting())
+                        && verified_owner.as_ref().and_then(|owner| owner.credential_principal()).is_some()) =>
+                    budget.with_durable_accounting(self.persistence.clone(), verified_owner.as_ref()).await,
+                Ok(budget) => Ok(budget),
+                Err(error) => Err(error),
+            };
 
             // Capture once before any summarization or model execution. Rebuilding
             // a client from the same config can resolve different environment or
@@ -5790,6 +6232,7 @@ impl RunManager {
             let approval_governance_gate = self.governance_gate.clone();
             let effective_tool_approval = effective_policy.tool_approval;
             let approval_gate_channel = approval_channel.clone();
+            let recovery_gate_record = recovered_approval.clone();
             let gate: crate::llm::ToolApprovalGate = Arc::new(move |invocation| {
                 let run_id = approval_run_id.clone();
                 let emitter = approval_emitter.clone();
@@ -5798,10 +6241,11 @@ impl RunManager {
                 let agent_id = approval_agent_id.clone();
                 let governance = approval_governance.clone();
                 let governance_gate = approval_governance_gate.clone();
+                let recovered = recovery_gate_record.clone().filter(|record|
+                    record.tool_call_id == invocation.invocation.model_tool_call_id);
                 Box::pin(async move {
-                    let admission_id = invocation.admission_id.clone();
+                    let checkpoint_request = invocation.clone();
                     let host_requires_approval = invocation.host_requires_approval;
-                    let action_display = invocation.action_display;
                     let invocation = invocation.invocation;
                     let admission_owner = invocation.admission_owner;
                     // Native effects retain their admission owner; a captured
@@ -5817,7 +6261,6 @@ impl RunManager {
                     let tool_call_id = invocation.model_tool_call_id.clone();
                     let tool_name = invocation.provider_tool_name.clone();
                     let approval_class = invocation.approval_class;
-                    let arguments_json = action_display.to_string();
                     let call_index = invocation.call_index;
                     if cancellation.is_cancelled() {
                         return crate::llm::ToolApprovalResult::Cancelled {
@@ -5827,7 +6270,9 @@ impl RunManager {
                     // A host may bypass automatic governance for a verified
                     // local root, but explicit Ask/Deny remains authoritative.
                     if !host_requires_approval
+                        && recovered.is_none()
                         && !child_run
+                        && approval_class != crate::uar::tools::descriptor::ApprovalClass::Required
                         && effective_tool_approval == ToolApprovalPolicy::Auto
                         && let Some(decision) = governance_bypass_decision(governance_gate.as_ref())
                     {
@@ -5840,6 +6285,11 @@ impl RunManager {
                         return decision;
                     }
                     if effective_tool_approval == ToolApprovalPolicy::Deny {
+                        if let Some(record) = &recovered && channel.invalidate_recovered(record).await.is_err() {
+                            emitter.emit(NormalizedEvent::Error { run_id: run_id.clone(), code: "approval_persistence_unavailable".into(),
+                                message: "Recovered approval invalidation could not be persisted; continuation claim remains held".into() }).await;
+                            return crate::llm::ToolApprovalResult::Cancelled { reason: "Approval persistence unavailable".into() };
+                        }
                         let reason =
                             format!("Tool '{tool_name}' is denied by the effective run policy");
                         emitter
@@ -5853,7 +6303,7 @@ impl RunManager {
                             .await;
                         return crate::llm::ToolApprovalResult::Rejected { reason };
                     }
-                    let approval_required = host_requires_approval
+                    let approval_required = recovered.is_some() || host_requires_approval
                         || effective_tool_approval == ToolApprovalPolicy::Ask
                         || approval_class == crate::uar::tools::descriptor::ApprovalClass::Required;
                     let decision = match &governance {
@@ -5874,6 +6324,11 @@ impl RunManager {
                             return crate::llm::ToolApprovalResult::Allowed;
                         }
                         crate::uar::governance::engine::ToolGovernanceDecision::Deny => {
+                            if let Some(record) = &recovered && channel.invalidate_recovered(record).await.is_err() {
+                                emitter.emit(NormalizedEvent::Error { run_id: run_id.clone(), code: "approval_persistence_unavailable".into(),
+                                    message: "Recovered approval invalidation could not be persisted; continuation claim remains held".into() }).await;
+                                return crate::llm::ToolApprovalResult::Cancelled { reason: "Approval persistence unavailable".into() };
+                            }
                             let reason =
                                 format!("Tool '{tool_name}' is denied by governance policy");
                             emitter
@@ -5900,20 +6355,16 @@ impl RunManager {
                     } else {
                         format!("Tool '{tool_name}' requires approval under its descriptor")
                     };
-                    match channel
-                        .request_with_admission_owner(
-                            Some(admission_id),
-                            admission_owner,
-                            decision_owner,
-                            call_index,
-                            tool_call_id,
-                            tool_name.clone(),
-                            arguments_json,
-                            risk_reason,
-                            &cancellation,
-                        )
-                        .await
-                    {
+                    let outcome = if let Some(record) = &recovered {
+                        match channel.approve_recovered(record, &invocation).await {
+                            Ok(true) => ApprovalOutcome::Approved,
+                            Ok(false) => ApprovalOutcome::Rejected,
+                            Err(_) => ApprovalOutcome::ChannelClosed,
+                        }
+                    } else {
+                        channel.request_tool(checkpoint_request, decision_owner, risk_reason, &cancellation).await
+                    };
+                    match outcome {
                         ApprovalOutcome::Approved => {
                             tracing::info!(run_id = %run_id, tool = %tool_name, "Tool call approved by user");
                             crate::llm::ToolApprovalResult::Approved
@@ -5961,7 +6412,7 @@ impl RunManager {
                         &decision,
                         crate::llm::ToolApprovalResult::Rejected { .. }
                             | crate::llm::ToolApprovalResult::Cancelled { .. }
-                    ) && let Err(error) = budget.admit_tool()
+                    ) && let Err(error) = budget.admit_tool_durable().await
                     {
                         let reason = error.to_string();
                         emitter
@@ -6119,6 +6570,40 @@ impl RunManager {
         let finalizer_graph_tools = graph_tool_host.clone();
         let finalizer_terminals = Arc::clone(&terminal_operations);
         let finalizer_terminal_scope = terminal_scope.clone();
+        let finalizer_checkpoint_cleanup = Arc::clone(&self.checkpoint_cleanup_failed);
+        let checkpoint_actor_root = actor_root.clone();
+        let checkpoint_source = {
+            let mut runs = self.active_runs.write().await;
+            runs.get_mut(&run_id).map(|state| {
+                state.run.context["checkpoint_execution"] = serde_json::json!(
+                    crate::uar::persistence::checkpoint_resume::CheckpointExecutionDefinition {
+                        schema_version: 1,
+                        kind: if graph_for_run.is_some() {
+                            crate::uar::persistence::checkpoint_resume::CheckpointExecutionKind::HostGraph
+                        } else if self.primary_driver.is_some() {
+                            crate::uar::persistence::checkpoint_resume::CheckpointExecutionKind::HostDriver
+                        } else if checkpoint_has_host_resources {
+                            crate::uar::persistence::checkpoint_resume::CheckpointExecutionKind::HostResources
+                        } else if checkpoint_a2a_renewable {
+                            crate::uar::persistence::checkpoint_resume::CheckpointExecutionKind::A2aToolLoop
+                        } else {
+                            crate::uar::persistence::checkpoint_resume::CheckpointExecutionKind::ToolLoop
+                        },
+                    });
+                if let Some(contract) = &a2a_delegation {
+                    state.run.context["a2a_delegation"] = serde_json::json!(contract);
+                }
+                state.run.clone()
+            })
+        };
+        let checkpoint_host = checkpoint_source.map(|source| Arc::new(crate::uar::runtime::checkpoint_host::CheckpointHost::new(
+            self.persistence.clone(), source, verified_owner.as_ref(), self.tool_runtime_epoch.clone(),
+            crate::uar::runtime::checkpoint::authorization_digest(&effective_policy),
+            run_cancellation.clone(), emitter.secret_scrubber.clone(), collaboration_binding.clone(),
+        )));
+        if let Some(host) = &checkpoint_host {
+            approval_channel.install_recovery_host(Arc::clone(host), self.root_cancellation.clone(), Arc::clone(&tool_admission));
+        }
         let actor_producer = actor_root.as_ref().map(|root| Arc::clone(&root.producer));
         if let Some(root) = &actor_root {
             root.ready.store(true, std::sync::atomic::Ordering::Release);
@@ -6202,7 +6687,6 @@ impl RunManager {
                     llm_config: llm_config_for_graph,
                     driver: graph_driver,
                     cache_strategy: cache_strategy_for_graph,
-                    persistence: persistence_for_run.clone(),
                     thread_delegate: graph_thread_delegate,
                     tool_host: graph_tool_host.clone(),
                 };
@@ -6271,7 +6755,16 @@ impl RunManager {
                         cancellations_for_cleanup.write().await.remove(&cleanup_run_id);
                         return;
                     }
-                    state = graph.execute_with_events(initial_state, &graph_ctx, &emitter) => state,
+                    state = async {
+                        match &checkpoint_host {
+                            Some(host) => graph.execute_with_checkpoint_host(initial_state, &graph_ctx, &emitter, host).await,
+                            None => {
+                                let mut state = initial_state;
+                                state.set("_error", "checkpoint_source_unavailable");
+                                state
+                            }
+                        }
+                    } => state,
                 };
 
                 let mut graph_succeeded = final_state.get::<String>("_error").is_none();
@@ -6398,7 +6891,71 @@ impl RunManager {
             // 2. Execute Orchestrator
             #[cfg(feature = "bauar-native-admission-gate")]
             let native_admission_gate = orchestrator.native_admission_gate();
-            match orchestrator.chat_with_history(messages).await {
+            let orchestrator = if recovered_approval.is_some() {
+                let completed = pending_history.iter().filter_map(|message| message.tool_call_id.clone())
+                    .collect::<BTreeSet<_>>();
+                let pending_calls = pending_history.iter().flat_map(|message| message.tool_calls.iter().flatten())
+                    .cloned().enumerate().filter(|(_, call)| !completed.contains(&call.id)).collect::<Vec<_>>();
+                for message in &pending_history {
+                    dialogue.record(&execution_session, |history| history.add_message(message.clone()));
+                }
+                messages.extend(pending_history);
+                for (index, call) in pending_calls {
+                    emitter.emit(NormalizedEvent::ToolStart { run_id: execute_run_id.clone(),
+                        call_index: index, tool_call_id: call.id.clone(), tool: call.function.name.clone(),
+                        input: serde_json::from_str(&call.function.arguments).unwrap_or(serde_json::Value::Null),
+                    }).await;
+                    match orchestrator.execute_recovered_tool_call(&call, index, messages.clone()).await {
+                        Ok((canonical, displayed, outcome)) => {
+                            let message = Message { role: MessageRole::Tool,
+                                content: crate::llm::MessageContent::text(canonical.clone()),
+                                tool_call_id: Some(call.id.clone()), tool_calls: None };
+                            dialogue.record(&execution_session, |history| history.add_message(message.clone()));
+                            messages.push(message);
+                            tool_call_count += 1;
+                            emitter.emit(NormalizedEvent::ToolEnd { run_id: execute_run_id.clone(),
+                                call_index: index, tool_call_id: call.id, tool: call.function.name,
+                                output: serde_json::from_str(&displayed).unwrap_or(serde_json::Value::String(displayed)),
+                                ok: outcome.succeeded() }).await;
+                            if outcome == crate::mcp::outcome::ToolOutcome::OutcomeUnknown {
+                                run_failed = true;
+                                emitter.emit(NormalizedEvent::Error { run_id: execute_run_id.clone(),
+                                    code: "TOOL_OUTCOME_UNKNOWN".into(), message: "Recovered tool outcome is unknown; reconciliation required".into() }).await;
+                                break;
+                            }
+                        }
+                        Err(_) => {
+                            run_failed = true;
+                            let invalidation_unavailable = match &recovered_approval {
+                                Some(record) => approval_channel.invalidate_recovered(record).await.is_err(),
+                                None => false,
+                            };
+                            if invalidation_unavailable && let Some(state) = runs_for_completion.write().await.get_mut(&execute_run_id) {
+                                state.run.context["error_code"] = "approval_persistence_unavailable".into();
+                            }
+                            emitter.emit(NormalizedEvent::Error { run_id: execute_run_id.clone(),
+                                code: if invalidation_unavailable { "approval_persistence_unavailable" } else { "approval_recovery_admission_denied" }.into(),
+                                message: if invalidation_unavailable { "Recovered approval invalidation could not be persisted; continuation claim remains held" }
+                                    else { "Current admission did not authorize the recovered call" }.into() }).await;
+                            break;
+                        }
+                    }
+                }
+                if !run_failed && let Some(host) = &checkpoint_host {
+                    let state = crate::uar::runtime::graph::GraphState { data: HashMap::new(),
+                        messages: execution_session.messages().iter().map(|message| serde_json::json!(message)).collect(),
+                        iteration: tool_call_count as u32 };
+                    if host.persist("approval_recovered", &state).await.is_err() {
+                        run_failed = true;
+                        emitter.emit(NormalizedEvent::Error { run_id: execute_run_id.clone(),
+                            code: "checkpoint_persistence_failed".into(), message: "Recovered tool result checkpoint could not be persisted".into() }).await;
+                    }
+                }
+                Arc::new((*orchestrator).clone().with_recovered_history(messages.clone()))
+            } else { orchestrator };
+            let recovered_stream = if run_failed { Err(anyhow::anyhow!("Approval recovery failed before model continuation")) }
+                else { orchestrator.chat_with_history(messages).await };
+            match recovered_stream {
                 Ok(stream) => {
                     futures::pin_mut!(stream);
                     loop {
@@ -6704,8 +7261,8 @@ impl RunManager {
                             if matches!(evt, NormalizedEvent::ToolEnd { .. }) {
                                 tool_call_count += 1;
 
-                                // Asynchronously persist a checkpoint after each tool call.
-                                if let Some(db) = persistence_for_run.clone() {
+                                // The host awaits the atomic checkpoint/envelope write.
+                                if persistence_for_run.is_some() {
                                     let checkpoint_state = crate::uar::runtime::graph::GraphState {
                                         data: std::collections::HashMap::new(),
                                         messages: execution_session
@@ -6718,25 +7275,17 @@ impl RunManager {
                                             .collect(),
                                         iteration: tool_call_count as u32,
                                     };
-                                    let checkpoint_authorization_digest =
-                                        crate::uar::runtime::checkpoint::authorization_digest(
-                                            &effective_policy,
-                                        );
-                                    let cp = crate::uar::runtime::checkpoint::Checkpoint::new(
-                                        &execute_run_id,
-                                        execution_session.id(),
-                                        format!("tool_loop_{tool_call_count}"),
-                                        &checkpoint_state,
-                                        &checkpoint_authorization_digest,
-                                    );
-                                    tokio::spawn(async move {
-                                        if let Err(e) = db.save_checkpoint(&cp).await {
-                                            tracing::warn!(
-                                                error = %e,
-                                                "Failed to save tool-loop checkpoint"
-                                            );
-                                        }
-                                    });
+                                    let saved = match &checkpoint_host {
+                                        Some(host) => host.persist(&format!("tool_loop_{tool_call_count}"), &checkpoint_state).await,
+                                        None => Err(anyhow::anyhow!("checkpoint source unavailable")),
+                                    };
+                                    if saved.is_err() {
+                                        run_failed = true;
+                                        emitter.emit(NormalizedEvent::Error {
+                                            run_id: execute_run_id.clone(), code: "checkpoint_persistence_failed".into(),
+                                            message: "Atomic checkpoint persistence failed".into(),
+                                        }).await;
+                                    }
                                 }
                             }
                             // Derive a memory mutation event before consuming the ToolEnd.
@@ -6745,6 +7294,7 @@ impl RunManager {
                             if let Some(m) = mutation_evt {
                                 emitter.emit(m).await;
                             }
+                            if run_failed { break; }
                         }
                     }
                 }
@@ -6991,8 +7541,7 @@ impl RunManager {
             }
             // Settle cost for any run that reported usage, cancelled or not, so a
             // cancelled run's spend reaches the durable ledger and the event stream.
-            let cost_usd_estimate = if has_usage {
-                crate::uar::runtime::run_cost::settle_run_cost(
+            let cost_usd_estimate = crate::uar::runtime::run_cost::settle_run_cost(
                     crate::uar::runtime::run_cost::RunCostInputs {
                         run_id: &execute_run_id,
                         session_id: execution_session.id(),
@@ -7007,10 +7556,7 @@ impl RunManager {
                     persistence_for_run.as_ref(),
                     &emitter,
                 )
-                .await
-            } else {
-                None
-            };
+                .await;
             if run_cancelled {
                 tracing::info!(run_id = %execute_run_id, "Run cancelled; emitting terminal Cancelled event");
                 let usage = has_usage.then(|| crate::uar::domain::events::RunUsage {
@@ -7091,6 +7637,7 @@ impl RunManager {
             Some(producer) => Some(producer.lock().await),
             None => None,
         };
+        let mut checkpoint_producers = self.checkpoint_producers.lock().await;
         let producer = tokio::spawn(
             async move {
                 use futures::FutureExt;
@@ -7109,7 +7656,15 @@ impl RunManager {
                     Some(root) => root.shutdown().await,
                     None => Ok(()),
                 };
+                let mcp_cleanup = match mcp_interaction_guard.as_mut() {
+                    Some(guard) => guard.finish().await,
+                    None => Ok(()),
+                };
                 let cleanup = finalizer_sandboxes.finish_run(&finalizer_scope).await;
+                if result.is_err() || graph_cleanup.is_err() || terminal_cleanup.is_err()
+                    || thread_cleanup.is_err() || mcp_cleanup.is_err() || cleanup.is_err() {
+                    finalizer_checkpoint_cleanup.store(true, std::sync::atomic::Ordering::Release);
+                }
                 if result.is_err() {
                     completion_guard.fail("kernel_panicked", "Run kernel failed while unwinding");
                     if let Some(state) = finalizer_runs.write().await.get_mut(&finalizer_run_id) {
@@ -7143,6 +7698,13 @@ impl RunManager {
                     }
                     tracing::error!(run_id = %finalizer_run_id, %error, "Run retains unconfirmed child threads");
                 }
+                if let Err(error) = mcp_cleanup {
+                    completion_guard.fail("mcp_interaction_cleanup_unconfirmed", "MCP interaction cleanup remains unconfirmed");
+                    if let Some(state) = finalizer_runs.write().await.get_mut(&finalizer_run_id) {
+                        state.run.status = RunStatus::Error;
+                    }
+                    tracing::error!(run_id = %finalizer_run_id, %error, "Run retains unconfirmed MCP interactions");
+                }
                 if let Err(error) = terminal_cleanup {
                     completion_guard.fail("terminal_cleanup_unconfirmed", "Terminal cleanup remains unconfirmed");
                     if let Some(state) = finalizer_runs.write().await.get_mut(&finalizer_run_id) {
@@ -7154,6 +7716,11 @@ impl RunManager {
         );
         if let Some(slot) = actor_producer_slot.as_mut() {
             slot.handle = Some(producer);
+            if let Some(root) = checkpoint_actor_root {
+                checkpoint_producers.insert(run_id.clone(), Arc::new(Mutex::new(CheckpointProducer::Actor(root))));
+            }
+        } else {
+            checkpoint_producers.insert(run_id.clone(), Arc::new(Mutex::new(CheckpointProducer::Ordinary(Some(producer)))));
         }
 
         run_id
@@ -7368,6 +7935,27 @@ impl RunManager {
     }
 
     /// Return a run only for the exact verified subject and tenant identity.
+    /// Wire projection observes final status only after all owned producer
+    /// cleanup, including interaction connections and graph persistence.
+    pub(crate) async fn settled_run_status_for_context(
+        &self, user: &crate::uar::security::claims::UserContext, run_id: &str,
+    ) -> Option<RunStatus> {
+        let run = self.get_run_for_context(user,run_id).await?;
+        if !matches!(run.status,RunStatus::Done|RunStatus::Error|RunStatus::Cancelled)
+            || !self.graph_roots.is_settled(run_id) { return None; }
+        let producer = self.checkpoint_producers.lock().await.get(run_id).cloned();
+        if let Some(producer) = producer {
+            let producer = producer.try_lock().ok()?;
+            let finished = match &*producer {
+                CheckpointProducer::Ordinary(handle) => handle.as_ref().is_none_or(tokio::task::JoinHandle::is_finished),
+                CheckpointProducer::Actor(root) => root.producer.try_lock().is_ok_and(|producer|
+                    producer.handle.as_ref().is_none_or(tokio::task::JoinHandle::is_finished)),
+            };
+            if !finished { return None; }
+        }
+        Some(run.status)
+    }
+
     pub async fn get_run_for_owner(
         &self,
         owner: &crate::uar::runtime::actor::messages::ActorOwner,
@@ -7382,6 +7970,16 @@ impl RunManager {
     pub async fn get_run_by_session_id(&self, session_id: &str) -> Option<Run> {
         self.get_run_by_session_id_for_user(crate::session::ANONYMOUS_SESSION_OWNER, session_id)
             .await
+    }
+
+    /// Resolve a session's live run using the complete verified identity.
+    pub async fn get_run_by_session_id_for_context(
+        &self, user: &crate::uar::security::claims::UserContext, session_id: &str,
+    ) -> Option<Run> {
+        let owner = user.session_owner_key().ok()?;
+        let key = crate::uar::persistence::tenant_storage_key(&owner, session_id);
+        let run_id = self.session_current_run.read().await.get(&key).cloned()?;
+        self.get_run_for_context(user, &run_id).await
     }
 
     /// Return the current run for an owner-scoped conversation session.
@@ -7687,7 +8285,7 @@ mod credential_layer_tests {
     use super::apply_credential_layer;
     use crate::config::LlmConfig;
     use crate::uar::security::credentials::{
-        CredentialEncryption, CredentialRecord, CredentialScope, CredentialStore,
+        CredentialEncryption, CredentialRecord, CredentialScope, PrincipalCredentialStore,
         InMemoryCredentialStore, ProviderService,
     };
     use std::sync::Arc;
@@ -7707,7 +8305,7 @@ mod credential_layer_tests {
         let enc = CredentialEncryption::from_key(KEY);
         let now = chrono::Utc::now();
         store
-            .put(CredentialRecord {
+            .put_principal(&crate::uar::security::claims::CredentialPrincipal::for_test(user), CredentialRecord {
                 scope: CredentialScope::User,
                 scope_id: user.to_string(),
                 provider_id: provider.to_string(),
@@ -7725,7 +8323,7 @@ mod credential_layer_tests {
     #[tokio::test]
     async fn single_tenant_no_service_keeps_env_key() {
         let out =
-            apply_credential_layer(cfg_with_env_key(), None, Some("alice"), None, "agent-1").await;
+            apply_credential_layer(cfg_with_env_key(), None, Some(&crate::uar::security::claims::CredentialPrincipal::for_test("alice")), None, "agent-1").await.unwrap();
         assert_eq!(out.api_key.as_deref(), Some("env-key"));
     }
 
@@ -7736,11 +8334,11 @@ mod credential_layer_tests {
         let out = apply_credential_layer(
             cfg_with_env_key(),
             Some(&svc),
-            Some("alice"),
+            Some(&crate::uar::security::claims::CredentialPrincipal::for_test("alice")),
             None,
             "agent-1",
         )
-        .await;
+        .await.unwrap();
         assert_eq!(out.api_key.as_deref(), Some("sk-alice-USER"));
     }
 
@@ -7751,11 +8349,11 @@ mod credential_layer_tests {
         let out = apply_credential_layer(
             cfg_with_env_key(),
             Some(&svc),
-            Some("bob"), // bob has no stored key
+            Some(&crate::uar::security::claims::CredentialPrincipal::for_test("bob")), // bob has no stored key
             None,
             "agent-1",
         )
-        .await;
+        .await.unwrap();
         assert_eq!(out.api_key.as_deref(), Some("env-key"));
     }
 
@@ -7766,11 +8364,11 @@ mod credential_layer_tests {
         let out = apply_credential_layer(
             cfg_with_env_key(), // model is openai/*
             Some(&svc),
-            Some("alice"),
+            Some(&crate::uar::security::claims::CredentialPrincipal::for_test("alice")),
             None,
             "agent-1",
         )
-        .await;
+        .await.unwrap();
         assert_eq!(out.api_key.as_deref(), Some("env-key"));
     }
 }

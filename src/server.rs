@@ -72,7 +72,7 @@ use crate::uar::{
         },
     },
     security::{
-        api_keys::{ApiKeyService, InMemoryApiKeyStorage},
+        api_keys::ApiKeyService,
         claims::UserContext,
         sidecar_guard::{SidecarGuard, SidecarLaunchToken},
     },
@@ -276,6 +276,8 @@ fn emit_shutdown_marker_nonblocking(marker: &[u8]) {
 
 #[cfg(feature = "in-memory-backend")]
 use crate::uar::persistence::providers::memory::InMemoryProvider;
+#[cfg(feature = "in-memory-backend")]
+use crate::uar::security::api_keys::InMemoryApiKeyStorage;
 #[cfg(feature = "surreal-backend")]
 use crate::uar::persistence::providers::surreal::SurrealDbProvider;
 
@@ -601,6 +603,7 @@ async fn run_server_with_listener(
         agent_registry,
         live_bus,
         credential_store,
+        api_key_storage,
         a2ui_design_system_store,
         surreal_live_bus,
     ): (
@@ -613,11 +616,15 @@ async fn run_server_with_listener(
         Option<Arc<dyn crate::uar::api::a2a::AgentRegistry>>,
         Option<Arc<dyn crate::uar::realtime::RealtimeBus>>,
         Option<Arc<dyn uar::security::credentials::CredentialStore>>,
+        Arc<dyn uar::security::api_keys::ApiKeyStorage>,
         uar::a2ui::design_systems::store::SharedDesignSystemStore,
         Option<Arc<crate::uar::realtime::surreal_bus::LiveQueryBus>>,
     ) = if config.persistence.provider == "memory" {
         #[cfg(feature = "in-memory-backend")]
         {
+            if config.security.is_remote() {
+                anyhow::bail!("Remote API-key authority requires durable persistence; memory is a local development mode");
+            }
             (
                 Arc::new(InMemoryProvider::new()) as Arc<dyn PersistenceLayer>,
                 None,
@@ -626,6 +633,7 @@ async fn run_server_with_listener(
                 None,
                 None,
                 None,
+                Arc::new(InMemoryApiKeyStorage::new()),
                 Arc::new(uar::a2ui::design_systems::store::InMemoryDesignSystemStore::new()),
                 None,
             )
@@ -661,6 +669,12 @@ async fn run_server_with_listener(
 
             // Create compiler storage sharing the same DB connection
             let db = provider.client();
+            if config.security.is_remote() && provider.catalog_storage_backend() == "memory" {
+                anyhow::bail!("Remote API-key authority requires durable SurrealDB; memory is a local development mode");
+            }
+            let api_key_storage = Arc::new(uar::security::api_keys::SurrealApiKeyStorage::new(db.clone())
+                .with_request_timeout_ms(config.resilience.request_timeout_ms))
+                as Arc<dyn uar::security::api_keys::ApiKeyStorage>;
             let a2ui_store = Arc::new(
                 uar::a2ui::design_systems::store::SurrealDesignSystemStore::new(db.clone()),
             )
@@ -702,6 +716,7 @@ async fn run_server_with_listener(
                 Some(registry),
                 live_bus,
                 credential_store,
+                api_key_storage,
                 a2ui_store,
                 Some(surreal_live_bus),
             )
@@ -722,6 +737,9 @@ async fn run_server_with_listener(
                 .await
                 .expect("Failed to initialize Postgres");
             let pool = provider.get_pool().clone();
+            let api_key_storage = Arc::new(uar::security::api_keys::PostgresApiKeyStorage::new(pool.clone())
+                .with_request_timeout_ms(config.resilience.request_timeout_ms))
+                as Arc<dyn uar::security::api_keys::ApiKeyStorage>;
             let a2ui_store = Arc::new(
                 uar::a2ui::design_systems::store::PostgresDesignSystemStore::new(pool.clone()),
             )
@@ -764,6 +782,7 @@ async fn run_server_with_listener(
                 Some(registry),
                 live_bus,
                 credential_store,
+                api_key_storage,
                 a2ui_store,
                 None,
             )
@@ -944,13 +963,17 @@ async fn run_server_with_listener(
     let history_tool = Arc::new(crate::uar::tools::memory::MemoryHistoryTool::new(
         memory_service.clone(),
     ));
+    let policy_tool = Arc::new(crate::uar::tools::memory::MemoryPolicyTool::new(
+        memory_service.clone(),
+    ));
     mcp_registry = mcp_registry
         .with_native_tool(save_tool)?
         .with_native_tool(recall_tool)?
         .with_native_tool(list_tool)?
         .with_native_tool(delete_tool)?
         .with_native_tool(update_tool)?
-        .with_native_tool(history_tool)?;
+        .with_native_tool(history_tool)?
+        .with_native_tool(policy_tool)?;
     info!(
         "Native tools (memory_save, memory_recall, memory_list, memory_delete_by_id, memory_update_by_id, memory_history) registered — active={}",
         memory_service.is_some()
@@ -1080,7 +1103,8 @@ async fn run_server_with_listener(
     // Multi-tenant provider credentials. Active only when CREDENTIAL_ENCRYPTION_KEY
     // is set; otherwise `None` ⇒ single-tenant (env/config key path, unchanged).
     // Uses the durable SurrealDB-backed store when persistence is Surreal;
-    // otherwise falls back to an in-memory store (matches the api_keys precedent).
+    // PostgreSQL uses its durable store. Explicit memory development mode uses
+    // an in-memory store; configuration errors never disable credential authority.
     let provider_service: Option<Arc<uar::security::credentials::ProviderService>> = {
         let store: Arc<dyn uar::security::credentials::CredentialStore> =
             credential_store.clone().unwrap_or_else(|| {
@@ -1092,9 +1116,8 @@ async fn run_server_with_listener(
                 Some(Arc::new(svc))
             }
             Ok(None) => None,
-            Err(e) => {
-                tracing::error!(error = %e, "CREDENTIAL_ENCRYPTION_KEY invalid; multi-tenant credentials disabled");
-                None
+            Err(_) => {
+                anyhow::bail!("Provider credential encryption or owner mapping configuration is invalid");
             }
         }
     };
@@ -1353,8 +1376,6 @@ async fn run_server_with_listener(
     info!("Actor collaboration system initialized");
 
     // Initialize API Key Service
-    let api_key_storage: Arc<dyn uar::security::api_keys::ApiKeyStorage> =
-        Arc::new(InMemoryApiKeyStorage::new());
     let api_key_service = Arc::new(
         ApiKeyService::new(
             Arc::clone(&api_key_storage),
@@ -1390,6 +1411,17 @@ async fn run_server_with_listener(
     } else { false };
     info!("Collaboration package catalog initialized");
 
+    // Registration must precede observer/team startup and every external
+    // admission. An opted-in but unqualified controller fails startup.
+    let supervisor_recovery = if let Some(supervisor_config) = config.supervisor_recovery.clone() {
+        let host = Arc::new(uar::runtime::supervisor::SupervisorRecoveryHost::new(
+            Arc::clone(&persistence_layer), supervisor_config,
+        )?);
+        let identity = collaboration_catalog.execution_identity()?;
+        host.register(run_manager.runtime_epoch(), &identity.incarnation_id, &run_cancellation_root).await?;
+        Some(host)
+    } else { None };
+
     let team_execution_runtime = uar::runtime::team_execution::TeamExecutionRuntime::new(
         Arc::clone(&collaboration_catalog),
         Arc::clone(&run_manager),
@@ -1407,6 +1439,20 @@ async fn run_server_with_listener(
         Arc::clone(&agent_instance_controller),
         Arc::clone(&persistence_layer),
     );
+    let schedule_controller = uar::runtime::schedules::ScheduleController::new(
+        Arc::clone(&collaboration_catalog), Arc::clone(&agent_instance_controller),
+    );
+    observer_controller.attach_schedules(Arc::clone(&schedule_controller)).await;
+    uar::runtime::native_skills::schedules::register(
+        &native_skill_registry, Arc::clone(&schedule_controller),
+    ).await?;
+    let followup_controller = uar::runtime::followups::FollowupController::new(
+        Arc::clone(&collaboration_catalog), Arc::clone(&agent_instance_controller),
+    );
+    observer_controller.attach_followups(Arc::clone(&followup_controller)).await;
+    uar::runtime::native_skills::followups::register(
+        &native_skill_registry, Arc::clone(&followup_controller),
+    ).await?;
     let channel_observer_controller = uar::runtime::observer::ChannelObserverController::new(
         Arc::clone(&agent_instance_controller),
         Arc::clone(&persistence_layer),
@@ -1441,6 +1487,11 @@ async fn run_server_with_listener(
             uar::api::a2a::thread_service::A2AThreadService::new(Arc::clone(&actor_system))
                 .with_instance_id(service_instance.descriptor().instance.id.clone())
                 .with_full_harness(Arc::clone(&full_harness_authority))
+                .with_run_api(Arc::new(uar::api::routes::RunApiState {
+                    manager: Arc::clone(&run_manager),
+                    collaboration_catalog: Arc::clone(&collaboration_catalog),
+                    service_instance: Arc::clone(&service_instance),
+                }))
                 .with_guardrails(config.guardrails.clone()),
         ),
         security: config.security.clone(),
@@ -1547,8 +1598,10 @@ async fn run_server_with_listener(
                 config_manager.current(),
             ) {
                 Ok(pool) => {
+                    let pool = Arc::new(pool);
+                    pool.start_durable_dispatch();
                     info!("Shared ingestion worker pool initialized (single instance)");
-                    Some(Arc::new(pool))
+                    Some(pool)
                 }
                 Err(e) => {
                     tracing::error!("Failed to create shared ingestion pool: {:?}", e);
@@ -1582,6 +1635,14 @@ async fn run_server_with_listener(
     // of which router a request comes through.
     #[cfg(feature = "a2a-transport")]
     let a2a_routes: axum::Router<AppState> = Router::new()
+        .route(
+            "/a2a/v1/compiler",
+            post(uar::api::a2a::v1::handle_rpc).with_state(Arc::clone(&a2a_state)),
+        )
+        .route(
+            "/a2a/v1/agents/{agent_id}",
+            post(uar::api::a2a::v1::handle_agent_rpc).with_state(Arc::clone(&a2a_state)),
+        )
         .route(
             "/a2a/agents/{agent_id}",
             post(uar::api::a2a::handler::handle_agent_rpc).with_state(Arc::clone(&a2a_state)),
@@ -1671,9 +1732,26 @@ async fn run_server_with_listener(
                     service_instance: Arc::clone(&service_instance),
                 }))
                 .merge(
+                    uar::api::mcp_interactions::build_router(config.security.clone())
+                        .with_state::<AppState>(Arc::new(uar::api::routes::RunApiState {
+                            manager: Arc::clone(&state.run_manager),
+                            collaboration_catalog: Arc::clone(&state.collaboration_catalog),
+                            service_instance: Arc::clone(&service_instance),
+                        })),
+                )
+                .merge(
                     uar::a2ui::routes::build_response_router()
                         .with_state::<AppState>(a2ui_api_state.clone()),
                 ),
+        )
+        .nest(
+            "/api/uar/ag-ui",
+            uar::api::agui::build_router(config.security.clone())
+                .with_state::<AppState>(Arc::new(uar::api::routes::RunApiState {
+                    manager: Arc::clone(&state.run_manager),
+                    collaboration_catalog: Arc::clone(&state.collaboration_catalog),
+                    service_instance: Arc::clone(&service_instance),
+                })),
         )
         .nest(
             "/api/uar/full-harness/v1",
@@ -1773,6 +1851,25 @@ async fn run_server_with_listener(
             uar::api::actors::build_router().with_state(Arc::clone(&state.actor_system)),
         )
         // Settings API (runtime config administration)
+        .merge(uar::api::supervisor::router(uar::api::supervisor::SupervisorApiState {
+            host: supervisor_recovery.clone(),
+            catalog: Arc::clone(&collaboration_catalog),
+            cancellation: run_cancellation_root.clone(),
+        }))
+        .nest("/api/uar/schedules", uar::api::schedules::build_router()
+            .with_state(Arc::clone(&schedule_controller)))
+        .nest("/api/uar/followups", uar::api::followups::build_router()
+            .with_state(Arc::clone(&followup_controller)))
+        .merge(uar::api::assistant_capabilities::router(uar::api::assistant_capabilities::AssistantApiState {
+            app: state.clone(),
+            schedules: Arc::clone(&schedule_controller),
+            followups: Arc::clone(&followup_controller),
+            supervisor_registered: supervisor_recovery.is_some(),
+        }))
+        .merge(uar::api::effective_settings::router(uar::api::effective_settings::EffectiveSettingsState {
+            app: state.clone(),
+            governance: governance_status.clone(),
+        }))
         .nest(
             "/api/uar/settings",
             uar::api::settings::build_router().with_state(Arc::new(
@@ -1795,6 +1892,10 @@ async fn run_server_with_listener(
         .nest(
             "/api/uar/credentials",
             uar::api::credentials::build_router().with_state(state.provider_service.clone()),
+        )
+        .nest(
+            "/api/uar/accounting",
+            uar::api::accounting::build_router().with_state(state.clone()),
         )
         // Admin Memory API (CRUD)
         .nest(
@@ -1957,6 +2058,7 @@ async fn run_server_with_listener(
             post(uar::api::memory::save_memory_handler)
                 .get(uar::api::memory::search_memory_handler),
         )
+        .nest("/api/memory", uar::api::memory::controls_router())
         // Persistence info + SSE sync stream
         .route("/api/config/persistence", get(persistence_info_handler))
         .route("/api/uar/sync/stream", get(sync_stream_handler))
@@ -2110,7 +2212,7 @@ async fn run_server_with_listener(
     let app = if sidecar_mode {
         app
     } else {
-        app.layer(build_permissive_cors_layer())
+        app.layer(build_cors_layer(&config.server.cors_allowed_origins)?)
     };
     let app = app
         .layer(axum::middleware::from_fn(
@@ -2154,7 +2256,8 @@ async fn run_server_with_listener(
             anyhow::bail!("A2A gRPC admission activated before governance finalization");
         }
         let grpc_service =
-            crate::uar::api::a2a::grpc::GrpcAgentService::new(Arc::clone(&a2a_state));
+            crate::uar::api::a2a::grpc::GrpcAgentService::new(Arc::clone(&a2a_state))
+                .with_api_key_service(Arc::clone(&api_key_service));
         let grpc_shutdown = run_cancellation_root.clone();
         info!(name: "a2a.grpc.serving", address = %grpc_addr, "A2A gRPC transport serving");
         Some(tokio::spawn(async move {
@@ -2588,11 +2691,23 @@ fn normalize_legacy_openai_base_url(llm_config: &mut crate::config::LlmConfig) {
     }
 }
 
-fn build_permissive_cors_layer() -> CorsLayer {
-    CorsLayer::new()
-        .allow_origin(Any)
+fn build_cors_layer(origins: &[String]) -> anyhow::Result<CorsLayer> {
+    let origins = origins
+        .iter()
+        .map(|origin| {
+            anyhow::ensure!(
+                !origin.is_empty() && origin != "*" && origin != "null",
+                "server.cors_allowed_origins requires explicit non-null origins"
+            );
+            origin.parse::<HeaderValue>().map_err(|error| {
+                anyhow::anyhow!("Invalid server.cors_allowed_origins entry: {error}")
+            })
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    Ok(CorsLayer::new()
+        .allow_origin(origins)
         .allow_methods(Any)
-        .allow_headers(Any)
+        .allow_headers(Any))
 }
 
 /// POST /api/uar/runs/{run_id}/approval
@@ -2860,9 +2975,9 @@ async fn api_generate_title(Json(req): Json<GenerateTitleRequest>) -> Response {
 
 /// GET /api/models
 ///
-/// Returns the full model catalog (all providers × models from the compile-time
-/// `ModelCatalog`), enriched with a `configured` flag indicating whether the
-/// provider has a live API key registered in the `ProviderRegistry`.
+/// Returns the bundled catalog merged with configured providers and served aliases.
+/// `configured` and `enabled` reflect registry bindings, not a successful inference
+/// or the presence of an API key (local providers may not require one).
 ///
 /// Response shape:
 /// ```json
@@ -3277,7 +3392,10 @@ async fn api_context_stats(
     axum::Extension(user_ctx): axum::Extension<UserContext>,
     axum::extract::Path(session_id): axum::extract::Path<String>,
 ) -> Response {
-    let session = state.sessions.get_for_user(&session_id, &user_ctx.user_id);
+    let Ok(owner_key) = user_ctx.session_owner_key() else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+    let session = state.sessions.get_for_user(&session_id, &owner_key);
     match session {
         Some(s) => {
             let messages = s.messages();
@@ -3613,6 +3731,7 @@ async fn sync_stream_handler(
     State(state): State<AppState>,
     axum::Extension(user): axum::Extension<UserContext>,
 ) -> Response {
+    let Ok(owner_key) = user.session_owner_key() else { return StatusCode::UNAUTHORIZED.into_response(); };
     let config = &state.config.persistence;
     let is_embedded = config.database_url.starts_with("surrealkv://")
         || config.database_url.starts_with("rocksdb://")
@@ -3636,7 +3755,7 @@ async fn sync_stream_handler(
         let mut last_check = chrono::Utc::now().to_rfc3339();
 
         if let Some(ref persistence) = persistence {
-            match persistence.list_knowledge_bases(&user.user_id).await {
+            match persistence.list_knowledge_bases(&owner_key).await {
                 Ok(kbs) => {
                     yield Ok::<_, std::convert::Infallible>(
                         Event::default().event("entity.snapshot").data(
@@ -3674,7 +3793,7 @@ async fn sync_stream_handler(
             // Poll entity tables for changes since last check.
             // KnowledgeBase has an `updated_at` RFC3339 field we can compare.
             if let Some(ref persistence) = persistence {
-                match persistence.list_knowledge_bases(&user.user_id).await {
+                match persistence.list_knowledge_bases(&owner_key).await {
                     Ok(kbs) => {
                         // Compare RFC3339 strings lexicographically (valid for ISO timestamps).
                         let changed: Vec<_> = kbs.iter()
@@ -4002,49 +4121,40 @@ async fn resolve_anthropic_model(
     state: &AppState,
     requested_model: &str,
 ) -> Result<ResolvedModel, Response> {
-    let default_provider_id = match state.provider_registry.default_id().await {
-        Some(id) => id,
-        None => {
-            let providers = state.provider_registry.list().await;
-            if let Some(first) = providers.first() {
-                first.id.clone()
-            } else {
-                return Err(anthropic_error_response(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "No configured providers",
-                ));
-            }
+    let requested_model = requested_model.trim();
+    let (provider_id, mut model_id) = if let Some((provider, model)) = requested_model.split_once('/') {
+        if provider.trim().is_empty() || model.trim().is_empty()
+            || state.provider_registry.get(provider.trim()).await.is_none()
+        {
+            return Err(anthropic_error_response(
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "Select a configured provider and explicit model",
+            ));
         }
+        (provider.trim().to_owned(), model.trim().to_owned())
+    } else {
+        let provider = state.provider_registry.default_id().await.ok_or_else(|| {
+            anthropic_error_response(
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "Select a default provider and model in settings",
+            )
+        })?;
+        (provider, requested_model.to_owned())
     };
-
-    let mut provider_id = default_provider_id;
-    let mut model_id = requested_model.trim().to_string();
-
-    if let Some((provider_hint, model_hint)) = requested_model.split_once('/')
-        && !provider_hint.trim().is_empty()
-        && !model_hint.trim().is_empty()
-        && state
-            .provider_registry
-            .get(provider_hint.trim())
-            .await
-            .is_some()
-    {
-        provider_id = provider_hint.trim().to_string();
-        model_id = model_hint.trim().to_string();
-    }
 
     if model_id.is_empty()
         && let Some(provider) = state.provider_registry.get(&provider_id).await
     {
         if let Some(default_model) = provider.default_model {
-            model_id = default_model;
-        } else if let Some(first_model) = provider.models.first() {
-            model_id = first_model.id.clone();
+            model_id = default_model.trim().to_owned();
         }
     }
 
     if model_id.is_empty() {
-        model_id = "default".to_string();
+        return Err(anthropic_error_response(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "Select an explicit model in the request or provider settings",
+        ));
     }
 
     Ok(ResolvedModel {
@@ -6218,9 +6328,16 @@ pub(crate) async fn api_chat_completion(
                                         let sid = stream_session_id.clone();
                                         let mgr = Arc::clone(&state.run_manager);
                                         let rid = run_id.clone();
+                                        let admission = match svc2.capture_admission(&ctx2).await {
+                                            Ok(admission) => admission,
+                                            Err(_) => {
+                                                tracing::warn!("Memory capture policy unavailable; capture not queued");
+                                                None
+                                            }
+                                        };
                                         tokio::spawn(async move {
                                             let captured = auto_capture::capture_from_stream_end(
-                                                &svc2, &msgs, &ctx2, &aid, &sid,
+                                                &svc2, &msgs, &ctx2, &aid, &sid, admission,
                                             ).await;
                                             for mem in captured {
                                                 let memory_id = mem.id
@@ -6535,7 +6652,8 @@ pub(crate) async fn api_chat_completion(
     }
 
     if assistant_text.trim().is_empty()
-        && let Some(session) = state.sessions.get_for_user(&session_id, &user_ctx.user_id)
+        && let Ok(owner_key) = user_ctx.session_owner_key()
+        && let Some(session) = state.sessions.get_for_user(&session_id, &owner_key)
     {
         let messages = session.messages();
         if let Some(last_assistant) = messages
@@ -7240,13 +7358,13 @@ marker.write_bytes(b"stdin-closed")
     }
 
     #[tokio::test]
-    async fn cors_layer_allows_all_origins_methods_and_headers() {
+    async fn cors_layer_allows_configured_origin_methods_and_headers() {
         use axum::{Router, body::Body, http::Method, http::header, routing::get};
         use tower::ServiceExt;
 
         let app = Router::new()
             .route("/ping", get(|| async { "ok" }))
-            .layer(build_permissive_cors_layer());
+            .layer(build_cors_layer(&["https://example.com".to_owned()]).expect("valid origin"));
 
         let req = Request::builder()
             .method(Method::OPTIONS)
@@ -7280,6 +7398,32 @@ marker.write_bytes(b"stdin-closed")
                 .get(header::ACCESS_CONTROL_ALLOW_HEADERS)
                 .is_some()
         );
+    }
+
+    #[test]
+    fn cors_configuration_rejects_wildcard_and_opaque_origins() {
+        for origin in ["", "*", "null"] {
+            assert!(build_cors_layer(&[origin.to_owned()]).is_err());
+        }
+    }
+
+    #[tokio::test]
+    async fn cors_layer_omits_allow_origin_for_default_and_unlisted_origins() {
+        use axum::{Router, body::Body, http::header, routing::get};
+        use tower::ServiceExt;
+
+        for allowed in [Vec::new(), vec!["https://allowed.example".to_owned()]] {
+            let app = Router::new()
+                .route("/ping", get(|| async { "ok" }))
+                .layer(build_cors_layer(&allowed).expect("valid origin configuration"));
+            let request = Request::builder()
+                .uri("/ping")
+                .header(header::ORIGIN, "https://unlisted.example")
+                .body(Body::empty())
+                .expect("origin request");
+            let response = app.oneshot(request).await.expect("response");
+            assert!(!response.headers().contains_key(header::ACCESS_CONTROL_ALLOW_ORIGIN));
+        }
     }
 
     #[test]

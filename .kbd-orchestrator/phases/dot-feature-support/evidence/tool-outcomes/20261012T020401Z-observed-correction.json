@@ -1,0 +1,84 @@
+{
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T015608Z-production-boundary.json",
+  "changedBoundPathsSincePreviousGate": [
+    "tests/support/truthful_tool_outcome_process.rs"
+  ],
+  "hashes": {
+    "tests/support/truthful_tool_outcome_process.rs": {
+      "old": "b62f831a2b78cc1d754489aff24d53d157744eb0716fea3b2c8b04633e8e6fdd",
+      "new": "04b79e1aa819423cacb75898246b161f1c23c3f5b66625bdf5e649b288c296d6"
+    }
+  },
+  "correctionPatchSha256": "1ea71303b5b242f62347c82502835eabfae5736aece3d35b9cd65b86ab95a7f9",
+  "staticChecksScope": "Author reports50documents/10transformedpackages validated against installedjsonschema +operator-empty negative. Dynamic owner/skill modeled from existingC03shape; not actual runtime/install acceptance.",
+  "patch": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T020401Z-observed-correction.patch",
+  "tier0Commands": [
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--no-index",
+        "--check",
+        "/dev/null",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--emit",
+        "stdout",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 65965,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--check",
+        "--config",
+        "reorder_imports=false,reorder_modules=false",
+        "--file-lines",
+        "[{\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs\", \"range\": [489, 489]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs\", \"range\": [492, 497]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs\", \"range\": [503, 503]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs\", \"range\": [516, 519]}]",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "python3",
+        "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-operator-package-correction-r4ae9wju/validate_shapes.py"
+      ],
+      "exit": 0,
+      "stdout_bytes": 309,
+      "stderr_bytes": 0
+    }
+  ],
+  "staticCheckOutput": "PASS: 50 static schema documents across 10 transformed package/binding shapes; reference/lock/digest closure; operator-empty-list negative control rejected.\nLIMIT: existing C03 dynamic skill/owner shapes substituted; no production install, authority, activation, persistence, or scenario execution certified.\n",
+  "tier0Attribution": "Original author command receipt; exact correction and full source stability independently verified. Static shape checks do not certify dynamic runtime identity/installation."
+}

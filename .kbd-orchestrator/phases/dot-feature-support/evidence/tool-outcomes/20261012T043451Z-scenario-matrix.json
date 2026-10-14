@@ -1,0 +1,402 @@
+{
+  "expected": 65,
+  "entered": 63,
+  "completed": 62,
+  "failed": 1,
+  "unrun": 2,
+  "localCompleted": 30,
+  "sharedCompleted": 32,
+  "rows": [
+    {
+      "profile": "local",
+      "boundary": "production_activation_host",
+      "mode": "eligible",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "production_activation_host",
+      "mode": "denied",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "production_activation_host",
+      "mode": "missing",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/direct",
+      "mode": "success",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/scoped",
+      "mode": "success",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "manager/direct",
+      "mode": "success",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "success",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/direct",
+      "mode": "application",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/scoped",
+      "mode": "application",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "manager/direct",
+      "mode": "application",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "application",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/direct",
+      "mode": "predispatch",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/scoped",
+      "mode": "predispatch",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "manager/direct",
+      "mode": "predispatch",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "predispatch",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/direct",
+      "mode": "unknown",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "registry/scoped",
+      "mode": "unknown",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "manager/direct",
+      "mode": "unknown",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "unknown",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "server_process",
+      "mode": "success",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "server_process",
+      "mode": "application",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "server_process",
+      "mode": "predispatch",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "server_process",
+      "mode": "unknown",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "team_process",
+      "mode": "success",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "team_process",
+      "mode": "application",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "team_process",
+      "mode": "unknown",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "team_process",
+      "mode": "no_tool",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "instance_process",
+      "mode": "success",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "instance_process",
+      "mode": "application",
+      "status": "completed"
+    },
+    {
+      "profile": "local",
+      "boundary": "instance_process",
+      "mode": "unknown",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "production_activation_host",
+      "mode": "eligible",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "production_activation_host",
+      "mode": "denied",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "production_activation_host",
+      "mode": "missing",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/direct",
+      "mode": "success",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/scoped",
+      "mode": "success",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "manager/direct",
+      "mode": "success",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "success",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/direct",
+      "mode": "application",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/scoped",
+      "mode": "application",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "manager/direct",
+      "mode": "application",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "application",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/direct",
+      "mode": "predispatch",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/scoped",
+      "mode": "predispatch",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "manager/direct",
+      "mode": "predispatch",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "predispatch",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/direct",
+      "mode": "unknown",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "registry/scoped",
+      "mode": "unknown",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "manager/direct",
+      "mode": "unknown",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "scoped_authenticated_binary",
+      "mode": "unknown",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "server_process",
+      "mode": "success",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "server_process",
+      "mode": "application",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "server_process",
+      "mode": "predispatch",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "server_process",
+      "mode": "unknown",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_process",
+      "mode": "success",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_process",
+      "mode": "application",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_process",
+      "mode": "unknown",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_process",
+      "mode": "no_tool",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_recovery_process",
+      "mode": "known-application-failure",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_recovery_process",
+      "mode": "legacy",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_recovery_process",
+      "mode": "native-legacy-failure",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_recovery_process",
+      "mode": "same-name-unrelated-native",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "team_process",
+      "mode": "legacy-hold",
+      "status": "completed"
+    },
+    {
+      "profile": "shared",
+      "boundary": "instance_process",
+      "mode": "success",
+      "status": "failed-during-durable-instance-readback"
+    },
+    {
+      "profile": "shared",
+      "boundary": "instance_process",
+      "mode": "application",
+      "status": "unrun"
+    },
+    {
+      "profile": "shared",
+      "boundary": "instance_process",
+      "mode": "unknown",
+      "status": "unrun"
+    }
+  ],
+  "basis": "Local aggregate11binary rows+8protocol rows+3activation controls; shared ordered progression through historical4/legacyhold and first instance, retained actual vectors/events/terminal/artifact/concurrent/restart evidence. Shared aggregate process receipt not written because abort."
+}

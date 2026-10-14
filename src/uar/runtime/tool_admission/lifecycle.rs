@@ -32,6 +32,21 @@ pub enum AdmissionCancellationOutcome {
 pub enum AdmissionTerminalOutcome {
     Succeeded,
     Failed,
+    ApplicationFailed,
+    TransportFailed,
+    OutcomeUnknown,
+}
+
+impl From<crate::mcp::outcome::ToolOutcome> for AdmissionTerminalOutcome {
+    fn from(outcome: crate::mcp::outcome::ToolOutcome) -> Self {
+        use crate::mcp::outcome::ToolOutcome;
+        match outcome {
+            ToolOutcome::Succeeded => Self::Succeeded,
+            ToolOutcome::ApplicationFailed => Self::ApplicationFailed,
+            ToolOutcome::TransportFailed => Self::TransportFailed,
+            ToolOutcome::OutcomeUnknown => Self::OutcomeUnknown,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -247,7 +262,7 @@ impl AdmissionLifecycle {
     pub(super) async fn finish(
         &self,
         admitted: &AdmittedToolInvocation,
-        succeeded: bool,
+        outcome: AdmissionTerminalOutcome,
     ) -> anyhow::Result<()> {
         let invocation = admitted.prepared.as_ref();
         let cell = self
@@ -264,14 +279,20 @@ impl AdmissionLifecycle {
         self.save_evidence(&ToolAdmissionEvidence::new(
             invocation,
             &admitted.host_receipt.admission_id,
-            if succeeded {
-                ToolAdmissionEvidenceState::Succeeded
-            } else {
-                ToolAdmissionEvidenceState::Failed
+            match outcome {
+                AdmissionTerminalOutcome::Succeeded => ToolAdmissionEvidenceState::Succeeded,
+                AdmissionTerminalOutcome::Failed => ToolAdmissionEvidenceState::Failed,
+                AdmissionTerminalOutcome::ApplicationFailed => ToolAdmissionEvidenceState::ApplicationFailed,
+                AdmissionTerminalOutcome::TransportFailed => ToolAdmissionEvidenceState::TransportFailed,
+                AdmissionTerminalOutcome::OutcomeUnknown => ToolAdmissionEvidenceState::OutcomeUnknown,
             },
         ))
         .await?;
-        *state = LiveState::Terminal;
+        *state = if outcome == AdmissionTerminalOutcome::OutcomeUnknown {
+            LiveState::ClaimedUnknown
+        } else {
+            LiveState::Terminal
+        };
         Ok(())
     }
 
@@ -464,16 +485,29 @@ impl ToolAdmissionRuntime {
         admitted: &AdmittedToolInvocation,
         succeeded: bool,
     ) -> anyhow::Result<()> {
-        self.lifecycle.finish(admitted, succeeded).await?;
+        self.finish_outcome(
+            admitted,
+            if succeeded {
+                AdmissionTerminalOutcome::Succeeded
+            } else {
+                AdmissionTerminalOutcome::Failed
+            },
+        )
+        .await
+    }
+
+    /// Persist truthful execution certainty; unknown claims remain held.
+    pub async fn finish_outcome(
+        &self,
+        admitted: &AdmittedToolInvocation,
+        outcome: AdmissionTerminalOutcome,
+    ) -> anyhow::Result<()> {
+        self.lifecycle.finish(admitted, outcome).await?;
         self.host
             .finish(
                 admitted.prepared.as_ref(),
                 &admitted.host_receipt.admission_id,
-                if succeeded {
-                    AdmissionTerminalOutcome::Succeeded
-                } else {
-                    AdmissionTerminalOutcome::Failed
-                },
+                outcome,
             )
             .await
     }

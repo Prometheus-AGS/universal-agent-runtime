@@ -138,7 +138,7 @@ async fn current_agent_by_session(
 
     let Some(run) = state
         .run_manager
-        .get_run_by_session_id_for_user(&user.user_id, &session_id)
+        .get_run_by_session_id_for_context(&user, &session_id)
         .await
     else {
         return (
@@ -629,23 +629,10 @@ pub(crate) async fn load_conversation_policy(
         .0
 }
 
-fn conversation_policy_owner_key(user: &UserContext) -> String {
-    crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user)
-        .map(|owner| owner.presentation_owner_key())
-        .unwrap_or_else(|_| user.user_id.clone())
-}
-
-fn conversation_policy_cache_key(user: &UserContext, conversation_id: &str) -> String {
-    let key = crate::uar::persistence::tenant_storage_key(
-        &conversation_policy_owner_key(user),
-        conversation_id,
-    );
-    if crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user).is_ok() {
-        // Legacy keys always start with the numeric subject length.
-        format!("principal-policy:{key}")
-    } else {
-        key
-    }
+fn conversation_policy_cache_key(owner_key: &str, conversation_id: &str) -> String {
+    let key = crate::uar::persistence::tenant_storage_key(owner_key, conversation_id);
+    if owner_key == crate::session::ANONYMOUS_SESSION_OWNER { key }
+    else { format!("principal-policy:{key}") }
 }
 
 async fn persist_policy_for_user(
@@ -654,7 +641,9 @@ async fn persist_policy_for_user(
     record: &ConversationPolicyRecord,
     expected: Option<&RunPolicy>,
 ) -> anyhow::Result<bool> {
-    if crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user).is_ok() {
+    let owner_key = user.session_owner_key()?;
+    anyhow::ensure!(record.owner_id == owner_key, "Conversation policy owner mismatch");
+    if owner_key != crate::session::ANONYMOUS_SESSION_OWNER {
         persistence
             .save_principal_conversation_policy(record, expected)
             .await
@@ -669,11 +658,8 @@ async fn principal_policy_before_write(
     user: &UserContext,
     conversation_id: &str,
 ) -> anyhow::Result<Option<RunPolicy>> {
-    let Ok(owner) = crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user)
-    else {
-        return Ok(None);
-    };
-    let key = owner.presentation_owner_key();
+    let key = user.session_owner_key()?;
+    if key == crate::session::ANONYMOUS_SESSION_OWNER { return Ok(None); }
     let record = persistence
         .load_principal_conversation_policy(&key, conversation_id)
         .await?;
@@ -699,6 +685,7 @@ async fn load_conversation_policy_with_status(
     user: &UserContext,
     conversation_id: &str,
 ) -> (Option<RunPolicy>, bool) {
+    let Ok(owner_key) = user.session_owner_key() else { return (None, true); };
     let mut unavailable = false;
     let verified =
         crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user).ok();
@@ -721,22 +708,8 @@ async fn load_conversation_policy_with_status(
         }
     }
     let sessions = state.agent_sessions.read().await;
-    let scoped_key = conversation_policy_cache_key(user, conversation_id);
-    let policy = if let Some(config) = sessions.get(&scoped_key) {
-        Some(config.clone().into_run_policy())
-    } else {
-        sessions
-            .get(&crate::uar::persistence::tenant_storage_key(
-                &user.user_id,
-                conversation_id,
-            ))
-            .cloned()
-            .map(|config| {
-                let mut policy = config.into_run_policy();
-                policy.presentations = ResourceSelection::default();
-                policy
-            })
-    };
+    let scoped_key = conversation_policy_cache_key(&owner_key, conversation_id);
+    let policy = sessions.get(&scoped_key).cloned().map(AgentSessionConfig::into_run_policy);
     (policy, unavailable)
 }
 
@@ -802,8 +775,11 @@ async fn policy_universe(
         }
     }
     let mut knowledge_bases = std::collections::BTreeSet::new();
+    let knowledge_owner = verified_owner.and_then(|owner| owner.session_owner_key().ok())
+        .or_else(|| (owner_id == crate::session::ANONYMOUS_SESSION_OWNER).then(|| owner_id.to_owned()));
     if let Some(persistence) = &state.persistence
-        && let Ok(records) = persistence.list_knowledge_bases(owner_id).await
+        && let Some(knowledge_owner) = knowledge_owner
+        && let Ok(records) = persistence.list_knowledge_bases(&knowledge_owner).await
     {
         for knowledge_base in records {
             knowledge_bases.insert(knowledge_base.id);
@@ -874,8 +850,11 @@ pub async fn save_agent_session_config(
     Path(session_id): Path<String>,
     Json(mut config): Json<AgentSessionConfig>,
 ) -> impl IntoResponse {
+    let Ok(owner_key) = user.session_owner_key() else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
     let Some(persistence) = &state.persistence else {
-        let key = conversation_policy_cache_key(&user, &session_id);
+        let key = conversation_policy_cache_key(&owner_key, &session_id);
         let mut sessions = state.agent_sessions.write().await;
         if config.presentations.is_none() {
             config.presentations = Some(
@@ -923,7 +902,7 @@ pub async fn save_agent_session_config(
         persistence.as_ref(),
         &user,
         &ConversationPolicyRecord::new_for_user(
-            conversation_policy_owner_key(&user),
+            owner_key.clone(),
             session_id.clone(),
             policy,
         ),
@@ -943,7 +922,7 @@ pub async fn save_agent_session_config(
         }
     }
     state.agent_sessions.write().await.insert(
-        conversation_policy_cache_key(&user, &session_id),
+        conversation_policy_cache_key(&owner_key, &session_id),
         config.clone(),
     );
     (StatusCode::OK, Json(config)).into_response()
@@ -1100,6 +1079,9 @@ pub async fn save_conversation_policy(
     Path(conversation_id): Path<String>,
     Json(update): Json<ConversationPolicyUpdate>,
 ) -> impl IntoResponse {
+    let Ok(owner_key) = user.session_owner_key() else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
     let Some(persistence) = &state.persistence else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -1140,7 +1122,7 @@ pub async fn save_conversation_policy(
         }
     };
     let record = ConversationPolicyRecord::new_for_user(
-        conversation_policy_owner_key(&user),
+        owner_key.clone(),
         conversation_id.clone(),
         policy,
     );
@@ -1188,9 +1170,11 @@ pub async fn delete_conversation_policy(
     Extension(user): Extension<UserContext>,
     Path(conversation_id): Path<String>,
 ) -> impl IntoResponse {
-    let key = conversation_policy_owner_key(&user);
-    let verified =
-        crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(&user).is_ok();
+    let Ok(owner_key) = user.session_owner_key() else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+    let key = owner_key.clone();
+    let verified = owner_key != crate::session::ANONYMOUS_SESSION_OWNER;
     let result = if let Some(persistence) = &state.persistence {
         if verified {
             let expected =
@@ -1248,7 +1232,7 @@ pub async fn delete_conversation_policy(
         .agent_sessions
         .write()
         .await
-        .remove(&conversation_policy_cache_key(&user, &conversation_id));
+        .remove(&conversation_policy_cache_key(&owner_key, &conversation_id));
     StatusCode::NO_CONTENT.into_response()
 }
 
@@ -1263,6 +1247,9 @@ pub async fn delete_session(
     Extension(user): Extension<UserContext>,
     Path(session_id): Path<String>,
 ) -> impl IntoResponse {
+    let Ok(owner_key) = user.session_owner_key() else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
     let Some(persistence) = &state.persistence else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -1270,7 +1257,7 @@ pub async fn delete_session(
         )
             .into_response();
     };
-    let owner_id = &user.user_id;
+    let owner_id = &owner_key;
     match persistence.delete_session(owner_id, &session_id).await {
         Ok(true) => {
             // Evict from the in-memory session store.

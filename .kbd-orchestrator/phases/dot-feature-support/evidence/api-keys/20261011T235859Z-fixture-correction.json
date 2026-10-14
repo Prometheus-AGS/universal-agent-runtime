@@ -1,0 +1,13 @@
+{
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235337Z-production-boundary.json",
+  "changedBoundPathsSincePreviousGate": [
+    "tests/support/api_key_process.rs"
+  ],
+  "path": "tests/support/api_key_process.rs",
+  "oldSha256": "620b5e78d6897de6aa00d06129cdcc3f6dfac7cd1f9c1e0bf62760c4d544319b",
+  "newSha256": "084da5a43f9b38e0ca30f08de713b1a97f27630cbd1bed021b2e3312180928ef",
+  "correctionPatch": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-fixture-correction.patch",
+  "correctionPatchSha256": "93d5472ec8c5eeb3dc409c63bfbf9e0a8621b4d28089025f455893c28d04a9ee",
+  "observedFailure": "E0603 crate-private fixture JWT encoder",
+  "correction": "Use existing public jsonwebtoken::encode; Header/claims/EncodingKey/expect unchanged."
+}

@@ -1,0 +1,486 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-12T09:53:01.994914+00:00",
+  "phase": "Execute",
+  "change": "dot-06-fresh-process-resume",
+  "task": "1",
+  "canonicalRevision": 2711,
+  "planRevision": 9,
+  "headAtStart": "b4244aeaa7e931240ae0f09ae31bae3f45bda244",
+  "headAtHandoff": "b4244aeaa7e931240ae0f09ae31bae3f45bda244",
+  "status": "source_complete_awaiting_root_authorized_production_gate",
+  "accepted": false,
+  "productionVerified": false,
+  "sourceFiles": [
+    {
+      "path": "src/uar/api/routes.rs",
+      "beforeSha256": "1831ab4c546cc885570296bf4da44d6fcb00c3046689067ce2c5036578ed0fc0",
+      "afterSha256": "3ad526ab66218fa0a68bc0c045a2ba11c123152d5656c15103ceb2f19c34c1de",
+      "newFile": false,
+      "bytes": 66873,
+      "change": "Durable owner-bound checkpoint lookup before live state; current artifact/session/history/resource checks; current catalog and verified-target renewal; exact host claim execution and typed errors."
+    },
+    {
+      "path": "src/uar/runtime/manager.rs",
+      "beforeSha256": "ffbeaa9fa3e90fdd7f5a0d62fc2348315cf4b832f4f81dfaad5d8c5b509d4c6f",
+      "afterSha256": "14186ae9d6771d7718cfa17bb10360214451349e6bf9e1b08d16b4a3348607f4",
+      "newFile": false,
+      "bytes": 362284,
+      "change": "Owned producer joins and assembly shutdown fence; durable uncertain-effect exclusion checks; private one-use resume permit bound to durable source/revision/owner/epoch/request; explicit opaque host definition limits; awaited checkpoint writes."
+    },
+    {
+      "path": "src/uar/persistence/mod.rs",
+      "beforeSha256": "e9129e29804d2680e4e753ad0a29544b584ffde604e61dd8c1df9d83734baff1",
+      "afterSha256": "01f7fdc2994297fd11abadc40ee25279c6802277cc2548f436c62f759c648e9a",
+      "newFile": false,
+      "bytes": 27128,
+      "change": "Protected resume persistence contract and explicit unsupported defaults, including legacy checkpoint methods."
+    },
+    {
+      "path": "src/uar/persistence/providers/surreal.rs",
+      "beforeSha256": "6de14bca51284f5d6391b6975137245a527cb1117ed7587e7c57d3200ae37a94",
+      "afterSha256": "464ac4ffa44b398663a526d72b8aad21561c9a6af0b8a06d00235361874c65b9",
+      "newFile": false,
+      "bytes": 141388,
+      "change": "Constructor-captured durability gate and real checkpoint/envelope/claim/epoch provider delegation; unsupported memory/unattested profiles refuse."
+    },
+    {
+      "path": "src/uar/runtime/graph/types.rs",
+      "beforeSha256": "3c3786ecd7532ce08f4abddb63fc853fbd88a4d2526c805a00d6f1ba251a7cd5",
+      "afterSha256": "1d9e822fb79f354fbc82eaa0a477812cefdb33f0fdbe98c385f7f83d6d8d2d7e",
+      "newFile": false,
+      "bytes": 5702,
+      "change": "Checkpoint intent result; raw persistence removed from GraphContext."
+    },
+    {
+      "path": "src/uar/runtime/graph/engine.rs",
+      "beforeSha256": "db04863ef6ffc892f186742135cbd44cb03f5e32b1a6ca8ba82cd4486fbbf53a",
+      "afterSha256": "5af0ceaf4563372a09172c8a9fb8a22263ad7b93ef32df7102b505ab4653c9c8",
+      "newFile": false,
+      "bytes": 9714,
+      "change": "Trusted-host-only checkpoint handling and propagated checkpoint failure."
+    },
+    {
+      "path": "src/uar/runtime/graph/nodes/checkpoint_node.rs",
+      "beforeSha256": "20d92223bad0856a72755f3b18dee63880fafa2be47c7afe73875685f8a33a59",
+      "afterSha256": "14929d954d5c8aa4702aebe4e25e1f4d44f4c7676df164645942f763a5a1996d",
+      "newFile": false,
+      "bytes": 1901,
+      "change": "Graph node emits checkpoint intent and holds no write capability."
+    },
+    {
+      "path": "src/uar/runtime/mod.rs",
+      "beforeSha256": "0fb011afe8de588214726c48b1eeae724cbc8f1257c974aed23f3546f038d066",
+      "afterSha256": "f07515f5abec2fdb8714a9f0f32976c8effea29ecd5cc4a12ed3d51955d8bde0",
+      "newFile": false,
+      "bytes": 594,
+      "change": "Declare concrete trusted checkpoint host module."
+    },
+    {
+      "path": "tests/test_checkpoint.rs",
+      "beforeSha256": "b29336edbbd93b1cea7f34f05034bb2a29ce271787f7f7603b517f357b9769c3",
+      "afterSha256": "c1fd41e0662836856e21a11057ba9ecc1130b9c5d6870a75cbf39d4293ba91f4",
+      "newFile": false,
+      "bytes": 4808,
+      "change": "Constructor adaptation for removed kernel persistence authority."
+    },
+    {
+      "path": "tests/context_history_integrity.rs",
+      "beforeSha256": "05169738267805048dc38023dbd42e656d48fa6bcd6bda268e9ffe7ef6791975",
+      "afterSha256": "514c1b3f80573930eb9f8668b291225505391bf59bf9e42841a9cf98a3effa2e",
+      "newFile": false,
+      "bytes": 83841,
+      "change": "Constructor adaptation and the approved legacy raw-checkpoint denial test with a verified synthetic principal and unchanged execution/history assertions."
+    },
+    {
+      "path": "tests/test_agent_node.rs",
+      "beforeSha256": "689044767c60b2991f35eacfbc9e35a06d09bda9aacbfe4723ad7b917c32872d",
+      "afterSha256": "6252694d4be13c388450f57088c34bdc80f892cdeda4b5a8e6dbfed64a9dc52d",
+      "newFile": false,
+      "bytes": 4533,
+      "change": "GraphContext constructor span adaptation only."
+    },
+    {
+      "path": "tests/test_graph_execution.rs",
+      "beforeSha256": "0986fdee46749d9b5ad307d1ed527ad65e92618ffc0500bd2253b98b9f8b5cab",
+      "afterSha256": "644ce0173fafcc142844d8af9812e707a34bfc63a844a3903feb969d6bf779d4",
+      "newFile": false,
+      "bytes": 7985,
+      "change": "GraphContext constructor span adaptation only."
+    },
+    {
+      "path": "tests/stream_terminal_contract.rs",
+      "beforeSha256": "58afee293a0c884fd47b52f233baede31b27d24eab21ecf132573b97da3db69c",
+      "afterSha256": "bb69dfa9889ee7de1c478174db38de6705b543fd065bf16a7f3b44a6e83be031",
+      "newFile": false,
+      "bytes": 31232,
+      "change": "Synthetic helper now verifies a signed JWT through the public authentication API; existing stream/tool/accounting assertions preserved."
+    },
+    {
+      "path": "src/uar/persistence/checkpoint_resume.rs",
+      "beforeSha256": null,
+      "afterSha256": "37d392a97e9900b62a784d908dac80d1e7e90c11e1c9d672b7cf06053ff63523",
+      "newFile": true,
+      "bytes": 8089,
+      "change": "Versioned complete-owner envelope, exact projected byte/revision binding, actual host execution definition, typed refusal and continuation identity."
+    },
+    {
+      "path": "src/uar/persistence/providers/checkpoint_records/surreal.rs",
+      "beforeSha256": null,
+      "afterSha256": "3a1ef3de3643922fcbeb1e0ae18f6cb2bb2114c884fc5fcf3a82e054bcdb6d9f",
+      "newFile": true,
+      "bytes": 10961,
+      "change": "Atomic checkpoint plus envelope transaction; source/executor epoch fences; immutable continuation CAS; explicit transaction error handling and durable readback; orderly exclusion transaction."
+    },
+    {
+      "path": "src/uar/runtime/checkpoint_host.rs",
+      "beforeSha256": null,
+      "afterSha256": "36b66bf02e66a585077322e155dac6667fdcab4dce49121eb571415baedddd54",
+      "newFile": true,
+      "bytes": 4072,
+      "change": "Host-only source/owner/current-binding checkpoint writer with secret projection and explicit captured authorization digest."
+    },
+    {
+      "path": "tests/fresh_process_resume.rs",
+      "beforeSha256": null,
+      "afterSha256": "8d712e5168bd4c079c5cf7c6d1dec063a5456cddcb8fc94eb16ebe45652a8eed",
+      "newFile": true,
+      "bytes": 454,
+      "change": "One full public production integration entrypoint, no filtered/module/mock completion."
+    },
+    {
+      "path": "tests/support/fresh_process_resume_process.rs",
+      "beforeSha256": null,
+      "afterSha256": "266752c74b00e558c942f557b943978f3e972119f42d29c09dfefaf2ef2652dd",
+      "newFile": true,
+      "bytes": 32483,
+      "change": "Actual binary OS processes, verified JWT public APIs, controlled HTTP/MCP protocols, real KV/shared DB, restart/race/crash/owner/policy/binding/artifact/target/unsupported scenarios."
+    },
+    {
+      "path": "tests/fixtures/fresh_process_resume_mcp.py",
+      "beforeSha256": null,
+      "afterSha256": "f77a76d81a93bf40fe579fb9e2d28f16d2835903ecef44ddecb88e0681b73059",
+      "newFile": true,
+      "bytes": 2223,
+      "change": "Controlled stdio MCP provider with fsynced private exact-PID/effect protocol traces and deterministic uncertain effects."
+    },
+    {
+      "path": "docs/operations/fresh-process-resume.md",
+      "beforeSha256": null,
+      "afterSha256": "2f7c71f6d34606b6d4ddf0ca402354db422cc2e31edb87f21c29cb15e9f089b7",
+      "newFile": true,
+      "bytes": 12178,
+      "change": "Operator API/storage/shutdown/renewal/limitations contract and serialized local production gate."
+    }
+  ],
+  "sourceFileCount": 20,
+  "privateSnapshotRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-source-mta50t3m",
+  "privatePatch": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-source-mta50t3m/implementation.patch",
+  "patchSha256": "a01f0200e62c26c19036f32ae94903044b5457618f67d324be09ac0955505593",
+  "earlierChecks": {
+    "historicalOnly": true,
+    "currentBytesCertified": false,
+    "receipt": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-source-mta50t3m/tier0.jsonl",
+    "records": [
+      {
+        "at": "2026-10-12T08:36:35.752415+00:00",
+        "command": "rustfmt --edition 2024 --emit stdout src/uar/persistence/checkpoint_resume.rs >/dev/null; git diff --check -- src/uar/persistence/mod.rs",
+        "observed": "exit 0; no output",
+        "tier": 0
+      },
+      {
+        "at": "2026-10-12T08:38:29.794339+00:00",
+        "commands": [
+          "rustfmt --edition 2024 --emit stdout src/uar/persistence/checkpoint_resume.rs >/dev/null",
+          "rustfmt --edition 2024 --emit stdout src/uar/persistence/providers/checkpoint_records/surreal.rs >/dev/null",
+          "git diff --check -- src/uar/persistence/mod.rs src/uar/persistence/providers/surreal.rs"
+        ],
+        "observed": "exit 0; no output",
+        "tier": 0
+      },
+      {
+        "at": "2026-10-12T08:39:31.494351+00:00",
+        "tier": 0,
+        "results": [
+          {
+            "command": "rustfmt --edition 2024 --emit stdout src/uar/runtime/checkpoint_host.rs",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "command": "rustfmt --edition 2024 --emit stdout src/uar/runtime/graph/types.rs",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "command": "rustfmt --edition 2024 --emit stdout src/uar/runtime/graph/nodes/checkpoint_node.rs",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "command": "rustfmt --edition 2024 --emit stdout src/uar/runtime/graph/engine.rs",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "command": "git diff --check -- changed graph/checkpoint host files",
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        ]
+      },
+      {
+        "at": "2026-10-12T08:43:32.202939+00:00",
+        "tier": 0,
+        "results": [
+          {
+            "command": "rustfmt --edition 2024 --emit stdout src/uar/runtime/manager.rs",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "command": "git diff --check -- src/uar/runtime/manager.rs",
+            "exit": 0,
+            "stdout": ""
+          }
+        ]
+      },
+      {
+        "at": "2026-10-12T08:47:13.708442+00:00",
+        "tier": 0,
+        "results": [
+          {
+            "command": "rustfmt --edition 2024 --emit stdout src/uar/api/routes.rs",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "command": "rustfmt --edition 2024 --emit stdout src/uar/runtime/manager.rs",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "command": "rustfmt --edition 2024 --emit stdout tests/test_checkpoint.rs",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "command": "rustfmt --edition 2024 --emit stdout tests/context_history_integrity.rs",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "command": "rustfmt --edition 2024 --emit stdout tests/test_agent_node.rs",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "command": "rustfmt --edition 2024 --emit stdout tests/test_graph_execution.rs",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "command": "git diff --check -- changed API and constructor fixtures",
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        ]
+      },
+      {
+        "at": "2026-10-12T08:57:16.200417+00:00",
+        "tier": 0,
+        "results": [
+          {
+            "command": "rustfmt --edition 2024 --emit stdout tests/fresh_process_resume.rs",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "command": "rustfmt --edition 2024 --emit stdout tests/support/fresh_process_resume_process.rs",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "command": "rustfmt --edition 2024 --emit stdout tests/stream_terminal_contract.rs",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "command": "ast.parse tests/fixtures/fresh_process_resume_mcp.py",
+            "exit": 0
+          },
+          {
+            "command": "git diff --check -- owned production and fixtures",
+            "exit": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        ]
+      }
+    ]
+  },
+  "currentVerification": {
+    "cargoRun": false,
+    "compilerRun": false,
+    "buildRun": false,
+    "testsRun": false,
+    "lintRun": false,
+    "reviewRun": false,
+    "reason": "Updated AGENTS hourly whole-slice boundary and root gate ownership; all source and fixtures completed first."
+  },
+  "sourceContract": {
+    "atomicCheckpoint": "checkpoint_runtime_epochs active/fence plus CREATE checkpoints and immutable owner-bound checkpoint_resume_envelopes in one transaction, errors scanned and protected readback matched.",
+    "atomicClaim": "Exact protected envelope/revision plus orderly_excluded predecessor and active/fenced executor incarnation; unique complete-owner/source-run checkpoint_resume_claims CREATE; matching durable readback required before permit.",
+    "atomicExclusion": "Host cancellation and assembly fence followed by retained ordinary/actor/root/descendant/terminal/sandbox joins and no pending/unknown canonical/admission effects; then transaction writes orderly_excluded and requires readback.",
+    "resumeAdmission": "Protected load before live lookup; full issuer/tenant/subject ownership; current artifact/bindings/policy/resources; private one-use permit binds exact durable continuation, revision, epoch, authenticated owner and reconstructed request; consumed before history/resource/model work.",
+    "duplicate": "Same source continuation is held forever in this slice; duplicate or another checkpoint returns explicit conflict and never starts new execution.",
+    "kernelBoundary": "GraphContext has no PersistenceLayer; CheckpointNode emits NodeResult::Checkpoint intent; concrete CheckpointHost is supplied to the host executor only.",
+    "productionSignalPath": "Existing server async shutdown hook calls shutdown_sandboxes after actor/graph/terminal hooks; committed epoch proof is produced there only after manager checks. Source-wired, not runtime-verified."
+  },
+  "guards": [
+    {
+      "name": "protected_metadata_before_live_lookup",
+      "requirement": "Observed R5 live-run lookup prevented fresh-process resume.",
+      "files": [
+        "src/uar/api/routes.rs"
+      ]
+    },
+    {
+      "name": "complete_principal_owner",
+      "requirement": "Plan6 and existing principal credentials partition issuer/tenant/subject.",
+      "files": [
+        "src/uar/persistence/checkpoint_resume.rs",
+        "src/uar/api/routes.rs"
+      ]
+    },
+    {
+      "name": "kernel_checkpoint_write_inversion",
+      "requirement": "AGENTS kernels never write; observed direct CheckpointNode persistence save/warn path.",
+      "files": [
+        "src/uar/runtime/graph/types.rs",
+        "src/uar/runtime/graph/nodes/checkpoint_node.rs",
+        "src/uar/runtime/graph/engine.rs",
+        "src/uar/runtime/checkpoint_host.rs"
+      ]
+    },
+    {
+      "name": "atomic_source_revision_and_executor_claim",
+      "requirement": "Plan6 duplicate/race and killed claimant may not create another execution.",
+      "files": [
+        "src/uar/persistence/providers/checkpoint_records/surreal.rs",
+        "src/uar/runtime/manager.rs"
+      ]
+    },
+    {
+      "name": "legacy_adapter_requires_private_exact_claim",
+      "requirement": "Observed public compatibility adapter accepted checkpoint state without durable admission.",
+      "files": [
+        "src/uar/runtime/manager.rs",
+        "tests/context_history_integrity.rs"
+      ]
+    },
+    {
+      "name": "joined_predecessor_not_signal_or_expiry",
+      "requirement": "Plan6 predecessor may still execute and unknown tools cannot replay; late in-flight assembly publication must be included.",
+      "files": [
+        "src/uar/runtime/manager.rs"
+      ]
+    },
+    {
+      "name": "unsupported_backend_explicit_zero_execution",
+      "requirement": "Observed success no-op checkpoint defaults and unsupported PostgreSQL requirement.",
+      "files": [
+        "src/uar/persistence/mod.rs",
+        "src/uar/persistence/providers/surreal.rs",
+        "tests/support/fresh_process_resume_process.rs"
+      ]
+    },
+    {
+      "name": "actual_restorable_host_definition",
+      "requirement": "Plan6 complete source: opaque graphs/callbacks and unrenewable host grants cannot silently become artifact-default runs.",
+      "files": [
+        "src/uar/persistence/checkpoint_resume.rs",
+        "src/uar/runtime/manager.rs",
+        "src/uar/api/routes.rs"
+      ]
+    },
+    {
+      "name": "current_target_and_binding_renewal",
+      "requirement": "Plan6 current bindings and protected definition; ordinary catalog policy must not be blanket-disabled.",
+      "files": [
+        "src/uar/api/routes.rs",
+        "src/uar/runtime/checkpoint_host.rs",
+        "src/uar/runtime/manager.rs"
+      ]
+    },
+    {
+      "name": "complete_gate_requires_postgres_feature",
+      "requirement": "Cargo.toml server-full omits postgres-backend; required unsupported-PG proof otherwise skips.",
+      "files": [
+        "tests/support/fresh_process_resume_process.rs"
+      ]
+    }
+  ],
+  "productionGate": {
+    "owner": "root",
+    "serialized": true,
+    "resumeCommand": "cargo test --locked --no-default-features --features server-full,postgres-backend --test fresh_process_resume -- --nocapture --test-threads=1",
+    "requiredEnvironment": [
+      "UAR_DOT06_INFRA_FILE=<retained private disposable manifest>",
+      "UAR_DOT06_NAMESPACE=<fresh isolated namespace>",
+      "UAR_DOT06_EVIDENCE_ROOT=<preserved private directory>",
+      "UAR_REMOTE_SURREAL_DURABILITY_ATTESTED=1"
+    ],
+    "actualEntry": "Production CARGO_BIN_EXE_universal-agent-runtime binary, public JWT middleware/run/approval/policy/provider-verification/checkpoint/resume APIs and real durable DB records.",
+    "authoredScenarioGroups": 24,
+    "scenarioExecutionVerified": false,
+    "scenarioGroups": {
+      "eachLocalAndShared": [
+        "resume",
+        "target",
+        "negative",
+        "policy",
+        "binding",
+        "abrupt",
+        "uncertain",
+        "kill-before",
+        "kill-after",
+        "corrupt"
+      ],
+      "sharedOnly": [
+        "race"
+      ],
+      "unsupported": [
+        "memory",
+        "unattested remote",
+        "PostgreSQL"
+      ]
+    },
+    "customerArtifact": "Cargo integration build supplies the actual production runtime binary; record its actual produced path/hash at gate.",
+    "affectedPreviousTarget": "stream_terminal_contract whole target must rerun because owned authentication/graph checkpoint behavior changed; retain prior05 receipt as historical only.",
+    "streamCommand": "env -u BEDROCK_BASE_URL -u BEDROCK_CROSS_REGION VERTEXAI_PROJECT=dot05-fixture VERTEXAI_LOCATION=us-central1 UAR_DOT05_INFRA_FILE=<private manifest> UAR_DOT05_NAMESPACE=<fresh isolated namespace> cargo test --locked --no-default-features --features server-full --test stream_terminal_contract -- --nocapture --test-threads=1"
+  },
+  "limitations": [
+    "No compilation, parsing, current whitespace, runtime, real process, transactional semantics or current stream regression acceptance has been claimed for these final bytes; production gate is pending.",
+    "Synthetic protocol peers do not prove genuine provider inference or arbitrary remote durability; attestation is constructor-captured and must be operator-qualified.",
+    "Opaque host graph overrides and with_llm_driver callbacks have no trusted durable reconstruction and refuse before claim.",
+    "Resume ingress has no delegated full-harness admission, remote usage/budget/sandbox, team-attempt, private-instance, or inherited-child renewal fields; those exact source shapes are non-restorable. No old grants are deserialized.",
+    "Ordinary catalog/context and existing verified model targets use current host protocols, but this binary fixture does not qualify catalog installation or embedding-specific callback workflows.",
+    "Abrupt source or claimant recovery, exclusion/reconciliation, and claim reassignment remain planned supervisor change11; this slice holds all uncertain work.",
+    "Budget durability remains later planned work; checkpoint persistence never carries budget/usage grant authority.",
+    "Existing session deletion does not cascade legacy checkpoints; new resume metadata follows that existing retention limitation and retention change13 must resolve the final policy. No adjacent deletion rewrite was made."
+  ],
+  "unrequestedAdditions": [],
+  "preservation": {
+    "reset": false,
+    "stash": false,
+    "commit": false,
+    "push": false,
+    "pinsEdited": false,
+    "otherEditsReverted": false,
+    "newDependencies": false
+  },
+  "capacityHistory": "Root reported initial model-capacity failures and authorized retries; those failures are not execution or verification receipts."
+}

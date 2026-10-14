@@ -1,0 +1,14 @@
+{
+  "recorded_at": "2026-10-13T08:12:28.380521+00:00",
+  "gate": "candidate-build",
+  "command_result": "passed",
+  "receipt_path": "/tmp/uar-dot17-validation-20261013/candidate-attempt-04/candidate_build/receipt.json",
+  "receipt_sha256": "9112eb52a83316fd35267364d6b03afacfa6446b072909c403b93736c36a9baa",
+  "inventory_path": "/tmp/dot17-validation-20261013T064622Z/authorized-inventory-05.json",
+  "binary_sha256": "cc139800f75b507fde83567fb512bf8e4f1d1452b7a7a095fd2967089f557dc6",
+  "warnings": {
+    "library": 33,
+    "linker": 1
+  },
+  "claims": "Compilation succeeded only. Warning correction source supersedes this candidate; runtime scenarios and full-phase acceptance remain unverified."
+}

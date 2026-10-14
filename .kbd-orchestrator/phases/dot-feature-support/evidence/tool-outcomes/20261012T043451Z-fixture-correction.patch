@@ -1,0 +1,42 @@
+--- before/tests/support/truthful_tool_outcome_process.rs
++++ current/tests/support/truthful_tool_outcome_process.rs
+@@ -863,8 +863,7 @@
+     )
+ }
+ 
+-async fn durable_instance(database: &Database, evidence: &Value) {
+-    let store = database.connect().await;
++async fn durable_instance(store: &SurrealDbProvider, evidence: &Value) {
+     let saved = store
+         .load_agent_instance(
+             evidence["owner"].as_str().unwrap(),
+@@ -1423,7 +1422,7 @@
+     mode: &str,
+     team: &Value,
+     evidence_directory: &Path,
+-) {
++) -> SurrealDbProvider {
+     let store = database.connect().await;
+     let receipts = store
+         .list_canonical_tool_receipts(peer::OWNER, run)
+@@ -1557,6 +1556,7 @@
+             assert!(attempt.usage.is_none());
+         }
+     }
++    store
+ }
+ 
+ /// Reopen the exact scoped fixture backend after its owning server has exited.
+@@ -1804,8 +1804,10 @@
+         );
+         assert_eq!(peer::effects(&node.trace).len(), 1);
+         node.stop().await;
+-        durable_result(&database, &run, &tool, mode, &Value::Null, &node.directory).await;
+-        durable_instance(&database, &instance).await;
++        let store =
++            durable_result(&database, &run, &tool, mode, &Value::Null, &node.directory).await;
++        durable_instance(&store, &instance).await;
++        drop(store);
+         rows.push(
+             json!({"boundary":"instance_process","mode":mode,"run":run,"tool":tool,
+             "outcome":super::expected(mode),"instanceEvidence":instance,"database":database.name,

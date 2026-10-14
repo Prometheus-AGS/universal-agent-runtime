@@ -12,6 +12,8 @@ UAR uses a hierarchical configuration system. Settings are merged from multiple 
 
 ---
 
+See [safe host defaults](config/safe-host-defaults.md) for new-install credentials, explicit model selection, CORS and shared-host overrides.
+
 ## 1. CLI Arguments
 
 ```bash
@@ -48,7 +50,7 @@ All LLM settings live under the `llm` namespace. Use `UAR_LLM__` prefix for stru
 
 | Env Var | Config Key | Default | Description |
 |---|---|---|---|
-| `UAR_LLM__MODEL` | `llm.model` | `openai/gpt-4o` | Model in `provider/model` format |
+| `UAR_LLM__MODEL` | `llm.model` | empty | Explicit model in `provider/model` format; required before inference |
 | `UAR_LLM__API_KEY` | `llm.api_key` | — | API key for the provider |
 | `UAR_LLM__BASE_URL` | `llm.base_url` | — | Base URL override |
 | `UAR_LLM__TIMEOUT_SECS` | `llm.timeout_secs` | `60` | Request timeout |
@@ -84,7 +86,8 @@ LLM_PROTOCOL=auto
 | Env Var | Default | Description |
 |---|---|---|
 | `UAR_SERVER__PORT` | `1906` | Listening port |
-| `UAR_SERVER__HOST` | `0.0.0.0` | Bind address |
+| `UAR_SERVER__HOST` | `127.0.0.1` | Bind address; shared deployments explicitly opt into a wider listener |
+| `UAR_SERVER__CORS_ALLOWED_ORIGINS` | empty | Comma-separated exact origins, without spaces; no wildcard or origin reflection |
 | `PORT` | — | Alias for `UAR_SERVER__PORT` |
 | `UAR_SERVER__GRPC_PORT` | `50051` | A2A v0.3 gRPC transport port (serves alongside the HTTP/JSON-RPC A2A endpoint) |
 | `UAR_ENV_FILE` | — | Explicit dotenv file loaded before telemetry/configuration; unreadable or malformed files fail startup |

@@ -7,6 +7,7 @@ mod lifecycle;
 mod pump;
 mod reconcile;
 mod representation;
+mod schedules;
 mod view;
 
 pub use controller::AgentInstanceController;

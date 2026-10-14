@@ -33,6 +33,12 @@ pub struct FullHarnessTaskAuthority {
     records: Arc<Mutex<AuthorityRecords>>,
 }
 
+impl std::fmt::Debug for FullHarnessTaskAuthority {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FullHarnessTaskAuthority").finish_non_exhaustive()
+    }
+}
+
 #[derive(Debug, Default)]
 struct AuthorityRecords {
     tasks: HashMap<String, TaskRecord>,

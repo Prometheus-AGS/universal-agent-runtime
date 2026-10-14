@@ -1,0 +1,60 @@
+{
+  "status": "failed-compilation",
+  "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-production-boundary.json",
+  "command": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test truthful_tool_outcomes -- --test-threads=1 --nocapture",
+  "exitCode": 101,
+  "observedErrors": [
+    {
+      "code": "E0624",
+      "path": "tests/truthful_tool_outcomes.rs",
+      "line": 165,
+      "detail": "McpRegistry::shutdown is crate-private at src/mcp/registry.rs:1959"
+    },
+    {
+      "code": "E0624",
+      "path": "tests/truthful_tool_outcomes.rs",
+      "line": 203,
+      "detail": "McpRegistry::shutdown is crate-private at src/mcp/registry.rs:1959"
+    },
+    {
+      "code": "E0624",
+      "path": "tests/truthful_tool_outcomes.rs",
+      "line": 320,
+      "detail": "McpRegistry::shutdown is crate-private at src/mcp/registry.rs:1959"
+    },
+    {
+      "code": "E0624",
+      "path": "tests/truthful_tool_outcomes.rs",
+      "line": 435,
+      "detail": "McpRegistry::shutdown is crate-private at src/mcp/registry.rs:1959"
+    },
+    {
+      "code": "E0624",
+      "path": "tests/truthful_tool_outcomes.rs",
+      "line": 550,
+      "detail": "McpRegistry::shutdown is crate-private at src/mcp/registry.rs:1959"
+    }
+  ],
+  "rootCause": "External integration fixture cannot call a crate-private registry lifecycle method. The previous public-error-trait derive blocker is resolved; target fixture compilation now exposes this separate visibility failure.",
+  "proposedNarrowCorrection": "Original author should use verified public lifecycle/real process closure in the fixture, preserve known predispatch and zero replay/cleanup assertions, and avoid widening production visibility merely for test. Public remove_server and McpRuntimeManager::shutdown exist; source owner selects the appropriate fixture correction. Refreeze before any same-target rerun.",
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T010903Z-production-boundary.json",
+  "harnessEntriesExecuted": 0,
+  "substantiveTestsExecuted": 0,
+  "expectedScenarioEntries": 59,
+  "executedScenarioEntries": 0,
+  "unrunScenarioEntries": 59,
+  "actualIntegrationRuntimePeerExecutableLaunches": 0,
+  "sourceStable": true,
+  "sourceBoundFiles": 6549,
+  "sourceChangesByGateExecutor": [],
+  "addedUnrequestedChanges": [],
+  "newProductionGuards": [],
+  "unverified": [
+    "All dot04 runtime scenario claims due to compilation preventing launch",
+    "Postgres receipt roundtrip and observer/checkpoint parity",
+    "Explicit shared B denied takeover request not authored by fixture",
+    "Genuine inference",
+    "Complete transitive registry/toolchain/native closure",
+    "Tier2 composition/cumulative independent review/whole phase and Tier3 publication"
+  ]
+}

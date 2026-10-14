@@ -355,6 +355,12 @@ pub struct TeamExecutionFencingEvidence {
     pub root_and_children_stopped: bool,
     pub source: String,
     pub recorded_at: DateTime<Utc>,
+    /// Exact host challenge and controller observation retained for audit only.
+    /// Neither string deserializes into the sealed host proof capability.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supervisor_challenge_json: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supervisor_observation_json: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]

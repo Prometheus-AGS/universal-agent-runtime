@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "planRevision": 9,
+  "change": "dot-13-memory-controls",
+  "command": "node /Users/gqadonis/.codex/skills/kbd-process-orchestrator/shared/openspec/cli.mjs run --project /Users/gqadonis/Projects/prometheus/universal-agent-runtime -- validate dot-13-memory-controls --strict --json",
+  "firstAttempt": {
+    "exitCode": 1,
+    "issue": "Requirement text very long (>500 characters)",
+    "receipt": "/Users/gqadonis/.prometheus/openspec/receipts/3612a6e09dc2e6a06683ca3d/1791755142166-65d846f9-f49b-4c86-b080-b306af2d51af.json"
+  },
+  "repair": "split independently stated behaviors into five short requirements; keep exact scenarios",
+  "currentAttempt": {
+    "exitCode": 0,
+    "valid": true,
+    "issues": [],
+    "receipt": "/Users/gqadonis/.prometheus/openspec/receipts/3612a6e09dc2e6a06683ca3d/1791755173053-4910ebbc-3433-42e3-9193-8971a7dad9c9.json"
+  },
+  "independentReview": "review/retention-contract/findings.json",
+  "runtimeAcceptance": "pending"
+}

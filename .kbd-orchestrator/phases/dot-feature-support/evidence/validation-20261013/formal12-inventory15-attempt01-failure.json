@@ -1,0 +1,32 @@
+{
+  "observed_at": "2026-10-13T23:38:12.411414+00:00",
+  "inventory_sha256": "9b7c1e6d7a906f3a50ccadb83fa4bbfa79e2516503a6d9245339001ad72ec248",
+  "gate": "credentials_api_integration_test",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,in-memory-backend",
+    "--test",
+    "credentials_api_integration_test",
+    "--",
+    "--include-ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit_code": 1,
+  "passed": 3,
+  "failed": 1,
+  "ignored": 0,
+  "filtered": 0,
+  "seconds": 130.44,
+  "failed_case": "shared_surreal_principals_migrations_and_two_runtimes",
+  "failure": "Cannot connect to the HTTP remote engine as it is not enabled in this build of SurrealDB",
+  "log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory15-attempt01/source_integration/credentials_api_integration_test.log",
+  "log_sha256": "72172c23feca7367de0553a386b959c81666af7553d2ff9917509467c1dcb449",
+  "remaining_eleven_gates": "not executed",
+  "correction_owner": "state teammate private qualification-input bundle; no production-source change authorized by this observation alone",
+  "gate_running": false
+}

@@ -1,0 +1,89 @@
+{
+  "captured_at": "2026-10-11T20:18:41.694597+00:00",
+  "baseline": {
+    "command": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "exit_code": 0,
+    "stdout": "2cc9a1829167411e01a8198072f60892d70a233d"
+  },
+  "dependency_inputs": {
+    "liter-llm": {
+      "path": "vendor/git/liter-llm/crates/liter-llm",
+      "manifest_version": "2.1.1",
+      "lock": [
+        {
+          "name": "liter-llm",
+          "version": "2.1.1",
+          "source": null
+        }
+      ]
+    },
+    "surreal-memory": {
+      "path": "vendor/git/surreal-memory-server/crates/surreal-memory",
+      "manifest_version": "0.1.0",
+      "lock": [
+        {
+          "name": "surreal-memory",
+          "version": "0.1.0",
+          "source": null
+        }
+      ]
+    }
+  },
+  "git_tree": {
+    "command": [
+      "git",
+      "ls-tree",
+      "HEAD",
+      "vendor/git/liter-llm",
+      "vendor/git/surreal-memory-server",
+      "crates/prometheus-skill-system"
+    ],
+    "exit_code": 0,
+    "stdout": "160000 commit f4bef4556a83ac22bf204bf69a01ddf0f9e007f2\tcrates/prometheus-skill-system\n160000 commit a6047386cc9fae4258b4a8577f6a016022095586\tvendor/git/liter-llm\n040000 tree f9215a067a0e5dd3be0569ab687272c264748d5b\tvendor/git/surreal-memory-server"
+  },
+  "publication": {
+    "command": [
+      "gh",
+      "run",
+      "view",
+      "38154340213",
+      "--json",
+      "status,conclusion,headSha,jobs,url"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"conclusion\":\"success\",\"headSha\":\"2cc9a1829167411e01a8198072f60892d70a233d\",\"jobs\":[{\"completedAt\":\"2026-10-11T16:56:30Z\",\"conclusion\":\"success\",\"databaseId\":114514089286,\"name\":\"GHCR Build (linux/arm64)\",\"startedAt\":\"2026-10-11T16:10:28Z\",\"status\":\"completed\",\"steps\":[{\"completedAt\":\"2026-10-11T16:10:30Z\",\"conclusion\":\"success\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2026-10-11T16:10:28Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:10:53Z\",\"conclusion\":\"success\",\"name\":\"Checkout code\",\"number\":2,\"startedAt\":\"2026-10-11T16:10:30Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:11:41Z\",\"conclusion\":\"success\",\"name\":\"Complete recursive submodule checkout\",\"number\":3,\"startedAt\":\"2026-10-11T16:10:53Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:11:51Z\",\"conclusion\":\"success\",\"name\":\"Free disk space\",\"number\":4,\"startedAt\":\"2026-10-11T16:11:41Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:11:51Z\",\"conclusion\":\"success\",\"name\":\"Set platform pair\",\"number\":5,\"startedAt\":\"2026-10-11T16:11:51Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:11:52Z\",\"conclusion\":\"success\",\"name\":\"Log in to GHCR\",\"number\":6,\"startedAt\":\"2026-10-11T16:11:51Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:11:58Z\",\"conclusion\":\"success\",\"name\":\"Set up Docker Buildx\",\"number\":7,\"startedAt\":\"2026-10-11T16:11:52Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:56:01Z\",\"conclusion\":\"success\",\"name\":\"Build and push by digest\",\"number\":8,\"startedAt\":\"2026-10-11T16:11:58Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:56:01Z\",\"conclusion\":\"success\",\"name\":\"Export digest\",\"number\":9,\"startedAt\":\"2026-10-11T16:56:01Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:56:02Z\",\"conclusion\":\"success\",\"name\":\"Upload digest\",\"number\":10,\"startedAt\":\"2026-10-11T16:56:01Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:56:03Z\",\"conclusion\":\"success\",\"name\":\"Post Build and push by digest\",\"number\":17,\"startedAt\":\"2026-10-11T16:56:02Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:56:28Z\",\"conclusion\":\"success\",\"name\":\"Post Set up Docker Buildx\",\"number\":18,\"startedAt\":\"2026-10-11T16:56:03Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:56:28Z\",\"conclusion\":\"success\",\"name\":\"Post Log in to GHCR\",\"number\":19,\"startedAt\":\"2026-10-11T16:56:28Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:56:29Z\",\"conclusion\":\"success\",\"name\":\"Post Checkout code\",\"number\":20,\"startedAt\":\"2026-10-11T16:56:28Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:56:29Z\",\"conclusion\":\"success\",\"name\":\"Complete job\",\"number\":21,\"startedAt\":\"2026-10-11T16:56:29Z\",\"status\":\"completed\"}],\"url\":\"https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/38154340213/job/114514089286\"},{\"completedAt\":\"2026-10-11T17:06:54Z\",\"conclusion\":\"success\",\"databaseId\":114514089423,\"name\":\"GHCR Build (linux/amd64)\",\"startedAt\":\"2026-10-11T16:10:26Z\",\"status\":\"completed\",\"steps\":[{\"completedAt\":\"2026-10-11T16:10:28Z\",\"conclusion\":\"success\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2026-10-11T16:10:26Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:10:52Z\",\"conclusion\":\"success\",\"name\":\"Checkout code\",\"number\":2,\"startedAt\":\"2026-10-11T16:10:28Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:11:44Z\",\"conclusion\":\"success\",\"name\":\"Complete recursive submodule checkout\",\"number\":3,\"startedAt\":\"2026-10-11T16:10:52Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:12:49Z\",\"conclusion\":\"success\",\"name\":\"Free disk space\",\"number\":4,\"startedAt\":\"2026-10-11T16:11:44Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:12:49Z\",\"conclusion\":\"success\",\"name\":\"Set platform pair\",\"number\":5,\"startedAt\":\"2026-10-11T16:12:49Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:12:49Z\",\"conclusion\":\"success\",\"name\":\"Log in to GHCR\",\"number\":6,\"startedAt\":\"2026-10-11T16:12:49Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T16:12:53Z\",\"conclusion\":\"success\",\"name\":\"Set up Docker Buildx\",\"number\":7,\"startedAt\":\"2026-10-11T16:12:49Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:06:06Z\",\"conclusion\":\"success\",\"name\":\"Build and push by digest\",\"number\":8,\"startedAt\":\"2026-10-11T16:12:53Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:06:06Z\",\"conclusion\":\"success\",\"name\":\"Export digest\",\"number\":9,\"startedAt\":\"2026-10-11T17:06:06Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:06:06Z\",\"conclusion\":\"success\",\"name\":\"Upload digest\",\"number\":10,\"startedAt\":\"2026-10-11T17:06:06Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:06:08Z\",\"conclusion\":\"success\",\"name\":\"Post Build and push by digest\",\"number\":17,\"startedAt\":\"2026-10-11T17:06:06Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:06:52Z\",\"conclusion\":\"success\",\"name\":\"Post Set up Docker Buildx\",\"number\":18,\"startedAt\":\"2026-10-11T17:06:08Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:06:52Z\",\"conclusion\":\"success\",\"name\":\"Post Log in to GHCR\",\"number\":19,\"startedAt\":\"2026-10-11T17:06:52Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:06:53Z\",\"conclusion\":\"success\",\"name\":\"Post Checkout code\",\"number\":20,\"startedAt\":\"2026-10-11T17:06:52Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:06:53Z\",\"conclusion\":\"success\",\"name\":\"Complete job\",\"number\":21,\"startedAt\":\"2026-10-11T17:06:53Z\",\"status\":\"completed\"}],\"url\":\"https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/38154340213/job/114514089423\"},{\"completedAt\":\"2026-10-11T16:10:24Z\",\"conclusion\":\"skipped\",\"databaseId\":114514090227,\"name\":\"The Boss sidecar (${{ matrix.platform }})\",\"startedAt\":\"2026-10-11T16:10:24Z\",\"status\":\"completed\",\"steps\":[],\"url\":\"https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/38154340213/job/114514090227\"},{\"completedAt\":\"2026-10-11T16:10:24Z\",\"conclusion\":\"skipped\",\"databaseId\":114514090268,\"name\":\"Publish immutable The Boss sidecar payload\",\"startedAt\":\"2026-10-11T16:10:24Z\",\"status\":\"completed\",\"steps\":[],\"url\":\"https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/38154340213/job/114514090268\"},{\"completedAt\":\"2026-10-11T17:07:22Z\",\"conclusion\":\"success\",\"databaseId\":114525669068,\"name\":\"GHCR Merge Manifest\",\"startedAt\":\"2026-10-11T17:06:57Z\",\"status\":\"completed\",\"steps\":[{\"completedAt\":\"2026-10-11T17:07:02Z\",\"conclusion\":\"success\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2026-10-11T17:06:58Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:07:03Z\",\"conclusion\":\"success\",\"name\":\"Download digests\",\"number\":2,\"startedAt\":\"2026-10-11T17:07:02Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:07:04Z\",\"conclusion\":\"success\",\"name\":\"Log in to GHCR\",\"number\":3,\"startedAt\":\"2026-10-11T17:07:03Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:07:16Z\",\"conclusion\":\"success\",\"name\":\"Set up Docker Buildx\",\"number\":4,\"startedAt\":\"2026-10-11T17:07:04Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:07:17Z\",\"conclusion\":\"success\",\"name\":\"Docker meta\",\"number\":5,\"startedAt\":\"2026-10-11T17:07:16Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:07:19Z\",\"conclusion\":\"success\",\"name\":\"Create manifest list and push\",\"number\":6,\"startedAt\":\"2026-10-11T17:07:17Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:07:19Z\",\"conclusion\":\"success\",\"name\":\"Inspect image\",\"number\":7,\"startedAt\":\"2026-10-11T17:07:19Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:07:20Z\",\"conclusion\":\"success\",\"name\":\"Post Set up Docker Buildx\",\"number\":13,\"startedAt\":\"2026-10-11T17:07:19Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:07:20Z\",\"conclusion\":\"success\",\"name\":\"Post Log in to GHCR\",\"number\":14,\"startedAt\":\"2026-10-11T17:07:20Z\",\"status\":\"completed\"},{\"completedAt\":\"2026-10-11T17:07:20Z\",\"conclusion\":\"success\",\"name\":\"Complete job\",\"number\":15,\"startedAt\":\"2026-10-11T17:07:20Z\",\"status\":\"completed\"}],\"url\":\"https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/38154340213/job/114525669068\"}],\"status\":\"completed\",\"url\":\"https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/38154340213\"}"
+  },
+  "manifest_log_excerpt": {
+    "command": [
+      "gh",
+      "run",
+      "view",
+      "38154340213",
+      "--log"
+    ],
+    "exit_code": 0,
+    "stdout": "GHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8790545Z Name:      ghcr.io/prometheus-ags/universal-agent-runtime:main\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8791384Z MediaType: application/vnd.oci.image.index.v1+json\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8791655Z Digest:    sha256:e955789aa6aea70853d4e19ce95b5c5774750d232472c048bd4763c96e5513f5\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8791884Z            \nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8791992Z Manifests: \nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8792285Z   Name:        ghcr.io/prometheus-ags/universal-agent-runtime:main@sha256:29a66c9c9ad136d5bf01886cb07334c37ae90b52ee883169de81423e21823776\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8792654Z   MediaType:   application/vnd.oci.image.manifest.v1+json\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8792848Z   Platform:    linux/amd64\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8792983Z                \nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8793280Z   Name:        ghcr.io/prometheus-ags/universal-agent-runtime:main@sha256:1b3a68a4736fa04691f3633a916c338e90e2bd10803237855e1d698f506aa921\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8793629Z   MediaType:   application/vnd.oci.image.manifest.v1+json\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8793825Z   Platform:    unknown/unknown\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8793961Z   Annotations: \nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8794207Z     vnd.docker.reference.digest: sha256:29a66c9c9ad136d5bf01886cb07334c37ae90b52ee883169de81423e21823776\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8794505Z     vnd.docker.reference.type:   attestation-manifest\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8794676Z                \nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8794962Z   Name:        ghcr.io/prometheus-ags/universal-agent-runtime:main@sha256:6b7eb727db9f7d1d67eaa473eaffe140858224d7fa26917e122f4bfabf8f7dbe\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8795317Z   MediaType:   application/vnd.oci.image.manifest.v1+json\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8795500Z   Platform:    linux/arm64\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8795626Z                \nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8795905Z   Name:        ghcr.io/prometheus-ags/universal-agent-runtime:main@sha256:f46efb4cf23f167846b5abcf5a72333018cce00e42f2668d1eea354821758a21\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8796260Z   MediaType:   application/vnd.oci.image.manifest.v1+json\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8796442Z   Platform:    unknown/unknown\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8796576Z   Annotations: \nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8796819Z     vnd.docker.reference.digest: sha256:6b7eb727db9f7d1d67eaa473eaffe140858224d7fa26917e122f4bfabf8f7dbe\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8797118Z     vnd.docker.reference.type:   attestation-manifest\nGHCR Merge Manifest\tUNKNOWN STEP\t2026-10-11T17:07:19.8886303Z Post job cleanup."
+  },
+  "limitations": [
+    "No fresh registry pull or deployed health proof",
+    "Docker Cargo command is not locked; full transitive image dependency graph unverified",
+    "versions.toml remains authoritative policy; no pins edited",
+    "Skill runtime override selection must be recorded per deployment"
+  ],
+  "research": {
+    "max_queries_per_tier": 8,
+    "max_minutes": 20,
+    "queries_used": {
+      "tier_1": 6,
+      "tier_2": 6,
+      "tier_3": 3,
+      "tier_4": 0
+    },
+    "counting": "Primary GitHub documents are tier 1; cached in-document reads and local source/deployment inspection are not new landscape queries."
+  },
+  "refresh_receipt": "/Users/gqadonis/.prometheus/openspec/receipts/3612a6e09dc2e6a06683ca3d/1791749507468-2926794f-b191-42d7-b096-8cfcc0c2ee5e.json"
+}

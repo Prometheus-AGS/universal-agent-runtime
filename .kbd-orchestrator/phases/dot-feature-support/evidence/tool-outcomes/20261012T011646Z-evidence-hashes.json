@@ -1,0 +1,127 @@
+{
+  "publicArtifacts": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-failure-analysis.json",
+      "sha256": "7c83265e51a416dfc26478cb82f9f33ec53299ad29b7403fb77877de5291c2c9",
+      "bytes": 3004
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-observed-correction.json",
+      "sha256": "9b1a1353632b0dc7dcc10c58e5e51ffc716fd38cabadb0132c6c2dac7de13d20",
+      "bytes": 3497
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-observed-correction.patch",
+      "sha256": "fb63f80a559716d33749db3e4cef93c0f5e4df9b8f3e18c4aee374521471599a",
+      "bytes": 1936
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-production-boundary.json",
+      "sha256": "bb5bc4c7761f2311d053f40efedd4826bb6cb7c327db345f26d3521f6cd9a2ea",
+      "bytes": 5098
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-production-boundary.log",
+      "sha256": "b92ac805ea6b47f8785255ea026ccc80d16e2236bab8dea066490100290b39fc",
+      "bytes": 13603
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-source-fingerprint-at-exit.json",
+      "sha256": "a9d8c46e9e560210b110eced3a9b692d5741d0162edad92f35a347d7d1e96b3c",
+      "bytes": 940565
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-source-fingerprint.json",
+      "sha256": "f9a1acb3f2066145151471795e9eeb94d27404257b74e13a62938e4087b5c399",
+      "bytes": 940565
+    }
+  ],
+  "privateArtifacts": [
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/source-snapshot.tar.gz",
+      "sha256": "b2c75a4e4d63f54c0ad33b3c85f02df46c89a2a78b80d85b82af8b72d97999e2",
+      "bytes": 71143384,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/targeted_format.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/receipt-path",
+      "sha256": "37f2e55fa97720ee65c998a16570ca31b872278ee3c0af144d843ed3d650826d",
+      "bytes": 169,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/tier0-commands.json",
+      "sha256": "c1d3c2de8aa391d332263ac561e22110768fdf0bab8e674b0355b04ae8898012",
+      "bytes": 1376,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/sampled-descendants.json",
+      "sha256": "e29c0507926c84ea6623e6d093d99a6207e88a63803bd7d71892457376dce1b4",
+      "bytes": 3811,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/source-before.json",
+      "sha256": "f9a1acb3f2066145151471795e9eeb94d27404257b74e13a62938e4087b5c399",
+      "bytes": 940565,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/dirty-source.patch",
+      "sha256": "63ba56e6fe546785ca6b7ba72394e0a3520aa0a406e50296f094b34cd3fcdd91",
+      "bytes": 140293,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/targeted_format.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/correction.json",
+      "sha256": "0c2ca9c6946fb6ae434b416f01a69750b9c6693c7c07a76e1a8ffb62b8309182",
+      "bytes": 940,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/correction.patch",
+      "sha256": "fb63f80a559716d33749db3e4cef93c0f5e4df9b8f3e18c4aee374521471599a",
+      "bytes": 1936,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/parse.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/cargo-raw.log",
+      "sha256": "b92ac805ea6b47f8785255ea026ccc80d16e2236bab8dea066490100290b39fc",
+      "bytes": 13603,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/driver.py",
+      "sha256": "c709e5528d06565063dc8474046edc9b8246c01dad45d83606f5e0839d0eac5e",
+      "bytes": 13240,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-rerun-rncnmk8u/parse.stdout",
+      "sha256": "9eeea09d7d0bba5da99fd6c1fb97091e6d2153399e522e411a6a8ad31c92f397",
+      "bytes": 38163,
+      "mode": "0o600"
+    }
+  ],
+  "privateRootMode": "0o700",
+  "task1Tier0PreservedSha256": "644fdd827eca59e24828c041594fdff5d5f334986d7b12fef66451012b26ee45"
+}

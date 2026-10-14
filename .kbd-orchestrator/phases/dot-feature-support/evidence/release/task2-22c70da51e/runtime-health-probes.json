@@ -1,0 +1,38 @@
+[
+  {
+    "at": "2026-10-11T23:25:18.605652+00:00",
+    "argv": [
+      "docker",
+      "exec",
+      "1ebae811351116aa06df8684cb5f1a5b73b354ee64f50c41d80dcae7eebe42c4",
+      "curl",
+      "--fail",
+      "--silent",
+      "--show-error",
+      "--max-time",
+      "5",
+      "http://127.0.0.1:1906/health"
+    ],
+    "exit_code": 7,
+    "stdout": "",
+    "stderr": "curl: (7) Failed to connect to 127.0.0.1 port 1906 after 0 ms: Couldn't connect to server\n"
+  },
+  {
+    "at": "2026-10-11T23:25:19.685940+00:00",
+    "argv": [
+      "docker",
+      "exec",
+      "1ebae811351116aa06df8684cb5f1a5b73b354ee64f50c41d80dcae7eebe42c4",
+      "curl",
+      "--fail",
+      "--silent",
+      "--show-error",
+      "--max-time",
+      "5",
+      "http://127.0.0.1:1906/health"
+    ],
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "Error response from daemon: container 1ebae811351116aa06df8684cb5f1a5b73b354ee64f50c41d80dcae7eebe42c4 is not running\n"
+  }
+]

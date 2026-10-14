@@ -120,6 +120,13 @@ pub struct ChannelObserverController {
     admission: Mutex<()>,
 }
 
+impl std::fmt::Debug for ChannelObserverController {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Gate configuration and the retained owner state are private.
+        f.debug_struct("ChannelObserverController").finish_non_exhaustive()
+    }
+}
+
 impl ChannelObserverController {
     pub fn new(instances: Arc<AgentInstanceController>, store: Arc<dyn PersistenceLayer>) -> Arc<Self> {
         Arc::new(Self {

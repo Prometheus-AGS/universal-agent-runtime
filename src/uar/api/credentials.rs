@@ -25,10 +25,10 @@ use axum::{
 use serde::{Deserialize, Serialize};
 
 use crate::uar::security::{
-    claims::UserContext,
+    claims::{CredentialPrincipal, UserContext},
     credentials::{
         CredentialEncryption, CredentialMetadata, CredentialRecord, CredentialScope,
-        ProviderService,
+        CredentialMigrationError, ProviderService,
     },
 };
 
@@ -44,6 +44,9 @@ pub type CredentialApiState = Option<Arc<ProviderService>>;
 pub fn build_router() -> Router<CredentialApiState> {
     Router::new()
         .route("/", get(list_credentials))
+        .route("/principal", get(credential_principal))
+        .route("/migrate-legacy", axum::routing::post(migrate_legacy))
+        .route("/{provider}", get(read_credential))
         .route("/{provider}", put(put_credential))
         .route("/{provider}", delete(delete_credential))
 }
@@ -68,19 +71,15 @@ impl From<CredentialMetadata> for CredentialView {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct PutCredentialRequest {
     /// Raw provider API key. Accepted on write only; encrypted at rest.
     api_key: String,
 }
 
 /// Extract the authenticated user id (rejecting anonymous).
-fn require_user_id(user_ctx: Option<axum::Extension<UserContext>>) -> Option<String> {
-    let ctx = user_ctx?.0;
-    if ctx.user_id.is_empty() || ctx.user_id == "anonymous" {
-        None
-    } else {
-        Some(ctx.user_id)
-    }
+fn require_principal(user_ctx: Option<axum::Extension<UserContext>>) -> Option<CredentialPrincipal> {
+    CredentialPrincipal::from_verified_context(&user_ctx?.0).ok()
 }
 
 fn unauthorized() -> axum::response::Response {
@@ -105,14 +104,14 @@ async fn list_credentials(
     State(state): State<CredentialApiState>,
     user_ctx: Option<axum::Extension<UserContext>>,
 ) -> impl IntoResponse {
-    let Some(user_id) = require_user_id(user_ctx) else {
+    let Some(principal) = require_principal(user_ctx) else {
         return unauthorized();
     };
     let Some(service) = state else {
         return service_unavailable();
     };
 
-    match service.store().list(CredentialScope::User, &user_id).await {
+    match service.store().list_principal(&principal, CredentialScope::User, principal.subject()).await {
         Ok(rows) => {
             let views: Vec<CredentialView> = rows
                 .iter()
@@ -120,8 +119,8 @@ async fn list_credentials(
                 .collect();
             Json(views).into_response()
         }
-        Err(e) => {
-            tracing::error!(error = %e, "list credentials failed");
+        Err(_) => {
+            tracing::error!("list credentials failed");
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(serde_json::json!({ "error": "Failed to list credentials" })),
@@ -137,7 +136,7 @@ async fn put_credential(
     Path(provider): Path<String>,
     Json(req): Json<PutCredentialRequest>,
 ) -> impl IntoResponse {
-    let Some(user_id) = require_user_id(user_ctx) else {
+    let Some(principal) = require_principal(user_ctx) else {
         return unauthorized();
     };
     let Some(service) = state else {
@@ -158,7 +157,7 @@ async fn put_credential(
     let now = chrono::Utc::now();
     let record = CredentialRecord {
         scope: CredentialScope::User,
-        scope_id: user_id,
+        scope_id: principal.subject().to_owned(),
         provider_id: provider.clone(),
         api_key_encrypted: encrypted,
         api_key_hint: CredentialEncryption::key_hint(&req.api_key, 4),
@@ -166,14 +165,14 @@ async fn put_credential(
         updated_at: now,
     };
 
-    match service.store().put(record.clone()).await {
+    match service.store().put_principal(&principal, record.clone()).await {
         Ok(()) => (
             StatusCode::OK,
             Json(CredentialView::from(CredentialMetadata::from(&record))),
         )
             .into_response(),
-        Err(e) => {
-            tracing::error!(error = %e, "store credential failed");
+        Err(_) => {
+            tracing::error!("store credential failed");
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(serde_json::json!({ "error": "Failed to store credential" })),
@@ -188,7 +187,7 @@ async fn delete_credential(
     user_ctx: Option<axum::Extension<UserContext>>,
     Path(provider): Path<String>,
 ) -> impl IntoResponse {
-    let Some(user_id) = require_user_id(user_ctx) else {
+    let Some(principal) = require_principal(user_ctx) else {
         return unauthorized();
     };
     let Some(service) = state else {
@@ -197,7 +196,7 @@ async fn delete_credential(
 
     match service
         .store()
-        .delete(CredentialScope::User, &user_id, &provider)
+        .delete_principal(&principal, CredentialScope::User, principal.subject(), &provider)
         .await
     {
         Ok(true) => StatusCode::NO_CONTENT.into_response(),
@@ -206,13 +205,64 @@ async fn delete_credential(
             Json(serde_json::json!({ "error": "No credential for that provider" })),
         )
             .into_response(),
-        Err(e) => {
-            tracing::error!(error = %e, "delete credential failed");
+        Err(_) => {
+            tracing::error!("delete credential failed");
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(serde_json::json!({ "error": "Failed to delete credential" })),
             )
                 .into_response()
+        }
+    }
+}
+
+async fn credential_principal(user_ctx: Option<axum::Extension<UserContext>>) -> axum::response::Response {
+    let Some(principal) = require_principal(user_ctx) else { return unauthorized(); };
+    Json(serde_json::json!({ "owner_key": principal.storage_key(), "issuer": principal.issuer(),
+        "tenant_id": principal.tenant_id(), "subject": principal.subject() })).into_response()
+}
+
+async fn read_credential(
+    State(state): State<CredentialApiState>,
+    user_ctx: Option<axum::Extension<UserContext>>,
+    Path(provider): Path<String>,
+) -> axum::response::Response {
+    let Some(principal) = require_principal(user_ctx) else { return unauthorized(); };
+    let Some(service) = state else { return service_unavailable(); };
+    match service.store().get_principal(&principal, CredentialScope::User, principal.subject(), &provider).await {
+        Ok(Some(row)) => Json(CredentialView::from(CredentialMetadata::from(&row))).into_response(),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::SERVICE_UNAVAILABLE.into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LegacyMappingRequest {
+    scope: CredentialScope,
+    legacy_scope_id: String,
+    provider_id: String,
+    reason: String,
+}
+
+async fn migrate_legacy(
+    State(state): State<CredentialApiState>,
+    user_ctx: Option<axum::Extension<UserContext>>,
+    Json(request): Json<LegacyMappingRequest>,
+) -> axum::response::Response {
+    let Some(principal) = require_principal(user_ctx) else { return unauthorized(); };
+    let Some(service) = state else { return service_unavailable(); };
+    match service.migrate_legacy_credential(&principal, request.scope, &request.legacy_scope_id,
+        &request.provider_id, &request.reason).await {
+        Ok(receipt) => Json(receipt).into_response(),
+        Err(error) => {
+            let (status, code) = match error.downcast_ref::<CredentialMigrationError>() {
+                Some(CredentialMigrationError::MappingDenied) => (StatusCode::FORBIDDEN, "credential_mapping_denied"),
+                Some(CredentialMigrationError::SourceMissing) => (StatusCode::NOT_FOUND, "legacy_credential_missing"),
+                Some(CredentialMigrationError::Conflict) => (StatusCode::CONFLICT, "credential_mapping_conflict"),
+                None => (StatusCode::SERVICE_UNAVAILABLE, "credential_migration_unavailable"),
+            };
+            (status, Json(serde_json::json!({ "error": { "code": code } }))).into_response()
         }
     }
 }

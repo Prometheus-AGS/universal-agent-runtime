@@ -1,0 +1,34 @@
+{
+  "recorded_at": "2026-10-14T08:18:57.920441+00:00",
+  "status": "failed",
+  "stage": "source_integration",
+  "reason": "dot_memory_owner_contract: both local and shared profiles failed at transaction fixture line133",
+  "receipt": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/receipt.json",
+  "receipt_sha256": "293ec8d8c18c8f3f723ba10da0fbd4f6db68ee48ca9bd7a9dd29209224b2e85a",
+  "observation": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/dot_memory_owner_contract.json",
+  "observation_sha256": "5fd75d2c8019164015bf1047f2ec08c3b12f7dc16f4db48d5e572ec4e665487e",
+  "log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/dot_memory_owner_contract.log",
+  "log_sha256": "223c0f48f24acab8519d68b0b94adb62607ca0ec920953f6d148ef5fb998124c",
+  "inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-17.json",
+  "inventory_sha256": "caabc77cc1b7eb5cce72efb913b215cd7b9a2be665cd8c34de3b7c6f5d261409",
+  "result": {
+    "passed": 0,
+    "failed": 2,
+    "ignored": 0,
+    "filtered": 0
+  },
+  "passing_targets_retained": [
+    "truthful_tool_outcomes",
+    "stream_terminal_contract",
+    "fresh_process_resume",
+    "approval_recovery",
+    "durable_ingestion",
+    "run_cost_settlement"
+  ],
+  "unrun_targets": [
+    "dot_memory_controls",
+    "dot_owner_adjacent_contract",
+    "principal_knowledge_namespace"
+  ],
+  "no_final_acceptance": true
+}

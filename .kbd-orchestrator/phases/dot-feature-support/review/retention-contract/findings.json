@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "scope": "change13 bounded retention plan/spec contract",
+  "reviewedAt": "2026-10-11T21:48:21.489774+00:00",
+  "judge": "/root/retention_contract_critic",
+  "context": "fresh artifact-only",
+  "concreteJudgeModel": "unavailable",
+  "crossModelSeparation": "unverified",
+  "verdict": "PASS",
+  "findings": [],
+  "certifiesImplementation": false,
+  "certifiesPhase": false
+}

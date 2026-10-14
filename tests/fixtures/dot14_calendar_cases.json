@@ -1,0 +1,20 @@
+{
+  "qualification": "authored; not executed; compare against installed IANA rules at full-phase gate",
+  "cases": [
+    {"name":"Chicago spring gap", "recurrence":{"kind":"weekly","weekdays":[7],"time":"02:30","timezone":"America/Chicago"},"localDate":"2027-03-14","expectedUtc":null,"expectedSkipReason":"dst_gap"},
+    {"name":"Chicago autumn earlier fold", "recurrence":{"kind":"weekly","weekdays":[7],"time":"01:30","timezone":"America/Chicago"},"localDate":"2027-11-07","expectedUtc":"2027-11-07T06:30:00Z","forbiddenUtc":"2027-11-07T07:30:00Z"},
+    {"name":"Chicago summer wall time", "recurrence":{"kind":"daily","time":"09:00","timezone":"America/Chicago"},"localDate":"2027-07-01","expectedUtc":"2027-07-01T14:00:00Z"},
+    {"name":"Chicago winter wall time", "recurrence":{"kind":"daily","time":"09:00","timezone":"America/Chicago"},"localDate":"2027-12-01","expectedUtc":"2027-12-01T15:00:00Z"}
+  ],
+  "invalidRecurrences": [
+    {"kind":"daily","time":"09:00:00","timezone":"America/Chicago"},
+    {"kind":"daily","time":"24:00","timezone":"America/Chicago"},
+    {"kind":"daily","time":"9:00","timezone":"America/Chicago"},
+    {"kind":"daily","time":"09:00","timezone":"Not/AZone"},
+    {"kind":"weekly","weekdays":[],"time":"09:00","timezone":"America/Chicago"},
+    {"kind":"weekly","weekdays":[7,7],"time":"09:00","timezone":"America/Chicago"},
+    {"kind":"weekly","weekdays":[0],"time":"09:00","timezone":"America/Chicago"},
+    {"kind":"cron","expression":"0 9 * * *"},
+    {"kind":"rrule","rule":"FREQ=DAILY"}
+  ]
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "at": "2026-10-11T23:27:40.752908+00:00",
+    "argv": [
+      "docker",
+      "exec",
+      "eead25675081e38267b582135e102703e6028dcacd9a7b3f7af29faf7218e07d",
+      "curl",
+      "--fail",
+      "--silent",
+      "--show-error",
+      "--max-time",
+      "5",
+      "http://127.0.0.1:1906/health"
+    ],
+    "exit_code": 28,
+    "stdout": "",
+    "stderr": "curl: (28) Operation timed out after 5003 milliseconds with 0 bytes received\n"
+  },
+  {
+    "at": "2026-10-11T23:27:43.321168+00:00",
+    "argv": [
+      "docker",
+      "exec",
+      "eead25675081e38267b582135e102703e6028dcacd9a7b3f7af29faf7218e07d",
+      "curl",
+      "--fail",
+      "--silent",
+      "--show-error",
+      "--max-time",
+      "5",
+      "http://127.0.0.1:1906/health"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"status\":\"ok\"}",
+    "stderr": ""
+  }
+]

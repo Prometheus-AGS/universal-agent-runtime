@@ -1,0 +1,176 @@
+[
+  {
+    "mode": "success",
+    "teamStatus": "inactive",
+    "taskStates": [
+      {
+        "id": "effect",
+        "status": "succeeded",
+        "stateReason": "team_usage_or_effect_outcome_uncertain"
+      },
+      {
+        "id": "dependent",
+        "status": "ready",
+        "stateReason": null
+      }
+    ],
+    "attempt": {
+      "id": "4cc2edce-b56d-4269-90ba-b73d86d45dd2",
+      "ownerId": "v1:s:19:dot04-outcome-owner",
+      "runId": "05607693-88ce-4d67-ad43-e30a80c42bd2",
+      "status": "succeeded",
+      "executionOutcome": "succeeded",
+      "effectDisposition": "confirmed",
+      "accountingState": "reserved-unknown",
+      "output": "post-tool-control",
+      "stateReason": "team_usage_or_effect_outcome_uncertain"
+    },
+    "teamAttemptOwnerEqual": true,
+    "artifactCount": 1,
+    "queriedAdmissionOwner": "v1:s:19:dot04-outcome-owner",
+    "canonicalOwner": "dot04-outcome-owner",
+    "canonicalCount": 1,
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "succeeded"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": true,
+        "content": "{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"success\",\"nested\":{\"control\":42}},\"isError\":false,\"_meta\":{\"fixture\":\"metadata-control\"}}"
+      }
+    ],
+    "originalDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-team-partition-gate-n_lqefh8/profiles/local-076d36692f584bb2b998ac28d4902e07/binary-team_process-success",
+    "completedIncludingActualBinaryRestartReadbackAndDurableAssertions": true
+  },
+  {
+    "mode": "application",
+    "teamStatus": "inactive",
+    "taskStates": [
+      {
+        "id": "effect",
+        "status": "failed",
+        "stateReason": "team_tool_application_or_transport_failed"
+      },
+      {
+        "id": "dependent",
+        "status": "queued",
+        "stateReason": null
+      }
+    ],
+    "attempt": {
+      "id": "eece194a-cdc6-4290-a98a-544ca87059dc",
+      "ownerId": "v1:s:19:dot04-outcome-owner",
+      "runId": "4a1f559c-2897-4950-91db-d39e9dc1c8bf",
+      "status": "failed",
+      "executionOutcome": "failed",
+      "effectDisposition": "confirmed",
+      "accountingState": "reserved-unknown",
+      "output": null,
+      "stateReason": "team_tool_application_or_transport_failed"
+    },
+    "teamAttemptOwnerEqual": true,
+    "artifactCount": 0,
+    "queriedAdmissionOwner": "v1:s:19:dot04-outcome-owner",
+    "canonicalOwner": "dot04-outcome-owner",
+    "canonicalCount": 1,
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "application_failed"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": false,
+        "content": "{\"status\":\"error\",\"outcome\":\"application_failed\",\"tool_call_id\":\"dot04-call\",\"tool\":\"dot04__outcomes__effect\",\"provenance\":{\"source\":\"mcp\",\"terminal_state\":\"failed\",\"observed_by\":\"trusted_host\"},\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"application\",\"nested\":{\"control\":42}},\"isError\":true,\"_meta\":{\"fixture\":\"metadata-control\"}},\"message\":\"MCP application failure\"}"
+      }
+    ],
+    "originalDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-team-partition-gate-n_lqefh8/profiles/local-076d36692f584bb2b998ac28d4902e07/binary-team_process-application",
+    "completedIncludingActualBinaryRestartReadbackAndDurableAssertions": true
+  },
+  {
+    "mode": "unknown",
+    "teamStatus": "inactive",
+    "taskStates": [
+      {
+        "id": "effect",
+        "status": "blocked",
+        "stateReason": "TOOL_OUTCOME_UNKNOWN"
+      },
+      {
+        "id": "dependent",
+        "status": "queued",
+        "stateReason": null
+      }
+    ],
+    "attempt": {
+      "id": "5f68172a-20b4-4cd5-8b6c-b90e59406968",
+      "ownerId": "v1:s:19:dot04-outcome-owner",
+      "runId": "17995ece-9c05-47d5-ae8f-5adac7562862",
+      "status": "uncertain",
+      "executionOutcome": "uncertain",
+      "effectDisposition": "uncertain",
+      "accountingState": "reserved-unknown",
+      "output": null,
+      "stateReason": "TOOL_OUTCOME_UNKNOWN"
+    },
+    "teamAttemptOwnerEqual": true,
+    "artifactCount": 0,
+    "queriedAdmissionOwner": "v1:s:19:dot04-outcome-owner",
+    "canonicalOwner": "dot04-outcome-owner",
+    "canonicalCount": 1,
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "outcome_unknown"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": false,
+        "content": "{\"status\":\"error\",\"outcome\":\"outcome_unknown\",\"tool_call_id\":\"dot04-call\",\"tool\":\"dot04__outcomes__effect\",\"provenance\":{\"source\":\"mcp\",\"terminal_state\":\"outcome_unknown\",\"observed_by\":\"trusted_host\"},\"result\":null,\"message\":\"MCP response lost after dispatch; reconcile before another attempt\"}"
+      }
+    ],
+    "originalDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-team-partition-gate-n_lqefh8/profiles/local-076d36692f584bb2b998ac28d4902e07/binary-team_process-unknown",
+    "completedIncludingActualBinaryRestartReadbackAndDurableAssertions": true
+  },
+  {
+    "mode": "no_tool",
+    "teamStatus": "inactive",
+    "taskStates": [
+      {
+        "id": "effect",
+        "status": "succeeded",
+        "stateReason": "team_usage_or_effect_outcome_uncertain"
+      },
+      {
+        "id": "dependent",
+        "status": "ready",
+        "stateReason": null
+      }
+    ],
+    "attempt": {
+      "id": "bba67f85-a25a-4fef-8b9f-028563db3240",
+      "ownerId": "v1:s:19:dot04-outcome-owner",
+      "runId": "d0704fe7-c8c8-49bc-b066-d89457f5edf8",
+      "status": "succeeded",
+      "executionOutcome": "succeeded",
+      "effectDisposition": "confirmed",
+      "accountingState": "reserved-unknown",
+      "output": "post-tool-control",
+      "stateReason": "team_usage_or_effect_outcome_uncertain"
+    },
+    "teamAttemptOwnerEqual": true,
+    "artifactCount": 1,
+    "queriedAdmissionOwner": "v1:s:19:dot04-outcome-owner",
+    "canonicalOwner": "dot04-outcome-owner",
+    "canonicalCount": 0,
+    "admissionStates": [],
+    "ToolEnd": [],
+    "originalDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-team-partition-gate-n_lqefh8/profiles/local-076d36692f584bb2b998ac28d4902e07/binary-team_process-no_tool",
+    "completedIncludingActualBinaryRestartReadbackAndDurableAssertions": true
+  }
+]

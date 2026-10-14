@@ -1,0 +1,200 @@
+--- failed-gate/docs/operations/durable-api-keys.md
++++ corrected/docs/operations/durable-api-keys.md
+@@ -50,6 +50,29 @@
+ management, with no backend payload, plaintext, or hash in the response. Ordinary
+ issuer JWT signature verification keeps its existing behavior. Exchanging local
+ keys into tokens accepted by an external JWKS is unsupported and returns HTTP 501.
++
++A severed database transport was observed to leave an authority query pending
++until the ordinary HTTP timeout returned 408. Durable key reads and mutations now
++have a separate bounded wait derived from the existing
++`resilience.request_timeout_ms`: `min(5000ms, max(request_timeout_ms, 1000ms) / 8)`.
++The default request budget gives 3750ms per authority operation. Direct store
++constructors use that same default unless the host supplies its request budget.
++The division leaves deliberate headroom for chained operations; raw-key
++authentication and revocation together currently perform five authority reads or
++mutations. It does not guarantee that every route completes before its global
++timeout, since hashing and other route work also consume time. The global timeout
++and its disable setting are unchanged. Authority waits retain their finite cap
++even when ordinary request timeouts are disabled, and gRPC uses the same bound.
++Elapsed authority waits return the existing sanitized unavailable outcome.
++
++A timed-out mutation has no confirmed result and may already have committed.
++After storage recovers, authenticate with an issuer credential and inspect owned
++metadata to reconcile creation or revocation. A creation whose raw key was never
++received requires authenticated reissue; its plaintext cannot be recovered from
++storage. Do not automatically replay a timed-out mutation or assume that timing
++out rolled it back. Retain revoked rows and never restore authority from a stale
++record. Tokio's timeout bounds waiting on a yielding future; it is not proof of
++database rollback. [Tokio 1.53.1 timeout documentation](https://docs.rs/tokio/1.53.1/tokio/time/fn.timeout.html).
+ 
+ The public `authenticate_bearer_context` helper authenticates ordinary issuer JWTs
+ for identity-only host adapters. It has no storage binding and returns 503 for
+--- failed-gate/src/server.rs
++++ corrected/src/server.rs
+@@ -672,7 +672,8 @@
+             if config.security.is_remote() && provider.catalog_storage_backend() == "memory" {
+                 anyhow::bail!("Remote API-key authority requires durable SurrealDB; memory is a local development mode");
+             }
+-            let api_key_storage = Arc::new(uar::security::api_keys::SurrealApiKeyStorage::new(db.clone()))
++            let api_key_storage = Arc::new(uar::security::api_keys::SurrealApiKeyStorage::new(db.clone())
++                .with_request_timeout_ms(config.resilience.request_timeout_ms))
+                 as Arc<dyn uar::security::api_keys::ApiKeyStorage>;
+             let a2ui_store = Arc::new(
+                 uar::a2ui::design_systems::store::SurrealDesignSystemStore::new(db.clone()),
+@@ -736,7 +737,8 @@
+                 .await
+                 .expect("Failed to initialize Postgres");
+             let pool = provider.get_pool().clone();
+-            let api_key_storage = Arc::new(uar::security::api_keys::PostgresApiKeyStorage::new(pool.clone()))
++            let api_key_storage = Arc::new(uar::security::api_keys::PostgresApiKeyStorage::new(pool.clone())
++                .with_request_timeout_ms(config.resilience.request_timeout_ms))
+                 as Arc<dyn uar::security::api_keys::ApiKeyStorage>;
+             let a2ui_store = Arc::new(
+                 uar::a2ui::design_systems::store::PostgresDesignSystemStore::new(pool.clone()),
+--- failed-gate/src/uar/security/api_keys/storage.rs
++++ corrected/src/uar/security/api_keys/storage.rs
+@@ -5,6 +5,27 @@
+ use super::{ApiKeyRecord, ApiKeyStorage};
+ #[cfg(any(feature = "surreal-backend", feature = "postgres-backend"))]
+ use async_trait::async_trait;
++#[cfg(any(feature = "surreal-backend", feature = "postgres-backend"))]
++use std::{future::IntoFuture, time::Duration};
++
++#[cfg(any(feature = "surreal-backend", feature = "postgres-backend"))]
++fn authority_timeout(request_timeout_ms: u64) -> Duration {
++    // A severed DB channel was observed to wait for the outer HTTP timeout.
++    // Leave headroom for chained authentication/management queries; maintain
++    // a finite authentication boundary even when ordinary timeouts are disabled.
++    Duration::from_millis((request_timeout_ms.max(1_000) / 8).min(5_000))
++}
++
++#[cfg(any(feature = "surreal-backend", feature = "postgres-backend"))]
++async fn authority_query<T, E>(
++    deadline: Duration,
++    query: impl IntoFuture<Output = Result<T, E>>,
++) -> Result<T, ApiKeyStorageError> {
++    tokio::time::timeout(deadline, query)
++        .await
++        .map_err(|_| ApiKeyStorageError::Unavailable)?
++        .map_err(|_| ApiKeyStorageError::Unavailable)
++}
+ 
+ /// Sanitized persistence outcomes. Backend errors may contain credential data
+ /// and must never cross the authentication or operator receipt boundary.
+@@ -20,13 +41,23 @@
+ #[derive(Debug)]
+ pub struct SurrealApiKeyStorage {
+     db: surrealdb::Surreal<surrealdb::engine::any::Any>,
++    query_timeout: Duration,
+ }
+ 
+ #[cfg(feature = "surreal-backend")]
+ impl SurrealApiKeyStorage {
+     /// Reuse the runtime's selected DB handle; no reconnect or memory fallback.
+     pub fn new(db: surrealdb::Surreal<surrealdb::engine::any::Any>) -> Self {
+-        Self { db }
++        Self {
++            db,
++            query_timeout: authority_timeout(30_000),
++        }
++    }
++
++    /// Derive the authority deadline from the host's existing request budget.
++    pub fn with_request_timeout_ms(mut self, request_timeout_ms: u64) -> Self {
++        self.query_timeout = authority_timeout(request_timeout_ms);
++        self
+     }
+ 
+     async fn records(
+@@ -38,9 +69,8 @@
+         if let Some(parameter) = parameter {
+             request = request.bind(parameter);
+         }
+-        let mut response = request
+-            .await
+-            .map_err(|_| ApiKeyStorageError::Unavailable)?
++        let mut response = authority_query(self.query_timeout, request)
++            .await?
+             .check()
+             .map_err(|_| ApiKeyStorageError::Unavailable)?;
+         let rows: Vec<surrealdb::types::Value> = response
+@@ -64,12 +94,13 @@
+         let data = crate::uar::persistence::providers::surreal::to_db_value(&record)
+             .map_err(|_| ApiKeyStorageError::Unavailable)?;
+         // CREATE, never UPSERT: a duplicate ID cannot erase a revocation.
+-        self.db
++        let query = self
++            .db
+             .query("CREATE type::record('auth_api_keys', $key_id) SET data = $data")
+             .bind(("key_id", record.id))
+-            .bind(("data", data))
+-            .await
+-            .map_err(|_| ApiKeyStorageError::Unavailable)?
++            .bind(("data", data));
++        authority_query(self.query_timeout, query)
++            .await?
+             .check()
+             .map_err(|_| ApiKeyStorageError::Unavailable)?;
+         Ok(())
+@@ -116,13 +147,23 @@
+ #[derive(Debug)]
+ pub struct PostgresApiKeyStorage {
+     pool: sqlx::PgPool,
++    query_timeout: Duration,
+ }
+ 
+ #[cfg(feature = "postgres-backend")]
+ impl PostgresApiKeyStorage {
+     /// Reuse the runtime pool and its startup migrations.
+     pub fn new(pool: sqlx::PgPool) -> Self {
+-        Self { pool }
++        Self {
++            pool,
++            query_timeout: authority_timeout(30_000),
++        }
++    }
++
++    /// Derive the authority deadline from the host's existing request budget.
++    pub fn with_request_timeout_ms(mut self, request_timeout_ms: u64) -> Self {
++        self.query_timeout = authority_timeout(request_timeout_ms);
++        self
+     }
+ 
+     async fn records(
+@@ -135,10 +176,7 @@
+         if let Some(parameter) = parameter {
+             request = request.bind(parameter);
+         }
+-        let rows = request
+-            .fetch_all(&self.pool)
+-            .await
+-            .map_err(|_| ApiKeyStorageError::Unavailable)?;
++        let rows = authority_query(self.query_timeout, request.fetch_all(&self.pool)).await?;
+         rows.into_iter()
+             .map(|row| {
+                 let json: serde_json::Value = row
+@@ -155,8 +193,9 @@
+ impl ApiKeyStorage for PostgresApiKeyStorage {
+     async fn insert(&self, record: ApiKeyRecord) -> anyhow::Result<()> {
+         let data = serde_json::to_value(&record).map_err(|_| ApiKeyStorageError::Unavailable)?;
+-        let inserted = sqlx::query("INSERT INTO auth_api_keys (key_id, data) VALUES ($1, $2) ON CONFLICT (key_id) DO NOTHING")
+-            .bind(&record.id).bind(data).execute(&self.pool).await.map_err(|_| ApiKeyStorageError::Unavailable)?;
++        let query = sqlx::query("INSERT INTO auth_api_keys (key_id, data) VALUES ($1, $2) ON CONFLICT (key_id) DO NOTHING")
++            .bind(&record.id).bind(data);
++        let inserted = authority_query(self.query_timeout, query.execute(&self.pool)).await?;
+         if inserted.rows_affected() != 1 {
+             return Err(ApiKeyStorageError::AlreadyExists.into());
+         }
+@@ -180,8 +219,9 @@
+     }
+ 
+     async fn revoke(&self, id: &str) -> anyhow::Result<bool> {
+-        let updated = sqlx::query("UPDATE auth_api_keys SET data = jsonb_set(data, '{revoked}', 'true'::jsonb) WHERE key_id = $1")
+-            .bind(id).execute(&self.pool).await.map_err(|_| ApiKeyStorageError::Unavailable)?;
++        let query = sqlx::query("UPDATE auth_api_keys SET data = jsonb_set(data, '{revoked}', 'true'::jsonb) WHERE key_id = $1")
++            .bind(id);
++        let updated = authority_query(self.query_timeout, query.execute(&self.pool)).await?;
+         Ok(updated.rows_affected() == 1)
+     }
+ 

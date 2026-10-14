@@ -36,11 +36,18 @@ use pb::{
 #[derive(Debug, Clone)]
 pub struct GrpcAgentService {
     state: Arc<A2AState>,
+    api_keys: Option<Arc<crate::uar::security::api_keys::ApiKeyService>>,
 }
 
 impl GrpcAgentService {
     pub fn new(state: Arc<A2AState>) -> Self {
-        Self { state }
+        Self { state, api_keys: None }
+    }
+
+    /// Bind the same current key authority used by HTTP admission.
+    pub fn with_api_key_service(mut self, service: Arc<crate::uar::security::api_keys::ApiKeyService>) -> Self {
+        self.api_keys = Some(service);
+        self
     }
 
     pub fn into_server(self) -> AgentServiceServer<Self> {
@@ -76,6 +83,16 @@ impl GrpcAgentService {
             tenant_id: principal.tenant_id,
             claims: principal.claims,
         };
+        if user.verified_identity().is_some_and(|identity| identity.is_api_key_credential()) {
+            let service = self.api_keys.as_ref()
+                .ok_or_else(|| Status::unavailable("API-key authority storage is not bound"))?;
+            let valid = service.validate_admission(&user).await.map_err(|error| {
+                if error.downcast_ref::<crate::uar::security::api_keys::ApiKeyStorageError>().is_some() {
+                    Status::unavailable("API-key authority storage is unavailable")
+                } else { Status::unauthenticated("API key requires reissue") }
+            })?;
+            if !valid { return Err(Status::unauthenticated("API key is revoked or expired")); }
+        }
         let workspace = if self.state.security.is_remote() { grpc_workspace(request)? } else { None };
         if self.state.security.is_remote() && request.metadata().contains_key("x-uar-workspace-id")
             && workspace.is_none() {

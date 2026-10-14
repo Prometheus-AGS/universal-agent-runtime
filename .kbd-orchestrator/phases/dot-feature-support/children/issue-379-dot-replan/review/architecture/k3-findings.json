@@ -1,0 +1,107 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-6",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "SUGGESTION",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "Corrected M3 overreach: M3's CRITICAL claim that the cited files (server.rs, types.rs, agent_card.rs, llm/registry.rs, provider_sync.rs, mcp/registry.rs, mcp/runtime.rs, api/a2a/mod.rs, records.rs, recovery.rs) have no source_evidence excerpts is factually false; the packet's source_evidence covers every one of them at the cited lines.",
+      "evidence": "source_evidence includes src/server.rs excerpts at 1455-1465 (A2AThreadService construction at 1458), 2616-2688 (exact-approval-ID route), and 4698-4773 (OpenAI-shaped ingress); src/uar/api/a2a/types.rs at 112-285 (lines 116, 262); agent_card.rs at 12-35 (hardcoded version \"0.1.0\"); api/a2a/mod.rs at 63-76; src/llm/registry.rs at 500-510 and 650-674; src/uar/settings/provider_sync.rs at 1-28 (line 7); src/mcp/registry.rs at 160-172, 690-704, 773-784, 828-840, 1395-1406 (all four `().serve(transport)` unit-handler sites); src/mcp/runtime.rs at 831-907; thread/approvals/records.rs at 1-110 (line 45 finish/transition); thread/approvals/recovery.rs at 1-115 (protected_call at 44).",
+      "suggested_fix": "No artifact change. Discard M3 finding 1; it does not justify a BLOCK."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "Corrected M3 overreach: the working-tree line counts are not used to justify scope reduction, and the artifact already contains exactly the provenance disclaimer M3 demands.",
+      "evidence": "The artifact states: \"They are only a mixed-checkout inventory: they establish neither Dot-attributable expansion nor the necessity or wastefulness of any scenario. No provenance breakdown has been established, and no scope or deletion decision may rely on these counts... No arbitrary line-count reduction target is justified.\" The phrase M3 quotes (\"show significant test/support expansion\") does not appear in the artifact; the artifact's only use of the figures is to refuse attribution and refuse a line-count target.",
+      "suggested_fix": "No artifact change. The counts are presented with their limits named; the traceability directive (\"each scenario must trace to an explicit requirement/failure boundary\") already assigns the decomposition work M3 asks for."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "Corrected M3 overreach: the claim \"This ordering also exists in HEAD\" for the approval-precedence defect is supported by the packet's head_comparison excerpt.",
+      "evidence": "head_comparison (revision b4244ae, src/uar/runtime/manager.rs) shows the identical ordering at HEAD: the governance-bypass branch returns at 5829-5841 before `approval_required` is computed at 5856-5858, and `approval_required` still includes `approval_class == ApprovalClass::Required` only after the early return. The dirty tree's additions (`recovered.is_none()` guard, recovered invalidation) do not change the bypass-before-Required ordering.",
+      "suggested_fix": "No artifact change. M3 lacked the head_comparison section; the claim is verified against it."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "Corrected M3 overreach: the withdrawal of task_execution.rs:568 as production evidence is directly anchored by a `#[cfg(test)] mod tests` declaration in the packet.",
+      "evidence": "The second task_execution.rs source_evidence entry shows lines 422-423: `#[cfg(test)]` / `mod tests {`, with line 568 (`tool_approval: ToolApprovalPolicy::Auto,`) inside that module. The artifact's citation \"test module declared at 422-423\" is exact.",
+      "suggested_fix": "No artifact change."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "Corrected M3 overreach: the ordering constraints M3 calls bare assertions each carry an explicit consequence rationale, and the phase-completion-before-verification rule is an operator constraint, not an engineering claim.",
+      "evidence": "Artifact text: \"enforceable budgets need durable reservation/settlement state so restart cannot reset liabilities; safe schedule recovery needs owner exclusion so a replacement cannot overlap a still-running executor; complete proactive behavior needs memory controls to honor capture/deletion policy and schedules to generate durable due occurrences\" and \"Pin external contract versions... a mapper otherwise has no stable definition of accepted fields, states and errors.\" The full-phase-before-verification ordering restates the goals field: \"No tests/builds before full combined phase implementation.\"",
+      "suggested_fix": "No artifact change."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "Corrected M3 overreach: the duplicate-authority audit gap M3 flags is already named, enumerated, and explicitly scoped as unperformed in the artifact, which is the permitted handling for a source-inspection gap.",
+      "evidence": "\"Review scope clarification\" lists the seven untracked source files by subject (MCP outcome normalization, checkpoint resume envelope, Surreal checkpoint persistence, checkpoint host capability, approval continuation recovery, API-key storage, principal credential storage), states \"whole-tree duplicate-authority classification remains unperformed,\" and bars deletion/refactor on that basis. The reuse mandate is framed as \"prospective design constraints,\" not a claim about the dirty tree.",
+      "suggested_fix": "Optional: assign the whole-tree duplicate-authority classification to a named plan task so it is not silently dropped; the artifact's disclaimer itself is adequate."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "Corrected M3 overreach: the A2A binding concurrency contract is not unanalyzed; it is explicitly named and assigned to the adapter task with a correct caution against over-claiming.",
+      "evidence": "Artifact: \"A2A binding concurrency needs explicit ownership/atomic transition design in the adapter task; the local map observation does not by itself establish a race or deadlock.\" The process-local HashMap/ Mutex structure (thread_service.rs:35-52, 497-509) is cited as the motivation for durable correlation, not as a proven concurrency defect.",
+      "suggested_fix": "No artifact change; the plan's adapter task must carry the ownership/atomic-transition design item."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "New evidence-based issue: the citation agent_card.rs:21 for the hardcoded card version is off by one; line 21 is the `url` field and the hardcoded version \"0.1.0\" is at line 22.",
+      "evidence": "agent_card.rs excerpt: \"21:         url: format!(\\\"{base_url}/a2a/compiler\\\"),\" and \"22:         version: \\\"0.1.0\\\".into(),\". The artifact cites \"hardcoded card version need adaptation (types.rs:116,262, agent_card.rs:21)\".",
+      "suggested_fix": "Correct the citation to agent_card.rs:22. Substantive finding (hardcoded version exists) is unaffected."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "analysis.md",
+      "line": 0,
+      "claim": "New evidence-based issue: the assertion \"The legacy TaskStore is not the production handler's store\" has no supporting evidence anywhere in the packet (no TaskStore file in file_tree, source_evidence, or cited_paths).",
+      "evidence": "file_tree and source_evidence contain no TaskStore source; the claim appears in finding 1 with no citation. The surrounding directive (\"Do not add another executor or independent task authority\") is independently supported by the thread_service.rs evidence, so the unsupported sentence is removable without changing the conclusion.",
+      "suggested_fix": "Either cite the legacy TaskStore path demonstrating it is unwired from the production handler, or delete the sentence."
+    }
+  ],
+  "judge_identity": {
+    "providerConnectionId": "kimi-coding",
+    "providerId": "kimi",
+    "modelId": "k3"
+  },
+  "producer_identity": {
+    "providerConnectionId": "codex-session",
+    "providerId": "openai",
+    "modelId": "gpt-6"
+  },
+  "checked_classes": [
+    "M3 false-finding screen \u2014 all seven M3 findings checked against packet evidence; zero confirmed, all seven are overreach contradicted by source_evidence, head_comparison, or the artifact's own disclaimers",
+    "Citation accuracy \u2014 every artifact file:line citation cross-checked against source_evidence excerpts; one off-by-one found (agent_card.rs:21 vs 22), all others verified including the manager.rs:6147/6180-6182 approval-precedence trace, standalone.rs:63-106 Auto disposition and resolve-without-class-check, orchestrator.rs:525-581 Ask-only host flag and resolve(true), mcp/registry.rs:167 Required class and 698/779/834/1400 unit handlers",
+    "Baseline-vs-dirty conflation \u2014 artifact explicitly disclaims provenance attribution of the dirty-tree counts and bars scope decisions from them; head_comparison confirms the HEAD-ordering claim and the run_cost.rs/cost_budget.rs unchanged-since-HEAD claim is consistent with the fire-and-forget ledger excerpt",
+    "Test-only evidence misuse \u2014 artifact correctly withdraws task_execution.rs:568 (inside #[cfg(test)] at 422-423) rather than relying on it",
+    "Artificial ordering \u2014 every stated dependency carries a consequence rationale or restates the operator's explicit no-tests-before-completion constraint",
+    "Runtime certification vs architecture confidence \u2014 artifact consistently frames conclusions as source-analysis design constraints (\"Runtime reproduction remains deferred\", \"not completion or runtime-conformance evidence\"), correctly distinguishing the two per operator instruction",
+    "Goal coverage \u2014 all nine issue #379 requirements are owned in the requirements table, reusable authorities are named per repair, scope-expansion vs architecture-deficiency assessment is present, and the separate-release recommendation is explicitly superseded per the operator decision",
+    "Uninspected-gap handling \u2014 duplicate-authority audit and A2A binding concurrency gaps are named and assigned rather than silently omitted, which is acceptable at this stage"
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

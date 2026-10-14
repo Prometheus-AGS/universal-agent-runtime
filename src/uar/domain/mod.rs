@@ -11,6 +11,8 @@ pub mod policy;
 pub mod prompt_caching;
 pub mod runs;
 pub mod skills;
+pub mod schedules;
+pub mod followups;
 pub mod reviewed_skill_coverage;
 pub mod team_mailbox;
 pub mod team_context;

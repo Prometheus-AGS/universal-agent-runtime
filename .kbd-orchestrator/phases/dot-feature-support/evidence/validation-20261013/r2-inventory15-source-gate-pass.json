@@ -1,0 +1,29 @@
+{
+  "observed_at": "2026-10-13T23:50:24.803122+00:00",
+  "inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-15.json",
+  "inventory_sha256": "9b7c1e6d7a906f3a50ccadb83fa4bbfa79e2516503a6d9245339001ad72ec248",
+  "target": "credentials_api_integration_test",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,in-memory-backend",
+    "--test",
+    "credentials_api_integration_test",
+    "--",
+    "--include-ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "passed": 4,
+  "failed": 0,
+  "ignored": 0,
+  "filtered": 0,
+  "seconds": 172.37,
+  "log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory15-attempt02/source_integration/credentials_api_integration_test.log",
+  "log_sha256": "7c44f1ffc159d3d9def6a2ebb9194129eb5f081113e71b7c55b96c43956e5d6e",
+  "status": "whole_production_source_gate_passed",
+  "claim_limit": "Current complete-source gate result, not final installed release acceptance. Batch remaining targets still active."
+}

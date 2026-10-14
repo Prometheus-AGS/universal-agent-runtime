@@ -193,6 +193,8 @@ pub enum PrincipalMode {
 /// Body of `GET /api/uar/capabilities`.
 #[derive(Debug, Serialize)]
 pub struct CapabilitiesResponse {
+    /// Per-operation installed host inventory; this link does not confer access.
+    pub assistant_operations: &'static str,
     pub authentication: AuthenticationCapabilities,
     #[serde(rename = "executionProfile")]
     pub execution_profile: &'static str,
@@ -343,6 +345,7 @@ pub fn capabilities_response(
         capabilities.dedup();
     }
     CapabilitiesResponse {
+        assistant_operations: "/api/uar/assistant-capabilities",
         authentication: AuthenticationCapabilities {
             principal_mode: if host_authenticated.is_some() {
                 PrincipalMode::HostAsserted

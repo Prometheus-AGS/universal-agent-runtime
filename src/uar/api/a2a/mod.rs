@@ -19,6 +19,9 @@
 //! resource cleanup. Neither transport may treat that flag as successful stop.
 
 pub mod agent_card;
+pub mod durable;
+#[cfg(feature = "server")]
+pub mod v1;
 pub mod client;
 pub mod contract;
 #[cfg(feature = "server")]
@@ -72,5 +75,7 @@ pub fn build_rpc_router() -> Router<Arc<A2AState>> {
 
 #[cfg(feature = "server")]
 pub fn build_well_known_router() -> Router<Arc<A2AState>> {
-    Router::new().route("/agent.json", get(handler::handle_agent_card))
+    Router::new()
+        .route("/agent-card.json", get(v1::handle_agent_card))
+        .route("/agent.json", get(handler::handle_agent_card))
 }

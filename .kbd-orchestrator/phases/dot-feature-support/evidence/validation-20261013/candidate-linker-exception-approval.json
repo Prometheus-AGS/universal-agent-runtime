@@ -1,0 +1,8 @@
+{
+  "recorded_at": "2026-10-13T08:46:54.615391+00:00",
+  "authorization": "Explicit human response: Approve candidate-only exception and continue validation (Recommended)",
+  "scope": "Serial database and runtime validation using authorized inventory07/candidate06 only; preserve exact visible macOS compact-unwind linker diagnostic. No suppression or panic/unwind changes, no functional test waiver, no final release acceptance. All other warnings remain subject to project rule.",
+  "inventory": "/tmp/dot17-validation-20261013T064622Z/authorized-inventory-07.json",
+  "candidate_receipt": "/tmp/uar-dot17-validation-20261013/candidate-attempt-06/candidate_build/receipt.json",
+  "paid_resources": "Prior separate approval of exactly one10Gi retained know-me volume remains unchanged."
+}

@@ -1,0 +1,161 @@
+{
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T022508Z-production-boundary.json",
+  "changedBoundPathsSincePreviousGate": [
+    "docs/operations/truthful-tool-outcomes.md",
+    "src/uar/runtime/skills/activation.rs",
+    "tests/support/truthful_tool_outcome_process.rs",
+    "tests/truthful_tool_outcomes.rs"
+  ],
+  "hashes": {
+    "src/uar/runtime/skills/activation.rs": {
+      "old": "200ec6b19c47ced13bdb2042b4c16278b8d7699a6ae503443484d75d580a0515",
+      "new": "f31420f83a7d9f8a32a942a3e7c4d83c50e76567b916a9fd425134c6c36de908"
+    },
+    "tests/support/truthful_tool_outcome_process.rs": {
+      "old": "b51c9c31dc4cce50a6b9d0a79b8f9d191a65b005284de33fddbe89e0257bb836",
+      "new": "b6c90b26de8cacf791a081feb075c7f94c5f6943df84037cf064e8970e0d4cef"
+    },
+    "tests/truthful_tool_outcomes.rs": {
+      "old": "be770a718e7c1551d7f023639a8c0d175424e17945c9faf347bf1b2be1272fb1",
+      "new": "730b01b55601035e313e1478ca324be850ed259510a12d85be027c38b5b4ed55"
+    },
+    "docs/operations/truthful-tool-outcomes.md": {
+      "old": "175f7e29d4d409df8497cf9165bdaa27fdf7b143c7c0734d90ab8603fcac6b9a",
+      "new": "f5d3d32d6773c14672482e49d06404b3c7f3ba51adad4b5fd56e6783bd042b35"
+    }
+  },
+  "correctionPatchSha256": "9ea9e47c961ae902e6d4d692e4f9fced19c4a64276c05be822d353e1bfc88b72",
+  "scenarioInventoryChange": "Original59preserved;3 production activation controls per profile added; total65(local30/shared35).",
+  "supersededInference": "Earlier unqualified outcomes__effect inference was incomplete. Filesystem skill loader qualifies its actual server to dot04__outcomes; fixture now restores actual dot04__outcomes__effect. Prior failures remain historical evidence.",
+  "patch": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T024240Z-observed-correction.patch",
+  "tier0Commands": [
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--no-index",
+        "--check",
+        "/dev/null",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/skills/activation.rs"
+      ],
+      "exit": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--no-index",
+        "--check",
+        "/dev/null",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--no-index",
+        "--check",
+        "/dev/null",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs"
+      ],
+      "exit": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--no-index",
+        "--check",
+        "/dev/null",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/docs/operations/truthful-tool-outcomes.md"
+      ],
+      "exit": 1,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--emit",
+        "stdout",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/skills/activation.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 19924,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--emit",
+        "stdout",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 66962,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--emit",
+        "stdout",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 38067,
+      "stderr_bytes": 0
+    },
+    {
+      "command": [
+        "/Users/gqadonis/.cargo/bin/rustfmt",
+        "--edition",
+        "2024",
+        "--unstable-features",
+        "--skip-children",
+        "--check",
+        "--config",
+        "reorder_imports=false,reorder_modules=false",
+        "--file-lines",
+        "[{\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/skills/activation.rs\", \"range\": [401, 401]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/skills/activation.rs\", \"range\": [481, 502]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs\", \"range\": [28, 28]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs\", \"range\": [132, 132]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs\", \"range\": [257, 453]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs\", \"range\": [948, 950]}]",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/uar/runtime/skills/activation.rs",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/support/truthful_tool_outcome_process.rs",
+        "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/tests/truthful_tool_outcomes.rs"
+      ],
+      "exit": 0,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    }
+  ],
+  "tier0Attribution": "Original author cheap checks; exact4sourcepath correction and broad source stability independently verified. Earlier unqualified tool inference explicitly superseded; actor now uses actual qualified filesystem namespace and executed successfully."
+}

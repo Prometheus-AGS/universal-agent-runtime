@@ -329,18 +329,6 @@ where
     build_sse_response_inner(stream, agui_spec, replay_snapshot, None)
 }
 
-/// Full-harness consumers advance one source cursor for every normalized event,
-/// including events with no AG-UI content representation.
-pub(crate) fn build_full_harness_sse_response<S>(
-    stream: S,
-    run_id: String,
-) -> Sse<impl Stream<Item = Result<Event, Infallible>> + Send>
-where
-    S: Stream<Item = StreamEvent> + Send + 'static,
-{
-    build_sse_response_inner(stream, false, None, Some(run_id))
-}
-
 fn build_sse_response_inner<S>(
     stream: S,
     agui_spec: bool,

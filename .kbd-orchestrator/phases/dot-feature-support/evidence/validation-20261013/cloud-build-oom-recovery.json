@@ -1,0 +1,23 @@
+{
+  "recorded_at": "2026-10-13T14:20:23.220097+00:00",
+  "failed_candidate": {
+    "pod_uid": "109eaf67-1044-4d37-9403-0b2b00b4ee27",
+    "exit_code": 137,
+    "reason": "OOMKilled",
+    "finished_at": "2026-10-13T12:58:50Z",
+    "memory_limit": "8Gi",
+    "candidate_manifest_observed": "404 MANIFEST_UNKNOWN"
+  },
+  "recovery": {
+    "same_pod": true,
+    "memory_limit": "12Gi",
+    "restart_count": 1,
+    "retained_cache": "10.64GB",
+    "source_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-12.json",
+    "source_content_sha256": "910482a3d1b3ebfc53a74067dce1e1e024494d0c49d34fcbbb5776584253e36d",
+    "archive_sha256": "a911473146d6955094b1646f99943d37a1428e824f523cd467c87555a69a65cb",
+    "cargo_jobs": 1,
+    "new_paid_resources": 0
+  },
+  "claims": "Recovery infrastructure only. No image, runtime deployment, product acceptance or final certification achieved."
+}

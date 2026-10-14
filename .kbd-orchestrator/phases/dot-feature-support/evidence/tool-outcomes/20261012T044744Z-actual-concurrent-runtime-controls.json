@@ -1,0 +1,167 @@
+[
+  {
+    "profile": "shared",
+    "mode": "success",
+    "concurrent": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 45367,
+      "observerPid": 45535,
+      "writerStartedAt": "2026-10-12T04:50:35.769273+00:00",
+      "observerStartedAt": "2026-10-12T04:50:40.635400+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:50:42.119323+00:00",
+      "database": "truthful_outcomes_binary_team_process_success",
+      "namespace": "dot04_5cdf5bb0f23f4848bf90f3078aa2870d",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-success-concurrent-observer"
+    },
+    "restart": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 45367,
+      "restartedPid": 45574,
+      "startedAt": "2026-10-12T04:50:42.422848+00:00",
+      "database": "truthful_outcomes_binary_team_process_success",
+      "teamOutcome": "succeeded",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-success-restarted-observer"
+    },
+    "modelAndEffectCountsUnchangedByObserver": true,
+    "basis": "Actual fixture assertions completed"
+  },
+  {
+    "profile": "shared",
+    "mode": "application",
+    "concurrent": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 45617,
+      "observerPid": 45726,
+      "writerStartedAt": "2026-10-12T04:50:43.808655+00:00",
+      "observerStartedAt": "2026-10-12T04:50:48.515287+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:50:49.541752+00:00",
+      "database": "truthful_outcomes_binary_team_process_application",
+      "namespace": "dot04_5cdf5bb0f23f4848bf90f3078aa2870d",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-application-concurrent-observer"
+    },
+    "restart": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 45617,
+      "restartedPid": 45757,
+      "startedAt": "2026-10-12T04:50:49.847253+00:00",
+      "database": "truthful_outcomes_binary_team_process_application",
+      "teamOutcome": "failed",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-application-restarted-observer"
+    },
+    "modelAndEffectCountsUnchangedByObserver": true,
+    "basis": "Actual fixture assertions completed"
+  },
+  {
+    "profile": "shared",
+    "mode": "unknown",
+    "concurrent": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 45804,
+      "observerPid": 46122,
+      "writerStartedAt": "2026-10-12T04:50:51.990433+00:00",
+      "observerStartedAt": "2026-10-12T04:50:57.173584+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:50:58.501527+00:00",
+      "database": "truthful_outcomes_binary_team_process_unknown",
+      "namespace": "dot04_5cdf5bb0f23f4848bf90f3078aa2870d",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-unknown-concurrent-observer"
+    },
+    "restart": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 45804,
+      "restartedPid": 46174,
+      "startedAt": "2026-10-12T04:50:58.811658+00:00",
+      "database": "truthful_outcomes_binary_team_process_unknown",
+      "teamOutcome": "uncertain",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-unknown-restarted-observer"
+    },
+    "modelAndEffectCountsUnchangedByObserver": true,
+    "basis": "Actual fixture assertions completed"
+  },
+  {
+    "profile": "shared",
+    "mode": "no_tool",
+    "concurrent": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 46205,
+      "observerPid": 46645,
+      "writerStartedAt": "2026-10-12T04:51:00.189839+00:00",
+      "observerStartedAt": "2026-10-12T04:51:04.594666+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:51:05.602801+00:00",
+      "database": "truthful_outcomes_binary_team_process_no_tool",
+      "namespace": "dot04_5cdf5bb0f23f4848bf90f3078aa2870d",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-no_tool-concurrent-observer"
+    },
+    "restart": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 46205,
+      "restartedPid": 46674,
+      "startedAt": "2026-10-12T04:51:05.901120+00:00",
+      "database": "truthful_outcomes_binary_team_process_no_tool",
+      "teamOutcome": "succeeded",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team_process-no_tool-restarted-observer"
+    },
+    "modelAndEffectCountsUnchangedByObserver": true,
+    "basis": "Actual fixture assertions completed"
+  },
+  {
+    "profile": "shared",
+    "mode": "legacy-hold",
+    "concurrent": {
+      "kind": "concurrent_runtime_binary_observer",
+      "writerPid": 47041,
+      "observerPid": 47424,
+      "writerStartedAt": "2026-10-12T04:51:07.292495+00:00",
+      "observerStartedAt": "2026-10-12T04:51:11.904105+00:00",
+      "bothAliveObservedAt": "2026-10-12T04:51:12.916271+00:00",
+      "database": "truthful_outcomes_binary_team_process_legacy_hold",
+      "namespace": "dot04_5cdf5bb0f23f4848bf90f3078aa2870d",
+      "persistenceDescriptorSha256": "sha256:fa5cb7ba037d1c706088d9913f7b56286454e2fc3e01624a723a29ff0d1b5ac7",
+      "catalogStorage": {
+        "backend": "surrealdb"
+      },
+      "authenticatedOwner": "v1:s:19:dot04-outcome-owner",
+      "observerOwnsExecution": false,
+      "observerTeamExecutionAdvertised": false,
+      "observerEvidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team-process-legacy-hold-concurrent-observer"
+    },
+    "restart": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 47041,
+      "restartedPid": 47794,
+      "startedAt": "2026-10-12T04:51:13.225602+00:00",
+      "database": "truthful_outcomes_binary_team_process_legacy_hold",
+      "teamOutcome": "uncertain",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/shared-ca0b4d69bd10479980fca3b97e1e89dd/binary-team-process-legacy-hold-restarted-observer"
+    },
+    "modelAndEffectCountsUnchangedByObserver": true,
+    "basis": "Actual fixture assertions completed"
+  }
+]

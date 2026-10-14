@@ -1,0 +1,12 @@
+{
+  "preparedAt": "2026-10-12T06:04:04.991197+00:00",
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-retry-preparation-q5o1ge51",
+  "status": "runner_prepared_sourceauthor_handoff_and_newgateauthorization_pending",
+  "previousAttempt": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-acceptance-hv2q20ro",
+  "originalRunnerSha256": "71b0536c39ef36fd07f3694cfaab25d4474325fb70c93ef6c2f13c15154840a1",
+  "newRunnerSha256": "c3d5989cddf9015c5fc8a5e73cc16921e2f96834e751963196d5937e646e6302",
+  "change": "Bound ps/lsof process inspection after observed >10second hostscan stall. Timeout means unknown/skippedsnapshot; preflighttimeout aborts beforeCargo. No production/test changes.",
+  "cargoLaunched": false,
+  "newNamespace": "Will be generatedfresh by prepare.py onlyafterroot supplies authorizedcorrected18filefreeze",
+  "sourceBinding": "Notrun; correctingauthor owns tests/stream_terminal_contract.rs"
+}

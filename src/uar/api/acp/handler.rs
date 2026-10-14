@@ -81,7 +81,11 @@ pub(crate) async fn dispatch_with_capture(
     user: &UserContext,
     credential_capture: Option<AuthenticatedCredentialCapture>,
 ) -> JsonRpcResponse {
-    let owner_id = user.user_id.as_str();
+    let owner_key = match acp_owner_key(user) {
+        Ok(owner) => owner,
+        Err(_) => return JsonRpcResponse::err(req.id, RPC_INVALID_PARAMS, "Invalid session principal"),
+    };
+    let owner_id = owner_key.as_str();
     match req.method.as_str() {
         "agents/list" => handle_agents_list(req.id, &state).await,
         "agents/get" => handle_agents_get(req.id, req.params, &state).await,
@@ -91,13 +95,17 @@ pub(crate) async fn dispatch_with_capture(
         "sessions/get" => handle_sessions_get(req.id, req.params, &sessions, owner_id).await,
         "sessions/delete" => handle_sessions_delete(req.id, req.params, &sessions, owner_id).await,
         "runs/create" => handle_runs_create(req.id, req.params, &state, &sessions, user, credential_capture).await,
-        "runs/get" => handle_runs_get(req.id, req.params, &state, owner_id).await,
+        "runs/get" => handle_runs_get(req.id, req.params, &state, user).await,
         _ => JsonRpcResponse::err(
             req.id,
             RPC_METHOD_NOT_FOUND,
             format!("Method '{}' not found", req.method),
         ),
     }
+}
+
+fn acp_owner_key(user: &UserContext) -> anyhow::Result<String> {
+    user.session_owner_key()
 }
 
 // =============================================================================
@@ -253,7 +261,10 @@ async fn handle_runs_create(
     user: &UserContext,
     credential_capture: Option<AuthenticatedCredentialCapture>,
 ) -> JsonRpcResponse {
-    let owner_id = user.user_id.as_str();
+    let owner_id = match acp_owner_key(user) {
+        Ok(owner) => owner,
+        Err(_) => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, "Invalid session principal"),
+    };
     let params = match params {
         Some(p) => p,
         None => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, "Missing params"),
@@ -281,7 +292,7 @@ async fn handle_runs_create(
     };
 
     // Verify session exists
-    if sessions.get(owner_id, &session_id).await.is_none() {
+    if sessions.get(&owner_id, &session_id).await.is_none() {
         return JsonRpcResponse::err(
             id,
             ACP_SESSION_NOT_FOUND,
@@ -315,7 +326,7 @@ async fn handle_runs_get(
     id: Option<Value>,
     params: Option<Value>,
     state: &AppState,
-    owner_id: &str,
+    user: &UserContext,
 ) -> JsonRpcResponse {
     let run_id = match params
         .as_ref()
@@ -326,7 +337,7 @@ async fn handle_runs_get(
         None => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, "Missing run_id"),
     };
     // Check if run exists in run manager
-    let run = state.run_manager.get_run_for_user(owner_id, &run_id).await;
+    let run = state.run_manager.get_run_for_context(user, &run_id).await;
     match run {
         Some(r) => JsonRpcResponse::ok(
             id,

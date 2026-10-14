@@ -1,0 +1,943 @@
+{
+  "phase": "dot-feature-support",
+  "change": "dot-04-truthful-tool-outcomes",
+  "task": "2",
+  "stage": "Execute",
+  "waypointRevisionAtDispatch": 2695,
+  "verificationTier": "Tier 1 completed-change real production integration",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,in-memory-backend",
+    "--test",
+    "truthful_tool_outcomes",
+    "--",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "commandDisplay": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test truthful_tool_outcomes -- --test-threads=1 --nocapture",
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "startedAt": "2026-10-12T02:10:28.116882+00:00",
+  "status": "failed",
+  "sourceFingerprint": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T021011Z-source-fingerprint.json",
+  "sourceFingerprintSha256": "9c13760e936c135856e524e625487fa564e882b786aff421ff6be6504b05872c",
+  "privateSourceSnapshot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/source-snapshot.tar.gz",
+  "sourceSnapshotSha256": "d01948d9301b320a5092bcaf08e8b296397e64a90131cd46467293343818ab7f",
+  "privateDirtySourcePatch": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/dirty-source.patch",
+  "dirtySourcePatchSha256": "63ba56e6fe546785ca6b7ba72394e0a3520aa0a406e50296f094b34cd3fcdd91",
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6",
+  "privateRawLog": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/cargo-raw.log",
+  "environmentNames": [
+    "HOME",
+    "PATH",
+    "UAR_DOT04_INFRA_FILE",
+    "UAR_DOT04_EVIDENCE_ROOT"
+  ],
+  "topChildVariableUnset": true,
+  "substantiveTest": "actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes",
+  "noopTopHarnessEntry": "child_outcome_boundary",
+  "expectedScenarioEntries": 59,
+  "sampledProcesses": [
+    {
+      "pid": 87865,
+      "parentPid": 85341,
+      "comm": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "observedAt": "2026-10-12T02:10:43.078745+00:00",
+      "role": "integration-target",
+      "artifact": {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "sha256": "4093cb735309e35c55bdf11f51de75fbf9c07bc60ddc3fc91c5c99f9628f6141",
+        "bytes": 333403864,
+        "capturedAt": "2026-10-12T02:10:43.310456+00:00"
+      }
+    },
+    {
+      "pid": 88550,
+      "parentPid": 87865,
+      "comm": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "observedAt": "2026-10-12T02:10:46.666644+00:00",
+      "role": "integration-target",
+      "artifact": {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "sha256": "4093cb735309e35c55bdf11f51de75fbf9c07bc60ddc3fc91c5c99f9628f6141",
+        "bytes": 333403864,
+        "capturedAt": "2026-10-12T02:10:43.310456+00:00"
+      }
+    },
+    {
+      "pid": 88675,
+      "parentPid": 88550,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T02:10:48.896149+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "678d373e10fc926e3d24e705d1cf94f490421952ed2713879c5b4d7e76dc0a77",
+        "bytes": 551865368,
+        "capturedAt": "2026-10-12T02:10:49.409565+00:00"
+      }
+    },
+    {
+      "pid": 88882,
+      "parentPid": 88675,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:10:57.224469+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 88985,
+      "parentPid": 88550,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:10:59.453015+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 89462,
+      "parentPid": 88550,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T02:11:00.708230+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "678d373e10fc926e3d24e705d1cf94f490421952ed2713879c5b4d7e76dc0a77",
+        "bytes": 551865368,
+        "capturedAt": "2026-10-12T02:10:49.409565+00:00"
+      }
+    },
+    {
+      "pid": 89627,
+      "parentPid": 89462,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:11:04.016484+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 89690,
+      "parentPid": 88550,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:11:06.202895+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 89691,
+      "parentPid": 88550,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:11:06.203128+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 89742,
+      "parentPid": 88550,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T02:11:08.386293+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "678d373e10fc926e3d24e705d1cf94f490421952ed2713879c5b4d7e76dc0a77",
+        "bytes": 551865368,
+        "capturedAt": "2026-10-12T02:10:49.409565+00:00"
+      }
+    },
+    {
+      "pid": 89779,
+      "parentPid": 89742,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:11:10.857383+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 89890,
+      "parentPid": 88550,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T02:11:14.138757+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "678d373e10fc926e3d24e705d1cf94f490421952ed2713879c5b4d7e76dc0a77",
+        "bytes": 551865368,
+        "capturedAt": "2026-10-12T02:10:49.409565+00:00"
+      }
+    },
+    {
+      "pid": 89942,
+      "parentPid": 89890,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:11:16.340486+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 89968,
+      "parentPid": 89890,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:11:17.445352+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 89969,
+      "parentPid": 89890,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:11:17.445659+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 90001,
+      "parentPid": 88550,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T02:11:18.539677+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "678d373e10fc926e3d24e705d1cf94f490421952ed2713879c5b4d7e76dc0a77",
+        "bytes": 551865368,
+        "capturedAt": "2026-10-12T02:10:49.409565+00:00"
+      }
+    },
+    {
+      "pid": 90064,
+      "parentPid": 90001,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:11:20.755010+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 90363,
+      "parentPid": 90001,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:11:21.853710+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 90364,
+      "parentPid": 90001,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:11:21.854090+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 90386,
+      "parentPid": 88550,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T02:11:22.961889+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "678d373e10fc926e3d24e705d1cf94f490421952ed2713879c5b4d7e76dc0a77",
+        "bytes": 551865368,
+        "capturedAt": "2026-10-12T02:10:49.409565+00:00"
+      }
+    },
+    {
+      "pid": 90429,
+      "parentPid": 90386,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:11:25.158796+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 90473,
+      "parentPid": 88550,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T02:11:27.347005+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "678d373e10fc926e3d24e705d1cf94f490421952ed2713879c5b4d7e76dc0a77",
+        "bytes": 551865368,
+        "capturedAt": "2026-10-12T02:10:49.409565+00:00"
+      }
+    },
+    {
+      "pid": 90518,
+      "parentPid": 90473,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:11:28.438762+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 90599,
+      "parentPid": 88550,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T02:11:31.757932+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "678d373e10fc926e3d24e705d1cf94f490421952ed2713879c5b4d7e76dc0a77",
+        "bytes": 551865368,
+        "capturedAt": "2026-10-12T02:10:49.409565+00:00"
+      }
+    },
+    {
+      "pid": 90655,
+      "parentPid": 90599,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:11:33.948394+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    },
+    {
+      "pid": 90706,
+      "parentPid": 88550,
+      "comm": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "observedAt": "2026-10-12T02:11:36.180474+00:00",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "678d373e10fc926e3d24e705d1cf94f490421952ed2713879c5b4d7e76dc0a77",
+        "bytes": 551865368,
+        "capturedAt": "2026-10-12T02:10:49.409565+00:00"
+      }
+    },
+    {
+      "pid": 90832,
+      "parentPid": 90706,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T02:11:38.372019+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+      }
+    }
+  ],
+  "boundFileCount": 6549,
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T020401Z-production-boundary.json",
+  "correction": {
+    "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T020401Z-production-boundary.json",
+    "changedBoundPathsSincePreviousGate": [
+      "tests/support/truthful_tool_outcome_process.rs"
+    ],
+    "hashes": {
+      "tests/support/truthful_tool_outcome_process.rs": {
+        "old": "04b79e1aa819423cacb75898246b161f1c23c3f5b66625bdf5e649b288c296d6",
+        "new": "3dcc50fa686845e09ae6ae55d94a4123e7fb718cceaae4b7793ac3a81e39baf5"
+      }
+    },
+    "correctionPatchSha256": "2d413408af678c9810d0b864cd444dd9cb7c91bef57bf973a6330c2a9a8ed184"
+  },
+  "cargoPid": 85341,
+  "lastObservedAt": "2026-10-12T02:11:39.628503+00:00",
+  "rawLogBytes": 12789,
+  "testLines": [
+    "running 2 tests",
+    "test actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes ... Private dot04 profile evidence retained at /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c",
+    "test child_outcome_boundary ... ok",
+    "test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 53.86s"
+  ],
+  "exitCode": 101,
+  "finishedAt": "2026-10-12T02:11:39.630178+00:00",
+  "elapsedSeconds": 71.37,
+  "sourceUnchangedAtExit": true,
+  "changedSourcePathsAtExit": [],
+  "artifactFingerprints": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "sha256": "4093cb735309e35c55bdf11f51de75fbf9c07bc60ddc3fc91c5c99f9628f6141",
+      "bytes": 333403864,
+      "capturedAt": "2026-10-12T02:10:43.310456+00:00"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "sha256": "678d373e10fc926e3d24e705d1cf94f490421952ed2713879c5b4d7e76dc0a77",
+      "bytes": 551865368,
+      "capturedAt": "2026-10-12T02:10:49.409565+00:00"
+    },
+    {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+      "bytes": 101280,
+      "capturedAt": "2026-10-12T02:10:57.224904+00:00"
+    }
+  ],
+  "artifactStabilityAtExit": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "sameSha256": true
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "sameSha256": true
+    },
+    {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sameSha256": true
+    }
+  ],
+  "testSummary": [
+    "test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 53.86s"
+  ],
+  "testPassedByName": {
+    "child_outcome_boundary": true,
+    "actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes": false
+  },
+  "libtestTopResultObserved": false,
+  "rawLogSha256": "ffe92dfedcf613712d90d01546c7853a47d5bb9ab7b63d85397e14f2cda6b101",
+  "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T021011Z-production-boundary.log",
+  "logSha256": "ffe92dfedcf613712d90d01546c7853a47d5bb9ab7b63d85397e14f2cda6b101",
+  "profiles": [
+    {
+      "profile": "local-c1abfa529f3844c1853baf6baaf5d91c",
+      "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c",
+      "directories": [
+        "binary-scoped-predispatch",
+        "binary-team_process-success",
+        "binary-scoped-success",
+        "binary-scoped-application",
+        "binary-server_process-predispatch",
+        "binary-server_process-application",
+        "binary-server_process-success",
+        "binary-server_process-unknown",
+        "binary-database",
+        "binary-scoped-unknown"
+      ],
+      "receiptFilePresent": true,
+      "processReceiptFilePresent": false,
+      "receipts.jsonCount": 8
+    }
+  ],
+  "sanitizedArtifacts": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T021011Z-local-receipts.json",
+      "sha256": "b279914f43205a1c3b0778f583663a721b8d70197b47d776fe8781ddfed9bff0",
+      "privateSourceSha256": "2dce4554aed6ee1f267bae3acac7e6a66116a6ef56907ea4fc80497b99df277b"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T021011Z-local-helper-88550.stderr.log",
+      "sha256": "7ba5698e3978f1ed7b907e65f929192e8e18d4813e6e8ddc61250e269f88c5c9",
+      "privateSourceSha256": "7ba5698e3978f1ed7b907e65f929192e8e18d4813e6e8ddc61250e269f88c5c9"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T021011Z-local-helper-88550.stdout.log",
+      "sha256": "85a551aa40ee017415ea3b37c8d04c006c61aa1c01c7f19b81033abb63c97f02",
+      "privateSourceSha256": "85a551aa40ee017415ea3b37c8d04c006c61aa1c01c7f19b81033abb63c97f02"
+    }
+  ],
+  "cleanup": [],
+  "rootInfrastructureUntouched": true,
+  "failureAnalysis": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T021011Z-failure-analysis.json",
+  "correctionReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T021011Z-observed-correction.json",
+  "scenarioInventory": {
+    "expected": 59,
+    "evidencedEntered": 21,
+    "completed": 20,
+    "completedScenarios": [
+      "local/registry/direct/success",
+      "local/registry/scoped/success",
+      "local/manager/direct/success",
+      "local/scoped_authenticated_binary/success",
+      "local/registry/direct/application",
+      "local/registry/scoped/application",
+      "local/manager/direct/application",
+      "local/scoped_authenticated_binary/application",
+      "local/registry/direct/predispatch",
+      "local/registry/scoped/predispatch",
+      "local/manager/direct/predispatch",
+      "local/scoped_authenticated_binary/predispatch",
+      "local/registry/direct/unknown",
+      "local/registry/scoped/unknown",
+      "local/manager/direct/unknown",
+      "local/scoped_authenticated_binary/unknown",
+      "local/server_process/success",
+      "local/server_process/application",
+      "local/server_process/predispatch",
+      "local/server_process/unknown"
+    ],
+    "failedScenario": "local/team_process/success",
+    "unrun": 38,
+    "unrunScenarios": [
+      "local/team_process/application",
+      "local/team_process/unknown",
+      "local/team_process/no_tool",
+      "local/instance_process/success",
+      "local/instance_process/application",
+      "local/instance_process/unknown",
+      "shared/registry/direct/success",
+      "shared/registry/scoped/success",
+      "shared/manager/direct/success",
+      "shared/scoped_authenticated_binary/success",
+      "shared/registry/direct/application",
+      "shared/registry/scoped/application",
+      "shared/manager/direct/application",
+      "shared/scoped_authenticated_binary/application",
+      "shared/registry/direct/predispatch",
+      "shared/registry/scoped/predispatch",
+      "shared/manager/direct/predispatch",
+      "shared/scoped_authenticated_binary/predispatch",
+      "shared/registry/direct/unknown",
+      "shared/registry/scoped/unknown",
+      "shared/manager/direct/unknown",
+      "shared/scoped_authenticated_binary/unknown",
+      "shared/server_process/success",
+      "shared/server_process/application",
+      "shared/server_process/predispatch",
+      "shared/server_process/unknown",
+      "shared/team_process/success",
+      "shared/team_process/application",
+      "shared/team_process/unknown",
+      "shared/team_process/no_tool",
+      "shared/team_process/legacy-hold",
+      "shared/team_recovery_process/known-application-failure",
+      "shared/team_recovery_process/legacy",
+      "shared/team_recovery_process/native-legacy-failure",
+      "shared/team_recovery_process/same-name-unrelated-native",
+      "shared/instance_process/success",
+      "shared/instance_process/application",
+      "shared/instance_process/unknown"
+    ],
+    "sharedProfileEntered": false,
+    "entrypointChange": "Four scoped cases in each profile use real startup-composed JWT authenticated ordinary binary POST /api/uar/runs, SSE and real approval. They replace invalid ownerless manual fixtures; counts are not additional scenarios.",
+    "completionEvidence": "receipts.json containing8rows was written only after all16 local first-loop cases/assertions returned. Frozen sequential production_process_cases reached first team package install only after all four preceding server_process cases, durable readbacks and assertions returned."
+  },
+  "curatedBinaryScenarios": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T021011Z-local-curated-binary-scenarios.json",
+  "privateRawBinaryArtifactHashes": [
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-application/stderr.log",
+      "sha256": "3170eaa4f49b7eb4512b212f9fe4d72fa9328005557d2e52439689796054f5f2",
+      "bytes": 39,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-application/scoped-entrypoint.json",
+      "sha256": "96738ae0ff65a116a3d77216812af4f1289fc2f70aeca840657ede1ec07639fd",
+      "bytes": 335,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-application/config.yaml",
+      "sha256": "cdd6cc18eee6112d2a5d92b1d63a2ca699d6a281f7a863161cca09c13a82d8a1",
+      "bytes": 1756,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-application/stdout.log",
+      "sha256": "702db5424d87d63aac190ef7bfacdf6fee7a0cc52aab3b90336d206fe4424ec3",
+      "bytes": 90447,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-application/effects.jsonl",
+      "sha256": "3cfc1b997df8fa42b41d96eaf611a9ec236bb7507ffdd297e3077dda73bb8adb",
+      "bytes": 54,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-application/run-events.json",
+      "sha256": "596d636adbbd4125ad58bc9d3a0fafd2e6d47ad2137f1262614e4be9a4fe2970",
+      "bytes": 22127,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-application/mcp.json",
+      "sha256": "5f9cf1848729b01c499fceef431afa4c8324d8c4d04748b39b04fba6eb568eb4",
+      "bytes": 446,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-predispatch/stderr.log",
+      "sha256": "3170eaa4f49b7eb4512b212f9fe4d72fa9328005557d2e52439689796054f5f2",
+      "bytes": 39,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-predispatch/scoped-entrypoint.json",
+      "sha256": "a9309a9b716d94b5496730c0162e32c70e0524ce25fcf77a0cde795471c61b3a",
+      "bytes": 335,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-predispatch/config.yaml",
+      "sha256": "59389e39f011901746c51fdb00d5c54cc9c90061e41892de7d0c90559308129f",
+      "bytes": 1756,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-predispatch/stdout.log",
+      "sha256": "162dec7267524d0eeeeb1c25c531b5c23d859c314215ddfd69b9b15a334531bd",
+      "bytes": 92810,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-predispatch/run-events.json",
+      "sha256": "3d31b4c3103da3cb3bacd68e690180197f7ca3696a5cd3f7ef932dba09545ec3",
+      "bytes": 22720,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-predispatch/mcp.json",
+      "sha256": "b02905fab8072fbfe76db28e3d1a25a35b695d9e5f2832cd09a1943e6f70d691",
+      "bytes": 446,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-success/stderr.log",
+      "sha256": "3170eaa4f49b7eb4512b212f9fe4d72fa9328005557d2e52439689796054f5f2",
+      "bytes": 39,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-success/scoped-entrypoint.json",
+      "sha256": "15094ed8e7b191468d7e5864bfe119f00d30d296b07aa2dcf9be17412c962bc3",
+      "bytes": 331,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-success/config.yaml",
+      "sha256": "4212908f7c6e3f8a7111a4cdef431eeba4cd6031f52d56e4520e678e05f9a064",
+      "bytes": 1752,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-success/stdout.log",
+      "sha256": "e556d78532e99a8a3a37d37ca1046ff626e0999905bf0ddc522fe91e08bbc981",
+      "bytes": 90457,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-success/effects.jsonl",
+      "sha256": "4034cefa544684812f52a6f5142f08938d88d41c90e7e7b36e5262d43a963e5b",
+      "bytes": 50,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-success/run-events.json",
+      "sha256": "0ceb1aebc524a2ba1c768a73730e6b2436a1297ad09f3d33eae9a924f445b295",
+      "bytes": 21825,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-success/mcp.json",
+      "sha256": "4671c882a0046bfcfbfd0346e0fcdd59db0e1d8c0e3a0635f3ebab2d4e581098",
+      "bytes": 442,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-unknown/stderr.log",
+      "sha256": "3170eaa4f49b7eb4512b212f9fe4d72fa9328005557d2e52439689796054f5f2",
+      "bytes": 39,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-unknown/scoped-entrypoint.json",
+      "sha256": "588e1333798860d8aff4e5f05263dedd2dd63aefc351bb2e9e57bb75032aa15d",
+      "bytes": 331,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-unknown/config.yaml",
+      "sha256": "1acd25fd0378333f939114c52ea38cfb8b1ba11142104b27ad5f0895e62d93a4",
+      "bytes": 1752,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-unknown/stdout.log",
+      "sha256": "d5006d8426d36b1c5f4f9d3293ab1d9a58b447619ff2e01b8bad4ba73364b3b2",
+      "bytes": 81686,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-unknown/effects.jsonl",
+      "sha256": "64b479534fb644a4f761dd38b38c9bb1431878fe387888bfdeea6256c1604d86",
+      "bytes": 50,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-unknown/run-events.json",
+      "sha256": "493a17c84ab2c6cc74e5cc944ce4447ac3bae87864573e47706160aa77ed4840",
+      "bytes": 20081,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-scoped-unknown/mcp.json",
+      "sha256": "6b306db35c298a4d62dcf9f946b7927db5b1f4bb15de537405458f0751d03a9b",
+      "bytes": 442,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-application/stderr.log",
+      "sha256": "3170eaa4f49b7eb4512b212f9fe4d72fa9328005557d2e52439689796054f5f2",
+      "bytes": 39,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-application/config.yaml",
+      "sha256": "0890a1a105b762d1c172bfc1841411842777463799f9a21c096141a16e425eb7",
+      "bytes": 1764,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-application/stdout.log",
+      "sha256": "2b8fd563a898811353b54d9cbad2cf52b00bd28c5264b36e9c0adc25d0d5edc7",
+      "bytes": 90647,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-application/effects.jsonl",
+      "sha256": "b26bc2dab9617953daed6447558401007d37f0c3da7e6a39a2eae8efb7b00336",
+      "bytes": 54,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-application/run-events.json",
+      "sha256": "93cd6b55bb3d9899f9610cc255f3bdbe9f11171ebd02185215dde4c3f0b646df",
+      "bytes": 22132,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-application/mcp.json",
+      "sha256": "8f73e9beafd1b5be4c6546bc804ba5e17b3a3bc2cba4078d4f885197b21f7b55",
+      "bytes": 454,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-predispatch/stderr.log",
+      "sha256": "3170eaa4f49b7eb4512b212f9fe4d72fa9328005557d2e52439689796054f5f2",
+      "bytes": 39,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-predispatch/config.yaml",
+      "sha256": "e29202004539e8d6b436bdf67a40d92c2b5eab31e4b560fd3b60d6200d1fe87c",
+      "bytes": 1764,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-predispatch/stdout.log",
+      "sha256": "7de06a6761e406def7dbc60192aa14e8d07e1a2b2ef6cc6b6b28446a61b98a54",
+      "bytes": 93030,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-predispatch/run-events.json",
+      "sha256": "d2e17ac9aaebeb38d952ba4e5a925ebf69d1ad2250940321e2ca53a3dc413a70",
+      "bytes": 22725,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-predispatch/mcp.json",
+      "sha256": "411228b9c021330f877875460a55ce6052d4515aa9e57f029dd50843e7395b87",
+      "bytes": 454,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-success/stderr.log",
+      "sha256": "3170eaa4f49b7eb4512b212f9fe4d72fa9328005557d2e52439689796054f5f2",
+      "bytes": 39,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-success/config.yaml",
+      "sha256": "d5e7cb6c2131e14016277cbd0a3c65ebf3a1fa3b588d12f481a31c84103b5a2c",
+      "bytes": 1760,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-success/stdout.log",
+      "sha256": "0de870a6d7b734a1b8b60d519d4ad922e29c351d9b3d3c039e155a5ec1851569",
+      "bytes": 90625,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-success/effects.jsonl",
+      "sha256": "fce72dc98891b1bae6cfd55b50e17a4c2fa8cae5973214d7e20633fcf2248d8a",
+      "bytes": 50,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-success/run-events.json",
+      "sha256": "32b2ce0dd6573e6a6d11f6bca0c3b8c5a3671a60d82eaa9a7cfbbcbdfa4247c2",
+      "bytes": 21830,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-success/mcp.json",
+      "sha256": "044cc68d5d3ed92ea2f2071c8f794a6755fc6931ff230631ad843d76ed014655",
+      "bytes": 450,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-unknown/stderr.log",
+      "sha256": "3170eaa4f49b7eb4512b212f9fe4d72fa9328005557d2e52439689796054f5f2",
+      "bytes": 39,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-unknown/config.yaml",
+      "sha256": "df7a9ff8f0819ec74108e694deb9e9ea3532bb9c6e97d69a14ea1f251e868329",
+      "bytes": 1760,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-unknown/stdout.log",
+      "sha256": "f78cc216753c4cdc9267578d06a5e6b12e22cf962c8c806267b74bcac9207617",
+      "bytes": 81865,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-unknown/effects.jsonl",
+      "sha256": "70989752dd123dade48e97b5cd937c86656124ad5b9e9c58eb1a6caaee02dd52",
+      "bytes": 50,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-unknown/run-events.json",
+      "sha256": "03da8113574cd658b73d4e1ef95b9675d6ac7bce6183d0a659698fec28d0f6e6",
+      "bytes": 20085,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-server_process-unknown/mcp.json",
+      "sha256": "83c6db52a9b06393f69e1a844c7a301f66fd9b80af02548191b5ac63351d4939",
+      "bytes": 450,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-team_process-success/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-team_process-success/config.yaml",
+      "sha256": "6fed4a3b06c21cd8c777d45f4749fad7445015d080bd74d2d66dcd050db1f3c7",
+      "bytes": 1758,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-team_process-success/stdout.log",
+      "sha256": "cae56efba528734f4502958097e622bf04e33e0b7b0279320244ecd89f8f4f3e",
+      "bytes": 34929,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-eighth-wct47fh6/profiles/local-c1abfa529f3844c1853baf6baaf5d91c/binary-team_process-success/mcp.json",
+      "sha256": "adebf795b681b92210bca9c1ff5b97d8b8b3a7d04cdf0dbbeffe3a32f80ecb04",
+      "bytes": 448,
+      "mode": "0o600"
+    }
+  ],
+  "harnessCountMeaning": "Two top entries: substantive fullgate failed; child no-op passed. Internal filtered child is fixture orchestration, not unit acceptance.",
+  "processSamplingLimitation": "Sampled PID inventory is not exhaustive; scoped-entrypoint JSON and independent effect traces supplement actual PID/executable evidence. No sidecar launched."
+}

@@ -1,0 +1,138 @@
+[
+  {
+    "mode": "success",
+    "completed": true,
+    "lifecycle": "dormant",
+    "recovery": "ready",
+    "commands": [
+      {
+        "commandId": "1c86ba7e-d15e-44b1-9583-6d40a6a87d36",
+        "rootRunId": "8ba1f1f9-ca11-4c1b-a73d-30700bc01fbc",
+        "status": "completed"
+      },
+      {
+        "commandId": "30bf65a0-3ab3-4179-9312-97d7269678ce",
+        "rootRunId": null,
+        "status": "completed"
+      },
+      {
+        "commandId": "f325d996-f1e4-46e8-9781-c16f75a9a5b9",
+        "rootRunId": null,
+        "status": "completed"
+      }
+    ],
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "8ba1f1f9-ca11-4c1b-a73d-30700bc01fbc",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "succeeded"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "succeeded"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": true,
+        "content": "{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"success\",\"nested\":{\"control\":42}},\"isError\":false,\"_meta\":{\"fixture\":\"metadata-control\"}}"
+      }
+    ],
+    "durableLifecycleAndRecoveryReadbackPassed": true,
+    "modelAndIndependentExternalEffectCardinalityPassed": true
+  },
+  {
+    "mode": "application",
+    "completed": true,
+    "lifecycle": "dormant",
+    "recovery": "ready",
+    "commands": [
+      {
+        "commandId": "c4d6140c-9ba8-47d8-aefd-f78fb49ada1a",
+        "rootRunId": "58f95a22-bc00-45c2-a113-e5a86bb4ef07",
+        "status": "completed"
+      },
+      {
+        "commandId": "14348469-519f-4f4f-9055-e9bd8d6eee45",
+        "rootRunId": null,
+        "status": "completed"
+      },
+      {
+        "commandId": "05af7693-781f-4d0d-9a9f-020ce315bca3",
+        "rootRunId": null,
+        "status": "completed"
+      }
+    ],
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "58f95a22-bc00-45c2-a113-e5a86bb4ef07",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "application_failed"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "application_failed"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": false,
+        "content": "{\"status\":\"error\",\"outcome\":\"application_failed\",\"tool_call_id\":\"dot04-call\",\"tool\":\"dot04__outcomes__effect\",\"provenance\":{\"source\":\"mcp\",\"terminal_state\":\"failed\",\"observed_by\":\"trusted_host\"},\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"application\",\"nested\":{\"control\":42}},\"isError\":true,\"_meta\":{\"fixture\":\"metadata-control\"}},\"message\":\"MCP application failure\"}"
+      }
+    ],
+    "durableLifecycleAndRecoveryReadbackPassed": true,
+    "modelAndIndependentExternalEffectCardinalityPassed": true
+  },
+  {
+    "mode": "unknown",
+    "completed": true,
+    "lifecycle": "active",
+    "recovery": "effect_uncertain",
+    "commands": [
+      {
+        "commandId": "37a34bda-8780-4186-9e95-5163b10958dc",
+        "rootRunId": "c515cf36-39ce-4fb7-9e70-6b58ab5545d8",
+        "status": "uncertain"
+      },
+      {
+        "commandId": "7b8b9a83-0f0d-436a-a6bb-4f706d7c7b8d",
+        "rootRunId": null,
+        "status": "completed"
+      }
+    ],
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "c515cf36-39ce-4fb7-9e70-6b58ab5545d8",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "outcome_unknown"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "outcome_unknown"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": false,
+        "content": "{\"status\":\"error\",\"outcome\":\"outcome_unknown\",\"tool_call_id\":\"dot04-call\",\"tool\":\"dot04__outcomes__effect\",\"provenance\":{\"source\":\"mcp\",\"terminal_state\":\"outcome_unknown\",\"observed_by\":\"trusted_host\"},\"result\":null,\"message\":\"MCP response lost after dispatch; reconcile before another attempt\"}"
+      }
+    ],
+    "durableLifecycleAndRecoveryReadbackPassed": true,
+    "modelAndIndependentExternalEffectCardinalityPassed": true
+  }
+]

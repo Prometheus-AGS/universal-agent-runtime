@@ -1,0 +1,229 @@
+{
+  "publicArtifacts": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T025152Z-expected-inventory.json",
+      "sha256": "acab9788db611b1e37d899ebdaa8ca8ede93bddaf60af3d9e0d544ca342ad01a",
+      "bytes": 7424
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T025152Z-failure-analysis.json",
+      "sha256": "2589abed482eaade25d1fa11d25aff18438162edb0a387b853262828ec6a0adb",
+      "bytes": 6922
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T025152Z-local-activation-controls.json",
+      "sha256": "024b86c2ea36e1384d8eb6a6a4a439921bd219e0b84d27cb2f9819d6b432f171",
+      "bytes": 778
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T025152Z-local-curated-binary-scenarios.json",
+      "sha256": "fc52a1cf7511ab611eb7c771407f503dba88630c2d417988f90dc2640d2b15db",
+      "bytes": 14520
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T025152Z-local-helper-38484.stderr.log",
+      "sha256": "18414163bf17ada72fd179d902a0530b92717c5a9b789e337923583ec6a8c697",
+      "bytes": 2341
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T025152Z-local-helper-38484.stdout.log",
+      "sha256": "e91999f6110e5044527157cc50497a024d97b7b6b5136b02eab1bec31ad5ba76",
+      "bytes": 270
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T025152Z-local-receipts.json",
+      "sha256": "1788549c4e1cd88f1374bc8475462b5df17e1b219f047b29c64bf214fe92bf0e",
+      "bytes": 787
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T025152Z-observed-correction.json",
+      "sha256": "0b94d6221d00d735cb9ccc638c69d81f044ce1ce8f2a7c5dcfc9be2bc88a676e",
+      "bytes": 3214
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T025152Z-observed-correction.patch",
+      "sha256": "7ed04ada483f8d604337b17738964e89b5e75a102edceb023cc3152a699fda6e",
+      "bytes": 733
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T025152Z-production-boundary.json",
+      "sha256": "68a11744b4b05707a45aa6b71fa8b40c3a4dc4bb73a8abea40626b3a4af480fd",
+      "bytes": 52173
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T025152Z-production-boundary.log",
+      "sha256": "8c78c62ac553e66493f01fd966d5b6c1a4788db67d178f0e93e90fce8168e510",
+      "bytes": 12792
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T025152Z-source-fingerprint-at-exit.json",
+      "sha256": "da17b94c7e53b0c94148239a9d5eaca6ae6dec1db44a551724a0be9cce314fc4",
+      "bytes": 940565
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T025152Z-source-fingerprint.json",
+      "sha256": "946ce67449bea9dc9f032853b0f29a786991fc9ba080a8c4d2ab8a8bc156078e",
+      "bytes": 940565
+    }
+  ],
+  "privateArtifacts": [
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-check-0.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/source-snapshot.tar.gz",
+      "sha256": "6bcbca44f591e3cabd9db7cf56183544524ef9c7a7175d9c8ddd32885d172039",
+      "bytes": 71150535,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-check-4.stdout",
+      "sha256": "ed958343424b4818d09796a7b9c69474a0dc61a53542b977ff4e1424c2a2c266",
+      "bytes": 309,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/receipt-path",
+      "sha256": "d43ecc4151ce8d05fda828342e21dfae9e5d8f6fa55d1dadca4295046526da76",
+      "bytes": 169,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-check-2.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/sampled-descendants.json",
+      "sha256": "0bce006e4735e42cf2935708d0d51c0b6e9a14ebb10111ffcc5c29e8eee46e58",
+      "bytes": 21515,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/source-before.json",
+      "sha256": "946ce67449bea9dc9f032853b0f29a786991fc9ba080a8c4d2ab8a8bc156078e",
+      "bytes": 940565,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-check-2.stdout",
+      "sha256": "82c7171712696fb991b81948db874811acaa298fb7101eab21b4e77c2c575fbb",
+      "bytes": 67108,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/dirty-source.patch",
+      "sha256": "9f013f24266aa71e21c76f5933738c81354275d50c59f74b241f2259da2da32c",
+      "bytes": 142669,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-refreeze.json",
+      "sha256": "60385162a4d3cf007c4ae7e14b61eb0ab69abdf7c1c896ebe608f2ff3ace7468",
+      "bytes": 1920,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-check-4.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-check-0.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-commands.json",
+      "sha256": "8e47fe0ce58edc0a1f7befa6925d2c7c8c8d4d778154bc29f797c1e9f8ad0dae",
+      "bytes": 1645,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/correction.json",
+      "sha256": "b2567bc35667628396b8cdb2825f3052c8bd4a2a0da0e05e0b7d1be7aff4db31",
+      "bytes": 640,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-baseline.json",
+      "sha256": "d3e00ebf52855d7474f0ff34fd87390e74ff479d9c569753c47389187a37305b",
+      "bytes": 123,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/correction.patch",
+      "sha256": "7ed04ada483f8d604337b17738964e89b5e75a102edceb023cc3152a699fda6e",
+      "bytes": 733,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-check-1.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/expected-inventory.json",
+      "sha256": "acab9788db611b1e37d899ebdaa8ca8ede93bddaf60af3d9e0d544ca342ad01a",
+      "bytes": 7424,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-validate_shapes.py",
+      "sha256": "bc892a2a5c94b74ed041d9c3194bdf2646ff9f355620c2dbc42add848441e426",
+      "bytes": 6500,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-changed-ranges.json",
+      "sha256": "322dc97b97afb49782858d7e2f50ec125850536736688506f3478895eb4ae4e9",
+      "bytes": 176,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/cargo-raw.log",
+      "sha256": "8c78c62ac553e66493f01fd966d5b6c1a4788db67d178f0e93e90fce8168e510",
+      "bytes": 12792,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-check-3.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-before.rs",
+      "sha256": "b6c90b26de8cacf791a081feb075c7f94c5f6943df84037cf064e8970e0d4cef",
+      "bytes": 66894,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/driver.py",
+      "sha256": "0b3017e24489e34ac3024cf17c739f113752efc7ab6465b9cf75243406a08b27",
+      "bytes": 13476,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-check-3.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o600"
+    },
+    {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-twelfth-a9h3wwa0/author-check-1.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mode": "0o600"
+    }
+  ],
+  "privateRootMode": "0o700",
+  "task1Tier0PreservedSha256": "644fdd827eca59e24828c041594fdff5d5f334986d7b12fef66451012b26ee45"
+}

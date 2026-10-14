@@ -8,6 +8,50 @@ manifest binds hashed local test and security-audit receipts to the release
 source SHA. GitHub Actions are not a product-test, build, certification, or
 signing runner; they are reserved for deployment execution and validation.
 
+Before archiving or signing, the local evidence script generates
+`release-input-provenance.json`. The existing manifest's `evidence.files` hashes
+this companion receipt and the signed supply checksum index covers it. To
+inspect source inputs separately from a clean checkout, use a fresh output path:
+
+```bash
+mkdir -p target/release-inputs
+node scripts/generate-release-input-provenance.mjs target/release-inputs/release-input-provenance.json
+```
+
+The generator rejects dirty source and recursive submodule checkouts, mismatched
+policy/gitlink/checkout commits, Liter policy/crate/lock version disagreement,
+and memory export provenance or crate/lock disagreement before emitting a
+success receipt. It records the root commit/tree, policy hash, recursive gitlinks,
+skill source tree, memory export file hashes and adapted manifest, provider
+catalog, Docker inputs and compiled collaboration schemas. Each actual root,
+frontend and entity-management pnpm install workspace includes its definition,
+lock and package manifests, including manifests inside the source submodule.
+Resource templates shipped in the skill submodule remain bound by its source
+tree and recursive gitlinks; they are not reported as install workspaces.
+
+The memory policy and export table identify an upstream **commit**. The exported
+directory has its own **tree** identity; the generator records both without
+equating them or claiming an upstream byte comparison. Such a comparison is
+separate reconciliation evidence, including any documented manifest adaptation.
+
+The uncomfortable limit: this is source evidence. It cannot certify frozen
+installation, locked compilation, offline closure or the skills selected by a
+launcher. At the completed-change production gate, retain the actual frozen
+install and locked packaging commands, results and artifact identity. Preserve
+the launched host's `skills.pack.resolved` log (`source`, `root`, `version`,
+`skill_count`) and content identities for the selected root and extra/verified
+roots. Docker selects `/opt/uar/skills/builtin` through
+`UAR_BUILTIN_SKILLS_DIR`; a repository embedded-source receipt does not prove
+that a separate launcher used that root. Full offline rebuild acceptance remains
+the existing unpacked, empty-cache, network-disabled `--locked --offline` gate.
+
+The supporting public-CLI integration test uses temporary real Git repositories,
+submodules and filesystem inputs. Run it locally at the completed-change boundary:
+
+```bash
+node --test scripts/test-release-input-provenance.mjs
+```
+
 Run the local security gate first, then prepare evidence from already-built
 platform archives and an already-published digest-addressed candidate image.
 Both commands require a clean checkout and write source-bound receipts. Signing

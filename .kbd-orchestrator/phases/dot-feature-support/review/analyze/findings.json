@@ -1,0 +1,27 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "gpt-6.1-sol",
+  "producer_model": "unknown",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "unverified-producer-unknown",
+  "findings": [],
+  "judge_identity": {
+    "providerConnectionId": "openai-proxy-8181",
+    "providerId": "openai",
+    "modelId": "gpt-6.1-sol"
+  },
+  "checked_classes": [
+    "Build-versus-adopt blind spots \u2014 The artifact compares existing UAR primitives with a timing library, a durable job library, and a workflow platform. It assigns UAR-specific authority and transaction semantics to UAR while requiring an exact-version scheduler fit gate before adoption.",
+    "Unevaluated candidates \u2014 All seven candidates have verdicts, supporting evidence, risks, and decision rationales. Conditional adoption and reference-only dispositions are explicitly distinguished from permission to install dependencies.",
+    "Maintenance and unverifiable landscape claims \u2014 External candidates include release/version checks and primary-source references. The artifact identifies mutable main-branch documentation, stale indexed Temporal descriptions, unresolved licensing, and the absence of compatibility tests rather than treating them as settled adoption evidence.",
+    "Missing solution categories \u2014 The candidate set covers timing, persistent job dispatch, workflow orchestration, existing memory infrastructure, transactional persistence, and provider framing. No required capability in the supplied goals demonstrates a missing solution category that would invalidate the recommendations.",
+    "Contradictions with assessment or goals \u2014 The artifact explicitly updates the assessment's publication uncertainty, traces effective dependency inputs without approving policy-pin divergence, and preserves the unreproduced status of runtime findings. Both local operation and shared hosting remain mandatory first-release gates.",
+    "Project constraints and unsupported support claims \u2014 No separate constraints were supplied. Backend and entry-point mappings are labeled proposals, unresolved mappings block support claims, and Postgres and direct embedded SDK parity are not silently asserted."
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

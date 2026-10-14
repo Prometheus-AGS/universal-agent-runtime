@@ -1,0 +1,697 @@
+{
+  "ownedProcessSamples": [
+    {
+      "pid": 38420,
+      "role": "integration-target",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 39240,
+      "role": "integration-target",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 39400,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 39562,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 39591,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 39592,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 39632,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 39723,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 39836,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 39886,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 39921,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 39972,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 39996,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 39997,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 40083,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 40131,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 40206,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 40258,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 40292,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 40318,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 40391,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 40437,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 40481,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 40818,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 41202,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 41260,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 41398,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 41422,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 41792,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 41843,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 41895,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 41919,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 41983,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42042,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42072,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42100,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42138,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42171,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42250,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42293,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42322,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42340,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42341,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42412,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42462,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42839,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42884,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 42962,
+      "role": "integration-target",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 43680,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 43733,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 43762,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 43831,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 44113,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 44209,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 44364,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 44410,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 44546,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 44631,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 44722,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 44777,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 44829,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 44912,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45045,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45094,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45160,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45266,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45328,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45367,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45437,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45510,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45512,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45535,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45537,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45574,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45617,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45670,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45701,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45703,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45726,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45729,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45757,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45804,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45863,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 45894,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 46116,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 46122,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 46174,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 46176,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 46205,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 46458,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 46619,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 46644,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 46645,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 46674,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 47041,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 47357,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 47401,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 47402,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 47424,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 47534,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 47794,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 47876,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 48221,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 48585,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 48657,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 48707,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 48708,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 48709,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 48788,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 49188,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 49486,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 49515,
+      "role": "integration-target",
+      "presentAtSample": false,
+      "basis": "Live sampled descendant"
+    },
+    {
+      "pid": 49514,
+      "role": "integration-helper",
+      "presentAtSample": false,
+      "basis": "Retained actual helper stdout log, missed by live sampling"
+    },
+    {
+      "pid": 42943,
+      "role": "integration-helper",
+      "presentAtSample": false,
+      "basis": "Retained actual helper stdout log, missed by live sampling"
+    }
+  ],
+  "allSampledAndRetainedHelperPIDsGone": true,
+  "sampledOrdinaryRuntimePIDs": 43,
+  "sampledIntegrationPIDs": 4,
+  "additionalRetainedHelperPIDs": 2,
+  "actualRuntimeBootNodeCount": 45,
+  "exactOwnedPythonTraceMatches": [],
+  "cleanupActions": [],
+  "rootInfrastructureUntouched": true,
+  "scope": "43runtimePID samples versus45successful actualnodeboots inferred from target receipts/configs; not exhaustive process closure. Missing shortlived runtime samples do not change executable identity, same fixed production binary for every Node boot."
+}

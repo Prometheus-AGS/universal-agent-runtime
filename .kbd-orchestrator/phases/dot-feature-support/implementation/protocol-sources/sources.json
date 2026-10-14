@@ -1,0 +1,6 @@
+{
+  "uar-effective-settings.schema.json": "https://raw.githubusercontent.com/GQAdonis/kubo/d5dea2115ad59ed7b12df561e5b085b562df8674/mcp/contract/agentic/uar-effective-settings.schema.json",
+  "agui-types.ts": "https://raw.githubusercontent.com/ag-ui-protocol/ag-ui/704b190e44aedda71a5388d2676370711c6b6b49/sdks/typescript/packages/core/src/generated/types.ts",
+  "agui-schemas.ts": "https://raw.githubusercontent.com/ag-ui-protocol/ag-ui/704b190e44aedda71a5388d2676370711c6b6b49/sdks/typescript/packages/core/src/generated/schemas.ts",
+  "agui-package.json": "https://raw.githubusercontent.com/ag-ui-protocol/ag-ui/704b190e44aedda71a5388d2676370711c6b6b49/sdks/typescript/packages/core/package.json"
+}

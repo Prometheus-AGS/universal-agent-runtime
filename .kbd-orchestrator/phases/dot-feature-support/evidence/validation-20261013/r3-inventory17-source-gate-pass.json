@@ -1,0 +1,36 @@
+{
+  "recorded_at": "2026-10-14T00:58:53.417741+00:00",
+  "requirement": 3,
+  "status": "whole_production_target_passed",
+  "observation": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/truthful_tool_outcomes.json",
+  "observation_sha256": "cca45b6b14d2b6daf6ffcf45d28618ad9c511ad41fb19afa46ae056eb566dbf8",
+  "inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-17.json",
+  "inventory_sha256": "caabc77cc1b7eb5cce72efb913b215cd7b9a2be665cd8c34de3b7c6f5d261409",
+  "log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/formal12-inventory17-attempt01/source_integration/truthful_tool_outcomes.log",
+  "log_sha256": "a30b7a3b6577891cef5eb828eece4e756d40f6d9d08d0084b1635b6b98a318bd",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,in-memory-backend",
+    "--test",
+    "truthful_tool_outcomes",
+    "--",
+    "--include-ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "returncode": 0,
+  "tests_passed": 2,
+  "failed": 0,
+  "ignored": 0,
+  "filtered": 0,
+  "duration_seconds": 1278.21,
+  "profiles": [
+    "local_surreal_kv",
+    "shared_two_runtime_surreal_db"
+  ],
+  "claim_limit": "Whole current production-source target passed; Cargo-provided runtime. Not installed published artifact certification or aggregate source-stage acceptance; remaining suffix targets active."
+}

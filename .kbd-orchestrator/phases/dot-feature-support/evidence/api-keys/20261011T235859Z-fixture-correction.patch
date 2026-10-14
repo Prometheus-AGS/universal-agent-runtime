@@ -1,0 +1,11 @@
+--- failed-gate/tests/support/api_key_process.rs
++++ corrected/tests/support/api_key_process.rs
+@@ -330,7 +330,7 @@
+         claims["iss"] = json!(issuer);
+         claims["aud"] = json!("api-key-runtime");
+     }
+-    universal_agent_runtime::uar::security::jwt::encode(
++    jsonwebtoken::encode(
+         &jsonwebtoken::Header::default(),
+         &claims,
+         &jsonwebtoken::EncodingKey::from_secret(JWT_SECRET.as_bytes()),

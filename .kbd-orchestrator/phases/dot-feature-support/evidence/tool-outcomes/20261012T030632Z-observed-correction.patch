@@ -1,0 +1,167 @@
+--- failed-source/tests/support/truthful_tool_outcome_peer.rs
++++ refrozen-source/tests/support/truthful_tool_outcome_peer.rs
+@@ -147,6 +147,7 @@
+ #[derive(Default)]
+ pub struct Seen {
+     pub requests: Mutex<Vec<Value>>,
++    request_log: PathBuf,
+     pub pause_after_tool: std::sync::atomic::AtomicBool,
+     pub paused: tokio::sync::Notify,
+     pub resume: tokio::sync::Notify,
+@@ -165,8 +166,28 @@
+ }
+ 
+ impl Peer {
+-    pub async fn start() -> Self {
+-        let seen = Arc::new(Seen::default());
++    pub async fn start(root: &Path) -> Self {
++        let log_directory = root.join("liter-requests");
++        std::fs::create_dir_all(&log_directory).unwrap();
++        #[cfg(unix)]
++        {
++            use std::os::unix::fs::PermissionsExt;
++            std::fs::set_permissions(&log_directory, std::fs::Permissions::from_mode(0o700))
++                .unwrap();
++        }
++        let request_log = log_directory.join(format!("{}.jsonl", uuid::Uuid::new_v4()));
++        let mut options = std::fs::OpenOptions::new();
++        options.write(true).create_new(true);
++        #[cfg(unix)]
++        {
++            use std::os::unix::fs::OpenOptionsExt;
++            options.mode(0o600);
++        }
++        options.open(&request_log).unwrap();
++        let seen = Arc::new(Seen {
++            request_log,
++            ..Seen::default()
++        });
+         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+         let url = format!("http://{}/v1", listener.local_addr().unwrap());
+         let app = Router::new()
+@@ -180,16 +201,20 @@
+ }
+ 
+ async fn completion(State(seen): State<Arc<Seen>>, Json(body): Json<Value>) -> Response {
+-    seen.requests.lock().unwrap().push(body.clone());
++    {
++        use std::io::Write;
++        let mut requests = seen.requests.lock().unwrap();
++        requests.push(body.clone());
++        let mut file = std::fs::OpenOptions::new()
++            .append(true)
++            .open(&seen.request_log)
++            .unwrap();
++        serde_json::to_writer(&mut file, &body).unwrap();
++        file.write_all(b"\n").unwrap();
++        file.sync_all().unwrap();
++    }
+     let messages = body["messages"].as_array().unwrap();
+-    let input = messages
+-        .iter()
+-        .rev()
+-        .find(|message| message["role"] == "user")
+-        .unwrap()["content"]
+-        .as_str()
+-        .unwrap();
+-    fn find_mode(value: &Value) -> Option<&str> {
++    fn find_mode(value: &Value) -> Option<String> {
+         match value {
+             Value::String(mode)
+                 if [
+@@ -201,15 +226,43 @@
+                 ]
+                 .contains(&mode.as_str()) =>
+             {
+-                Some(mode)
++                Some(mode.clone())
+             }
+             Value::Object(values) => values.values().find_map(find_mode),
+             Value::Array(values) => values.iter().find_map(find_mode),
+             _ => None,
+         }
+     }
+-    let parsed = serde_json::from_str::<Value>(input).unwrap_or_else(|_| json!(input));
+-    let mode = find_mode(&parsed).expect("controlled user or selected team input names a scenario");
++    fn parsed_mode(value: &Value) -> Option<String> {
++        find_mode(value).or_else(|| {
++            value
++                .as_str()
++                .and_then(|text| serde_json::from_str::<Value>(text).ok())
++                .and_then(|parsed| find_mode(&parsed))
++        })
++    }
++    let mode = messages
++        .iter()
++        .rev()
++        .filter(|message| message["role"] == "user")
++        .find_map(|message| parsed_mode(&message["content"]))
++        .or_else(|| {
++            messages.iter().rev().find_map(|message| {
++                message["tool_calls"]
++                    .as_array()
++                    .into_iter()
++                    .flatten()
++                    .find_map(|call| parsed_mode(&call["function"]["arguments"]))
++            })
++        })
++        .or_else(|| {
++            messages
++                .iter()
++                .rev()
++                .filter(|message| message["role"] == "tool")
++                .find_map(|message| parsed_mode(&message["content"]))
++        })
++        .expect("controlled input or retained tool invocation names a scenario");
+     let chunk = |delta: Value, finish: Value| {
+         format!(
+             "data: {}\n\n",
+--- failed-source/tests/truthful_tool_outcomes.rs
++++ refrozen-source/tests/truthful_tool_outcomes.rs
+@@ -564,7 +564,7 @@
+     if mode == "predispatch" {
+         close_fixture_peer_before_dispatch(&registry, &trace).await;
+     }
+-    let peer = peer::Peer::start().await;
++    let peer = peer::Peer::start(root).await;
+     let manager = Arc::new(
+         RunManager::with_classifier_config(
+             llm(&peer),
+--- failed-source/tests/support/truthful_tool_outcome_process.rs
++++ refrozen-source/tests/support/truthful_tool_outcome_process.rs
+@@ -1512,7 +1512,7 @@
+ ) -> (String, std::sync::Arc<dyn PersistenceLayer>) {
+     let label = format!("scoped-{mode}");
+     let database = Database::configuration(root, shared, &label);
+-    let model = peer::Peer::start().await;
++    let model = peer::Peer::start(root).await;
+     let mut node = Node::boot(root, &label, &database, &model).await;
+     let mut artifact = universal_agent_runtime::uar::defaults::default_agent();
+     artifact.id = format!("dot04-scoped-{mode}");
+@@ -1587,7 +1587,7 @@
+         for mode in modes {
+             let label = format!("{boundary}-{mode}");
+             let database = Database::configuration(root, shared, &label);
+-            let model = peer::Peer::start().await;
++            let model = peer::Peer::start(root).await;
+             let mut node = Node::boot(root, &label, &database, &model).await;
+             let (run, team) = if boundary == "team_process" {
+                 team_case(&node, mode, None).await
+@@ -1673,7 +1673,7 @@
+     }
+     if shared {
+         let database = Database::configuration(root, true, "team-process-legacy-hold");
+-        let model = peer::Peer::start().await;
++        let model = peer::Peer::start(root).await;
+         model
+             .seen
+             .pause_after_tool
+@@ -1717,7 +1717,7 @@
+     for mode in ["success", "application", "unknown"] {
+         let label = format!("instance-process-{mode}");
+         let database = Database::configuration(root, shared, &label);
+-        let model = peer::Peer::start().await;
++        let model = peer::Peer::start(root).await;
+         let mut node = Node::boot(root, &label, &database, &model).await;
+         let (run, tool, instance) = instance_case(&node, mode).await;
+         assert_eq!(

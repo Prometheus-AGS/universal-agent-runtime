@@ -32,6 +32,8 @@ pub mod catalog;
 pub mod config;
 pub mod exposure;
 pub mod lifecycle;
+pub mod interaction;
+pub mod outcome;
 pub mod preflight;
 pub mod projection;
 pub mod registry;

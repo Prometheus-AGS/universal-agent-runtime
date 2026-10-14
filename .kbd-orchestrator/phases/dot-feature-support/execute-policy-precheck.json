@@ -1,0 +1,12 @@
+{
+  "time": "2026-10-11T21:32:15.339021+00:00",
+  "command": "pnpm github-actions-policy:validate",
+  "tier": "mandatory packaging policy prerequisite",
+  "exitCode": 0,
+  "output": "GitHub Actions policy validation passed (deployment workflows only; Pages publisher: docs.yml).",
+  "appliesBefore": [
+    "Dockerfile",
+    "workflow-invoked packaging scripts"
+  ],
+  "productionChangeComplete": false
+}

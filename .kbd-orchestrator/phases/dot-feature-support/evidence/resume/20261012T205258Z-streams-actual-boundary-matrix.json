@@ -1,0 +1,2287 @@
+[
+  {
+    "index": 1,
+    "protocol": "OpenAi",
+    "case": "valid",
+    "boundary": "legacy",
+    "diagnosticsPresent": true,
+    "rowCompleted": false,
+    "diagnosticSha256": "ed7c7b3e9704693276c399fe61507951ec7f6e32e6aac2a21bc3fce997f56e71",
+    "actualProtocol": "OpenAi",
+    "actualCase": "valid",
+    "actualEventTypes": [
+      "stream.start",
+      "runtime.step",
+      "custom",
+      "message.delta",
+      "done"
+    ],
+    "providerRequests": 1,
+    "requestTraceRows": 1,
+    "toolEffects": 0,
+    "checkpointNodes": [],
+    "partialTextExposed": null,
+    "historyInterrupted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 1,
+    "protocol": "OpenAi",
+    "case": "valid",
+    "boundary": "local",
+    "diagnosticsPresent": true,
+    "rowCompleted": false,
+    "diagnosticSha256": "d880a697dc6110d534f458ecd55ff682f69bf0f35eaa7532e173d6f9b7dba070",
+    "actualProtocol": "OpenAi",
+    "actualCase": "valid",
+    "actualEventTypes": [
+      "Artifact",
+      "StatePatch",
+      "Artifact",
+      "RunStart",
+      "StatePatch",
+      "RuntimeStep",
+      "RuntimeStep",
+      "RuntimeStep",
+      "ChatDelta",
+      "RuntimeStep",
+      "RuntimeStep",
+      "RuntimeStep",
+      "StatePatch",
+      "RunDone"
+    ],
+    "providerRequests": 1,
+    "requestTraceRows": 1,
+    "toolEffects": 0,
+    "checkpointNodes": [
+      "admission",
+      "terminal"
+    ],
+    "partialTextExposed": true,
+    "historyInterrupted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 1,
+    "protocol": "OpenAi",
+    "case": "valid",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 2,
+    "protocol": "OpenAi",
+    "case": "split",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 2,
+    "protocol": "OpenAi",
+    "case": "split",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 2,
+    "protocol": "OpenAi",
+    "case": "split",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 3,
+    "protocol": "OpenAi",
+    "case": "empty",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 3,
+    "protocol": "OpenAi",
+    "case": "empty",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 3,
+    "protocol": "OpenAi",
+    "case": "empty",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 4,
+    "protocol": "OpenAi",
+    "case": "missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 4,
+    "protocol": "OpenAi",
+    "case": "missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 4,
+    "protocol": "OpenAi",
+    "case": "missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 5,
+    "protocol": "OpenAi",
+    "case": "partial_after_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 5,
+    "protocol": "OpenAi",
+    "case": "partial_after_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 5,
+    "protocol": "OpenAi",
+    "case": "partial_after_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 6,
+    "protocol": "OpenAi",
+    "case": "partial_event",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 6,
+    "protocol": "OpenAi",
+    "case": "partial_event",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 6,
+    "protocol": "OpenAi",
+    "case": "partial_event",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 7,
+    "protocol": "OpenAi",
+    "case": "malformed",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 7,
+    "protocol": "OpenAi",
+    "case": "malformed",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 7,
+    "protocol": "OpenAi",
+    "case": "malformed",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 8,
+    "protocol": "OpenAi",
+    "case": "invalid_utf8",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 8,
+    "protocol": "OpenAi",
+    "case": "invalid_utf8",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 8,
+    "protocol": "OpenAi",
+    "case": "invalid_utf8",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 9,
+    "protocol": "OpenAi",
+    "case": "malformed_after_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 9,
+    "protocol": "OpenAi",
+    "case": "malformed_after_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 9,
+    "protocol": "OpenAi",
+    "case": "malformed_after_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 10,
+    "protocol": "OpenAi",
+    "case": "tool",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 10,
+    "protocol": "OpenAi",
+    "case": "tool",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 10,
+    "protocol": "OpenAi",
+    "case": "tool",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 11,
+    "protocol": "OpenAi",
+    "case": "tool_missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 11,
+    "protocol": "OpenAi",
+    "case": "tool_missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 11,
+    "protocol": "OpenAi",
+    "case": "tool_missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 12,
+    "protocol": "OpenAi",
+    "case": "cancel",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 12,
+    "protocol": "OpenAi",
+    "case": "cancel",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 12,
+    "protocol": "OpenAi",
+    "case": "cancel",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 13,
+    "protocol": "Azure",
+    "case": "valid",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 13,
+    "protocol": "Azure",
+    "case": "valid",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 13,
+    "protocol": "Azure",
+    "case": "valid",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 14,
+    "protocol": "Azure",
+    "case": "missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 14,
+    "protocol": "Azure",
+    "case": "missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 14,
+    "protocol": "Azure",
+    "case": "missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 15,
+    "protocol": "LiterAnthropic",
+    "case": "valid",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 15,
+    "protocol": "LiterAnthropic",
+    "case": "valid",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 15,
+    "protocol": "LiterAnthropic",
+    "case": "valid",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 16,
+    "protocol": "LiterAnthropic",
+    "case": "split",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 16,
+    "protocol": "LiterAnthropic",
+    "case": "split",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 16,
+    "protocol": "LiterAnthropic",
+    "case": "split",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 17,
+    "protocol": "LiterAnthropic",
+    "case": "empty",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 17,
+    "protocol": "LiterAnthropic",
+    "case": "empty",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 17,
+    "protocol": "LiterAnthropic",
+    "case": "empty",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 18,
+    "protocol": "LiterAnthropic",
+    "case": "missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 18,
+    "protocol": "LiterAnthropic",
+    "case": "missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 18,
+    "protocol": "LiterAnthropic",
+    "case": "missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 19,
+    "protocol": "LiterAnthropic",
+    "case": "partial_after_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 19,
+    "protocol": "LiterAnthropic",
+    "case": "partial_after_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 19,
+    "protocol": "LiterAnthropic",
+    "case": "partial_after_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 20,
+    "protocol": "LiterAnthropic",
+    "case": "partial_event",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 20,
+    "protocol": "LiterAnthropic",
+    "case": "partial_event",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 20,
+    "protocol": "LiterAnthropic",
+    "case": "partial_event",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 21,
+    "protocol": "LiterAnthropic",
+    "case": "malformed",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 21,
+    "protocol": "LiterAnthropic",
+    "case": "malformed",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 21,
+    "protocol": "LiterAnthropic",
+    "case": "malformed",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 22,
+    "protocol": "LiterAnthropic",
+    "case": "invalid_utf8",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 22,
+    "protocol": "LiterAnthropic",
+    "case": "invalid_utf8",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 22,
+    "protocol": "LiterAnthropic",
+    "case": "invalid_utf8",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 23,
+    "protocol": "LiterAnthropic",
+    "case": "malformed_after_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 23,
+    "protocol": "LiterAnthropic",
+    "case": "malformed_after_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 23,
+    "protocol": "LiterAnthropic",
+    "case": "malformed_after_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 24,
+    "protocol": "LiterAnthropic",
+    "case": "tool",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 24,
+    "protocol": "LiterAnthropic",
+    "case": "tool",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 24,
+    "protocol": "LiterAnthropic",
+    "case": "tool",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 25,
+    "protocol": "LiterAnthropic",
+    "case": "tool_missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 25,
+    "protocol": "LiterAnthropic",
+    "case": "tool_missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 25,
+    "protocol": "LiterAnthropic",
+    "case": "tool_missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 26,
+    "protocol": "LiterAnthropic",
+    "case": "cancel",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 26,
+    "protocol": "LiterAnthropic",
+    "case": "cancel",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 26,
+    "protocol": "LiterAnthropic",
+    "case": "cancel",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 27,
+    "protocol": "NativeAnthropic",
+    "case": "valid",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 27,
+    "protocol": "NativeAnthropic",
+    "case": "valid",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 27,
+    "protocol": "NativeAnthropic",
+    "case": "valid",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 28,
+    "protocol": "NativeAnthropic",
+    "case": "split",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 28,
+    "protocol": "NativeAnthropic",
+    "case": "split",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 28,
+    "protocol": "NativeAnthropic",
+    "case": "split",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 29,
+    "protocol": "NativeAnthropic",
+    "case": "empty",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 29,
+    "protocol": "NativeAnthropic",
+    "case": "empty",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 29,
+    "protocol": "NativeAnthropic",
+    "case": "empty",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 30,
+    "protocol": "NativeAnthropic",
+    "case": "missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 30,
+    "protocol": "NativeAnthropic",
+    "case": "missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 30,
+    "protocol": "NativeAnthropic",
+    "case": "missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 31,
+    "protocol": "NativeAnthropic",
+    "case": "partial_after_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 31,
+    "protocol": "NativeAnthropic",
+    "case": "partial_after_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 31,
+    "protocol": "NativeAnthropic",
+    "case": "partial_after_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 32,
+    "protocol": "NativeAnthropic",
+    "case": "partial_event",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 32,
+    "protocol": "NativeAnthropic",
+    "case": "partial_event",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 32,
+    "protocol": "NativeAnthropic",
+    "case": "partial_event",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 33,
+    "protocol": "NativeAnthropic",
+    "case": "malformed",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 33,
+    "protocol": "NativeAnthropic",
+    "case": "malformed",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 33,
+    "protocol": "NativeAnthropic",
+    "case": "malformed",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 34,
+    "protocol": "NativeAnthropic",
+    "case": "invalid_utf8",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 34,
+    "protocol": "NativeAnthropic",
+    "case": "invalid_utf8",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 34,
+    "protocol": "NativeAnthropic",
+    "case": "invalid_utf8",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 35,
+    "protocol": "NativeAnthropic",
+    "case": "malformed_after_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 35,
+    "protocol": "NativeAnthropic",
+    "case": "malformed_after_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 35,
+    "protocol": "NativeAnthropic",
+    "case": "malformed_after_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 36,
+    "protocol": "NativeAnthropic",
+    "case": "tool",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 36,
+    "protocol": "NativeAnthropic",
+    "case": "tool",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 36,
+    "protocol": "NativeAnthropic",
+    "case": "tool",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 37,
+    "protocol": "NativeAnthropic",
+    "case": "tool_missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 37,
+    "protocol": "NativeAnthropic",
+    "case": "tool_missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 37,
+    "protocol": "NativeAnthropic",
+    "case": "tool_missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 38,
+    "protocol": "NativeAnthropic",
+    "case": "cancel",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 38,
+    "protocol": "NativeAnthropic",
+    "case": "cancel",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 38,
+    "protocol": "NativeAnthropic",
+    "case": "cancel",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 39,
+    "protocol": "GoogleAi",
+    "case": "valid",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 39,
+    "protocol": "GoogleAi",
+    "case": "valid",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 39,
+    "protocol": "GoogleAi",
+    "case": "valid",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 40,
+    "protocol": "GoogleAi",
+    "case": "split",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 40,
+    "protocol": "GoogleAi",
+    "case": "split",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 40,
+    "protocol": "GoogleAi",
+    "case": "split",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 41,
+    "protocol": "GoogleAi",
+    "case": "empty",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 41,
+    "protocol": "GoogleAi",
+    "case": "empty",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 41,
+    "protocol": "GoogleAi",
+    "case": "empty",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 42,
+    "protocol": "GoogleAi",
+    "case": "missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 42,
+    "protocol": "GoogleAi",
+    "case": "missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 42,
+    "protocol": "GoogleAi",
+    "case": "missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 43,
+    "protocol": "GoogleAi",
+    "case": "partial_after_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 43,
+    "protocol": "GoogleAi",
+    "case": "partial_after_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 43,
+    "protocol": "GoogleAi",
+    "case": "partial_after_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 44,
+    "protocol": "GoogleAi",
+    "case": "partial_event",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 44,
+    "protocol": "GoogleAi",
+    "case": "partial_event",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 44,
+    "protocol": "GoogleAi",
+    "case": "partial_event",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 45,
+    "protocol": "GoogleAi",
+    "case": "malformed",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 45,
+    "protocol": "GoogleAi",
+    "case": "malformed",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 45,
+    "protocol": "GoogleAi",
+    "case": "malformed",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 46,
+    "protocol": "GoogleAi",
+    "case": "invalid_utf8",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 46,
+    "protocol": "GoogleAi",
+    "case": "invalid_utf8",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 46,
+    "protocol": "GoogleAi",
+    "case": "invalid_utf8",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 47,
+    "protocol": "GoogleAi",
+    "case": "malformed_after_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 47,
+    "protocol": "GoogleAi",
+    "case": "malformed_after_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 47,
+    "protocol": "GoogleAi",
+    "case": "malformed_after_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 48,
+    "protocol": "GoogleAi",
+    "case": "tool",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 48,
+    "protocol": "GoogleAi",
+    "case": "tool",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 48,
+    "protocol": "GoogleAi",
+    "case": "tool",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 49,
+    "protocol": "GoogleAi",
+    "case": "tool_missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 49,
+    "protocol": "GoogleAi",
+    "case": "tool_missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 49,
+    "protocol": "GoogleAi",
+    "case": "tool_missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 50,
+    "protocol": "GoogleAi",
+    "case": "cancel",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 50,
+    "protocol": "GoogleAi",
+    "case": "cancel",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 50,
+    "protocol": "GoogleAi",
+    "case": "cancel",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 51,
+    "protocol": "Vertex",
+    "case": "valid",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 51,
+    "protocol": "Vertex",
+    "case": "valid",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 51,
+    "protocol": "Vertex",
+    "case": "valid",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 52,
+    "protocol": "Vertex",
+    "case": "split",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 52,
+    "protocol": "Vertex",
+    "case": "split",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 52,
+    "protocol": "Vertex",
+    "case": "split",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 53,
+    "protocol": "Vertex",
+    "case": "empty",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 53,
+    "protocol": "Vertex",
+    "case": "empty",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 53,
+    "protocol": "Vertex",
+    "case": "empty",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 54,
+    "protocol": "Vertex",
+    "case": "missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 54,
+    "protocol": "Vertex",
+    "case": "missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 54,
+    "protocol": "Vertex",
+    "case": "missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 55,
+    "protocol": "Vertex",
+    "case": "partial_after_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 55,
+    "protocol": "Vertex",
+    "case": "partial_after_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 55,
+    "protocol": "Vertex",
+    "case": "partial_after_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 56,
+    "protocol": "Vertex",
+    "case": "partial_event",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 56,
+    "protocol": "Vertex",
+    "case": "partial_event",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 56,
+    "protocol": "Vertex",
+    "case": "partial_event",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 57,
+    "protocol": "Vertex",
+    "case": "malformed",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 57,
+    "protocol": "Vertex",
+    "case": "malformed",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 57,
+    "protocol": "Vertex",
+    "case": "malformed",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 58,
+    "protocol": "Vertex",
+    "case": "invalid_utf8",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 58,
+    "protocol": "Vertex",
+    "case": "invalid_utf8",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 58,
+    "protocol": "Vertex",
+    "case": "invalid_utf8",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 59,
+    "protocol": "Vertex",
+    "case": "malformed_after_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 59,
+    "protocol": "Vertex",
+    "case": "malformed_after_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 59,
+    "protocol": "Vertex",
+    "case": "malformed_after_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 60,
+    "protocol": "Vertex",
+    "case": "tool",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 60,
+    "protocol": "Vertex",
+    "case": "tool",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 60,
+    "protocol": "Vertex",
+    "case": "tool",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 61,
+    "protocol": "Vertex",
+    "case": "tool_missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 61,
+    "protocol": "Vertex",
+    "case": "tool_missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 61,
+    "protocol": "Vertex",
+    "case": "tool_missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 62,
+    "protocol": "Vertex",
+    "case": "cancel",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 62,
+    "protocol": "Vertex",
+    "case": "cancel",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 62,
+    "protocol": "Vertex",
+    "case": "cancel",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 63,
+    "protocol": "Cohere",
+    "case": "valid",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 63,
+    "protocol": "Cohere",
+    "case": "valid",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 63,
+    "protocol": "Cohere",
+    "case": "valid",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 64,
+    "protocol": "Cohere",
+    "case": "split",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 64,
+    "protocol": "Cohere",
+    "case": "split",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 64,
+    "protocol": "Cohere",
+    "case": "split",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 65,
+    "protocol": "Cohere",
+    "case": "empty",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 65,
+    "protocol": "Cohere",
+    "case": "empty",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 65,
+    "protocol": "Cohere",
+    "case": "empty",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 66,
+    "protocol": "Cohere",
+    "case": "missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 66,
+    "protocol": "Cohere",
+    "case": "missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 66,
+    "protocol": "Cohere",
+    "case": "missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 67,
+    "protocol": "Cohere",
+    "case": "partial_after_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 67,
+    "protocol": "Cohere",
+    "case": "partial_after_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 67,
+    "protocol": "Cohere",
+    "case": "partial_after_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 68,
+    "protocol": "Cohere",
+    "case": "partial_event",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 68,
+    "protocol": "Cohere",
+    "case": "partial_event",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 68,
+    "protocol": "Cohere",
+    "case": "partial_event",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 69,
+    "protocol": "Cohere",
+    "case": "malformed",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 69,
+    "protocol": "Cohere",
+    "case": "malformed",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 69,
+    "protocol": "Cohere",
+    "case": "malformed",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 70,
+    "protocol": "Cohere",
+    "case": "invalid_utf8",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 70,
+    "protocol": "Cohere",
+    "case": "invalid_utf8",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 70,
+    "protocol": "Cohere",
+    "case": "invalid_utf8",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 71,
+    "protocol": "Cohere",
+    "case": "malformed_after_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 71,
+    "protocol": "Cohere",
+    "case": "malformed_after_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 71,
+    "protocol": "Cohere",
+    "case": "malformed_after_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 72,
+    "protocol": "Cohere",
+    "case": "tool",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 72,
+    "protocol": "Cohere",
+    "case": "tool",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 72,
+    "protocol": "Cohere",
+    "case": "tool",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 73,
+    "protocol": "Cohere",
+    "case": "tool_missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 73,
+    "protocol": "Cohere",
+    "case": "tool_missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 73,
+    "protocol": "Cohere",
+    "case": "tool_missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 74,
+    "protocol": "Cohere",
+    "case": "cancel",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 74,
+    "protocol": "Cohere",
+    "case": "cancel",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 74,
+    "protocol": "Cohere",
+    "case": "cancel",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 75,
+    "protocol": "Bedrock",
+    "case": "valid",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 75,
+    "protocol": "Bedrock",
+    "case": "valid",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 75,
+    "protocol": "Bedrock",
+    "case": "valid",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 76,
+    "protocol": "Bedrock",
+    "case": "split",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 76,
+    "protocol": "Bedrock",
+    "case": "split",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 76,
+    "protocol": "Bedrock",
+    "case": "split",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 77,
+    "protocol": "Bedrock",
+    "case": "empty",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 77,
+    "protocol": "Bedrock",
+    "case": "empty",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 77,
+    "protocol": "Bedrock",
+    "case": "empty",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 78,
+    "protocol": "Bedrock",
+    "case": "missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 78,
+    "protocol": "Bedrock",
+    "case": "missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 78,
+    "protocol": "Bedrock",
+    "case": "missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 79,
+    "protocol": "Bedrock",
+    "case": "partial_after_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 79,
+    "protocol": "Bedrock",
+    "case": "partial_after_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 79,
+    "protocol": "Bedrock",
+    "case": "partial_after_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 80,
+    "protocol": "Bedrock",
+    "case": "malformed",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 80,
+    "protocol": "Bedrock",
+    "case": "malformed",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 80,
+    "protocol": "Bedrock",
+    "case": "malformed",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 81,
+    "protocol": "Bedrock",
+    "case": "tool",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 81,
+    "protocol": "Bedrock",
+    "case": "tool",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 81,
+    "protocol": "Bedrock",
+    "case": "tool",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 82,
+    "protocol": "Bedrock",
+    "case": "tool_missing_terminal",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 82,
+    "protocol": "Bedrock",
+    "case": "tool_missing_terminal",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 82,
+    "protocol": "Bedrock",
+    "case": "tool_missing_terminal",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 83,
+    "protocol": "Bedrock",
+    "case": "cancel",
+    "boundary": "legacy",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 83,
+    "protocol": "Bedrock",
+    "case": "cancel",
+    "boundary": "local",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  },
+  {
+    "index": 83,
+    "protocol": "Bedrock",
+    "case": "cancel",
+    "boundary": "shared",
+    "diagnosticsPresent": false,
+    "rowCompleted": false,
+    "observedBoundaryMatched": false
+  }
+]

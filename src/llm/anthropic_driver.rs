@@ -377,8 +377,8 @@ impl LlmDriver for AnthropicDriver {
         let event_stream = stream! {
             use futures::StreamExt;
 
-            let mut line_buffer = String::new();
-            let mut current_event_type = String::new();
+            let mut decoder = liter_llm::SseDecoder::default();
+            let mut saw_terminal = false;
 
             // Pin the byte_stream for iteration
             let mut byte_stream = std::pin::pin!(byte_stream);
@@ -389,60 +389,79 @@ impl LlmDriver for AnthropicDriver {
                     Err(e) => {
                         warn!("SSE stream transport failed");
                         yield Err(ProviderError::from_reqwest(e).into());
-                        break;
+                        return;
                     }
                 };
 
-                let text = String::from_utf8_lossy(&chunk);
-                for line in text.split('\n') {
-                    let line = line.trim();
-
-                    if line.is_empty() {
-                        // Empty line = end of SSE event
-                        if !current_event_type.is_empty() && !line_buffer.is_empty() {
-                            if let Ok(event) = serde_json::from_str::<StreamEvent>(&line_buffer) {
-                                for normalized in state.process_event(event) {
-                                    if let NormalizedEvent::Usage {
-                                        prompt_tokens,
-                                        completion_tokens,
-                                        cached_tokens,
-                                        cache_creation_tokens,
-                                        ..
-                                    } = &normalized
-                                    {
-                                        crate::uar::telemetry::metrics::record_llm_tokens(
-                                            "anthropic",
-                                            &metrics_model,
-                                            u64::from(*prompt_tokens),
-                                            u64::from(*completion_tokens),
-                                        );
-                                        if cached_tokens.is_some()
-                                            || cache_creation_tokens.is_some()
-                                        {
-                                            crate::uar::telemetry::metrics::record_cache_tokens(
-                                                "anthropic",
-                                                &metrics_model,
-                                                cache_creation_tokens.unwrap_or(0),
-                                                cached_tokens.unwrap_or(0),
-                                            );
-                                        }
-                                    }
-                                    yield Ok(normalized);
-                                }
+                if let Err(error) = decoder.push(&chunk) {
+                    yield Err(ProviderError::from_liter(error).into());
+                    return;
+                }
+                while let Some(frame) = decoder.next_event() {
+                    if saw_terminal {
+                        yield Err(ProviderError::new(None, super::ProviderErrorKind::Stream, None,
+                            "Anthropic sent data after message_stop").into());
+                        return;
+                    }
+                    let payload: serde_json::Value = match serde_json::from_str(&frame.data) {
+                        Ok(value) => value,
+                        Err(_) => {
+                            yield Err(ProviderError::new(None, super::ProviderErrorKind::Stream, None,
+                                "Malformed Anthropic SSE event").into());
+                            return;
+                        }
+                    };
+                    if !frame.event.is_empty()
+                        && payload.get("type").and_then(serde_json::Value::as_str) != Some(frame.event.as_str()) {
+                        yield Err(ProviderError::new(None, super::ProviderErrorKind::Stream, None,
+                            "Anthropic SSE event name disagrees with payload type").into());
+                        return;
+                    }
+                    let event: StreamEvent = match serde_json::from_value(payload) {
+                        Ok(event) => event,
+                        Err(_) => {
+                            yield Err(ProviderError::new(None, super::ProviderErrorKind::Stream, None,
+                                "Malformed Anthropic SSE event").into());
+                            return;
+                        }
+                    };
+                    saw_terminal = matches!(&event, StreamEvent::MessageStop);
+                    for normalized in state.process_event(event) {
+                        if matches!(&normalized, NormalizedEvent::Done) {
+                            // Validate trailing bytes and EOF before exposing success.
+                            continue;
+                        }
+                        if let NormalizedEvent::Usage {
+                            prompt_tokens, completion_tokens, cached_tokens,
+                            cache_creation_tokens, ..
+                        } = &normalized {
+                            crate::uar::telemetry::metrics::record_llm_tokens(
+                                "anthropic", &metrics_model,
+                                u64::from(*prompt_tokens), u64::from(*completion_tokens),
+                            );
+                            if cached_tokens.is_some() || cache_creation_tokens.is_some() {
+                                crate::uar::telemetry::metrics::record_cache_tokens(
+                                    "anthropic", &metrics_model,
+                                    cache_creation_tokens.unwrap_or(0), cached_tokens.unwrap_or(0),
+                                );
                             }
                         }
-                        line_buffer.clear();
-                        current_event_type.clear();
-                        continue;
-                    }
-
-                    if let Some(event_type) = line.strip_prefix("event: ") {
-                        current_event_type = event_type.to_string();
-                    } else if let Some(data) = line.strip_prefix("data: ") {
-                        line_buffer.push_str(data);
+                        let failed = matches!(&normalized, NormalizedEvent::Error { .. });
+                        yield Ok(normalized);
+                        if failed { return; }
                     }
                 }
             }
+            if let Err(error) = decoder.finish() {
+                yield Err(ProviderError::from_liter(error).into());
+                return;
+            }
+            if !saw_terminal {
+                yield Err(ProviderError::new(None, super::ProviderErrorKind::Stream, None,
+                    "Anthropic stream ended without message_stop").into());
+                return;
+            }
+            yield Ok(NormalizedEvent::Done);
         };
 
         Ok(Box::pin(event_stream))

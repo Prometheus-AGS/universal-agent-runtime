@@ -1,0 +1,65 @@
+{
+  "recorded_at": "2026-10-13T18:52:27.072329+00:00",
+  "requirement": 4,
+  "status": "primary_production_gate_passed",
+  "source_inventory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/implementation/validation-inventories/authorized-inventory-14.json",
+  "source_inventory_sha256": "bd782c95b80d97a58c16befa9717161d3d115bf270c882bb3b2e0f2258a907d6",
+  "git_head": "3e6af7c4a81b9406c11dc3886d3626232f037375",
+  "source_content_sha256": "6c85be67d66ccf50ce144a89e2805b96f9f1436b72fea3f0ed7005ef831196f1",
+  "command": [
+    "/Users/gqadonis/.cargo/bin/cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,in-memory-backend",
+    "--test",
+    "stream_terminal_contract",
+    "--",
+    "--include-ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "returncode": 0,
+  "test_result": {
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered_out": 0
+  },
+  "protocol_scenario_rows": 83,
+  "production_boundary_checks": 249,
+  "boundary_paths": [
+    "legacy",
+    "local_surreal_kv_graph",
+    "shared_surreal_db_graph"
+  ],
+  "protocol_paths": [
+    "Azure",
+    "Bedrock",
+    "Cohere",
+    "GoogleAi",
+    "LiterAnthropic",
+    "NativeAnthropic",
+    "OpenAi",
+    "Vertex"
+  ],
+  "private_receipt": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/r4-inventory14-attempt-01/receipt.json",
+  "private_log": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/r4-inventory14-attempt-01/whole-target.log",
+  "log_sha256": "01faab266cc2a846df99f74829e32f374b0e05761fb39f8a06b1e302fb0b8c82",
+  "fixture_evidence": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/source-integration-preparation/temporary-fixtures/uar-dot05-integration-U6YgB4",
+  "warnings": [
+    "sccache: warning: The server looks like it shut down unexpectedly, compiling locally instead",
+    "sccache: warning: The server looks like it shut down unexpectedly, compiling locally instead",
+    "sccache: warning: The server looks like it shut down unexpectedly, compiling locally instead",
+    "sccache: warning: The server looks like it shut down unexpectedly, compiling locally instead",
+    "sccache: warning: The server looks like it shut down unexpectedly, compiling locally instead",
+    "sccache: warning: The server looks like it shut down unexpectedly, compiling locally instead",
+    "sccache: warning: The server looks like it shut down unexpectedly, compiling locally instead",
+    "sccache: warning: The server looks like it shut down unexpectedly, compiling locally instead",
+    "sccache: warning: The server looks like it shut down unexpectedly, compiling locally instead"
+  ],
+  "scope_limit": "Pre-curation current source14 primary gate. Final approved pins/formal12 and installed/released profiles remain pending; not final phase acceptance.",
+  "report_parser_correction": "Initial anchored row reader counted82 because first row follows Rust test-name prefix; corrected reader captures all83 actual rows. No test rerun."
+}

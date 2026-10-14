@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-12T19:31:02.179021+00:00",
+  "phase": "Execute",
+  "change": "dot-06-fresh-process-resume",
+  "task": "2",
+  "canonicalRevision": 2715,
+  "status": "environment_stalled_stopped_unverified",
+  "accepted": false,
+  "productFailureEstablished": false,
+  "productPassEstablished": false,
+  "exitCode": null,
+  "command": [
+    "env",
+    "-i",
+    "HOME=/Users/gqadonis",
+    "PATH=/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/gqadonis/.minimax/bin:/Users/gqadonis/.local/bin:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/97288_1791831174106/bin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.pyenv/shims:/Users/gqadonis/.minimax/bin:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/usr/local/share/dotnet:~/.dotnet/tools:/usr/local/go/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/opt/podman/bin:/Users/gqadonis/.codex/tmp/arg0/codex-arg08wZZjw:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/29547_1791811184470/bin:/Users/gqadonis/miniconda3/condabin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.the-boss/commands:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/opt/zerobrew/prefix/bin:/Users/gqadonis/.pochi/bin:/Users/gqadonis/.antigravity/antigravity/bin:/Users/gqadonis/.codeium/windsurf/bin:/opt/homebrew/opt/openssl@3/bin:/opt/homebrew/opt/bison/bin:/Users/gqadonis/.opencode/bin:/Users/gqadonis/.console-ninja/.bin:/Users/gqadonis/.wasmedge/bin:/Users/gqadonis/.wasmtime/bin:/Users/gqadonis/.deno/bin:/Users/gqadonis/.paperspace/bin:/Users/gqadonis/.groundcover/bin:/Users/gqadonis/.rd/bin:/Users/gqadonis/google-cloud-sdk/bin:/Users/gqadonis/.shorebird/bin:/Applications/Android Studio/Contents/MacOS:/Users/gqadonis/development/flutter/bin:/Users/gqadonis/.rust-mcp-stack/bin:/Users/gqadonis/.cargo/bin:/Users/gqadonis/.bun/bin:/Users/gqadonis/Library/pnpm:/opt/homebrew/opt/go/libexec/bin:/Users/gqadonis/go/bin:/opt/local/bin:/opt/local/sbin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Users/gqadonis/.pub-cache/bin:/Users/gqadonis/development/flutter/.pub-cache/bin:/Users/gqadonis/Library/Android/sdk/platform-tools:/Users/gqadonis/Library/Android/sdk/tools:/Users/gqadonis/Library/Android/sdk/tools/bin:/Users/gqadonis/Library/Android/sdk/emulator:/Users/gqadonis/.rvm/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.modular/bin:/Users/gqadonis/bin:/Users/gqadonis/Projects/ide/bin:/Users/gqadonis/.dotnet/tools:/Users/gqadonis/.orbstack/bin:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/gqadonis/.dotnet/tools:/usr/local/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.orbstack/bin",
+    "UAR_DOT06_INFRA_FILE=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "UAR_DOT06_NAMESPACE=dot06_20261012T191820_6885641608",
+    "UAR_DOT06_EVIDENCE_ROOT=/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-detached-gate-uh2b8dgq/resume-fixtures",
+    "UAR_REMOTE_SURREAL_DURABILITY_ATTESTED=1",
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend",
+    "--test",
+    "fresh_process_resume",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "priorRunningReceipt": ".kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T191937Z-resume-production-boundary.json",
+  "priorReceiptPreserved": true,
+  "privateAttempt": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-detached-gate-uh2b8dgq",
+  "completedScenarioGroups": 0,
+  "runtimeScenariosEntered": 0,
+  "terminalTestResults": [],
+  "observedWait": "Exactownedclient31384 finitecallstacksample showed mainthread__recvfrom; daemoncauseunknown.",
+  "compileProgressObservation": {
+    "observedAt": "2026-10-12T19:26:03.186754+00:00",
+    "statsExit": 0,
+    "globalCounterBefore": {
+      "Compile requests": 1413,
+      "Compile requests executed": 1221,
+      "Compilations": 1197,
+      "Cache misses": 1197,
+      "Cache errors": 0,
+      "Cache read errors": 0,
+      "Cache write errors": 0,
+      "Cache timeouts": 0
+    },
+    "globalCounterAfter": {
+      "Compile requests": 1413,
+      "Compile requests executed": 1221,
+      "Compilations": 1197,
+      "Cache misses": 1197,
+      "Cache errors": 0,
+      "Cache read errors": 0,
+      "Cache write errors": 0,
+      "Cache timeouts": 0
+    },
+    "globalCounterDelta": {
+      "Compile requests": 0,
+      "Compile requests executed": 0,
+      "Compilations": 0,
+      "Cache misses": 0,
+      "Cache errors": 0,
+      "Cache read errors": 0,
+      "Cache write errors": 0,
+      "Cache timeouts": 0
+    },
+    "selectedCacheDaemonChildCount": 0,
+    "currentGate": {
+      "status": "running",
+      "elapsedSeconds": 385.62,
+      "stdoutBytes": 0,
+      "stderrBytes": 568,
+      "verifiedScenarioFiles": 0
+    },
+    "classification": "no_observed_compile_progress_in_bounded_window; waitlocation/cause remainsUNKNOWN",
+    "scopeLimits": "Global counters are not per-gate; exactdaemonchildren only; no full process or stack inspection; no signals/reset/duplicate"
+  },
+  "reviewedStop": {
+    "observedAt": "2026-10-12T19:29:18.705652+00:00",
+    "recordedOwnedGroup": 30603,
+    "groupState": "gone",
+    "knownOwnedProcesses": [
+      {
+        "pid": 30603,
+        "gone": true
+      },
+      {
+        "pid": 30726,
+        "gone": true
+      },
+      {
+        "pid": 31384,
+        "gone": true
+      },
+      {
+        "pid": 31385,
+        "gone": true
+      },
+      {
+        "pid": 31386,
+        "gone": true
+      },
+      {
+        "pid": 31387,
+        "gone": true
+      },
+      {
+        "pid": 31388,
+        "gone": true
+      },
+      {
+        "pid": 31389,
+        "gone": true
+      },
+      {
+        "pid": 31390,
+        "gone": true
+      },
+      {
+        "pid": 31391,
+        "gone": true
+      },
+      {
+        "pid": 31392,
+        "gone": true
+      }
+    ],
+    "buildLockHolderOutputBytes": 0,
+    "buildLockInspectionStderrBytes": 0,
+    "sharedCacheAliveUntouched": true,
+    "rootSurrealAliveUntouched": true,
+    "rootPostgresIdentityUnchanged": true,
+    "signals": "Only reviewedexactownedPGID30603 TERM; no cache/infrastructure signals"
+  },
+  "sourceStableAfterStop": true,
+  "sourceAfterStopReconciliation": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-detached-gate-uh2b8dgq/after-stop-source-reconciliation.json",
+  "sourceObservationBasis": "Newfullsourcepreparationafterstop, capturedAt=2026-10-12T19:30:17.339780+00:00",
+  "toolImagesMatchedFreshPreparation": true,
+  "hostConfigsMatchedFreshPreparation": true,
+  "infrastructureManifestMatchedFreshPreparation": true,
+  "rawLogIdentities": {
+    "resume.stdout": {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-detached-gate-uh2b8dgq/resume.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "resume.stderr": {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-detached-gate-uh2b8dgq/resume.stderr",
+      "sha256": "a0f2d10d8aa30997bd7f6c8f4d447b7bd6792e3a3ae8d902b614341d99c05d22",
+      "bytes": 568
+    },
+    "resume-runner.stdout": {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-detached-gate-uh2b8dgq/resume-runner.stdout",
+      "sha256": "9a2a6ae9ae6df9e84aa86ee92de4556a2c9d085694a19bd04d3a3c4d201a5dbb",
+      "bytes": 1937
+    },
+    "resume-runner.stderr": {
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-detached-gate-uh2b8dgq/resume-runner.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  },
+  "sourceEdits": [],
+  "newProductionGuards": [],
+  "unrequestedAdditions": [],
+  "sharedCacheReset": false,
+  "infrastructureMutated": false,
+  "nextAttemptPrepared": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-wrapper-bypass-i9wj0878",
+  "nextEnvironmentDelta": {
+    "RUSTC_WRAPPER": ""
+  },
+  "officialBypassDocs": "https://doc.rust-lang.org/cargo/reference/environment-variables.html",
+  "nextGateAuthorization": "pendingnewrootGO",
+  "limits": [
+    "No upstreamcachefailurecauseasserted.",
+    "No product/testfailureorpass; environmentwaitonly.",
+    "No actualruntime/scenarioacceptance.",
+    "No fullprocessimageloadorunknowncompileruniverseproof."
+  ]
+}

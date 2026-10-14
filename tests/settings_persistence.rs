@@ -131,9 +131,11 @@ async fn make_surreal() -> (Arc<dyn PersistenceLayer>, tempfile::TempDir) {
 /// Build a minimal `AppConfig` that only sets the fields needed for tests.
 fn minimal_config() -> AppConfig {
     AppConfig {
+        supervisor_recovery: None,
         server: ServerConfig {
             port: 3000,
             host: "127.0.0.1".to_string(),
+            cors_allowed_origins: Vec::new(),
             shutdown_timeout_secs: 30,
             log_format: universal_agent_runtime::config::LogFormat::Compact,
             grpc_port: 50051,

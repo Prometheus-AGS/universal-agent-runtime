@@ -1,0 +1,49 @@
+[
+  {
+    "mode": "success",
+    "rowComplete": false,
+    "lifecycle": "dormant",
+    "recovery": "ready",
+    "commands": [
+      {
+        "commandId": "41c4e876-4e82-434a-bdae-5f4430309af0",
+        "rootRunId": "1e01f20c-0b1e-4913-9710-aa29957cdb8a",
+        "status": "completed"
+      },
+      {
+        "commandId": "c0aeec4e-b0eb-4da2-8b2a-d9f08609832b",
+        "rootRunId": null,
+        "status": "completed"
+      },
+      {
+        "commandId": "9686afd5-0ce4-4649-8f56-ba9a9a579ff0",
+        "rootRunId": null,
+        "status": "completed"
+      }
+    ],
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "1e01f20c-0b1e-4913-9710-aa29957cdb8a",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "succeeded"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "succeeded"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": true,
+        "content": "{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"success\",\"nested\":{\"control\":42}},\"isError\":false,\"_meta\":{\"fixture\":\"metadata-control\"}}"
+      }
+    ],
+    "fullSDKcontentAndModelEffectCardinalityAssertionsPassed": true,
+    "durableLifecycleAndRecoveryReadbackAssertionsPassed": false
+  }
+]

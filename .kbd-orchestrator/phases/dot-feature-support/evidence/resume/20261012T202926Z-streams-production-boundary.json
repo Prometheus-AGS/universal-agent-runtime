@@ -1,0 +1,157 @@
+{
+  "change": "dot-06-fresh-process-resume",
+  "task": "2",
+  "gate": "streams",
+  "tier": "Tier1 completed-change production integration",
+  "command": [
+    "env",
+    "-i",
+    "HOME=/Users/gqadonis",
+    "PATH=/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.local/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/41335_1791836860479/bin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.pyenv/shims:/Users/gqadonis/.minimax/bin:/Users/gqadonis/.local/bin:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/usr/local/share/dotnet:~/.dotnet/tools:/usr/local/go/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/opt/podman/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/gqadonis/.codex/tmp/arg0/codex-arg08wZZjw:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/gqadonis/.antigravity-ide/antigravity-ide/bin:/Users/gqadonis/.zero/bin:/opt/homebrew/opt/llvm/bin:/Users/gqadonis/.prometheus/bin:/Users/gqadonis/.local/state/fnm_multishells/29547_1791811184470/bin:/Users/gqadonis/miniconda3/condabin:/Users/gqadonis/.rbenv/shims:/Users/gqadonis/.the-boss/commands:/Users/gqadonis/.nvm/versions/node/v24.21.0/bin:/opt/zerobrew/prefix/bin:/Users/gqadonis/.pochi/bin:/Users/gqadonis/.antigravity/antigravity/bin:/Users/gqadonis/.codeium/windsurf/bin:/opt/homebrew/opt/openssl@3/bin:/opt/homebrew/opt/bison/bin:/Users/gqadonis/.opencode/bin:/Users/gqadonis/.console-ninja/.bin:/Users/gqadonis/.wasmedge/bin:/Users/gqadonis/.wasmtime/bin:/Users/gqadonis/.deno/bin:/Users/gqadonis/.paperspace/bin:/Users/gqadonis/.groundcover/bin:/Users/gqadonis/.rd/bin:/Users/gqadonis/google-cloud-sdk/bin:/Users/gqadonis/.shorebird/bin:/Applications/Android Studio/Contents/MacOS:/Users/gqadonis/development/flutter/bin:/Users/gqadonis/.rust-mcp-stack/bin:/Users/gqadonis/.cargo/bin:/Users/gqadonis/.bun/bin:/Users/gqadonis/Library/pnpm:/opt/homebrew/opt/go/libexec/bin:/Users/gqadonis/go/bin:/opt/local/bin:/opt/local/sbin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Users/gqadonis/.pub-cache/bin:/Users/gqadonis/development/flutter/.pub-cache/bin:/Users/gqadonis/Library/Android/sdk/platform-tools:/Users/gqadonis/Library/Android/sdk/tools:/Users/gqadonis/Library/Android/sdk/tools/bin:/Users/gqadonis/Library/Android/sdk/emulator:/Users/gqadonis/.rvm/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.modular/bin:/Users/gqadonis/bin:/Users/gqadonis/Projects/ide/bin:/Users/gqadonis/.dotnet/tools:/Users/gqadonis/.orbstack/bin:/Users/gqadonis/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/gqadonis/.dotnet/tools:/usr/local/bin:/Users/gqadonis/.cache/lm-studio/bin:/Users/gqadonis/.orbstack/bin",
+    "VERTEXAI_PROJECT=dot05-fixture",
+    "VERTEXAI_LOCATION=us-central1",
+    "UAR_DOT05_INFRA_FILE=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot-api-key-infra-nya_qlmc/infrastructure.json",
+    "UAR_DOT05_NAMESPACE=dot05_affected06_20261012T202758_d3bee329a9",
+    "RUSTC_WRAPPER=",
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full",
+    "--test",
+    "stream_terminal_contract",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "privateRoot": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-affected-streams-dialrv26",
+  "startedAt": "2026-10-12T20:29:26.934661+00:00",
+  "status": "failed",
+  "sourceSetSha256": "f50f80ec67dd369c73bc34fd1b72dfaac4d77139431bc91fa5fc12bf713ab679",
+  "boundInputCount": 6565,
+  "gitlinkCount": 16,
+  "sourceEdits": [],
+  "unrequestedAdditions": [],
+  "newProductionGuards": [],
+  "cargoWrapperPid": 42621,
+  "sampledFixtureExecutableBindings": [],
+  "elapsedSeconds": 888.28,
+  "stdoutBytes": 252,
+  "stderrBytes": 18368,
+  "actualExecutableArtifacts": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/stream_terminal_contract-a0db6587c4848919",
+      "sha256": "6103a1e80093e1f4b0d105377f1055b3922694becf3ffc1391b004dc062c53d0",
+      "bytes": 329831080,
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-affected-streams-dialrv26/streams-accepted-stream_terminal_contract-a0db6587c4848919",
+      "retainedSha256": "6103a1e80093e1f4b0d105377f1055b3922694becf3ffc1391b004dc062c53d0"
+    }
+  ],
+  "fixtureRoots": [
+    "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-fTB4vE"
+  ],
+  "knownFixturePidCount": 1,
+  "observedCompletedRows": 0,
+  "exitCode": 101,
+  "finishedAt": "2026-10-12T20:44:15.182449+00:00",
+  "sourceStableAtExit": true,
+  "environmentStableAtExit": true,
+  "testSummary": [
+    "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.96s"
+  ],
+  "warningLines": [
+    "warning: Cargo.toml: version requirement `=0.4.1+0.23` for dependency `ort-tract` includes semver metadata which will be ignored, removing the metadata is recommended to avoid confusion",
+    "warning: `universal-agent-runtime` (manifest) generated 1 warning",
+    "warning: the item `Digest` is imported redundantly",
+    "warning: the item `Sha256` is imported redundantly",
+    "warning: unused import: `context::SelectedTeamContext`",
+    "warning: the item `IntoFuture` is imported redundantly",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: function `build_full_harness_sse_response` is never used",
+    "warning: function `reject_portable_authority` is never used",
+    "warning: struct `Draft1Migration` is never constructed",
+    "warning: function `migrate_draft1_document` is never used",
+    "warning: function `required_string` is never used",
+    "warning: function `has_markdown_structure` is never used",
+    "warning: method `request` is never used",
+    "warning: method `scrub` is never used",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: unused `axum::Extension` that must be used",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: `universal-agent-runtime` (lib) generated 31 warnings (run `cargo fix --lib -p universal-agent-runtime` to apply 1 suggestion)",
+    "warning: variant `DelayedContent` is never constructed",
+    "warning: method `with_prompt_prefix` is never used",
+    "warning: `universal-agent-runtime` (bin \"stub-llm\") generated 2 warnings"
+  ],
+  "executedRows": [],
+  "executedRowCount": 0,
+  "completedBoundaries": 0,
+  "actualScenarioInventoryMatched": false,
+  "actualBoundaryMatrix": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T202926Z-streams-actual-boundary-matrix.json",
+    "sha256": "9a52a7744f1b397b877a375741fbc4500fd441ac8f0d603f459b3bd8af2fb908",
+    "observedRows": 249,
+    "matchedBoundaries": 0
+  },
+  "actualBoundaryDiagnosticsMatched": false,
+  "upstreamResumeCustomerArtifact": [
+    {
+      "originalProducedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "retainedCopy": "/private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-release-negative-p0kxlbra/resume-accepted-production-runtime",
+      "retainedSha256": "c2f54f9a8542e85ccb1ef5cc32f679849ba5eaeb520ac1531f1728f13ea219c4",
+      "retainedCopyStable": true,
+      "productionSourceSetSha256": "f50f80ec67dd369c73bc34fd1b72dfaac4d77139431bc91fa5fc12bf713ab679",
+      "qualification": "Prior accepted resume gate customer artifact, same source with server-full,postgres-backend features; not a new streams artifact or launched streams process."
+    }
+  ],
+  "upstreamResumeCustomerArtifactStable": true,
+  "rawStdoutSha256": "8d8539f24a59080c07fdf3f5bbeaeee7ffb3ef08d97ad0862196e84a407bd44c",
+  "rawStderrSha256": "7171d85627c7ea61f2f2c68ff827a0ad1af3d55d396827c319084c97de58c0ef",
+  "executableStableAtExit": true,
+  "cleanupObservations": [
+    {
+      "pid": 60415,
+      "basis": "exact-child-of-cargo",
+      "state": "gone"
+    }
+  ],
+  "cleanupUnknown": false,
+  "sourceStableAfterCleanup": true,
+  "privateDiagnosticFileCount": 13,
+  "sanitizedStdout": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T202926Z-streams-stdout.log",
+    "sha256": "8d8539f24a59080c07fdf3f5bbeaeee7ffb3ef08d97ad0862196e84a407bd44c"
+  },
+  "sanitizedStderr": {
+    "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T202926Z-streams-stderr.log",
+    "sha256": "e324b28240b573b6e656ae79fb707bec23f32c40e605f9d7b187bf4bf4ee0377"
+  },
+  "sourceStableAtFinalSeal": true,
+  "environmentStableAtFinalSeal": true,
+  "rootInfrastructurePreserved": true,
+  "upstreamResumeCustomerArtifactStableAtFinalSeal": true,
+  "limits": [
+    "Synthetic protocol peers do not certify genuine provider inference.",
+    "No abrupt-owner takeover, publication or release claim.",
+    "Registry/native transitive/toolchain library closure not bound.",
+    "Short lived children can evade process sampling; fixture trace/completion evidence determines counts."
+  ]
+}

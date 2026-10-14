@@ -52,6 +52,10 @@ impl EmbeddingBackend for VoyageEmbeddingBackend {
         &self.model
     }
 
+    fn endpoint(&self) -> Option<&str> {
+        Some(&self.base_url)
+    }
+
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
         if texts.is_empty() {
             return Ok(vec![]);

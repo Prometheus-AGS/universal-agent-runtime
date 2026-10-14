@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-12T00:03:21.504702+00:00",
+  "container": "uar-dot-api-keys-vector-bc90262901e1",
+  "reason": "Actual API-key gate PostgreSQL child rejected host 192.168.215.1 before readiness",
+  "observedFailedGate": "20261011T235859Z-production-boundary.json",
+  "change": "Added only host postgres postgres 192.168.215.1/32 scram-sha-256 to disposable database HBA",
+  "reloadAcknowledged": true,
+  "parsedRuleErrors": 0,
+  "beforeSha256": "781e74271f13efdf7f98f82c05d7335f0b594628de3a5b57a9c1101807e9833d",
+  "afterSha256": "d3bfd284541d777e7476b25325805a5ea558d4886e8fc16654c133d400703189",
+  "productionConfigurationChanged": false,
+  "productAcceptanceReRun": false,
+  "limits": "Reload and rule parsing do not prove full runtime startup or API-key acceptance."
+}

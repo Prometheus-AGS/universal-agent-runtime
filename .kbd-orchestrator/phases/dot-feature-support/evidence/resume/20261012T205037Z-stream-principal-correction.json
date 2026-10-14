@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-12T20:50:37.487391+00:00",
+  "phase": "Execute",
+  "change": "dot-06-fresh-process-resume",
+  "task": "2",
+  "rootWaypoint": {
+    "revision": 2715,
+    "planRevision": 9,
+    "change": "dot-06-fresh-process-resume",
+    "currentTask": "2",
+    "stageId": "execute"
+  },
+  "head": "b4244aeaa7e931240ae0f09ae31bae3f45bda244",
+  "status": "stream_principal_fixture_correction_complete_awaiting_root_review_and_whole_failed_gate",
+  "accepted": false,
+  "correctedBehaviorVerified": false,
+  "observedFailure": {
+    "privateAttempt": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-affected-streams-dialrv26",
+    "retainedFixture": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-fTB4vE",
+    "safeAnalysis": ".kbd-orchestrator/phases/dot-feature-support/evidence/resume/20261012T204549Z-streams-failure-analysis.json",
+    "compiled": true,
+    "exitCode": 101,
+    "runtimeSeconds": 3.96,
+    "completedRows": 0,
+    "completedBoundaries": 0,
+    "failureLocation": "tests/stream_terminal_contract.rs:106: actual signed fixture principal verification: 500",
+    "requestKind": "Direct public authenticate_bearer_context call; no HTTP response body exists.",
+    "enteredLegacyPath": "First OpenAI valid legacy path had one provider request and zero effects; local graph path was not entered.",
+    "resumeWholeGate": "Previously passed; no resume source or resume fixture changed in this correction."
+  },
+  "diagnosis": {
+    "cause": "Fixture raw jsonwebtoken signing acquired the process provider before UAR guarded verification.",
+    "trace": [
+      "user() calls raw jsonwebtoken::encode before authenticate_bearer_context.",
+      "Pinned jsonwebtoken 11.0.0 encoding.rs:156 calls CryptoProvider::get_default; crypto/mod.rs:215 initializes PROCESS_DEFAULT_PROVIDER via get_or_init.",
+      "SharedSecretVerifier.verify reaches UAR jwt::decode, which calls ensure_rustcrypto_provider before parsing.",
+      "UAR ensure_rustcrypto_provider tries install_default and permanently records ProviderConflict if another operation already installed the slot.",
+      "Middleware maps VerificationError::ProviderConflict to HTTP status500. Identity policy refusal maps503 and bad tokens map401."
+    ],
+    "scope": "Fixture initialization ordering, not an asserted production resume regression."
+  },
+  "changes": [
+    {
+      "path": "tests/stream_terminal_contract.rs",
+      "beforeSha256": "bb69dfa9889ee7de1c478174db38de6705b543fd065bf16a7f3b44a6e83be031",
+      "afterSha256": "ea2037230ee121a25d956e02b389751673bcfe399a6a92907f87de5fb6b22577",
+      "bytes": 31695,
+      "span": "user() helper only"
+    }
+  ],
+  "allOwnedAfterSha256": {
+    "src/uar/api/routes.rs": "3ad526ab66218fa0a68bc0c045a2ba11c123152d5656c15103ceb2f19c34c1de",
+    "src/uar/runtime/manager.rs": "14186ae9d6771d7718cfa17bb10360214451349e6bf9e1b08d16b4a3348607f4",
+    "src/uar/persistence/mod.rs": "01f7fdc2994297fd11abadc40ee25279c6802277cc2548f436c62f759c648e9a",
+    "src/uar/persistence/providers/surreal.rs": "464ac4ffa44b398663a526d72b8aad21561c9a6af0b8a06d00235361874c65b9",
+    "src/uar/runtime/graph/types.rs": "1d9e822fb79f354fbc82eaa0a477812cefdb33f0fdbe98c385f7f83d6d8d2d7e",
+    "src/uar/runtime/graph/engine.rs": "5af0ceaf4563372a09172c8a9fb8a22263ad7b93ef32df7102b505ab4653c9c8",
+    "src/uar/runtime/graph/nodes/checkpoint_node.rs": "14929d954d5c8aa4702aebe4e25e1f4d44f4c7676df164645942f763a5a1996d",
+    "src/uar/runtime/mod.rs": "f07515f5abec2fdb8714a9f0f32976c8effea29ecd5cc4a12ed3d51955d8bde0",
+    "tests/test_checkpoint.rs": "c1fd41e0662836856e21a11057ba9ecc1130b9c5d6870a75cbf39d4293ba91f4",
+    "tests/context_history_integrity.rs": "514c1b3f80573930eb9f8668b291225505391bf59bf9e42841a9cf98a3effa2e",
+    "tests/test_agent_node.rs": "6252694d4be13c388450f57088c34bdc80f892cdeda4b5a8e6dbfed64a9dc52d",
+    "tests/test_graph_execution.rs": "644ce0173fafcc142844d8af9812e707a34bfc63a844a3903feb969d6bf779d4",
+    "tests/stream_terminal_contract.rs": "ea2037230ee121a25d956e02b389751673bcfe399a6a92907f87de5fb6b22577",
+    "src/uar/persistence/checkpoint_resume.rs": "37d392a97e9900b62a784d908dac80d1e7e90c11e1c9d672b7cf06053ff63523",
+    "src/uar/persistence/providers/checkpoint_records/surreal.rs": "928c83d6bb5a21af8267b4f647ddd35fba030db15a7ece90233b0a86d166e6fb",
+    "src/uar/runtime/checkpoint_host.rs": "0b72b80d3cf0d3adf3c01b1a8145ef1d04b78d6153646837aa165a27ed213a9d",
+    "tests/fresh_process_resume.rs": "8094ed222888f76638eefb9b3d6dc539cdcddb8d3d8353b29005fc383f0afbe4",
+    "tests/support/fresh_process_resume_process.rs": "0f93a4dad0f1da099a222b2aaf5fee24753227ef841bb7517ab9e62580342be9",
+    "tests/fixtures/fresh_process_resume_mcp.py": "f77a76d81a93bf40fe579fb9e2d28f16d2835903ecef44ddecb88e0681b73059",
+    "docs/operations/fresh-process-resume.md": "901ba5f4b0c2bfa3443a44360af4785823665a7d2d14aac2d75cd2ed1f43d651",
+    "src/uar/persistence/providers/surreal_host.rs": "18a9e0ad067ec6b0ad22de0f966ededf9b2c1009095cb65083ece8d6ca5348d4"
+  },
+  "ownedFileCount": 21,
+  "privateSnapshotRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-stream-principal-correction-nx2d2w7b",
+  "privatePatch": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot06-stream-principal-correction-nx2d2w7b/correction.patch",
+  "patchSha256": "71adcd9caf60ee8a8e3e705834c8e55be2a2a331efc17b92f648743065245065",
+  "changedBehavior": [
+    "Before fixture signing, call the public production verifier with a deliberately malformed synthetic token and require401. This allows UAR to initialize its selected process provider while denying invalid identity.",
+    "Then sign and genuinely verify the existing synthetic JWT as before. No manual VerifiedIdentity, authority minting, provider bypass or public production API was added.",
+    "Existing OWNER, SecurityConfig, JWT claims, stream/protocol/tool/accounting assertions, 83 cases and 249 production boundaries remain unchanged."
+  ],
+  "guards": [
+    {
+      "name": "production_verifier_initializes_before_fixture_signing",
+      "trace": "Observed provider-conflict500 caused by signing-before-UAR initialization."
+    },
+    {
+      "name": "malformed_initialization_request_remains_unauthorized",
+      "trace": "Trust boundary initialization must not authenticate or forge a principal; the public verifier must return401."
+    }
+  ],
+  "references": [
+    "src/uar/security/middleware.rs:resolve_authenticated_context/authenticate_bearer_context",
+    "src/uar/security/verifier/mod.rs:SharedSecretVerifier.verify/verify_token",
+    "src/uar/security/jwt.rs:ensure_rustcrypto_provider/decode",
+    "/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/jsonwebtoken-11.0.0/src/encoding.rs:156",
+    "/Users/gqadonis/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/jsonwebtoken-11.0.0/src/crypto/mod.rs:215",
+    "https://docs.rs/jsonwebtoken/latest/jsonwebtoken/crypto/struct.CryptoProvider.html"
+  ],
+  "verification": {
+    "currentChecksRun": [],
+    "testsRun": false,
+    "cargoRun": false,
+    "compilerRun": false,
+    "probeRun": false,
+    "sourceAndPrivateFailureInspected": true,
+    "pinnedDependencySourceInspected": true,
+    "reason": "Completed fixture helper correction only; root review and the whole failed target authorization pending."
+  },
+  "nextGate": {
+    "owner": "root/resume_acceptance",
+    "sameWholeTarget": "stream_terminal_contract",
+    "command": "env -u BEDROCK_BASE_URL -u BEDROCK_CROSS_REGION VERTEXAI_PROJECT=dot05-fixture VERTEXAI_LOCATION=us-central1 UAR_DOT05_INFRA_FILE=<private manifest> UAR_DOT05_NAMESPACE=<fresh isolated namespace> cargo test --locked --no-default-features --features server-full --test stream_terminal_contract -- --nocapture --test-threads=1",
+    "expectedCases": 83,
+    "expectedProductionBoundaries": 249,
+    "resumeGate": "No rerun requested by this source worker; production/resume fixture bytes unchanged."
+  },
+  "unrequestedAdditions": [],
+  "productionSourceChanged": false,
+  "manifestChanged": false,
+  "pinsChanged": false,
+  "streamAssertionsChanged": false,
+  "limits": [
+    "The corrected helper and whole affected stream target remain unverified until the complete failed gate passes.",
+    "No result is claimed for unentered stream rows. The legacy HTTP activity before failure does not constitute a completed row.",
+    "Similar raw-sign-before-UAR ordering remains in the separate legacy context-history fixture; it was not run by this gate and was not changed under the narrow approved user-helper scope."
+  ]
+}

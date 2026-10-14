@@ -1,4 +1,4 @@
-//! A2A Protocol RC v1.0 — type definitions.
+//! Legacy A2A HTTP/gRPC adapter types. The v1 wire boundary is `v1.rs`.
 //!
 //! These types implement the Google Agent-to-Agent (A2A) protocol specification.
 //! Reference: <https://a2a-protocol.org/latest/specification/>
@@ -113,7 +113,7 @@ pub mod rpc_error {
 // A2A Task
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Task status per A2A RC v1.0 §4.2.
+/// Legacy task status; v1 serializes through its explicit protocol projection.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TaskState {
@@ -259,7 +259,7 @@ pub struct Artifact {
 // AgentCard
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// AgentCard — machine-readable capability declaration per A2A RC v1.0 §3.
+/// Legacy AgentCard retained for existing HTTP and gRPC clients.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentCard {
     pub name: String,

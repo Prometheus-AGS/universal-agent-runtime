@@ -94,6 +94,10 @@ impl Default for AgentInstanceLimits {
 #[serde(deny_unknown_fields)]
 pub struct AgentInstanceCommand {
     pub command_id: String,
+    /// Only the schedule host sets this; keep the dedupe receipt until its
+    /// durable schedule disposition has committed independently.
+    #[serde(default)]
+    pub schedule_id: Option<String>,
     pub request_digest: String,
     pub kind: InstanceCommandKind,
     /// Private durable input. Never project this field to ordinary status APIs.
@@ -293,6 +297,7 @@ impl AgentInstanceRecord {
                 .map_err(|_| AgentInstanceStoreError::InvalidRecord)?
                 .unwrap_or(0);
             if command.command_id.is_empty()
+                || command.schedule_id.as_ref().is_some_and(|id| id.is_empty() || id.len() > 256)
                 || !command_ids.insert(&command.command_id)
                 || command.request_digest.len() != 64
                 || !command
@@ -398,7 +403,7 @@ impl AgentInstanceRecord {
             })
             .unwrap_or(self.inbox.len());
         for dropped in &self.inbox[..old_retained_start] {
-            if matches!(
+            if dropped.schedule_id.is_some() || matches!(
                 dropped.status,
                 InstanceCommandStatus::Accepted
                     | InstanceCommandStatus::Running
@@ -415,7 +420,15 @@ impl AgentInstanceRecord {
             if current.command_id != previous.command_id {
                 return Err(AgentInstanceStoreError::InvalidRecord);
             }
-            if current.request_digest != previous.request_digest
+            let terminal = matches!(previous.status, InstanceCommandStatus::Completed
+                | InstanceCommandStatus::Failed | InstanceCommandStatus::Cancelled);
+            let schedule_unpinned = terminal && previous.schedule_id.is_some() && current.schedule_id.is_none() && {
+                let mut unpinned = previous.clone();
+                unpinned.schedule_id = None;
+                &unpinned == current
+            };
+            if (current.schedule_id != previous.schedule_id && !schedule_unpinned)
+                || current.request_digest != previous.request_digest
                 || current.kind != previous.kind
                 || current.payload != previous.payload
                 || current.payload_ref != previous.payload_ref
@@ -425,7 +438,7 @@ impl AgentInstanceRecord {
                     InstanceCommandStatus::Completed
                         | InstanceCommandStatus::Failed
                         | InstanceCommandStatus::Cancelled
-                ) && current != previous)
+                ) && current != previous && !schedule_unpinned)
                 || (previous.status == InstanceCommandStatus::Uncertain
                     && current.status != InstanceCommandStatus::Uncertain
                     && next.reconciliation_receipt == self.reconciliation_receipt)

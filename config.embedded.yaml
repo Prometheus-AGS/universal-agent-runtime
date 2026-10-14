@@ -14,10 +14,10 @@
 server:
   port: 1906
   host: "127.0.0.1"
+  cors_allowed_origins: []
 
 security:
-  jwt_required: false
-  jwt_secret: "dev_secret_key_at_least_32_characters_long"
+  jwt_required: true
 
 resilience:
   rate_limit_enabled: false
@@ -51,14 +51,8 @@ intent_classifier:
   accept_threshold: 0.7
   margin_threshold: 0.1
 
-providers:
-  - id: openai
-    display_name: "OpenAI"
-    base_url: "https://api.openai.com/v1"
-    api_key: "${LLM_API_KEY}"
-    protocol: "auto"
-    enabled: true
-    default_model: "gpt-5.2"
+# Select a model explicitly via llm.model or provider.default_model.
+providers: []
 
 # ── Optional: same defaults as code; omit to use defaults ─────────────────────
 failover:

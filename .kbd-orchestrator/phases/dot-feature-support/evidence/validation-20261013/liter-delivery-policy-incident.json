@@ -1,0 +1,16 @@
+{
+  "recorded_at": "2026-10-13T19:21:42.779936+00:00",
+  "problem": "Inherited release-regression job executed in GitHub Actions contrary to project policy.",
+  "run_id": 38452219497,
+  "head": "e11cf250df3e954cb565dc0b5c502e7796904ae5",
+  "result_excluded_from_acceptance": true,
+  "correction_head": "e446f5ef91003bbec5fce6b2f45fb94559dff335",
+  "correction": "Both inherited PR metadata and release-regression jobs are restricted to upstream repository. Actual corrected-head checks all skipped.",
+  "local_policy_command": "pnpm github-actions-policy:validate",
+  "local_policy_result": 0,
+  "validator_scope": "Root repository only; child guards inspected directly and actual checks read.",
+  "pr": "https://github.com/GQAdonis/liter-llm/pull/3",
+  "streaming_source_hashes_unchanged": true,
+  "pin_approval": "pending exact corrected head",
+  "raw_receipts": "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/liter-delivery-20261013"
+}

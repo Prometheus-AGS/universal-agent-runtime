@@ -110,6 +110,12 @@ pub struct DelegatedHostContexts {
     runs: Mutex<HashMap<(String, String), String>>,
 }
 
+impl std::fmt::Debug for DelegatedHostContexts {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DelegatedHostContexts").finish_non_exhaustive()
+    }
+}
+
 impl DelegatedHostContexts {
     pub fn new(grants: Arc<DelegationGrantAuthority>) -> Self {
         Self { grants, contexts: Mutex::new(HashMap::new()), runs: Mutex::new(HashMap::new()) }
@@ -246,7 +252,7 @@ pub(super) async fn get_run(
 }
 
 fn require_host(host: Option<Extension<HostAuthenticated>>) -> Result<(), ApiError> {
-    host.ok_or_else(|| ApiError::unauthorized("host_authentication_required", "paired host authentication required"))?;
+    let _host = host.ok_or_else(|| ApiError::unauthorized("host_authentication_required", "paired host authentication required"))?;
     Ok(())
 }
 fn verified_owner(user: &UserContext) -> Result<ActorOwner, ApiError> {

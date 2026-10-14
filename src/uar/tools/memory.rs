@@ -28,66 +28,22 @@ fn check_memory_policy(
     Ok(())
 }
 
-/// Model owner fields are filters, never authority. Preserve the legacy direct
-/// host API, but every verified run is confined to its captured user's records.
-async fn scoped_arguments(
-    mut args: serde_json::Value,
+/// Capture the capability from the admitted host turn, never from JSON.
+fn scoped_service<'a>(
+    args: &serde_json::Value,
     context: &crate::uar::runtime::native_skill::NativeExecutionContext,
-    service: Option<&MemoryService>,
-    scope: MemoryScope,
-) -> anyhow::Result<serde_json::Value> {
-    if let Some(policy) = &context.thread_policy {
-        check_memory_policy(policy)?;
+    service: &'a MemoryService,
+) -> anyhow::Result<crate::uar::memory::owned::OwnedMemory<'a>> {
+    if let Some(policy) = &context.thread_policy { check_memory_policy(policy)?; }
+    let principal = context.verified_owner.as_ref()
+        .and_then(crate::uar::runtime::actor::messages::ActorOwner::credential_principal)
+        .ok_or_else(|| anyhow::anyhow!("memory_requires_verified_owner"))?;
+    let owned = service.for_owner(principal);
+    owned.check_filter(args.get("user_id").and_then(serde_json::Value::as_str))?;
+    if let Some(requested) = args.get("session_id").and_then(serde_json::Value::as_str) {
+        anyhow::ensure!(context.session_id.as_deref() == Some(requested), "Memory session cannot be replaced by tool arguments");
     }
-    let Some(owner) = &context.verified_owner else {
-        anyhow::ensure!(
-            context.thread_policy.is_none() && scope == MemoryScope::OptionalOwner,
-            "memory_requires_verified_owner"
-        );
-        return Ok(args);
-    };
-    let object = args
-        .as_object_mut()
-        .ok_or_else(|| anyhow::anyhow!("Memory arguments must be an object"))?;
-    if let Some(requested) = object.get("user_id") {
-        anyhow::ensure!(
-            requested.as_str() == Some(owner.user_id()),
-            "Memory owner cannot be replaced by tool arguments"
-        );
-    }
-    if scope == MemoryScope::ById {
-        let id = object
-            .get("memory_id")
-            .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| anyhow::anyhow!("Missing memory_id"))?;
-        anyhow::ensure!(
-            !id.trim().is_empty()
-                && id
-                    .split_once(':')
-                    .is_none_or(|(table, _)| table == "memory"),
-            "Memory ID must address a memory record"
-        );
-        if let Some(service) = service {
-            let memory = service
-                .get(id)
-                .await?
-                .ok_or_else(|| anyhow::anyhow!("Memory is unavailable to this owner"))?;
-            anyhow::ensure!(
-                memory.user_id.as_deref() == Some(owner.user_id()),
-                "Memory is unavailable to this owner"
-            );
-        }
-    } else {
-        object.insert("user_id".into(), json!(owner.user_id()));
-    }
-    Ok(args)
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum MemoryScope {
-    OptionalOwner,
-    RequiredOwner,
-    ById,
+    Ok(owned)
 }
 
 #[derive(Debug)]
@@ -108,23 +64,6 @@ impl NativeTool for MemorySaveTool {
         policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
     ) -> anyhow::Result<()> {
         check_memory_policy(policy)
-    }
-
-    async fn call_with_context(
-        &self,
-        args: serde_json::Value,
-        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
-    ) -> anyhow::Result<serde_json::Value> {
-        self.call(
-            scoped_arguments(
-                args,
-                context,
-                self.memory_service.as_deref(),
-                MemoryScope::OptionalOwner,
-            )
-            .await?,
-        )
-        .await
     }
 
     fn name(&self) -> &'static str {
@@ -165,7 +104,15 @@ impl NativeTool for MemorySaveTool {
         ToolEffect::ExternalMutation
     }
 
-    async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+    async fn call(&self, _args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+        anyhow::bail!("memory_requires_verified_owner")
+    }
+
+    async fn call_with_context(
+        &self,
+        args: serde_json::Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<serde_json::Value> {
         let content = args["content"]
             .as_str()
             .ok_or_else(|| anyhow::anyhow!("Missing content"))?;
@@ -181,29 +128,24 @@ impl NativeTool for MemorySaveTool {
         let user_id = args["user_id"].as_str().map(str::to_string);
 
         if let Some(svc) = &self.memory_service {
-            let mut memory = Memory::new(content.to_string(), user_id, agent_id, None, categories);
+            let scoped = scoped_service(&args, context, svc)?;
+            let mut memory = Memory::new(content.to_string(), user_id, agent_id, context.session_id.clone(), categories);
             if memory.user_id.is_some() {
                 memory.scope = surreal_memory::MemoryScope::User;
             }
-            let stored = svc
-                .storage()
+            let stored = scoped
                 .add_memory(memory)
                 .await
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
             let id = stored
                 .id
                 .as_ref()
-                .map(|r| {
-                    serde_json::to_value(r)
-                        .ok()
-                        .and_then(|v| v.as_str().map(str::to_string))
-                        .unwrap_or_default()
-                })
+                .map(|r| crate::uar::memory::owned::record_id(r).unwrap_or_default())
                 .unwrap_or_default();
             Ok(json!({ "status": "success", "memory_id": id }))
         } else {
             tracing::warn!("memory_save called but MemoryService not enabled");
-            Ok(json!({ "status": "disabled", "message": "Memory system not enabled" }))
+            anyhow::bail!("memory_disabled")
         }
     }
 }
@@ -229,23 +171,6 @@ impl NativeTool for MemoryListTool {
         policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
     ) -> anyhow::Result<()> {
         check_memory_policy(policy)
-    }
-
-    async fn call_with_context(
-        &self,
-        args: serde_json::Value,
-        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
-    ) -> anyhow::Result<serde_json::Value> {
-        self.call(
-            scoped_arguments(
-                args,
-                context,
-                self.memory_service.as_deref(),
-                MemoryScope::RequiredOwner,
-            )
-            .await?,
-        )
-        .await
     }
 
     fn name(&self) -> &'static str {
@@ -285,9 +210,17 @@ impl NativeTool for MemoryListTool {
         ToolEffect::ReadOnly
     }
 
-    async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+    async fn call(&self, _args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+        anyhow::bail!("memory_requires_verified_owner")
+    }
+
+    async fn call_with_context(
+        &self,
+        args: serde_json::Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<serde_json::Value> {
         let Some(svc) = &self.memory_service else {
-            return Ok(json!({ "memories": [], "message": "Memory system not enabled" }));
+            anyhow::bail!("memory_disabled");
         };
 
         let user_id = args["user_id"].as_str();
@@ -295,8 +228,8 @@ impl NativeTool for MemoryListTool {
         let session_id = args["session_id"].as_str();
         let limit = args["limit"].as_u64().unwrap_or(20) as usize;
 
-        let results = svc
-            .storage()
+        let scoped = scoped_service(&args, context, svc)?;
+        let results = scoped
             .get_all_memories(user_id, agent_id, session_id)
             .await
             .map_err(|e| anyhow::anyhow!("{e}"))?;
@@ -307,12 +240,7 @@ impl NativeTool for MemoryListTool {
             .map(|m| {
                 let id =
                     m.id.as_ref()
-                        .map(|r| {
-                            serde_json::to_value(r)
-                                .ok()
-                                .and_then(|v| v.as_str().map(str::to_string))
-                                .unwrap_or_default()
-                        })
+                        .map(|r| crate::uar::memory::owned::record_id(r).unwrap_or_default())
                         .unwrap_or_default();
                 json!({
                     "memory_id": id,
@@ -351,23 +279,6 @@ impl NativeTool for MemoryDeleteTool {
         check_memory_policy(policy)
     }
 
-    async fn call_with_context(
-        &self,
-        args: serde_json::Value,
-        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
-    ) -> anyhow::Result<serde_json::Value> {
-        self.call(
-            scoped_arguments(
-                args,
-                context,
-                self.memory_service.as_deref(),
-                MemoryScope::ById,
-            )
-            .await?,
-        )
-        .await
-    }
-
     fn name(&self) -> &'static str {
         "memory_delete_by_id"
     }
@@ -393,16 +304,24 @@ impl NativeTool for MemoryDeleteTool {
         ToolEffect::ExternalMutation
     }
 
-    async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+    async fn call(&self, _args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+        anyhow::bail!("memory_requires_verified_owner")
+    }
+
+    async fn call_with_context(
+        &self,
+        args: serde_json::Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<serde_json::Value> {
         let Some(svc) = &self.memory_service else {
-            return Ok(json!({ "status": "disabled", "message": "Memory system not enabled" }));
+            anyhow::bail!("memory_disabled");
         };
 
         let memory_id = args["memory_id"]
             .as_str()
             .ok_or_else(|| anyhow::anyhow!("Missing memory_id"))?;
 
-        svc.storage()
+        scoped_service(&args, context, svc)?
             .delete_memory(memory_id)
             .await
             .map_err(|e| anyhow::anyhow!("{e}"))?;
@@ -430,23 +349,6 @@ impl NativeTool for MemoryUpdateTool {
         policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy,
     ) -> anyhow::Result<()> {
         check_memory_policy(policy)
-    }
-
-    async fn call_with_context(
-        &self,
-        args: serde_json::Value,
-        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
-    ) -> anyhow::Result<serde_json::Value> {
-        self.call(
-            scoped_arguments(
-                args,
-                context,
-                self.memory_service.as_deref(),
-                MemoryScope::ById,
-            )
-            .await?,
-        )
-        .await
     }
 
     fn name(&self) -> &'static str {
@@ -478,9 +380,17 @@ impl NativeTool for MemoryUpdateTool {
         ToolEffect::ExternalMutation
     }
 
-    async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+    async fn call(&self, _args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+        anyhow::bail!("memory_requires_verified_owner")
+    }
+
+    async fn call_with_context(
+        &self,
+        args: serde_json::Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<serde_json::Value> {
         let Some(svc) = &self.memory_service else {
-            return Ok(json!({ "status": "disabled", "message": "Memory system not enabled" }));
+            anyhow::bail!("memory_disabled");
         };
 
         let memory_id = args["memory_id"]
@@ -490,8 +400,7 @@ impl NativeTool for MemoryUpdateTool {
             .as_str()
             .ok_or_else(|| anyhow::anyhow!("Missing content"))?;
 
-        let updated = svc
-            .storage()
+        let updated = scoped_service(&args, context, svc)?
             .update_memory(memory_id, content.to_string())
             .await
             .map_err(|e| anyhow::anyhow!("{e}"))?;
@@ -499,12 +408,7 @@ impl NativeTool for MemoryUpdateTool {
         let new_id = updated
             .id
             .as_ref()
-            .map(|r| {
-                serde_json::to_value(r)
-                    .ok()
-                    .and_then(|v| v.as_str().map(str::to_string))
-                    .unwrap_or_default()
-            })
+            .map(|r| crate::uar::memory::owned::record_id(r).unwrap_or_default())
             .unwrap_or_default();
 
         Ok(json!({
@@ -536,23 +440,6 @@ impl NativeTool for MemoryHistoryTool {
         check_memory_policy(policy)
     }
 
-    async fn call_with_context(
-        &self,
-        args: serde_json::Value,
-        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
-    ) -> anyhow::Result<serde_json::Value> {
-        self.call(
-            scoped_arguments(
-                args,
-                context,
-                self.memory_service.as_deref(),
-                MemoryScope::ById,
-            )
-            .await?,
-        )
-        .await
-    }
-
     fn name(&self) -> &'static str {
         "memory_history"
     }
@@ -578,17 +465,24 @@ impl NativeTool for MemoryHistoryTool {
         ToolEffect::ReadOnly
     }
 
-    async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+    async fn call(&self, _args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+        anyhow::bail!("memory_requires_verified_owner")
+    }
+
+    async fn call_with_context(
+        &self,
+        args: serde_json::Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<serde_json::Value> {
         let Some(svc) = &self.memory_service else {
-            return Ok(json!({ "history": [], "message": "Memory system not enabled" }));
+            anyhow::bail!("memory_disabled");
         };
 
         let memory_id = args["memory_id"]
             .as_str()
             .ok_or_else(|| anyhow::anyhow!("Missing memory_id"))?;
 
-        let history = svc
-            .storage()
+        let history = scoped_service(&args, context, svc)?
             .get_memory_history(memory_id)
             .await
             .map_err(|e| anyhow::anyhow!("{e}"))?;
@@ -633,23 +527,6 @@ impl NativeTool for MemoryRecallTool {
         check_memory_policy(policy)
     }
 
-    async fn call_with_context(
-        &self,
-        args: serde_json::Value,
-        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
-    ) -> anyhow::Result<serde_json::Value> {
-        self.call(
-            scoped_arguments(
-                args,
-                context,
-                self.memory_service.as_deref(),
-                MemoryScope::OptionalOwner,
-            )
-            .await?,
-        )
-        .await
-    }
-
     fn name(&self) -> &'static str {
         "memory_recall"
     }
@@ -687,7 +564,15 @@ impl NativeTool for MemoryRecallTool {
         ToolEffect::ReadOnly
     }
 
-    async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+    async fn call(&self, _args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+        anyhow::bail!("memory_requires_verified_owner")
+    }
+
+    async fn call_with_context(
+        &self,
+        args: serde_json::Value,
+        context: &crate::uar::runtime::native_skill::NativeExecutionContext,
+    ) -> anyhow::Result<serde_json::Value> {
         let query = args["query"]
             .as_str()
             .ok_or_else(|| anyhow::anyhow!("Missing query"))?;
@@ -696,11 +581,11 @@ impl NativeTool for MemoryRecallTool {
         let limit = args["limit"].as_u64().unwrap_or(5) as usize;
 
         let Some(svc) = &self.memory_service else {
-            return Ok(json!([]));
+            anyhow::bail!("memory_disabled");
         };
 
-        let results = svc
-            .storage()
+        let scoped = scoped_service(&args, context, svc)?;
+        let results = scoped
             .search_memories(query, user_id, agent_id, None, None, limit)
             .await
             .map_err(|e| anyhow::anyhow!("{e}"))?;
@@ -719,5 +604,26 @@ impl NativeTool for MemoryRecallTool {
             .collect();
 
         Ok(json!(json_results))
+    }
+}
+
+/// Inspection is available to model tools; consent changes remain an explicit
+/// authenticated owner operation on HTTP/MCP, not an inferred agent preference.
+#[derive(Debug)]
+pub struct MemoryPolicyTool { memory_service: Option<Arc<MemoryService>> }
+impl MemoryPolicyTool {
+    pub fn new(memory_service: Option<Arc<MemoryService>>) -> Self { Self { memory_service } }
+}
+#[async_trait]
+impl NativeTool for MemoryPolicyTool {
+    fn name(&self) -> &'static str { "memory_capture_policy" }
+    fn description(&self) -> &'static str { "Read the owner's durable automatic memory capture consent and retention policy." }
+    fn schema(&self) -> serde_json::Value { json!({"type":"object","properties":{},"additionalProperties":false}) }
+    fn effect(&self) -> ToolEffect { ToolEffect::ReadOnly }
+    fn check_thread_policy(&self, policy: &crate::uar::runtime::thread::policy_intersection::ThreadPolicy) -> anyhow::Result<()> { check_memory_policy(policy) }
+    async fn call(&self, _args: serde_json::Value) -> anyhow::Result<serde_json::Value> { anyhow::bail!("memory_requires_verified_owner") }
+    async fn call_with_context(&self, args: serde_json::Value, context: &crate::uar::runtime::native_skill::NativeExecutionContext) -> anyhow::Result<serde_json::Value> {
+        let service = self.memory_service.as_ref().ok_or_else(|| anyhow::anyhow!("Memory system not enabled"))?;
+        Ok(serde_json::to_value(scoped_service(&args, context, service)?.capture_policy().await?)?)
     }
 }

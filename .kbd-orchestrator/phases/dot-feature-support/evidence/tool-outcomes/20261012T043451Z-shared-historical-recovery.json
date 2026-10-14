@@ -1,0 +1,54 @@
+[
+  {
+    "boundary": "team_recovery_process",
+    "mode": "known-application-failure",
+    "run": "d6fe8934-24ab-4b00-ba89-46dc97d68a2e",
+    "team": "163bcc61-59d7-4180-9ae0-04ab9479703c",
+    "attempt": "aea32637-dd94-49ef-a531-7c24f9adf823",
+    "wait": "9a9f861f-9eae-4388-979f-a52cdfbed453",
+    "database": "truthful_outcomes_binary_team_process_application",
+    "historicalFixture": true,
+    "claimedInvocationId": "6ddf96ba-73eb-48f1-bf91-6a7da2bff56e",
+    "unrelatedNativeInvocationId": null,
+    "unrelatedCanonicalCallId": null
+  },
+  {
+    "boundary": "team_recovery_process",
+    "mode": "legacy",
+    "run": "90d54ce7-d894-41dc-b64b-4bc8ad54e843",
+    "team": "163bcc61-59d7-4180-9ae0-04ab9479703c",
+    "attempt": "5e551abe-69f6-4fbd-89d5-7e88ad322143",
+    "wait": "19e0107f-09bd-4375-9e97-041982111003",
+    "database": "truthful_outcomes_binary_team_process_application",
+    "historicalFixture": true,
+    "claimedInvocationId": "8d450b44-c6da-4da5-b6a5-cf4a90a785f1",
+    "unrelatedNativeInvocationId": null,
+    "unrelatedCanonicalCallId": null
+  },
+  {
+    "boundary": "team_recovery_process",
+    "mode": "native-legacy-failure",
+    "run": "6b2732e3-be0c-4e38-9785-77abbefd85ab",
+    "team": "163bcc61-59d7-4180-9ae0-04ab9479703c",
+    "attempt": "0271e959-8a92-4593-92b1-70cf5322edd1",
+    "wait": "d17d2471-a1f7-4915-88cf-1d50493fece1",
+    "database": "truthful_outcomes_binary_team_process_application",
+    "historicalFixture": true,
+    "claimedInvocationId": "61948911-b130-4e2b-9db0-810051f46ec9",
+    "unrelatedNativeInvocationId": null,
+    "unrelatedCanonicalCallId": null
+  },
+  {
+    "boundary": "team_recovery_process",
+    "mode": "same-name-unrelated-native",
+    "run": "dee3f2c3-7774-41f8-b729-64695ceddfca",
+    "team": "163bcc61-59d7-4180-9ae0-04ab9479703c",
+    "attempt": "c216cd9c-6762-432e-8931-8857c4f95457",
+    "wait": "75eb8136-560e-491c-b91f-bfa5d0b8d54c",
+    "database": "truthful_outcomes_binary_team_process_application",
+    "historicalFixture": true,
+    "claimedInvocationId": "04f176a2-a9e5-4bf2-bd7e-38470d25e114",
+    "unrelatedNativeInvocationId": "d2a2cf6f-cfd7-49fb-9a6e-162e99c07c3e",
+    "unrelatedCanonicalCallId": "unrelated-native-call-same-name-unrelated-native"
+  }
+]

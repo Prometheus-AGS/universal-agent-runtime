@@ -491,8 +491,8 @@ impl Runtime {
     /// # Errors
     /// Returns an error if the runtime has no memory service, or the read fails.
     #[cfg(feature = "embedded")]
-    pub async fn get_memory(&self, id: &str) -> Result<Option<uar_memory::Memory>> {
-        uar_admin::memory::get(self.inner.memory_service().as_ref(), id)
+    pub async fn get_memory(&self, id: &str, user_ctx: &UserContext) -> Result<Option<uar_memory::Memory>> {
+        uar_admin::memory::get(self.inner.memory_service().as_ref(), id, user_ctx)
             .await
             .map_err(runtime_error)
     }
@@ -530,8 +530,8 @@ impl Runtime {
     /// # Errors
     /// Returns an error if the runtime has no memory service, or the write fails.
     #[cfg(feature = "embedded")]
-    pub async fn update_memory(&self, id: &str, content: String) -> Result<uar_memory::Memory> {
-        uar_admin::memory::update(self.inner.memory_service().as_ref(), id, content)
+    pub async fn update_memory(&self, id: &str, content: String, user_ctx: &UserContext) -> Result<uar_memory::Memory> {
+        uar_admin::memory::update(self.inner.memory_service().as_ref(), id, content, user_ctx)
             .await
             .map_err(runtime_error)
     }
@@ -541,8 +541,8 @@ impl Runtime {
     /// # Errors
     /// Returns an error if the runtime has no memory service, or the write fails.
     #[cfg(feature = "embedded")]
-    pub async fn delete_memory(&self, id: &str) -> Result<()> {
-        uar_admin::memory::delete(self.inner.memory_service().as_ref(), id)
+    pub async fn delete_memory(&self, id: &str, user_ctx: &UserContext) -> Result<()> {
+        uar_admin::memory::delete(self.inner.memory_service().as_ref(), id, user_ctx)
             .await
             .map_err(runtime_error)
     }

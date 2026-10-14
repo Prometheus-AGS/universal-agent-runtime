@@ -25,6 +25,13 @@ pub struct SelectedTeamContext {
     pub data: Value,
 }
 
+impl std::fmt::Debug for SelectedTeamContext {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Selected content and its attribution remain owner-scoped.
+        f.debug_struct("SelectedTeamContext").finish_non_exhaustive()
+    }
+}
+
 impl CollaborationCatalogService {
     pub async fn selected_team_context(
         &self,

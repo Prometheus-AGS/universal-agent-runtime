@@ -1,0 +1,275 @@
+{
+  "verdict": "failed",
+  "command": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test truthful_tool_outcomes -- --test-threads=1 --nocapture",
+  "exitCode": 101,
+  "topHarness": {
+    "entries": 2,
+    "substantive": 1,
+    "substantiveStatus": "failed",
+    "noopStatus": "passed",
+    "actualSummary": [
+      "test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 92.81s"
+    ],
+    "internalChildInvocation": "fixture orchestration; not additional completion evidence"
+  },
+  "scenarioCounts": {
+    "expected": 65,
+    "entered": 28,
+    "completed": 27,
+    "failed": 1,
+    "unrun": 37,
+    "localCompleted": 27,
+    "sharedEntered": 0
+  },
+  "failure": {
+    "source": "tests/support/truthful_tool_outcome_process.rs:243",
+    "request": "POST /api/uar/agent-instances/v1/",
+    "expectedStatus": 201,
+    "observedStatus": 404,
+    "response": {
+      "error": {
+        "message": "API route not found",
+        "type": "invalid_request_error",
+        "code": "api_route_not_found"
+      }
+    },
+    "rootCause": "Fixture instance creation URL has a trailing slash; production server nests at /api/uar/agent-instances/v1 and existing contracts/live fixtures use no trailing slash. Locked Axum0.8.9 official nest documentation explicitly distinguishes /foo from /foo/.",
+    "proposedNarrowCorrection": "Remove only trailing slash from fixture creation URL at process.rs:585; keep status and semantic assertions. Actual correction sufficiency remains unverified.",
+    "privateResponse": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-team-partition-gate-n_lqefh8/profiles/local-076d36692f584bb2b998ac28d4902e07/binary-instance-process-success/api-failure.json",
+    "upstreamDoc": "https://github.com/tokio-rs/axum/blob/axum-v0.8.9/axum/src/docs/routing/nest.md",
+    "lockedDocPrivateCopy": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-team-partition-gate-n_lqefh8/axum-0.8.9-nest-docs.md",
+    "lockedDocSha256": "23db0a99ad0d3f837eb7c9657cdc6ad340cfa35b8d1e116d3f1e814fb2f97dfd",
+    "Context7Resolved": "/tokio-rs/axum/axum_v0_8_4",
+    "Context7DocumentationURL": "https://github.com/tokio-rs/axum/blob/axum-v0.8.4/axum/src/docs/routing/nest.md"
+  },
+  "observedProgress": [
+    "All3localproductionactivationcontrols completed",
+    "All16localregistry/manager/scopedbinarymodecases completed",
+    "All4localordinaryservercases completed",
+    "All4localteamcases completed including actual restart readback, correctly partitioned durable vectors and public artifact assertions",
+    "Instance success setup entered; no instance turn submitted",
+    "All35sharedcases unrun"
+  ],
+  "sourceAndArtifacts": {
+    "head": "c314099bc9173058f3ba43b983539d8d13c6f4de",
+    "boundInputs": 6551,
+    "all18HashesMatch": true,
+    "sourceUnchangedAtExit": true,
+    "artifactStabilityAtExit": [
+      {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "sameSha256": true
+      },
+      {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sameSha256": true
+      },
+      {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sameSha256": true
+      }
+    ],
+    "sampledOrdinaryRuntimeLaunches": 16,
+    "sidecarLaunched": false,
+    "privateSourceSnapshot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-team-partition-gate-n_lqefh8/source-snapshot.tar.gz",
+    "privateCorrectionPatch": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-team-partition-gate-n_lqefh8/authorized-source-correction.patch"
+  },
+  "limits": [
+    "No PG receipt roundtrip/observer/checkpoint parity",
+    "Controlled provider/MCP fault injection; no genuine external inference",
+    "SDK-represented scrubbed MCP content; no wire unknown-field preservation claim",
+    "Shared concurrent B role is read-only observer and was unrun here; no takeover-denial proof",
+    "Registry/toolchain/native transitive closure unbound",
+    "No broader feature matrix, whole-phase cumulative QA/review, Tier2 or Tier3"
+  ],
+  "cleanup": {
+    "sampledOwnedProcesses": [
+      {
+        "pid": 53499,
+        "role": "integration-target",
+        "presentAtSample": false
+      },
+      {
+        "pid": 53566,
+        "role": "integration-target",
+        "presentAtSample": false
+      },
+      {
+        "pid": 53740,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 53925,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 54027,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 54147,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 54299,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 54357,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 54486,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 54521,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 54585,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 54659,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 54727,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 54858,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 55010,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 55044,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 55071,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 55156,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 55262,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 55349,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 55697,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 55776,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 56121,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 56220,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 56315,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 56409,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 56442,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 56723,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 56824,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 56874,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 56982,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 56984,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 57020,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 57074,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      },
+      {
+        "pid": 57221,
+        "role": "ordinary-runtime",
+        "presentAtSample": false
+      },
+      {
+        "pid": 57539,
+        "role": "controlled-mcp-peer",
+        "presentAtSample": false
+      }
+    ],
+    "exactOwnedPythonTraceMatches": [],
+    "cleanupActions": [],
+    "allSampledOwnedProcessesGone": true,
+    "scope": "Sampled owned PIDs and exact unique private trace argv only; not exhaustive system-process closure",
+    "rootInfrastructureUntouched": true
+  },
+  "cargoHeldAfterFailure": true
+}

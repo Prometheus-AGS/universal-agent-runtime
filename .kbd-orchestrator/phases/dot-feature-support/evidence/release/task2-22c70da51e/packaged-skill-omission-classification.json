@@ -1,0 +1,8 @@
+{
+  "dockerignore_sha256": "fd14a64e2699637e18b70be5b9943b285732903af67bddc87102132ba2052896",
+  "observed_rule": "**/dist",
+  "omitted_count": 37,
+  "all_omissions_are_dist_descendants": true,
+  "skill_manifest_omissions": [],
+  "all_packaged_entries_match_source": true
+}

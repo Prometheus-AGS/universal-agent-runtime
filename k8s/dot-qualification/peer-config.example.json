@@ -1,0 +1,9 @@
+{
+  "namespace": "dot17-uar",
+  "name": "dot17-qualification-source",
+  "python_image": "REPLACE_WITH_PYTHON_IMAGE@sha256:REPLACE_WITH_ACTUAL_DIGEST",
+  "existing_claim": "surrealdb-data-surrealdb-0",
+  "trace_subpath": "peer",
+  "ports": {"provider": 18080, "mcp": 18081},
+  "runtime_labels": {"app.kubernetes.io/name": "uar", "app.kubernetes.io/component": "app"}
+}

@@ -1,0 +1,468 @@
+{
+  "phase": "dot-feature-support",
+  "change": "dot-03-durable-api-keys",
+  "task": "2",
+  "stage": "Execute",
+  "verificationTier": "Tier 1 completed-change production integration",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,in-memory-backend",
+    "--test",
+    "durable_api_keys_integration",
+    "--",
+    "--include-ignored",
+    "--test-threads=1"
+  ],
+  "commandDisplay": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test durable_api_keys_integration -- --include-ignored --test-threads=1",
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "profile": "test inherits dev; debug=line-tables-only; split-debuginfo=unpacked",
+  "startedAt": "2026-10-12T00:07:23.827051+00:00",
+  "status": "passed",
+  "expectedTests": [
+    "explicit_local_development_memory_remains_volatile",
+    "local_surreal_kv_keys_exchange_and_revocation_survive_restart",
+    "postgres_modified_key_paths_restart_revocation_and_outage",
+    "shared_surreal_two_processes_current_authority_and_transport_outage",
+    "sidecar_delegated_key_admission_rechecks_revocation_and_outage"
+  ],
+  "sourceFingerprint": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261012T000707Z-source-fingerprint.json",
+  "sourceFingerprintSha256": "1b34876464d4872ac839ba6e28c1d05c6c03a0654063b48b8df1aadea12560b3",
+  "sourceSnapshot": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261012T000707Z-source-snapshot.tar.gz",
+  "sourceSnapshotSha256": "f2b213c1c4326cc4c95b1ce9811099dc36d34edf909885f4ee6498947d444d34",
+  "dirtySourcePatch": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261012T000707Z-dirty-source.patch",
+  "dirtySourcePatchSha256": "cf05d1d759ef5cfa9eff31ab8bf0c8b6f03eaafc3ca06ccde427948d13972528",
+  "privateRawLog": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-api-key-gate-012sh2zf/20261012T000707Z-raw.log",
+  "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261012T000707Z-production-boundary.log",
+  "environmentNames": [
+    "HOME",
+    "PATH",
+    "UAR_API_KEY_TEST_SURREAL_URL",
+    "UAR_API_KEY_TEST_SURREAL_USER",
+    "UAR_API_KEY_TEST_SURREAL_PASS",
+    "UAR_API_KEY_TEST_POSTGRES_URL"
+  ],
+  "sourceFreezeRequired": true,
+  "argvProfileUnmodified": true,
+  "launchedProcesses": [
+    {
+      "pid": 77249,
+      "parentPid": 76486,
+      "observedAt": "2026-10-12T00:08:37.829216+00:00",
+      "argv": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067 --include-ignored --test-threads=1",
+      "binaryPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067",
+      "role": "integration-target",
+      "artifact": {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067",
+        "sha256": "0e008e0142df8a50cb25c8886fe80c7577d329412da9e11b578aa99c94ad154c",
+        "bytes": 236439792,
+        "capturedAt": "2026-10-12T00:08:37.950565+00:00"
+      }
+    },
+    {
+      "pid": 77259,
+      "parentPid": 77249,
+      "observedAt": "2026-10-12T00:08:40.173516+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmp21vPDU/config.yaml --port 59401",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+        "bytes": 551719448,
+        "capturedAt": "2026-10-12T00:08:40.493386+00:00"
+      }
+    },
+    {
+      "pid": 77297,
+      "parentPid": 77249,
+      "observedAt": "2026-10-12T00:08:46.001559+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpjTSFdj/config.yaml --port 59499",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+        "bytes": 551719448,
+        "capturedAt": "2026-10-12T00:08:40.493386+00:00"
+      }
+    },
+    {
+      "pid": 77442,
+      "parentPid": 77249,
+      "observedAt": "2026-10-12T00:09:02.650515+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpY1h5xN/config.yaml --port 59594",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+        "bytes": 551719448,
+        "capturedAt": "2026-10-12T00:08:40.493386+00:00"
+      }
+    },
+    {
+      "pid": 77452,
+      "parentPid": 77249,
+      "observedAt": "2026-10-12T00:09:03.751585+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmprxV2c2/config.yaml --port 59622",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+        "bytes": 551719448,
+        "capturedAt": "2026-10-12T00:08:40.493386+00:00"
+      }
+    },
+    {
+      "pid": 77462,
+      "parentPid": 77249,
+      "observedAt": "2026-10-12T00:09:05.960037+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpk7lYwm/config.yaml --port 59641",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+        "bytes": 551719448,
+        "capturedAt": "2026-10-12T00:08:40.493386+00:00"
+      }
+    },
+    {
+      "pid": 77615,
+      "parentPid": 77249,
+      "observedAt": "2026-10-12T00:09:19.186390+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpgyMA17/config.yaml --port 59737",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+        "bytes": 551719448,
+        "capturedAt": "2026-10-12T00:08:40.493386+00:00"
+      }
+    },
+    {
+      "pid": 77650,
+      "parentPid": 77249,
+      "observedAt": "2026-10-12T00:09:21.390223+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpuYVBme/config.yaml --port 59816",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+        "bytes": 551719448,
+        "capturedAt": "2026-10-12T00:08:40.493386+00:00"
+      }
+    },
+    {
+      "pid": 77696,
+      "parentPid": 77249,
+      "observedAt": "2026-10-12T00:09:24.709779+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpcY0cwT/config.yaml --port 59839",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+        "bytes": 551719448,
+        "capturedAt": "2026-10-12T00:08:40.493386+00:00"
+      }
+    },
+    {
+      "pid": 77808,
+      "parentPid": 77249,
+      "observedAt": "2026-10-12T00:09:39.131934+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpzly3Sc/config.yaml --port 59930",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+        "bytes": 551719448,
+        "capturedAt": "2026-10-12T00:08:40.493386+00:00"
+      }
+    },
+    {
+      "pid": 77811,
+      "parentPid": 77249,
+      "observedAt": "2026-10-12T00:09:39.136378+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmp8UDH2b/config.yaml --port 59941",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+        "bytes": 551719448,
+        "capturedAt": "2026-10-12T00:08:40.493386+00:00"
+      }
+    },
+    {
+      "pid": 77819,
+      "parentPid": 77249,
+      "observedAt": "2026-10-12T00:09:40.241711+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpFaEsse/config.yaml --port 59969",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+        "bytes": 551719448,
+        "capturedAt": "2026-10-12T00:08:40.493386+00:00"
+      }
+    },
+    {
+      "pid": 78150,
+      "parentPid": 77249,
+      "observedAt": "2026-10-12T00:10:17.825872+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpjEzciZ/config.yaml --port 60217",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "role": "ordinary-runtime",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+        "sha256": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+        "bytes": 551719448,
+        "capturedAt": "2026-10-12T00:08:40.493386+00:00"
+      }
+    },
+    {
+      "pid": 78184,
+      "parentPid": 77249,
+      "observedAt": "2026-10-12T00:10:21.145348+00:00",
+      "argv": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar --config /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/.tmpZFwk9D/config.yaml --port 60237",
+      "binaryPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar",
+      "role": "sidecar",
+      "artifact": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar",
+        "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar",
+        "sha256": "b0801a5dc8cd535e461c409ef949648049ef6e3102883680fc0be57eebedb17b",
+        "bytes": 550347632,
+        "capturedAt": "2026-10-12T00:10:21.536169+00:00"
+      }
+    }
+  ],
+  "deferredChecks": [
+    "Postgres checkpoint/observer parity",
+    "Tier 2 phase composition and cumulative independent review",
+    "Tier 3 both-architecture publication/certification",
+    "Other phase tasks"
+  ],
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-production-boundary.json",
+  "fixtureCorrection": {
+    "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235859Z-production-boundary.json",
+    "changedBoundPathsSincePreviousGate": [
+      "docs/operations/durable-api-keys.md",
+      "src/server.rs",
+      "src/uar/security/api_keys/storage.rs"
+    ],
+    "files": [
+      {
+        "path": "docs/operations/durable-api-keys.md",
+        "oldSha256": "96136bdbe7ae4f2e7a1ace4a5209bd3684aca09360d21de2232d03e7b170e70b",
+        "newSha256": "3da7e6848f2113c839dfcc4010e65bf0f23f670535e74c883b9c14c6b0d5f924"
+      },
+      {
+        "path": "src/server.rs",
+        "oldSha256": "bc413f1392361762efa374697884c2a0b13f5ceb7030fba3384d3a1bba4316db",
+        "newSha256": "0c806a77890dd530a26b2acafda8d1125c48a346f9346336deecdbddb04466af"
+      },
+      {
+        "path": "src/uar/security/api_keys/storage.rs",
+        "oldSha256": "81971efae0cf8e710274050451d70eee9f5efd525487618e4258a1238e719cb7",
+        "newSha256": "80ee64f78fa71389473d9fdf6f76a2c965a28da588171efee7ad501cdc7d4d9b"
+      }
+    ],
+    "correctionPatch": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261012T000707Z-observed-correction.patch",
+    "correctionPatchSha256": "b2899e88a42f1723edca7c44a7c931380cfea8489b5f7ea984bcf721277a3ff5",
+    "observedFailures": [
+      "Postgres fixture gateway pg_hba rejection",
+      "Shared and sidecar outage returned408 instead of503"
+    ],
+    "productionCorrection": "Bound API-key durable operations to min(5000ms,max(request_timeout_ms,1000)/8); pass existing configured timeout from server; document unknown mutation commit outcome.",
+    "infrastructureCorrectionReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/infrastructure-hba-correction.json"
+  },
+  "pid": 76486,
+  "lastObservedAt": "2026-10-12T00:10:41.401312+00:00",
+  "logBytes": 12295,
+  "testLines": [
+    "running 5 tests",
+    "test explicit_local_development_memory_remains_volatile ... ok",
+    "test local_surreal_kv_keys_exchange_and_revocation_survive_restart ... ok",
+    "test postgres_modified_key_paths_restart_revocation_and_outage ... ok",
+    "test shared_surreal_two_processes_current_authority_and_transport_outage ... ok",
+    "test sidecar_delegated_key_admission_rechecks_revocation_and_outage ... ok",
+    "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 120.87s"
+  ],
+  "exitCode": 0,
+  "finishedAt": "2026-10-12T00:10:41.401853+00:00",
+  "sourceUnchangedAtExit": true,
+  "changedSourcePathsAtExit": [],
+  "sourceDrift": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261012T000707Z-source-drift.json",
+  "sourceDriftSha256": "734396767818a3287365ba26cfacf4f601039a26cdaf30b2e84ab13cb13eef0a",
+  "logSha256": "161b8d219a8e1409d12f98860cfef82476842455e5250095e3d24d536e8838e6",
+  "rawLogSha256": "161b8d219a8e1409d12f98860cfef82476842455e5250095e3d24d536e8838e6",
+  "testSummary": [
+    "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 120.87s"
+  ],
+  "testPassedByName": {
+    "explicit_local_development_memory_remains_volatile": true,
+    "local_surreal_kv_keys_exchange_and_revocation_survive_restart": true,
+    "postgres_modified_key_paths_restart_revocation_and_outage": true,
+    "shared_surreal_two_processes_current_authority_and_transport_outage": true,
+    "sidecar_delegated_key_admission_rechecks_revocation_and_outage": true
+  },
+  "artifactFingerprints": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067",
+      "sha256": "0e008e0142df8a50cb25c8886fe80c7577d329412da9e11b578aa99c94ad154c",
+      "bytes": 236439792,
+      "capturedAt": "2026-10-12T00:08:37.950565+00:00"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "sha256": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+      "bytes": 551719448,
+      "capturedAt": "2026-10-12T00:08:40.493386+00:00"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar",
+      "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar",
+      "sha256": "b0801a5dc8cd535e461c409ef949648049ef6e3102883680fc0be57eebedb17b",
+      "bytes": 550347632,
+      "capturedAt": "2026-10-12T00:10:21.536169+00:00"
+    }
+  ],
+  "allExpectedTestsPassed": true,
+  "testCounts": {
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered": 0
+  },
+  "sanitization": "DB URL/password and credential-context usernames, fixture secrets, JWTs, raw-key patterns, 64-hex grants/launch tokens, hash-bearing log lines; known harness scenario names preserved.",
+  "receiptSanitizationCorrection": ".kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261012T000707Z-receipt-sanitization-correction.json",
+  "acceptedScenarioCoverage": [
+    {
+      "scenario": "explicit_local_development_memory_remains_volatile",
+      "observed": "Actual runtime uses explicit memory provider, creates/admitted raw+exchanged keys, restarts, denies raw/exchange HTTP and exchanged gRPC authority.",
+      "result": "passed"
+    },
+    {
+      "scenario": "local_surreal_kv_keys_exchange_and_revocation_survive_restart",
+      "observed": "Actual HTTP creation/exchange, gRPC admission, owner isolation, unauthorized management, reserved role rejection, explicit legacy reissue, expiry denial, fresh-process restart admission then revoke/restart denial, inspectable tombstone, Argon2id-only secret and failed duplicate-insert cannot revive key.",
+      "result": "passed"
+    },
+    {
+      "scenario": "postgres_modified_key_paths_restart_revocation_and_outage",
+      "observed": "Actual Postgres runtime full startup/migrations, two processes, tenant/subject isolation, unauthorized/role escalation/legacy rejection, HTTP/gRPC expiry, revocation and both-process restart denial, current-role mismatch denial, actual transport disconnect yields HTTP503 for raw/exchanged admission/exchange/list/create/revoke and gRPCUnavailable; issuer JWT reaches independent invalid-argument control; retained hashed owner metadata and duplicate tombstone insertion rejection.",
+      "result": "passed",
+      "limit": "Modified existing API-key paths; does not certify observer/checkpoint parity."
+    },
+    {
+      "scenario": "shared_surreal_two_processes_current_authority_and_transport_outage",
+      "observed": "Actual shared durable networked SurrealDB, two processes, cross-process revoke and both restart denial, tenant/subject/issuer isolation, unauthorized management/escalation/legacy rejection, HTTP/gRPC expiry and current-role checks; transport disconnect yields required HTTP503 for admission/exchange/list/create/revoke and gRPCUnavailable; ordinary issuer control remains independent; hashed durable tombstone and duplicate-insert rejection.",
+      "result": "passed"
+    },
+    {
+      "scenario": "sidecar_delegated_key_admission_rechecks_revocation_and_outage",
+      "observed": "Actual uar-sidecar receives launch token only through retained stdin; API-derived and independent host grants admit initially; revoke denies API-derived grant401 while host grant remains200; real DB disconnect denies live API-derived grant503 while independent host grant remains200.",
+      "result": "passed"
+    }
+  ],
+  "artifactFingerprintsAtCompletion": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/durable_api_keys_integration-8cddde3bb9077067",
+      "sha256": "0e008e0142df8a50cb25c8886fe80c7577d329412da9e11b578aa99c94ad154c",
+      "bytes": 236439792,
+      "capturedAt": "2026-10-12T00:08:37.950565+00:00",
+      "sha256AtCompletion": "0e008e0142df8a50cb25c8886fe80c7577d329412da9e11b578aa99c94ad154c",
+      "unchangedSinceObservedLaunch": true
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime",
+      "sha256": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+      "bytes": 551719448,
+      "capturedAt": "2026-10-12T00:08:40.493386+00:00",
+      "sha256AtCompletion": "8a1f981215b36fd7bf7127f43eb524f1fef71b7e452ed83a6ec3fa009e3e82fe",
+      "unchangedSinceObservedLaunch": true
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar",
+      "resolvedPath": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/uar-sidecar",
+      "sha256": "b0801a5dc8cd535e461c409ef949648049ef6e3102883680fc0be57eebedb17b",
+      "bytes": 550347632,
+      "capturedAt": "2026-10-12T00:10:21.536169+00:00",
+      "sha256AtCompletion": "b0801a5dc8cd535e461c409ef949648049ef6e3102883680fc0be57eebedb17b",
+      "unchangedSinceObservedLaunch": true
+    }
+  ],
+  "observedLaunchSampling": {
+    "intervalSecs": 1,
+    "observedCount": 14,
+    "notExhaustive": true,
+    "stillLiveAtCompletionObservation": [],
+    "individualChildExitCodes": "Not instrumented; receipt records gate exit0 and observed launches, passing fixture stop paths signal/wait children. Do not infer per-child numerical exit codes from OS sampling."
+  },
+  "warningSummaries": [
+    "warning: Cargo.toml: version requirement `=0.4.1+0.23` for dependency `ort-tract` includes semver metadata which will be ignored, removing the metadata is recommended to avoid confusion",
+    "warning: `universal-agent-runtime` (manifest) generated 1 warning",
+    "warning: the item `Digest` is imported redundantly",
+    "warning: the item `Sha256` is imported redundantly",
+    "warning: unused import: `context::SelectedTeamContext`",
+    "warning: the item `IntoFuture` is imported redundantly",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: use of deprecated type alias `rmcp::model::ServerInfo`: use `ServerConfig` instead",
+    "warning: function `build_full_harness_sse_response` is never used",
+    "warning: function `reject_portable_authority` is never used",
+    "warning: struct `Draft1Migration` is never constructed",
+    "warning: function `migrate_draft1_document` is never used",
+    "warning: function `required_string` is never used",
+    "warning: function `has_markdown_structure` is never used",
+    "warning: method `request` is never used",
+    "warning: method `scrub` is never used",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: unused `axum::Extension` that must be used",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation",
+    "warning: `universal-agent-runtime` (lib) generated 31 warnings (run `cargo fix --lib -p universal-agent-runtime` to apply 1 suggestion)",
+    "warning: variant `DelayedContent` is never constructed",
+    "warning: method `with_prompt_prefix` is never used",
+    "warning: `universal-agent-runtime` (bin \"stub-llm\") generated 2 warnings"
+  ]
+}

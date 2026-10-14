@@ -86,6 +86,8 @@ pub enum ToolAdmissionEvidenceState {
     ClaimIntent,
     Succeeded,
     Failed,
+    ApplicationFailed,
+    TransportFailed,
     Denied,
     Cancelled,
     Invalidated,

@@ -31,7 +31,6 @@ fn make_ctx_with_events(run_id: &str, events: Vec<NormalizedEvent>) -> GraphCont
         llm_config: universal_agent_runtime::config::LlmConfig::default(),
         driver,
         cache_strategy: None,
-        persistence: None,
         thread_delegate: None,
         tool_host: None,
     }

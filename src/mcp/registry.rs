@@ -227,7 +227,16 @@ fn native_tool_descriptor(
     }))
 }
 
-type DynClientService = rmcp::service::RunningService<rmcp::service::RoleClient, ()>;
+type DynClientService = rmcp::service::RunningService<rmcp::service::RoleClient, super::interaction::RunMcpClient>;
+// An abandoned tool must not leave an interactive callback able to resume it.
+// Cancelling this exact connection does not replay the uncertain remote effect.
+struct ElicitationCallLifetime { service: Arc<DynClientService>, completed: bool }
+impl Drop for ElicitationCallLifetime {
+    fn drop(&mut self) {
+        if !self.completed { self.service.cancellation_token().cancel(); }
+    }
+}
+
 struct ClientServiceState {
     service: Arc<DynClientService>,
     // Replacement is synchronous, but transport close is asynchronous. Retain
@@ -726,7 +735,7 @@ async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<Dy
                 .stderr(std::process::Stdio::null())
                 .spawn()
                 .with_context(|| format!("failed to spawn stdio MCP server '{name}'"))?;
-            ().serve(transport)
+            super::interaction::RunMcpClient::default().serve(transport)
                 .await
                 .with_context(|| format!("failed to connect stdio MCP server '{name}'"))
         }
@@ -754,7 +763,7 @@ async fn connect_configured_http(
     let transport_config = headers.apply(StreamableHttpClientTransportConfig::with_uri(
         endpoint.to_string(),
     ));
-    ().serve(StreamableHttpClientTransport::with_client(
+    super::interaction::RunMcpClient::default().serve(StreamableHttpClientTransport::with_client(
         client,
         transport_config,
     ))
@@ -807,7 +816,7 @@ async fn connect_stdio_snapshot(
         .map_err(|_| McpBindingError::ConnectionFailed {
             server: name.to_owned(),
         })?;
-    tokio::time::timeout(MCP_CONNECT_TIMEOUT, ().serve(transport))
+    tokio::time::timeout(MCP_CONNECT_TIMEOUT, super::interaction::RunMcpClient::for_request(request).serve(transport))
         .await
         .map_err(|_| McpBindingError::ConnectionFailed {
             server: name.to_owned(),
@@ -828,6 +837,7 @@ async fn connect_stdio_snapshot(
 async fn connect_http_snapshot(
     request: &McpBindingRequest,
     headers: Option<&super::runtime::RunHttpHeaders>,
+    credential: Option<super::runtime::RunMcpCredentialLease>,
 ) -> Result<DynClientService, McpBindingError> {
     let definition = request.definition();
     let name = definition.name();
@@ -862,7 +872,7 @@ async fn connect_http_snapshot(
         transport_config = headers.apply(transport_config);
     }
     let transport = StreamableHttpClientTransport::with_client(client, transport_config);
-    tokio::time::timeout(MCP_CONNECT_TIMEOUT, ().serve(transport))
+    tokio::time::timeout(MCP_CONNECT_TIMEOUT, super::interaction::RunMcpClient::for_request(request).with_credential(credential).serve(transport))
         .await
         .map_err(|_| McpBindingError::ConnectionFailed {
             server: name.to_owned(),
@@ -1005,7 +1015,7 @@ async fn reconnect_snapshot(
             if let Some(credential) = credential {
                 credential.authorize(snapshot.request.definition().name())?;
             }
-            connect_http_snapshot(&snapshot.request, headers.as_ref()).await?
+            connect_http_snapshot(&snapshot.request, headers.as_ref(), credential.clone()).await?
         }
     };
     let server = snapshot.request.definition().name();
@@ -1165,7 +1175,7 @@ impl McpRegistry {
         if let Some(credential) = &credential {
             credential.authorize(request.definition().name())?;
         }
-        let service = connect_http_snapshot(&request, Some(headers)).await?;
+        let service = connect_http_snapshot(&request, Some(headers), credential.clone()).await?;
         Self::connect_snapshot_binding(
             request,
             service,
@@ -1457,7 +1467,7 @@ impl McpRegistry {
                 let (transport, _) = TokioChildProcess::builder(cmd)
                     .stderr(std::process::Stdio::null())
                     .spawn()?;
-                ().serve(transport)
+                super::interaction::RunMcpClient::default().serve(transport)
                     .await
                     .with_context(|| format!("failed to connect stdio MCP server '{name}'"))
             }
@@ -1844,6 +1854,25 @@ impl McpRegistry {
             entries.insert(name.clone(), current_reconnect_entry(service_slot).0);
         }
         entries
+    }
+
+    /// Snapshot the live transport recipes under their owning locks. The host
+    /// callback must project non-secret fields and must not mutate the registry.
+    pub(crate) fn inspect_server_entries<R>(
+        &self,
+        inspect: impl FnOnce(HashMap<String, McpServerEntry>) -> R,
+    ) -> anyhow::Result<R> {
+        anyhow::ensure!(self.bound_services.is_none(), "bound registry has no administration inventory");
+        let configured = self.server_config.read().map_err(|_| anyhow!("MCP configuration unavailable"))?;
+        let services = self.services.read().map_err(|_| anyhow!("MCP services unavailable"))?;
+        let slots = services.iter().map(|(name, slot)| {
+            slot.read().map(|guard| (name, guard)).map_err(|_| anyhow!("MCP service state unavailable"))
+        }).collect::<anyhow::Result<Vec<_>>>()?;
+        let mut entries = configured.clone();
+        for (name, slot) in &slots {
+            entries.insert((*name).clone(), slot.reconnect_entry.clone());
+        }
+        Ok(inspect(entries))
     }
 
     /// Add or replace one MCP server and immediately refresh its advertised tools.
@@ -2428,14 +2457,28 @@ impl McpRegistry {
         if let Some(args) = args_obj {
             call_params = call_params.with_arguments(args);
         }
-        let res = tokio::time::timeout(MCP_TOOL_CALL_TIMEOUT, service.call_tool(call_params))
+        // A closed request queue proves this invocation was never enqueued.
+        // Closure racing an admitted call remains uncertain instead.
+        let dispatched = !service.peer().is_transport_closed();
+        let mut interaction_call = service.service().channel().map(|_| ElicitationCallLifetime {
+            service: Arc::clone(&service), completed: false,
+        });
+        let res = if dispatched {
+            super::interaction::interaction_timeout(service.service().channel(), MCP_TOOL_CALL_TIMEOUT, service.peer().call_tool(call_params))
             .await
             .map_err(|_| {
-                anyhow!("tools/call timed out after 30 seconds for {server_name}::{raw_tool_name}")
+                anyhow!("tools/call execution or interaction budget elapsed for {server_name}::{raw_tool_name}")
             })
-            .and_then(|result| result.map_err(anyhow::Error::from));
+            .and_then(|result| result.map_err(anyhow::Error::from))
+        } else {
+            Err(anyhow!("MCP request queue closed before dispatch"))
+        };
+        if let Some(guard) = &mut interaction_call { guard.completed = res.is_ok(); }
+        drop(interaction_call);
         let duration = start.elapsed();
-        let success = res.is_ok();
+        let success = res
+            .as_ref()
+            .is_ok_and(|result| result.is_error != Some(true));
 
         let output_size = if let Ok(ref r) = res {
             serde_json::to_string(r).map(|s| s.len()).unwrap_or(0)
@@ -2466,7 +2509,7 @@ impl McpRegistry {
 
         let res = match res {
             Ok(result) => result,
-            Err(error) => {
+            Err(_error) => {
                 {
                     let state = service_slot
                         .read()
@@ -2479,7 +2522,10 @@ impl McpRegistry {
                 // A child cannot re-read auth/env/config after transport loss.
                 // The owner may establish a new binding for a later root turn.
                 if self.bound_services.is_some() {
-                    return Err(error);
+                    return Err(super::outcome::McpToolFailure {
+                        outcome: if dispatched { super::outcome::ToolOutcome::OutcomeUnknown } else { super::outcome::ToolOutcome::TransportFailed },
+                        result: None,
+                    }.into());
                 }
                 // Re-establish the transport for future calls. Never replay the
                 // failed call: it may have completed remotely before transport loss.
@@ -2541,14 +2587,25 @@ impl McpRegistry {
                         }
                     }
                 }
-                return Err(error).with_context(|| {
-                    format!("tools/call failed for {server_name}::{raw_tool_name}")
-                });
+                return Err(super::outcome::McpToolFailure {
+                    outcome: if dispatched { super::outcome::ToolOutcome::OutcomeUnknown } else { super::outcome::ToolOutcome::TransportFailed },
+                    result: None,
+                }.into());
             }
         };
 
-        // 4. Return content (simplified)
-        Ok(serde_json::to_value(res)?)
+        // Retain every SDK-represented content block and structured result. A
+        // delivered application failure must not become execution success.
+        let application_failed = res.is_error == Some(true);
+        let value = serde_json::to_value(res)?;
+        if application_failed {
+            return Err(super::outcome::McpToolFailure {
+                outcome: super::outcome::ToolOutcome::ApplicationFailed,
+                result: Some(value),
+            }
+            .into());
+        }
+        Ok(value)
     }
 }
 

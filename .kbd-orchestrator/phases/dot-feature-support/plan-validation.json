@@ -1,0 +1,584 @@
+{
+  "strictOpenSpec": [
+    {
+      "change": "dot-01-release-provenance",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-01-release-provenance",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 15
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-02-principal-credentials",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-02-principal-credentials",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 26
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-03-durable-api-keys",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-03-durable-api-keys",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 29
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-04-truthful-tool-outcomes",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-04-truthful-tool-outcomes",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 36
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-05-stream-terminal-contract",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-05-stream-terminal-contract",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 23
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-06-fresh-process-resume",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-06-fresh-process-resume",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 22
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-07-approval-recovery",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-07-approval-recovery",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 16
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-08-durable-ingestion",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-08-durable-ingestion",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 21
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-09-idempotent-settlement",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-09-idempotent-settlement",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 15
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-10-durable-budget-admission",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-10-durable-budget-admission",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 18
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-11-supervisor-fencing",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-11-supervisor-fencing",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 14
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-12-memory-isolation",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-12-memory-isolation",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 18
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-13-memory-controls",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-13-memory-controls",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 13
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-14-durable-schedules",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-14-durable-schedules",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 13
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-15-proactive-followups",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-15-proactive-followups",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 20
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-16-assistant-capability-surface",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-16-assistant-capability-surface",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 22
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    },
+    {
+      "change": "dot-17-assistant-release-acceptance",
+      "exitCode": 0,
+      "result": {
+        "items": [
+          {
+            "id": "dot-17-assistant-release-acceptance",
+            "type": "change",
+            "valid": true,
+            "issues": [],
+            "durationMs": 18
+          }
+        ],
+        "summary": {
+          "totals": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          },
+          "byType": {
+            "change": {
+              "items": 1,
+              "passed": 1,
+              "failed": 0
+            }
+          }
+        },
+        "version": "1.0",
+        "root": {
+          "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+          "source": "nearest"
+        }
+      }
+    }
+  ],
+  "artifactStatus": "all required artifacts done",
+  "taskCount": 35
+}

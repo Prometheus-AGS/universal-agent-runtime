@@ -1,0 +1,59 @@
+{
+  "change": "dot-05-stream-terminal-contract",
+  "task": "2",
+  "attempt": "20261012T054303Z",
+  "observedFailure": "tests/stream_terminal_contract.rs:673 partial stream lost interruption marker",
+  "gateExitCode": 101,
+  "observedCompletedRows": 7,
+  "observedEnteredRows": 8,
+  "completedBoundaries": 22,
+  "failedBoundary": "OpenAi/invalid_utf8/local",
+  "failureEvidence": [
+    {
+      "route": "legacy",
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-VfEC0O/case-8/legacy/first.bin",
+      "bytes": 689,
+      "sha256": "d9f249db35929ef0b36ad72befcc1aef05c9340df7c43c7b281702b95548fc87",
+      "invalidByteOffset": 684,
+      "trailingBytesHex": "5d0d0a0d0a646174613a20ff0d0a0d0a",
+      "requestCount": 1,
+      "requestFileSha256": "bd0f5ca1931718ed87dae3b83966659e19c0b4f1a6285ca784b7e3aab3890661"
+    },
+    {
+      "route": "local",
+      "path": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot05-integration-VfEC0O/case-8/local/first.bin",
+      "bytes": 689,
+      "sha256": "d9f249db35929ef0b36ad72befcc1aef05c9340df7c43c7b281702b95548fc87",
+      "invalidByteOffset": 684,
+      "trailingBytesHex": "5d0d0a0d0a646174613a20ff0d0a0d0a",
+      "requestCount": 1,
+      "requestFileSha256": "7c957d57ec5301e333be3df10afc95d5d8bb4b716d877e6083cea11aa5d1a6f6"
+    }
+  ],
+  "observedAssertionSequence": "Row8 legacy returned; localfailed only after error/cancellation/toolcount/requestshape/finalstatusError/checkpointadmission/no-success-edge/sessionread assertions. Its shared route was not entered.",
+  "snapshotLimit": "Manager event arrays and serialized session snapshots were not separately retained. LocalSurrealKV and exactfixturewirebytes/requestbodies retained privately. No claim of observed missingChatDelta.",
+  "sourceInference": "SSE decoderpush returns error on invalidUTF8 for the transportchunk before ChatSseParser drains buffered events. Thus a validwireprefix can be present without a renderedChatDelta. Manager onlywrites TurnInterrupted for accumulatedcontent/partialtools; fixture asserted it basedcase label. This explains the failedassertion fromsource, without proving actualchunkdistribution or liveeventabsence.",
+  "productionDefectObserved": false,
+  "correctionAssignedByRoot": "Sourceauthor owns testfile markerassert basedactual nonemptyChatDelta plus privateboundary diagnostics; thisacceptanceworker changes no production/test source.",
+  "noRetry": true,
+  "sourceStableAtExitAndFinalSeal": true,
+  "artifactAndCleanup": {
+    "integrationRuntimeSha256": "c04286e7f2d951f674cd6e91d733f7fb15da7fc68c6dd277f78541337c9d77c2",
+    "preparedToolsStable": true,
+    "hostConfigStable": true,
+    "infraManifestStable": true,
+    "sampledOwnedRemaining": 0,
+    "exactOwnedHttpsPeerMatchesFinal": [],
+    "rootInfrastructureRetained": true
+  },
+  "evidenceOnlyBoundedProcessLookups": "15second timeout only on later read-only process/container snapshots after observedhostprocess scan block >10seconds; currentgate runner unchanged.",
+  "sourceEditsByAcceptanceWorker": [],
+  "additionalUnrequestedWork": [],
+  "newProductionGuards": [],
+  "remainingUnverified": [
+    "75scenario rows unrun and row8sharedunrun",
+    "Other providerprotocols/TLS DNS qualification/nativeAnthropic/tools/cancellationmatrix not entered",
+    "Correctedfixture runtime sufficiency",
+    "Wholephase/crossprocess recovery/genuineinference/releasequalification"
+  ]
+}

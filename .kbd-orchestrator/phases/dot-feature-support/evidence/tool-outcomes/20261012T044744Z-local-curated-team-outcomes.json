@@ -1,0 +1,147 @@
+[
+  {
+    "mode": "success",
+    "teamStatus": "inactive",
+    "executionOutcome": "succeeded",
+    "effectDisposition": "confirmed",
+    "accountingState": "reserved-unknown",
+    "artifactCount": 1,
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "f0f6ecc9-0eab-4cdb-9de8-dbfcab4c705f",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "succeeded"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "succeeded"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": true,
+        "content": "{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"success\",\"nested\":{\"control\":42}},\"isError\":false,\"_meta\":{\"fixture\":\"metadata-control\"}}"
+      }
+    ],
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 41260,
+      "restartedPid": 41758,
+      "startedAt": "2026-10-12T04:49:17.710384+00:00",
+      "database": "outcomes",
+      "teamOutcome": "succeeded",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/local-f1249cd0bcd1484dbc9f7c767e00a01a/binary-team_process-success-restarted-observer"
+    },
+    "completed": true
+  },
+  {
+    "mode": "application",
+    "teamStatus": "inactive",
+    "executionOutcome": "failed",
+    "effectDisposition": "confirmed",
+    "accountingState": "reserved-unknown",
+    "artifactCount": 0,
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "62986d49-178a-411b-b193-da0ddcec8d38",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "application_failed"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "application_failed"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": false,
+        "content": "{\"status\":\"error\",\"outcome\":\"application_failed\",\"tool_call_id\":\"dot04-call\",\"tool\":\"dot04__outcomes__effect\",\"provenance\":{\"source\":\"mcp\",\"terminal_state\":\"failed\",\"observed_by\":\"trusted_host\"},\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"application\",\"nested\":{\"control\":42}},\"isError\":true,\"_meta\":{\"fixture\":\"metadata-control\"}},\"message\":\"MCP application failure\"}"
+      }
+    ],
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 41792,
+      "restartedPid": 41895,
+      "startedAt": "2026-10-12T04:49:23.162507+00:00",
+      "database": "outcomes",
+      "teamOutcome": "failed",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/local-f1249cd0bcd1484dbc9f7c767e00a01a/binary-team_process-application-restarted-observer"
+    },
+    "completed": true
+  },
+  {
+    "mode": "unknown",
+    "teamStatus": "inactive",
+    "executionOutcome": "uncertain",
+    "effectDisposition": "uncertain",
+    "accountingState": "reserved-unknown",
+    "artifactCount": 0,
+    "canonical": [
+      {
+        "owner": "dot04-outcome-owner",
+        "run": "d175a385-49d9-403f-b36f-390cfbfe2db7",
+        "callId": "dot04-call",
+        "tool": "dot04__outcomes__effect",
+        "source": "mcp",
+        "outcome": "outcome_unknown"
+      }
+    ],
+    "admissionStates": [
+      "awaiting_approval",
+      "claim_intent",
+      "outcome_unknown"
+    ],
+    "ToolEnd": [
+      {
+        "name": "dot04__outcomes__effect",
+        "success": false,
+        "content": "{\"status\":\"error\",\"outcome\":\"outcome_unknown\",\"tool_call_id\":\"dot04-call\",\"tool\":\"dot04__outcomes__effect\",\"provenance\":{\"source\":\"mcp\",\"terminal_state\":\"outcome_unknown\",\"observed_by\":\"trusted_host\"},\"result\":null,\"message\":\"MCP response lost after dispatch; reconcile before another attempt\"}"
+      }
+    ],
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 41983,
+      "restartedPid": 42100,
+      "startedAt": "2026-10-12T04:49:28.836210+00:00",
+      "database": "outcomes",
+      "teamOutcome": "uncertain",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/local-f1249cd0bcd1484dbc9f7c767e00a01a/binary-team_process-unknown-restarted-observer"
+    },
+    "completed": true
+  },
+  {
+    "mode": "no_tool",
+    "teamStatus": "inactive",
+    "executionOutcome": "succeeded",
+    "effectDisposition": "confirmed",
+    "accountingState": "reserved-unknown",
+    "artifactCount": 1,
+    "canonical": [],
+    "admissionStates": [],
+    "ToolEnd": [],
+    "concurrentBinaryEvidence": null,
+    "restartedBinaryEvidence": {
+      "kind": "restarted_runtime_binary_observer",
+      "previousPid": 42138,
+      "restartedPid": 42218,
+      "startedAt": "2026-10-12T04:49:34.279040+00:00",
+      "database": "outcomes",
+      "teamOutcome": "succeeded",
+      "evidenceDirectory": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-shared-attestation-gate-iilzxij6/profiles/local-f1249cd0bcd1484dbc9f7c767e00a01a/binary-team_process-no_tool-restarted-observer"
+    },
+    "completed": true
+  }
+]

@@ -20,6 +20,12 @@ pub struct ProjectedEventStream {
     sandbox: BTreeMap<String, SecretStream>,
 }
 
+impl std::fmt::Debug for ProjectedEventStream {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("ProjectedEventStream([redacted])")
+    }
+}
+
 impl ProjectedEventStream {
     pub fn new(scrubber: RunSecretScrubber) -> Self {
         Self {

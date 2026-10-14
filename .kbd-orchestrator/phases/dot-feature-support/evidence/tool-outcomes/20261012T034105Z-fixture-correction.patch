@@ -1,0 +1,137 @@
+--- thirteenth-bound/tests/support/truthful_tool_outcome_process.rs
++++ reconciled536-bound/tests/support/truthful_tool_outcome_process.rs
+@@ -734,9 +734,11 @@
+         serde_json::to_vec_pretty(&json!({"team":team,"attempt":attempt})).unwrap(),
+     )
+     .unwrap();
++    assert_eq!(team["ownerId"], attempt["ownerId"]);
+     (
+         run,
+-        json!({"team":id,"attempt":admitted["id"],"teamOutcome":expected,"legacyHold":legacy.is_some()}),
++        json!({"team":id,"attempt":admitted["id"],"teamOutcome":expected,"legacyHold":legacy.is_some(),
++            "admissionOwner":team["ownerId"]}),
+     )
+ }
+ 
+@@ -1047,10 +1049,20 @@
+         .iter()
+         .find(|task| task.id == original.task_id)
+         .unwrap();
++    assert_eq!(
++        original.owner_id,
++        source["admissionOwner"].as_str().unwrap()
++    );
+     let original_evidence = store
+-        .list_tool_admission_evidence(peer::OWNER)
++        .list_tool_admission_evidence(&original.owner_id)
+         .await
+         .unwrap();
++    retain_private_json(
++        &node.directory.join("historical-admission-source.json"),
++        &json!({
++            "queriedAdmissionOwner":original.owner_id,"run":original.run_id,"evidence":original_evidence
++        }),
++    );
+     let source_facts = original_evidence
+         .iter()
+         .filter(|record| {
+@@ -1257,7 +1269,7 @@
+         store.save_canonical_tool_receipt(&receipt).await.unwrap();
+         if collision {
+             let facts = store
+-                .list_tool_admission_evidence(peer::OWNER)
++                .list_tool_admission_evidence(&original.owner_id)
+                 .await
+                 .unwrap();
+             let failures = facts
+@@ -1370,16 +1382,61 @@
+     }
+ }
+ 
+-async fn durable_result(database: &Database, run: &str, tool: &str, mode: &str, team: &Value) {
++fn retain_private_json(path: &Path, value: &Value) {
++    let mut options = std::fs::OpenOptions::new();
++    options.write(true).create(true).truncate(true);
++    #[cfg(unix)]
++    {
++        use std::os::unix::fs::OpenOptionsExt;
++        options.mode(0o600);
++    }
++    let mut file = options.open(path).unwrap();
++    serde_json::to_writer_pretty(&mut file, value).unwrap();
++    file.sync_all().unwrap();
++}
++
++async fn durable_result(
++    database: &Database,
++    run: &str,
++    tool: &str,
++    mode: &str,
++    team: &Value,
++    evidence_directory: &Path,
++) {
+     let store = database.connect().await;
+     let receipts = store
+         .list_canonical_tool_receipts(peer::OWNER, run)
+         .await
+         .unwrap();
++    // Team effects use the authenticated binding partition. Canonical history
++    // and ordinary/instance admission retain their existing subject partition.
++    let admission_owner = if team["team"].is_string() {
++        team["admissionOwner"]
++            .as_str()
++            .expect("actual team owner was retained")
++    } else {
++        peer::OWNER
++    };
+     let evidence = store
+-        .list_tool_admission_evidence(peer::OWNER)
++        .list_tool_admission_evidence(admission_owner)
+         .await
+         .unwrap();
++    let canonical = receipts
++        .iter()
++        .map(|receipt| {
++            json!({
++                "owner":receipt.owner_id,"run":receipt.run_id,"callId":receipt.call_id,
++                "tool":receipt.tool,"source":receipt.source,"outcome":receipt.outcome
++            })
++        })
++        .collect::<Vec<_>>();
++    retain_private_json(
++        &evidence_directory.join("durable-admission-evidence.json"),
++        &json!({
++            "queriedAdmissionOwner":admission_owner,"canonicalOwner":peer::OWNER,
++            "run":run,"tool":tool,"canonical":canonical,"evidence":evidence
++        }),
++    );
+     if mode == "no_tool" {
+         assert!(
+             receipts.is_empty(),
+@@ -1660,7 +1717,7 @@
+             } else {
+                 Value::Null
+             };
+-            durable_result(&database, &run, tool, mode, &team).await;
++            durable_result(&database, &run, tool, mode, &team, &node.directory).await;
+             let outcome = if *mode == "no_tool" {
+                 Value::Null
+             } else {
+@@ -1709,7 +1766,7 @@
+             &previous_state,
+         )
+         .await;
+-        durable_result(&database, &run, TEAM_TOOL, "success", &team).await;
++        durable_result(&database, &run, TEAM_TOOL, "success", &team, &node.directory).await;
+         rows.push(json!({"boundary":"team_process","mode":"legacy-hold","run":run,"tool":TEAM_TOOL,
+             "teamEvidence":team,"concurrentBinaryEvidence":concurrent,"restartedBinaryEvidence":restarted,
+             "database":database.name,"evidenceDirectory":node.directory}));
+@@ -1726,7 +1783,7 @@
+         );
+         assert_eq!(peer::effects(&node.trace).len(), 1);
+         node.stop().await;
+-        durable_result(&database, &run, &tool, mode, &Value::Null).await;
++        durable_result(&database, &run, &tool, mode, &Value::Null, &node.directory).await;
+         durable_instance(&database, &instance).await;
+         rows.push(
+             json!({"boundary":"instance_process","mode":mode,"run":run,"tool":tool,

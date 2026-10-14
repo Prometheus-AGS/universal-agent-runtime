@@ -1,0 +1,732 @@
+{
+  "ownedProcessSamples": [
+    {
+      "pid": 8185,
+      "role": "integration-target",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 8220,
+      "role": "integration-target",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 8600,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 8620,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 8810,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 8860,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 8861,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 8922,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 8988,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 9245,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 9519,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 9618,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 9648,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 10279,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 10417,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 10432,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 10539,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 10919,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 10982,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 11333,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 11758,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 11993,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 12142,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 12169,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 12853,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13128,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13180,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13343,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13427,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13431,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13466,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13594,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13624,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13677,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13817,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13893,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13918,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13946,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13948,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 13982,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14137,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14274,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14345,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14379,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14461,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14474,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14475,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14503,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14608,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14679,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14783,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14794,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14796,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14839,
+      "role": "integration-target",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14955,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 15479,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 15891,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 16001,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 17260,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 17558,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 17559,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 17633,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 17846,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 17921,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 18066,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 18095,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 18185,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 18294,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 18331,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 18379,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 18441,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 18445,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 18469,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 18535,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 18666,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 18726,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 18821,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 18908,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19158,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19335,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19389,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19390,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19411,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19416,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19444,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19475,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19523,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19555,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19574,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19599,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19675,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19699,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19746,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19793,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19861,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19862,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19868,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19890,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19902,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19936,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 19976,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20026,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20073,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20076,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20089,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20102,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20138,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20419,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20529,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20607,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20615,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20643,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20660,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20689,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20736,
+      "role": "ordinary-runtime",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20788,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20827,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20841,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 20842,
+      "role": "controlled-mcp-peer",
+      "presentAtSample": false,
+      "source": "livePIDsample"
+    },
+    {
+      "pid": 14837,
+      "role": "integration-helper",
+      "presentAtSample": false,
+      "source": "retainedactualhelperstdoutlog; missedbylivePIDsampling"
+    }
+  ],
+  "allSampledAndRetainedHelperPIDsGone": true,
+  "sampledRuntimeLaunches": 43,
+  "sampledIntegrationPIDs": 3,
+  "additionalRetainedHelperPIDCount": 1,
+  "exactOwnedPythonTraceMatches": [],
+  "cleanupActions": [],
+  "rootInfrastructureUntouched": true,
+  "scope": "LivePIDsample plus actualretained helperlogPIDs and exactunique private Python traces, not exhaustive process closure"
+}

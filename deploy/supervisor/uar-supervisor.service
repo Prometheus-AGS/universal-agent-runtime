@@ -1,0 +1,21 @@
+[Unit]
+Description=UAR trusted supervisor exclusion controller
+After=network.target
+Before=uar.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/uar/supervisor/controller.py --config /etc/uar-supervisor/controller.json
+Restart=on-failure
+User=root
+Group=root
+UMask=0077
+StateDirectory=uar-supervisor
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/uar-supervisor
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

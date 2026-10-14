@@ -1,0 +1,11 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-10-12T22:56:25Z",
+  "outputs": [
+    "plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "Planning-only child proposes a separate issue-379 release, a dependency order for remaining Dot work, and moving all pending verification to the full-phase boundary. Parent plan and ledger remain untouched; operator decisions on scope, settings schema, approval policy and release version are pending.",
+  "skipped": false,
+  "skipReason": null
+}

@@ -108,6 +108,23 @@ async fn resolve_authenticated_context(
     }
 }
 
+/// Verify bearer identity for a trusted non-HTTP host adapter using the same
+/// verifier as HTTP ingress. No caller assertions can create the returned proof.
+///
+/// # Errors
+/// Rejects invalid, anonymous and incomplete configured identities.
+pub async fn authenticate_bearer_context(config: &SecurityConfig, token: &str) -> Result<UserContext, StatusCode> {
+    let authorization = format!("Bearer {token}");
+    let (context, _) = resolve_authenticated_context(config, Some(&authorization)).await?;
+    if context.verified_identity().is_none() { return Err(StatusCode::UNAUTHORIZED); }
+    // This identity-only adapter has no authoritative storage. Production
+    // HTTP/gRPC use the service-bound admission paths below/alongside it.
+    if context.verified_identity().is_some_and(|identity| identity.is_api_key_credential()) {
+        return Err(StatusCode::SERVICE_UNAVAILABLE);
+    }
+    Ok(context)
+}
+
 #[cfg(test)]
 async fn resolve_user_context_with_config(
     config: &SecurityConfig,
@@ -171,7 +188,15 @@ pub async fn auth_middleware(
         .get::<super::delegation_grants::DelegationAuthenticated>()
         .cloned()
     {
+        require_current_key_authority(&state, &delegated.0).await?;
         request.extensions_mut().insert(delegated.0);
+        return Ok(next.run(request).await);
+    }
+
+    // Only discovery GETs are anonymous; task endpoints still pass admission.
+    if request.method() == axum::http::Method::GET
+        && matches!(request.uri().path(), "/.well-known/agent-card.json" | "/.well-known/agent.json")
+    {
         return Ok(next.run(request).await);
     }
 
@@ -220,6 +245,8 @@ pub async fn auth_middleware(
                         (StatusCode::UNAUTHORIZED, axum::Json(serde_json::json!({
                             "error": {"code": "api_key_reissue_required"}
                         }))).into_response()
+                    } else if error.downcast_ref::<super::api_keys::ApiKeyStorageError>().is_some() {
+                        StatusCode::SERVICE_UNAVAILABLE.into_response()
                     } else { StatusCode::UNAUTHORIZED.into_response() }
                 })?
                 .ok_or_else(|| StatusCode::UNAUTHORIZED.into_response())?;
@@ -237,6 +264,8 @@ pub async fn auth_middleware(
         context
     };
 
+    require_current_key_authority(&state, &context).await?;
+
     let workspace = if state.config.security.is_remote() {
         request.headers().get("x-uar-workspace-id")
             .map(|value| value.to_str().map(str::trim))
@@ -251,6 +280,24 @@ pub async fn auth_middleware(
     request.extensions_mut().insert(credential_capture);
     request.extensions_mut().insert(context);
     Ok(next.run(request).await)
+}
+
+async fn require_current_key_authority(state: &AppState, context: &UserContext) -> Result<(), Response> {
+    if context.verified_identity().is_some_and(|identity| identity.is_api_key_credential()) {
+        let service = state.api_key_service.as_ref()
+            .ok_or_else(|| StatusCode::SERVICE_UNAVAILABLE.into_response())?;
+        let valid = service.validate_admission(context).await.map_err(|error| {
+            if error.downcast_ref::<super::api_keys::ApiKeyStorageError>().is_some() {
+                StatusCode::SERVICE_UNAVAILABLE.into_response()
+            } else {
+                (StatusCode::UNAUTHORIZED, axum::Json(serde_json::json!({
+                    "error": {"code": "api_key_reissue_required"}
+                }))).into_response()
+            }
+        })?;
+        if !valid { return Err(StatusCode::UNAUTHORIZED.into_response()); }
+    }
+    Ok(())
 }
 
 #[cfg(test)]

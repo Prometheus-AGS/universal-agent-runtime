@@ -1,0 +1,104 @@
+[
+  {
+    "change": "dot-11-supervisor-fencing",
+    "exitCode": 0,
+    "result": {
+      "items": [
+        {
+          "id": "dot-11-supervisor-fencing",
+          "type": "change",
+          "valid": true,
+          "issues": [],
+          "durationMs": 17
+        }
+      ],
+      "summary": {
+        "totals": {
+          "items": 1,
+          "passed": 1,
+          "failed": 0
+        },
+        "byType": {
+          "change": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          }
+        }
+      },
+      "version": "1.0",
+      "root": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+        "source": "nearest"
+      }
+    }
+  },
+  {
+    "change": "dot-14-durable-schedules",
+    "exitCode": 0,
+    "result": {
+      "items": [
+        {
+          "id": "dot-14-durable-schedules",
+          "type": "change",
+          "valid": true,
+          "issues": [],
+          "durationMs": 33
+        }
+      ],
+      "summary": {
+        "totals": {
+          "items": 1,
+          "passed": 1,
+          "failed": 0
+        },
+        "byType": {
+          "change": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          }
+        }
+      },
+      "version": "1.0",
+      "root": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+        "source": "nearest"
+      }
+    }
+  },
+  {
+    "change": "dot-17-assistant-release-acceptance",
+    "exitCode": 0,
+    "result": {
+      "items": [
+        {
+          "id": "dot-17-assistant-release-acceptance",
+          "type": "change",
+          "valid": true,
+          "issues": [],
+          "durationMs": 97
+        }
+      ],
+      "summary": {
+        "totals": {
+          "items": 1,
+          "passed": 1,
+          "failed": 0
+        },
+        "byType": {
+          "change": {
+            "items": 1,
+            "passed": 1,
+            "failed": 0
+          }
+        }
+      },
+      "version": "1.0",
+      "root": {
+        "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+        "source": "nearest"
+      }
+    }
+  }
+]

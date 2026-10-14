@@ -1,0 +1,17 @@
+{
+  "stage": "analyze",
+  "completedAt": "2026-10-11T20:29:16Z",
+  "outputs": [
+    "analysis.md",
+    "library-candidates.json",
+    "analysis-evidence.json",
+    "analyze-prior-context.md",
+    "decision-log.md",
+    "review/analyze/findings.json",
+    "review/analyze/gate-deployment-clarification.log"
+  ],
+  "nextStage": "spec",
+  "summaryForNext": "Operator decision supersedes the earlier assumption: LOCAL OPERATION AND SHARED HOSTING ARE EQUALLY REQUIRED FROM THE FIRST RELEASE. Both must pass all six capability contracts and separate acceptance gates; do not defer shared-host support. Seven candidate recommendations remain. Proposed mappings: local SurrealKV and shared attested networked SurrealDB with two or more runtimes; Plan must accept or replace them, enumerate entry points and resolve Postgres observer parity and embedded SDK coverage before claiming support. Existing backend behavior must be preserved. Effective dependency inputs are traced but policy-pin reconciliation and image graph remain open; both architecture manifests are published, deployment health unverified. Clarification artifact review PASS with no findings; cross-model independence remains unverified because producer identity is unavailable. Plan must resolve schedule/DST/delivery/retention/supervisor details, perform scheduler fit gate and author OpenSpec deltas. No runtime tests or product changes. Separate optional Spec stage remains folded into Plan.",
+  "skipped": false,
+  "skipReason": null
+}

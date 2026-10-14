@@ -1,0 +1,69 @@
+{
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T010903Z-production-boundary.json",
+  "changedBoundPathsSincePreviousGate": [
+    "src/mcp/outcome.rs",
+    "src/mcp/runtime.rs"
+  ],
+  "hashes": {
+    "src/mcp/runtime.rs": {
+      "old": "20e588a4cc06d37ce254a35d9931c2b7cf2f6fad7bed07d0336e66502483671a",
+      "new": "3b9bf9e64773e1035d915be96f03ad3a3c92e43a5a5449aff56a0e55d9f278c6"
+    },
+    "src/mcp/outcome.rs": {
+      "old": "129dc02faac5e1bbcd64f4724f91a946e48376d47b27ee2d1315bd8956a1267f",
+      "new": "632bc50c2b6fe3b09f8ed0b30d368acc9b76c6fe406f6d4a24be8a8aa60c4978"
+    }
+  },
+  "correctionPatchSha256": "fb63f80a559716d33749db3e4cef93c0f5e4df9b8f3e18c4aee374521471599a",
+  "tier0CommandsReceipt": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-typed-error-correction-ehq2mbjn/commands.json",
+  "patch": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-observed-correction.patch",
+  "patchSha256": "fb63f80a559716d33749db3e4cef93c0f5e4df9b8f3e18c4aee374521471599a",
+  "tier0Commands": {
+    "parse": [
+      "rustfmt",
+      "--edition",
+      "2024",
+      "--unstable-features",
+      "--skip-children",
+      "--config",
+      "reorder_imports=false,reorder_modules=false",
+      "--emit",
+      "stdout",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/runtime.rs",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/outcome.rs"
+    ],
+    "targeted_format": [
+      "rustfmt",
+      "--edition",
+      "2024",
+      "--unstable-features",
+      "--skip-children",
+      "--config",
+      "reorder_imports=false,reorder_modules=false",
+      "--check",
+      "--file-lines",
+      "[{\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/runtime.rs\", \"range\": [421, 421]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/runtime.rs\", \"range\": [448, 448]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/runtime.rs\", \"range\": [911, 917]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/runtime.rs\", \"range\": [925, 928]}, {\"file\": \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/outcome.rs\", \"range\": [41, 41]}]",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/runtime.rs",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/src/mcp/outcome.rs"
+    ]
+  },
+  "tier0OutputHashes": {
+    "parse.stdout": {
+      "sha256": "9eeea09d7d0bba5da99fd6c1fb97091e6d2153399e522e411a6a8ad31c92f397",
+      "bytes": 38163
+    },
+    "parse.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "targeted_format.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "targeted_format.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  },
+  "tier0ResultAttribution": "Original author/root reported exit0 for parsing and changed-span formatting, with no diagnostics; retained raw command/output files. This gate executor independently verified the exact two source changes, but did not rerun Tier0."
+}

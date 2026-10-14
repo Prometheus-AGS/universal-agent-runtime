@@ -1,0 +1,27 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "gpt-6.1-sol",
+  "producer_model": "unknown",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "unverified-producer-unknown",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "claim": "The assessment accepts dependency-sensitive findings before completing the exact-pin revalidation required by goal 2.",
+      "evidence": "Goal 2 requires: \u201cRevalidate against current main and exact dependency pins before accepting findings.\u201d The assessment instructs Analyze to \u201cCarry the remaining eight runtime findings ... as source-supported findings,\u201d including R4's LiterLlmDriver behavior, but later states: \u201cversions.toml declares liter_llm_commit c5c6caac and prometheus_skill_system_commit ad5c82c6, while checked-out gitlinks are a6047386 and f4bef455\u201d and \u201cArchitecture pin reconciliation is needed.\u201d It does not establish which revisions the production build resolves or whether the affected findings hold at those revisions.",
+      "suggested_fix": "Identify the effective dependency revisions resolved by the current build configuration, distinguish them from declared and checked-out revisions, and revalidate dependency-sensitive findings against that baseline. Until then, mark those findings as provisional and make pin reconciliation an explicit prerequisite in the Analyze handoff."
+    }
+  ],
+  "judge_identity": {
+    "providerConnectionId": "openai-proxy-8181",
+    "providerId": "openai",
+    "modelId": "gpt-6.1-sol"
+  },
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

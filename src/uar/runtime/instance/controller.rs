@@ -205,6 +205,13 @@ impl AgentInstanceController {
         command_id: &str,
         prompt: &str,
     ) -> Result<AgentInstanceCommandView, AgentInstanceError> {
+        self.submit_inner(owner, workspace, id, command_id, prompt, None).await
+    }
+
+    pub(super) async fn submit_inner(
+        self: &Arc<Self>, owner: &ActorOwner, workspace: &str, id: &str,
+        command_id: &str, prompt: &str, schedule_id: Option<&str>,
+    ) -> Result<AgentInstanceCommandView, AgentInstanceError> {
         require_name(command_id)?;
         if prompt.trim().is_empty() {
             return Err(AgentInstanceError::Invalid("turn prompt is empty"));
@@ -228,6 +235,7 @@ impl AgentInstanceController {
                 {
                     return if existing.request_digest == digest
                         && existing.kind == InstanceCommandKind::Turn
+                        && existing.schedule_id.as_deref() == schedule_id
                     {
                         Ok(false)
                     } else {
@@ -271,6 +279,7 @@ impl AgentInstanceController {
                 let now = Utc::now();
                 next.inbox.push(AgentInstanceCommand {
                     command_id: command_id.to_owned(),
+                    schedule_id: schedule_id.map(str::to_owned),
                     request_digest: digest.clone(),
                     kind: InstanceCommandKind::Turn,
                     payload: Some(payload.clone()),
@@ -480,13 +489,14 @@ impl AgentInstanceController {
             };
         }
         let bound = self.bound(record).await?;
+        let session_owner = owner.session_owner_key().map_err(store_error)?;
         let history = self
             .store
-            .load_session(owner.user_id(), &record.session_id)
+            .load_session(&session_owner, &record.session_id)
             .await
             .map_err(store_error)?
             .map(|session| {
-                if session.owner_id() != owner.user_id() || session.id() != record.session_id {
+                if session.owner_id() != session_owner || session.id() != record.session_id {
                     return Err(AgentInstanceError::Internal(anyhow::anyhow!(
                         "Stored conversation identity changed"
                     )));
@@ -648,7 +658,7 @@ pub(crate) fn append_event(
 pub(crate) fn trim_commands(record: &mut AgentInstanceRecord) -> Result<(), AgentInstanceError> {
     while record.inbox.len() >= record.limits.retained_commands as usize {
         let removable = record.inbox.first().is_some_and(|command| {
-            matches!(
+            command.schedule_id.is_none() && matches!(
                 command.status,
                 InstanceCommandStatus::Completed
                     | InstanceCommandStatus::Failed

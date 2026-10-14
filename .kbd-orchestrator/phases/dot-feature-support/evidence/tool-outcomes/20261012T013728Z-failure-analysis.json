@@ -1,0 +1,90 @@
+{
+  "status": "failed-runtime-scoped-result-absent",
+  "receipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T013728Z-production-boundary.json",
+  "command": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test truthful_tool_outcomes -- --test-threads=1 --nocapture",
+  "exitCode": 101,
+  "observedFailure": {
+    "helperPid": 27472,
+    "thread": "dot04-outcome-child",
+    "path": "tests/truthful_tool_outcomes.rs",
+    "line": 592,
+    "message": "actual scoped orchestrator produced a result",
+    "detail": "Events collection returned, but find_map found no ModelEvent::ToolResult named outcomes__effect. Original event vector was not retained, so underlying diagnostic is not available."
+  },
+  "rootCause": "Missing scoped tool-result boundary in first success scenario. Exact underlying admission/projection/transport cause is unlocalized from retained evidence; no failure classification is invented.",
+  "proposedNarrowCorrection": "Original author must inspect actual scoped path and correct observed missing result. Retain private events/provider requests before result assertion if static source cannot isolate cause. Preserve assertion and fixture production boundaries. Refreeze before root authorizes any same-target rerun.",
+  "testResult": [
+    "test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.01s"
+  ],
+  "topHarnessEntries": 2,
+  "topHarnessPassed": 1,
+  "topHarnessFailed": 1,
+  "noopTopHarnessEntry": "child_outcome_boundary passed because top CHILD unset",
+  "substantiveTestPassed": false,
+  "substantiveTestFailed": true,
+  "scenarioInventory": {
+    "expected": 59,
+    "evidencedEntered": 4,
+    "completed": 3,
+    "enteredScenarios": [
+      "local/registry/direct/success",
+      "local/registry/scoped/success",
+      "local/manager/direct/success",
+      "local/orchestrator/scoped/success"
+    ],
+    "completedScenarios": [
+      "local/registry/direct/success",
+      "local/registry/scoped/success",
+      "local/manager/direct/success"
+    ],
+    "failedScenario": "local/orchestrator/scoped/success",
+    "remainingWithoutEntryEvidence": 55,
+    "actualRuntimeBinaryScenariosEntered": 0,
+    "sharedProfileEntered": false,
+    "effectTraces": [
+      {
+        "scenario": "registry-false-success",
+        "traceSha256": "61b3e98f420135ce23f4d14a07853bc813e487764c09029fb57d78afd6d21ace",
+        "effects": {
+          "mode": "success",
+          "pid": 27530,
+          "effect": true
+        }
+      },
+      {
+        "scenario": "manager-success",
+        "traceSha256": "344af7de8a5085e73e5f72c89c2c3e98ea343b1c5fe9d47ef78d1faf596ac576",
+        "effects": {
+          "mode": "success",
+          "pid": 27535,
+          "effect": true
+        }
+      },
+      {
+        "scenario": "registry-true-success",
+        "traceSha256": "3550f6c03375a2b7d7fd9da61ca14131ce5b51bc7639547ef12b38ebafa7987c",
+        "effects": {
+          "mode": "success",
+          "pid": 27533,
+          "effect": true
+        }
+      }
+    ],
+    "completionEvidence": "Sequential frozen source reached scoped orchestrator result assertion; earlier three awaited scenarios and direct canonical/admission/catalog checks returned. No assertion relaxation. Scoped scenario failed before producing matching result and before scoped trace effect file."
+  },
+  "sourceStable": true,
+  "sourceBoundFiles": 6549,
+  "sourceChangesByGateExecutor": [],
+  "addedUnrequestedChanges": [],
+  "newProductionGuards": [],
+  "cleanup": [],
+  "unverified": [
+    "Remaining55 scenarios and failed scoped result semantics",
+    "Any ordinary runtime/shared two-runtime/restart/team/instance/recovery gate",
+    "Postgres receipt roundtrip and observer/checkpoint parity",
+    "Explicit shared B denied takeover request not authored by fixture",
+    "Genuine inference",
+    "Complete transitive registry/toolchain/native closure",
+    "Tier2 composition/cumulative independent review/whole phase and Tier3 publication"
+  ]
+}

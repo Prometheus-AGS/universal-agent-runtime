@@ -84,7 +84,7 @@ impl NativeSkill for SessionSearchTool {
         let owner = context.verified_owner.as_ref().ok_or_else(|| {
             anyhow::anyhow!("Session search requires a verified host execution context")
         })?;
-        self.search_for_owner(args, owner.user_id()).await
+        self.search_for_owner(args, &owner.session_owner_key()?).await
     }
 }
 

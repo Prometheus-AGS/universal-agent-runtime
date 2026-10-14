@@ -1,0 +1,244 @@
+{
+  "phase": "dot-feature-support",
+  "change": "dot-04-truthful-tool-outcomes",
+  "task": "2",
+  "stage": "Execute",
+  "waypointRevisionAtDispatch": 2695,
+  "verificationTier": "Tier 1 completed-change real production integration",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-default-features",
+    "--features",
+    "server-full,postgres-backend,in-memory-backend",
+    "--test",
+    "truthful_tool_outcomes",
+    "--",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "commandDisplay": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test truthful_tool_outcomes -- --test-threads=1 --nocapture",
+  "cwd": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "startedAt": "2026-10-12T01:31:19.531528+00:00",
+  "status": "failed",
+  "sourceFingerprint": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T013104Z-source-fingerprint.json",
+  "sourceFingerprintSha256": "c23500e23c674e49642a1acbb57096c9e11b5153f8956514215b8c977389693a",
+  "privateSourceSnapshot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-third-ranruz3b/source-snapshot.tar.gz",
+  "sourceSnapshotSha256": "27b421c0df888f380ac4d2e3eb373a95b149cf596293edfedf931715d3d0fdc2",
+  "privateDirtySourcePatch": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-third-ranruz3b/dirty-source.patch",
+  "dirtySourcePatchSha256": "63ba56e6fe546785ca6b7ba72394e0a3520aa0a406e50296f094b34cd3fcdd91",
+  "privateRoot": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-third-ranruz3b",
+  "privateRawLog": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-third-ranruz3b/cargo-raw.log",
+  "environmentNames": [
+    "HOME",
+    "PATH",
+    "UAR_DOT04_INFRA_FILE",
+    "UAR_DOT04_EVIDENCE_ROOT"
+  ],
+  "topChildVariableUnset": true,
+  "substantiveTest": "actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes",
+  "noopTopHarnessEntry": "child_outcome_boundary",
+  "expectedScenarioEntries": 59,
+  "sampledProcesses": [
+    {
+      "pid": 24185,
+      "parentPid": 24051,
+      "comm": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "observedAt": "2026-10-12T01:31:30.799637+00:00",
+      "role": "integration-target",
+      "artifact": {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "sha256": "3941a4268b3fe652b1cc7d7ff27182c8222173385c4409ddf31944f6bbb20333",
+        "bytes": 333372120,
+        "capturedAt": "2026-10-12T01:31:30.967931+00:00"
+      }
+    },
+    {
+      "pid": 24223,
+      "parentPid": 24185,
+      "comm": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "observedAt": "2026-10-12T01:31:34.284902+00:00",
+      "role": "integration-target",
+      "artifact": {
+        "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+        "sha256": "3941a4268b3fe652b1cc7d7ff27182c8222173385c4409ddf31944f6bbb20333",
+        "bytes": 333372120,
+        "capturedAt": "2026-10-12T01:31:30.967931+00:00"
+      }
+    },
+    {
+      "pid": 24233,
+      "parentPid": 24223,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T01:31:35.366687+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T01:31:35.367145+00:00"
+      }
+    },
+    {
+      "pid": 24234,
+      "parentPid": 24223,
+      "comm": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "observedAt": "2026-10-12T01:31:35.367153+00:00",
+      "role": "controlled-mcp-peer",
+      "artifact": {
+        "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+        "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+        "bytes": 101280,
+        "capturedAt": "2026-10-12T01:31:35.367145+00:00"
+      }
+    }
+  ],
+  "boundFileCount": 6549,
+  "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-production-boundary.json",
+  "correction": {
+    "previousFailedReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T011646Z-production-boundary.json",
+    "changedBoundPathsSincePreviousGate": [
+      "tests/truthful_tool_outcomes.rs"
+    ],
+    "hashes": {
+      "tests/truthful_tool_outcomes.rs": {
+        "old": "406717291860221be37e4cb174af7296e40d46e9685276775bac25fde5dbd50a",
+        "new": "591024bea14d07920430513238f12d583901290cdfc8fc6a335d79916b4de441"
+      }
+    },
+    "correctionPatchSha256": "d17a8cc484c7fc689d1abb2dae39fa82f53b00cc4220b9658580b8d706bf6ab1"
+  },
+  "cargoPid": 24051,
+  "lastObservedAt": "2026-10-12T01:31:36.483270+00:00",
+  "rawLogBytes": 12789,
+  "testLines": [
+    "running 2 tests",
+    "test actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes ... Private dot04 profile evidence retained at /var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-third-ranruz3b/profiles/local-897594960bbb4f049dc96d29bd88c9fd",
+    "test child_outcome_boundary ... ok",
+    "test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.57s"
+  ],
+  "exitCode": 101,
+  "finishedAt": "2026-10-12T01:31:36.484759+00:00",
+  "elapsedSeconds": 16.83,
+  "sourceUnchangedAtExit": true,
+  "changedSourcePathsAtExit": [],
+  "artifactFingerprints": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "resolvedPath": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "sha256": "3941a4268b3fe652b1cc7d7ff27182c8222173385c4409ddf31944f6bbb20333",
+      "bytes": 333372120,
+      "capturedAt": "2026-10-12T01:31:30.967931+00:00"
+    },
+    {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "resolvedPath": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sha256": "77f3ab5a74eb5b9b4dda8c73dbf5a42b354e248c15f9f9885731fd7de7aac43d",
+      "bytes": 101280,
+      "capturedAt": "2026-10-12T01:31:35.367145+00:00"
+    }
+  ],
+  "artifactStabilityAtExit": [
+    {
+      "path": "/Users/gqadonis/.cargo-build/5c/bd0eb538b0ead3/debug/deps/truthful_tool_outcomes-62a09985f6dac48a",
+      "sameSha256": true
+    },
+    {
+      "path": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+      "sameSha256": true
+    }
+  ],
+  "testSummary": [
+    "test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.57s"
+  ],
+  "testPassedByName": {
+    "child_outcome_boundary": true,
+    "actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes": false
+  },
+  "libtestTopResultObserved": false,
+  "rawLogSha256": "87a9503161eb9161f046aec6212737a81bd0e157818ad2b6d84bd44a44be3982",
+  "log": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T013104Z-production-boundary.log",
+  "logSha256": "87a9503161eb9161f046aec6212737a81bd0e157818ad2b6d84bd44a44be3982",
+  "profiles": [
+    {
+      "profile": "local-897594960bbb4f049dc96d29bd88c9fd",
+      "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-third-ranruz3b/profiles/local-897594960bbb4f049dc96d29bd88c9fd",
+      "directories": [],
+      "receiptFilePresent": false,
+      "processReceiptFilePresent": false
+    }
+  ],
+  "sanitizedArtifacts": [
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T013104Z-local-helper-24223.stdout.log",
+      "sha256": "daf071121a9ffe32bbce44190e37a068c96d08bff63fd7b660dd95b77d786dca",
+      "privateSourceSha256": "daf071121a9ffe32bbce44190e37a068c96d08bff63fd7b660dd95b77d786dca"
+    },
+    {
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T013104Z-local-helper-24223.stderr.log",
+      "sha256": "2fff2b9729eaec2fc7ab02a2d32984610a447a362631d2b1949de400514f3a05",
+      "privateSourceSha256": "2fff2b9729eaec2fc7ab02a2d32984610a447a362631d2b1949de400514f3a05"
+    }
+  ],
+  "cleanup": [],
+  "rootInfrastructureUntouched": true,
+  "failureAnalysis": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T013104Z-failure-analysis.json",
+  "correctionReceipt": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/dot-feature-support/evidence/tool-outcomes/20261012T013104Z-observed-correction.json",
+  "scenarioInventory": {
+    "expected": 59,
+    "evidencedEntered": 2,
+    "enteredScenarios": [
+      "local/registry/direct/success",
+      "local/registry/scoped/success"
+    ],
+    "completedMinimum": 1,
+    "completedMinimumScenarios": [
+      "local/registry/direct/success"
+    ],
+    "completionNotCertified": [
+      "local/registry/scoped/success"
+    ],
+    "remainingWithoutEntryEvidence": 57,
+    "actualRuntimeBinaryScenariosEntered": 0,
+    "sharedProfileEntered": false,
+    "legacyReceiptControlCompletedBeforeScenarios": "source sequence establishes control returned before direct registry ran",
+    "effectTraces": [
+      {
+        "scenario": "registry-false-success",
+        "traceSha256": "2f98f6805335e741687c7c6b3cdea619633a26e3389c1cfac0109351ce05f241",
+        "effects": {
+          "mode": "success",
+          "pid": 24231,
+          "effect": true
+        }
+      },
+      {
+        "scenario": "registry-true-success",
+        "traceSha256": "ba317ab24ebb6da395fb2ffa212785fe20f3efea51773782635332eeb3d1ea14",
+        "effects": {
+          "mode": "success",
+          "pid": 24234,
+          "effect": true
+        }
+      }
+    ],
+    "limitation": "Fixture does not emit per-scenario entry/exit rows before its final aggregate manifests. First direct registry returned because later scoped effect executed; scoped effect trace alone does not certify that boundary returned before helper abort. No later scenario entry is evidenced."
+  },
+  "harnessCountMeaning": "Two top harness entries: one substantive failed fullgate; one top child no-op passed. Internal filtered child invocation is fixture orchestration, not standalone unit acceptance.",
+  "processSamplingLimitation": "PID inventory sampled once per second; effect traces additionally identify actual peerPID24231 missed by sampler. Not exhaustive process/toolchain closure. No ordinary runtime/sidecar launched.",
+  "additionalEffectPeerPids": [
+    24231
+  ],
+  "fixtureLaunchExecutable": {
+    "requestedPath": "/usr/bin/python3",
+    "requestedPathSha256": "1632eb8de8409ac0bf8d35c2d52ea8222fd7d091344bba3fa0f998bfac2ddfda",
+    "observedResolvedExecutable": "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python",
+    "fixtureScript": "tests/fixtures/truthful_tool_outcome_mcp.py",
+    "fixtureScriptSha256": "965e3d78fbacd53c412c750882e27c7e79947df9729cc0f4ed6c211578190864"
+  }
+}

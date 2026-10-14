@@ -1,0 +1,31 @@
+{
+  "recorded_at": "2026-10-13T20:23:48.278230+00:00",
+  "scope": "Previously approved disposable Linux guest and bounded512Mi faultdisk only",
+  "status": "filesystem_initialized_and_mounted",
+  "machine_id": "bfce24a91bd646c3863fd68836ea5e7d",
+  "boot_id": "4f079a1f-310a-47a6-86a3-5321e6d463f6",
+  "observed_mount": {
+    "device": "/dev/vdb",
+    "filesystem_uuid": "48068f51-0336-43cc-a59a-f760d805cf71",
+    "uuid_link": "/dev/disk/by-uuid/48068f51-0336-43cc-a59a-f760d805cf71",
+    "mountpoint": "/var/lib/uar/dot17-volume/embedded",
+    "maximum_bytes": 536870912,
+    "major_minor": "253:16",
+    "filesystem": "ext4",
+    "whole_mount": true,
+    "owner_uid": 501,
+    "owner_gid": 1000,
+    "clock_or_ntp_changed": false,
+    "format_replayed": false
+  },
+  "first_attempt": "Formatting succeeded; immediate mount failed32 before normal udev UUID link appeared.",
+  "mount_only_retry_returncode": 0,
+  "format_replayed": false,
+  "guest_ntp_or_clock_changed": false,
+  "host_changed": false,
+  "qualification_claims": false,
+  "private_receipts": [
+    "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/linux-guest-disk-setup-attempt01/receipt.json",
+    "/Users/gqadonis/.local/state/uar-dot-qualification/recovery-20261013/linux-guest-disk-mount-attempt02/receipt.json"
+  ]
+}

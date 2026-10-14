@@ -118,11 +118,18 @@ pub struct CanonicalSecretProjection {
 pub struct CanonicalToolReceipt {
     pub schema_version: u32,
     pub owner_id: String,
+    /// Verified issuer/tenant/subject provenance. Legacy subject partitions
+    /// alone never authorize disclosure through an owner-facing API.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub principal_key: Option<String>,
     pub run_id: String,
     pub sequence: u64,
     pub call_id: String,
     pub tool: String,
     pub source: CanonicalReceiptSource,
+    /// Absent on historical receipts; absence never proves execution success.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub outcome: Option<crate::mcp::outcome::ToolOutcome>,
     pub typed_value: Option<serde_json::Value>,
     pub typed_value_bytes: u64,
     pub typed_value_sha256: String,
@@ -131,6 +138,26 @@ pub struct CanonicalToolReceipt {
     pub completeness: CanonicalReceiptCompleteness,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secret_projection: Option<CanonicalSecretProjection>,
+}
+
+/// Historical MCP/graph responses have no reliable execution certainty. A
+/// legacy boolean failure is definite only when trusted native-only admission
+/// ownership identifies that exact invocation. Tool names are not correlation.
+/// This reads history without migrating it or granting replay authority.
+#[must_use]
+pub fn has_ambiguous_legacy_tool_outcomes(
+    receipts: &[CanonicalToolReceipt],
+    evidence: &[super::tool_admission::ToolAdmissionEvidence],
+) -> bool {
+    receipts.iter().any(|receipt| {
+        matches!(
+            receipt.source,
+            CanonicalReceiptSource::Mcp | CanonicalReceiptSource::Graph
+        ) && receipt.outcome.is_none()
+    }) || evidence.iter().any(|record| {
+        record.state == super::tool_admission::ToolAdmissionEvidenceState::Failed
+            && record.admission_owner != super::tool_admission::AdmissionOwner::UarRuntime
+    })
 }
 
 impl CanonicalToolReceipt {
@@ -218,11 +245,13 @@ impl CanonicalToolReceipt {
         Ok(Self {
             schema_version: 1,
             owner_id,
+            principal_key: None,
             run_id,
             sequence,
             call_id,
             tool,
             source,
+            outcome: None,
             typed_value: can_retain.then_some(typed_value),
             typed_value_bytes,
             typed_value_sha256,
@@ -378,11 +407,13 @@ fn valid_sha256(value: &str) -> bool {
 fn same_canonical_payload(left: &CanonicalToolReceipt, right: &CanonicalToolReceipt) -> bool {
     left.schema_version == right.schema_version
         && left.owner_id == right.owner_id
+        && left.principal_key == right.principal_key
         && left.run_id == right.run_id
         && left.sequence == right.sequence
         && left.call_id == right.call_id
         && left.tool == right.tool
         && left.source == right.source
+        && left.outcome == right.outcome
         && left.secret_projection == right.secret_projection
         && left.typed_value_bytes == right.typed_value_bytes
         && left.typed_value_sha256 == right.typed_value_sha256

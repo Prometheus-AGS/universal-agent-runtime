@@ -1,0 +1,55 @@
+{
+  "rowComplete": false,
+  "lifecycle": "dormant",
+  "recovery": "ready",
+  "commands": [
+    {
+      "commandId": "e17f9934-5f02-4fb3-ab0b-2bd5494db77a",
+      "rootRunId": "4e972b72-e622-4d39-82a6-6ff19ba5e408",
+      "status": "completed"
+    },
+    {
+      "commandId": "278c6b09-4c2f-4e33-ae8b-3828f6d1ed5f",
+      "rootRunId": null,
+      "status": "completed"
+    },
+    {
+      "commandId": "4fa928af-196d-47d3-bff0-624927b76860",
+      "rootRunId": null,
+      "status": "completed"
+    }
+  ],
+  "canonical": [
+    {
+      "owner": "dot04-outcome-owner",
+      "run": "4e972b72-e622-4d39-82a6-6ff19ba5e408",
+      "callId": "dot04-call",
+      "tool": "dot04__outcomes__effect",
+      "source": "mcp",
+      "outcome": "succeeded"
+    }
+  ],
+  "admissionStates": [
+    "awaiting_approval",
+    "claim_intent",
+    "succeeded"
+  ],
+  "ToolEnd": [
+    {
+      "name": "dot04__outcomes__effect",
+      "success": true,
+      "content": "{\"content\":[{\"type\":\"text\",\"text\":\"fixture-response-control:\u03bb\"},{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"},{\"type\":\"resource\",\"resource\":{\"uri\":\"fixture://outcomes/result\",\"mimeType\":\"text/plain\",\"text\":\"embedded-resource-control\"}}],\"structuredContent\":{\"mode\":\"success\",\"nested\":{\"control\":42}},\"isError\":false,\"_meta\":{\"fixture\":\"metadata-control\"}}"
+    }
+  ],
+  "observedPassedBeforeFailure": [
+    "actualToolEndAndFullSDKContent",
+    "modelRequestCount2",
+    "externalEffectCount1",
+    "recoveryReady",
+    "lifecycleDormant",
+    "owningRuntimeExited",
+    "durableCanonicalAndAdmissionReadbackAndAssertions"
+  ],
+  "unrunAssertion": "load_agent_instance durable lifecycle/recovery assertions; second connect failed before load",
+  "processStopBasis": "Node::stop waits child.try_wait and succeeded before durable_result; latter successfully reopened and queried same database"
+}

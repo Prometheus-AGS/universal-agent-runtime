@@ -552,6 +552,7 @@ fn insert_command(
     trim_commands(record)?;
     let now = Utc::now();
     record.inbox.push(AgentInstanceCommand {
+        schedule_id: None,
         command_id: command_id.to_owned(),
         request_digest: digest,
         kind,

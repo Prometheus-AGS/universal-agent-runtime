@@ -16,11 +16,11 @@
 
 server:
   port: 1906
-  host: "0.0.0.0"
+  host: "127.0.0.1"
+  cors_allowed_origins: []
 
 security:
   jwt_required: true
-  jwt_secret: "change_me_use_UAR_SECURITY__JWT_SECRET_in_production"
 
 resilience:
   rate_limit_enabled: true
@@ -54,7 +54,7 @@ intent_classifier:
   margin_threshold: 0.05
 
 llm:
-  model: "openai/gpt-4o"
+  model: ""
   timeout_secs: 60
   max_retries: 3
   cost_tracking: false

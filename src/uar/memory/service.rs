@@ -19,7 +19,8 @@ use surreal_memory::{
 };
 
 use crate::config::MemoryConfig;
-use crate::uar::security::claims::UserContext;
+use crate::uar::security::claims::{CredentialPrincipal, UserContext};
+use super::owned::OwnedMemory;
 
 use super::workflow_mirror::{
     WorkflowMirrorCandidate, WorkflowMirrorRecord, workflow_candidate_from_memory,
@@ -30,6 +31,7 @@ use super::workflow_mirror::{
 pub struct MemoryService {
     pub(crate) storage: Arc<dyn MemoryStorage>,
     pub(crate) config: MemoryConfig,
+    pub(crate) embeddings: Arc<dyn EmbeddingService>,
 }
 
 impl std::fmt::Debug for MemoryService {
@@ -102,7 +104,7 @@ impl MemoryService {
                 username: config.surreal_user.clone(),
                 password: config.surreal_pass.clone(),
                 namespace: config.namespace.clone(),
-                database: config.database.clone(),
+                database: format!("{}__owner_v1", config.database),
                 ..Default::default()
             }
         } else {
@@ -120,23 +122,26 @@ impl MemoryService {
                 username: None,
                 password: None,
                 namespace: config.namespace.clone(),
-                database: config.database.clone(),
+                database: format!("{}__owner_v1", config.database),
                 ..Default::default()
             }
         };
-        let storage = SurrealStorage::new(&surreal_config, embedding_svc)
+        let storage = SurrealStorage::new(&surreal_config, Arc::clone(&embedding_svc))
             .await
             .context("Failed to initialise SurrealDB for memory")?;
 
-        Ok(Self {
+        let service = Self {
             storage: Arc::new(storage),
             config,
-        })
+            embeddings: embedding_svc,
+        };
+        service.initialize_controls().await?;
+        Ok(service)
     }
 
     // ── Scoped memory ─────────────────────────────────────────────────────────
 
-    /// Add a memory with explicit scope. User-scoped memories require `user_ctx.user_id`.
+    /// Add a memory inside the complete verified principal namespace.
     pub async fn add(
         &self,
         content: impl Into<String>,
@@ -149,22 +154,9 @@ impl MemoryService {
         metadata: Option<serde_json::Value>,
         importance: f32,
     ) -> Result<Memory> {
-        let user_id = match &scope {
-            MemoryScope::User | MemoryScope::Session => {
-                // Only authenticated users may write user/session-scoped memories.
-                if user_ctx.user_id == "anonymous" {
-                    anyhow::bail!(
-                        "User-scoped memories require a valid JWT. Provide an Authorization: Bearer <token> header."
-                    );
-                }
-                Some(user_ctx.user_id.clone())
-            }
-            _ => None,
-        };
-
         let mut memory = Memory::new(
             content,
-            user_id,
+            None,
             agent_id.map(String::from),
             session_id.map(String::from),
             categories,
@@ -174,7 +166,7 @@ impl MemoryService {
         memory.metadata = metadata;
         memory.importance = importance;
 
-        self.storage
+        self.for_context(user_ctx)?
             .add_memory(memory)
             .await
             .context("add_memory failed")
@@ -190,14 +182,9 @@ impl MemoryService {
         limit: usize,
         categories: Option<&[String]>,
     ) -> Result<Vec<Memory>> {
-        let user_id = if user_ctx.user_id != "anonymous" {
-            Some(user_ctx.user_id.as_str())
-        } else {
-            None
-        };
 
-        self.storage
-            .search_memories(query, user_id, agent_id, session_id, categories, limit)
+        self.for_context(user_ctx)?
+            .search_memories(query, None, agent_id, session_id, categories, limit)
             .await
             .context("search_memories failed")
     }
@@ -213,21 +200,16 @@ impl MemoryService {
         vector_weight: Option<f32>,
         bm25_weight: Option<f32>,
     ) -> Result<Vec<Memory>> {
-        let user_id = if user_ctx.user_id != "anonymous" {
-            Some(user_ctx.user_id.as_str())
-        } else {
-            None
-        };
         let vw = vector_weight.unwrap_or(self.config.vector_weight);
         let bw = bm25_weight.unwrap_or(self.config.bm25_weight);
 
-        self.storage
-            .hybrid_search_memories(query, user_id, agent_id, session_id, limit, vw, bw)
+        self.for_context(user_ctx)?
+            .hybrid_search_memories(query, None, agent_id, session_id, limit, vw, bw)
             .await
             .context("hybrid_search_memories failed")
     }
 
-    /// Auto-extract memories from a conversation turn (calls the embedding LLM internally).
+    /// Capture conversation records within the verified owner namespace.
     pub async fn auto_capture(
         &self,
         messages: Vec<serde_json::Value>,
@@ -235,14 +217,9 @@ impl MemoryService {
         agent_id: Option<&str>,
         session_id: Option<&str>,
     ) -> Result<Vec<Memory>> {
-        let user_id = if user_ctx.user_id != "anonymous" {
-            Some(user_ctx.user_id.clone())
-        } else {
-            None
-        };
 
-        self.storage
-            .add_memories_from_conversation(messages, user_id.as_deref(), agent_id, session_id)
+        self.for_context(user_ctx)?
+            .add_memories_from_conversation(messages, None, agent_id, session_id)
             .await
             .context("add_memories_from_conversation failed")
     }
@@ -254,14 +231,9 @@ impl MemoryService {
         agent_id: Option<&str>,
         session_id: Option<&str>,
     ) -> Result<Vec<Memory>> {
-        let user_id = if user_ctx.user_id != "anonymous" {
-            Some(user_ctx.user_id.as_str())
-        } else {
-            None
-        };
 
-        self.storage
-            .get_all_memories(user_id, agent_id, session_id)
+        self.for_context(user_ctx)?
+            .get_all_memories(None, agent_id, session_id)
             .await
             .context("get_all_memories failed")
     }
@@ -300,25 +272,24 @@ impl MemoryService {
     }
 
     /// Retrieve a single memory by its record ID string (e.g. `"memory:abc123"`).
-    pub async fn get(&self, id: &str) -> Result<Option<Memory>> {
-        self.storage
+    pub async fn get(&self, id: &str, user_ctx: &UserContext) -> Result<Option<Memory>> {
+        self.for_context(user_ctx)?
             .get_memory(id)
             .await
             .context("get_memory failed")
     }
 
     /// Update a memory's content (creates a history record).
-    pub async fn update(&self, id: &str, content: String) -> Result<Memory> {
-        self.storage
+    pub async fn update(&self, id: &str, content: String, user_ctx: &UserContext) -> Result<Memory> {
+        self.for_context(user_ctx)?
             .update_memory(id, content)
             .await
             .context("update_memory failed")
     }
 
-    /// Delete a single memory. Ownership is not enforced here — callers should
-    /// validate ownership before calling (e.g. via `get` + scope check).
-    pub async fn delete(&self, id: &str) -> Result<()> {
-        self.storage
+    /// Delete a single memory only after resolving the complete caller owner.
+    pub async fn delete(&self, id: &str, user_ctx: &UserContext) -> Result<()> {
+        self.for_context(user_ctx)?
             .delete_memory(id)
             .await
             .context("delete_memory failed")
@@ -331,21 +302,16 @@ impl MemoryService {
         agent_id: Option<&str>,
         session_id: Option<&str>,
     ) -> Result<u64> {
-        let user_id = if user_ctx.user_id != "anonymous" {
-            Some(user_ctx.user_id.as_str())
-        } else {
-            None
-        };
 
-        self.storage
-            .delete_all_memories(user_id, agent_id, session_id)
+        self.for_context(user_ctx)?
+            .delete_all_memories(None, agent_id, session_id)
             .await
             .context("delete_all_memories failed")
     }
 
     /// Get the audit history for a memory.
-    pub async fn history(&self, memory_id: &str) -> Result<Vec<MemoryHistory>> {
-        self.storage
+    pub async fn history(&self, memory_id: &str, user_ctx: &UserContext) -> Result<Vec<MemoryHistory>> {
+        self.for_context(user_ctx)?
             .get_memory_history(memory_id)
             .await
             .context("get_memory_history failed")
@@ -359,55 +325,47 @@ impl MemoryService {
         session_id: Option<&str>,
         older_than_days: u32,
     ) -> Result<Option<Memory>> {
-        let user_id = if user_ctx.user_id != "anonymous" {
-            Some(user_ctx.user_id.as_str())
-        } else {
-            None
-        };
 
-        self.storage
-            .compress_memories(user_id, agent_id, session_id, older_than_days)
+        self.for_context(user_ctx)?
+            .compress_memories(None, agent_id, session_id, older_than_days)
             .await
             .context("compress_memories failed")
     }
 
     /// Expire stale memories (those past their `valid_until` TTL). Returns expired count.
-    pub async fn expire_stale(&self) -> Result<u64> {
-        self.storage
-            .expire_stale_memories()
-            .await
-            .context("expire_stale_memories failed")
+    pub(crate) async fn expire_stale(&self) -> Result<u64> {
+        self.resume_memory_purge().await
     }
 
     // ── Knowledge Graph ───────────────────────────────────────────────────────
 
-    pub async fn knowledge_graph(&self) -> Result<KnowledgeGraph> {
-        self.storage.get_graph().await.context("get_graph failed")
+    pub async fn knowledge_graph(&self, user_ctx: &UserContext) -> Result<KnowledgeGraph> {
+        self.admin_storage(user_ctx)?.get_graph().await.context("get_graph failed")
     }
 
-    pub async fn create_entity(&self, entity: Entity) -> Result<Entity> {
-        self.storage
+    pub async fn create_entity(&self, entity: Entity, user_ctx: &UserContext) -> Result<Entity> {
+        self.admin_storage(user_ctx)?
             .create_entity(entity)
             .await
             .context("create_entity failed")
     }
 
-    pub async fn create_entities(&self, entities: Vec<Entity>) -> Result<Vec<Entity>> {
-        self.storage
+    pub async fn create_entities(&self, entities: Vec<Entity>, user_ctx: &UserContext) -> Result<Vec<Entity>> {
+        self.admin_storage(user_ctx)?
             .create_entities(entities)
             .await
             .context("create_entities failed")
     }
 
-    pub async fn get_entity(&self, name: &str) -> Result<Option<Entity>> {
-        self.storage
+    pub async fn get_entity(&self, name: &str, user_ctx: &UserContext) -> Result<Option<Entity>> {
+        self.admin_storage(user_ctx)?
             .get_entity(name)
             .await
             .context("get_entity failed")
     }
 
-    pub async fn search_entities(&self, query: &str) -> Result<Vec<Entity>> {
-        self.storage
+    pub async fn search_entities(&self, query: &str, user_ctx: &UserContext) -> Result<Vec<Entity>> {
+        self.admin_storage(user_ctx)?
             .search_entities(query)
             .await
             .context("search_entities failed")
@@ -418,8 +376,9 @@ impl MemoryService {
         query: &str,
         limit: usize,
         threshold: f32,
+        user_ctx: &UserContext,
     ) -> Result<Vec<SemanticSearchResult>> {
-        self.storage
+        self.admin_storage(user_ctx)?
             .semantic_search(query, limit, threshold)
             .await
             .context("semantic_search failed")
@@ -429,43 +388,44 @@ impl MemoryService {
         &self,
         name: &str,
         observations: Vec<String>,
+        user_ctx: &UserContext,
     ) -> Result<Entity> {
-        self.storage
+        self.admin_storage(user_ctx)?
             .add_observations(name, observations)
             .await
             .context("add_observations failed")
     }
 
-    pub async fn delete_entity(&self, name: &str) -> Result<()> {
-        self.storage
+    pub async fn delete_entity(&self, name: &str, user_ctx: &UserContext) -> Result<()> {
+        self.admin_storage(user_ctx)?
             .delete_entity(name)
             .await
             .context("delete_entity failed")
     }
 
-    pub async fn create_relation(&self, relation: Relation) -> Result<Relation> {
-        self.storage
+    pub async fn create_relation(&self, relation: Relation, user_ctx: &UserContext) -> Result<Relation> {
+        self.admin_storage(user_ctx)?
             .create_relation(relation)
             .await
             .context("create_relation failed")
     }
 
-    pub async fn create_relations(&self, relations: Vec<Relation>) -> Result<Vec<Relation>> {
-        self.storage
+    pub async fn create_relations(&self, relations: Vec<Relation>, user_ctx: &UserContext) -> Result<Vec<Relation>> {
+        self.admin_storage(user_ctx)?
             .create_relations(relations)
             .await
             .context("create_relations failed")
     }
 
-    pub async fn get_relations(&self, entity_name: &str) -> Result<Vec<Relation>> {
-        self.storage
+    pub async fn get_relations(&self, entity_name: &str, user_ctx: &UserContext) -> Result<Vec<Relation>> {
+        self.admin_storage(user_ctx)?
             .get_relations(entity_name)
             .await
             .context("get_relations failed")
     }
 
-    pub async fn delete_relation(&self, from: &str, to: &str, relation_type: &str) -> Result<()> {
-        self.storage
+    pub async fn delete_relation(&self, from: &str, to: &str, relation_type: &str, user_ctx: &UserContext) -> Result<()> {
+        self.admin_storage(user_ctx)?
             .delete_relation(from, to, relation_type)
             .await
             .context("delete_relation failed")
@@ -476,15 +436,16 @@ impl MemoryService {
         entity_name: &str,
         depth: u8,
         limit: usize,
+        user_ctx: &UserContext,
     ) -> Result<KnowledgeGraph> {
-        self.storage
+        self.admin_storage(user_ctx)?
             .expand_neighbors(entity_name, depth, limit)
             .await
             .context("expand_neighbors failed")
     }
 
-    pub async fn find_path(&self, from: &str, to: &str, max_depth: u8) -> Result<Vec<Vec<String>>> {
-        self.storage
+    pub async fn find_path(&self, from: &str, to: &str, max_depth: u8, user_ctx: &UserContext) -> Result<Vec<Vec<String>>> {
+        self.admin_storage(user_ctx)?
             .find_path(from, to, max_depth)
             .await
             .context("find_path failed")
@@ -496,8 +457,9 @@ impl MemoryService {
         relation_type: Option<&str>,
         direction: &str,
         limit: usize,
+        user_ctx: &UserContext,
     ) -> Result<Vec<Entity>> {
-        self.storage
+        self.admin_storage(user_ctx)?
             .get_related(entity_name, relation_type, direction, limit)
             .await
             .context("get_related failed")
@@ -505,8 +467,8 @@ impl MemoryService {
 
     // ── TaskStreams ───────────────────────────────────────────────────────────
 
-    pub async fn create_task_stream(&self, stream: TaskStream) -> Result<TaskStream> {
-        self.storage
+    pub async fn create_task_stream(&self, stream: TaskStream, user_ctx: &UserContext) -> Result<TaskStream> {
+        self.for_context(user_ctx)?
             .create_task_stream(stream)
             .await
             .context("create_task_stream failed")
@@ -515,11 +477,11 @@ impl MemoryService {
     pub async fn get_task_stream(
         &self,
         name: &str,
-        user_id: Option<&str>,
+        user_ctx: &UserContext,
         agent_id: Option<&str>,
     ) -> Result<Option<TaskStream>> {
-        self.storage
-            .get_task_stream(name, user_id, agent_id)
+        self.for_context(user_ctx)?
+            .get_task_stream(name, None, agent_id)
             .await
             .context("get_task_stream failed")
     }
@@ -527,12 +489,12 @@ impl MemoryService {
     pub async fn add_to_task_stream(
         &self,
         stream_name: &str,
-        user_id: Option<&str>,
+        user_ctx: &UserContext,
         agent_id: Option<&str>,
         memory: Memory,
     ) -> Result<Memory> {
-        self.storage
-            .add_to_task_stream(stream_name, user_id, agent_id, memory)
+        self.for_context(user_ctx)?
+            .add_to_task_stream(stream_name, None, agent_id, memory)
             .await
             .context("add_to_task_stream failed")
     }
@@ -541,13 +503,13 @@ impl MemoryService {
     pub async fn task_stream_context(
         &self,
         stream_name: &str,
-        user_id: Option<&str>,
+        user_ctx: &UserContext,
         agent_id: Option<&str>,
         model_id: &str,
         max_tokens: Option<u64>,
     ) -> Result<ContextWindow> {
-        self.storage
-            .get_context_for_task(stream_name, user_id, agent_id, model_id, max_tokens)
+        self.for_context(user_ctx)?
+            .get_context_for_task(stream_name, None, agent_id, model_id, max_tokens)
             .await
             .context("get_context_for_task failed")
     }
@@ -555,10 +517,10 @@ impl MemoryService {
     pub async fn list_task_streams(
         &self,
         agent_id: Option<&str>,
-        user_id: Option<&str>,
+        user_ctx: &UserContext,
     ) -> Result<Vec<TaskStream>> {
-        self.storage
-            .list_task_streams(agent_id, user_id)
+        self.for_context(user_ctx)?
+            .list_task_streams(agent_id, None)
             .await
             .context("list_task_streams failed")
     }
@@ -566,11 +528,11 @@ impl MemoryService {
     pub async fn archive_task_stream(
         &self,
         name: &str,
-        user_id: Option<&str>,
+        user_ctx: &UserContext,
         agent_id: Option<&str>,
     ) -> Result<TaskStream> {
-        self.storage
-            .archive_task_stream(name, user_id, agent_id)
+        self.for_context(user_ctx)?
+            .archive_task_stream(name, None, agent_id)
             .await
             .context("archive_task_stream failed")
     }
@@ -578,27 +540,27 @@ impl MemoryService {
     pub async fn auto_summarize_task_stream(
         &self,
         stream_name: &str,
-        user_id: Option<&str>,
+        user_ctx: &UserContext,
         agent_id: Option<&str>,
         model_id: &str,
     ) -> Result<Option<Memory>> {
-        self.storage
-            .auto_summarize_task_stream(stream_name, user_id, agent_id, model_id)
+        self.for_context(user_ctx)?
+            .auto_summarize_task_stream(stream_name, None, agent_id, model_id)
             .await
             .context("auto_summarize_task_stream failed")
     }
 
     // ── Mindmaps ─────────────────────────────────────────────────────────────
 
-    pub async fn create_mindmap(&self, mindmap: MindMap) -> Result<MindMap> {
-        self.storage
+    pub async fn create_mindmap(&self, mindmap: MindMap, user_ctx: &UserContext) -> Result<MindMap> {
+        self.admin_storage(user_ctx)?
             .create_mindmap(mindmap)
             .await
             .context("create_mindmap failed")
     }
 
-    pub async fn get_mindmap(&self, name: &str, user_id: Option<&str>) -> Result<Option<MindMap>> {
-        self.storage
+    pub async fn get_mindmap(&self, name: &str, user_id: Option<&str>, user_ctx: &UserContext) -> Result<Option<MindMap>> {
+        self.admin_storage(user_ctx)?
             .get_mindmap(name, user_id, None)
             .await
             .context("get_mindmap failed")
@@ -608,8 +570,9 @@ impl MemoryService {
         &self,
         user_id: Option<&str>,
         agent_id: Option<&str>,
+        user_ctx: &UserContext,
     ) -> Result<Vec<MindMap>> {
-        self.storage
+        self.admin_storage(user_ctx)?
             .list_mindmaps(user_id, agent_id)
             .await
             .context("list_mindmaps failed")
@@ -620,8 +583,9 @@ impl MemoryService {
         mindmap_name: &str,
         user_id: Option<&str>,
         node: MindMapNode,
+        user_ctx: &UserContext,
     ) -> Result<MindMap> {
-        self.storage
+        self.admin_storage(user_ctx)?
             .add_mindmap_node(mindmap_name, user_id, None, node)
             .await
             .context("add_mindmap_node failed")
@@ -632,8 +596,9 @@ impl MemoryService {
         mindmap_name: &str,
         user_id: Option<&str>,
         edge: MindMapEdge,
+        user_ctx: &UserContext,
     ) -> Result<MindMap> {
-        self.storage
+        self.admin_storage(user_ctx)?
             .add_mindmap_edge(mindmap_name, user_id, None, edge)
             .await
             .context("add_mindmap_edge failed")
@@ -644,15 +609,16 @@ impl MemoryService {
         mindmap_name: &str,
         user_id: Option<&str>,
         node_id: &str,
+        user_ctx: &UserContext,
     ) -> Result<MindMap> {
-        self.storage
+        self.admin_storage(user_ctx)?
             .delete_mindmap_node(mindmap_name, user_id, None, node_id)
             .await
             .context("delete_mindmap_node failed")
     }
 
-    pub async fn delete_mindmap(&self, name: &str, user_id: Option<&str>) -> Result<()> {
-        self.storage
+    pub async fn delete_mindmap(&self, name: &str, user_id: Option<&str>, user_ctx: &UserContext) -> Result<()> {
+        self.admin_storage(user_ctx)?
             .delete_mindmap(name, user_id, None)
             .await
             .context("delete_mindmap failed")
@@ -660,9 +626,20 @@ impl MemoryService {
 
     // ── Storage arc accessor (for MCP server handler) ─────────────────────────
 
-    /// Return the underlying storage for direct use in the MCP server handler.
-    pub fn storage(&self) -> Arc<dyn MemoryStorage> {
-        Arc::clone(&self.storage)
+    /// Bind a non-deserializable complete owner captured by the host.
+    pub fn for_owner(&self, principal: &CredentialPrincipal) -> OwnedMemory<'_> {
+        OwnedMemory { service: self, principal: principal.clone() }
+    }
+
+    pub fn for_context(&self, context: &UserContext) -> Result<OwnedMemory<'_>> {
+        Ok(self.for_owner(&CredentialPrincipal::from_verified_context(context)?))
+    }
+
+    /// Global administrative access requires installation/service authority;
+    /// role strings or user-supplied query filters do not establish it.
+    pub fn admin_storage(&self, context: &UserContext) -> Result<Arc<dyn MemoryStorage>> {
+        anyhow::ensure!(context.trusted_host_id().is_some(), "Trusted host memory administration required");
+        Ok(Arc::clone(&self.storage))
     }
 
     /// Config accessor.

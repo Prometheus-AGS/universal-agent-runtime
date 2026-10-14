@@ -1,0 +1,55 @@
+{
+  "buildx.build.provenance": {
+    "builder": {
+      "id": ""
+    },
+    "buildType": "https://mobyproject.org/buildkit@v1",
+    "materials": [
+      {
+        "uri": "pkg:docker/docker/dockerfile@1.7",
+        "digest": {
+          "sha256": "a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e"
+        }
+      },
+      {
+        "uri": "pkg:docker/ubuntu@24.04?platform=linux%2Farm64",
+        "digest": {
+          "sha256": "534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55"
+        }
+      }
+    ],
+    "invocation": {
+      "configSource": {
+        "entryPoint": "Dockerfile"
+      },
+      "parameters": {
+        "frontend": "gateway.v0",
+        "args": {
+          "cmdline": "docker/dockerfile:1.7",
+          "source": "docker/dockerfile:1.7"
+        },
+        "secrets": [
+          {
+            "id": "github_token",
+            "optional": true
+          }
+        ],
+        "locals": [
+          {
+            "name": "context"
+          },
+          {
+            "name": "dockerfile"
+          }
+        ]
+      },
+      "environment": {
+        "platform": "linux/arm64"
+      }
+    }
+  },
+  "buildx.build.ref": "orbstack/orbstack/8ciiz1x1eee23gj6ip7wn9k5v",
+  "containerimage.config.digest": "sha256:08f9f35da53d30f79a444205bf89c90bed5bfc154fd0598103fbb983958b81de",
+  "containerimage.digest": "sha256:08f9f35da53d30f79a444205bf89c90bed5bfc154fd0598103fbb983958b81de",
+  "image.name": "docker.io/library/uar-dot01:22c70da51e"
+}

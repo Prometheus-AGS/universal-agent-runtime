@@ -21,7 +21,7 @@ use universal_agent_runtime::uar::{
 };
 use uuid::Uuid;
 
-const TEST_OWNER: &str = "knowledge-integration-owner";
+const TEST_OWNER: &str = "v1:k:issuer:i:7:fixture:local:s:27:knowledge-integration-owner";
 
 // =============================================================================
 // Test Utilities
@@ -117,7 +117,7 @@ async fn test_equal_ids_are_partitioned_by_owner_in_postgres() {
     let shared_chunk_id = Uuid::new_v4();
     let now = chrono::Utc::now().to_rfc3339();
 
-    for owner in ["postgres-alice", "postgres-bob"] {
+    for owner in ["v1:k:issuer:i:7:fixture:local:s:14:postgres-alice", "v1:k:issuer:i:7:fixture:local:s:12:postgres-bob"] {
         let kb = KnowledgeBase {
             id: shared_kb_id.clone(),
             owner_id: owner.to_string(),
@@ -154,7 +154,7 @@ async fn test_equal_ids_are_partitioned_by_owner_in_postgres() {
         persistence.save_chunk(&chunk).await.unwrap();
     }
 
-    for owner in ["postgres-alice", "postgres-bob"] {
+    for owner in ["v1:k:issuer:i:7:fixture:local:s:14:postgres-alice", "v1:k:issuer:i:7:fixture:local:s:12:postgres-bob"] {
         assert_eq!(
             persistence
                 .get_knowledge_base(owner, &shared_kb_id)
@@ -183,7 +183,7 @@ async fn test_equal_ids_are_partitioned_by_owner_in_postgres() {
 
     let bob_only_kb = KnowledgeBase {
         id: Uuid::new_v4().to_string(),
-        owner_id: "postgres-bob".to_string(),
+        owner_id: "v1:k:issuer:i:7:fixture:local:s:12:postgres-bob".to_string(),
         name: format!("postgres-bob-only-{}", Uuid::new_v4()),
         description: None,
         config: KbConfig::default(),
@@ -193,7 +193,7 @@ async fn test_equal_ids_are_partitioned_by_owner_in_postgres() {
     persistence.save_knowledge_base(&bob_only_kb).await.unwrap();
     let cross_owner_document = KnowledgeDocument {
         id: Uuid::new_v4().to_string(),
-        owner_id: "postgres-alice".to_string(),
+        owner_id: "v1:k:issuer:i:7:fixture:local:s:14:postgres-alice".to_string(),
         kb_id: bob_only_kb.id.clone(),
         filename: "must-fail.txt".to_string(),
         file_path: None,
@@ -212,22 +212,22 @@ async fn test_equal_ids_are_partitioned_by_owner_in_postgres() {
     );
 
     persistence
-        .delete_knowledge_base("postgres-bob", &shared_kb_id)
+        .delete_knowledge_base("v1:k:issuer:i:7:fixture:local:s:12:postgres-bob", &shared_kb_id)
         .await
         .unwrap();
     assert!(
         persistence
-            .get_knowledge_base("postgres-alice", &shared_kb_id)
+            .get_knowledge_base("v1:k:issuer:i:7:fixture:local:s:14:postgres-alice", &shared_kb_id)
             .await
             .unwrap()
             .is_some()
     );
     persistence
-        .delete_knowledge_base("postgres-alice", &shared_kb_id)
+        .delete_knowledge_base("v1:k:issuer:i:7:fixture:local:s:14:postgres-alice", &shared_kb_id)
         .await
         .unwrap();
     persistence
-        .delete_knowledge_base("postgres-bob", &bob_only_kb.id)
+        .delete_knowledge_base("v1:k:issuer:i:7:fixture:local:s:12:postgres-bob", &bob_only_kb.id)
         .await
         .unwrap();
 }

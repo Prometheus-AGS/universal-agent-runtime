@@ -1,0 +1,112 @@
+{
+  "source_sha": "22c70da51e5aad357e679553fd3dc2e79df2b378",
+  "image_id": "sha256:08f9f35da53d30f79a444205bf89c90bed5bfc154fd0598103fbb983958b81de",
+  "container_name": "uar-dot01-gate-3be496a4aaa1",
+  "attempt": 2,
+  "first_failure": "../runtime-attempt-1/diagnosis.json",
+  "settings_mutation_auth_preserved": true,
+  "admin_fixture_supplied_by": "UAR_SECURITY__SETTINGS_ADMIN_KEY environment name",
+  "admin_key_value_recorded": false,
+  "container_id": "eead25675081e38267b582135e102703e6028dcacd9a7b3f7af29faf7218e07d",
+  "user": "65532",
+  "health": {
+    "status": "ok"
+  },
+  "source_event_name": "skills.pack.resolved",
+  "actual_log_event": {
+    "timestamp": "2026-10-11T23:27:39.359468Z",
+    "level": "INFO",
+    "fields": {
+      "message": "Resolved active skill-pack root",
+      "source": "EnvOverride",
+      "root": "/opt/uar/skills/builtin",
+      "version": "<unknown>",
+      "skill_count": 194
+    },
+    "target": "universal_agent_runtime::server",
+    "line_number": 1057,
+    "threadId": "ThreadId(1)"
+  },
+  "skill_environment": {
+    "UAR_BUILTIN_SKILLS_DIR": "/opt/uar/skills/builtin",
+    "UAR_EXTRA_BUILTIN_SKILL_DIRS": null,
+    "UAR_REVIEWED_SKILL_SOURCES": null
+  },
+  "extra_roots": [],
+  "verified_full_roots": [],
+  "skill_content": {
+    "source_entries": 10867,
+    "packaged_entries": 10830,
+    "source_inventory_sha256": "67f5c83a7f24e2933462e8973204ef66d90970fb4df8671e217a5415a1c26a0b",
+    "packaged_inventory_sha256": "f1794aa2e6ddc663c0c643f14f4ee299197f9025fb1fa72bf7338ee2deebd872",
+    "mismatched_packaged_paths": [],
+    "omitted_source_paths": [
+      "imported/artifact-refiner/examples/ui-preview-refinement/dist/previews/card/preview-report.json",
+      "imported/artifact-refiner/examples/ui-preview-refinement/dist/previews/card/preview.html",
+      "imported/artifact-refiner/examples/ui-preview-refinement/dist/previews/card/screenshot.png",
+      "imported/prometheus-entity-management/.refiner/artifacts/v3-devtools-react-inspector-archive-qa/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/artifacts/v3-devtools-react-inspector-archive-qa/dist/causal-inspector.png",
+      "imported/prometheus-entity-management/.refiner/artifacts/v3-devtools-react-inspector-archive-qa/dist/responsive-500-events.png",
+      "imported/prometheus-entity-management/.refiner/artifacts/v3-devtools-react-inspector-archive-qa/dist/sycophancy-receipt.json",
+      "imported/prometheus-entity-management/.refiner/artifacts/v3-devtools-react-inspector-archive-qa/dist/validation.json",
+      "imported/prometheus-entity-management/.refiner/artifacts/v3-devtools-time-travel-archive-qa/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/artifacts/v3-flint-portable-contracts-archive-qa/dist/artifact-refiner-qa.md",
+      "imported/prometheus-entity-management/.refiner/artifacts/v3-flint-portable-contracts-archive-qa/dist/validation.json",
+      "imported/prometheus-entity-management/.refiner/artifacts/v3-flutter-riverpod-a2ui-example-archive-qa/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/artifacts/v3-flutter-riverpod-a2ui-example-archive-qa/dist/validation.json",
+      "imported/prometheus-entity-management/.refiner/artifacts/v3-nextjs-app-router-example-archive-qa/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/artifacts/v3-nextjs-app-router-example-archive-qa/dist/validation.json",
+      "imported/prometheus-entity-management/.refiner/history/v3-devtools-time-travel-archive-qa/2026-08-29_20-20-25Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-devtools-time-travel-archive-qa/2026-08-29_20-26-47Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-devtools-time-travel-archive-qa/2026-08-29_20-32-27Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-devtools-time-travel-archive-qa/2026-08-29_20-39-12Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-devtools-time-travel-archive-qa/2026-08-29_20-39-31Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-devtools-time-travel-archive-qa/2026-08-29_20-45-43Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-devtools-time-travel-archive-qa/2026-08-29_20-53-35Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-devtools-time-travel-archive-qa/2026-08-29_21-00-57Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-devtools-time-travel-archive-qa/2026-08-29_21-06-46Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-devtools-time-travel-archive-qa/2026-08-29_21-12-48Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-flutter-riverpod-a2ui-example-archive-qa/2026-08-04_01-03-51Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-flutter-riverpod-a2ui-example-archive-qa/2026-08-04_01-03-51Z/dist/validation.json",
+      "imported/prometheus-entity-management/.refiner/history/v3-flutter-riverpod-a2ui-example-archive-qa/2026-08-04_01-12-49Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-flutter-riverpod-a2ui-example-archive-qa/2026-08-04_01-12-49Z/dist/validation.json",
+      "imported/prometheus-entity-management/.refiner/history/v3-flutter-riverpod-a2ui-example-archive-qa/2026-08-04_01-18-40Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-flutter-riverpod-a2ui-example-archive-qa/2026-08-04_01-18-40Z/dist/validation.json",
+      "imported/prometheus-entity-management/.refiner/history/v3-nextjs-app-router-example-archive-qa/2026-08-03_15-22-06Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-nextjs-app-router-example-archive-qa/2026-08-03_15-22-06Z/dist/validation.json",
+      "imported/prometheus-entity-management/.refiner/history/v3-nextjs-app-router-example-archive-qa/2026-08-03_15-47-37Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-nextjs-app-router-example-archive-qa/2026-08-03_15-47-37Z/dist/validation.json",
+      "imported/prometheus-entity-management/.refiner/history/v3-nextjs-app-router-example-archive-qa/2026-08-03_16-05-23Z/dist/archive-qa-report.md",
+      "imported/prometheus-entity-management/.refiner/history/v3-nextjs-app-router-example-archive-qa/2026-08-03_16-05-23Z/dist/validation.json"
+    ],
+    "full_inventory_equal": false
+  },
+  "binary": {
+    "path": "/usr/local/bin/universal-agent-runtime",
+    "sha256": "a09894914c1b39b097ec218a22806e1d2968be6bc3b947d46ffbf54268a761bc"
+  },
+  "anonymous_mounts": [
+    {
+      "Type": "volume",
+      "Name": "a15f221a66c5d479e1829d8cc219a06c4e7226056d9e2db6f995bcde4413beaa",
+      "Source": "/var/lib/docker/volumes/a15f221a66c5d479e1829d8cc219a06c4e7226056d9e2db6f995bcde4413beaa/_data",
+      "Destination": "/var/lib/uar",
+      "Driver": "local",
+      "Mode": "",
+      "RW": true,
+      "Propagation": ""
+    }
+  ],
+  "limits": [
+    "local arm64 packaging/startup with explicit test-only operator configuration",
+    "no provider inference, offline rebuild, multiarch publication or final phase certification"
+  ],
+  "cleanup": {
+    "stop_exit_code": 0,
+    "remove_container_and_anonymous_volumes_exit_code": 0
+  },
+  "status": "passed",
+  "error": null,
+  "credential_redactions": 2,
+  "finished_at": "2026-10-11T23:27:45.582759+00:00"
+}

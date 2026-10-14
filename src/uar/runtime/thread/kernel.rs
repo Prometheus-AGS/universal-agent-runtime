@@ -145,15 +145,9 @@ impl CapturedThreadKernel {
         self.require_live_root().await
     }
 
-    pub(crate) fn admit_host_tool(&self) -> anyhow::Result<()> {
-        self.resources.models.budget().admit_tool()
-    }
-
-    pub(crate) fn reserve_remote_budget(
-        &self,
-        requested: &ThreadBudgets,
-    ) -> anyhow::Result<crate::uar::runtime::cost_budget::RemoteBudgetReservation> {
-        self.resources.models.budget().reserve_remote(requested)
+    /// Read-only captured budget handle; durable mutations belong to the host service.
+    pub(crate) fn remote_budget(&self) -> &crate::uar::runtime::cost_budget::ModelCallBudget {
+        self.resources.models.budget()
     }
 
     pub(crate) fn original_artifact(&self) -> &crate::uar::domain::artifact::AgentArtifact {

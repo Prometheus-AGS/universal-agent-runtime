@@ -113,24 +113,40 @@ impl TeamExecutionRuntime {
                 }
             }
         }
-        if let Some(content) = &output {
-            if self
-                .catalog
-                .add_team_artifact(&attempt, content.clone())
-                .await
-                .is_err()
-            {
-                output = None;
-                reason = Some("team_artifact_publication_unconfirmed".into());
-                status = "failed";
-            }
-        }
         let snapshot = self.manager.run_usage(&attempt.run_id);
         let effects = self
             .manager
-            .tool_admission_evidence_for_user(owner.user_id(), &attempt.run_id)
+            .tool_admission_evidence_for_user(&owner.presentation_owner_key(), &attempt.run_id)
             .await;
-        let effects_confirmed = effects.as_ref().is_ok_and(|records| {
+        let canonical = async {
+            let mut runs = std::collections::BTreeSet::from([attempt.run_id.clone()]);
+            if let Ok(records) = &effects {
+                runs.extend(records.iter().map(|record| record.run_id.clone()));
+            }
+            let mut receipts = Vec::new();
+            for run in runs {
+                receipts.extend(
+                    self.persistence
+                        .list_canonical_tool_receipts(owner.user_id(), &run)
+                        .await?,
+                );
+            }
+            Ok::<_, anyhow::Error>(receipts)
+        }
+        .await;
+        let legacy_certainty_missing = match (&effects, &canonical) {
+            (Ok(records), Ok(receipts)) => {
+                crate::uar::persistence::agent_threads::has_ambiguous_legacy_tool_outcomes(
+                    receipts, records,
+                )
+            }
+            // A no-tool turn needs no tool receipt; otherwise storage cannot
+            // manufacture certainty for an already claimed invocation.
+            (Ok(records), Err(_)) => !records.is_empty(),
+            (Err(_), _) => true,
+        };
+        let effects_confirmed = !legacy_certainty_missing
+            && effects.as_ref().is_ok_and(|records| {
             use crate::uar::persistence::tool_admission::ToolAdmissionEvidenceState;
             records
                 .iter()
@@ -148,10 +164,49 @@ impl TeamExecutionRuntime {
                                 record.state,
                                 ToolAdmissionEvidenceState::Succeeded
                                     | ToolAdmissionEvidenceState::Failed
+                                    | ToolAdmissionEvidenceState::ApplicationFailed
+                                    | ToolAdmissionEvidenceState::TransportFailed
                             )
                     })
                 })
+            });
+        // Final model prose cannot promote a failed claimed tool into a
+        // successful task or release its success-dependent tasks.
+        let effects_failed = effects.as_ref().is_ok_and(|records| {
+            use crate::uar::persistence::tool_admission::ToolAdmissionEvidenceState;
+            records.iter().any(|record| {
+                matches!(
+                    record.state,
+                    ToolAdmissionEvidenceState::Failed
+                        | ToolAdmissionEvidenceState::ApplicationFailed
+                        | ToolAdmissionEvidenceState::TransportFailed
+                )
+            })
         });
+        if effects_failed && matches!(status, "succeeded" | "yielded") {
+            status = "failed";
+            output = None;
+            yielded = None;
+            reason = Some("team_tool_application_or_transport_failed".into());
+        }
+        if !effects_confirmed {
+            output = None;
+        }
+        if let Some(content) = output
+            .as_ref()
+            .filter(|_| status == "succeeded" && effects_confirmed)
+        {
+            if self
+                .catalog
+                .add_team_artifact(&attempt, content.clone())
+                .await
+                .is_err()
+            {
+                output = None;
+                reason = Some("team_artifact_publication_unconfirmed".into());
+                status = "failed";
+            }
+        }
         // A model request without a provider usage report keeps its whole reservation.
         let usage_known = snapshot.usage_reports == snapshot.model_requests
             && snapshot.completed_usage_reports == snapshot.model_requests

@@ -13,6 +13,8 @@ use crate::uar::{
     rag::ingest::IngestService,
 };
 use anyhow::Result;
+use crate::uar::persistence::ingestion_records::{IngestionJob, IngestionState, IngestionStoreError};
+use tokio::sync::{Notify, mpsc};
 use async_trait::async_trait;
 use prometheus_parking_lot::{
     config::WorkerPoolConfig,
@@ -30,6 +32,8 @@ use tracing::{error, info, warn};
 /// A document ingestion job to be processed by the worker pool.
 #[derive(Debug, Clone)]
 pub struct DocumentIngestionJob {
+    /// Durable attempt whose exact state fences every write.
+    pub durable: IngestionJob,
     /// The document to process
     pub document: KnowledgeDocument,
     /// Raw file content (bytes)
@@ -65,6 +69,7 @@ pub struct DocumentIngestionExecutor {
     /// Cancellation token — checked between processing stages to honour
     /// graceful shutdown without leaving documents in `Processing` state.
     cancellation: CancellationToken,
+    completed: mpsc::UnboundedSender<String>,
 }
 
 impl DocumentIngestionExecutor {
@@ -74,12 +79,14 @@ impl DocumentIngestionExecutor {
         persistence: Arc<dyn PersistenceLayer>,
         config: Arc<AppConfig>,
         cancellation: CancellationToken,
+        completed: mpsc::UnboundedSender<String>,
     ) -> Self {
         Self {
             ingest_service,
             persistence,
             config,
             cancellation,
+            completed,
         }
     }
 }
@@ -87,78 +94,29 @@ impl DocumentIngestionExecutor {
 #[async_trait]
 impl WorkerExecutor<DocumentIngestionJob, IngestionResult> for DocumentIngestionExecutor {
     async fn execute(&self, job: DocumentIngestionJob, meta: TaskMetadata) -> IngestionResult {
+        // Notify dispatch even if preparation unwinds, so a durable job is rediscovered.
+        let _completion = IngestionCompletion {
+            key: job.durable.storage_key(), sender: self.completed.clone(),
+        };
         let doc_id = job.document.id.clone();
-
-        // Honour deadline from task metadata as a secondary cancellation guard.
-        let deadline_exceeded = meta.deadline_ms.map_or(false, |dl_ms| {
-            u128::try_from(chrono::Utc::now().timestamp_millis()).unwrap_or(0) > dl_ms
+        let deadline_exceeded = meta.deadline_ms.is_some_and(|deadline| {
+            u128::try_from(chrono::Utc::now().timestamp_millis()).unwrap_or(0) > deadline
         });
-        if self.cancellation.is_cancelled() || deadline_exceeded {
-            warn!(
-                document_id = %doc_id,
-                cancelled = self.cancellation.is_cancelled(),
-                deadline_exceeded,
-                "Ingestion task cancelled before start — leaving status unchanged"
-            );
-            return IngestionResult {
-                document_id: doc_id,
-                chunk_count: 0,
-                status: DocumentStatus::Failed {
-                    error: "cancelled before start".to_string(),
-                },
-            };
-        }
-
-        info!(document_id = %doc_id, "Starting document ingestion");
-
-        // Update status to Processing
-        if let Err(e) = self
-            .persistence
-            .update_document_status(&job.document.owner_id, &doc_id, &DocumentStatus::Processing)
-            .await
-        {
-            warn!(document_id = %doc_id, error = %e, "Failed to update status to processing");
-        }
-
-        // Attempt to ingest the document; check cancellation token between stages
-        match self.process_document(&job).await {
-            Ok(chunk_count) => {
-                // Update status to Indexed
-                let status = DocumentStatus::Indexed;
-                if let Err(e) = self
-                    .persistence
-                    .update_document_status(&job.document.owner_id, &doc_id, &status)
-                    .await
-                {
-                    error!(document_id = %doc_id, error = %e, "Failed to update status to indexed");
+        let result = if self.cancellation.is_cancelled() || deadline_exceeded {
+            Err(anyhow::anyhow!("ingestion interrupted before preparation"))
+        } else {
+            self.process_document(&job).await
+        };
+        match result {
+            Ok(chunk_count) => IngestionResult { document_id: doc_id, chunk_count, status: DocumentStatus::Indexed },
+            Err(error) => {
+                // CAS cannot overwrite a concurrent publication, retry, or deletion.
+                let failed = job.durable.failed_attempt(error.to_string());
+                if let Err(update_error) = self.persistence.transition_ingestion(&job.durable, &failed).await {
+                    error!(document_id = %doc_id, error = %update_error, "Could not persist ingestion failure; committed source remains discoverable");
                 }
-
-                info!(document_id = %doc_id, chunk_count, "Document ingestion completed");
-                IngestionResult {
-                    document_id: doc_id,
-                    chunk_count,
-                    status,
-                }
-            }
-            Err(e) => {
-                // Update status to Failed
-                let status = DocumentStatus::Failed {
-                    error: e.to_string(),
-                };
-                if let Err(update_err) = self
-                    .persistence
-                    .update_document_status(&job.document.owner_id, &doc_id, &status)
-                    .await
-                {
-                    error!(document_id = %doc_id, error = %update_err, "Failed to update status to failed");
-                }
-
-                error!(document_id = %doc_id, error = %e, "Document ingestion failed");
-                IngestionResult {
-                    document_id: doc_id,
-                    chunk_count: 0,
-                    status,
-                }
+                warn!(document_id = %doc_id, error = %error, "Ingestion attempt did not publish");
+                IngestionResult { document_id: doc_id, chunk_count: 0, status: DocumentStatus::Failed { error: error.to_string() } }
             }
         }
     }
@@ -188,19 +146,12 @@ impl DocumentIngestionExecutor {
         let provider_name = result.provider_name.clone();
         let metadata = build_chunk_metadata(&job.document, &result, provider_name);
 
-        // Stage 2 — chunk, embed, and store
-        let chunks = self
-            .ingest_service
-            .ingest_text_with_metadata(
-                &result.content,
-                &job.document.owner_id,
-                &job.kb_id,
-                job.document.id.clone(),
-                metadata,
-            )
-            .await?;
-
-        Ok(chunks)
+        // Preparation is replayable; only the storage transaction publishes a generation.
+        let publication = self.ingest_service.prepare_ingestion(&result.content, &job.durable, metadata).await?;
+        if self.cancellation.is_cancelled() { anyhow::bail!("ingestion interrupted before publication"); }
+        let count = publication.chunks.len();
+        self.persistence.publish_ingestion(&job.durable, &publication).await?;
+        Ok(count)
     }
 
     async fn resolve_file_processing_config(
@@ -266,6 +217,15 @@ impl DocumentIngestionExecutor {
             metadata: result.metadata,
         })
     }
+}
+
+struct IngestionCompletion {
+    key: String,
+    sender: mpsc::UnboundedSender<String>,
+}
+
+impl Drop for IngestionCompletion {
+    fn drop(&mut self) { let _ = self.sender.send(self.key.clone()); }
 }
 
 #[derive(Debug)]
@@ -367,6 +327,10 @@ pub struct IngestionWorkerPool {
     cancellation: CancellationToken,
     /// Per-task deadline (ms) — `None` means unbounded.
     task_deadline_ms: Option<u128>,
+    persistence: Arc<dyn PersistenceLayer>,
+    wake: Notify,
+    completed: std::sync::Mutex<Option<mpsc::UnboundedReceiver<String>>>,
+    dispatch_capacity: usize,
 }
 
 impl std::fmt::Debug for IngestionWorkerPool {
@@ -405,11 +369,13 @@ impl IngestionWorkerPool {
             .with_max_units(1000) // Resource capacity
             .with_max_queue_depth(max_queue_depth);
 
+        let (completed_tx, completed_rx) = mpsc::unbounded_channel();
         let executor = DocumentIngestionExecutor::new(
             ingest_service,
-            persistence,
+            Arc::clone(&persistence),
             Arc::clone(&config),
             cancellation.clone(),
+            completed_tx,
         );
         let pool = WorkerPool::new(pool_config, executor)?;
 
@@ -422,6 +388,10 @@ impl IngestionWorkerPool {
             pool,
             cancellation,
             task_deadline_ms: None,
+            persistence,
+            wake: Notify::new(),
+            completed: std::sync::Mutex::new(Some(completed_rx)),
+            dispatch_capacity: worker_count,
         })
     }
 
@@ -435,38 +405,104 @@ impl IngestionWorkerPool {
         self
     }
 
-    /// Submit a document for ingestion.
-    ///
-    /// Returns a job key that can be used to retrieve the result.
-    pub async fn submit(
-        &self,
-        document: KnowledgeDocument,
-        file_content: Vec<u8>,
-    ) -> Result<String, PoolError> {
-        let job = DocumentIngestionJob {
-            kb_id: document.kb_id.clone(),
-            document,
-            file_content,
+    /// Compatibility entry point: commit acceptance before requesting dispatch.
+    pub async fn submit(&self, document: KnowledgeDocument, file_content: Vec<u8>) -> Result<String> {
+        let job = self.persistence.accept_ingestion(&document, &file_content).await?;
+        self.notify_committed();
+        Ok(job.document_id)
+    }
+
+    /// Queue notifications accelerate discovery; losing one cannot lose a job.
+    pub fn notify_committed(&self) { self.wake.notify_one(); }
+
+    /// Called once by the trusted server after wrapping this pool in an Arc.
+    pub fn start_durable_dispatch(self: &Arc<Self>) {
+        if !self.persistence.supports_durable_ingestion() {
+            warn!("Durable ingestion dispatcher disabled: storage does not support durable uploads");
+            return;
+        }
+        let receiver = match self.completed.lock() {
+            Ok(mut receiver) => receiver.take(),
+            Err(error) => { error!(%error, "Could not start durable ingestion dispatcher"); return; }
         };
+        let Some(mut completed) = receiver else { return; };
+        let shared = Arc::clone(self);
+        tokio::spawn(async move {
+            let cancellation = shared.cancellation.clone();
+            tokio::select! {
+                _ = cancellation.cancelled() => {}
+                _ = async {
+            let mut active: HashMap<String, MailboxKey> = HashMap::new();
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(5));
+            let mut reconciled = false;
+            loop {
+                tokio::select! {
+                    _ = shared.cancellation.cancelled() => break,
+                    key = completed.recv() => {
+                        if let Some(key) = key {
+                            if let Some(mailbox) = active.remove(&key) {
+                                // Completion fires just before the executor returns to the mailbox.
+                                if let Err(error) = shared.pool.retrieve_async(&mailbox, std::time::Duration::from_secs(1)).await {
+                                    warn!(%error, "Ingestion mailbox result unavailable; database remains authoritative");
+                                }
+                            }
+                        }
+                    }
+                    _ = interval.tick() => {}
+                    _ = shared.wake.notified() => {}
+                }
+                if shared.cancellation.is_cancelled() { break; }
+                if !reconciled {
+                    match shared.persistence.reconcile_ingestion().await {
+                        Ok(()) => reconciled = true,
+                        Err(error) => { error!(%error, "Could not reconcile legacy uploads"); continue; }
+                    }
+                }
+                if active.len() >= shared.dispatch_capacity { continue; }
+                let jobs = match shared.persistence.discover_ingestion(shared.dispatch_capacity + active.len()).await {
+                    Ok(jobs) => jobs,
+                    Err(error) => { error!(%error, "Durable ingestion discovery failed"); continue; }
+                };
+                for job in jobs {
+                    if shared.cancellation.is_cancelled() || active.len() >= shared.dispatch_capacity { break; }
+                    let key = job.storage_key();
+                    if active.contains_key(&key) { continue; }
+                    match shared.dispatch(job).await {
+                        Ok(Some(mailbox)) => { active.insert(key, mailbox); }
+                        Ok(None) => {}
+                        Err(error) => { warn!(%error, "Ingestion dispatch failed; job remains durable"); }
+                    }
+                }
+            }
+                } => {}
+            }
+        });
+    }
 
+    async fn dispatch(&self, job: IngestionJob) -> Result<Option<MailboxKey>> {
+        job.validate_namespace()?;
+        let job = if job.state == IngestionState::Processing {
+            // Crash recovery can repeat pure preparation. Publication alone owns the fence.
+            job
+        } else {
+            let processing = job.processing();
+            if !self.persistence.transition_ingestion(&job, &processing).await? { return Ok(None); }
+            processing
+        };
+        let Some(file_content) = self.persistence.get_ingestion_source(&job).await? else { return Ok(None); };
+        let document = self.persistence.get_document(&job.owner_id, &job.document_id).await?
+            .ok_or(IngestionStoreError::Revoked)?;
+        let payload = DocumentIngestionJob { kb_id: job.kb_id.clone(), durable: job, document, file_content };
         let now_ms = u128::try_from(chrono::Utc::now().timestamp_millis()).unwrap_or(0);
-        let deadline_ms = self.task_deadline_ms.map(|d| now_ms + d);
-
         let meta = TaskMetadata {
             id: uuid::Uuid::new_v4().as_u128() as u64,
             priority: Priority::Normal,
-            cost: ResourceCost {
-                kind: ResourceKind::Cpu, // CPU-bound work
-                units: 10,               // Each document uses 10 resource units
-            },
+            cost: ResourceCost { kind: ResourceKind::Cpu, units: 10 },
             created_at_ms: now_ms,
-            deadline_ms,
-            mailbox: None,
-            idempotency_key: None,
+            deadline_ms: self.task_deadline_ms.map(|duration| now_ms + duration),
+            mailbox: None, idempotency_key: None,
         };
-
-        let key = self.pool.submit_async(job, meta).await?;
-        Ok(format!("{key:?}"))
+        Ok(Some(self.pool.submit_async(payload, meta).await?))
     }
 
     /// Retrieve the result of an ingestion job.

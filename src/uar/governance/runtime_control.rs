@@ -651,8 +651,10 @@ impl GovernanceMutationHandle {
                 bound_addresses = %bound_addresses,
                 jwt_required = false,
                 effective_enabled = false,
-                bypassed_gates = "cedar,run_policy,risk_approval",
-                "Tool governance is inactive for this loopback-only process"
+                bypassed_gates = "cedar,automatic_risk_approval",
+                required_approval_enforced = true,
+                explicit_policy_enforced = true,
+                "Automatic tool governance is inactive for eligible calls in this loopback-only process; explicit policy and required approvals remain enforced"
             );
         });
         emitted.load(std::sync::atomic::Ordering::Relaxed)
@@ -966,7 +968,7 @@ mod tests {
             "bound_addresses=127.0.0.1:1906",
             "jwt_required=false",
             "effective_enabled=false",
-            "bypassed_gates=\"cedar,run_policy,risk_approval\"",
+            "bypassed_gates=\"cedar,automatic_risk_approval\"",
         ] {
             assert!(
                 output.contains(field),

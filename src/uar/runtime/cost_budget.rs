@@ -6,14 +6,15 @@
 //! session / agent, declare budget envelopes, and emit threshold-crossing
 //! events so the UI and operators can react before a runaway burns the budget.
 //!
-//! In-memory and lock-light — a single-process aggregator suitable for the
-//! runtime hot path. Durable roll-ups (SurrealDB/Postgres) can layer on top by
-//! subscribing to the emitted events; that persistence is intentionally out of
-//! scope here.
+//! The synchronous tracker measures live activity; the trusted driver wrapper
+//! reserves and settles durable aggregate liability before exposing provider events.
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+
+use crate::uar::persistence::accounting::{AccountingError, CallAdmission, CallIdentity, CallUsage, ScopeBinding, ScopeIdentity, ScopeLimits};
+use crate::uar::persistence::PersistenceLayer;
 
 use crate::uar::api::a2a::contract::{UarUsageGrant, UarUsageReceipt};
 use crate::uar::runtime::thread::policy_intersection::ThreadBudgets;
@@ -111,6 +112,7 @@ struct Inner {
     tokens: HashMap<(BudgetScope, String), u64>,
     runs: HashMap<String, RunUsage>,
     remote_reservations: HashMap<String, RemoteReservationState>,
+    accounting_owners: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone)]
@@ -130,6 +132,8 @@ pub(crate) struct RemoteBudgetReservation {
     id: String,
     grant: UarUsageGrant,
     released: Arc<std::sync::atomic::AtomicBool>,
+    durable: Option<DurableCall>,
+    unresolved: Arc<std::sync::atomic::AtomicBool>,
 }
 
 #[derive(Debug, Default)]
@@ -704,6 +708,7 @@ pub(crate) struct ModelCallBudget {
     remote: Option<RemoteUsageGrantBinding>,
     started_at: Instant,
     deadline: Option<Instant>,
+    durable: Option<DurableBudget>,
 }
 
 impl ModelCallBudget {
@@ -727,6 +732,7 @@ impl ModelCallBudget {
             remote,
             started_at,
             deadline,
+            durable: None,
             scopes: vec![
                 (BudgetScope::Run, run_id),
                 (BudgetScope::Session, session_id),
@@ -751,7 +757,10 @@ impl ModelCallBudget {
 
     pub(crate) fn narrowed(&self, requested: &ThreadBudgets) -> anyhow::Result<Self> {
         let limits = self.limits.intersect(requested);
-        let deadline = Self::deadline(self.started_at, &limits)?;
+        let deadline = match (Self::deadline(self.started_at, &limits)?, self.deadline) {
+            (Some(local), Some(existing)) => Some(local.min(existing)),
+            (local, existing) => local.or(existing),
+        };
         let narrowed = Self {
             limits,
             deadline,
@@ -764,7 +773,7 @@ impl ModelCallBudget {
     /// Reserve the source root's remaining finite capacity for one remote
     /// child. Other local/remote work sees the reservation immediately. The
     /// returned contract grant is a balance, not the original ceiling.
-    pub(crate) fn reserve_remote(
+    fn reserve_remote_local(
         &self,
         requested: &ThreadBudgets,
     ) -> anyhow::Result<RemoteBudgetReservation> {
@@ -881,6 +890,8 @@ impl ModelCallBudget {
             id,
             grant,
             released: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            durable: None,
+            unresolved: Arc::new(std::sync::atomic::AtomicBool::new(false)),
         })
     }
 
@@ -915,6 +926,19 @@ impl ModelCallBudget {
             &self.limits,
             self.remote.as_ref(),
         )
+    }
+
+    /// Called only by the trusted host before an authorized tool attempt.
+    pub(crate) async fn admit_tool_durable(&self) -> anyhow::Result<()> {
+        self.admit_tool()?;
+        self.admit_remote_activity(crate::uar::persistence::accounting::RemoteGrantActivity::Tool).await
+    }
+
+    async fn admit_remote_activity(&self, activity: crate::uar::persistence::accounting::RemoteGrantActivity) -> anyhow::Result<()> {
+        let Some(remote) = &self.remote else { return Ok(()); };
+        let durable = self.durable.as_ref().ok_or(AccountingError::Unsupported)?;
+        durable.store.admit_remote_grant(&durable.owner, &remote.accounting_id, &remote.grant, activity).await?;
+        Ok(())
     }
 
     async fn expired(&self) {
@@ -963,10 +987,10 @@ impl RemoteBudgetReservation {
         Ok(())
     }
 
-    /// A peer that closes without a usable receipt cannot return reserved
-    /// capacity as if it were unused. Charge every finite reserved dimension;
-    /// unbounded dimensions had no finite capacity withheld from the source.
-    pub(crate) fn charge_reserved_capacity(&self) -> anyhow::Result<()> {
+    /// A peer without a usable receipt retains unknown durable liability.
+    /// Conservatively occupy finite live-tracker capacity without claiming this
+    /// is a confirmed provider charge or authorizing durable release.
+    pub(crate) async fn charge_reserved_capacity(&self) -> anyhow::Result<()> {
         self.check_active()?;
         let state = self
             .tracker
@@ -977,7 +1001,8 @@ impl RemoteBudgetReservation {
             .get(&self.id)
             .ok_or_else(|| anyhow::anyhow!("Remote budget reservation is unavailable"))?
             .clone();
-        self.record_cumulative(UarUsageReceipt {
+        self.unresolved.store(true, std::sync::atomic::Ordering::Release);
+        self.record_cumulative_local(UarUsageReceipt {
             total_tokens: state.used.total_tokens.max(
                 state
                     .grant
@@ -1008,7 +1033,7 @@ impl RemoteBudgetReservation {
     /// Charge a monotonic cumulative peer receipt while retaining all unused
     /// capacity for this child. A malformed or over-budget receipt does not
     /// release the reservation.
-    pub(crate) fn record_cumulative(&self, receipt: UarUsageReceipt) -> anyhow::Result<()> {
+    fn record_cumulative_local(&self, receipt: UarUsageReceipt) -> anyhow::Result<()> {
         receipt.validate()?;
         self.check_active()?;
         let mut inner = self
@@ -1085,7 +1110,7 @@ impl RemoteBudgetReservation {
 
     /// Release only when the host proves no dispatch occurred or the exact
     /// remote task confirms terminal cleanup.
-    pub(crate) fn release_confirmed(&self) -> anyhow::Result<()> {
+    fn release_confirmed_local(&self) -> anyhow::Result<()> {
         if self.is_released() {
             return Ok(());
         }
@@ -1148,6 +1173,8 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
             Some(&self.model),
             self.budget.remote.as_ref(),
         ).map_err(|error| error.context(BudgetFailureOrigin::Admission))?;
+        let durable_call = self.budget.begin_call(&self.model, &request).await
+            .map_err(|error| error.context(BudgetFailureOrigin::Admission))?;
         let mut stream = tokio::select! {
             biased;
             _ = self.budget.cancellation.cancelled() => return Err(BudgetFailureOrigin::RootCancellation.into()),
@@ -1159,6 +1186,7 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
         Ok(Box::pin(async_stream::stream! {
             let mut charged = 0.0_f64;
             let mut charged_tokens = 0_u64;
+            let mut last_price = None;
             let mut reported_usage = false;
             let mut confirmed_usage = false;
             let mut stream_failed = false;
@@ -1176,9 +1204,6 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
                     next = stream.next() => next,
                 };
                 let Some(event) = next else {
-                    if reported_usage && !confirmed_usage && !stream_failed {
-                        if let Err(error) = budget.tracker.record_usage_report(&budget.usage_id, budget.remote.as_ref(), true, true) { yield Err(error.context(BudgetFailureOrigin::UsageAccounting)); }
-                    }
                     break;
                 };
                 stream_failed |= event.is_err() || matches!(&event, Ok(crate::normalized::NormalizedEvent::Error { .. }));
@@ -1206,6 +1231,13 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
                     // smaller report cannot refund already observed usage.
                     let tokens = u64::from(*prompt_tokens) + u64::from(*completion_tokens);
                     let new_tokens = tokens.saturating_sub(charged_tokens);
+                    if let Some(call) = &durable_call {
+                        if let Err(error) = call.usage(price, charged_tokens.max(tokens), false).await {
+                            tracing::warn!(%error, call_id = %call.identity.call_id, "Durable usage remains pending");
+                            yield Ok(crate::normalized::NormalizedEvent::Custom { source: "uar.accounting".into(), event_name: "unresolved".into(),
+                                payload: serde_json::json!({"callId": call.identity.call_id, "state": "pending"}) });
+                        }
+                    }
                     if delta != 0.0 || new_tokens > 0 {
                         if let Err(error) = budget.tracker.record_call(
                             &budget.scopes, &budget.usage_id, budget.remote.as_ref(), delta, new_tokens,
@@ -1214,13 +1246,23 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
                             break;
                         }
                     }
+                    last_price = price;
                     charged = cost;
                     charged_tokens = charged_tokens.max(tokens);
+
                 }
                 // A partial cumulative report followed by cancellation is not
                 // a terminal provider counter and cannot release a reservation.
                 if matches!(&event, Ok(crate::normalized::NormalizedEvent::Done)) && reported_usage && !confirmed_usage && !stream_failed {
                     if let Err(error) = budget.tracker.record_usage_report(&budget.usage_id, budget.remote.as_ref(), true, true) { yield Err(error.context(BudgetFailureOrigin::UsageAccounting)); break; }
+                    if let Some(call) = &durable_call {
+                        let price = last_price;
+                        if let Err(error) = call.usage(price, charged_tokens, true).await {
+                            tracing::warn!(%error, call_id = %call.identity.call_id, "Execution completed with unresolved durable accounting");
+                            yield Ok(crate::normalized::NormalizedEvent::Custom { source: "uar.accounting".into(), event_name: "unresolved".into(),
+                                payload: serde_json::json!({"callId": call.identity.call_id, "state": "pending"}) });
+                        }
+                    }
                     confirmed_usage = true;
                 }
                 yield event;
@@ -1351,5 +1393,199 @@ mod tests {
             1,
             "the refused call must not reach the provider"
         );
+    }
+}
+
+/// Host capability captured once; descendants inherit the same economic scopes.
+#[derive(Debug, Clone)]
+struct DurableBudget {
+    store: Arc<dyn PersistenceLayer>,
+    owner: String,
+    scopes: Vec<ScopeBinding>,
+    source_reservation: Option<CallIdentity>,
+}
+#[derive(Debug, Clone)]
+struct DurableCall { store: Arc<dyn PersistenceLayer>, identity: CallIdentity }
+impl DurableCall {
+    async fn usage(&self, cost: Option<f64>, tokens: u64, terminal: bool) -> anyhow::Result<()> {
+        self.store.record_accounting_usage(&CallUsage { identity: self.identity.clone(),
+            cost_usd: cost, tokens, terminal, evidence: None }).await?;
+        Ok(())
+    }
+}
+impl CostBudgetTracker {
+    pub(crate) fn accounting_owner(&self, run: &str) -> Option<String> {
+        self.inner.lock().ok()?.accounting_owners.get(run).cloned()
+    }
+}
+impl ModelCallBudget {
+    /// Preserve explicit untracked, unlimited development execution; a configured
+    /// financial/token envelope or remote grant cannot use that compatibility path.
+    pub(crate) fn has_configured_limits(&self) -> bool {
+        self.remote.is_some() || self.limits.max_cost_per_session_usd.is_some()
+            || self.limits.max_tokens_per_turn.is_some() || self.limits.max_tokens_per_session.is_some()
+            || self.tracker.inner.lock().map_or(true, |inner| self.scopes.iter().any(|key|
+                inner.limits.get(key).is_some_and(|limit| limit.limit_usd.is_finite())))
+    }
+
+    /// Capture persistence and the complete middleware-verified principal in the host.
+    pub(crate) async fn with_durable_accounting(mut self, store: Option<Arc<dyn PersistenceLayer>>,
+        owner: Option<&crate::uar::runtime::actor::messages::ActorOwner>) -> anyhow::Result<Self> {
+        let store = store.ok_or(AccountingError::Unsupported)?;
+        anyhow::ensure!(store.supports_durable_accounting(), "durable_accounting_unsupported");
+        let owner = owner.and_then(|owner| owner.credential_principal())
+            .ok_or_else(|| anyhow::anyhow!("accounting_verified_principal_required"))?.storage_key();
+        let configured = self.tracker.inner.lock()
+            .map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?.limits.clone();
+        let mut scopes = Vec::new();
+        // Only the exact pending reservation in this same durable store proves
+        // shared economic authority. A different deployment must enforce its
+        // own house budget; team grants also retain normal economic scopes.
+        let mut shared_source = None;
+        if let Some(remote) = &self.remote {
+            let state = store.admit_remote_grant(&owner, &remote.accounting_id, &remote.grant,
+                crate::uar::persistence::accounting::RemoteGrantActivity::Inspect).await?;
+            if let Some(expires_at) = state.expires_at {
+                let remaining = (expires_at - chrono::Utc::now()).to_std()
+                    .map_err(|_| anyhow::anyhow!("remote_grant_expired"))?;
+                let deadline = Instant::now().checked_add(remaining)
+                    .ok_or_else(|| anyhow::anyhow!("remote_grant_deadline_invalid"))?;
+                self.deadline = Some(self.deadline.map_or(deadline, |current| current.min(deadline)));
+            }
+            let id = ScopeIdentity { owner: owner.clone(), scope: "remote_destination".into(), scope_id: remote.accounting_id.clone() };
+            let limits = ScopeLimits { cost_usd: remote.grant.max_total_cost_usd, tokens: remote.grant.max_total_tokens };
+            let row = store.ensure_accounting_scope(&id,&limits).await?;
+            scopes.push(ScopeBinding { identity: id, generation: row.generation });
+            if let Some(digest) = remote.accounting_id.strip_prefix("a2a:") {
+                if let Some(source) = store.get_accounting_delegation(digest).await? {
+                    anyhow::ensure!(source.state == crate::uar::persistence::accounting::AccountingState::Pending
+                        && source.admission.model == "remote-delegation"
+                        && source.admission.reserved_cost_usd == remote.grant.max_total_cost_usd
+                        && source.admission.reserved_tokens == remote.grant.max_total_tokens,
+                        "shared source accounting reservation is not live or does not match the grant");
+                    shared_source = Some(source.admission.identity);
+                }
+            }
+        }
+        if shared_source.is_none() {
+            for (kind,id) in &self.scopes {
+                let identity = ScopeIdentity { owner: if *kind == BudgetScope::Global { "deployment".into() } else { owner.clone() },
+                    scope: kind.as_str().into(), scope_id: id.clone() };
+                let mut limits = ScopeLimits { cost_usd: configured.get(&(*kind,id.clone())).map(|v| v.limit_usd).filter(|v| v.is_finite()), tokens: None };
+                if *kind == BudgetScope::Run { limits.tokens = self.limits.max_tokens_per_turn; }
+                if *kind == BudgetScope::Session {
+                    limits.tokens = self.limits.max_tokens_per_session;
+                    if let Some(cost) = self.limits.max_cost_per_session_usd { limits.cost_usd = Some(limits.cost_usd.map_or(cost,|v| v.min(cost))); }
+                }
+                let row = store.ensure_accounting_scope(&identity,&limits).await?;
+                scopes.push(ScopeBinding { identity, generation: row.generation });
+            }
+        }
+        self.tracker.inner.lock().map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?
+            .accounting_owners.insert(self.usage_id.clone(),owner.clone());
+        self.durable = Some(DurableBudget { store, owner, scopes, source_reservation: shared_source });
+        Ok(self)
+    }
+
+    async fn begin_call(&self, model: &str, request: &crate::llm::LlmRequest) -> anyhow::Result<Option<DurableCall>> {
+        self.admit_remote_activity(crate::uar::persistence::accounting::RemoteGrantActivity::Model).await?;
+        let Some(durable) = &self.durable else { return Ok(None); };
+        let (input, output) = if request.budget_contract.is_some() {
+            let (input,output) = crate::llm::liter_driver::request_budget_bound(&request.budget_contract.as_ref().ok_or(AccountingError::Unresolved)?.destination_model,request)?;
+            (Some(input),Some(output))
+        } else {
+            let info = model.split_once('/').and_then(|(provider,model)| crate::llm::catalog::ModelCatalog::global().model(provider,model));
+            (info.map(|m| m.limits.context_window).filter(|v| *v > 0), info.map(|m| m.limits.max_output).filter(|v| *v > 0))
+        };
+        let tokens = input.zip(output).and_then(|(input,output)| input.checked_add(output));
+        let cost = input.zip(output).and_then(|(input,output)| {
+            // Reserve the most expensive input category; cache writes can cost
+            // more than uncached input and cannot be silently discounted.
+            let plain = crate::llm::catalog::estimate_cost_with_cache_write(model,input,output,0,0)?;
+            let writes = crate::llm::catalog::estimate_cost_with_cache_write(model,input,output,0,input)?;
+            let reads = crate::llm::catalog::estimate_cost_with_cache_write(model,input,output,input,0)?;
+            Some(plain.max(writes).max(reads))
+        });
+        let identity = CallIdentity { owner: durable.owner.clone(), run_id: self.usage_id.clone(),
+            call_id: uuid::Uuid::new_v4().to_string(), attempt: 1 };
+        durable.store.admit_accounting_call(&CallAdmission { identity: identity.clone(), model: model.into(),
+            scopes: durable.scopes.clone(), reserved_cost_usd: cost, reserved_tokens: tokens,
+            source_reservation: durable.source_reservation.clone() }).await?;
+        Ok(Some(DurableCall { store: durable.store.clone(), identity }))
+    }
+
+    /// The trusted host calls this; the read-only kernel only exposes the budget handle.
+    pub(crate) async fn reserve_remote(&self, requested: &ThreadBudgets) -> anyhow::Result<RemoteBudgetReservation> {
+        let mut reservation = self.reserve_remote_local(requested)?;
+        if let Some(durable) = &self.durable {
+            let result = async {
+                // Narrow the process-local offer with authoritative current balances.
+                for binding in &durable.scopes {
+                    let scope = durable.store.get_accounting_scope(&binding.identity).await?.ok_or(AccountingError::Missing)?;
+                    if scope.generation != binding.generation { return Err(AccountingError::Conflict.into()); }
+                    if let Some(limit) = scope.limits.cost_usd {
+                        let available = (limit-scope.settled_cost_usd-scope.reserved_cost_usd).max(0.0);
+                        reservation.grant.max_total_cost_usd = Some(reservation.grant.max_total_cost_usd.map_or(available, |v| v.min(available)));
+                    }
+                    if let Some(limit) = scope.limits.tokens {
+                        let available = limit.saturating_sub(scope.settled_tokens.saturating_add(scope.reserved_tokens));
+                        reservation.grant.max_total_tokens = Some(reservation.grant.max_total_tokens.map_or(available, |v| v.min(available)));
+                    }
+                }
+                reservation.grant.validate()?;
+                let identity = CallIdentity { owner: durable.owner.clone(), run_id: self.usage_id.clone(), call_id: reservation.id.clone(), attempt: 1 };
+                durable.store.admit_accounting_call(&CallAdmission { identity: identity.clone(), model: "remote-delegation".into(),
+                    scopes: durable.scopes.clone(), reserved_cost_usd: reservation.grant.max_total_cost_usd,
+                    reserved_tokens: reservation.grant.max_total_tokens,
+                    source_reservation: durable.source_reservation.clone() }).await?;
+                Ok::<_,anyhow::Error>(DurableCall { store: durable.store.clone(), identity })
+            }.await;
+            match result {
+                Ok(call) => {
+                    let mut inner = self.tracker.inner.lock().map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?;
+                    inner.remote_reservations.get_mut(&reservation.id).ok_or(AccountingError::Missing)?.grant = reservation.grant.clone();
+                    reservation.durable = Some(call);
+                }
+                Err(error) => { reservation.release_confirmed_local()?; return Err(error); }
+            }
+        }
+        Ok(reservation)
+    }
+}
+impl RemoteBudgetReservation {
+    /// Bind before peer dispatch. The existing complete contract digest includes
+    /// source, target and child identities and every granted restriction.
+    pub(crate) async fn bind_contract(&self, digest: String) -> anyhow::Result<()> {
+        if let Some(call) = &self.durable {
+            call.store.bind_accounting_delegation(&crate::uar::persistence::accounting::AccountingDelegation {
+                contract_digest: digest, source: call.identity.clone(),
+            }).await?;
+        }
+        Ok(())
+    }
+
+    pub(crate) async fn record_cumulative(&self, receipt: UarUsageReceipt) -> anyhow::Result<()> {
+        let result = async {
+            receipt.validate()?;
+            if let Some(call) = &self.durable { call.usage(Some(receipt.cost_usd),receipt.total_tokens,false).await?; }
+            self.record_cumulative_local(receipt)
+        }.await;
+        if result.is_err() {
+            // A later cleanup path cannot turn a stale/default receipt into a
+            // confirmed final cost after any counter or persistence failure.
+            self.unresolved.store(true, std::sync::atomic::Ordering::Release);
+        }
+        result
+    }
+    pub(crate) async fn release_confirmed(&self) -> anyhow::Result<()> {
+        if self.is_released() { return Ok(()); }
+        if let Some(call) = &self.durable {
+            // Cleanup alone cannot establish the billed usage of an uncertain peer.
+            if self.unresolved.load(std::sync::atomic::Ordering::Acquire) { return Err(AccountingError::Unresolved.into()); }
+            let used = self.tracker.inner.lock().map_err(|_| anyhow::anyhow!("Cost budget ledger is unavailable"))?
+                .remote_reservations.get(&self.id).ok_or(AccountingError::Missing)?.used.clone();
+            call.usage(Some(used.cost_usd),used.total_tokens,true).await?;
+        }
+        self.release_confirmed_local()
     }
 }

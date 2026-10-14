@@ -14,14 +14,17 @@
 //! app = app.nest(&config.memory.mcp_http_path, router);
 //! ```
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+use crate::uar::security::claims::{CredentialPrincipal, UserContext};
+use rmcp::service::{RequestContext, RoleServer};
 
 use anyhow::Result;
 use axum::Router;
 use rmcp::{
     ErrorData as McpError, ServerHandler,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
-    model::{CallToolResult, ContentBlock, Implementation, ServerCapabilities, ServerInfo},
+    model::{CallToolResult, ContentBlock, Implementation, ServerCapabilities, ServerConfig},
     tool, tool_handler, tool_router,
     transport::streamable_http_server::{
         StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
@@ -336,7 +339,7 @@ pub struct AutoSummarizeParams {
 /// surreal-memory-server, but run inside the UAR process.
 #[derive(Clone)]
 pub struct UarMemoryMcpServer {
-    storage: Arc<dyn MemoryStorage>,
+    service: Arc<MemoryService>,
     #[expect(
         dead_code,
         reason = "rmcp's generated tool handler retains this router for runtime dispatch"
@@ -351,12 +354,27 @@ impl std::fmt::Debug for UarMemoryMcpServer {
 }
 
 impl UarMemoryMcpServer {
-    pub fn new(storage: Arc<dyn MemoryStorage>) -> Self {
+    pub fn new(service: Arc<MemoryService>) -> Self {
         Self {
-            storage,
+            service,
             tool_router: Self::tool_router(),
         }
     }
+
+    fn request_user<'a>(&self, context: &'a RequestContext<RoleServer>) -> Result<&'a UserContext, McpError> {
+        context.extensions.get::<axum::http::request::Parts>()
+            .and_then(|parts| parts.extensions.get::<UserContext>())
+            .ok_or_else(|| err_mcp("Verified HTTP memory owner required"))
+    }
+
+    fn scoped(&self, context: &RequestContext<RoleServer>) -> Result<super::owned::OwnedMemory<'_>, McpError> {
+        self.service.for_context(self.request_user(context)?).map_err(err_mcp)
+    }
+
+    fn admin(&self, context: &RequestContext<RoleServer>) -> Result<Arc<dyn MemoryStorage>, McpError> {
+        self.service.admin_storage(self.request_user(context)?).map_err(err_mcp)
+    }
+
 }
 
 #[tool_router]
@@ -366,8 +384,10 @@ impl UarMemoryMcpServer {
     #[tool(description = "Add a new memory. Supports Global/Agent/User/Session/Task scoping.")]
     async fn memory_add(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<AddMemoryParams>,
     ) -> Result<CallToolResult, McpError> {
+        let storage = self.scoped(&context)?;
         let scope = match p.scope.as_deref().unwrap_or("user") {
             "global" => MemoryScope::Global,
             "agent" => MemoryScope::Agent,
@@ -386,26 +406,29 @@ impl UarMemoryMcpServer {
         mem.memory_type = memory_type;
         mem.metadata = p.metadata;
         mem.importance = p.importance;
-        let result = self.storage.add_memory(mem).await.map_err(err_mcp)?;
+        let result = storage.add_memory(mem).await.map_err(err_mcp)?;
         Ok(ok_json(&result))
     }
 
     #[tool(description = "Retrieve a specific memory by its record ID.")]
     async fn memory_get(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<MemoryIdParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self.storage.get_memory(&p.id).await.map_err(err_mcp)?;
+        let storage = self.scoped(&context)?;
+        let result = storage.get_memory(&p.id).await.map_err(err_mcp)?;
         Ok(ok_json(&result))
     }
 
     #[tool(description = "Update the content of an existing memory (creates a history record).")]
     async fn memory_update(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<UpdateMemoryParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.scoped(&context)?;
+        let result = storage
             .update_memory(&p.id, p.content)
             .await
             .map_err(err_mcp)?;
@@ -415,9 +438,11 @@ impl UarMemoryMcpServer {
     #[tool(description = "Delete a specific memory by ID.")]
     async fn memory_delete(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<MemoryIdParams>,
     ) -> Result<CallToolResult, McpError> {
-        self.storage.delete_memory(&p.id).await.map_err(err_mcp)?;
+        let storage = self.scoped(&context)?;
+        storage.delete_memory(&p.id).await.map_err(err_mcp)?;
         Ok(CallToolResult::success(vec![ContentBlock::text(format!(
             "Memory '{}' deleted",
             p.id
@@ -427,10 +452,11 @@ impl UarMemoryMcpServer {
     #[tool(description = "Delete all memories matching user/agent/session scope.")]
     async fn memory_delete_all(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<ScopeFilterParams>,
     ) -> Result<CallToolResult, McpError> {
-        let count = self
-            .storage
+        let storage = self.scoped(&context)?;
+        let count = storage
             .delete_all_memories(
                 p.user_id.as_deref(),
                 p.agent_id.as_deref(),
@@ -447,10 +473,11 @@ impl UarMemoryMcpServer {
     #[tool(description = "List all memories for a given scope filter.")]
     async fn memory_list(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<ScopeFilterParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.scoped(&context)?;
+        let result = storage
             .get_all_memories(
                 p.user_id.as_deref(),
                 p.agent_id.as_deref(),
@@ -466,10 +493,11 @@ impl UarMemoryMcpServer {
     )]
     async fn memory_search(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<SearchMemoriesParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.scoped(&context)?;
+        let result = storage
             .search_memories(
                 &p.query,
                 p.user_id.as_deref(),
@@ -488,10 +516,11 @@ impl UarMemoryMcpServer {
     )]
     async fn memory_hybrid_search(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<HybridSearchParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.scoped(&context)?;
+        let result = storage
             .hybrid_search_memories(
                 &p.query,
                 p.user_id.as_deref(),
@@ -509,10 +538,11 @@ impl UarMemoryMcpServer {
     #[tool(description = "Get the full edit history of a memory (all versions).")]
     async fn memory_history(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<MemoryIdParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.scoped(&context)?;
+        let result = storage
             .get_memory_history(&p.id)
             .await
             .map_err(err_mcp)?;
@@ -522,10 +552,11 @@ impl UarMemoryMcpServer {
     #[tool(description = "Compress memories older than N days into a single summary memory.")]
     async fn memory_compress(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<CompressMemoriesParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.scoped(&context)?;
+        let result = storage
             .compress_memories(
                 p.user_id.as_deref(),
                 p.agent_id.as_deref(),
@@ -540,10 +571,11 @@ impl UarMemoryMcpServer {
     #[tool(description = "Auto-extract and store memories from raw conversation messages.")]
     async fn memory_extract_from_conversation(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<ConversationParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.scoped(&context)?;
+        let result = storage
             .add_memories_from_conversation(
                 p.messages,
                 p.user_id.as_deref(),
@@ -555,21 +587,35 @@ impl UarMemoryMcpServer {
         Ok(ok_json(&result))
     }
 
+    #[tool(description = "Read your durable automatic memory capture consent, retention and host switch.")]
+    async fn memory_capture_policy(&self, context: RequestContext<RoleServer>) -> Result<CallToolResult, McpError> {
+        let policy = self.scoped(&context)?.capture_policy().await.map_err(err_mcp)?;
+        Ok(ok_json(&policy))
+    }
+
+    #[tool(description = "Set the authenticated owner's automatic capture consent. Enabling requires an explicit retention choice: 7, 30, 90 or 365 days, or until_deleted.")]
+    async fn memory_set_capture_policy(&self, context: RequestContext<RoleServer>, Parameters(update): Parameters<super::controls::CapturePolicyUpdate>) -> Result<CallToolResult, McpError> {
+        let policy = self.scoped(&context)?.set_capture_policy(update).await.map_err(err_mcp)?;
+        Ok(ok_json(&policy))
+    }
+
     // ── Knowledge Graph ───────────────────────────────────────────────────────
 
     #[tool(description = "Retrieve the complete knowledge graph with all entities and relations.")]
-    async fn kg_read(&self) -> Result<CallToolResult, McpError> {
-        let result = self.storage.get_graph().await.map_err(err_mcp)?;
+    async fn kg_read(&self, context: RequestContext<RoleServer>) -> Result<CallToolResult, McpError> {
+        let storage = self.admin(&context)?;
+        let result = storage.get_graph().await.map_err(err_mcp)?;
         Ok(ok_json(&result))
     }
 
     #[tool(description = "Search entities by text match on name or type.")]
     async fn kg_search(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<SearchParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.admin(&context)?;
+        let result = storage
             .search_entities(&p.query)
             .await
             .map_err(err_mcp)?;
@@ -579,10 +625,11 @@ impl UarMemoryMcpServer {
     #[tool(description = "Find entities by vector similarity. Best for natural language queries.")]
     async fn kg_semantic_search(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<SemanticSearchParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.admin(&context)?;
+        let result = storage
             .semantic_search(&p.query, p.limit, p.threshold)
             .await
             .map_err(err_mcp)?;
@@ -592,20 +639,23 @@ impl UarMemoryMcpServer {
     #[tool(description = "Create a new entity in the knowledge graph.")]
     async fn kg_create_entity(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<CreateEntityParams>,
     ) -> Result<CallToolResult, McpError> {
+        let storage = self.admin(&context)?;
         let entity = Entity::new(p.name, p.entity_type, p.observations);
-        let result = self.storage.create_entity(entity).await.map_err(err_mcp)?;
+        let result = storage.create_entity(entity).await.map_err(err_mcp)?;
         Ok(ok_json(&result))
     }
 
     #[tool(description = "Add observations to an existing entity.")]
     async fn kg_add_observations(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<AddObservationsParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.admin(&context)?;
+        let result = storage
             .add_observations(&p.entity_name, p.observations)
             .await
             .map_err(err_mcp)?;
@@ -615,11 +665,12 @@ impl UarMemoryMcpServer {
     #[tool(description = "Create a directed relationship between two entities.")]
     async fn kg_create_relation(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<CreateRelationParams>,
     ) -> Result<CallToolResult, McpError> {
+        let storage = self.admin(&context)?;
         let relation = Relation::new(p.from, p.to, p.relation_type);
-        let result = self
-            .storage
+        let result = storage
             .create_relation(relation)
             .await
             .map_err(err_mcp)?;
@@ -629,16 +680,18 @@ impl UarMemoryMcpServer {
     #[tool(description = "Delete an entity and all its relations from the knowledge graph.")]
     async fn kg_delete_entity(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<DeleteEntityParams>,
     ) -> Result<CallToolResult, McpError> {
-        let relations = self.storage.get_relations(&p.name).await.map_err(err_mcp)?;
+        let storage = self.admin(&context)?;
+        let relations = storage.get_relations(&p.name).await.map_err(err_mcp)?;
         for r in &relations {
-            self.storage
+            storage
                 .delete_relation(&r.from, &r.to, &r.relation_type)
                 .await
                 .map_err(err_mcp)?;
         }
-        self.storage.delete_entity(&p.name).await.map_err(err_mcp)?;
+        storage.delete_entity(&p.name).await.map_err(err_mcp)?;
         Ok(CallToolResult::success(vec![ContentBlock::text(format!(
             "Deleted '{}' and {} relation(s)",
             p.name,
@@ -649,9 +702,11 @@ impl UarMemoryMcpServer {
     #[tool(description = "Delete a specific relation between two entities.")]
     async fn kg_delete_relation(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<DeleteRelationParams>,
     ) -> Result<CallToolResult, McpError> {
-        self.storage
+        let storage = self.admin(&context)?;
+        storage
             .delete_relation(&p.from, &p.to, &p.relation_type)
             .await
             .map_err(err_mcp)?;
@@ -663,10 +718,11 @@ impl UarMemoryMcpServer {
     #[tool(description = "Return the subgraph of entities within N hops of a given entity.")]
     async fn kg_expand_neighbors(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<ExpandNeighborsParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.admin(&context)?;
+        let result = storage
             .expand_neighbors(&p.entity_name, p.depth, p.limit)
             .await
             .map_err(err_mcp)?;
@@ -676,10 +732,11 @@ impl UarMemoryMcpServer {
     #[tool(description = "Find shortest paths between two entities in the knowledge graph.")]
     async fn kg_find_path(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<FindPathParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.admin(&context)?;
+        let result = storage
             .find_path(&p.from, &p.to, p.max_depth)
             .await
             .map_err(err_mcp)?;
@@ -691,10 +748,11 @@ impl UarMemoryMcpServer {
     )]
     async fn kg_get_related(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<GetRelatedParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.admin(&context)?;
+        let result = storage
             .get_related(
                 &p.entity_name,
                 p.relation_type.as_deref(),
@@ -713,11 +771,12 @@ impl UarMemoryMcpServer {
     )]
     async fn task_stream_create(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<CreateTaskStreamParams>,
     ) -> Result<CallToolResult, McpError> {
+        let storage = self.scoped(&context)?;
         let stream = TaskStream::new(p.name, p.description, p.agent_id, p.user_id);
-        let result = self
-            .storage
+        let result = storage
             .create_task_stream(stream)
             .await
             .map_err(err_mcp)?;
@@ -727,10 +786,11 @@ impl UarMemoryMcpServer {
     #[tool(description = "Get the metadata of a TaskStream by name.")]
     async fn task_stream_get(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<TaskStreamNameParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.scoped(&context)?;
+        let result = storage
             .get_task_stream(&p.name, p.user_id.as_deref(), p.agent_id.as_deref())
             .await
             .map_err(err_mcp)?;
@@ -740,11 +800,12 @@ impl UarMemoryMcpServer {
     #[tool(description = "Add a memory to a TaskStream.")]
     async fn task_stream_add(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<AddToTaskStreamParams>,
     ) -> Result<CallToolResult, McpError> {
+        let storage = self.scoped(&context)?;
         let mem = Memory::new(p.content, None, None, None, p.categories);
-        let result = self
-            .storage
+        let result = storage
             .add_to_task_stream(
                 &p.stream_name,
                 p.user_id.as_deref(),
@@ -761,10 +822,11 @@ impl UarMemoryMcpServer {
     )]
     async fn task_stream_context(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<GetContextParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.scoped(&context)?;
+        let result = storage
             .get_context_for_task(
                 &p.stream_name,
                 p.user_id.as_deref(),
@@ -780,10 +842,11 @@ impl UarMemoryMcpServer {
     #[tool(description = "List all active TaskStreams, optionally filtered by agent/user.")]
     async fn task_stream_list(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<ScopeFilterParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.scoped(&context)?;
+        let result = storage
             .list_task_streams(p.agent_id.as_deref(), p.user_id.as_deref())
             .await
             .map_err(err_mcp)?;
@@ -793,10 +856,11 @@ impl UarMemoryMcpServer {
     #[tool(description = "Archive a TaskStream by name.")]
     async fn task_stream_archive(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<TaskStreamNameParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.scoped(&context)?;
+        let result = storage
             .archive_task_stream(&p.name, p.user_id.as_deref(), p.agent_id.as_deref())
             .await
             .map_err(err_mcp)?;
@@ -808,10 +872,11 @@ impl UarMemoryMcpServer {
     )]
     async fn task_stream_auto_summarize(
         &self,
+        context: RequestContext<RoleServer>,
         Parameters(p): Parameters<AutoSummarizeParams>,
     ) -> Result<CallToolResult, McpError> {
-        let result = self
-            .storage
+        let storage = self.scoped(&context)?;
+        let result = storage
             .auto_summarize_task_stream(
                 &p.stream_name,
                 p.user_id.as_deref(),
@@ -826,12 +891,12 @@ impl UarMemoryMcpServer {
 
 #[tool_handler]
 impl ServerHandler for UarMemoryMcpServer {
-    fn get_info(&self) -> ServerInfo {
-        // rmcp 1.8: ServerInfo (InitializeResult) and Implementation are both
+    fn get_info(&self) -> ServerConfig {
+        // rmcp 3.4.1: ServerConfig (InitializeResult) and Implementation are both
         // #[non_exhaustive] -- struct-literal syntax (even with
         // ..Default::default()) is rejected cross-crate; use the provided
         // constructors + field mutation instead (all fields are `pub`).
-        let mut info = ServerInfo::new(ServerCapabilities::builder().enable_tools().build());
+        let mut info = ServerConfig::new(ServerCapabilities::builder().enable_tools().build());
         info.server_info = Implementation::new("uar-memory-mcp", env!("CARGO_PKG_VERSION"));
         info.instructions = Some(
             "UAR in-process memory MCP server. \
@@ -863,7 +928,6 @@ impl ServerHandler for UarMemoryMcpServer {
 /// }
 /// ```
 pub fn memory_mcp_router(service: Arc<MemoryService>) -> Router {
-    let storage = service.storage();
 
     let session_manager = Arc::new(LocalSessionManager::default());
 
@@ -874,11 +938,49 @@ pub fn memory_mcp_router(service: Arc<MemoryService>) -> Router {
 
     let http_service = StreamableHttpService::new(
         move || -> Result<UarMemoryMcpServer, std::io::Error> {
-            Ok(UarMemoryMcpServer::new(Arc::clone(&storage)))
+            Ok(UarMemoryMcpServer::new(Arc::clone(&service)))
         },
         Arc::clone(&session_manager),
         config,
     );
 
     Router::new().route_service("/", http_service)
+        .layer(axum::middleware::from_fn_with_state(
+            Arc::new(Mutex::new(HashMap::<String, CredentialPrincipal>::new())),
+            bind_http_owner,
+        ))
+}
+
+
+/// Bind all transport requests, including SSE replay and DELETE, to the
+/// principal that initialized the MCP session. A session ID is not authority.
+async fn bind_http_owner(
+    axum::extract::State(owners): axum::extract::State<Arc<Mutex<HashMap<String, CredentialPrincipal>>>>,
+    request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    use axum::{http::{Method, StatusCode}, response::IntoResponse};
+    let principal = match request.extensions().get::<UserContext>()
+        .map(CredentialPrincipal::from_verified_context).transpose() {
+        Ok(Some(principal)) => principal,
+        _ => return (StatusCode::UNAUTHORIZED, "Verified memory owner required").into_response(),
+    };
+    let session = request.headers().get("mcp-session-id").and_then(|value| value.to_str().ok()).map(str::to_owned);
+    if let Some(session) = &session {
+        let Ok(bindings) = owners.lock() else { return StatusCode::INTERNAL_SERVER_ERROR.into_response(); };
+        if bindings.get(session) != Some(&principal) {
+            return (StatusCode::FORBIDDEN, "Memory session belongs to another owner").into_response();
+        }
+    }
+    let deleting = request.method() == Method::DELETE;
+    let response = next.run(request).await;
+    if response.status().is_success() {
+        let Ok(mut bindings) = owners.lock() else { return StatusCode::INTERNAL_SERVER_ERROR.into_response(); };
+        if deleting {
+            if let Some(session) = session { bindings.remove(&session); }
+        } else if let Some(session) = response.headers().get("mcp-session-id").and_then(|value| value.to_str().ok()) {
+            bindings.insert(session.to_owned(), principal);
+        }
+    }
+    response
 }

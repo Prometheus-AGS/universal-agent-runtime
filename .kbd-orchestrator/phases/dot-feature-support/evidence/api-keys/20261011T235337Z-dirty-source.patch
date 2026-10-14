@@ -1,0 +1,2455 @@
+diff --git a/scripts/prepare-release-evidence-local.sh b/scripts/prepare-release-evidence-local.sh
+index 09c683b7..49b63b13 100755
+--- a/scripts/prepare-release-evidence-local.sh
++++ b/scripts/prepare-release-evidence-local.sh
+@@ -54,6 +54,7 @@ for source in "$TEST_EVIDENCE_FILE" "$SECURITY_AUDIT_EVIDENCE_FILE" "$BUILD_RECE
+ done
+ 
+ mkdir -p "$evidence_directory"
++node "$root/scripts/generate-release-input-provenance.mjs" "$evidence_directory/release-input-provenance.json" "$root"
+ archive_count=0
+ while IFS= read -r archive; do
+   [[ "$(basename "$archive")" == uar-offline-source.tar.gz ]] && continue
+diff --git a/src/main.rs b/src/main.rs
+index f3db7c69..b949915b 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -18,8 +18,16 @@ use universal_agent_runtime::config_manager::ConfigManager;
+ use universal_agent_runtime::server;
+ use universal_agent_runtime::uar;
+ 
+-#[tokio::main]
+-async fn main() {
++fn main() {
++    let runtime = tokio::runtime::Builder::new_multi_thread()
++        .thread_stack_size(8 * 1024 * 1024)
++        .enable_all()
++        .build()
++        .expect("Failed to create UAR async runtime");
++    runtime.block_on(run_main());
++}
++
++async fn run_main() {
+     let _ = dotenv();
+ 
+     if let Some(path) = selected_env_file() {
+diff --git a/src/server.rs b/src/server.rs
+index c61d5214..fc846634 100644
+--- a/src/server.rs
++++ b/src/server.rs
+@@ -72,7 +72,7 @@ use crate::uar::{
+         },
+     },
+     security::{
+-        api_keys::{ApiKeyService, InMemoryApiKeyStorage},
++        api_keys::ApiKeyService,
+         claims::UserContext,
+         sidecar_guard::{SidecarGuard, SidecarLaunchToken},
+     },
+@@ -276,6 +276,8 @@ fn emit_shutdown_marker_nonblocking(marker: &[u8]) {
+ 
+ #[cfg(feature = "in-memory-backend")]
+ use crate::uar::persistence::providers::memory::InMemoryProvider;
++#[cfg(feature = "in-memory-backend")]
++use crate::uar::security::api_keys::InMemoryApiKeyStorage;
+ #[cfg(feature = "surreal-backend")]
+ use crate::uar::persistence::providers::surreal::SurrealDbProvider;
+ 
+@@ -601,6 +603,7 @@ async fn run_server_with_listener(
+         agent_registry,
+         live_bus,
+         credential_store,
++        api_key_storage,
+         a2ui_design_system_store,
+         surreal_live_bus,
+     ): (
+@@ -613,11 +616,15 @@ async fn run_server_with_listener(
+         Option<Arc<dyn crate::uar::api::a2a::AgentRegistry>>,
+         Option<Arc<dyn crate::uar::realtime::RealtimeBus>>,
+         Option<Arc<dyn uar::security::credentials::CredentialStore>>,
++        Arc<dyn uar::security::api_keys::ApiKeyStorage>,
+         uar::a2ui::design_systems::store::SharedDesignSystemStore,
+         Option<Arc<crate::uar::realtime::surreal_bus::LiveQueryBus>>,
+     ) = if config.persistence.provider == "memory" {
+         #[cfg(feature = "in-memory-backend")]
+         {
++            if config.security.is_remote() {
++                anyhow::bail!("Remote API-key authority requires durable persistence; memory is a local development mode");
++            }
+             (
+                 Arc::new(InMemoryProvider::new()) as Arc<dyn PersistenceLayer>,
+                 None,
+@@ -626,6 +633,7 @@ async fn run_server_with_listener(
+                 None,
+                 None,
+                 None,
++                Arc::new(InMemoryApiKeyStorage::new()),
+                 Arc::new(uar::a2ui::design_systems::store::InMemoryDesignSystemStore::new()),
+                 None,
+             )
+@@ -661,6 +669,11 @@ async fn run_server_with_listener(
+ 
+             // Create compiler storage sharing the same DB connection
+             let db = provider.client();
++            if config.security.is_remote() && provider.catalog_storage_backend() == "memory" {
++                anyhow::bail!("Remote API-key authority requires durable SurrealDB; memory is a local development mode");
++            }
++            let api_key_storage = Arc::new(uar::security::api_keys::SurrealApiKeyStorage::new(db.clone()))
++                as Arc<dyn uar::security::api_keys::ApiKeyStorage>;
+             let a2ui_store = Arc::new(
+                 uar::a2ui::design_systems::store::SurrealDesignSystemStore::new(db.clone()),
+             )
+@@ -702,6 +715,7 @@ async fn run_server_with_listener(
+                 Some(registry),
+                 live_bus,
+                 credential_store,
++                api_key_storage,
+                 a2ui_store,
+                 Some(surreal_live_bus),
+             )
+@@ -722,6 +736,8 @@ async fn run_server_with_listener(
+                 .await
+                 .expect("Failed to initialize Postgres");
+             let pool = provider.get_pool().clone();
++            let api_key_storage = Arc::new(uar::security::api_keys::PostgresApiKeyStorage::new(pool.clone()))
++                as Arc<dyn uar::security::api_keys::ApiKeyStorage>;
+             let a2ui_store = Arc::new(
+                 uar::a2ui::design_systems::store::PostgresDesignSystemStore::new(pool.clone()),
+             )
+@@ -764,6 +780,7 @@ async fn run_server_with_listener(
+                 Some(registry),
+                 live_bus,
+                 credential_store,
++                api_key_storage,
+                 a2ui_store,
+                 None,
+             )
+@@ -1080,7 +1097,8 @@ async fn run_server_with_listener(
+     // Multi-tenant provider credentials. Active only when CREDENTIAL_ENCRYPTION_KEY
+     // is set; otherwise `None` ⇒ single-tenant (env/config key path, unchanged).
+     // Uses the durable SurrealDB-backed store when persistence is Surreal;
+-    // otherwise falls back to an in-memory store (matches the api_keys precedent).
++    // PostgreSQL uses its durable store. Explicit memory development mode uses
++    // an in-memory store; configuration errors never disable credential authority.
+     let provider_service: Option<Arc<uar::security::credentials::ProviderService>> = {
+         let store: Arc<dyn uar::security::credentials::CredentialStore> =
+             credential_store.clone().unwrap_or_else(|| {
+@@ -1092,9 +1110,8 @@ async fn run_server_with_listener(
+                 Some(Arc::new(svc))
+             }
+             Ok(None) => None,
+-            Err(e) => {
+-                tracing::error!(error = %e, "CREDENTIAL_ENCRYPTION_KEY invalid; multi-tenant credentials disabled");
+-                None
++            Err(_) => {
++                anyhow::bail!("Provider credential encryption or owner mapping configuration is invalid");
+             }
+         }
+     };
+@@ -1353,8 +1370,6 @@ async fn run_server_with_listener(
+     info!("Actor collaboration system initialized");
+ 
+     // Initialize API Key Service
+-    let api_key_storage: Arc<dyn uar::security::api_keys::ApiKeyStorage> =
+-        Arc::new(InMemoryApiKeyStorage::new());
+     let api_key_service = Arc::new(
+         ApiKeyService::new(
+             Arc::clone(&api_key_storage),
+@@ -2154,7 +2169,8 @@ async fn run_server_with_listener(
+             anyhow::bail!("A2A gRPC admission activated before governance finalization");
+         }
+         let grpc_service =
+-            crate::uar::api::a2a::grpc::GrpcAgentService::new(Arc::clone(&a2a_state));
++            crate::uar::api::a2a::grpc::GrpcAgentService::new(Arc::clone(&a2a_state))
++                .with_api_key_service(Arc::clone(&api_key_service));
+         let grpc_shutdown = run_cancellation_root.clone();
+         info!(name: "a2a.grpc.serving", address = %grpc_addr, "A2A gRPC transport serving");
+         Some(tokio::spawn(async move {
+@@ -2860,9 +2876,9 @@ async fn api_generate_title(Json(req): Json<GenerateTitleRequest>) -> Response {
+ 
+ /// GET /api/models
+ ///
+-/// Returns the full model catalog (all providers × models from the compile-time
+-/// `ModelCatalog`), enriched with a `configured` flag indicating whether the
+-/// provider has a live API key registered in the `ProviderRegistry`.
++/// Returns the bundled catalog merged with configured providers and served aliases.
++/// `configured` and `enabled` reflect registry bindings, not a successful inference
++/// or the presence of an API key (local providers may not require one).
+ ///
+ /// Response shape:
+ /// ```json
+@@ -3178,25 +3194,17 @@ async fn api_route_model(
+ 
+ /// GET /v1/models — list available models in OpenAI API format.
+ pub(crate) async fn api_v1_models(State(state): State<AppState>) -> Json<Value> {
+-    let catalog = crate::llm::ModelCatalog::global();
+-    let configured_ids: std::collections::HashSet<String> = state
+-        .provider_registry
+-        .list()
+-        .await
+-        .into_iter()
+-        .filter(|p| p.enabled)
+-        .map(|p| p.id)
+-        .collect();
+-
++    let providers = state.provider_registry.list().await;
+     let now = Utc::now().timestamp();
+     let mut models = Vec::new();
+ 
+-    for provider in catalog.all_providers() {
+-        if !configured_ids.contains(&provider.id) {
+-            continue;
+-        }
+-        for model in &provider.models {
++    // This is the admitted service instance's models endpoint. Advertise only
++    // enabled runtime bindings, not every model known by the static catalog.
++    for provider in providers.iter().filter(|provider| provider.enabled) {
++        for model in provider.models.iter().filter(|model| model.enabled) {
+             models.push(json!({
++                // The router splits the first slash; the registered model ID
++                // is opaque and may itself contain provider/organization slashes.
+                 "id": format!("{}/{}", provider.id, model.id),
+                 "object": "model",
+                 "created": now,
+@@ -3213,11 +3221,9 @@ pub(crate) async fn api_v1_models(State(state): State<AppState>) -> Json<Value>
+ 
+ /// GET /v1/models/{model_id} — retrieve details for a specific model.
+ async fn api_v1_model_detail(
+-    State(_state): State<AppState>,
++    State(state): State<AppState>,
+     axum::extract::Path(model_id): axum::extract::Path<String>,
+ ) -> Response {
+-    let catalog = crate::llm::ModelCatalog::global();
+-
+     // Parse "provider/model" format
+     let parts: Vec<&str> = model_id.splitn(2, '/').collect();
+     if parts.len() != 2 {
+@@ -3236,7 +3242,11 @@ async fn api_v1_model_detail(
+ 
+     let (provider_id, raw_model_id) = (parts[0], parts[1]);
+ 
+-    match catalog.model(provider_id, raw_model_id) {
++    let model = state.provider_registry.get(provider_id).await
++        .filter(|provider| provider.enabled)
++        .and_then(|provider| provider.models.into_iter()
++            .find(|model| model.enabled && model.id == raw_model_id));
++    match model {
+         Some(model) => {
+             let now = Utc::now().timestamp();
+             Json(json!({
+@@ -3245,14 +3255,14 @@ async fn api_v1_model_detail(
+                 "created": now,
+                 "owned_by": provider_id,
+                 "capabilities": {
+-                    "tool_call": model.capabilities.tool_call,
+-                    "reasoning": model.capabilities.reasoning,
+-                    "structured_output": model.capabilities.structured_output,
+-                    "streaming": model.capabilities.streaming,
++                    "tool_call": model.supports_tools,
++                    "reasoning": model.supports_reasoning,
++                    "structured_output": model.supports_structured_output,
++                    "streaming": model.supports_streaming,
+                 },
+                 "limits": {
+-                    "context_window": model.limits.context_window,
+-                    "max_output": model.limits.max_output,
++                    "context_window": model.context_window,
++                    "max_output": model.max_output_tokens,
+                 },
+             }))
+             .into_response()
+diff --git a/src/uar/api/a2a/grpc.rs b/src/uar/api/a2a/grpc.rs
+index 73f433ca..5c2de0ca 100644
+--- a/src/uar/api/a2a/grpc.rs
++++ b/src/uar/api/a2a/grpc.rs
+@@ -36,11 +36,18 @@ use pb::{
+ #[derive(Debug, Clone)]
+ pub struct GrpcAgentService {
+     state: Arc<A2AState>,
++    api_keys: Option<Arc<crate::uar::security::api_keys::ApiKeyService>>,
+ }
+ 
+ impl GrpcAgentService {
+     pub fn new(state: Arc<A2AState>) -> Self {
+-        Self { state }
++        Self { state, api_keys: None }
++    }
++
++    /// Bind the same current key authority used by HTTP admission.
++    pub fn with_api_key_service(mut self, service: Arc<crate::uar::security::api_keys::ApiKeyService>) -> Self {
++        self.api_keys = Some(service);
++        self
+     }
+ 
+     pub fn into_server(self) -> AgentServiceServer<Self> {
+@@ -76,6 +83,16 @@ impl GrpcAgentService {
+             tenant_id: principal.tenant_id,
+             claims: principal.claims,
+         };
++        if user.verified_identity().is_some_and(|identity| identity.is_api_key_credential()) {
++            let service = self.api_keys.as_ref()
++                .ok_or_else(|| Status::unavailable("API-key authority storage is not bound"))?;
++            let valid = service.validate_admission(&user).await.map_err(|error| {
++                if error.downcast_ref::<crate::uar::security::api_keys::ApiKeyStorageError>().is_some() {
++                    Status::unavailable("API-key authority storage is unavailable")
++                } else { Status::unauthenticated("API key requires reissue") }
++            })?;
++            if !valid { return Err(Status::unauthenticated("API key is revoked or expired")); }
++        }
+         let workspace = if self.state.security.is_remote() { grpc_workspace(request)? } else { None };
+         if self.state.security.is_remote() && request.metadata().contains_key("x-uar-workspace-id")
+             && workspace.is_none() {
+diff --git a/src/uar/api/auth.rs b/src/uar/api/auth.rs
+index 38008173..da84258e 100644
+--- a/src/uar/api/auth.rs
++++ b/src/uar/api/auth.rs
+@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
+ use serde_json::json;
+ use std::sync::Arc;
+ 
+-use crate::uar::security::api_keys::{ApiKeyAuthorityError, ApiKeyService, CreateKeyRequest};
++use crate::uar::security::api_keys::{ApiKeyAuthorityError, ApiKeyService, ApiKeyStorageError, CreateKeyRequest};
+ use crate::uar::security::claims::UserContext;
+ 
+ /// Shared state for the auth router.
+@@ -162,7 +162,11 @@ fn key_authority_error(error: anyhow::Error) -> axum::response::Response {
+         Some(ApiKeyAuthorityError::UnsupportedExchange) => (StatusCode::NOT_IMPLEMENTED, "API-key exchange is unsupported by the configured verifier"),
+         Some(ApiKeyAuthorityError::InvalidConfiguration) => (StatusCode::SERVICE_UNAVAILABLE, "API-key authority configuration is invalid"),
+         Some(ApiKeyAuthorityError::InvalidLifetime) => (StatusCode::BAD_REQUEST, "API key lifetime must be a positive representable duration"),
+-        None => (StatusCode::INTERNAL_SERVER_ERROR, "API-key operation failed"),
++        None => match error.downcast_ref::<ApiKeyStorageError>() {
++            Some(ApiKeyStorageError::Unavailable) => (StatusCode::SERVICE_UNAVAILABLE, "API-key authority storage is unavailable"),
++            Some(ApiKeyStorageError::AlreadyExists) => (StatusCode::CONFLICT, "API-key record already exists; reissue with a new key"),
++            None => (StatusCode::INTERNAL_SERVER_ERROR, "API-key operation failed"),
++        },
+     };
+     (status, Json(json!({"error":message}))).into_response()
+ }
+diff --git a/src/uar/api/credentials.rs b/src/uar/api/credentials.rs
+index d75cd7cc..7c85e11a 100644
+--- a/src/uar/api/credentials.rs
++++ b/src/uar/api/credentials.rs
+@@ -25,10 +25,10 @@ use axum::{
+ use serde::{Deserialize, Serialize};
+ 
+ use crate::uar::security::{
+-    claims::UserContext,
++    claims::{CredentialPrincipal, UserContext},
+     credentials::{
+         CredentialEncryption, CredentialMetadata, CredentialRecord, CredentialScope,
+-        ProviderService,
++        CredentialMigrationError, ProviderService,
+     },
+ };
+ 
+@@ -44,6 +44,9 @@ pub type CredentialApiState = Option<Arc<ProviderService>>;
+ pub fn build_router() -> Router<CredentialApiState> {
+     Router::new()
+         .route("/", get(list_credentials))
++        .route("/principal", get(credential_principal))
++        .route("/migrate-legacy", axum::routing::post(migrate_legacy))
++        .route("/{provider}", get(read_credential))
+         .route("/{provider}", put(put_credential))
+         .route("/{provider}", delete(delete_credential))
+ }
+@@ -68,19 +71,15 @@ impl From<CredentialMetadata> for CredentialView {
+ }
+ 
+ #[derive(Debug, Deserialize)]
++#[serde(deny_unknown_fields)]
+ struct PutCredentialRequest {
+     /// Raw provider API key. Accepted on write only; encrypted at rest.
+     api_key: String,
+ }
+ 
+ /// Extract the authenticated user id (rejecting anonymous).
+-fn require_user_id(user_ctx: Option<axum::Extension<UserContext>>) -> Option<String> {
+-    let ctx = user_ctx?.0;
+-    if ctx.user_id.is_empty() || ctx.user_id == "anonymous" {
+-        None
+-    } else {
+-        Some(ctx.user_id)
+-    }
++fn require_principal(user_ctx: Option<axum::Extension<UserContext>>) -> Option<CredentialPrincipal> {
++    CredentialPrincipal::from_verified_context(&user_ctx?.0).ok()
+ }
+ 
+ fn unauthorized() -> axum::response::Response {
+@@ -105,14 +104,14 @@ async fn list_credentials(
+     State(state): State<CredentialApiState>,
+     user_ctx: Option<axum::Extension<UserContext>>,
+ ) -> impl IntoResponse {
+-    let Some(user_id) = require_user_id(user_ctx) else {
++    let Some(principal) = require_principal(user_ctx) else {
+         return unauthorized();
+     };
+     let Some(service) = state else {
+         return service_unavailable();
+     };
+ 
+-    match service.store().list(CredentialScope::User, &user_id).await {
++    match service.store().list_principal(&principal, CredentialScope::User, principal.subject()).await {
+         Ok(rows) => {
+             let views: Vec<CredentialView> = rows
+                 .iter()
+@@ -120,8 +119,8 @@ async fn list_credentials(
+                 .collect();
+             Json(views).into_response()
+         }
+-        Err(e) => {
+-            tracing::error!(error = %e, "list credentials failed");
++        Err(_) => {
++            tracing::error!("list credentials failed");
+             (
+                 StatusCode::INTERNAL_SERVER_ERROR,
+                 Json(serde_json::json!({ "error": "Failed to list credentials" })),
+@@ -137,7 +136,7 @@ async fn put_credential(
+     Path(provider): Path<String>,
+     Json(req): Json<PutCredentialRequest>,
+ ) -> impl IntoResponse {
+-    let Some(user_id) = require_user_id(user_ctx) else {
++    let Some(principal) = require_principal(user_ctx) else {
+         return unauthorized();
+     };
+     let Some(service) = state else {
+@@ -158,7 +157,7 @@ async fn put_credential(
+     let now = chrono::Utc::now();
+     let record = CredentialRecord {
+         scope: CredentialScope::User,
+-        scope_id: user_id,
++        scope_id: principal.subject().to_owned(),
+         provider_id: provider.clone(),
+         api_key_encrypted: encrypted,
+         api_key_hint: CredentialEncryption::key_hint(&req.api_key, 4),
+@@ -166,14 +165,14 @@ async fn put_credential(
+         updated_at: now,
+     };
+ 
+-    match service.store().put(record.clone()).await {
++    match service.store().put_principal(&principal, record.clone()).await {
+         Ok(()) => (
+             StatusCode::OK,
+             Json(CredentialView::from(CredentialMetadata::from(&record))),
+         )
+             .into_response(),
+-        Err(e) => {
+-            tracing::error!(error = %e, "store credential failed");
++        Err(_) => {
++            tracing::error!("store credential failed");
+             (
+                 StatusCode::INTERNAL_SERVER_ERROR,
+                 Json(serde_json::json!({ "error": "Failed to store credential" })),
+@@ -188,7 +187,7 @@ async fn delete_credential(
+     user_ctx: Option<axum::Extension<UserContext>>,
+     Path(provider): Path<String>,
+ ) -> impl IntoResponse {
+-    let Some(user_id) = require_user_id(user_ctx) else {
++    let Some(principal) = require_principal(user_ctx) else {
+         return unauthorized();
+     };
+     let Some(service) = state else {
+@@ -197,7 +196,7 @@ async fn delete_credential(
+ 
+     match service
+         .store()
+-        .delete(CredentialScope::User, &user_id, &provider)
++        .delete_principal(&principal, CredentialScope::User, principal.subject(), &provider)
+         .await
+     {
+         Ok(true) => StatusCode::NO_CONTENT.into_response(),
+@@ -206,8 +205,8 @@ async fn delete_credential(
+             Json(serde_json::json!({ "error": "No credential for that provider" })),
+         )
+             .into_response(),
+-        Err(e) => {
+-            tracing::error!(error = %e, "delete credential failed");
++        Err(_) => {
++            tracing::error!("delete credential failed");
+             (
+                 StatusCode::INTERNAL_SERVER_ERROR,
+                 Json(serde_json::json!({ "error": "Failed to delete credential" })),
+@@ -216,3 +215,54 @@ async fn delete_credential(
+         }
+     }
+ }
++
++async fn credential_principal(user_ctx: Option<axum::Extension<UserContext>>) -> axum::response::Response {
++    let Some(principal) = require_principal(user_ctx) else { return unauthorized(); };
++    Json(serde_json::json!({ "owner_key": principal.storage_key(), "issuer": principal.issuer(),
++        "tenant_id": principal.tenant_id(), "subject": principal.subject() })).into_response()
++}
++
++async fn read_credential(
++    State(state): State<CredentialApiState>,
++    user_ctx: Option<axum::Extension<UserContext>>,
++    Path(provider): Path<String>,
++) -> axum::response::Response {
++    let Some(principal) = require_principal(user_ctx) else { return unauthorized(); };
++    let Some(service) = state else { return service_unavailable(); };
++    match service.store().get_principal(&principal, CredentialScope::User, principal.subject(), &provider).await {
++        Ok(Some(row)) => Json(CredentialView::from(CredentialMetadata::from(&row))).into_response(),
++        Ok(None) => StatusCode::NOT_FOUND.into_response(),
++        Err(_) => StatusCode::SERVICE_UNAVAILABLE.into_response(),
++    }
++}
++
++#[derive(Deserialize)]
++#[serde(deny_unknown_fields)]
++struct LegacyMappingRequest {
++    scope: CredentialScope,
++    legacy_scope_id: String,
++    provider_id: String,
++    reason: String,
++}
++
++async fn migrate_legacy(
++    State(state): State<CredentialApiState>,
++    user_ctx: Option<axum::Extension<UserContext>>,
++    Json(request): Json<LegacyMappingRequest>,
++) -> axum::response::Response {
++    let Some(principal) = require_principal(user_ctx) else { return unauthorized(); };
++    let Some(service) = state else { return service_unavailable(); };
++    match service.migrate_legacy_credential(&principal, request.scope, &request.legacy_scope_id,
++        &request.provider_id, &request.reason).await {
++        Ok(receipt) => Json(receipt).into_response(),
++        Err(error) => {
++            let (status, code) = match error.downcast_ref::<CredentialMigrationError>() {
++                Some(CredentialMigrationError::MappingDenied) => (StatusCode::FORBIDDEN, "credential_mapping_denied"),
++                Some(CredentialMigrationError::SourceMissing) => (StatusCode::NOT_FOUND, "legacy_credential_missing"),
++                Some(CredentialMigrationError::Conflict) => (StatusCode::CONFLICT, "credential_mapping_conflict"),
++                None => (StatusCode::SERVICE_UNAVAILABLE, "credential_migration_unavailable"),
++            };
++            (status, Json(serde_json::json!({ "error": { "code": code } }))).into_response()
++        }
++    }
++}
+diff --git a/src/uar/persistence/providers/surreal_host.rs b/src/uar/persistence/providers/surreal_host.rs
+index c6bca9bd..000d9f8d 100644
+--- a/src/uar/persistence/providers/surreal_host.rs
++++ b/src/uar/persistence/providers/surreal_host.rs
+@@ -17,6 +17,18 @@ impl SurrealDbProvider {
+     }
+ }
+ pub(super) async fn migrate(db: &Surreal<Any>) -> Result<()> {
++    db.query(include_str!(
++        "../../../../migrations/surrealdb/durable_api_keys.surql"
++    ))
++    .await?
++    .check()?;
++
++    db.query(include_str!(
++        "../../../../migrations/surrealdb/principal_credentials.surql"
++    ))
++    .await?
++    .check()?;
++
+     db.query(include_str!(
+         "../../../../migrations/surrealdb/agent_threads.surql"
+     ))
+diff --git a/src/uar/runtime/actor/messages.rs b/src/uar/runtime/actor/messages.rs
+index 325e3f01..424406f7 100644
+--- a/src/uar/runtime/actor/messages.rs
++++ b/src/uar/runtime/actor/messages.rs
+@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
+ pub struct ActorOwner {
+     user_id: String,
+     tenant_id: Option<String>,
++    credential_principal: Option<crate::uar::security::claims::CredentialPrincipal>,
+ }
+ 
+ impl ActorOwner {
+@@ -29,6 +30,7 @@ impl ActorOwner {
+             anyhow::bail!("Actor operations require authenticated user context");
+         }
+         Ok(Self {
++            credential_principal: crate::uar::security::claims::CredentialPrincipal::from_verified_context(user).ok(),
+             user_id: user.user_id.clone(),
+             tenant_id: user
+                 .tenant_id
+@@ -53,6 +55,8 @@ impl ActorOwner {
+             anyhow::bail!("Persisted observer principal is invalid");
+         }
+         let owner = Self {
++            // Subject/tenant persistence is not enough to reconstruct issuer proof.
++            credential_principal: None,
+             user_id: user_id.to_owned(),
+             tenant_id: tenant_id.map(str::to_owned),
+         };
+@@ -67,6 +71,12 @@ impl ActorOwner {
+         self.tenant_id.as_deref()
+     }
+ 
++    /// Full identity captured at ingress, retained for secret resolution and cache
++    /// partitioning. Legacy persisted observers have no credential capability.
++    pub fn credential_principal(&self) -> Option<&crate::uar::security::claims::CredentialPrincipal> {
++        self.credential_principal.as_ref()
++    }
++
+     /// Catalog partition for this host-verified tenant and subject.
+     /// Matches the existing principal storage-key encoding, including lengths.
+     pub(crate) fn presentation_owner_key(&self) -> String {
+diff --git a/src/uar/runtime/manager.rs b/src/uar/runtime/manager.rs
+index 853a684c..48b66f12 100644
+--- a/src/uar/runtime/manager.rs
++++ b/src/uar/runtime/manager.rs
+@@ -498,33 +498,29 @@ const MEMORY_DELETE_TOOLS: &[&str] = &["memory_delete", "memory_delete_all"];
+ /// When `provider_service` is `Some` and a per-scope credential resolves for the
+ /// run's provider (chain: session → agent → user → system), override
+ /// `cfg.api_key` with the decrypted per-tenant key. When `provider_service` is
+-/// `None`, no credential resolves, or resolution errors, `cfg.api_key` is left
+-/// untouched — i.e. the single-tenant env/config key path is preserved.
++/// `None` or no credential resolves, `cfg.api_key` is left untouched. Storage
++/// failures stop model binding rather than silently using a different account.
+ ///
+ /// Extracted from `start_run` so the resolution-and-override behavior is unit
+ /// testable without constructing an `Orchestrator` or making LLM calls.
+ async fn apply_credential_layer(
+     mut cfg: LlmConfig,
+     provider_service: Option<&Arc<crate::uar::security::credentials::ProviderService>>,
+-    user_id: Option<&str>,
++    principal: Option<&crate::uar::security::claims::CredentialPrincipal>,
+     session_id: Option<&str>,
+     agent_id: &str,
+-) -> LlmConfig {
++) -> anyhow::Result<LlmConfig> {
+     let Some(provider_service) = provider_service else {
+-        return cfg;
++        return Ok(cfg);
+     };
+     let provider_id = provider_id_for_config(&cfg);
+-    match provider_service
+-        .resolver()
+-        .resolve_with_context(
+-            user_id.unwrap_or("anonymous"),
+-            &provider_id,
+-            session_id,
+-            Some(agent_id),
+-        )
+-        .await
+-    {
+-        Ok(Some(resolved)) => {
++    let resolver = provider_service.resolver();
++    let resolved = match principal {
++        Some(principal) => resolver.resolve_with_context(principal, &provider_id, session_id, Some(agent_id)).await,
++        None => resolver.resolve_system(&provider_id).await,
++    }.map_err(|_| anyhow::anyhow!("credential resolution unavailable"))?;
++    match resolved {
++        Some(resolved) => {
+             use secrecy::ExposeSecret;
+             cfg.api_key = Some(resolved.api_key.expose_secret().to_string());
+             tracing::debug!(
+@@ -533,21 +529,14 @@ async fn apply_credential_layer(
+                 "Resolved per-tenant provider credential"
+             );
+         }
+-        Ok(None) => {
++        None => {
+             tracing::trace!(
+                 provider = %provider_id,
+                 "No per-tenant credential; using env/config key"
+             );
+         }
+-        Err(_) => {
+-            // Resolver failures have no complete captured credential corpus.
+-            tracing::warn!(
+-                provider = %provider_id,
+-                "Credential resolution failed; falling back to env/config key"
+-            );
+-        }
+     }
+-    cfg
++    Ok(cfg)
+ }
+ 
+ fn provider_id_for_config(config: &LlmConfig) -> String {
+@@ -3590,7 +3579,7 @@ impl RunManager {
+ 
+         // Capture identity for credential resolution before `user_id` is moved
+         // into the Run record and the resolved session id is the source of truth.
+-        let user_id_for_creds = user_id.clone();
++        let principal_for_creds = verified_owner.as_ref().and_then(|owner| owner.credential_principal()).cloned();
+         let session_id_for_creds = Some(session.id().to_string());
+ 
+         let dialogue = redacted_checkpoint_dialogue(&session);
+@@ -4660,14 +4649,28 @@ impl RunManager {
+             let mut run_llm_config = if run_credentials.is_some() {
+                 run_llm_config
+             } else {
+-                apply_credential_layer(
++                match apply_credential_layer(
+                     run_llm_config,
+                     self.provider_service.as_ref(),
+-                    user_id_for_creds.as_deref(),
++                    principal_for_creds.as_ref(),
+                     session_id_for_creds.as_deref(),
+                     artifact.id.as_str(),
+                 )
+-                .await
++                .await {
++                    Ok(config) => config,
++                    Err(_) => {
++                        if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
++                            state.run.status = RunStatus::Error;
++                        }
++                        activation_context.lock().await.record_outcomes(false);
++                        emitter.emit(NormalizedEvent::Error { run_id: run_id.clone(),
++                            code: "credential_resolution_unavailable".to_owned(),
++                            message: "Provider credential resolution unavailable".to_owned() }).await;
++                        emitter.emit(NormalizedEvent::RunDone { run_id: run_id.clone() }).await;
++                        self.run_cancellations.write().await.remove(&run_id);
++                        return run_id;
++                    }
++                }
+             };
+             if let Some(credentials) = &run_credentials {
+                 let policy_route = effective_policy.model.as_ref();
+@@ -4773,7 +4776,7 @@ impl RunManager {
+                     let config = match &run_credentials {
+                         Some(credentials) => credentials.config_for(&profile.provider_id, Some(&model_id), config)?,
+                         None => apply_credential_layer(config, self.provider_service.as_ref(),
+-                            user_id_for_creds.as_deref(), session_id_for_creds.as_deref(), artifact.id.as_str()).await,
++                            principal_for_creds.as_ref(), session_id_for_creds.as_deref(), artifact.id.as_str()).await?,
+                     };
+                     fallback.api_key = config.api_key;
+                     fallback.base_url = config.base_url;
+@@ -7670,7 +7673,7 @@ mod credential_layer_tests {
+     use super::apply_credential_layer;
+     use crate::config::LlmConfig;
+     use crate::uar::security::credentials::{
+-        CredentialEncryption, CredentialRecord, CredentialScope, CredentialStore,
++        CredentialEncryption, CredentialRecord, CredentialScope, PrincipalCredentialStore,
+         InMemoryCredentialStore, ProviderService,
+     };
+     use std::sync::Arc;
+@@ -7690,7 +7693,7 @@ mod credential_layer_tests {
+         let enc = CredentialEncryption::from_key(KEY);
+         let now = chrono::Utc::now();
+         store
+-            .put(CredentialRecord {
++            .put_principal(&crate::uar::security::claims::CredentialPrincipal::for_test(user), CredentialRecord {
+                 scope: CredentialScope::User,
+                 scope_id: user.to_string(),
+                 provider_id: provider.to_string(),
+@@ -7708,7 +7711,7 @@ mod credential_layer_tests {
+     #[tokio::test]
+     async fn single_tenant_no_service_keeps_env_key() {
+         let out =
+-            apply_credential_layer(cfg_with_env_key(), None, Some("alice"), None, "agent-1").await;
++            apply_credential_layer(cfg_with_env_key(), None, Some(&crate::uar::security::claims::CredentialPrincipal::for_test("alice")), None, "agent-1").await.unwrap();
+         assert_eq!(out.api_key.as_deref(), Some("env-key"));
+     }
+ 
+@@ -7719,11 +7722,11 @@ mod credential_layer_tests {
+         let out = apply_credential_layer(
+             cfg_with_env_key(),
+             Some(&svc),
+-            Some("alice"),
++            Some(&crate::uar::security::claims::CredentialPrincipal::for_test("alice")),
+             None,
+             "agent-1",
+         )
+-        .await;
++        .await.unwrap();
+         assert_eq!(out.api_key.as_deref(), Some("sk-alice-USER"));
+     }
+ 
+@@ -7734,11 +7737,11 @@ mod credential_layer_tests {
+         let out = apply_credential_layer(
+             cfg_with_env_key(),
+             Some(&svc),
+-            Some("bob"), // bob has no stored key
++            Some(&crate::uar::security::claims::CredentialPrincipal::for_test("bob")), // bob has no stored key
+             None,
+             "agent-1",
+         )
+-        .await;
++        .await.unwrap();
+         assert_eq!(out.api_key.as_deref(), Some("env-key"));
+     }
+ 
+@@ -7749,11 +7752,11 @@ mod credential_layer_tests {
+         let out = apply_credential_layer(
+             cfg_with_env_key(), // model is openai/*
+             Some(&svc),
+-            Some("alice"),
++            Some(&crate::uar::security::claims::CredentialPrincipal::for_test("alice")),
+             None,
+             "agent-1",
+         )
+-        .await;
++        .await.unwrap();
+         assert_eq!(out.api_key.as_deref(), Some("env-key"));
+     }
+ }
+diff --git a/src/uar/security/api_keys.rs b/src/uar/security/api_keys.rs
+index 23f78cd0..73e59fb2 100644
+--- a/src/uar/security/api_keys.rs
++++ b/src/uar/security/api_keys.rs
+@@ -30,6 +30,12 @@ use secrecy::ExposeSecret;
+ mod policy;
+ pub use policy::ApiKeyAuthorityError;
+ use policy::{AUTHORITY_VERSION, KeyPolicy};
++mod storage;
++pub use storage::ApiKeyStorageError;
++#[cfg(feature = "surreal-backend")]
++pub use storage::SurrealApiKeyStorage;
++#[cfg(feature = "postgres-backend")]
++pub use storage::PostgresApiKeyStorage;
+ 
+ /// Proof created only after a stored API key hash and its authority are validated.
+ pub(in crate::uar::security) struct VerifiedKeyTenantClaim<'a>(&'a str);
+@@ -219,6 +225,7 @@ pub struct ApiKeyService {
+ #[derive(Serialize)]
+ struct IssuedJwtClaims<'a> {
+     uar_credential_kind: &'static str,
++    uar_api_key_id: &'a str,
+     #[serde(flatten)]
+     user: &'a UserClaims,
+     #[serde(skip_serializing_if = "Option::is_none")]
+@@ -313,43 +320,31 @@ impl ApiKeyService {
+ 
+     pub async fn exchange_with_expiry(&self, raw_key: &str) -> anyhow::Result<Option<ExchangedJwt>> {
+         if !self.policy.exchange_supported { return Err(ApiKeyAuthorityError::UnsupportedExchange.into()); }
+-        let active = self.db.all_active().await?;
+-        let now = now_unix();
+-
+-        for record in active {
+-            // Check expiry
+-            if let Some(exp) = record.expires_at {
+-                if now >= exp {
+-                    continue;
+-                }
+-            }
+-
+-            // Verify hash
+-            if verify_key(raw_key, &record.key_hash)? {
+-                self.policy.validate_record(&record)?;
+-                let Some(exp) = self.token_expiry(&record, now) else { return Ok(None); };
+-                let claims = UserClaims {
+-                    sub: record.subject.clone(),
+-                    name: Some(record.name.clone()),
+-                    roles: Some(record.roles.clone()),
+-                    tenant_id: record.tenant_id.clone(),
+-                    uar_instance_id: None,
+-                    exp,
+-                };
+-                let issued_claims = IssuedJwtClaims {
+-                    uar_credential_kind: "api_key",
+-                    user: &claims,
+-                    iss: record.issuer.as_deref(),
+-                    aud: self.policy.audience.as_deref(),
+-                };
+-                let token = jwt::encode(
+-                    &Header::default(),
+-                    &issued_claims,
+-                    &EncodingKey::from_secret(self.jwt_secret.expose_secret().as_bytes()),
+-                )
+-                .map_err(|error| anyhow::anyhow!("issuing API-key exchange JWT: {error}"))?;
+-                return Ok(Some(ExchangedJwt { token, expires_in: (exp as i64 - now) as u64 }));
+-            }
++        if let Some(record) = self.matching_record(raw_key).await? {
++            let now = now_unix();
++            let Some(exp) = self.token_expiry(&record, now) else { return Ok(None); };
++            let claims = UserClaims {
++                sub: record.subject.clone(),
++                name: Some(record.name.clone()),
++                roles: Some(record.roles.clone()),
++                tenant_id: record.tenant_id.clone(),
++                uar_instance_id: None,
++                exp,
++            };
++            let issued_claims = IssuedJwtClaims {
++                uar_credential_kind: "api_key",
++                uar_api_key_id: &record.id,
++                user: &claims,
++                iss: record.issuer.as_deref(),
++                aud: self.policy.audience.as_deref(),
++            };
++            let token = jwt::encode(
++                &Header::default(),
++                &issued_claims,
++                &EncodingKey::from_secret(self.jwt_secret.expose_secret().as_bytes()),
++            )
++            .map_err(|error| anyhow::anyhow!("issuing API-key exchange JWT: {error}"))?;
++            return Ok(Some(ExchangedJwt { token, expires_in: (exp as i64 - now) as u64 }));
+         }
+ 
+         Ok(None)
+@@ -385,37 +380,70 @@ impl ApiKeyService {
+     ///
+     /// Returns verified user context if valid, or `None` if invalid/expired/revoked.
+     pub async fn validate_key(&self, raw_key: &str) -> anyhow::Result<Option<UserContext>> {
+-        let active = self.db.all_active().await?;
+-        let now = now_unix();
++        if let Some(record) = self.matching_record(raw_key).await? {
++            let now = now_unix();
++            let Some(exp) = self.token_expiry(&record, now) else { return Ok(None); };
++            let claims = UserClaims {
++                sub: record.subject.clone(),
++                name: Some(record.name.clone()),
++                roles: Some(record.roles.clone()),
++                tenant_id: record.tenant_id.clone(),
++                uar_instance_id: None,
++                exp,
++            };
++            let tenant_id = record.tenant_id.as_deref().map(|tenant| TenantId::from_verified_key(VerifiedKeyTenantClaim(tenant)));
++            let authority = Some(VerifiedIdentity::new(record.issuer.as_deref(), &claims, tenant_id.clone(), super::claims::CredentialKind::ApiKey).with_api_key_id(Some(record.id.clone())));
++            return Ok(Some(UserContext {
++                host_authority: None, authority, user_id: record.subject.clone(),
++                tenant_id,
++                claims,
++            }));
++        }
++        Ok(None)
++    }
+ 
+-        for record in active {
+-            if let Some(exp) = record.expires_at {
+-                if now >= exp {
+-                    continue;
+-                }
++    // Hash verification can take longer than a concurrent revocation. Read the
++    // matching immutable record again after verification before admitting it.
++    async fn matching_record(&self, raw_key: &str) -> anyhow::Result<Option<ApiKeyRecord>> {
++        for candidate in self.db.all_active().await? {
++            if candidate.expires_at.is_some_and(|expiry| now_unix() >= expiry) {
++                continue;
+             }
+-            if verify_key(raw_key, &record.key_hash)? {
+-                self.policy.validate_record(&record)?;
+-                let Some(exp) = self.token_expiry(&record, now) else { return Ok(None); };
+-                let claims = UserClaims {
+-                    sub: record.subject.clone(),
+-                    name: Some(record.name.clone()),
+-                    roles: Some(record.roles.clone()),
+-                    tenant_id: record.tenant_id.clone(),
+-                    uar_instance_id: None,
+-                    exp,
+-                };
+-                let tenant_id = record.tenant_id.as_deref().map(|tenant| TenantId::from_verified_key(VerifiedKeyTenantClaim(tenant)));
+-                let authority = Some(VerifiedIdentity::new(record.issuer.as_deref(), &claims, tenant_id.clone(), super::claims::CredentialKind::ApiKey));
+-                return Ok(Some(UserContext {
+-                    host_authority: None, authority, user_id: record.subject.clone(),
+-                    tenant_id,
+-                    claims,
+-                }));
++            if !verify_key(raw_key, &candidate.key_hash)? { continue; }
++            let Some(current) = self.db.get_by_id(&candidate.id).await? else { return Ok(None); };
++            if current.revoked || current.expires_at.is_some_and(|expiry| now_unix() >= expiry)
++                || current.key_hash != candidate.key_hash {
++                return Ok(None);
+             }
++            self.policy.validate_record(&current)?;
++            return Ok(Some(current));
+         }
+         Ok(None)
+     }
++
++    /// Recheck a verified key-derived identity against current storage on each
++    /// new request. Ordinary issuer credentials need no key lookup.
++    ///
++    /// # Errors
++    /// Storage failure is explicit; signature verification never substitutes
++    /// for current revocation and expiry. Legacy exchange tokens require reissue.
++    pub async fn validate_admission(&self, context: &UserContext) -> anyhow::Result<bool> {
++        let identity = context.verified_identity().ok_or(ApiKeyAuthorityError::CallerRequired)?;
++        if !identity.is_api_key_credential() { return Ok(true); }
++        let id = identity.api_key_id().ok_or(ApiKeyAuthorityError::ReissueRequired)?;
++        let Some(record) = self.db.get_by_id(id).await? else { return Ok(false); };
++        let now = now_unix();
++        if record.revoked || record.expires_at.is_some_and(|expiry| now >= expiry)
++            || now >= context.claims.exp as i64 {
++            return Ok(false);
++        }
++        self.policy.validate_record(&record)?;
++        Ok(record.subject == identity.subject()
++            && record.issuer.as_deref() == identity.issuer()
++            && record.tenant_id.as_deref() == identity.tenant_id()
++            && record.roles.as_slice() == identity.roles()
++            && record.expires_at.is_none_or(|expiry| context.claims.exp as i64 <= expiry))
++    }
+ }
+ 
+ // ─────────────────────────────────────────────────────────────────────────────
+diff --git a/src/uar/security/api_keys/policy.rs b/src/uar/security/api_keys/policy.rs
+index a64d7f0c..28603691 100644
+--- a/src/uar/security/api_keys/policy.rs
++++ b/src/uar/security/api_keys/policy.rs
+@@ -131,7 +131,8 @@ impl KeyPolicy {
+         &self,
+         record: &ApiKeyRecord,
+     ) -> Result<(), ApiKeyAuthorityError> {
+-        if record.subject.trim().is_empty()
++        if record.authority_version != AUTHORITY_VERSION
++            || record.subject.trim().is_empty()
+             || record.subject == "anonymous"
+             || record
+                 .roles
+diff --git a/src/uar/security/claims.rs b/src/uar/security/claims.rs
+index 3d6ba666..fd018f7f 100644
+--- a/src/uar/security/claims.rs
++++ b/src/uar/security/claims.rs
+@@ -56,6 +56,7 @@ impl CredentialKind {
+ #[derive(Clone, Debug, Eq, PartialEq)]
+ pub struct VerifiedIdentity {
+     credential_kind: CredentialKind,
++    api_key_id: Option<String>,
+     issuer: Option<String>,
+     subject: String,
+     tenant_id: Option<TenantId>,
+@@ -64,9 +65,19 @@ pub struct VerifiedIdentity {
+ 
+ impl VerifiedIdentity {
+     pub(in crate::uar::security) fn new(issuer: Option<&str>, claims: &UserClaims, tenant_id: Option<TenantId>, credential_kind: CredentialKind) -> Self {
+-        Self { credential_kind, issuer: issuer.map(str::to_owned), subject: claims.sub.clone(), tenant_id, roles: claims.roles.clone() }
++        Self { credential_kind, api_key_id: None, issuer: issuer.map(str::to_owned), subject: claims.sub.clone(), tenant_id, roles: claims.roles.clone() }
+     }
+ 
++    pub(in crate::uar::security) fn with_api_key_id(mut self, id: Option<String>) -> Self {
++        self.api_key_id = id;
++        self
++    }
++
++    /// True only for credentials whose signed provenance identifies an API key.
++    pub fn is_api_key_credential(&self) -> bool { self.credential_kind == CredentialKind::ApiKey }
++
++    pub(in crate::uar::security) fn api_key_id(&self) -> Option<&str> { self.api_key_id.as_deref() }
++
+     pub(in crate::uar::security) fn is_issuer_credential(&self) -> bool { self.credential_kind == CredentialKind::Issuer }
+ 
+     pub fn issuer(&self) -> Option<&str> { self.issuer.as_deref() }
+@@ -144,3 +155,76 @@ impl UserContext {
+         self.authority.as_ref().filter(|authority| authority.matches(self))
+     }
+ }
++
++/// Complete credential owner captured at a trusted authentication boundary.
++/// This capability is never deserialized from a request or a persisted row.
++#[derive(Clone, Debug, Eq, Hash, PartialEq)]
++pub struct CredentialPrincipal {
++    issuer_kind: &'static str,
++    issuer: String,
++    tenant: Option<String>,
++    subject: String,
++}
++
++impl CredentialPrincipal {
++    /// Capture verified JWT/API-key identity or an authenticated local launch.
++    ///
++    /// # Errors
++    /// Rejects synthetic, anonymous and inconsistent contexts.
++    pub fn from_verified_context(context: &UserContext) -> anyhow::Result<Self> {
++        if context.user_id.trim().is_empty() || context.user_id == "anonymous" {
++            anyhow::bail!("verified credential principal required");
++        }
++        if let Some(identity) = context.verified_identity() {
++            let (issuer_kind, issuer) = match identity.issuer() {
++                Some(issuer) if !issuer.trim().is_empty() => ("issuer", issuer),
++                Some(_) => anyhow::bail!("verified credential issuer required"),
++                None => ("local-jwt", "urn:uar:local:jwt"),
++            };
++            if identity.tenant_id().is_some_and(|tenant| tenant.trim().is_empty()) {
++                anyhow::bail!("verified credential tenant required");
++            }
++            return Ok(Self {
++                issuer_kind,
++                issuer: issuer.to_owned(),
++                tenant: identity.tenant_id().map(str::to_owned),
++                subject: identity.subject().to_owned(),
++            });
++        }
++        if context.trusted_host_id().is_some() && context.tenant_id.is_none() {
++            return Ok(Self {
++                issuer_kind: "local-host",
++                issuer: "urn:uar:local:host".to_owned(),
++                tenant: None,
++                subject: context.user_id.clone(),
++            });
++        }
++        anyhow::bail!("verified credential principal required")
++    }
++
++    /// Canonical versioned owner key. Length framing prevents delimiter collisions;
++    /// storage must additionally use a namespace disjoint from legacy subjects.
++    pub fn storage_key(&self) -> String {
++        let tenant = match &self.tenant {
++            Some(value) => format!("t:{}:{}", value.len(), value),
++            None => "local".to_owned(),
++        };
++        format!("v1:k:{}:i:{}:{}:{}:s:{}:{}", self.issuer_kind,
++            self.issuer.len(), self.issuer, tenant, self.subject.len(), self.subject)
++    }
++
++    /// Verified issuer, including the explicit local authentication namespace.
++    pub fn issuer(&self) -> &str { &self.issuer }
++
++    /// Verified tenant; absence is the explicit local tenant namespace.
++    pub fn tenant_id(&self) -> Option<&str> { self.tenant.as_deref() }
++
++    /// Verified subject.
++    pub fn subject(&self) -> &str { &self.subject }
++
++    #[cfg(test)]
++    pub(crate) fn for_test(subject: &str) -> Self {
++        Self { issuer_kind: "local-jwt", issuer: "urn:uar:local:jwt".to_owned(),
++            tenant: None, subject: subject.to_owned() }
++    }
++}
+diff --git a/src/uar/security/credentials/mod.rs b/src/uar/security/credentials/mod.rs
+index 6a4a2767..72ac3459 100644
+--- a/src/uar/security/credentials/mod.rs
++++ b/src/uar/security/credentials/mod.rs
+@@ -11,9 +11,11 @@
+ pub mod encryption;
+ pub mod resolver;
+ pub mod store;
++pub mod principal_store;
+ 
+ pub use encryption::CredentialEncryption;
+ pub use resolver::{CredentialResolver, ResolvedCredential};
++pub use principal_store::{CredentialMigrationError, CredentialMigrationReceipt, LegacyCredentialOwnerMapping, PrincipalCredentialStore};
+ #[cfg(feature = "sqlx")]
+ pub use store::PostgresCredentialStore;
+ #[cfg(feature = "surreal-backend")]
+@@ -32,13 +34,14 @@ use std::sync::Arc;
+ pub struct ProviderService {
+     store: Arc<dyn CredentialStore>,
+     encryption: Arc<CredentialEncryption>,
++    legacy_owner_mappings: Arc<Vec<LegacyCredentialOwnerMapping>>,
+ }
+ 
+ impl ProviderService {
+     /// Construct from a store and an explicit encryption handle.
+     #[must_use]
+     pub fn new(store: Arc<dyn CredentialStore>, encryption: Arc<CredentialEncryption>) -> Self {
+-        Self { store, encryption }
++        Self { store, encryption, legacy_owner_mappings: Arc::new(Vec::new()) }
+     }
+ 
+     /// Construct from a store, reading the encryption key from
+@@ -47,7 +50,17 @@ impl ProviderService {
+     pub fn from_env(store: Arc<dyn CredentialStore>) -> anyhow::Result<Option<Self>> {
+         match CredentialEncryption::from_env()? {
+             None => Ok(None),
+-            Some(enc) => Ok(Some(Self::new(store, Arc::new(enc)))),
++            Some(enc) => {
++                let mut service = Self::new(store, Arc::new(enc));
++                if let Some(path) = std::env::var_os("CREDENTIAL_OWNER_MAPPING_FILE") {
++                    let contents = std::fs::read(path)
++                        .map_err(|_| anyhow::anyhow!("cannot read operator credential owner mappings"))?;
++                    let mappings = serde_json::from_slice(&contents)
++                        .map_err(|_| anyhow::anyhow!("invalid operator credential owner mappings"))?;
++                    service = service.with_legacy_owner_mappings(mappings)?;
++                }
++                Ok(Some(service))
++            }
+         }
+     }
+ 
+@@ -65,4 +78,50 @@ impl ProviderService {
+     pub fn encryption(&self) -> &Arc<CredentialEncryption> {
+         &self.encryption
+     }
++
++    /// Install explicit owner mappings reviewed by the application operator.
++    /// This is a trusted host composition method, never an HTTP operation.
++    ///
++    /// # Errors
++    /// Rejects empty approvals, system mappings and conflicting source mappings.
++    pub fn with_legacy_owner_mappings(mut self, mappings: Vec<LegacyCredentialOwnerMapping>) -> anyhow::Result<Self> {
++        let mut sources = std::collections::HashSet::new();
++        for mapping in &mappings {
++            if mapping.scope == CredentialScope::System || mapping.approval_id.trim().is_empty()
++                || mapping.destination_owner_key.trim().is_empty()
++                || !sources.insert((mapping.scope, &mapping.legacy_scope_id, &mapping.provider_id)) {
++                anyhow::bail!("invalid or conflicting operator credential owner mappings");
++            }
++        }
++        self.legacy_owner_mappings = Arc::new(mappings);
++        Ok(self)
++    }
++
++    /// Apply one exact operator-approved mapping to the authenticated caller.
++    /// Request fields cannot choose a destination identity or approval.
++    ///
++    /// # Errors
++    /// Denies absent mappings, conflicts, missing source rows and storage failures.
++    pub async fn migrate_legacy_credential(
++        &self,
++        principal: &crate::uar::security::claims::CredentialPrincipal,
++        scope: CredentialScope,
++        legacy_scope_id: &str,
++        provider_id: &str,
++        reason: &str,
++    ) -> anyhow::Result<CredentialMigrationReceipt> {
++        let owner_key = principal.storage_key();
++        let mapping = self.legacy_owner_mappings.iter().find(|mapping| {
++            mapping.scope == scope && mapping.legacy_scope_id == legacy_scope_id
++                && mapping.provider_id == provider_id && mapping.destination_owner_key == owner_key
++        }).ok_or(CredentialMigrationError::MappingDenied)?;
++        if reason.trim().is_empty() {
++            return Err(CredentialMigrationError::MappingDenied.into());
++        }
++        let authorization = principal_store::CredentialMigrationAuthorization {
++            mapping: mapping.clone(),
++            reason: reason.to_owned(),
++        };
++        self.store.migrate_legacy(principal, &authorization).await
++    }
+ }
+diff --git a/src/uar/security/credentials/resolver.rs b/src/uar/security/credentials/resolver.rs
+index e6300ff6..e8567af9 100644
+--- a/src/uar/security/credentials/resolver.rs
++++ b/src/uar/security/credentials/resolver.rs
+@@ -14,6 +14,7 @@ use secrecy::SecretString;
+ 
+ use super::encryption::CredentialEncryption;
+ use super::store::{CredentialScope, CredentialStore};
++use crate::uar::security::claims::CredentialPrincipal;
+ 
+ /// A successfully resolved credential. The plaintext key is wrapped in
+ /// [`SecretString`]; call [`secrecy::ExposeSecret::expose_secret`] only at the
+@@ -38,13 +39,13 @@ impl CredentialResolver {
+         Self { store, encryption }
+     }
+ 
+-    /// Resolve the credential for `(user_id, provider_id)` with no session/agent context.
++    /// Resolve a verified principal's provider key with no session/agent context.
+     pub async fn resolve(
+         &self,
+-        user_id: &str,
++        principal: &CredentialPrincipal,
+         provider_id: &str,
+     ) -> anyhow::Result<Option<ResolvedCredential>> {
+-        self.resolve_with_context(user_id, provider_id, None, None)
++        self.resolve_with_context(principal, provider_id, None, None)
+             .await
+     }
+ 
+@@ -54,7 +55,7 @@ impl CredentialResolver {
+     /// `None` if every scope misses (caller falls through to env/config).
+     pub async fn resolve_with_context(
+         &self,
+-        user_id: &str,
++        principal: &CredentialPrincipal,
+         provider_id: &str,
+         session_id: Option<&str>,
+         agent_id: Option<&str>,
+@@ -67,11 +68,10 @@ impl CredentialResolver {
+         if let Some(aid) = agent_id {
+             candidates.push((CredentialScope::Agent, aid));
+         }
+-        candidates.push((CredentialScope::User, user_id));
+-        candidates.push((CredentialScope::System, "system"));
++        candidates.push((CredentialScope::User, principal.subject()));
+ 
+         for (scope, scope_id) in candidates {
+-            if let Some(row) = self.store.get(scope, scope_id, provider_id).await? {
++            if let Some(row) = self.store.get_principal(principal, scope, scope_id, provider_id).await? {
+                 // Decrypt only the matched row. The original crypto error is
+                 // intentionally discarded (`_decrypt_err`) so no ciphertext or
+                 // key material can leak through the error chain; we surface only
+@@ -94,7 +94,19 @@ impl CredentialResolver {
+             }
+         }
+ 
+-        Ok(None)
++        self.resolve_system(provider_id).await
++    }
++
++    /// Resolve only the explicitly operator-owned platform credential. Callers
++    /// without verified principal proof may never probe user/session/agent rows.
++    pub async fn resolve_system(&self, provider_id: &str) -> anyhow::Result<Option<ResolvedCredential>> {
++        let Some(row) = self.store.get(CredentialScope::System, "system", provider_id).await? else {
++            return Ok(None);
++        };
++        let plaintext = self.encryption.decrypt(&row.api_key_encrypted)
++            .map_err(|_| anyhow::anyhow!("failed to decrypt system credential"))?;
++        Ok(Some(ResolvedCredential { provider_id: provider_id.to_owned(),
++            scope: CredentialScope::System, api_key: SecretString::from(plaintext) }))
+     }
+ }
+ 
+@@ -102,6 +114,7 @@ impl CredentialResolver {
+ mod tests {
+     use super::*;
+     use crate::uar::security::credentials::store::{CredentialRecord, InMemoryCredentialStore};
++    use crate::uar::security::credentials::PrincipalCredentialStore;
+     use chrono::Utc;
+     use secrecy::ExposeSecret;
+ 
+@@ -117,7 +130,7 @@ mod tests {
+         for (scope, scope_id, provider, plaintext) in entries {
+             let now = Utc::now();
+             store
+-                .put(CredentialRecord {
++                .put_principal(&CredentialPrincipal::for_test("userA"), CredentialRecord {
+                     scope: *scope,
+                     scope_id: (*scope_id).to_string(),
+                     provider_id: (*provider).to_string(),
+@@ -145,7 +158,7 @@ mod tests {
+         .await;
+         let r = CredentialResolver::new(store, e);
+         let got = r
+-            .resolve_with_context("userA", "openai", Some("sess1"), None)
++            .resolve_with_context(&CredentialPrincipal::for_test("userA"), "openai", Some("sess1"), None)
+             .await
+             .unwrap()
+             .unwrap();
+@@ -163,7 +176,7 @@ mod tests {
+         .await;
+         let r = CredentialResolver::new(store, e);
+         let got = r
+-            .resolve_with_context("userA", "openai", Some("sess1"), Some("agent1"))
++            .resolve_with_context(&CredentialPrincipal::for_test("userA"), "openai", Some("sess1"), Some("agent1"))
+             .await
+             .unwrap()
+             .unwrap();
+@@ -177,7 +190,7 @@ mod tests {
+         let store = store_with(&e, &[]).await;
+         let r = CredentialResolver::new(store, e);
+         let got = r
+-            .resolve_with_context("userA", "openai", None, None)
++            .resolve_with_context(&CredentialPrincipal::for_test("userA"), "openai", None, None)
+             .await
+             .unwrap();
+         assert!(got.is_none(), "no stored credential => None (env fallback)");
+@@ -193,7 +206,7 @@ mod tests {
+         .await;
+         let r = CredentialResolver::new(store, e);
+         let got = r
+-            .resolve_with_context("userA", "anthropic", None, None)
++            .resolve_with_context(&CredentialPrincipal::for_test("userA"), "anthropic", None, None)
+             .await
+             .unwrap();
+         assert!(got.is_none(), "must not return another provider's key");
+diff --git a/src/uar/security/credentials/store.rs b/src/uar/security/credentials/store.rs
+index 1da1981f..25b2ff99 100644
+--- a/src/uar/security/credentials/store.rs
++++ b/src/uar/security/credentials/store.rs
+@@ -95,7 +95,7 @@ impl From<&CredentialRecord> for CredentialMetadata {
+ 
+ /// Backend-agnostic credential storage.
+ #[async_trait]
+-pub trait CredentialStore: Send + Sync + std::fmt::Debug {
++pub trait CredentialStore: super::principal_store::PrincipalCredentialStore + Send + Sync + std::fmt::Debug {
+     /// Insert or replace the credential for `(scope, scope_id, provider_id)`.
+     async fn put(&self, record: CredentialRecord) -> anyhow::Result<()>;
+ 
+@@ -136,7 +136,8 @@ fn key_of(scope: CredentialScope, scope_id: &str, provider_id: &str) -> (String,
+ /// matching the `InMemoryApiKeyStorage` precedent.
+ #[derive(Debug, Default)]
+ pub struct InMemoryCredentialStore {
+-    rows: RwLock<HashMap<(String, String, String), CredentialRecord>>,
++    pub(super) rows: RwLock<HashMap<(String, String, String), CredentialRecord>>,
++    pub(super) principals: RwLock<super::principal_store::PrincipalMemoryState>,
+ }
+ 
+ impl InMemoryCredentialStore {
+@@ -144,6 +145,7 @@ impl InMemoryCredentialStore {
+     pub fn new() -> Self {
+         Self {
+             rows: RwLock::new(HashMap::new()),
++            principals: RwLock::new(super::principal_store::PrincipalMemoryState::default()),
+         }
+     }
+ }
+@@ -200,7 +202,7 @@ impl CredentialStore for InMemoryCredentialStore {
+ #[cfg(feature = "surreal-backend")]
+ #[derive(Debug, Clone)]
+ pub struct SurrealCredentialStore {
+-    db: surrealdb::Surreal<surrealdb::engine::any::Any>,
++    pub(super) db: surrealdb::Surreal<surrealdb::engine::any::Any>,
+ }
+ 
+ #[cfg(feature = "surreal-backend")]
+@@ -210,7 +212,7 @@ impl SurrealCredentialStore {
+         Self { db }
+     }
+ 
+-    fn record_id(scope: CredentialScope, scope_id: &str, provider_id: &str) -> String {
++    pub(super) fn record_id(scope: CredentialScope, scope_id: &str, provider_id: &str) -> String {
+         // Deterministic id => uniqueness on the triple + idempotent upsert.
+         format!("{}:{}:{}", scope.as_str(), scope_id, provider_id)
+     }
+@@ -244,7 +246,7 @@ impl CredentialStore for SurrealCredentialStore {
+             .query("UPSERT type::record('provider_credentials', $rid) CONTENT $data")
+             .bind(("rid", rid))
+             .bind(("data", payload))
+-            .await?;
++            .await?.check()?;
+         Ok(())
+     }
+ 
+@@ -259,7 +261,7 @@ impl CredentialStore for SurrealCredentialStore {
+             .db
+             .query("SELECT * FROM type::record('provider_credentials', $rid)")
+             .bind(("rid", rid))
+-            .await?;
++            .await?.check()?;
+         let rows: Vec<surrealdb::types::Value> = resp.take(0).or_else(|e| {
+             if e.to_string().contains("does not exist") {
+                 Ok(vec![])
+@@ -283,7 +285,7 @@ impl CredentialStore for SurrealCredentialStore {
+             )
+             .bind(("scope", scope.as_str().to_string()))
+             .bind(("scope_id", scope_id.to_string()))
+-            .await?;
++            .await?.check()?;
+         let rows: Vec<surrealdb::types::Value> = resp.take(0).or_else(|e| {
+             if e.to_string().contains("does not exist") {
+                 Ok(vec![])
+@@ -305,7 +307,7 @@ impl CredentialStore for SurrealCredentialStore {
+         self.db
+             .query("DELETE type::record('provider_credentials', $rid)")
+             .bind(("rid", rid))
+-            .await?;
++            .await?.check()?;
+         Ok(existed)
+     }
+ }
+@@ -421,7 +423,7 @@ mod tests {
+ #[cfg(feature = "sqlx")]
+ #[derive(Debug, Clone)]
+ pub struct PostgresCredentialStore {
+-    pool: sqlx::PgPool,
++    pub(super) pool: sqlx::PgPool,
+ }
+ 
+ #[cfg(feature = "sqlx")]
+@@ -513,7 +515,7 @@ impl CredentialStore for PostgresCredentialStore {
+ }
+ 
+ #[cfg(feature = "sqlx")]
+-fn row_to_record(r: &sqlx::postgres::PgRow) -> CredentialRecord {
++pub(super) fn row_to_record(r: &sqlx::postgres::PgRow) -> CredentialRecord {
+     use sqlx::Row;
+     CredentialRecord {
+         scope: CredentialScope::from_str_lenient(&r.get::<String, _>("scope")),
+diff --git a/src/uar/security/middleware.rs b/src/uar/security/middleware.rs
+index adab3aa2..abfee314 100644
+--- a/src/uar/security/middleware.rs
++++ b/src/uar/security/middleware.rs
+@@ -108,6 +108,23 @@ async fn resolve_authenticated_context(
+     }
+ }
+ 
++/// Verify bearer identity for a trusted non-HTTP host adapter using the same
++/// verifier as HTTP ingress. No caller assertions can create the returned proof.
++///
++/// # Errors
++/// Rejects invalid, anonymous and incomplete configured identities.
++pub async fn authenticate_bearer_context(config: &SecurityConfig, token: &str) -> Result<UserContext, StatusCode> {
++    let authorization = format!("Bearer {token}");
++    let (context, _) = resolve_authenticated_context(config, Some(&authorization)).await?;
++    if context.verified_identity().is_none() { return Err(StatusCode::UNAUTHORIZED); }
++    // This identity-only adapter has no authoritative storage. Production
++    // HTTP/gRPC use the service-bound admission paths below/alongside it.
++    if context.verified_identity().is_some_and(|identity| identity.is_api_key_credential()) {
++        return Err(StatusCode::SERVICE_UNAVAILABLE);
++    }
++    Ok(context)
++}
++
+ #[cfg(test)]
+ async fn resolve_user_context_with_config(
+     config: &SecurityConfig,
+@@ -171,6 +188,7 @@ pub async fn auth_middleware(
+         .get::<super::delegation_grants::DelegationAuthenticated>()
+         .cloned()
+     {
++        require_current_key_authority(&state, &delegated.0).await?;
+         request.extensions_mut().insert(delegated.0);
+         return Ok(next.run(request).await);
+     }
+@@ -220,6 +238,8 @@ pub async fn auth_middleware(
+                         (StatusCode::UNAUTHORIZED, axum::Json(serde_json::json!({
+                             "error": {"code": "api_key_reissue_required"}
+                         }))).into_response()
++                    } else if error.downcast_ref::<super::api_keys::ApiKeyStorageError>().is_some() {
++                        StatusCode::SERVICE_UNAVAILABLE.into_response()
+                     } else { StatusCode::UNAUTHORIZED.into_response() }
+                 })?
+                 .ok_or_else(|| StatusCode::UNAUTHORIZED.into_response())?;
+@@ -237,6 +257,8 @@ pub async fn auth_middleware(
+         context
+     };
+ 
++    require_current_key_authority(&state, &context).await?;
++
+     let workspace = if state.config.security.is_remote() {
+         request.headers().get("x-uar-workspace-id")
+             .map(|value| value.to_str().map(str::trim))
+@@ -253,6 +275,24 @@ pub async fn auth_middleware(
+     Ok(next.run(request).await)
+ }
+ 
++async fn require_current_key_authority(state: &AppState, context: &UserContext) -> Result<(), Response> {
++    if context.verified_identity().is_some_and(|identity| identity.is_api_key_credential()) {
++        let service = state.api_key_service.as_ref()
++            .ok_or_else(|| StatusCode::SERVICE_UNAVAILABLE.into_response())?;
++        let valid = service.validate_admission(context).await.map_err(|error| {
++            if error.downcast_ref::<super::api_keys::ApiKeyStorageError>().is_some() {
++                StatusCode::SERVICE_UNAVAILABLE.into_response()
++            } else {
++                (StatusCode::UNAUTHORIZED, axum::Json(serde_json::json!({
++                    "error": {"code": "api_key_reissue_required"}
++                }))).into_response()
++            }
++        })?;
++        if !valid { return Err(StatusCode::UNAUTHORIZED.into_response()); }
++    }
++    Ok(())
++}
++
+ #[cfg(test)]
+ mod tests {
+     use std::{
+diff --git a/src/uar/security/verifier/mod.rs b/src/uar/security/verifier/mod.rs
+index 7d83fa16..3efb5a60 100644
+--- a/src/uar/security/verifier/mod.rs
++++ b/src/uar/security/verifier/mod.rs
+@@ -42,6 +42,7 @@ pub(crate) enum Presented {
+ /// Identity produced only after the presented material has been authenticated.
+ pub(crate) struct Principal {
+     credential_kind: CredentialKind,
++    api_key_id: Option<String>,
+     pub(crate) host_authority: Option<HostAuthority>,
+     pub(crate) authority: Option<VerifiedIdentity>,
+     pub(crate) subject: String,
+@@ -55,6 +56,8 @@ struct VerifiedJwtClaims {
+     user: UserClaims,
+     #[serde(default)]
+     uar_credential_kind: Option<String>,
++    #[serde(default)]
++    uar_api_key_id: Option<String>,
+ }
+ 
+ #[derive(Debug, thiserror::Error)]
+@@ -161,6 +164,7 @@ impl TokenVerifier for SharedSecretVerifier<'_> {
+ 
+         Ok(Principal {
+             credential_kind,
++            api_key_id: token_data.claims.uar_api_key_id,
+             host_authority: None,
+             authority: None,
+             subject: claims.sub.clone(),
+@@ -274,6 +278,7 @@ impl TokenVerifier for JwksVerifier {
+         let claims = token_data.claims.user;
+         Ok(Principal {
+             credential_kind,
++            api_key_id: token_data.claims.uar_api_key_id,
+             host_authority: None,
+             authority: None,
+             subject: claims.sub.clone(),
+@@ -323,7 +328,7 @@ pub(crate) async fn verify_token(
+     {
+         return Err(VerificationError::MissingRemoteIdentity);
+     }
+-    principal.authority = Some(VerifiedIdentity::new(config.jwt_issuer.as_deref(), &principal.claims, principal.tenant_id.clone(), principal.credential_kind));
++    principal.authority = Some(VerifiedIdentity::new(config.jwt_issuer.as_deref(), &principal.claims, principal.tenant_id.clone(), principal.credential_kind).with_api_key_id(principal.api_key_id.clone()));
+     principal.host_authority = principal.authority.as_ref().and_then(|identity| HostAuthority::for_service(identity, config));
+     Ok(principal)
+ }
+diff --git a/tests/credentials_api_integration_test.rs b/tests/credentials_api_integration_test.rs
+index 3da29c69..1aebbc70 100644
+--- a/tests/credentials_api_integration_test.rs
++++ b/tests/credentials_api_integration_test.rs
+@@ -1,173 +1,698 @@
+-//! Integration tests for the per-user provider credential API.
+-//!
+-//! Exercises the HTTP endpoints under `/credentials` using `axum-test` — no
+-//! external infrastructure, no LLM calls. Storage is the in-memory credential
+-//! store; encryption uses a fixed test key.
+-//!
+-//! Coverage (maps to `provider-credentials → Credential CRUD API` scenarios):
+-//!  - Anonymous request → 401
+-//!  - Service disabled (no ProviderService) → 503
+-//!  - Store (PUT) then list (GET) returns masked metadata, never plaintext
+-//!  - Rotate (second PUT) changes the stored key (hint updates)
+-//!  - Delete → 204, then 404 on a second delete
+-//!  - A second user does not see the first user's credentials (isolation)
++//! Principal credential acceptance through real runtime processes and durable DBs.
++//! Product verification stays local. No ambient .env or provider keys are used.
++#![cfg(all(feature = "server", feature = "surreal-backend"))]
+ 
+-use std::sync::Arc;
++#[path = "support/credential_process.rs"]
++mod process;
+ 
+ use axum_test::TestServer;
+-use serde_json::{Value, json};
+-
+-use universal_agent_runtime::uar::security::claims::{UserClaims, UserContext};
+-use universal_agent_runtime::uar::security::credentials::{
+-    CredentialEncryption, InMemoryCredentialStore, ProviderService,
++use process::{Database, Node, Provider, TEST_KEY, authenticated, call, token};
++use reqwest::Method;
++use serde_json::json;
++use std::sync::Arc;
++use universal_agent_runtime::uar::security::{
++    claims::{CredentialPrincipal, UserClaims, UserContext},
++    credentials::{
++        CredentialEncryption, CredentialRecord, CredentialScope, CredentialStore,
++        InMemoryCredentialStore, LegacyCredentialOwnerMapping, PrincipalCredentialStore,
++        ProviderService, SurrealCredentialStore,
++    },
+ };
+ 
+-const TEST_KEY: &[u8; 32] = b"0123456789abcdef0123456789abcdef";
+-
+-/// Build a credentials server with the given user identity injected as an
+-/// `Extension<UserContext>` (simulating the auth middleware). Pass `None` for
+-/// an anonymous server.
+-fn server_for(user: Option<&str>, service: Option<Arc<ProviderService>>) -> TestServer {
+-    let mut app = axum::Router::new()
++#[tokio::test]
++async fn synthetic_user_context_never_confers_credential_ownership() {
++    let context = UserContext {
++        host_authority: None,
++        authority: None,
++        user_id: "same".to_owned(),
++        tenant_id: None,
++        claims: UserClaims {
++            sub: "same".to_owned(),
++            name: None,
++            roles: None,
++            tenant_id: None,
++            uar_instance_id: None,
++            exp: usize::MAX,
++        },
++    };
++    let service = Arc::new(ProviderService::new(
++        Arc::new(InMemoryCredentialStore::new()),
++        Arc::new(CredentialEncryption::from_key(TEST_KEY)),
++    ));
++    let app = axum::Router::new()
+         .nest(
+             "/credentials",
+             universal_agent_runtime::uar::api::credentials::build_router(),
+         )
+-        .with_state(service);
+-
+-    if let Some(uid) = user {
+-        let ctx = UserContext {
+-            host_authority: None, authority: None,
+-            user_id: uid.to_string(),
+-            tenant_id: None,
+-            claims: UserClaims {
+-                sub: uid.to_string(),
+-                name: None,
+-                roles: Some(vec!["user".to_string()]),
+-                tenant_id: None,
+-                uar_instance_id: None,
+-                exp: usize::MAX,
+-            },
+-        };
+-        app = app.layer(axum::Extension(ctx));
+-    }
+-
+-    TestServer::new(app)
+-}
+-
+-fn test_service() -> Arc<ProviderService> {
+-    let store = Arc::new(InMemoryCredentialStore::new());
+-    let enc = Arc::new(CredentialEncryption::from_key(TEST_KEY));
+-    Arc::new(ProviderService::new(store, enc))
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-#[tokio::test]
+-async fn anonymous_request_is_rejected() {
+-    let server = server_for(None, Some(test_service()));
+-    let res = server.get("/credentials").await;
+-    res.assert_status(axum::http::StatusCode::UNAUTHORIZED);
++        .with_state(Some(service))
++        .layer(axum::Extension(context));
++    let server = TestServer::new(app);
++    server
++        .put("/credentials/openai")
++        .json(&json!({"api_key":"synthetic-secret"}))
++        .await
++        .assert_status(axum::http::StatusCode::UNAUTHORIZED);
++    server
++        .get("/credentials")
++        .await
++        .assert_status(axum::http::StatusCode::UNAUTHORIZED);
+ }
+ 
+-#[tokio::test]
+-async fn service_disabled_returns_503() {
+-    let server = server_for(Some("alice"), None);
+-    let res = server.get("/credentials").await;
+-    res.assert_status(axum::http::StatusCode::SERVICE_UNAVAILABLE);
++#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
++async fn local_surreal_kv_api_resolution_survives_process_restart() {
++    let provider = Provider::start().await;
++    let database = Database::local();
++    let first = Node::boot(&database, &provider, None, &[], None).await;
++    let alice = token(None, None, "alice");
++    let owner = call(&first, &alice, Method::GET, "/principal", None, 200).await;
++    assert_eq!(owner["issuer"], "urn:uar:local:jwt");
++    call(
++        &first,
++        &alice,
++        Method::PUT,
++        "/openai",
++        Some(json!({"api_key":"credential-local-1111"})),
++        200,
++    )
++    .await;
++    let created = call(&first, &alice, Method::GET, "/openai", None, 200).await;
++    assert_eq!(created["api_key_hint"], "1111");
++    provider
++        .prove_run(
++            &first,
++            &alice,
++            "credential-local-1111",
++            "local-before-restart",
++        )
++        .await;
++    first.stop().await;
++    let second = Node::boot(&database, &provider, None, &[], None).await;
++    assert_eq!(
++        call(&second, &alice, Method::GET, "", None, 200)
++            .await
++            .as_array()
++            .unwrap()
++            .len(),
++        1
++    );
++    provider
++        .prove_run(
++            &second,
++            &alice,
++            "credential-local-1111",
++            "local-after-restart",
++        )
++        .await;
++    call(
++        &second,
++        &alice,
++        Method::PUT,
++        "/openai",
++        Some(json!({"api_key":"credential-local-9999"})),
++        200,
++    )
++    .await;
++    let rotated = call(&second, &alice, Method::GET, "/openai", None, 200).await;
++    assert_eq!(created["created_at"], rotated["created_at"]);
++    provider
++        .prove_run(&second, &alice, "credential-local-9999", "local-rotated")
++        .await;
++    call(&second, &alice, Method::DELETE, "/openai", None, 204).await;
++    call(&second, &alice, Method::GET, "/openai", None, 404).await;
++    provider
++        .prove_run(&second, &alice, "credential-test-house", "local-deleted")
++        .await;
++    second.stop().await;
+ }
+ 
+-#[tokio::test]
+-async fn store_then_list_returns_masked_metadata_never_plaintext() {
+-    let server = server_for(Some("alice"), Some(test_service()));
+-
+-    let put = server
+-        .put("/credentials/openai")
+-        .json(&json!({ "api_key": "sk-secret-TAIL1234" }))
++#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
++#[ignore = "requires UAR_CREDENTIAL_TEST_SURREAL_URL pointing to a real durable networked SurrealDB"]
++async fn shared_surreal_principals_migrations_and_two_runtimes() {
++    let provider = Provider::start().await;
++    let database = Database::shared().await;
++    let subjects = ["same".to_owned()];
++    let first = Node::boot(
++        &database,
++        &provider,
++        Some("credential-issuer-a"),
++        &subjects,
++        None,
++    )
++    .await;
++    let second = Node::boot(
++        &database,
++        &provider,
++        Some("credential-issuer-a"),
++        &subjects,
++        None,
++    )
++    .await;
++    let other_issuer = Node::boot(
++        &database,
++        &provider,
++        Some("credential-issuer-b"),
++        &subjects,
++        None,
++    )
++    .await;
++    let a = token(Some("credential-issuer-a"), Some("tenant-a"), "same");
++    let b = token(Some("credential-issuer-a"), Some("tenant-b"), "same");
++    let c = token(Some("credential-issuer-b"), Some("tenant-a"), "same");
++    call(
++        &first,
++        &a,
++        Method::PUT,
++        "/openai",
++        Some(json!({"api_key":"credential-tenant-a-1111"})),
++        200,
++    )
++    .await;
++    for (node, credential) in [(&second, &b), (&other_issuer, &c)] {
++        assert!(
++            call(node, credential, Method::GET, "", None, 200)
++                .await
++                .as_array()
++                .unwrap()
++                .is_empty()
++        );
++        call(node, credential, Method::GET, "/openai", None, 404).await;
++        call(node, credential, Method::DELETE, "/openai", None, 404).await;
++        provider
++            .prove_run(node, credential, "credential-test-house", "foreign-empty")
++            .await;
++    }
++    call(
++        &second,
++        &b,
++        Method::PUT,
++        "/openai",
++        Some(json!({"api_key":"credential-tenant-b-2222"})),
++        200,
++    )
++    .await;
++    call(
++        &other_issuer,
++        &c,
++        Method::PUT,
++        "/openai",
++        Some(json!({"api_key":"credential-issuer-b-3333"})),
++        200,
++    )
++    .await;
++    provider
++        .prove_run(
++            &second,
++            &a,
++            "credential-tenant-a-1111",
++            "same-owner-other-runtime",
++        )
++        .await;
++    provider
++        .prove_run(&second, &b, "credential-tenant-b-2222", "second-tenant")
++        .await;
++    provider
++        .prove_run(
++            &other_issuer,
++            &c,
++            "credential-issuer-b-3333",
++            "second-issuer",
++        )
++        .await;
++    call(
++        &first,
++        &a,
++        Method::PUT,
++        "/openai",
++        Some(json!({"api_key":"credential-tenant-a-9999"})),
++        200,
++    )
++    .await;
++    provider
++        .prove_run(
++            &second,
++            &a,
++            "credential-tenant-a-9999",
++            "rotation-observed-on-second-runtime",
++        )
++        .await;
++    call(&first, &a, Method::DELETE, "/openai", None, 204).await;
++    provider
++        .prove_run(
++            &second,
++            &a,
++            "credential-test-house",
++            "deletion-observed-on-second-runtime",
++        )
+         .await;
+-    put.assert_status_ok();
+-
+-    let list = server.get("/credentials").await;
+-    list.assert_status_ok();
+-    let body: Value = list.json();
+-    let arr = body.as_array().expect("array");
+-    assert_eq!(arr.len(), 1);
+-    assert_eq!(arr[0]["provider_id"], "openai");
+-    assert_eq!(arr[0]["api_key_hint"], "1234");
+ 
+-    // The plaintext key must never appear anywhere in the serialized body.
+-    let raw = list.text();
+-    assert!(
+-        !raw.contains("sk-secret-TAIL1234"),
+-        "plaintext key leaked in response"
++    let owner = call(&first, &a, Method::GET, "/principal", None, 200).await;
++    let owner_key = owner["owner_key"].as_str().unwrap().to_owned();
++    let raw_subject = Node::boot(
++        &database,
++        &provider,
++        Some("credential-issuer-a"),
++        &[owner_key.clone()],
++        None,
++    )
++    .await;
++    let raw = token(Some("credential-issuer-a"), Some("tenant-a"), &owner_key);
++    let store = Arc::new(SurrealCredentialStore::new(database.connect().await));
++    let encryption = CredentialEncryption::from_key(TEST_KEY);
++    let legacy = record(
++        CredentialScope::User,
++        "same",
++        "legacy",
++        &encryption,
++        "credential-legacy-4444",
++    );
++    store.put(legacy.clone()).await.unwrap();
++    store
++        .put(record(
++            CredentialScope::User,
++            &owner_key,
++            "collision",
++            &encryption,
++            "credential-collision-5555",
++        ))
++        .await
++        .unwrap();
++    call(&raw_subject, &raw, Method::GET, "/collision", None, 404).await;
++    call(&first, &a, Method::GET, "/collision", None, 404).await;
++    call(&first, &a, Method::GET, "/legacy", None, 404).await;
++    let request = json!({"scope":"user", "legacy_scope_id":"same", "provider_id":"legacy", "reason":"verified legacy owner evidence"});
++    call(
++        &first,
++        &a,
++        Method::POST,
++        "/migrate-legacy",
++        Some(request.clone()),
++        403,
++    )
++    .await;
++    let mapping = LegacyCredentialOwnerMapping {
++        scope: CredentialScope::User,
++        legacy_scope_id: "same".to_owned(),
++        provider_id: "legacy".to_owned(),
++        destination_owner_key: owner_key,
++        approval_id: "operator-reviewed-evidence-1".to_owned(),
++    };
++    let mapped = Node::boot(
++        &database,
++        &provider,
++        Some("credential-issuer-a"),
++        &subjects,
++        Some(vec![mapping]),
++    )
++    .await;
++    call(
++        &mapped,
++        &b,
++        Method::POST,
++        "/migrate-legacy",
++        Some(request.clone()),
++        403,
++    )
++    .await;
++    let receipt = call(
++        &mapped,
++        &a,
++        Method::POST,
++        "/migrate-legacy",
++        Some(request.clone()),
++        200,
++    )
++    .await;
++    assert_eq!(
++        receipt,
++        call(
++            &mapped,
++            &a,
++            Method::POST,
++            "/migrate-legacy",
++            Some(request.clone()),
++            200
++        )
++        .await
+     );
++    let principal = authenticated(Some("credential-issuer-a"), Some("tenant-a"), "same").await;
++    let copied = store
++        .get_principal(&principal, CredentialScope::User, "same", "legacy")
++        .await
++        .unwrap()
++        .unwrap();
+     assert!(
+-        !raw.contains("api_key_encrypted"),
+-        "ciphertext field leaked in response"
++        copied.api_key_encrypted == legacy.api_key_encrypted,
++        "migration must preserve ciphertext"
+     );
++    assert_eq!(copied.created_at, legacy.created_at);
++    let service = ProviderService::new(store, Arc::new(encryption));
++    let resolved = service
++        .resolver()
++        .resolve(&principal, "legacy")
++        .await
++        .unwrap()
++        .unwrap();
++    use secrecy::ExposeSecret;
++    assert!(resolved.api_key.expose_secret() == "credential-legacy-4444");
++    call(&mapped, &a, Method::DELETE, "/legacy", None, 204).await;
++    call(
++        &mapped,
++        &a,
++        Method::POST,
++        "/migrate-legacy",
++        Some(request),
++        200,
++    )
++    .await;
++    call(&mapped, &a, Method::GET, "/legacy", None, 404).await;
++    let conflicting = Node::boot(
++        &database,
++        &provider,
++        Some("credential-issuer-a"),
++        &subjects,
++        Some(vec![LegacyCredentialOwnerMapping {
++            scope: CredentialScope::User,
++            legacy_scope_id: "same".to_owned(),
++            provider_id: "legacy".to_owned(),
++            destination_owner_key:
++                call(&second, &b, Method::GET, "/principal", None, 200).await["owner_key"]
++                    .as_str()
++                    .unwrap()
++                    .to_owned(),
++            approval_id: "operator-reviewed-evidence-2".to_owned(),
++        }]),
++    )
++    .await;
++    call(&conflicting, &b, Method::POST, "/migrate-legacy", Some(json!({"scope":"user","legacy_scope_id":"same","provider_id":"legacy","reason":"conflicting mapping"})), 409).await;
++    prove_scope_precedence(
++        &service,
++        &principal,
++        &authenticated(Some("credential-issuer-a"), Some("tenant-b"), "same").await,
++    )
++    .await;
++    prove_destination_conflict(&service, &principal).await;
++    for node in [
++        first,
++        second,
++        other_issuer,
++        raw_subject,
++        mapped,
++        conflicting,
++    ] {
++        node.stop().await;
++    }
+ }
+ 
+-#[tokio::test]
+-async fn rotate_changes_stored_key() {
+-    let server = server_for(Some("alice"), Some(test_service()));
++fn record(
++    scope: CredentialScope,
++    scope_id: &str,
++    provider: &str,
++    encryption: &CredentialEncryption,
++    key: &str,
++) -> CredentialRecord {
++    let now = chrono::Utc::now();
++    CredentialRecord {
++        scope,
++        scope_id: scope_id.to_owned(),
++        provider_id: provider.to_owned(),
++        api_key_encrypted: encryption.encrypt(key).unwrap(),
++        api_key_hint: CredentialEncryption::key_hint(key, 4),
++        created_at: now,
++        updated_at: now,
++    }
++}
+ 
+-    server
+-        .put("/credentials/openai")
+-        .json(&json!({ "api_key": "sk-first-0001" }))
++async fn prove_scope_precedence(
++    service: &ProviderService,
++    a: &CredentialPrincipal,
++    b: &CredentialPrincipal,
++) {
++    for (scope, id, key) in [
++        (CredentialScope::Session, "shared-session", "session-key"),
++        (CredentialScope::Agent, "shared-agent", "agent-key"),
++        (CredentialScope::User, a.subject(), "user-key"),
++    ] {
++        service
++            .store()
++            .put_principal(
++                a,
++                record(scope, id, "precedence", service.encryption(), key),
++            )
++            .await
++            .unwrap();
++    }
++    let resolver = service.resolver();
++    assert_eq!(
++        resolver
++            .resolve_with_context(
++                a,
++                "precedence",
++                Some("shared-session"),
++                Some("shared-agent")
++            )
++            .await
++            .unwrap()
++            .unwrap()
++            .scope,
++        CredentialScope::Session
++    );
++    assert!(
++        resolver
++            .resolve_with_context(
++                b,
++                "precedence",
++                Some("shared-session"),
++                Some("shared-agent")
++            )
++            .await
++            .unwrap()
++            .is_none()
++    );
++    service
++        .store()
++        .delete_principal(a, CredentialScope::Session, "shared-session", "precedence")
+         .await
+-        .assert_status_ok();
+-    server
+-        .put("/credentials/openai")
+-        .json(&json!({ "api_key": "sk-second-9999" }))
++        .unwrap();
++    assert_eq!(
++        resolver
++            .resolve_with_context(
++                a,
++                "precedence",
++                Some("shared-session"),
++                Some("shared-agent")
++            )
++            .await
++            .unwrap()
++            .unwrap()
++            .scope,
++        CredentialScope::Agent
++    );
++    service
++        .store()
++        .delete_principal(a, CredentialScope::Agent, "shared-agent", "precedence")
+         .await
+-        .assert_status_ok();
+-
+-    let list = server.get("/credentials").await;
+-    let body: Value = list.json();
+-    let arr = body.as_array().unwrap();
+-    assert_eq!(arr.len(), 1, "rotate replaces, not appends");
+-    assert_eq!(arr[0]["api_key_hint"], "9999", "hint reflects rotated key");
++        .unwrap();
++    assert_eq!(
++        resolver
++            .resolve(a, "precedence")
++            .await
++            .unwrap()
++            .unwrap()
++            .scope,
++        CredentialScope::User
++    );
+ }
+ 
+-#[tokio::test]
+-async fn delete_then_second_delete_is_not_found() {
+-    let server = server_for(Some("alice"), Some(test_service()));
+-
+-    server
+-        .put("/credentials/openai")
+-        .json(&json!({ "api_key": "sk-xyz-4321" }))
++async fn prove_destination_conflict(service: &ProviderService, principal: &CredentialPrincipal) {
++    let provider = format!("occupied-{}", uuid::Uuid::new_v4());
++    let existing = record(
++        CredentialScope::User,
++        principal.subject(),
++        &provider,
++        service.encryption(),
++        "existing-approved-secret",
++    );
++    service
++        .store()
++        .put_principal(principal, existing.clone())
+         .await
+-        .assert_status_ok();
+-
+-    server
+-        .delete("/credentials/openai")
++        .unwrap();
++    service
++        .store()
++        .put(record(
++            CredentialScope::User,
++            "unmapped-legacy",
++            &provider,
++            service.encryption(),
++            "different-legacy-secret",
++        ))
+         .await
+-        .assert_status(axum::http::StatusCode::NO_CONTENT);
+-
+-    server
+-        .delete("/credentials/openai")
++        .unwrap();
++    let mapped = ProviderService::new(service.store().clone(), service.encryption().clone())
++        .with_legacy_owner_mappings(vec![LegacyCredentialOwnerMapping {
++            scope: CredentialScope::User,
++            legacy_scope_id: "unmapped-legacy".to_owned(),
++            provider_id: provider.clone(),
++            destination_owner_key: principal.storage_key(),
++            approval_id: "occupied-destination-approval".to_owned(),
++        }])
++        .unwrap();
++    let error = mapped
++        .migrate_legacy_credential(
++            principal,
++            CredentialScope::User,
++            "unmapped-legacy",
++            &provider,
++            "operator conflict control",
++        )
+         .await
+-        .assert_status(axum::http::StatusCode::NOT_FOUND);
++        .unwrap_err();
++    assert!(matches!(error.downcast_ref::<universal_agent_runtime::uar::security::credentials::CredentialMigrationError>(),
++        Some(universal_agent_runtime::uar::security::credentials::CredentialMigrationError::Conflict)));
++    let after = service
++        .store()
++        .get_principal(
++            principal,
++            CredentialScope::User,
++            principal.subject(),
++            &provider,
++        )
++        .await
++        .unwrap()
++        .unwrap();
++    assert!(
++        existing.api_key_encrypted == after.api_key_encrypted,
++        "conflict overwrote destination"
++    );
+ }
+ 
++#[cfg(feature = "sqlx")]
+ #[tokio::test]
+-async fn second_user_does_not_see_first_users_credentials() {
+-    let service = test_service();
+-
+-    server_for(Some("alice"), Some(Arc::clone(&service)))
+-        .put("/credentials/openai")
+-        .json(&json!({ "api_key": "sk-alice-1111" }))
+-        .await
+-        .assert_status_ok();
+-
+-    // Bob shares the same backing service but must see none of Alice's keys.
+-    let bob = server_for(Some("bob"), Some(service));
+-    let list = bob.get("/credentials").await;
+-    list.assert_status_ok();
+-    let body: Value = list.json();
++#[ignore = "requires UAR_CREDENTIAL_TEST_POSTGRES_URL pointing to an isolated real PostgreSQL database"]
++async fn postgres_principal_scope_and_atomic_legacy_mapping() {
++    use universal_agent_runtime::uar::security::credentials::PostgresCredentialStore;
++    let url = std::env::var("UAR_CREDENTIAL_TEST_POSTGRES_URL")
++        .expect("explicit isolated Postgres URL required");
++    let pool = sqlx::PgPool::connect(&url).await.unwrap();
++    sqlx::raw_sql(include_str!(
++        "../migrations/20260703000000_provider_credentials.sql"
++    ))
++    .execute(&pool)
++    .await
++    .unwrap();
++    sqlx::raw_sql(include_str!(
++        "../migrations/20261011000000_principal_credentials.sql"
++    ))
++    .execute(&pool)
++    .await
++    .unwrap();
++    let a = authenticated(Some("credential-issuer-a"), Some("tenant-a"), "same").await;
++    let b = authenticated(Some("credential-issuer-a"), Some("tenant-b"), "same").await;
++    let c = authenticated(Some("credential-issuer-b"), Some("tenant-a"), "same").await;
++    let provider = format!("postgres-{}", uuid::Uuid::new_v4());
++    let encryption = Arc::new(CredentialEncryption::from_key(TEST_KEY));
++    let store = Arc::new(PostgresCredentialStore::new(pool.clone()));
++    let legacy = record(
++        CredentialScope::User,
++        "same",
++        &provider,
++        &encryption,
++        "postgres-legacy-7777",
++    );
++    store.put(legacy.clone()).await.unwrap();
++    let service = ProviderService::new(store.clone(), encryption)
++        .with_legacy_owner_mappings(vec![LegacyCredentialOwnerMapping {
++            scope: CredentialScope::User,
++            legacy_scope_id: "same".to_owned(),
++            provider_id: provider.clone(),
++            destination_owner_key: a.storage_key(),
++            approval_id: "postgres-operator-approval".to_owned(),
++        }])
++        .unwrap();
++    assert!(
++        service
++            .resolver()
++            .resolve(&a, &provider)
++            .await
++            .unwrap()
++            .is_none()
++    );
++    assert!(
++        service
++            .migrate_legacy_credential(&b, CredentialScope::User, "same", &provider, "bad tenant")
++            .await
++            .is_err()
++    );
++    let (first, second) = tokio::join!(
++        service.migrate_legacy_credential(
++            &a,
++            CredentialScope::User,
++            "same",
++            &provider,
++            "owner evidence"
++        ),
++        service.migrate_legacy_credential(
++            &a,
++            CredentialScope::User,
++            "same",
++            &provider,
++            "owner evidence"
++        )
++    );
+     assert_eq!(
+-        body.as_array().unwrap().len(),
+-        0,
+-        "cross-user isolation violated"
++        serde_json::to_value(first.unwrap()).unwrap(),
++        serde_json::to_value(second.unwrap()).unwrap()
++    );
++    let migrated = store
++        .get_principal(&a, CredentialScope::User, "same", &provider)
++        .await
++        .unwrap()
++        .unwrap();
++    assert!(migrated.api_key_encrypted == legacy.api_key_encrypted);
++    for foreign in [&b, &c] {
++        assert!(
++            store
++                .get_principal(foreign, CredentialScope::User, "same", &provider)
++                .await
++                .unwrap()
++                .is_none()
++        );
++        assert!(
++            store
++                .list_principal(foreign, CredentialScope::User, "same")
++                .await
++                .unwrap()
++                .is_empty()
++        );
++        assert!(
++            !store
++                .delete_principal(foreign, CredentialScope::User, "same", &provider)
++                .await
++                .unwrap()
++        );
++    }
++    prove_scope_precedence(&service, &a, &b).await;
++    prove_destination_conflict(&service, &a).await;
++    store
++        .delete_principal(&a, CredentialScope::User, "same", &provider)
++        .await
++        .unwrap();
++    service
++        .migrate_legacy_credential(
++            &a,
++            CredentialScope::User,
++            "same",
++            &provider,
++            "resume completed mapping",
++        )
++        .await
++        .unwrap();
++    assert!(
++        store
++            .get_principal(&a, CredentialScope::User, "same", &provider)
++            .await
++            .unwrap()
++            .is_none()
+     );
++    pool.close().await;
+ }
+diff --git a/tests/test_a2a_grpc.rs b/tests/test_a2a_grpc.rs
+index 67bb8b0a..22596d42 100644
+--- a/tests/test_a2a_grpc.rs
++++ b/tests/test_a2a_grpc.rs
+@@ -109,7 +109,6 @@ async fn start_grpc_server() -> (String, tempfile::TempDir, String) {
+         },
+         base_url: format!("http://127.0.0.1:{port}"),
+     });
+-    let service = GrpcAgentService::new(state);
+     // Seed only the isolated test store, then obtain proof through real key validation.
+     use argon2::{Argon2, password_hash::{PasswordHasher, SaltString, rand_core::OsRng}};
+     let storage = Arc::new(InMemoryApiKeyStorage::new());
+@@ -121,7 +120,7 @@ async fn start_grpc_server() -> (String, tempfile::TempDir, String) {
+         subject: "a2a-grpc-user".to_owned(), authority_version: 1, issuer: None,
+         tenant_id: None, roles: vec!["user".to_owned()], created_at: 0, expires_at: None, revoked: false,
+     }).await.unwrap();
+-    let api_keys = ApiKeyService::new(storage, "test-secret");
++    let api_keys = Arc::new(ApiKeyService::new(storage, "test-secret"));
+     let caller = api_keys.validate_key(seed).await.unwrap().unwrap();
+     let key = api_keys
+         .create_key(
+@@ -139,6 +138,7 @@ async fn start_grpc_server() -> (String, tempfile::TempDir, String) {
+         .await
+         .expect("A2A gRPC test API key exchange succeeds")
+         .expect("A2A gRPC test API key returns a token");
++    let service = GrpcAgentService::new(state).with_api_key_service(api_keys);
+ 
+     tokio::spawn(async move {
+         tonic::transport::Server::builder()
+diff --git a/versions.toml b/versions.toml
+index 1ee22f3e..7a50f31c 100644
+--- a/versions.toml
++++ b/versions.toml
+@@ -15,19 +15,18 @@ zod = "3.25.76"
+ # Vite resolves entity-graph-core's optional Loro import during browser startup;
+ # 1.13.9 is the entity package's tested peer version.
+ loro_crdt = "1.13.9"
+-# Liter 1.18.2 is the provider/model routing baseline. The accepted remote head
+-# adds only generated knowledge records after the 1.18.2 source release.
+-liter_llm = "1.18.2"
+-liter_llm_commit = "c5c6caac617eb931cd5009146a70831422ec236c"
++# Operator approved UAR main 2cc9a182's exact Liter source on 2026-10-11.
++# Migration and locked production-path acceptance remain required.
++liter_llm = "2.1.1"
++liter_llm_commit = "a6047386cc9fae4258b4a8577f6a016022095586"
+ # Surreal Memory is pinned to the exact dependency commit rebased on the
+ # reviewed documentation and native-MLX remote head.
+ surreal_memory_server_base_commit = "e5f48916048a8e26d3ace83c44746b8105f0696c"
+ surreal_memory_server_commit = "432eaa1ebbef66fc02b9bb1a1e63cc2fdb2149e8"
+-# The Skill System accepted head already contains the reviewed Liter and
+-# Surreal Memory pointer refresh; its final UAR pin is recorded after the
+-# exact-pin pointer commit is created.
++# Operator approved UAR main 2cc9a182's exact skill-resource gitlink on 2026-10-11.
++# Effective runtime overrides and migration acceptance are recorded separately.
+ prometheus_skill_system_base_commit = "f0df1e0121d176c9467e5c71022737b845af6a20"
+-prometheus_skill_system_commit = "ad5c82c6c16145637c589a3ddfa06e0f20d603e7"
++prometheus_skill_system_commit = "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2"
+ # Keep the SDK, schema types, native server, and deployed container in lockstep.
+ surrealdb = "3.3.0"
+ surrealdb_types = "3.3.0"

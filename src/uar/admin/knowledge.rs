@@ -21,6 +21,8 @@ pub async fn get(
 }
 
 pub async fn save(store: &Arc<dyn PersistenceLayer>, kb: &KnowledgeBase) -> anyhow::Result<()> {
+    anyhow::ensure!(kb.owner_id == crate::uar::domain::knowledge::ANONYMOUS_KNOWLEDGE_OWNER,
+        "Anonymous administration cannot select an authenticated knowledge owner");
     store.save_knowledge_base(kb).await
 }
 

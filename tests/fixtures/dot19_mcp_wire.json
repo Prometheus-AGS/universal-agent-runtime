@@ -1,0 +1,15 @@
+{
+  "sdk": "rmcp=3.4.1",
+  "sdkSourceCommit": "9427a929959e665e0d12e9395f674026baf4bd48",
+  "protocolVersion": "2025-11-25",
+  "clientCapabilities": {"elicitation":{"form":{"schemaValidation":true},"url":{}}},
+  "formRequest": {"jsonrpc":"2.0","id":"elicit-form-1","method":"elicitation/create","params":{"mode":"form","message":"Select the fixture value","requestedSchema":{"type":"object","properties":{"value":{"type":"string","enum":["accepted"]}},"required":["value"]}}},
+  "urlRequest": {"jsonrpc":"2.0","id":"elicit-url-1","method":"elicitation/create","params":{"mode":"url","message":"Confirm the fixture URL interaction","url":"https://example.invalid/elicitation","elicitationId":"fixture-url-1"}},
+  "formAccept": {"action":"accept","content":{"value":"accepted"}},
+  "urlAccept": {"action":"accept"},
+  "decline": {"action":"decline"},
+  "cancel": {"action":"cancel"},
+  "invalidFormAccept": {"action":"accept","content":{"value":"wrong"}},
+  "invalidDecline": {"action":"decline","content":{"value":"accepted"}},
+  "rejectedAutomaticRetry": {"jsonrpc":"2.0","id":1,"result":{"resultType":"input_required","requestState":"must-not-replay"}}
+}

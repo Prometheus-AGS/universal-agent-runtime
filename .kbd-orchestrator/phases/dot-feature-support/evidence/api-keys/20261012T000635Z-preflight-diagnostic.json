@@ -1,0 +1,8 @@
+{
+  "status": "receipt-driver-error-before-cargo",
+  "recordedAt": "2026-10-12T00:07:06.815513+00:00",
+  "cargoExecuted": false,
+  "productionSourceChangedByAcceptanceWorker": false,
+  "cause": "Stale helper-only comparison guard remained after authorized three-path comparison; removed duplicated private driver block.",
+  "observedCorrection": ".kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261012T000635Z-observed-correction.json"
+}

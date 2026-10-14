@@ -122,6 +122,9 @@ pub struct RunExecutionRequest {
         Option<crate::uar::runtime::thread::policy_intersection::ThreadBudgets>,
     /// Stable host-only cumulative usage grant shared across governed peer turns.
     pub(crate) host_usage_grant: Option<crate::uar::runtime::cost_budget::RemoteUsageGrantBinding>,
+    /// Fresh authenticated A2A admission provenance. Persisting this value does
+    /// not make its policy or usage grant replayable authorization.
+    pub(crate) a2a_delegation: Option<crate::uar::api::a2a::contract::UarDelegationContract>,
     pub(crate) host_sandbox_constraint:
         Option<crate::uar::runtime::thread::policy_intersection::SandboxPermissions>,
     pub seed_history: Vec<SeedMessage>,
@@ -178,6 +181,7 @@ impl RunExecutionRequest {
             host_policy_constraint: None,
             host_budget_constraint: None,
             host_usage_grant: None,
+            a2a_delegation: None,
             host_sandbox_constraint: None,
             seed_history: Vec::new(),
             host_history: None,

@@ -1,0 +1,415 @@
+[
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/profiles/local-76bd35661a7a40d6953746fbd5d1f937/liter-requests/08eb53d8-b797-43a4-a275-92d45c46a092.jsonl",
+    "sha256": "61bc8d7218554e2d71cc5084f77a77b3e3c44fb9568b295b11aeac5cdd19f764",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/profiles/local-76bd35661a7a40d6953746fbd5d1f937/liter-requests/1826b759-4bca-4b61-9a27-06d16e5fc9e3.jsonl",
+    "sha256": "25778842e82fa86b66f2efac30b15131562f84fedf7e32f78d61f4f1b497dce4",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/profiles/local-76bd35661a7a40d6953746fbd5d1f937/liter-requests/31b3acb6-4517-4e84-9153-d07dbc0ad0db.jsonl",
+    "sha256": "05c36cad00e0f1f6d2fa0571b40836e08721c96fc8dba05ceb109deb071fb2f8",
+    "requestCount": 1,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/profiles/local-76bd35661a7a40d6953746fbd5d1f937/liter-requests/3ed12146-db81-4909-a9a0-b3d588abfa2e.jsonl",
+    "sha256": "ce1cded9fbeb54fa56a49170b3690751ee71cf59b98ec744a4a3089e08749de3",
+    "requestCount": 1,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/profiles/local-76bd35661a7a40d6953746fbd5d1f937/liter-requests/557a78b1-72bc-4196-a7b4-c3f8cdfac61d.jsonl",
+    "sha256": "2c089944c703b9669e99a4608549ba4b8a8eabdd79ffe046f8cd48beb149fd9b",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/profiles/local-76bd35661a7a40d6953746fbd5d1f937/liter-requests/61438002-6c5b-4c11-ad53-e764c93c3ef0.jsonl",
+    "sha256": "de62e684edcdb2f6ed000ef02113b4e92f3e7d6adb72c1eb17284c4cec82b8b0",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/profiles/local-76bd35661a7a40d6953746fbd5d1f937/liter-requests/6ce07d19-1d0b-4efc-9f72-014e4bd1b817.jsonl",
+    "sha256": "f994b7989a62e247d28594cc3ffff635ad76ca8bbd6715649a8b7f377e71750f",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/profiles/local-76bd35661a7a40d6953746fbd5d1f937/liter-requests/8cbb3a76-9adc-4750-889f-ea8e4041e831.jsonl",
+    "sha256": "46394744742f4a70571fa98047ffe61015272443fbaa11cd794647bba320752c",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/profiles/local-76bd35661a7a40d6953746fbd5d1f937/liter-requests/9c1ec4da-4a47-4e8b-b293-681da8440960.jsonl",
+    "sha256": "1337c02671f8062879428e52c68a2ec4c45697a69963ca9842c3d8aa96dcb88a",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": false,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/profiles/local-76bd35661a7a40d6953746fbd5d1f937/liter-requests/9db70dd6-5ed1-46e6-8325-21dab24ecd5f.jsonl",
+    "sha256": "b7c35586a21ee4cc4ec753065269932a15537ad8ed65bb80f02111935cb2edf4",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/profiles/local-76bd35661a7a40d6953746fbd5d1f937/liter-requests/bdb3e925-c3e2-4538-9883-cc3e935abefc.jsonl",
+    "sha256": "ce713f67246de7e3988d483eb381e99c520471406721d7f506f3678890c4bbed",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/profiles/local-76bd35661a7a40d6953746fbd5d1f937/liter-requests/e2b4b460-b971-4631-b243-7afb784534ee.jsonl",
+    "sha256": "af7c57b4245af181e95228b6deb26ee3fc907de1cd4c61b8a7acfcc59e40f288",
+    "requestCount": 1,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      }
+    ]
+  },
+  {
+    "privatePath": "/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/uar-dot04-gate-thirteenth-kw9mrias/profiles/local-76bd35661a7a40d6953746fbd5d1f937/liter-requests/e67e4d05-39a0-45e7-8b77-419406d310bd.jsonl",
+    "sha256": "4939166ea060ebdeddfeada1e792c801f4317a3721c5a4ef0dc9094c317f5dd3",
+    "requestCount": 2,
+    "requests": [
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system"
+        ],
+        "hasUser": true,
+        "hasToolReply": false,
+        "hasToolCall": false
+      },
+      {
+        "roles": [
+          "system",
+          "user",
+          "system",
+          "system",
+          "system",
+          "system",
+          "assistant",
+          "tool"
+        ],
+        "hasUser": true,
+        "hasToolReply": true,
+        "hasToolCall": true
+      }
+    ]
+  }
+]

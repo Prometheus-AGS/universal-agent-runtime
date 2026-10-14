@@ -1,0 +1,14 @@
+{
+  "user_answer": "Approve the 10 GiB volume",
+  "scope": {
+    "namespace": "dot17-uar",
+    "kubectl_context": "know-me",
+    "volumes": 1,
+    "size": "10Gi",
+    "storage_class": "linode-block-storage-retain",
+    "approx_usd_month": 1,
+    "additional_compute": false,
+    "additional_volumes": false
+  },
+  "other_paid_resources_authorized": false
+}

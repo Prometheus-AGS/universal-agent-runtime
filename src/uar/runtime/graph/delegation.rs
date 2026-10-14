@@ -69,6 +69,7 @@ impl GraphThreadDelegate {
             admission_id: host.admission_id.clone(),
             host_requires_approval: host.host_disposition == HostAdmissionDisposition::Ask,
             action_display: host.action_display.clone(),
+            checkpoint_history: None,
         };
         let local = match (self.gate)(request).await {
             ToolApprovalResult::Approved => LocalAdmissionDisposition::Approved,

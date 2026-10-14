@@ -13,11 +13,17 @@ pub(super) async fn create(store: &SurrealDbProvider, record: &ApprovalRecord) -
 
 pub(super) async fn transition(store: &SurrealDbProvider, before: &ApprovalRecord, after: &ApprovalRecord) -> anyhow::Result<bool> {
     before.validate_transition(after)?;
-    let mut response = store.db.query("UPDATE type::record('approval_records', $key) SET state = 'resolved', data = $after WHERE state = 'pending' AND data = $before RETURN AFTER")
+    let after_json = serde_json::to_string(after)?;
+    let mut response = store.db.query("UPDATE type::record('approval_records', $key) SET state = 'resolved',
+        data = IF $human AND <datetime>$expires <= time::now() { $expired } ELSE { $after }
+        WHERE state = 'pending' AND data = $before RETURN VALUE data")
         .bind(("key", before.storage_key())).bind(("before", serde_json::to_string(before)?))
-        .bind(("after", serde_json::to_string(after)?)).await?.check()?;
-    let rows: Vec<surrealdb::types::Value> = response.take(0)?;
-    Ok(rows.len() == 1)
+        .bind(("after", after_json.clone())).bind(("expired", serde_json::to_string(&before.expire())?))
+        .bind(("expires", before.expires_at.to_rfc3339()))
+        .bind(("human", matches!(after.state, ApprovalState::Approved | ApprovalState::Denied)))
+        .await?.check()?;
+    let rows: Vec<String> = response.take(0)?;
+    Ok(rows.len() == 1 && rows[0] == after_json)
 }
 
 pub(super) async fn list(store: &SurrealDbProvider, owner: &str, run: &str) -> anyhow::Result<Vec<ApprovalRecord>> {

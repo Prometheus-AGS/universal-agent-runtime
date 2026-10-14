@@ -59,8 +59,6 @@ pub struct GraphContext {
     pub driver: Arc<dyn crate::llm::LlmDriver>,
     /// Effective prompt-caching strategy for policy-bearing graph calls.
     pub cache_strategy: Option<crate::llm::anthropic_cache::CacheStrategy>,
-    /// Optional persistence layer for saving checkpoints.
-    pub persistence: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
     /// Host-bound child execution. A missing capability denies delegation;
     /// graph nodes must never substitute a direct model call.
     pub thread_delegate: Option<Arc<super::delegation::GraphThreadDelegate>>,
@@ -75,6 +73,9 @@ pub struct GraphContext {
 pub enum NodeResult {
     /// Continue graph execution with the (possibly modified) state.
     Continue(GraphState),
+    /// Request an immutable checkpoint. Only the trusted executor handles it;
+    /// nodes have no persistence or checkpoint-writer capability.
+    Checkpoint(GraphState),
     /// Execution is complete; return the final state immediately.
     Finished(GraphState),
     /// An error occurred; state is preserved for inspection.

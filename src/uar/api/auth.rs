@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
 
-use crate::uar::security::api_keys::{ApiKeyAuthorityError, ApiKeyService, CreateKeyRequest};
+use crate::uar::security::api_keys::{ApiKeyAuthorityError, ApiKeyService, ApiKeyStorageError, CreateKeyRequest};
 use crate::uar::security::claims::UserContext;
 
 /// Shared state for the auth router.
@@ -162,7 +162,11 @@ fn key_authority_error(error: anyhow::Error) -> axum::response::Response {
         Some(ApiKeyAuthorityError::UnsupportedExchange) => (StatusCode::NOT_IMPLEMENTED, "API-key exchange is unsupported by the configured verifier"),
         Some(ApiKeyAuthorityError::InvalidConfiguration) => (StatusCode::SERVICE_UNAVAILABLE, "API-key authority configuration is invalid"),
         Some(ApiKeyAuthorityError::InvalidLifetime) => (StatusCode::BAD_REQUEST, "API key lifetime must be a positive representable duration"),
-        None => (StatusCode::INTERNAL_SERVER_ERROR, "API-key operation failed"),
+        None => match error.downcast_ref::<ApiKeyStorageError>() {
+            Some(ApiKeyStorageError::Unavailable) => (StatusCode::SERVICE_UNAVAILABLE, "API-key authority storage is unavailable"),
+            Some(ApiKeyStorageError::AlreadyExists) => (StatusCode::CONFLICT, "API-key record already exists; reissue with a new key"),
+            None => (StatusCode::INTERNAL_SERVER_ERROR, "API-key operation failed"),
+        },
     };
     (status, Json(json!({"error":message}))).into_response()
 }

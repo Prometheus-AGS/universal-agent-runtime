@@ -1,0 +1,12 @@
+{
+  "files": {
+    ".kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235337Z-dirty-source.patch": "9dc785ca26e64157a9ced5a2db7ce9191f0643711106d7e99fb5b2a4fe15f8cb",
+    ".kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235337Z-failure-analysis.json": "e1d612e71fc5d05222166782f256cae545115118aa6a9e65f61f00202057bb40",
+    ".kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235337Z-production-boundary.json": "d63089cdcd528864470c1a3a17187fa0ea842f69c56b784e9f2dab7b6a8bc4be",
+    ".kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235337Z-production-boundary.log": "e00d73752a650fbbf259e620ccd1e84e14d67173229e6e157f7481a70d474b84",
+    ".kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235337Z-source-drift.json": "ca7b399ebd4878df59b9f188cb75c3efd8877fc28aebcb592110f567eae346d8",
+    ".kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235337Z-source-fingerprint-at-exit.json": "8cabf69c414434a2a632613d761c69ff53dd6bbcf13512ca5a5e1fc4f0e9efba",
+    ".kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235337Z-source-fingerprint.json": "7356aed2ab7d6ee8a37652d714faa58c2ed4c6db71c0ea68faf7671211f9cdb5",
+    ".kbd-orchestrator/phases/dot-feature-support/evidence/api-keys/20261011T235337Z-source-snapshot.tar.gz": "a6ee5d42adaf3a5c77d6c029199fec4508e0acbead21e5c6148a4f80403dc679"
+  }
+}
