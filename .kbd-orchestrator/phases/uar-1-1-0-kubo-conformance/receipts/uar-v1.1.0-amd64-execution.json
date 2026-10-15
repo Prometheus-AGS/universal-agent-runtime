@@ -1,0 +1,80 @@
+{
+  "status": "passed",
+  "image": "ghcr.io/prometheus-ags/universal-agent-runtime@sha256:94f78a7ed17197fc045baec514ed6ec30d3cf23433e8c26340ccfddb080fac90",
+  "release_index_digest": "sha256:064f5004fb3ba76506abce5cf81285b2a8aa3e54fa5a22e2c2bfc97b1211e43b",
+  "source_commit": "d815ef72ac7d2c57a9bd18b23fcc58ffb224f326",
+  "fixtures_match_tag": true,
+  "host": {
+    "system": "Darwin",
+    "machine": "arm64"
+  },
+  "docker_daemon": {
+    "Architecture": "aarch64",
+    "OperatingSystem": "OrbStack",
+    "ServerVersion": "29.8.2",
+    "OSType": "linux"
+  },
+  "execution_mode": "amd64 emulation on arm64 OrbStack host; not native amd64 hardware",
+  "image_inspection": {
+    "Id": "sha256:51044e5d1f72db606471788f1cde13beec7a47741aca9ec56c76f1e49b36aba6",
+    "Architecture": "amd64",
+    "Os": "linux",
+    "RepoDigests": [
+      "ghcr.io/prometheus-ags/universal-agent-runtime@sha256:94f78a7ed17197fc045baec514ed6ec30d3cf23433e8c26340ccfddb080fac90"
+    ]
+  },
+  "runtime_architecture": {
+    "machine": "x86_64",
+    "runtime_path": "/usr/local/bin/universal-agent-runtime",
+    "runtime_elf_machine": 62
+  },
+  "docker_default_platform": "",
+  "command": "DOCKER_DEFAULT_PLATFORM= PYTHONUNBUFFERED=1 python3 scripts/release/uar_1_1_acceptance.py --image ghcr.io/prometheus-ags/universal-agent-runtime@sha256:94f78a7ed17197fc045baec514ed6ec30d3cf23433e8c26340ccfddb080fac90 --evidence /tmp/uar-v1.1.0-published-amd64-evidence-r2",
+  "evidence_directory": "/tmp/uar-v1.1.0-published-amd64-evidence-r2",
+  "log": "/tmp/uar-v1.1.0-published-amd64-acceptance-r2.log",
+  "limitations": [
+    "No native amd64 hardware execution claim",
+    "Launch-to-first-capture gap unobserved",
+    "Shipped configuration projections do not prove infrastructure rollouts",
+    "Existing same-model-family review independence limit retained"
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "exit_code": 1,
+      "result": "incomplete",
+      "receipt": "/tmp/uar-v1.1.0-published-amd64-evidence-r1/receipt.json",
+      "reason": "Docker companion image pull reported cannot overwrite digest after safe_default passed",
+      "global_default_platform": "linux/amd64"
+    },
+    {
+      "attempt": 2,
+      "result": "passed",
+      "receipt": "/tmp/uar-v1.1.0-published-amd64-evidence-r2/receipt.json",
+      "global_default_platform": "",
+      "surreal_companion_architecture": "arm64",
+      "exit_code": 0,
+      "full_acceptance": true
+    }
+  ],
+  "companion_architecture": "arm64",
+  "related_upstream_error_report": "https://github.com/moby/moby/issues/43188",
+  "upstream_causality": "Matching error report only; current host root cause not independently established",
+  "result": "passed",
+  "full_acceptance": true,
+  "exit_code": 0,
+  "started_at": 1792092990,
+  "finished_at": 1792094675,
+  "duration_seconds": 1685,
+  "acceptance_counts": {
+    "shipped_profiles": 12,
+    "mcp_profiles": 4,
+    "elicitation_decisions": 12,
+    "explicit_approval_denials": 4,
+    "a2a_tuples": 8
+  },
+  "protocol_client_architecture": "arm64",
+  "runtime_and_fixture_sources_match_tag_after_run": true,
+  "receipt_sha256": "4f03aeb80b315d221dd1cae4ca32653c481db7e09829fa5d3d8b968eba1c0aa6",
+  "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

@@ -1772,3 +1772,7 @@ Installed v1.1.0 acceptance reproduced GetTask-32004 after task creation. The in
 ## 2026-10-15 — Per-turn skill activation registration
 
 Installed-image A2A acceptance r16 selected an eligible baseline skill but advertised no native activate_skill. Ordinary tool resolution excludes this per-turn control and resolved tools to none; manager registration incorrectly depended on that ordinary mode. Register ActivateSkillTool through EffectiveRunPolicy::allows_model_control_tool, whose existing contract follows selected skills. Do not widen the ordinary tool allowlist to make the acceptance fixture pass. The production repair is authored; r8 build and affected acceptance remain pending.
+
+## 2026-10-15 — Pin the runtime child digest without forcing every companion platform
+
+The published amd64 follow-up reproduced Docker cannot overwrite digest when DOCKER_DEFAULT_PLATFORM=linux/amd64 tried to pull a second platform of the already-cached pinned SurrealDB index. A related upstream report is https://github.com/moby/moby/issues/43188; current host causality is not independently established. The full rerun removed the global override, kept the existing arm64 companion and pinned UAR to its amd64 child manifest. Image metadata and ELF machine62 confirmed x86-64 UAR; the complete program passed. Preserve the failed attempt and disclose emulation/companion/client architectures; do not weaken assertions, delete shared images or relabel emulation as native hardware qualification.

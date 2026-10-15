@@ -1,0 +1,37 @@
+{
+  "original_assets_unchanged": 6,
+  "supplemental_assets_hash_matched": 6,
+  "release_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.1.0",
+  "supplemental_assets": {
+    "uar-v1.1.0-amd64-acceptance.json": {
+      "id": 645023153,
+      "digest": "sha256:4f03aeb80b315d221dd1cae4ca32653c481db7e09829fa5d3d8b968eba1c0aa6",
+      "browser_download_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/releases/download/v1.1.0/uar-v1.1.0-amd64-acceptance.json"
+    },
+    "uar-v1.1.0-amd64-attempt-1-incomplete.json": {
+      "id": 645023143,
+      "digest": "sha256:04146d5e6f364f6b4f74dcf351144ee3b3b3c09e942bc43e5064b51a7de9393a",
+      "browser_download_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/releases/download/v1.1.0/uar-v1.1.0-amd64-attempt-1-incomplete.json"
+    },
+    "uar-v1.1.0-amd64-execution.json": {
+      "id": 645023149,
+      "digest": "sha256:fd604b8d480c5f8553ad22d6b5a9cdef919b6a2264bd3576cf470ee3998d8446",
+      "browser_download_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/releases/download/v1.1.0/uar-v1.1.0-amd64-execution.json"
+    },
+    "uar-v1.1.0-amd64-grpcurl.json": {
+      "id": 645023183,
+      "digest": "sha256:cc0b2ed60e03984e51fc64c38b3ac5adfabd769b9be19f7c2f87ca55b086815c",
+      "browser_download_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/releases/download/v1.1.0/uar-v1.1.0-amd64-grpcurl.json"
+    },
+    "uar-v1.1.0-amd64-default-egress.json": {
+      "id": 645023152,
+      "digest": "sha256:b57258b938f6c1610fd93ca2b9cd9c712062f339fa8d205b75c7acb6a55774c9",
+      "browser_download_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/releases/download/v1.1.0/uar-v1.1.0-amd64-default-egress.json"
+    },
+    "SHA256SUMS-amd64": {
+      "id": 645023151,
+      "digest": "sha256:02b3bfbc4abc14ae02ee083504946e3c7390f8a74854bcc2e6c7d5d9bb4b0a5a",
+      "browser_download_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/releases/download/v1.1.0/SHA256SUMS-amd64"
+    }
+  }
+}

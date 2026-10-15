@@ -1,0 +1,632 @@
+{
+  "image": "ghcr.io/prometheus-ags/universal-agent-runtime@sha256:94f78a7ed17197fc045baec514ed6ec30d3cf23433e8c26340ccfddb080fac90",
+  "image_kind": "immutable-digest",
+  "started_at": 1792092571,
+  "result": "incomplete",
+  "requested_gates": [
+    "all"
+  ],
+  "selected_gates": [
+    "defaults",
+    "profiles",
+    "mcp",
+    "a2a"
+  ],
+  "full_acceptance": true,
+  "safe_default": {
+    "startup_refusal": {
+      "status": "refused",
+      "diagnostic": "fallback_jwt_secret_rejected",
+      "startup_mode": "image-default-command-without-config-or-environment"
+    },
+    "runtime_profile": {
+      "config_file": null,
+      "command_override": null,
+      "port_publication": null,
+      "auth_source": [
+        "UAR_SECURITY__JWT_SECRET",
+        "UAR_SECURITY__SETTINGS_ADMIN_KEY"
+      ],
+      "auth_principal_mode": "token-subject",
+      "loopback_namespace_client": "docker exec python3"
+    },
+    "effective": {
+      "schema_version": 1,
+      "llm": {
+        "provider_host": "disabled",
+        "model": ""
+      },
+      "knowledge_base_embedder": {
+        "provider_host": "local",
+        "model": "bge-small-en-v1.5"
+      },
+      "memory_embedder": {
+        "provider_host": "disabled",
+        "model": ""
+      },
+      "governance": {
+        "enabled": true,
+        "tool_approval": "per_run"
+      },
+      "native_tools": {
+        "terminal_exec_enabled": false,
+        "shell_tools": []
+      },
+      "mcp_servers": [],
+      "scope": "runtime_defaults; explicit owner/run overrides retain their own admission",
+      "revision": "sha256:cf041681182b7e3c239125ce02911c6ff57996ddeaae587de43ab558d833f77d"
+    },
+    "effective_revision_update": {
+      "mutation": "deny-all MCP catalog entry",
+      "before": "sha256:cf041681182b7e3c239125ce02911c6ff57996ddeaae587de43ab558d833f77d",
+      "changed": "sha256:595d6183bc969e33879ddd2ae5efd297dcd68f20dc7d8cf2fa99310fbd894229",
+      "restored": "sha256:cf041681182b7e3c239125ce02911c6ff57996ddeaae587de43ab558d833f77d"
+    },
+    "version": "1.1.0",
+    "listeners": [
+      {
+        "address_hex": "0100007F",
+        "family": "ipv4",
+        "loopback": true,
+        "port": 50051
+      },
+      {
+        "address_hex": "0100007F",
+        "family": "ipv4",
+        "loopback": true,
+        "port": 1906
+      },
+      {
+        "address_hex": "00000000000000000000000001000000",
+        "family": "ipv6",
+        "loopback": true,
+        "port": 1906
+      }
+    ],
+    "agent_card": {
+      "version": "1.1.0",
+      "supported_interfaces": [
+        {
+          "url": "http://127.0.0.1:1906/a2a/v1/compiler",
+          "protocolBinding": "JSONRPC",
+          "protocolVersion": "1.0"
+        },
+        {
+          "url": "http://127.0.0.1:50051",
+          "protocolBinding": "GRPC",
+          "protocolVersion": "1.0"
+        }
+      ]
+    },
+    "auth": {
+      "anonymous_effective_status": 401,
+      "anonymous_agents_status": 401,
+      "non_admin_effective_status": 403
+    },
+    "cors": {
+      "unlisted_origin": "not_allowed",
+      "explicit_profile": {
+        "allowed_origin": "https://default-profile-allowed.invalid",
+        "anonymous_effective_status": 401
+      }
+    },
+    "no_model": {
+      "status": 422,
+      "code": "model_not_configured"
+    },
+    "egress": {
+      "method": "AF_PACKET outgoing frames plus /proc/net/dev counters",
+      "started_before_health_probe": true,
+      "duration_seconds": 300,
+      "excluded_control_traffic": [
+        "gratuitous_arp",
+        "ipv6_neighbor_discovery",
+        "ipv6_multicast_listener_report"
+      ],
+      "capture": {
+        "duration_seconds": 300.15052747601294,
+        "received_packets": 536,
+        "dropped_packets": 0,
+        "observations": [
+          {
+            "seconds": 0.12644901499152184,
+            "interface": "eth0",
+            "bytes": 42,
+            "ether_type": "0806",
+            "classification": "gratuitous_arp",
+            "operation": 1,
+            "sender": "192.168.215.4",
+            "target": "192.168.215.4"
+          },
+          {
+            "seconds": 0.13362764799967408,
+            "interface": "eth0",
+            "bytes": 86,
+            "ether_type": "86dd",
+            "classification": "ipv6_neighbor_discovery",
+            "source": "fd07:b51a:cc66:1::4",
+            "destination": "ff02::1",
+            "protocol": 58,
+            "icmpv6_type": 136,
+            "icmpv6_code": 0
+          },
+          {
+            "seconds": 0.7238787550013512,
+            "interface": "eth0",
+            "bytes": 110,
+            "ether_type": "86dd",
+            "classification": "ipv6_multicast_listener_report",
+            "source": "fe80::3cb5:90ff:fe6e:1123",
+            "destination": "ff02::16",
+            "protocol": 58,
+            "icmpv6_type": 143,
+            "icmpv6_code": 0
+          },
+          {
+            "seconds": 0.7245354749902617,
+            "interface": "eth0",
+            "bytes": 70,
+            "ether_type": "86dd",
+            "classification": "ipv6_neighbor_discovery",
+            "source": "fe80::3cb5:90ff:fe6e:1123",
+            "destination": "ff02::2",
+            "protocol": 58,
+            "icmpv6_type": 133,
+            "icmpv6_code": 0
+          },
+          {
+            "seconds": 1.1252632190007716,
+            "interface": "eth0",
+            "bytes": 42,
+            "ether_type": "0806",
+            "classification": "gratuitous_arp",
+            "operation": 1,
+            "sender": "192.168.215.4",
+            "target": "192.168.215.4"
+          },
+          {
+            "seconds": 1.1255878290103283,
+            "interface": "eth0",
+            "bytes": 86,
+            "ether_type": "86dd",
+            "classification": "ipv6_neighbor_discovery",
+            "source": "fd07:b51a:cc66:1::4",
+            "destination": "ff02::1",
+            "protocol": 58,
+            "icmpv6_type": 136,
+            "icmpv6_code": 0
+          },
+          {
+            "seconds": 1.5523517249966972,
+            "interface": "eth0",
+            "bytes": 110,
+            "ether_type": "86dd",
+            "classification": "ipv6_multicast_listener_report",
+            "source": "fe80::3cb5:90ff:fe6e:1123",
+            "destination": "ff02::16",
+            "protocol": 58,
+            "icmpv6_type": 143,
+            "icmpv6_code": 0
+          },
+          {
+            "seconds": 5.51951948000351,
+            "interface": "eth0",
+            "bytes": 70,
+            "ether_type": "86dd",
+            "classification": "ipv6_neighbor_discovery",
+            "source": "fe80::3cb5:90ff:fe6e:1123",
+            "destination": "ff02::2",
+            "protocol": 58,
+            "icmpv6_type": 133,
+            "icmpv6_code": 0
+          },
+          {
+            "seconds": 14.738387149001937,
+            "interface": "eth0",
+            "bytes": 70,
+            "ether_type": "86dd",
+            "classification": "ipv6_neighbor_discovery",
+            "source": "fe80::3cb5:90ff:fe6e:1123",
+            "destination": "ff02::2",
+            "protocol": 58,
+            "icmpv6_type": 133,
+            "icmpv6_code": 0
+          },
+          {
+            "seconds": 32.65540763598983,
+            "interface": "eth0",
+            "bytes": 70,
+            "ether_type": "86dd",
+            "classification": "ipv6_neighbor_discovery",
+            "source": "fe80::3cb5:90ff:fe6e:1123",
+            "destination": "ff02::2",
+            "protocol": 58,
+            "icmpv6_type": 133,
+            "icmpv6_code": 0
+          },
+          {
+            "seconds": 68.49659811801394,
+            "interface": "eth0",
+            "bytes": 70,
+            "ether_type": "86dd",
+            "classification": "ipv6_neighbor_discovery",
+            "source": "fe80::3cb5:90ff:fe6e:1123",
+            "destination": "ff02::2",
+            "protocol": 58,
+            "icmpv6_type": 133,
+            "icmpv6_code": 0
+          },
+          {
+            "seconds": 146.32223678199807,
+            "interface": "eth0",
+            "bytes": 70,
+            "ether_type": "86dd",
+            "classification": "ipv6_neighbor_discovery",
+            "source": "fe80::3cb5:90ff:fe6e:1123",
+            "destination": "ff02::2",
+            "protocol": 58,
+            "icmpv6_type": 133,
+            "icmpv6_code": 0
+          },
+          {
+            "seconds": 297.87379455799237,
+            "interface": "eth0",
+            "bytes": 70,
+            "ether_type": "86dd",
+            "classification": "ipv6_neighbor_discovery",
+            "source": "fe80::3cb5:90ff:fe6e:1123",
+            "destination": "ff02::2",
+            "protocol": 58,
+            "icmpv6_type": 133,
+            "icmpv6_code": 0
+          }
+        ]
+      },
+      "observations": [
+        {
+          "seconds": 0,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 1250,
+              "rx_packets": 13,
+              "tx_bytes": 742,
+              "tx_packets": 9
+            }
+          }
+        },
+        {
+          "seconds": 10,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 2400,
+              "rx_packets": 28,
+              "tx_bytes": 1190,
+              "tx_packets": 15
+            }
+          }
+        },
+        {
+          "seconds": 20,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 2400,
+              "rx_packets": 28,
+              "tx_bytes": 1190,
+              "tx_packets": 15
+            }
+          }
+        },
+        {
+          "seconds": 30,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 2400,
+              "rx_packets": 28,
+              "tx_bytes": 1190,
+              "tx_packets": 15
+            }
+          }
+        },
+        {
+          "seconds": 40,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 2400,
+              "rx_packets": 28,
+              "tx_bytes": 1190,
+              "tx_packets": 15
+            }
+          }
+        },
+        {
+          "seconds": 50,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 2400,
+              "rx_packets": 28,
+              "tx_bytes": 1190,
+              "tx_packets": 15
+            }
+          }
+        },
+        {
+          "seconds": 60,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 2400,
+              "rx_packets": 28,
+              "tx_bytes": 1190,
+              "tx_packets": 15
+            }
+          }
+        },
+        {
+          "seconds": 70,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 3450,
+              "rx_packets": 41,
+              "tx_bytes": 1260,
+              "tx_packets": 16
+            }
+          }
+        },
+        {
+          "seconds": 80,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 3520,
+              "rx_packets": 42,
+              "tx_bytes": 1260,
+              "tx_packets": 16
+            }
+          }
+        },
+        {
+          "seconds": 90,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 3590,
+              "rx_packets": 43,
+              "tx_bytes": 1260,
+              "tx_packets": 16
+            }
+          }
+        },
+        {
+          "seconds": 100,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 3660,
+              "rx_packets": 44,
+              "tx_bytes": 1260,
+              "tx_packets": 16
+            }
+          }
+        },
+        {
+          "seconds": 110,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 3660,
+              "rx_packets": 44,
+              "tx_bytes": 1260,
+              "tx_packets": 16
+            }
+          }
+        },
+        {
+          "seconds": 120,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 4402,
+              "rx_packets": 53,
+              "tx_bytes": 1260,
+              "tx_packets": 16
+            }
+          }
+        },
+        {
+          "seconds": 130,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 4710,
+              "rx_packets": 57,
+              "tx_bytes": 1260,
+              "tx_packets": 16
+            }
+          }
+        },
+        {
+          "seconds": 140,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 5760,
+              "rx_packets": 70,
+              "tx_bytes": 1260,
+              "tx_packets": 16
+            }
+          }
+        },
+        {
+          "seconds": 150,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 5970,
+              "rx_packets": 73,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 160,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 6712,
+              "rx_packets": 82,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 170,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 6950,
+              "rx_packets": 85,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 180,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 6950,
+              "rx_packets": 85,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 190,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 6950,
+              "rx_packets": 85,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 200,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 6950,
+              "rx_packets": 85,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 210,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 6950,
+              "rx_packets": 85,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 220,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 6950,
+              "rx_packets": 85,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 230,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 6950,
+              "rx_packets": 85,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 240,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 6950,
+              "rx_packets": 85,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 250,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 6950,
+              "rx_packets": 85,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 260,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 6950,
+              "rx_packets": 85,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 270,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 6950,
+              "rx_packets": 85,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 280,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 6950,
+              "rx_packets": 85,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 290,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 6950,
+              "rx_packets": 85,
+              "tx_bytes": 1330,
+              "tx_packets": 17
+            }
+          }
+        },
+        {
+          "seconds": 300,
+          "counters": {
+            "eth0": {
+              "rx_bytes": 7020,
+              "rx_packets": 86,
+              "tx_bytes": 1400,
+              "tx_packets": 18
+            }
+          }
+        }
+      ]
+    }
+  },
+  "failure": "{\n  \"command\": [\n    \"docker\",\n    \"run\",\n    \"--detach\",\n    \"--name\",\n    \"surreal-release-42bbe9ee30f1\",\n    \"--network\",\n    \"uar-release-d8160cb3b626\",\n    \"--publish\",\n    \"127.0.0.1::8000\",\n    \"--network-alias\",\n    \"surreal\",\n    \"surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20\",\n    \"start\",\n    \"--log\",\n    \"warn\",\n    \"--user\",\n    \"root\",\n    \"--pass\",\n    \"release-surreal-password\",\n    \"--bind\",\n    \"0.0.0.0:8000\",\n    \"rocksdb:/tmp/release.db\"\n  ],\n  \"stdout\": \"\",\n  \"stderr\": \"Unable to find image 'surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20' locally\\ndocker.io/surrealdb/surrealdb@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20: Pulling from surrealdb/surrealdb\\nf18c1d441b4d: Pulling fs layer\\n0dff3cedfc4b: Pulling fs layer\\n9201e51fe8c1: Pulling fs layer\\nbe42b23d0328: Pulling fs layer\\n4b0cf376f6b1: Pulling fs layer\\nc8f78e707292: Pulling fs layer\\n8c8295a9ff9d: Pulling fs layer\\n40bb219819c2: Pulling fs layer\\n1a549fe3c432: Pulling fs layer\\nea3f0632c657: Pulling fs layer\\n8c8295a9ff9d: Waiting\\n40bb219819c2: Waiting\\n1a549fe3c432: Waiting\\nea3f0632c657: Waiting\\nbe42b23d0328: Waiting\\n4b0cf376f6b1: Waiting\\nc8f78e707292: Waiting\\n0dff3cedfc4b: Download complete\\n9201e51fe8c1: Verifying Checksum\\n9201e51fe8c1: Download complete\\nbe42b23d0328: Verifying Checksum\\nbe42b23d0328: Download complete\\nf18c1d441b4d: Verifying Checksum\\nf18c1d441b4d: Download complete\\n4b0cf376f6b1: Verifying Checksum\\n4b0cf376f6b1: Download complete\\n8c8295a9ff9d: Verifying Checksum\\n8c8295a9ff9d: Download complete\\n40bb219819c2: Verifying Checksum\\n40bb219819c2: Download complete\\n1a549fe3c432: Verifying Checksum\\n1a549fe3c432: Download complete\\nf18c1d441b4d: Pull complete\\nea3f0632c657: Verifying Checksum\\nea3f0632c657: Download complete\\n0dff3cedfc4b: Pull complete\\n9201e51fe8c1: Pull complete\\nbe42b23d0328: Pull complete\\n4b0cf376f6b1: Pull complete\\nc8f78e707292: Verifying Checksum\\nc8f78e707292: Download complete\\nc8f78e707292: Pull complete\\n8c8295a9ff9d: Pull complete\\n40bb219819c2: Pull complete\\n1a549fe3c432: Pull complete\\nea3f0632c657: Pull complete\\nDigest: sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20\\ndocker: cannot overwrite digest sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20\\n\\nRun 'docker run --help' for more information\\n\"\n}",
+  "finished_at": 1792092945
+}

@@ -1,6 +1,12 @@
 # UAR v1.1.0 release complete
 
-## Final status
+## Operator-authorized amd64 follow-up — complete
+
+The full published-amd64 program completed with exit 0, result passed and full_acceptance true. All 12 shipped profiles, 4 MCP/skills/AG-UI profiles, 12 elicitation decisions, 4 false approvals and 8 A2A cases passed. See amd64-acceptance.md and receipts/uar-v1.1.0-amd64-execution.json. Execution was amd64 under emulation on arm64 OrbStack; native amd64 hardware remains unverified. Runtime and fixture sources matched the immutable tag before and after the run. No source patches, assertion changes, rebuild or retag occurred.
+
+The Release now has six supplemental amd64 assets; all six GitHub hashes matched. Original six assets remain unchanged. #379 follow-up: https://github.com/Prometheus-AGS/universal-agent-runtime/issues/379#issuecomment-6201219322. r1's incomplete companion-Docker-pull attempt is retained; r2 passed with the existing companion platform and immutable amd64 UAR child digest. Local containers and network were cleaned by the full program. No acceptance process remains active. No new development phase was opened; the final operation is committing and pushing these follow-up records.
+
+## Original final status (before follow-up)
 
 All seven tasks and the bounded Kubo conformance phase are complete. The full program passed against the published immutable image, without source patches. The GitHub Release and #379 handoff are published. No local acceptance process or source edit remains active. No next phase is authorized.
 

@@ -98,3 +98,7 @@ No skill is created or changed in this release. Existing whole-phase verificatio
 ## Context for Next Phase
 
 Use receipts/publication.json, receipts/published-acceptance.json and the stable GitHub Release for final status. Preserve failed history and immutable v1.1.0. Do not revive the cancelled Dot qualification program.
+
+## Authorized amd64 evidence follow-up — 2026-10-15
+
+The initial linux/amd64 execution gap was subsequently narrowed by full acceptance against the immutable published amd64 child manifest: exit 0, result passed, full_acceptance true. Execution was under emulation on arm64 OrbStack; native amd64 hardware remains unverified. The SurrealDB companion and grpcurl client were arm64. An initial companion Docker pull failed with cannot overwrite digest; it is retained as incomplete. Removing the global platform override permitted the full unchanged program to pass. No production, fixture, assertion, timeout, source tag or image changed. Six supplemental Release asset hashes matched and #379 was updated. See amd64-acceptance.md for the exact command and receipts. This follow-up does not reopen Dot or activate a development phase.

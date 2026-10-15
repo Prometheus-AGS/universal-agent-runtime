@@ -121,3 +121,15 @@
 ## Final phase closure
 
 Canonical task 7 completed (7/7); change completed (1/1). Managed OpenSpec verify returned PASS and archive completed. Reconcile returned clean. Reflect screening score 0.01785714365541935 (one low length warning, no S-08); candidate lists had no pending candidates. The first phase-close guard was blocked because the initial phase-start receipt was absent. A late current-time start reconciliation and passing pre/post close receipts preserve this process gap without backdating. Canonical phase completion then succeeded. No next phase was activated; Dot closure/cancellation is unchanged.
+
+## Published amd64 follow-up — 2026-10-15
+
+## amd64 follow-up — 2026-10-15
+
+PASSED. The unchanged full program exited 0 against published child manifest sha256:94f78a7ed17197fc045baec514ed6ec30d3cf23433e8c26340ccfddb080fac90; result passed, full_acceptance true. All 12 shipped projections, 4 MCP/skills/AG-UI profiles, 12 elicitation decisions, 4 false approvals and 8 A2A cases passed, including the 300-second default capture. Raw result: receipts/uar-v1.1.0-amd64-acceptance.json; command, architecture proof, attempts and hashes: receipts/uar-v1.1.0-amd64-execution.json. No runtime or fixture source changed.
+
+This was amd64 emulation on arm64 OrbStack, not native amd64 hardware execution. UAR image metadata was linux/amd64 and its executable was x86-64 ELF machine 62. The SurrealDB companion and grpcurl client were arm64. Native amd64 hardware remains unverified. Existing capture-window, infrastructure-projection and review-independence limits remain. The initial Docker companion-pull stop is retained as an incomplete attempt; the subsequent full run passed without changing assertions or timeouts.
+
+Six supplemental Release asset hashes matched local files; the six original arm64 assets and hashes stayed unchanged. SHA256SUMS-amd64 covers the supplemental JSON receipts. Tag/source/index digests are unchanged.
+
+Issue follow-up: https://github.com/Prometheus-AGS/universal-agent-runtime/issues/379#issuecomment-6201219322

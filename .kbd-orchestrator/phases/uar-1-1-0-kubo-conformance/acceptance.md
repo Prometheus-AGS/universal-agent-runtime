@@ -1,5 +1,15 @@
 # Final published acceptance
 
+## amd64 follow-up — 2026-10-15
+
+PASSED. The unchanged full program exited 0 against published child manifest sha256:94f78a7ed17197fc045baec514ed6ec30d3cf23433e8c26340ccfddb080fac90; result passed, full_acceptance true. All 12 shipped projections, 4 MCP/skills/AG-UI profiles, 12 elicitation decisions, 4 false approvals and 8 A2A cases passed, including the 300-second default capture. Raw result: receipts/uar-v1.1.0-amd64-acceptance.json; command, architecture proof, attempts and hashes: receipts/uar-v1.1.0-amd64-execution.json. No runtime or fixture source changed.
+
+This was amd64 emulation on arm64 OrbStack, not native amd64 hardware execution. UAR image metadata was linux/amd64 and its executable was x86-64 ELF machine 62. The SurrealDB companion and grpcurl client were arm64. Native amd64 hardware remains unverified. Existing capture-window, infrastructure-projection and review-independence limits remain. The initial Docker companion-pull stop is retained as an incomplete attempt; the subsequent full run passed without changing assertions or timeouts.
+
+Six supplemental Release asset hashes matched local files; the six original arm64 assets and hashes stayed unchanged. SHA256SUMS-amd64 covers the supplemental JSON receipts. Tag/source/index digests are unchanged.
+
+## Original arm64 result
+
 PASSED. The complete program exited0 against the pulled immutable digest sha256:064f5004fb3ba76506abce5cf81285b2a8aa3e54fa5a22e2c2bfc97b1211e43b, result passed and full_acceptance true. All12shippedconfigurationprojections,4MCP/skills/AGUIprofiles,12elicitationdecisions,4falseapprovalscenarios and8A2Atuplespassed. Source andclientfixturesmatchedv1.1.0; no UARsource/binarypatches. See receipts/published-acceptance.json and publication.json, release-notes.md and issue-handoff.md. StableGitHubReleasecreatedand#379handoffposted.
 
 Limits: installed execution linux/arm64; nativeamd64built butnotexecutedlocally. Egresscapture excludes documentedinterfacecontrolframes, zerodrops/application/unclassifiedframes, launch-to-firstcapturegapnotobserved. Twelveprofiles are source-backedconfigurationprojections, not infrastructure rollout tests. NativeRusttests authoredbutunrun; realinstalledimageprogram waschosenacceptance. No deferredKubo requirement.

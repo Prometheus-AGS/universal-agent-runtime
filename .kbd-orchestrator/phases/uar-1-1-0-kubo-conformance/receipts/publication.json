@@ -44,5 +44,28 @@
   },
   "release_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.1.0",
   "release_id": 414160304,
-  "issue_comment_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/379#issuecomment-6199871487"
+  "issue_comment_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/379#issuecomment-6199871487",
+  "additional_architecture_acceptance": {
+    "linux/amd64": {
+      "result": "passed",
+      "exit_code": 0,
+      "full_acceptance": true,
+      "image": "ghcr.io/prometheus-ags/universal-agent-runtime@sha256:94f78a7ed17197fc045baec514ed6ec30d3cf23433e8c26340ccfddb080fac90",
+      "execution_mode": "amd64 emulation on arm64 OrbStack host; not native amd64 hardware",
+      "receipt": "uar-v1.1.0-amd64-acceptance.json",
+      "execution_receipt": "uar-v1.1.0-amd64-execution.json",
+      "counts": {
+        "shipped_profiles": 12,
+        "mcp_profiles": 4,
+        "elicitation_decisions": 12,
+        "explicit_approval_denials": 4,
+        "a2a_tuples": 8
+      },
+      "native_hardware_execution": false,
+      "issue_comment_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/379#issuecomment-6201219322",
+      "release_assets_hash_verified": 6,
+      "original_assets_unchanged": 6,
+      "asset_verification_receipt": "amd64-release-asset-verification.json"
+    }
+  }
 }
