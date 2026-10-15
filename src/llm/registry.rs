@@ -228,6 +228,25 @@ pub struct ProviderRegistry {
     /// every `Orchestrator` (CH-03).
     health: std::sync::Arc<super::health::ProviderHealthMonitor>,
     administration: tokio::sync::Mutex<()>,
+    /// Operator-global client settings inherited by every resolved `LlmConfig`.
+    llm_defaults: RwLock<InheritedLlmSettings>,
+}
+
+/// Provider-independent client settings set by the operator (`llm.timeout_secs`,
+/// `llm.max_retries`). Provider identity and credentials are never stored here.
+#[derive(Debug, Clone, Copy)]
+struct InheritedLlmSettings {
+    timeout_secs: u64,
+    max_retries: u32,
+}
+
+impl From<&LlmConfig> for InheritedLlmSettings {
+    fn from(config: &LlmConfig) -> Self {
+        Self {
+            timeout_secs: config.timeout_secs,
+            max_retries: config.max_retries,
+        }
+    }
 }
 
 impl ProviderRegistry {
@@ -238,7 +257,15 @@ impl ProviderRegistry {
             default_id: RwLock::new(None),
             health: std::sync::Arc::new(super::health::ProviderHealthMonitor::new()),
             administration: tokio::sync::Mutex::new(()),
+            llm_defaults: RwLock::new(InheritedLlmSettings::from(&LlmConfig::default())),
         }
+    }
+
+    /// Record the operator-global LLM settings that every provider/model
+    /// resolution inherits. Without this, per-agent provider policies resolve
+    /// with `LlmConfig::default()` values and ignore `UAR_LLM__TIMEOUT_SECS`.
+    pub async fn set_llm_defaults(&self, global: &LlmConfig) {
+        *self.llm_defaults.write().await = InheritedLlmSettings::from(global);
     }
 
     /// Shared provider-health monitor (CH-03): consulted by `resolve_to_llm_config`
@@ -575,6 +602,7 @@ impl ProviderRegistry {
         } else {
             format!("{provider_id}/{resolved_model}")
         };
+        let inherited = *self.llm_defaults.read().await;
 
         Some(LlmConfig {
             model: model_for_driver,
@@ -586,6 +614,8 @@ impl ProviderRegistry {
             } else {
                 Some(config.base_url.clone())
             },
+            timeout_secs: inherited.timeout_secs,
+            max_retries: inherited.max_retries,
             ..LlmConfig::default()
         })
     }
@@ -862,6 +892,33 @@ mod tests {
         let c = llm.unwrap();
         // base_url is set explicitly, so driver gets plain model (no provider prefix)
         assert_eq!(c.model, "llama-3.3-70b");
+    }
+
+    #[tokio::test]
+    async fn resolve_to_llm_config_inherits_operator_timeout_and_retries() {
+        let registry = ProviderRegistry::new();
+        registry
+            .set_llm_defaults(&LlmConfig {
+                timeout_secs: 240,
+                max_retries: 7,
+                ..LlmConfig::default()
+            })
+            .await;
+        registry
+            .register(make_test_config("groq", "https://api.groq.com/openai"))
+            .await
+            .unwrap();
+
+        let resolved = registry
+            .resolve_to_llm_config("groq", "llama-3.3-70b")
+            .await
+            .expect("registered provider resolves");
+
+        assert_eq!(
+            (resolved.timeout_secs, resolved.max_retries),
+            (240, 7),
+            "per-provider resolution must keep the operator-configured timeout and retries"
+        );
     }
 
     #[tokio::test]

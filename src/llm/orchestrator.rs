@@ -124,6 +124,14 @@ fn build_driver_inner(
 
     let mut client_config = crate::config::build_client_config(llm_config);
     capture_client_config(&mut client_config, capture);
+    tracing::info!(
+        target: "llm",
+        provider = %provider_id,
+        model = %model_id,
+        timeout_secs = llm_config.timeout_secs,
+        max_retries = llm_config.max_retries,
+        "Built LLM client with effective request timeout"
+    );
     Ok(Arc::new(super::LiterLlmDriver::new(
         client_config,
         llm_config.model.clone(),
@@ -2406,6 +2414,15 @@ impl Orchestrator {
                             yield event;
                         }
                         Err(e) => {
+                            tracing::warn!(
+                                target: "llm",
+                                request_id = %request_id,
+                                run_id = orchestrator.resolved_turn.as_ref()
+                                    .map(|turn| turn.environment().run_id.as_str()),
+                                error_kind = super::ProviderError::from_anyhow(&e)
+                                    .map_or("provider_error", super::ProviderError::code),
+                                "LLM stream failed mid-response"
+                            );
                             yield orchestrator.provider_failure(&e, true);
                             return;
                         }
