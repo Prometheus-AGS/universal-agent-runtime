@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-10-15T17:14:38.679356+00:00",
+  "captured_at": "2026-10-15T17:22:13.676103+00:00",
   "baseline": "c9dca17084ab30a7c602df9fe99e5618fa42349e",
   "branch": "codex/uar-1-1-0-kubo-conformance",
   "files": {
@@ -35,7 +35,7 @@
     "src/mcp/interaction.rs": "4ea7b4878a4544890b7cbd7a05be31c8b1e525df657afea9535f1124c21b63c0",
     "src/mcp/registry.rs": "0b598edefa6ab28756899403dacb30a1d6feb15cb104a16f5c99092d3c067b7c",
     "src/mcp/runtime.rs": "a5a12d74eee2489ba78ed51c8c89421d117b0573eb7a10ac7e03313262d1e30f",
-    "src/server.rs": "e7be38f3433ea1c52f253e6de05f99b9e35cac639346620d33c9491bdf12dbe2",
+    "src/server.rs": "d900403216beee843d28cc5e37a6a6a4c48be059f8198e55a960809cef010adc",
     "src/uar/admin/mcp.rs": "528a762d881e6fd8a9d7d5ecd7dd029d5cb943e8f40f44816a7c7328ca7b18ac",
     "src/uar/api/a2a/admission.rs": "6dd6561473514f1c5b6e231f7f38a2269f205d9d2a186083b7cfb1244865155b",
     "src/uar/api/a2a/grpc.rs": "9acad99181f58c16940bdd649afcb5cd04ca56034dbb074232ca1b664ad9bf2e",
@@ -72,11 +72,11 @@
     "tests/context_history_integrity.rs": "504f7c9188382d5ba55af5c2b120714c1d1940205c457d20fb4a84e68491894f",
     "tests/fixtures/a2a_v1_approval_governance.py": "3566511f2d237ba72e444f6504bb20699fb2bb510f34813287cab3e7784fed54",
     "tests/fixtures/dot19_mcp_peer.py": "c4be6ac3afe23d8a160babbfdb19139ab69fac78e1e085c2e28ee5024589f862",
-    "tests/fixtures/skill-upload/collision.SKILL.md": "961219c11c9175b964d5cd6f757602d8cabd9c7c5c9462d8c5bed78b0869bb13",
+    "tests/fixtures/skill-upload/collision.SKILL.md": "b544477418e766e736267837b9bdf46926d09a41d35f7f41de775a46a8cb0137",
     "tests/fixtures/skill-upload/invalid.SKILL.md": "0e4c98d0625f83f96b7ed6c64d0622fbae5a489dca5c2955949dd713a152077d",
-    "tests/fixtures/skill-upload/round-trip.SKILL.md": "c2f5cf56912d85358d3e16d034183628de432f6a07dc58fb74cfca54c4c19144",
+    "tests/fixtures/skill-upload/round-trip.SKILL.md": "c574f216321b3391091abefe379c3cb939aea5b7841b9662dc23bbe46cc82247",
     "tests/fixtures/skill_remote_import.py": "5f5ba56aba7b22e2572bd56aa46c8a7b1c407bbbea4d890981b81f8eba2c76b8",
-    "tests/fixtures/uar_1_1_mcp_contract.py": "6da1b65ef80e582ff99488ee9a5de27e2df4a7f48829d6c4ea882a8565ada834",
+    "tests/fixtures/uar_1_1_mcp_contract.py": "1a5fcfb4bb5ff36261e74345b42b7214e0e22cfb857be5fd95c1d793b3917813",
     "tests/jwks_es256_verification.rs": "b3a3aac1894ab74db58c527a3968287aadff3a641069f9d2ea07c2669bbc68e5",
     "tests/remote_mcp_run_grants.rs": "735dc7ec1704c28a2c2837a777cfc933a726e8f2514a4b98456f52543c3939e3",
     "tests/settings_persistence.rs": "b30cb3a09c7c678c2449bf2927df395b34d6080c800d0af9f10b99292c0b6fc5",
@@ -87,9 +87,14 @@
     "src/uar/persistence/providers/a2a_bindings/surreal.rs": "963328ab986ee6db1b4c91c1556150b0b8002e2bcbb8d63f2c4f465b69ba2f47",
     "docs/releases/v1.1.0-kubo.md": "d9dac0537ad9fac2bdabc2b30b9c6f24aa4bfa10e94439c705fc458d9c67c134",
     "docs/A2A_V1.md": "f4cce74206c94f0d52c1bd16089ed9ef54659f3551e4a6cffe20b2ba416f8875",
-    "docs/AGUI_V1.md": "61a7356081d1ff1a35493341e48b62a44a0543f94c3994991a72377df6261b3b"
+    "docs/AGUI_V1.md": "61a7356081d1ff1a35493341e48b62a44a0543f94c3994991a72377df6261b3b",
+    "src/embedded.rs": "c6d09dc4e0021df134507a68fd0a327ad4b973c3e61eeb0f5f76af3bd710006f",
+    "src/llm/orchestrator.rs": "f60bdc51dd4289c7abd8524362ad763a960870801e28b51f16cf87edfeb3a294",
+    "src/llm/registry.rs": "c0cb06d84a1fd29c982fa8209c20e0074b30c7612ba87ff952a56c713b8029d9",
+    "tests/test_provider_resolution.rs": "ef46c7c824a57ca99d8f8f4c7ef19ee62d87affa144f94c54b8670d2224741a4"
   },
   "claim": "Source identity only; not acceptance. Baseline plus these changed source/config/fixture files identifies the candidate input.",
   "correction": "E0308 path argument type correction after first completed-boundary compiler failure; all production/fixture implementation complete.",
-  "implementation_boundary": ".kbd-orchestrator/phases/uar-1-1-0-kubo-conformance/implementation-complete.md"
+  "implementation_boundary": ".kbd-orchestrator/phases/uar-1-1-0-kubo-conformance/implementation-complete.md",
+  "integrated_origin_main": "76f2ad307925916d8fdf35319f7e6ad5c912744f"
 }
