@@ -1,0 +1,11 @@
+{
+  "transport": "jsonrpc",
+  "governance": "enforced",
+  "decision": "approve",
+  "tenant": "release-tenant",
+  "task_id": "a2a-c1c72924977137a95d5d25746de1532ee9f4d36aca416f678885e00b4cb1c1f3",
+  "immediate_get_state": "TASK_STATE_WORKING",
+  "tool_count": 1,
+  "dynamic_task_id": "a2a-629da157ba2a656181aa2043f7e4eb73f3be059dda6d7c213f9579febc3bb9a1",
+  "result": "passed"
+}

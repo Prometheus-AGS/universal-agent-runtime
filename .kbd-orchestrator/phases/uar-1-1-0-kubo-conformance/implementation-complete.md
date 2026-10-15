@@ -1,3 +1,7 @@
+# Current complete source boundary
+
+Recorded 2026-10-15T17:43:20.861354+00:00 after source-only correction for the observed HTTP429 acceptance-client burst. All phase code, fixtures and documentation are authored, with no unresolved implementation item. HTTP probes now pace200ms, preserving the runtime limiter and exact assertions. Only A2A fixture diagnostics/pacing changed; integrated imageebae4c36 and passed r23MCP profiles remain valid evidence. Resume affected A2A only after this entire inventory closure.
+
 # Current integrated release source boundary
 
 Recorded 2026-10-15T17:22:13.676103+00:00 after clean source integration of origin/main76f2ad30/PR384. All approved conformance implementation and the upstream operator timeout/retry fix are present; no source conflict or remaining implementation item. Record new candidate build and affected MCP/A2A provider paths before immutable tag.

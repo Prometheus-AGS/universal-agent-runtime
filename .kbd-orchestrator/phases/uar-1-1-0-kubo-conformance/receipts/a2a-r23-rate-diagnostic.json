@@ -1,0 +1,12 @@
+{
+  "observed": [
+    {
+      "timestamp": "2026-10-15T17:41:44.705218Z",
+      "message": "Rate limit exceeded",
+      "target": "universal_agent_runtime::uar::security::rate_limit"
+    }
+  ],
+  "source": "src/uar/security/rate_limit.rs:rate_limit_middleware",
+  "response": "HTTP429",
+  "correction": "pace every fixture HTTP request 200ms; no retry or runtime limit change"
+}

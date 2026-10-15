@@ -1,0 +1,11 @@
+{
+  "transport": "jsonrpc",
+  "governance": "disabled",
+  "decision": "deny",
+  "tenant": "release-tenant",
+  "task_id": "a2a-fe4a042d0917a09e2440bd8f497265fa8a430c35d4cf5d4d8ccd53e47b62d116",
+  "immediate_get_state": "TASK_STATE_WORKING",
+  "tool_count": 0,
+  "dynamic_task_id": "a2a-dc9211867b706b24727576e0ff3e6853ffe24b98a278d953c0939ff140c9d250",
+  "result": "passed"
+}

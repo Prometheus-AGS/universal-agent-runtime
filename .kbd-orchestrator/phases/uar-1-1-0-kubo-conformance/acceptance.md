@@ -49,3 +49,7 @@ The complete r20 program exited1 after current-image defaults, all twelve shippe
 ## Local acceptance complete
 
 A2A r22 exited0 with all eight tuples passed. Current runtime image2bf3ce5f now has passing defaults,12 shipped profiles,4 MCP/skills/AG-UI profiles with12 elicitation decisions and4 explicit approval denials, and8 A2A cases. `receipts/candidate-local-acceptance.json` composes exact r20/r22 evidence and preserves the failed/partial raw receipts. Runtime source did not change between these gates. `git diff --check` exited0 with no output; managed OpenSpec validation exited0 and reported the change valid. Published digest acceptance remains pending.
+
+## Integrated release candidate
+
+Origin/main PR384 was merged cleanly in722ce006. Production r9 built imageebae4c36 with zero warnings (release10m46s). All4MCP/skills/AGUI profiles passedr23; all8A2A tuples passedr24 after pacing the client below the observedHTTP429 limiter. Exact combined receipts are indexed by candidate-integrated-acceptance.json. Default/profile passes remain tied to earlierimage2bf3ce5f; the published image receives the complete program to cover the integrated artifact.

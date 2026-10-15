@@ -1,0 +1,23 @@
+{
+  "result": "passed",
+  "scope": "affected integration after merging upstream PR384",
+  "local_image_id": "sha256:ebae4c36839d15f1ce2961dbce439d6a25311ca29a1293a3679b0a5a117c8f4e",
+  "runtime_source_commit": "722ce006",
+  "build_receipt": "candidate-build-r9.json",
+  "gates": {
+    "mcp_skills_agui": {
+      "receipt": "candidate-integrated-r23-incomplete.json",
+      "field": "profiles",
+      "count": 4,
+      "elicitation_decisions": 12,
+      "explicit_approval_denials": 4
+    },
+    "a2a": {
+      "receipt": "candidate-integrated-a2a-r24-passed.json",
+      "field": "a2a_profiles",
+      "count": 8
+    }
+  },
+  "earlier_complete_local_gate_aggregate": "candidate-local-acceptance.json",
+  "published_full_acceptance": false
+}

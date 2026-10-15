@@ -96,6 +96,8 @@ def provider_rows():
 
 
 def http_request(payload, credential=token, target_agent=agent_id):
+    # Keep the conformance client's probes below the shipped HTTP rate limit.
+    time.sleep(0.2)
     endpoint = base_url + "/a2a/v1/agents/" + target_agent
     headers = {
         "content-type": "application/json",
@@ -130,7 +132,9 @@ def jsonrpc(method, params, credential=token, allow_error=False, target_agent=ag
         assert payload.get("jsonrpc") == "2.0" and payload.get("id") == request_id, payload
     if allow_error:
         return status, payload, is_a2a_response
-    assert is_a2a_response and status == 200 and "error" not in payload, payload
+    assert is_a2a_response and status == 200 and "error" not in payload, {
+        "status": status, "a2a_response": is_a2a_response, "body": payload,
+    }
     return payload["result"]
 
 
