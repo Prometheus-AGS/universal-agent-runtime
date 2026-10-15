@@ -405,6 +405,7 @@ impl EmbeddedRuntimeBuilder {
         let skills = skill_service.registry().clone();
 
         let provider_registry = Arc::new(ProviderRegistry::new());
+        provider_registry.set_llm_defaults(&llm_config).await;
         provider_registry
             .register_custom_provider(provider.clone())
             .await?;

@@ -1093,6 +1093,7 @@ async fn run_server_with_listener(
     // Initialize Provider Registry
     let provider_registry = Arc::new(crate::llm::ProviderRegistry::new());
     info!(name: "startup.step", step = 7, stage = "provider_registry_seed", "UAR startup progress");
+    provider_registry.set_llm_defaults(&llm_config).await;
     provider_registry.seed_from_llm_config(&llm_config).await;
     if !config.providers.is_empty() {
         provider_registry
