@@ -2,10 +2,10 @@
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 2905,
-  "derivedRevision": 2905,
+  "sourceRevision": 2919,
+  "derivedRevision": 2919,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2501,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2515,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -19,19 +19,17 @@
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
   "conflictCount": 0,
-  "updatedAt": "2026-10-15T17:24:40.735675Z",
+  "updatedAt": "2026-10-15T19:00:48.340326Z",
   "cursor": [
     "uar-1-1-0-kubo-conformance",
-    "execute",
-    "uar-1-1-0-kubo-conformance",
-    "7"
+    "reflect"
   ],
   "root": {
     "type": "phase",
     "id": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
     "status": "ready",
     "progress": {
-      "done": 136,
+      "done": 137,
       "total": 150
     },
     "children": [
@@ -1139,18 +1137,18 @@
         "type": "phase",
         "id": "uar-1-1-0-kubo-conformance",
         "canonicalId": "uar-1-1-0-kubo-conformance",
-        "status": "IN_PROGRESS",
+        "status": "COMPLETE",
         "progress": {
-          "done": 0,
+          "done": 1,
           "total": 1
         },
         "children": [
           {
             "type": "change",
             "id": "uar-1-1-0-kubo-conformance",
-            "status": "IN_PROGRESS",
+            "status": "COMPLETE",
             "progress": {
-              "done": 6,
+              "done": 7,
               "total": 7
             }
           }

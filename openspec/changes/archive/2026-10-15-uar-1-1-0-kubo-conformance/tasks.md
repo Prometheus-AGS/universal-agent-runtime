@@ -24,4 +24,4 @@
 
 ## 7. Publication
 
-- [ ] 7.1 Publish immutable source/tag/images; accept published digest; create release and issue handoff
+- [x] 7.1 Publish immutable source/tag/images; accept published digest; create release and issue handoff

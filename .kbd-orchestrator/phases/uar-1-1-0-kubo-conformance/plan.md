@@ -4,7 +4,7 @@
 User approved implementation and publication on 2026-10-15. Baseline c9dca170; prior conformance fixes are committed in 22088cee. Dot is canonically complete; its cancelled qualification remains cancelled. This bounded phase delivers every #379 original item and follow-up requirement. Nothing is deferred.
 
 ## Spec → Plan → Execute → Reflect
-Spec and Plan were completed through source inspection and operator decisions before execution. Execute is active. The operator-required entire-phase implementation boundary is complete and recorded in implementation-complete.md. All production, fixture and documentation items are authored; only serialized acceptance and publication remain. Historical acceptance results apply to their precise source/image.
+Spec and Plan were completed through source inspection and operator decisions before execution. Execute and Reflect are complete. The operator-required entire-phase implementation boundary is recorded in implementation-complete.md. Published-image acceptance passed and v1.1.0 is released; receipts/publication.json and receipts/published-acceptance.json hold the final evidence. Historical acceptance results apply to their precise source/image.
 
 ## Implementation inventory and ownership
 1. uar-runtime: official pinned A2A 1.0 protobuf/gRPC alongside legacy; all durable operations, status and approval projections, admission authorization, protocol acceptance fixtures. Own src/uar/api/a2a/**, proto/** and A2A fixtures. Lead owns build.rs until policy validation.

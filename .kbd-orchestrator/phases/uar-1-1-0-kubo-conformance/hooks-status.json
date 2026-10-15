@@ -1,1 +1,1 @@
-{"totalRuns":34,"failedRuns":0,"lastRun":{"ts":"2026-10-15T17:20:25Z","kind":"task","edge":"before","name":"uar-1-1-0-kubo-conformance:7","hookId":"kbd-memory-log","layer":"builtin","mode":"augment","status":0},"lastFailure":null}
+{"totalRuns":52,"failedRuns":0,"lastRun":{"ts":"2026-10-15T19:00:36Z","kind":"phase","edge":"after","name":"uar-1-1-0-kubo-conformance","hookId":"legacy-phase-complete","layer":"builtin","mode":"augment","status":0},"lastFailure":null}

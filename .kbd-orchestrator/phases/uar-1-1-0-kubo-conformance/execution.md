@@ -111,3 +111,13 @@
 - Integrated r23 passed all4MCP/skills/AGUI profiles and4governance-enabledA2A tuples. Disabled JSONRPC dynamic polling hit bareHTTPerror; exact retained runtime log at17:41:44.705218Z says Rate limit exceeded, middleware returns429. Fixture now paces everyHTTPrequest200ms and reports status/header classification on failure, with no retry or limit disable. All phase implementation remains complete after this fixture-only operational correction; no check ran while correcting. Reconcile entire source/docs inventory before affected A2A gate r24; no runtime rebuild needed.
 
 - Integrated imageebae4c36 A2A r24 exited0 with all8 tuples passed. r23 all4MCP/skills/AGUI profiles passed,12elicitationdecisions and4falseapprovalcases. Only fixturepacing/diagnostic changed betweenr23/r24, no runtimechange. Integrated affected gate aggregate candidate-integrated-acceptance.json retains exactr23/r24 receipts; final published digest mustpassallgates. No implementationpending.
+
+- Source/evidence commitd815ef72 pushed atomically to main, taskbranch and annotatedimmutablev1.1.0 tag3bdb9435. Remote peeledtag matchesd815ef72. Existing deployment run38780160573 buildingnativeamd64+arm64. Canceled only ownduplicatemainrun38780158980 (samecommit). No registrydigest or publishedacceptance yet.
+
+- Deployment38780160573 succeeded fromtagv1.1.0/source d815ef72. Final OCIindex sha256:064f5004fb3ba76506abce5cf81285b2a8aa3e54fa5a22e2c2bfc97b1211e43b containslinuxamd64manifest94f78a7e... andlinuxarm64manifestb3a3d8bd.... Pullbyfinaldigest exited0, runtime/fixture sources matchtag (gitdiffexit0). Full published acceptance r1 started; no success claimuntilfullreceiptpasses.
+
+- Published full program exited0: resultpassed/full_acceptancetrue,12profiles,4MCP,12elicitationdecisions,4explicitapprovaldenials,8A2A. Stable GitHubRelease v1.1.0 created with6assets; all6 GitHub assetdigests matchuploadedfiles. Posted #379 comment6199871487 withexactOG4reference, source/workflow/archdigests, receipts andlimits. Tagunchanged.
+
+## Final phase closure
+
+Canonical task 7 completed (7/7); change completed (1/1). Managed OpenSpec verify returned PASS and archive completed. Reconcile returned clean. Reflect screening score 0.01785714365541935 (one low length warning, no S-08); candidate lists had no pending candidates. The first phase-close guard was blocked because the initial phase-start receipt was absent. A late current-time start reconciliation and passing pre/post close receipts preserve this process gap without backdating. Canonical phase completion then succeeded. No next phase was activated; Dot closure/cancellation is unchanged.

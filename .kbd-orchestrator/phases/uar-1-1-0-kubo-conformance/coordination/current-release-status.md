@@ -1,17 +1,34 @@
-# Current release continuation
+# UAR v1.1.0 release complete
 
-Phase Execute, task7 publication active. User authorized complete implementation and immutable v1.1.0 publication. All phase code/fixtures/docs are complete and owner handoffs delivered. Never run a gate while an implementation item remains.
+## Final status
 
-Source commits: a39e1fd5 conformance+evidence,722ce006 clean merge of origin/main76f2ad30 (PR384 operator LLM timeout/retry inheritance). Branch codex/uar-1-1-0-kubo-conformance. Source committed locally, no push/tag/release/image publication. No tag v1.1.0 existed at last preflight. Main was unprotected.
+All seven tasks and the bounded Kubo conformance phase are complete. The full program passed against the published immutable image, without source patches. The GitHub Release and #379 handoff are published. No local acceptance process or source edit remains active. No next phase is authorized.
 
-ACTIVE: production Docker build r9, exec60109. Log /tmp/uar-v1.1.0-candidate-build-r9.log, metadata /tmp/uar-v1.1.0-candidate-build-r9.json. All integrated source complete before launch. Wait actual exit, record image/compile/warnings. Then run affected MCP+A2A gates on new image, evidence r23. Single build/check writer lead.
+- Source/tag commit: d815ef72ac7d2c57a9bd18b23fcc58ffb224f326.
+- Immutable tag v1.1.0 object: 3bdb94354f1e8554db62f3321f7bd8f72c730833. Do not move it.
+- Image: ghcr.io/prometheus-ags/universal-agent-runtime@sha256:064f5004fb3ba76506abce5cf81285b2a8aa3e54fa5a22e2c2bfc97b1211e43b.
+- Deployment workflow: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/38780160573 (success).
+- GitHub Release: https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.1.0.
+- Issue handoff: https://github.com/Prometheus-AGS/universal-agent-runtime/issues/379#issuecomment-6199871487.
 
-Historical r8 image2bf3ce5f: full r20 passed defaults,12profiles,all4MCP/skills/AGUI incl12elicitation decisions and4explicitfalseapproval scenarios; r22 A2A-only passed all8 tuples. Aggregate receipts/candidate-local-acceptance.json retains split raw receipts and precise scope. Source git diff/check and managed OpenSpec validation passed. Staged diff later flagged4EOFblanklines; normalized all4 (payload fixtures still retain trailingnewline), full staged check fromc9 passed. Both commit hooks policy and commitlint passed; merge initially rejected type merge, then accepted chore(release). No hook bypass.
+## Evidence
 
-A2A fixture final integration: lead removed invented required optional metadata/context/history/artifact fields after r21; true required IDs/enums/nonemptyparts and actual approvalrecords retained. Both middleware401 and handler401/-32010 paths explicit. All8r22 passed including same limitedcredential dynamic activation ineligible and nopeer effect/prompt. No runtime change after manager activation registration except upstream PR384 nowincluded.
+receipts/publication.json records source, workflow, index, architecture child manifests, build output indexes, Release and issue identifiers. receipts/published-acceptance.json is the raw final full PASS receipt. Six Release assets were uploaded and their GitHub SHA256 values matched the local files. release-notes.md and issue-handoff.md retain the exact public bodies.
 
-After r9/affected acceptance: retain receipts, record candidate source hashes and integrated proof; required local source/spec gates; commit evidence. Recheck remote main and tag. Push approved source branch/main and immutable tag without force; if main advanced again do not overwrite it. Existing deploy.yml vtag publishes nativeamd64/arm64, deployment-only. Avoid duplicate main/tag builds by canceling only own duplicate run if both dispatched. Record workflowcommit/run and manifest/architecturedigests; pulldigest and run FULL installed-image acceptance with no sourcepatches. Only then GitHubRelease with setup/compatibility/receipts, #379 comment, OG-4 verifieddigest.
+Full acceptance command, observed exit 0:
 
-Current-source boundary and requirement map: implementation-complete.md, implementation-inventory.md, requirements-inventory.md. Native Rust tests authored but notrun; installedimage program is completion gate. Isolated review and one corrective done, samefamilylimitation retained; no third optionalreview. Packet observation excludes documented interfacecontrolframes and retains launch-to-capture gap.
+```sh
+python3 scripts/release/uar_1_1_acceptance.py --image ghcr.io/prometheus-ags/universal-agent-runtime@sha256:064f5004fb3ba76506abce5cf81285b2a8aa3e54fa5a22e2c2bfc97b1211e43b --evidence /tmp/uar-v1.1.0-published-evidence-r1
+```
 
-LATEST: r9 build PASSED exit0, release10m46s zero warnings, integrated localimage sha256:ebae4c36839d15f1ce2961dbce439d6a25311ca29a1293a3679b0a5a117c8f4e. r23 MCP all4profiles passed and4enforcedA2Apassed; disabledJSONRPCpolling hit actualHTTP429 (retained log Rate limit exceeded). Fixture only: allHTTPrequests paced200ms plusstatusdiagnostic, no retry/limitdisable. Entire phase inventory closed after correction. ACTIVE r24 A2Aonly exec30891, log /tmp/uar-v1.1.0-candidate-acceptance-r24.log, evidence matching-r24;3tuplespassed atlastread. No build active. Afterpass requiredsource/spec gates, commit evidence/pacing, recheckmain/tag, immutablepush thenworkflowdigests/fullpublishedacceptance/release.
+The program exercised 12 shipped configuration projections, four MCP/skills/AG-UI profiles, twelve elicitation decisions, four explicit false approvals, eight A2A transport/governance/decision tuples, and the five-minute default capture.
+
+## Limits and history
+
+Runtime execution was linux/arm64. linux/amd64 was built natively but not executed locally. Configuration projections do not prove infrastructure rollouts. Capture excluded documented interface-control frames and did not observe launch-to-first-capture. Independent artifact review plus one corrective pass used the recorded same-family fallback. Native Rust unit tests were authored but not run. See reflection.md and acceptance.md.
+
+All requested production code, fixtures and required documentation preceded the final gate. Earlier failed attempts and superseded boundaries remain historical in execution.md and implementation-boundary-history.md. No passing acceptance is attributed to them.
+
+Canonical closure initially found a missing phase-start guard receipt. It was recorded late, transparently, without backdating or reopening implementation; the original blocked receipt and subsequent canonical guard receipts are retained. Dot stays closed and its cancelled qualification remains cancelled.
+
+The only remaining operation at this record's creation is committing and pushing the audit records. That commit changes no release runtime source or fixture and does not move v1.1.0.

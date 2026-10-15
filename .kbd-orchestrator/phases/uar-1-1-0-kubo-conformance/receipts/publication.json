@@ -1,0 +1,48 @@
+{
+  "source_commit": "d815ef72ac7d2c57a9bd18b23fcc58ffb224f326",
+  "tag": "v1.1.0",
+  "tag_object": "3bdb94354f1e8554db62f3321f7bd8f72c730833",
+  "source_push": "atomic main + codex/uar-1-1-0-kubo-conformance + annotated tag",
+  "workflow_id": 236945891,
+  "workflow_run_id": 38780160573,
+  "workflow_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/38780160573",
+  "duplicate_main_run_cancel_requested": 38780158980,
+  "status": "released and handed off",
+  "manifest_digest": "sha256:064f5004fb3ba76506abce5cf81285b2a8aa3e54fa5a22e2c2bfc97b1211e43b",
+  "architecture_digests": {
+    "linux/amd64": "sha256:94f78a7ed17197fc045baec514ed6ec30d3cf23433e8c26340ccfddb080fac90",
+    "linux/arm64": "sha256:b3a3d8bdda9d919fa3489dded935c834256bf89984fa17b07a428acdb7a1c1ae"
+  },
+  "published_acceptance": true,
+  "build_output_digests": {
+    "linux/arm64": "sha256:fd92db181ecb6e4f742c4e3da899f6fa554207904e907f9c20450ec73a4a073d",
+    "linux/amd64": "sha256:e4a063b9092298157b2542dbc1fc71966a56840aed469d46e74012608df3fc13"
+  },
+  "arm64_job_status": "success",
+  "arm64_child_image_manifest": "sha256:b3a3d8bdda9d919fa3489dded935c834256bf89984fa17b07a428acdb7a1c1ae",
+  "arm64_preload": "passed; docker pull by workflow build digest completed",
+  "workflow_conclusion": "success",
+  "runtime_and_fixture_sources_match_tag": true,
+  "published_acceptance_receipt": "published-acceptance.json",
+  "published_acceptance_exit_code": 0,
+  "published_acceptance_command": "python3 scripts/release/uar_1_1_acceptance.py --image ghcr.io/prometheus-ags/universal-agent-runtime@sha256:064f5004fb3ba76506abce5cf81285b2a8aa3e54fa5a22e2c2bfc97b1211e43b --evidence /tmp/uar-v1.1.0-published-evidence-r1",
+  "local_execution": {
+    "Id": "sha256:0f626a14311c3a2ea26b15039bf3a39c6b511de1ae0f262f488257b9293d9ccf",
+    "Architecture": "arm64",
+    "Os": "linux",
+    "RepoDigests": [
+      "ghcr.io/prometheus-ags/universal-agent-runtime@sha256:064f5004fb3ba76506abce5cf81285b2a8aa3e54fa5a22e2c2bfc97b1211e43b",
+      "ghcr.io/prometheus-ags/universal-agent-runtime@sha256:fd92db181ecb6e4f742c4e3da899f6fa554207904e907f9c20450ec73a4a073d"
+    ]
+  },
+  "acceptance_counts": {
+    "shipped_profiles": 12,
+    "mcp_profiles": 4,
+    "elicitation_decisions": 12,
+    "explicit_approval_denials": 4,
+    "a2a_tuples": 8
+  },
+  "release_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.1.0",
+  "release_id": 414160304,
+  "issue_comment_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/379#issuecomment-6199871487"
+}

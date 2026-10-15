@@ -2,10 +2,10 @@
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 2904,
-  "derivedRevision": 2904,
+  "sourceRevision": 2917,
+  "derivedRevision": 2917,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2500,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2513,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -22,18 +22,18 @@
   "phase": "uar-1-1-0-kubo-conformance",
   "phaseId": "uar-1-1-0-kubo-conformance",
   "parentPhase": null,
-  "last_updated": "2026-10-15T17:20:24.637492Z",
+  "last_updated": "2026-10-15T19:00:29.762038Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 1,
-  "changes_completed": 0,
+  "changes_completed": 1,
   "implementation_total": 1,
-  "implementation_completed": 0,
+  "implementation_completed": 1,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 0,
+      "completed": 1,
       "total": 1,
-      "status": "PENDING"
+      "status": "COMPLETE"
     },
     "evidence": {
       "status": "NOT_TRACKED",
@@ -60,7 +60,7 @@
     "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 136,
+      "completed": 137,
       "total": 150,
       "status": "IN_PROGRESS"
     },
@@ -84,12 +84,12 @@
     {
       "id": "uar-1-1-0-kubo-conformance",
       "title": "Complete #379 and publish v1.1.0",
-      "status": "IN_PROGRESS",
-      "implementation_status": "IN_PROGRESS",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 7,
-      "tasks_done": 6,
-      "last_task_completed": "Record complete inventory; run isolated review and serial local production-path acceptance",
-      "next_task_pending": "Publish immutable source/tag/images; accept published digest; create release and issue handoff",
+      "tasks_done": 7,
+      "last_task_completed": "Publish immutable source/tag/images; accept published digest; create release and issue handoff",
+      "next_task_pending": null,
       "blockers": []
     }
   ],

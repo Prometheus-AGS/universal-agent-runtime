@@ -1,3 +1,11 @@
+# Final published acceptance
+
+PASSED. The complete program exited0 against the pulled immutable digest sha256:064f5004fb3ba76506abce5cf81285b2a8aa3e54fa5a22e2c2bfc97b1211e43b, result passed and full_acceptance true. All12shippedconfigurationprojections,4MCP/skills/AGUIprofiles,12elicitationdecisions,4falseapprovalscenarios and8A2Atuplespassed. Source andclientfixturesmatchedv1.1.0; no UARsource/binarypatches. See receipts/published-acceptance.json and publication.json, release-notes.md and issue-handoff.md. StableGitHubReleasecreatedand#379handoffposted.
+
+Limits: installed execution linux/arm64; nativeamd64built butnotexecutedlocally. Egresscapture excludes documentedinterfacecontrolframes, zerodrops/application/unclassifiedframes, launch-to-firstcapturegapnotobserved. Twelveprofiles are source-backedconfigurationprojections, not infrastructure rollout tests. NativeRusttests authoredbutunrun; realinstalledimageprogram waschosenacceptance. No deferredKubo requirement.
+
+## Historical acceptance record
+
 # UAR v1.1.0 release acceptance
 
 Acceptance incomplete. The entire-phase implementation boundary is now recorded in `implementation-complete.md`; all remaining code, fixtures and documentation are authored before verification resumes. No tag, registry image, GitHub Release or OG-4 success exists.

@@ -1,0 +1,125 @@
+{
+  "outcome": "pass",
+  "authoritativeRevision": 2918,
+  "sourceRevision": 2916,
+  "position": "uar-1-1-0-kubo-conformance",
+  "findings": [],
+  "outstandingObligations": {
+    "change:dot-07-approval-recovery": {
+      "key": "change:dot-07-approval-recovery",
+      "receiptId": "c398b296f2bf07a31a64a11e045127adbbacc5945775f95bfab1df7cc5198611",
+      "boundary": "change",
+      "subject": "dot-07-approval-recovery",
+      "sourceRevision": 2719,
+      "exactSignal": "Starting change 7 out of 17: Recover pending approvals without stale authority"
+    },
+    "phase:dot-feature-support": {
+      "key": "phase:dot-feature-support",
+      "receiptId": "532bb1b384f401bf6ff969b486fe8bce4eb867749e9db27d3dc7fbd5bff8e4b4",
+      "boundary": "phase",
+      "subject": "dot-feature-support",
+      "sourceRevision": 2588,
+      "exactSignal": "Starting phase 26 out of 26: dot-feature-support"
+    },
+    "phase:runtime-harness-gap-closure": {
+      "key": "phase:runtime-harness-gap-closure",
+      "receiptId": "842d1f1a4101c2c3fe448188fa16003d87b1521375b7ac4657fc25c20a01a2da",
+      "boundary": "phase",
+      "subject": "runtime-harness-gap-closure",
+      "sourceRevision": 2484,
+      "exactSignal": "Starting phase 25 out of 25: runtime-harness-gap-closure"
+    },
+    "phase:skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::classify-readiness-diagnostic-websocket-frame": {
+      "key": "phase:skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::classify-readiness-diagnostic-websocket-frame",
+      "receiptId": "22e93c03361d7f0e12a1b6be4e9960d5ed0895d725a6bd7c9825dd1433242be1",
+      "boundary": "phase",
+      "subject": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::classify-readiness-diagnostic-websocket-frame",
+      "sourceRevision": 2411,
+      "exactSignal": "Starting phase 3 out of 3: classify-readiness-diagnostic-websocket-frame"
+    },
+    "phase:skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::codex-harness-comparative-analysis": {
+      "key": "phase:skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::codex-harness-comparative-analysis",
+      "receiptId": "35f9069b93d48b0aa2835caa0544677f18371584afb51253b1b97f128c18b38a",
+      "boundary": "phase",
+      "subject": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::codex-harness-comparative-analysis",
+      "sourceRevision": 1265,
+      "exactSignal": "Starting phase 1 out of 1: codex-harness-comparative-analysis"
+    },
+    "phase:skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::diagnose-database-readiness-latency": {
+      "key": "phase:skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::diagnose-database-readiness-latency",
+      "receiptId": "74259c64d49f1c7d23c5b306d2f638f2708c8117615d0c65ee1400ff3ddde1cb",
+      "boundary": "phase",
+      "subject": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::diagnose-database-readiness-latency",
+      "sourceRevision": 2363,
+      "exactSignal": "Starting phase 2 out of 2: Diagnose persistent database-backed readiness latency"
+    },
+    "task:4.2 `agentnode` spawns and waits on a real child thread; remove the synthesized two-message call and the `[route]` prefix": {
+      "key": "task:4.2 `agentnode` spawns and waits on a real child thread; remove the synthesized two-message call and the `[route]` prefix",
+      "receiptId": "8937f584bc57c12eceb9c8c1db29fc928f40e0897016463760a2d5e8d9f9895a",
+      "boundary": "task",
+      "subject": "4.2 `AgentNode` spawns and waits on a real child thread; remove the synthesized two-message call and the `[route]` prefix",
+      "sourceRevision": 1862,
+      "exactSignal": "Starting task 18 out of 26: 4.2 `AgentNode` spawns and waits on a real child thread; remove the synthesized two-message call and the `[route]` prefix"
+    },
+    "task:add src/uar/runtime/prompt/assemble.rs: fixed section enum, per-section deterministic sort, render(&[promptfragment]) -> string": {
+      "key": "task:add src/uar/runtime/prompt/assemble.rs: fixed section enum, per-section deterministic sort, render(&[promptfragment]) -> string",
+      "receiptId": "9e6e8af0cfd9795aba17d862a51fb799e9819a92155a249bc9e27ec6db693828",
+      "boundary": "task",
+      "subject": "Add src/uar/runtime/prompt/assemble.rs: fixed section enum, per-section deterministic sort, render(&[PromptFragment]) -> String",
+      "sourceRevision": 1640,
+      "exactSignal": "Starting task 10 out of 20: Add src/uar/runtime/prompt/assemble.rs: fixed section enum, per-section deterministic sort, render(&[PromptFragment]) -> String"
+    },
+    "task:dot-07-approval-recovery/2": {
+      "key": "task:dot-07-approval-recovery/2",
+      "receiptId": "f615ca4f132120c700d1b344543a42ed3c6c8c516b8c69864d8b749f7d77a9c5",
+      "boundary": "task",
+      "subject": "dot-07-approval-recovery/2",
+      "sourceRevision": 2724,
+      "exactSignal": "Starting task 2 out of 2: 2.1 Verify recover pending approvals without stale authority through production boundaries. Restart while pending, read it through the shipped interface and decide on a second runtime. Race duplicate decisions, expiration, revoked authority and changed bindings; assert at most one approved effect and no effect for invalidated/denied decisions."
+    },
+    "task:make `uar::domain::context::contextstrategy` the only enum; map `truncatemiddle` to `keepfirstlast` and `hierarchical` to `progressivesummar": {
+      "key": "task:make `uar::domain::context::contextstrategy` the only enum; map `truncatemiddle` to `keepfirstlast` and `hierarchical` to `progressivesummar",
+      "receiptId": "cf9ea650c9a2fdd7df98e56d96b5637cd10bea4ca4659ccc69ee6bd916a91f02",
+      "boundary": "task",
+      "subject": "Make `uar::domain::context::ContextStrategy` the only enum; map `TruncateMiddle` to `KeepFirstLast` and `Hierarchical` to `ProgressiveSummar",
+      "sourceRevision": 1512,
+      "exactSignal": "Starting task 11 out of 19: Make `uar::domain::context::ContextStrategy` the only enum; map `TruncateMiddle` to `KeepFirstLast` and `Hierarchical` to `ProgressiveSummar"
+    },
+    "task:projected-mcp-runtime::3.1": {
+      "key": "task:projected-mcp-runtime::3.1",
+      "receiptId": "80630babba729db1ffa6529847d28b2d11e287bc60e96553c5dfbceac88af1ee",
+      "boundary": "task",
+      "subject": "projected-mcp-runtime::3.1",
+      "sourceRevision": 1842,
+      "exactSignal": "Starting task 13 out of 22: Lazy start for skill-contributed and child-only servers gated on cached catalog completeness; `wait_until_ready` on the call path"
+    },
+    "task:projected-mcp-runtime::4.1": {
+      "key": "task:projected-mcp-runtime::4.1",
+      "receiptId": "cfac8c22d12769f7b9e939586c5c1b012c9a691027d82ebfb771ff918362f039",
+      "boundary": "task",
+      "subject": "projected-mcp-runtime::4.1",
+      "sourceRevision": 1856,
+      "exactSignal": "Starting task 17 out of 22: Replace per-run `from_config` with catalog resolution and binding lookup"
+    },
+    "task:thread-native-subagents::4.1": {
+      "key": "task:thread-native-subagents::4.1",
+      "receiptId": "d42c9c4e61a1b92da6a8017109a9ce4d28dd1705300e2cf265a56fbc6cc0999a",
+      "boundary": "task",
+      "subject": "thread-native-subagents::4.1",
+      "sourceRevision": 1824,
+      "exactSignal": "Starting task 17 out of 25: `AgentActor` as a mailbox over the kernel; actor API requires user context"
+    },
+    "task:thread-native-subagents::5.1": {
+      "key": "task:thread-native-subagents::5.1",
+      "receiptId": "fc129807934bcb5288af5f6a7fc3b3b846354f7c2820e584ea6d456b6d329463",
+      "boundary": "task",
+      "subject": "thread-native-subagents::5.1",
+      "sourceRevision": 1858,
+      "exactSignal": "Starting task 20 out of 25: Record child usage against the root run; enforce `Exceeded` on spawn and model call"
+    }
+  },
+  "exactSignal": "Completed phase 27 out of 27: UAR v1.1.0 Kubo conformance release",
+  "repairedProjections": [],
+  "receiptId": "ceb4bc3f8ff92709ca9a4b79cf46ab3e0273776d8447e7b057b30d3b374d32c0",
+  "precommit": false
+}
