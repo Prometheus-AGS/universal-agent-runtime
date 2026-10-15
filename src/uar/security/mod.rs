@@ -15,3 +15,5 @@ pub mod rate_limit;
 pub mod sidecar_guard;
 #[cfg(feature = "server")]
 pub(crate) mod verifier;
+
+pub mod skill_roles;

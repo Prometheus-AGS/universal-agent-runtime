@@ -1,0 +1,17 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 9,
+  "task": {
+    "action": "add",
+    "id": "uar110-runtime-finish",
+    "title": "Finish all A2A fixture and client contracts",
+    "owner": "uar-runtime",
+    "harness": "codex",
+    "dependsOn": [],
+    "evidence": [],
+    "remaining": [
+      "tests/fixtures/a2a_v1_approval_governance.py",
+      "A2A setup/client portions of scripts/release/uar_1_1_acceptance.py and uar_1_1_loopback_client.py"
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "image": "uar:v1.1.0-candidate",
+  "local_image_id": "sha256:2bf3ce5fea8aeb739f98080a5393772aaa4833fae9ff27e292da433b5fc4e00f",
+  "full_acceptance": true,
+  "gates": {
+    "defaults": {
+      "status": "passed",
+      "receipt": "candidate-r20-incomplete.json",
+      "field": "safe_default",
+      "local_image_id": "sha256:2bf3ce5fea8aeb739f98080a5393772aaa4833fae9ff27e292da433b5fc4e00f",
+      "scope": "r20 source/image; complete published acceptance remains required"
+    },
+    "profiles": {
+      "status": "passed",
+      "receipt": "candidate-r20-incomplete.json",
+      "field": "shipped_profiles",
+      "local_image_id": "sha256:2bf3ce5fea8aeb739f98080a5393772aaa4833fae9ff27e292da433b5fc4e00f",
+      "scope": "r20 source/image; complete published acceptance remains required"
+    },
+    "mcp": {
+      "status": "passed",
+      "receipt": "candidate-r20-incomplete.json",
+      "field": "profiles",
+      "profile_count": 4,
+      "elicitation_decisions": 12,
+      "local_image_id": "sha256:2bf3ce5fea8aeb739f98080a5393772aaa4833fae9ff27e292da433b5fc4e00f",
+      "scope": "r20 source/image; complete published acceptance remains required",
+      "explicit_approval_denials": 4
+    },
+    "a2a": {
+      "status": "passed",
+      "receipt": "candidate-a2a-r22-passed.json",
+      "field": "a2a_profiles",
+      "profile_count": 8,
+      "local_image_id": "sha256:2bf3ce5fea8aeb739f98080a5393772aaa4833fae9ff27e292da433b5fc4e00f"
+    }
+  },
+  "published": false,
+  "current_implementation_status": "complete",
+  "aggregate_receipt": "candidate-local-acceptance.json"
+}

@@ -2,10 +2,10 @@
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 2668,
-  "derivedRevision": 2668,
+  "sourceRevision": 2900,
+  "derivedRevision": 2900,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2264,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2496,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -22,7 +22,7 @@
   "phase": "classify-readiness-diagnostic-websocket-frame",
   "phaseId": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture::classify-readiness-diagnostic-websocket-frame",
   "parentPhase": "skills-a2ui-library-and-runtime-observability::agui-a2ui-selection-architecture",
-  "last_updated": "2026-10-11T21:47:19.875386Z",
+  "last_updated": "2026-10-15T17:14:42.474681Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 1,
   "changes_completed": 1,
@@ -60,8 +60,8 @@
     "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 116,
-      "total": 146,
+      "completed": 136,
+      "total": 150,
       "status": "IN_PROGRESS"
     },
     "evidence": {

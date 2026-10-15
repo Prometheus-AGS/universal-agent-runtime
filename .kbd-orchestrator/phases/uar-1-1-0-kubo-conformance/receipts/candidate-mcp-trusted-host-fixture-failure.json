@@ -1,0 +1,17 @@
+{
+  "image": "uar:v1.1.0-candidate",
+  "image_kind": "local-tag",
+  "started_at": 1792071057,
+  "result": "incomplete",
+  "requested_gates": [
+    "mcp",
+    "a2a"
+  ],
+  "selected_gates": [
+    "mcp",
+    "a2a"
+  ],
+  "full_acceptance": false,
+  "failure": "wrong agent denial code for same_owner_agent_b: {\"code\": \"run_mcp_grant_forbidden\", \"error\": \"remote MCP grants require an authenticated trusted host\"}",
+  "finished_at": 1792071110
+}

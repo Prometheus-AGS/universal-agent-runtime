@@ -7,14 +7,35 @@ use crate::uar::security::credential_capture::AuthenticatedCredentialCapture;
 use serde::{Deserialize, Serialize};
 
 /// Host-created actor namespace. Never deserialize identity from actor payloads.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct ActorOwner {
+    // Fresh host-captured authority is separate from stable ownership identity.
+    verified_roles: std::collections::BTreeSet<String>,
     user_id: String,
     tenant_id: Option<String>,
     credential_principal: Option<crate::uar::security::claims::CredentialPrincipal>,
 }
 
+impl PartialEq for ActorOwner {
+    fn eq(&self, other: &Self) -> bool {
+        self.user_id == other.user_id && self.tenant_id == other.tenant_id
+            && self.credential_principal == other.credential_principal
+    }
+}
+impl Eq for ActorOwner {}
+impl std::hash::Hash for ActorOwner {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::hash::Hash::hash(&self.user_id, state);
+        std::hash::Hash::hash(&self.tenant_id, state);
+        std::hash::Hash::hash(&self.credential_principal, state);
+    }
+}
+
 impl ActorOwner {
+    pub(crate) fn verified_roles(&self) -> &std::collections::BTreeSet<String> {
+        &self.verified_roles
+    }
+
     /// Capture identity established by the authentication middleware.
     ///
     /// # Errors
@@ -30,6 +51,7 @@ impl ActorOwner {
             anyhow::bail!("Actor operations require authenticated user context");
         }
         Ok(Self {
+            verified_roles: user.verified_identity().map(|identity| identity.roles().iter().cloned().collect()).unwrap_or_default(),
             credential_principal: crate::uar::security::claims::CredentialPrincipal::from_verified_context(user).ok(),
             user_id: user.user_id.clone(),
             tenant_id: user
@@ -55,6 +77,7 @@ impl ActorOwner {
             anyhow::bail!("Persisted observer principal is invalid");
         }
         let owner = Self {
+            verified_roles: Default::default(),
             // Subject/tenant persistence is not enough to reconstruct issuer proof.
             credential_principal: None,
             user_id: user_id.to_owned(),
@@ -84,7 +107,7 @@ impl ActorOwner {
         owner_key: &str, schedule_id: &str, workspace: &str, instance: &str,
     ) -> anyhow::Result<Self> {
         let principal = grant.restore(owner_key, schedule_id, workspace, instance)?;
-        Ok(Self { user_id: principal.subject().to_owned(),
+        Ok(Self { verified_roles: Default::default(), user_id: principal.subject().to_owned(),
             tenant_id: principal.tenant_id().map(str::to_owned),
             credential_principal: Some(principal) })
     }
@@ -95,7 +118,7 @@ impl ActorOwner {
         owner_key: &str, rule_id: &str, workspace: &str, instance: &str,
     ) -> anyhow::Result<Self> {
         let principal = grant.restore(owner_key, rule_id, workspace, instance)?;
-        Ok(Self { user_id: principal.subject().to_owned(), tenant_id: principal.tenant_id().map(str::to_owned),
+        Ok(Self { verified_roles: Default::default(), user_id: principal.subject().to_owned(), tenant_id: principal.tenant_id().map(str::to_owned),
             credential_principal: Some(principal) })
     }
 
@@ -127,6 +150,7 @@ pub enum AgentMessage {
     /// A trusted transport's exact run submission. The host allocates run_id;
     /// wire payloads cannot create this envelope or replace its identity.
     UserRun {
+        owner: ActorOwner,
         run_id: String,
         content: String,
         credential_capture: AuthenticatedCredentialCapture,
@@ -137,6 +161,7 @@ pub enum AgentMessage {
     },
     /// A user or system prompt to process.
     UserPrompt {
+        owner: ActorOwner,
         /// The text prompt to handle.
         content: String,
         /// Optional reply channel for the response.

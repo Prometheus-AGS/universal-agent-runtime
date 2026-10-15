@@ -15,7 +15,7 @@
 //! CONFIGURATION LIVES IN THE DATABASE, NOT IN FILES
 //!
 //! Config files SEED the store on first boot (`hydrate` persists the
-//! file-derived registry when the store is empty) and the store is the source
+//! file-derived registry when the setting is absent) and the store is the source
 //! of truth from then on. That is what makes a runtime API change take effect
 //! without a restart, a file write, or a polling loop — the same contract on
 //! an embedded device and a remote server.
@@ -144,7 +144,9 @@ pub async fn save(
     servers.insert(name.clone(), server.clone());
     write(manager, &servers).await?;
 
-    if connected {
+    let restricted_change = server.entry.requires_agent_grant()
+        || registry.server_entries().get(&name).is_some_and(McpServerEntry::requires_agent_grant);
+    if connected && !restricted_change {
         return Ok(SaveResult {
             name,
             outcome: ApplyOutcome::Deferred {
@@ -160,6 +162,8 @@ pub async fn save(
             .upsert_server(name.clone(), server.entry)
             .await
             .map_err(|error| error.to_string())?;
+    } else {
+        registry.remove_server(&name);
     }
     Ok(SaveResult {
         name,
@@ -212,15 +216,15 @@ pub async fn hydrate(
         })
         .collect::<HashMap<_, _>>();
     let stored = manager
-        .get_value(SETTINGS_KEY)
-        .await
-        .and_then(|value| serde_json::from_value::<HashMap<String, StoredMcpServer>>(value).ok())
-        .unwrap_or_default();
+        .load_optional_persisted_value(SETTINGS_KEY)
+        .await?
+        .map(serde_json::from_value::<HashMap<String, StoredMcpServer>>)
+        .transpose()?;
 
-    // The file→database seed: an empty store adopts the file configuration
-    // once, and every later read comes from the database.
-    let seed = stored.is_empty() && !current.is_empty();
-    let effective = if seed { current } else { stored };
+    // Only an absent setting adopts the file configuration. An explicitly
+    // empty persisted map is authoritative; storage/decoding errors fail closed.
+    let seed = stored.is_none() && !current.is_empty();
+    let effective = stored.unwrap_or(current);
     for (name, server) in &effective {
         server.entry.validate_sandbox_policy(name)?;
     }
@@ -230,7 +234,7 @@ pub async fn hydrate(
             .await?;
     }
 
-    for name in registry.server_names() {
+    for name in registry.server_entries().into_keys() {
         registry.remove_server(&name);
     }
     for (name, server) in effective {

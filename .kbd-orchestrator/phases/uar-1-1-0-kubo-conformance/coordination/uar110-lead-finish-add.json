@@ -1,0 +1,17 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 13,
+  "task": {
+    "action": "add",
+    "id": "uar110-lead-finish",
+    "title": "Reconcile entire phase implementation and release documentation",
+    "owner": "uar-lead",
+    "harness": "codex",
+    "dependsOn": [],
+    "evidence": [],
+    "remaining": [
+      "docs/releases/v1.1.0-kubo.md",
+      "phase records and complete implementation inventory"
+    ]
+  }
+}

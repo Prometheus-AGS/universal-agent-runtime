@@ -133,6 +133,7 @@ fn minimal_config() -> AppConfig {
     AppConfig {
         supervisor_recovery: None,
         server: ServerConfig {
+            mcp_shared_transports_enabled: true,
             port: 3000,
             host: "127.0.0.1".to_string(),
             cors_allowed_origins: Vec::new(),
@@ -144,6 +145,7 @@ fn minimal_config() -> AppConfig {
             deployment_profile: Default::default(),
             jwt_algorithm: None,
             workspace_authorities: Vec::new(),
+            skill_required_roles: Default::default(),
             api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
             api_key_admin_principals: Vec::new(),
             trusted_host_principals: Vec::new(),

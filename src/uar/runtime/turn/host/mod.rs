@@ -11,6 +11,15 @@ mod event_projection;
 pub use credentials::{RunCredentialInput, RunCredentials, RunProviderKind};
 pub use history::{HistorySeedStatus, HostHistoryInput};
 pub use mcp::{RunMcpServerInput, RunMcpServers};
+pub(crate) use mcp::RegisteredMcpAgent;
+
+/// Non-secret, host-resolved identity of an agent-restricted destination grant.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct HostMcpAgentBinding {
+    pub agent_id: String,
+    pub agent_revision: String,
+    pub grant_policy_revision: String,
+}
 pub use secret_stream::{SecretStream, ProjectedEventStream};
 pub use receipt_projection::ProjectedCanonicalResult;
 pub use event_projection::AdmissionProjection;
@@ -27,6 +36,8 @@ pub struct HostMcpGrantMarker {
     pub scopes: std::collections::BTreeSet<String>,
     pub credential_revision: String,
     pub expires_at_unix: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_binding: Option<HostMcpAgentBinding>,
 }
 
 impl HostMcpGrantMarker {
@@ -34,6 +45,7 @@ impl HostMcpGrantMarker {
     /// destination and authority. Extending expiry requires a new revision.
     pub(crate) fn accepts_renewal(&self, renewed: &Self) -> bool {
         self.server == renewed.server
+            && self.agent_binding == renewed.agent_binding
             && self.destination_id == renewed.destination_id
             && self.trusted_host == renewed.trusted_host
             && renewed.scopes.is_subset(&self.scopes)

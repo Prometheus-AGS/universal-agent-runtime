@@ -1,0 +1,160 @@
+{
+  "image": "uar:v1.1.0-candidate",
+  "image_kind": "local-tag",
+  "started_at": 1792084486,
+  "result": "partial-passed",
+  "requested_gates": [
+    "a2a"
+  ],
+  "selected_gates": [
+    "a2a"
+  ],
+  "full_acceptance": false,
+  "a2a_profiles": [
+    {
+      "tuple": "enforced-jsonrpc-approve",
+      "receipt": {
+        "transport": "jsonrpc",
+        "governance": "enforced",
+        "decision": "approve",
+        "tenant": "release-tenant",
+        "task_id": "a2a-792bfb3d8e8a1d0b591b1f5fb69a6d93e97c664a2dafa8b38b9bd7e7c3d5756c",
+        "immediate_get_state": "TASK_STATE_WORKING",
+        "tool_count": 1,
+        "dynamic_task_id": "a2a-fa184ec13bf4aff8db7402ca80f49377b44a6e1242122432fa0b80b9a1d5bef3",
+        "result": "passed"
+      },
+      "provider_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-enforced-jsonrpc-approve/provider.jsonl",
+      "peer_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-enforced-jsonrpc-approve/mcp-peer.jsonl",
+      "shared_transports_enabled": true,
+      "client": "candidate-image-network-namespace"
+    },
+    {
+      "tuple": "enforced-jsonrpc-deny",
+      "receipt": {
+        "transport": "jsonrpc",
+        "governance": "enforced",
+        "decision": "deny",
+        "tenant": "release-tenant",
+        "task_id": "a2a-e4e9f113f17221b6f67ab17e01760363a5fed02e6fe0483c8d6be0de4a642306",
+        "immediate_get_state": "TASK_STATE_WORKING",
+        "tool_count": 0,
+        "dynamic_task_id": "a2a-54e53929a5f736d0b7fd7abd2eb5075502409619dff5d80641bf635cfb340e68",
+        "result": "passed"
+      },
+      "provider_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-enforced-jsonrpc-deny/provider.jsonl",
+      "peer_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-enforced-jsonrpc-deny/mcp-peer.jsonl",
+      "shared_transports_enabled": true,
+      "client": "candidate-image-network-namespace"
+    },
+    {
+      "tuple": "enforced-grpc-approve",
+      "receipt": {
+        "transport": "grpc",
+        "governance": "enforced",
+        "decision": "approve",
+        "tenant": "release-tenant",
+        "task_id": "a2a-7786346958891e8134ddc2df727ab532d5890e9aee98b4a3d422782996b50a12",
+        "immediate_get_state": "TASK_STATE_WORKING",
+        "tool_count": 1,
+        "dynamic_task_id": "a2a-15a6332d04ef0518489fc360ba1769cd40f05731de6c5bc135a5e9d40b56e1fd",
+        "result": "passed"
+      },
+      "provider_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-enforced-grpc-approve/provider.jsonl",
+      "peer_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-enforced-grpc-approve/mcp-peer.jsonl",
+      "shared_transports_enabled": true,
+      "client": "candidate-image-network-namespace"
+    },
+    {
+      "tuple": "enforced-grpc-deny",
+      "receipt": {
+        "transport": "grpc",
+        "governance": "enforced",
+        "decision": "deny",
+        "tenant": "release-tenant",
+        "task_id": "a2a-305a0ed361a6cb0a6c5e9a946a59f9f00e9943d866876bcf7bf9931a21003bb1",
+        "immediate_get_state": "TASK_STATE_WORKING",
+        "tool_count": 0,
+        "dynamic_task_id": "a2a-fb8ce2a0373e63051927abddf3bd2fff5a7eaa2a70a4b6834b2015272e2eac1c",
+        "result": "passed"
+      },
+      "provider_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-enforced-grpc-deny/provider.jsonl",
+      "peer_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-enforced-grpc-deny/mcp-peer.jsonl",
+      "shared_transports_enabled": true,
+      "client": "candidate-image-network-namespace"
+    },
+    {
+      "tuple": "disabled-jsonrpc-approve",
+      "receipt": {
+        "transport": "jsonrpc",
+        "governance": "disabled",
+        "decision": "approve",
+        "tenant": "release-tenant",
+        "task_id": "a2a-27aa3db3f4f7b5db5c25a03353f7762c921976f81f3db1a5450d961052d90bb3",
+        "immediate_get_state": "TASK_STATE_WORKING",
+        "tool_count": 1,
+        "dynamic_task_id": "a2a-e1e67d34764ce85436830f08b7d4628468112f28382914cfbef8cbfce1d95757",
+        "result": "passed"
+      },
+      "provider_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-disabled-jsonrpc-approve/provider.jsonl",
+      "peer_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-disabled-jsonrpc-approve/mcp-peer.jsonl",
+      "shared_transports_enabled": true,
+      "client": "candidate-image-network-namespace"
+    },
+    {
+      "tuple": "disabled-jsonrpc-deny",
+      "receipt": {
+        "transport": "jsonrpc",
+        "governance": "disabled",
+        "decision": "deny",
+        "tenant": "release-tenant",
+        "task_id": "a2a-285001ef7875b987413cd2986cbfe7dd589362c50e94e278f3fe43997a166d3c",
+        "immediate_get_state": "TASK_STATE_WORKING",
+        "tool_count": 0,
+        "dynamic_task_id": "a2a-7d636110962efbf4d3eaee3ace2959830db10a8ece69f25195fccd394ab53289",
+        "result": "passed"
+      },
+      "provider_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-disabled-jsonrpc-deny/provider.jsonl",
+      "peer_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-disabled-jsonrpc-deny/mcp-peer.jsonl",
+      "shared_transports_enabled": true,
+      "client": "candidate-image-network-namespace"
+    },
+    {
+      "tuple": "disabled-grpc-approve",
+      "receipt": {
+        "transport": "grpc",
+        "governance": "disabled",
+        "decision": "approve",
+        "tenant": "release-tenant",
+        "task_id": "a2a-7ad7239b17666e4339fa9cc19629d0db724f4ddcf554f84f7636cd273a17ddd4",
+        "immediate_get_state": "TASK_STATE_WORKING",
+        "tool_count": 1,
+        "dynamic_task_id": "a2a-4d89d37f8e655014082db35f329733718875a7889ed086294df77f6e2f0d9165",
+        "result": "passed"
+      },
+      "provider_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-disabled-grpc-approve/provider.jsonl",
+      "peer_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-disabled-grpc-approve/mcp-peer.jsonl",
+      "shared_transports_enabled": true,
+      "client": "candidate-image-network-namespace"
+    },
+    {
+      "tuple": "disabled-grpc-deny",
+      "receipt": {
+        "transport": "grpc",
+        "governance": "disabled",
+        "decision": "deny",
+        "tenant": "release-tenant",
+        "task_id": "a2a-dd9cf9c52ee11e9ef1525b300e6049474629e5dd64734de4e15a479278e48f25",
+        "immediate_get_state": "TASK_STATE_WORKING",
+        "tool_count": 0,
+        "dynamic_task_id": "a2a-ea9e00b414200a820cdfeed02c99341e38cc15e2042de22ed93fa065093f43ae",
+        "result": "passed"
+      },
+      "provider_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-disabled-grpc-deny/provider.jsonl",
+      "peer_trace": "/private/tmp/uar-v1.1.0-candidate-evidence-r22/work/a2a-disabled-grpc-deny/mcp-peer.jsonl",
+      "shared_transports_enabled": true,
+      "client": "candidate-image-network-namespace"
+    }
+  ],
+  "finished_at": 1792084625
+}

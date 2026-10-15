@@ -1,0 +1,5 @@
+Run: fix-runtime-settings-namespace-routes-20260825T091750Z  revision 2890
+Lifecycle: Ready  plan revision 46
+Position: uar-1-1-0-kubo-conformance › execute › uar-1-1-0-kubo-conformance › 6
+Next work: change uar-1-1-0-kubo-conformance, task 6
+Operator note: Finish review corrections and reachable loopback/tenant/parity fixtures; record corrected implementation boundary; then rebuild and accept local production image.

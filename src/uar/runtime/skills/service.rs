@@ -10,15 +10,19 @@ mod selection;
 pub use selection::SkillSelectionError;
 
 use super::registry::SkillRegistry;
-use super::storage::{SkillStorageProvider, StorageProviderKind};
-use crate::uar::domain::skills::{Skill, SkillCandidate, SkillMatchResult, SkillScope};
+use super::storage::{SkillStorageProvider, StorageProviderKind, filesystem::parse_skill_file};
+use crate::uar::domain::skills::{
+    Skill, SkillCandidate, SkillKind, SkillMatchResult, SkillOrigin, SkillScope,
+};
 use crate::uar::persistence::PersistenceLayer;
 use crate::uar::runtime::matching::vector::VectorMatcher;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+use std::fmt::Write as _;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
+use sha2::{Digest, Sha256};
 
 /// Supported matching algorithms.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -84,6 +88,34 @@ impl Default for SkillMatchingConfig {
             model_name: None,
         }
     }
+}
+
+/// Errors returned when importing one remote `SKILL.md` document.
+#[derive(Debug, thiserror::Error)]
+pub enum SkillContentImportError {
+    /// The request body did not contain one valid SKILL.md manifest.
+    #[error("skill_markdown_invalid: {0}")]
+    InvalidManifest(String),
+    /// A skill with the derived ID is already present in durable storage.
+    #[error("skill_id_conflict")]
+    Conflict,
+    /// Governance denied creation of this remote skill manifest.
+    #[error("skill_mutation_denied")]
+    MutationDenied,
+    /// Import requires the configured persistence layer to acknowledge its write.
+    #[error("skill_persistence_unavailable")]
+    PersistenceUnavailable,
+    /// The persistence layer could not establish that the import was written.
+    #[error("skill_persistence_failed: {0}")]
+    Persistence(#[source] anyhow::Error),
+}
+
+fn sha256_digest(bytes: &[u8]) -> String {
+    let mut encoded = String::from("sha256:");
+    for byte in Sha256::digest(bytes) {
+        write!(&mut encoded, "{byte:02x}").expect("writing to String cannot fail");
+    }
+    encoded
 }
 
 /// Patch fields for updating an existing skill.
@@ -504,6 +536,76 @@ impl SkillService {
         }
 
         info!("Created skill via API: {}", skill.skill_id);
+        Ok(skill)
+    }
+
+    /// Import exactly one remote `SKILL.md` document without requiring a
+    /// filesystem shared with the caller.
+    ///
+    /// The original document is retained separately from the parsed overlay so
+    /// a later `GET` can return the same content and the stored digest remains
+    /// meaningful. The database write happens before the in-memory registry is
+    /// updated or a response can be returned.
+    pub async fn import_skill_markdown(
+        &self,
+        skill_markdown: String,
+    ) -> Result<Skill, SkillContentImportError> {
+        let (manifest, prompt_overlay) = parse_skill_file(&skill_markdown)
+            .map_err(|error| SkillContentImportError::InvalidManifest(error.to_string()))?;
+        let skill_id = manifest.name.trim().to_lowercase().replace(' ', "-");
+        if skill_id.is_empty() {
+            return Err(SkillContentImportError::InvalidManifest(
+                "name must not be empty".to_string(),
+            ));
+        }
+        self.ensure_mutation_allowed(&skill_id)
+            .await
+            .map_err(|_| SkillContentImportError::MutationDenied)?;
+
+        let skill = Skill {
+            skill_id: skill_id.clone(),
+            version: manifest.version,
+            artifact_digest: Some(sha256_digest(skill_markdown.as_bytes())),
+            installed_location: None,
+            entrypoint: None,
+            required_tools: manifest.tools.clone(),
+            title: manifest.name,
+            description: manifest.description,
+            triggers: manifest.triggers,
+            prompt_overlay,
+            skill_markdown: Some(skill_markdown),
+            preferred_tools: manifest.tools,
+            mcp_config: None,
+            constraints: Default::default(),
+            enabled: manifest.enabled,
+            scoped_config: manifest.scoped_config,
+            tombstoned: false,
+            provider_id: "api".to_string(),
+            execution_config: Default::default(),
+            kind: SkillKind::Manifest,
+            origin: SkillOrigin::User,
+            ..Default::default()
+        };
+
+        // The write lock serializes imports in this process. The persistence
+        // provider owns the final atomic create-if-absent decision, so a
+        // competing runtime process cannot replace the first document.
+        let mut registry = self.registry.write().await;
+        if !registry.has_persistence() {
+            return Err(SkillContentImportError::PersistenceUnavailable);
+        }
+        if registry.get(&skill_id).is_some() {
+            return Err(SkillContentImportError::Conflict);
+        }
+        if !registry
+            .register_if_absent_checked(skill.clone())
+            .await
+            .map_err(SkillContentImportError::Persistence)?
+        {
+            return Err(SkillContentImportError::Conflict);
+        }
+
+        info!(skill_id = %skill_id, "Imported skill content via API");
         Ok(skill)
     }
 

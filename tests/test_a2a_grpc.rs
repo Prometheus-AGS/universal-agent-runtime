@@ -19,6 +19,8 @@ use universal_agent_runtime::uar::api::a2a::grpc::pb::agent_service_client::Agen
 use universal_agent_runtime::uar::api::a2a::grpc::pb::{
     CancelTaskRequest, GetTaskRequest, Message, Part, SendMessageRequest, part,
 };
+use universal_agent_runtime::uar::api::a2a::grpc_v1::{GrpcV1Service, pb as v1_pb};
+use universal_agent_runtime::uar::api::a2a::grpc_v1::pb::a2a_service_client::A2aServiceClient;
 use universal_agent_runtime::uar::api::a2a::{A2AState, thread_service::A2AThreadService};
 use universal_agent_runtime::uar::persistence::{
     PersistenceLayer, providers::surreal::SurrealDbProvider,
@@ -89,9 +91,11 @@ async fn start_grpc_server() -> (String, tempfile::TempDir, String) {
     );
     let state = Arc::new(A2AState {
         threads: Arc::new(A2AThreadService::new(Arc::new(ActorCollaboration::new(
-            manager,
+            Arc::clone(&manager),
         )))),
+        admission: manager,
         security: SecurityConfig {
+            skill_required_roles: Default::default(),
             deployment_profile: Default::default(),
             jwt_algorithm: None,
             workspace_authorities: Vec::new(),
@@ -108,6 +112,7 @@ async fn start_grpc_server() -> (String, tempfile::TempDir, String) {
             settings_admin_key: Some("test-admin-key".to_string().into()),
         },
         base_url: format!("http://127.0.0.1:{port}"),
+        grpc_url: None,
     });
     // Seed only the isolated test store, then obtain proof through real key validation.
     use argon2::{Argon2, password_hash::{PasswordHasher, SaltString, rand_core::OsRng}};
@@ -138,11 +143,14 @@ async fn start_grpc_server() -> (String, tempfile::TempDir, String) {
         .await
         .expect("A2A gRPC test API key exchange succeeds")
         .expect("A2A gRPC test API key returns a token");
-    let service = GrpcAgentService::new(state).with_api_key_service(api_keys);
+    let legacy_service = GrpcAgentService::new(Arc::clone(&state))
+        .with_api_key_service(Arc::clone(&api_keys));
+    let v1_service = GrpcV1Service::new(state).with_api_key_service(api_keys);
 
     tokio::spawn(async move {
         tonic::transport::Server::builder()
-            .add_service(service.into_server())
+            .add_service(legacy_service.into_server())
+            .add_service(v1_service.into_server())
             .serve(addr)
             .await
             .unwrap();
@@ -161,6 +169,16 @@ async fn connect(url: &str) -> AgentServiceClient<tonic::transport::Channel> {
         tokio::time::sleep(Duration::from_millis(20)).await;
     }
     panic!("gRPC server did not become ready in time");
+}
+
+async fn connect_v1(url: &str) -> A2aServiceClient<tonic::transport::Channel> {
+    for _ in 0..50 {
+        if let Ok(client) = A2aServiceClient::connect(url.to_string()).await {
+            return client;
+        }
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+    panic!("A2A v1 gRPC server did not become ready in time");
 }
 
 fn text_message(text: &str) -> Message {
@@ -237,6 +255,67 @@ fn grpc_task_get_missing_task_returns_not_found() {
             .expect_err("unknown task_id should error");
 
         assert_eq!(err.code(), tonic::Code::NotFound);
+    });
+}
+
+#[test]
+fn grpc_v1_send_message_and_get_task_round_trip() {
+    integration_runtime().block_on(async {
+        let (url, _database, token) = start_grpc_server().await;
+        let mut client = connect_v1(&url).await;
+        let configuration = v1_pb::SendMessageConfiguration {
+            return_immediately: true,
+            ..Default::default()
+        };
+        let response = client
+            .send_message(authenticated(
+                v1_pb::SendMessageRequest {
+                    tenant: String::new(),
+                    message: Some(v1_pb::Message {
+                        message_id: "v1-grpc-message".to_owned(),
+                        context_id: String::new(),
+                        task_id: String::new(),
+                        role: 1,
+                        parts: vec![v1_pb::Part {
+                            content: Some(v1_pb::part::Content::Text(
+                                "hello from official A2A v1 gRPC".to_owned(),
+                            )),
+                            metadata: None,
+                            filename: String::new(),
+                            media_type: "text/plain".to_owned(),
+                        }],
+                        metadata: None,
+                        extensions: Vec::new(),
+                        reference_task_ids: Vec::new(),
+                    }),
+                    configuration: Some(configuration),
+                    metadata: None,
+                },
+                &token,
+            ))
+            .await
+            .expect("official v1 SendMessage should succeed")
+            .into_inner();
+        let task = match response.payload {
+            Some(v1_pb::send_message_response::Payload::Task(task)) => task,
+            _ => panic!("official v1 SendMessage must return a Task"),
+        };
+        assert!(!task.id.is_empty());
+        assert!(task.status.is_some());
+
+        let fetched = client
+            .get_task(authenticated(
+                v1_pb::GetTaskRequest {
+                    tenant: String::new(),
+                    id: task.id.clone(),
+                    history_length: None,
+                },
+                &token,
+            ))
+            .await
+            .expect("official v1 GetTask should succeed")
+            .into_inner();
+        assert_eq!(fetched.id, task.id);
     });
 }
 

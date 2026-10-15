@@ -19,6 +19,7 @@
 //! resource cleanup. Neither transport may treat that flag as successful stop.
 
 pub mod agent_card;
+pub mod admission;
 pub mod durable;
 #[cfg(feature = "server")]
 pub mod v1;
@@ -30,6 +31,8 @@ pub mod discovery;
 // Enable once tonic-build prost integration is configured.
 #[cfg(feature = "a2a-transport")]
 pub mod grpc;
+#[cfg(feature = "a2a-transport")]
+pub mod grpc_v1;
 #[cfg(feature = "server")]
 pub mod handler;
 pub mod peer;

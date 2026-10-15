@@ -122,6 +122,7 @@ pub struct McpBindingRequest {
     key: McpBindingKey,
     definition: Arc<ServerDefinition>,
     interactions: Option<Arc<super::interaction::McpInteractionChannel>>,
+    ambient_registry: Option<(Arc<McpRegistry>, bool, bool)>,
 }
 
 impl McpBindingRequest {
@@ -142,7 +143,24 @@ impl McpBindingRequest {
             authentication: definition.authentication().clone(),
             environment,
         };
-        Self { key, definition, interactions: None }
+        Self { key, definition, interactions: None, ambient_registry: None }
+    }
+
+    pub(crate) fn with_ambient_registry(mut self, registry: Arc<McpRegistry>) -> Self {
+        let registered = matches!(self.definition.source(), ServerSource::Global);
+        self.ambient_registry = Some((registry, registered, false));
+        self
+    }
+
+    pub(crate) fn with_destination_registry(mut self, registry: Arc<McpRegistry>, registered: bool, agent_bound: bool) -> Self {
+        self.ambient_registry = Some((registry, registered, agent_bound));
+        self
+    }
+
+    /// Immutable launch inputs do not preserve revoked administrator authority.
+    pub(crate) fn authorize_current_definition(&self) -> Result<(), McpBindingError> {
+        self.ambient_registry.as_ref().map_or(Ok(()), |(registry, registered, agent_bound)|
+            registry.authorize_ambient_definition(self, *registered, *agent_bound))
     }
 
     pub(crate) fn with_interactions(mut self, channel: Option<&Arc<super::interaction::McpInteractionChannel>>) -> Self {

@@ -30,7 +30,7 @@ windows-service = "=0.8.1"
 
 [package]
 name = "universal-agent-runtime"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2024"
 license = "MIT"
 
@@ -282,7 +282,7 @@ sentry = ["dep:sentry"]
 
 ## A2A JSON-RPC, discovery, and gRPC network transports. Internal A2A types and
 ## registry contracts remain available for compiler and graph integration.
-a2a-transport = ["dep:tonic", "dep:tonic-prost", "dep:prost"]
+a2a-transport = ["dep:tonic", "dep:tonic-prost", "dep:prost", "dep:prost-types"]
 
 ## Optional Postgres/sqlx persistence + compiler storage + A2A registry. Pulls
 ## in `sqlx` (with the `postgres` driver) and `pgvector`. When OFF, all
@@ -328,6 +328,7 @@ serde_json = "1.0.147"
 tonic = { version = "0.14", optional = true }
 tonic-prost = { version = "0.14", optional = true }
 prost = { version = "0.14", optional = true }
+prost-types = { version = "=0.14.3", optional = true }
 
 # Async utilities
 futures = "0.3.32"

@@ -19,7 +19,7 @@ services:
       - LLM_PROTOCOL=auto
       - LLM_BASE_URL=${LLM_BASE_URL:-https://api.openai.com}
       - LLM_API_KEY=${LLM_API_KEY:-test-key}
-      - LLM_MODEL=${LLM_MODEL:-gpt-4o}
+      - LLM_MODEL=${LLM_MODEL:-}
       # File processing
       - UAR_FILE_PROCESSING__UNSTRUCTURED__API_URL=http://unstructured:8000/general/v0/general
       - UAR_FILE_PROCESSING__UNSTRUCTURED__API_KEY=test_key

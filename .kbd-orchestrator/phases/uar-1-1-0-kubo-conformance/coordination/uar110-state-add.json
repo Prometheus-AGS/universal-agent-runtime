@@ -1,0 +1,16 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 4,
+  "task": {
+    "action": "add",
+    "id": "uar110-state",
+    "owner": "uar-state",
+    "title": "Durable remote manifest import",
+    "harness": "codex",
+    "dependsOn": [],
+    "evidence": [],
+    "remaining": [
+      "Implementation and deferred acceptance"
+    ]
+  }
+}

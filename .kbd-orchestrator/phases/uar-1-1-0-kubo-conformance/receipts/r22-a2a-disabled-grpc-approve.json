@@ -1,0 +1,11 @@
+{
+  "transport": "grpc",
+  "governance": "disabled",
+  "decision": "approve",
+  "tenant": "release-tenant",
+  "task_id": "a2a-7ad7239b17666e4339fa9cc19629d0db724f4ddcf554f84f7636cd273a17ddd4",
+  "immediate_get_state": "TASK_STATE_WORKING",
+  "tool_count": 1,
+  "dynamic_task_id": "a2a-4d89d37f8e655014082db35f329733718875a7889ed086294df77f6e2f0d9165",
+  "result": "passed"
+}

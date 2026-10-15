@@ -261,6 +261,26 @@ async fn save_server(
             return (StatusCode::BAD_REQUEST, Json(json!({"error": error}))).into_response();
         }
     };
+    // A restricted destination is durable configuration, not an ambient
+    // connection. Persist policy before revoking the prior executable view.
+    if stored.entry.requires_agent_grant()
+        || state.mcp.server_entries().get(&name).is_some_and(McpServerEntry::requires_agent_grant)
+    {
+        let mut servers = stored_servers(&state).await;
+        servers.insert(name.clone(), stored.clone());
+        if let Err(error) = persist(&state, &servers).await {
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": error}))).into_response();
+        }
+        if stored.enabled {
+            if let Err(error) = state.mcp.upsert_server(name.clone(), stored.entry.clone()).await {
+                return (StatusCode::UNPROCESSABLE_ENTITY, Json(json!({"error": error.to_string()}))).into_response();
+            }
+        } else {
+            state.mcp.remove_server(&name);
+        }
+        state.run_manager.invalidate_mcp_server(&name).await;
+        return Json(public_server(&name, &stored, &state)).into_response();
+    }
     if stored.enabled {
         if let Err(error) = state
             .mcp

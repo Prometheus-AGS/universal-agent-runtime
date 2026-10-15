@@ -11,6 +11,7 @@ use axum::{
 };
 
 use super::{
+    admission::{A2aAdmission, A2aAdmissionError},
     agent_card::build_agent_card,
     thread_service::{A2AThreadService, TaskError},
     types::{
@@ -27,9 +28,24 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct A2AState {
     pub threads: Arc<A2AThreadService>,
+    /// Host-owned authorization for new named task admission.
+    pub admission: Arc<dyn A2aAdmission>,
     pub security: SecurityConfig,
     /// Public base URL used by the existing compiler AgentCard.
     pub base_url: String,
+    /// Bound official gRPC endpoint, advertised only after the service mounts.
+    pub grpc_url: Option<String>,
+}
+
+fn admission_error(id: Option<serde_json::Value>, error: A2aAdmissionError) -> JsonRpcResponse {
+    match error {
+        A2aAdmissionError::Forbidden => {
+            JsonRpcResponse::err(id, rpc_error::INVALID_REQUEST, "insufficient scope")
+        }
+        A2aAdmissionError::Unavailable => {
+            JsonRpcResponse::err(id, rpc_error::INTERNAL_ERROR, "task admission unavailable")
+        }
+    }
 }
 
 /// Existing compiler endpoint, now executing its registered agent artifact.
@@ -97,6 +113,16 @@ async fn dispatch(
     let result = match req.method.as_str() {
         "message/send" => match parse_params::<MessageSendParams>(req.params) {
             Ok(params) => {
+                let Some(user) = user.as_ref() else {
+                    return JsonRpcResponse::err(
+                        req.id,
+                        rpc_error::INVALID_REQUEST,
+                        "verified user context required",
+                    );
+                };
+                if let Err(error) = state.admission.admit(user, agent_id).await {
+                    return admission_error(req.id, error);
+                }
                 state
                     .threads
                     .send_with_capture(&owner, authenticated_instance_id, agent_id, params,
@@ -255,6 +281,7 @@ mod tests {
 
     fn security(jwt_required: bool) -> SecurityConfig {
         SecurityConfig {
+            skill_required_roles: Default::default(),
             deployment_profile: Default::default(),
             jwt_algorithm: None,
             workspace_authorities: Vec::new(),
@@ -314,10 +341,12 @@ mod tests {
         );
         let state = Arc::new(A2AState {
             threads: Arc::new(A2AThreadService::new(Arc::new(ActorCollaboration::new(
-                manager,
+                Arc::clone(&manager),
             )))),
+            admission: manager,
             security: security(jwt_required),
             base_url: "http://127.0.0.1:3928".to_owned(),
+            grpc_url: None,
         });
         (state, database)
     }

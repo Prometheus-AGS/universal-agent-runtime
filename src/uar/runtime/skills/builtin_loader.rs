@@ -489,6 +489,7 @@ fn parse_manifest(path: &Path) -> Result<Skill> {
         skill_id: String::new(),
         version: meta.version.unwrap_or_else(|| "0.0.0".to_string()),
         artifact_digest: Some(artifact_digest),
+        skill_markdown: None,
         installed_location: Some(format!("file://{}", path.display())),
         entrypoint: None,
         required_tools: preferred_tools.clone(),

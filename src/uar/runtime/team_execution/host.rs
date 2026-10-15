@@ -151,7 +151,7 @@ impl TeamExecutionRuntime {
         }
         let (servers, resources) = self
             .manager
-            .admit_run_mcp_servers(input.mcp_servers, user, owner, directory.clone())
+            .admit_run_mcp_servers(input.mcp_servers, user, owner, directory.clone(), None)
             .await
             .map_err(|_| CollaborationError::Conflict("TEAM_HOST_CONTEXT_REQUIRED".into()))?;
         let admission = HttpHostToolAdmissionPort::from_input(input.tool_admission)

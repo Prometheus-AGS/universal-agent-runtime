@@ -129,14 +129,6 @@ impl ActorSession {
         self.submit_reserved_prompt(uuid::Uuid::new_v4().to_string(), content)
     }
 
-    pub(crate) fn submit_prompt_with_capture(
-        &self,
-        content: String,
-        credential_capture: AuthenticatedCredentialCapture,
-    ) -> anyhow::Result<ActorTurn> {
-        self.submit_captured_prompt(uuid::Uuid::new_v4().to_string(), content, credential_capture)
-    }
-
     /// Submit a turn whose identity was already committed to a logical-instance inbox.
     pub(crate) fn submit_reserved_prompt(
         &self,
@@ -152,6 +144,18 @@ impl ActorSession {
         content: String,
         credential_capture: AuthenticatedCredentialCapture,
     ) -> anyhow::Result<ActorTurn> {
+        self.submit_authorized_prompt(&self.key.0, run_id, content, credential_capture)
+    }
+
+    /// Renew authority from the authenticated caller while retaining exact ownership.
+    pub(crate) fn submit_authorized_prompt(
+        &self,
+        owner: &ActorOwner,
+        run_id: String,
+        content: String,
+        credential_capture: AuthenticatedCredentialCapture,
+    ) -> anyhow::Result<ActorTurn> {
+        anyhow::ensure!(owner == &self.key.0, "Actor authority belongs to another owner");
         let handle = &self.handle;
         anyhow::ensure!(
             !handle.cancellation.is_cancelled() && !handle.is_finished(),
@@ -165,6 +169,7 @@ impl ActorSession {
         handle
             .actor_ref
             .send_message(AgentMessage::UserRun {
+                owner: owner.clone(),
                 run_id: run_id.clone(),
                 content,
                 credential_capture,
@@ -535,6 +540,7 @@ impl ActorCollaboration {
         let (tx, rx) = tokio::sync::oneshot::channel();
         actor_ref
             .send_message(AgentMessage::UserPrompt {
+                owner: owner.clone(),
                 content,
                 reply: Some(tx),
             })

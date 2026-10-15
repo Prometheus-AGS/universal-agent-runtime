@@ -1,0 +1,1 @@
+{"command": "prometheus kbd task register", "id": 7, "title": "Publish immutable source/tag/images; accept published digest; create release and issue handoff", "returncode": 0}

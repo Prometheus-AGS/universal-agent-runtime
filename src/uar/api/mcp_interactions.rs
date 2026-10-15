@@ -49,6 +49,9 @@ pub(crate) async fn list_for_context(manager: &RunManager, user: &UserContext, r
 /// Resolve one exact live interaction. ElicitResult is not an approval response.
 pub(crate) async fn resolve_for_context(manager: &RunManager, user: &UserContext, run: &str,
     workspace: Option<&str>, id: &str, response: ElicitResult) -> anyhow::Result<bool> {
+    if matches!(response.action, rmcp::model::ElicitationAction::Accept) {
+        manager.authorize_run_skill_roles(user, run).await?;
+    }
     let views = list_for_context(manager,user,run,workspace).await?;
     let Some(view) = views.into_iter().find(|view|view.record.id == id && view.resolvable) else { return Ok(false); };
     let next = view.record.answer(response)?;

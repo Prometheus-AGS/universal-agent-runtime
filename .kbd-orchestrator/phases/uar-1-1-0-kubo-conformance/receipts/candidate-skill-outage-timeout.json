@@ -1,0 +1,17 @@
+{
+  "image": "uar:v1.1.0-candidate",
+  "image_kind": "local-tag",
+  "started_at": 1792070799,
+  "result": "incomplete",
+  "requested_gates": [
+    "mcp",
+    "a2a"
+  ],
+  "selected_gates": [
+    "mcp",
+    "a2a"
+  ],
+  "full_acceptance": false,
+  "failure": "POST /api/uar/skills/import-content returned 408, expected 503: Request timed out",
+  "finished_at": 1792070850
+}

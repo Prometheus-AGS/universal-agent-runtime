@@ -557,6 +557,9 @@ impl ServiceInstanceConfig {
 
 #[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct ServerConfig {
+    /// Allow ambient MCP transports; false requires explicit run-owned grants.
+    #[serde(default = "ServerConfig::default_mcp_shared_transports_enabled")]
+    pub mcp_shared_transports_enabled: bool,
     pub port: u16,
     pub host: String,
     /// Exact browser origins allowed by CORS. Empty means no cross-origin access.
@@ -566,13 +569,15 @@ pub struct ServerConfig {
     pub shutdown_timeout_secs: u64,
     #[serde(default = "ServerConfig::default_log_format")]
     pub log_format: LogFormat,
-    /// Port for the A2A v0.3 gRPC transport. Defaults to 50051.
+    /// Port for the official A2A 1.0 and legacy gRPC services. Defaults to 50051.
     /// Configurable via `UAR_SERVER__GRPC_PORT`.
     #[serde(default = "ServerConfig::default_grpc_port")]
     pub grpc_port: u16,
 }
 
 impl ServerConfig {
+    fn default_mcp_shared_transports_enabled() -> bool { true }
+
     fn default_shutdown_timeout_secs() -> u64 {
         30
     }
@@ -672,6 +677,9 @@ pub struct TrustedHostPrincipal {
 
 #[derive(Deserialize, Clone, schemars::JsonSchema)]
 pub struct SecurityConfig {
+    /// Operator-owned role requirements; every listed role is required.
+    #[serde(default)]
+    pub skill_required_roles: std::collections::BTreeMap<String, std::collections::BTreeSet<String>>,
     #[serde(default)]
     pub deployment_profile: DeploymentProfile,
     /// Required explicitly in remote mode; must agree with the selected verifier.
@@ -2494,6 +2502,7 @@ persistence:
     #[test]
     fn protected_settings_require_a_configured_admin_key() {
         let config = SecurityConfig {
+            skill_required_roles: Default::default(),
             deployment_profile: Default::default(),
             jwt_algorithm: None,
             workspace_authorities: Vec::new(),
@@ -2519,6 +2528,7 @@ persistence:
     #[test]
     fn protected_settings_accept_a_configured_admin_key() {
         let config = SecurityConfig {
+            skill_required_roles: Default::default(),
             deployment_profile: Default::default(),
             jwt_algorithm: None,
             workspace_authorities: Vec::new(),

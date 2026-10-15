@@ -113,3 +113,7 @@ The host validates the server's requested schema, exact original connection and
 live waiter; an accepted form never approves a tool. Approval and elicitation
 IDs together form the all-open interrupt set. Cold disconnected elicitation is
 history and cannot be replayed or delivered to a replacement server connection.
+
+## v1.1.0 complete interrupt profile
+
+The release-pinned [Kubo integration contract](releases/v1.1.0-kubo.md#complete-ag-ui-interrupt-contract) specifies every approval and MCP elicitation field, response boolean/action, and exact all-pending resume coverage.

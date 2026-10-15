@@ -65,6 +65,7 @@ fn security() -> SecurityConfig {
         deployment_profile: Default::default(),
         jwt_algorithm: None,
         workspace_authorities: Vec::new(),
+        skill_required_roles: Default::default(),
         api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
         api_key_admin_principals: Vec::new(),
         trusted_host_principals: Vec::new(),
@@ -132,6 +133,8 @@ async fn harness(driver: Arc<dyn LlmDriver>) -> Harness {
     let owner = ActorOwner::from_verified_context(&context).expect("verified A2A owner");
     let collaboration = Arc::new(ActorCollaboration::new(Arc::clone(&manager)));
     let state = Arc::new(A2AState {
+        admission: manager.clone(),
+        grpc_url: None,
         threads: Arc::new(A2AThreadService::new(Arc::clone(&collaboration))),
         security: security(),
         base_url: "http://127.0.0.1:3928".to_owned(),

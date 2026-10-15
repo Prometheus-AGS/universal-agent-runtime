@@ -220,6 +220,13 @@ impl ActorThreadSession {
             AuthenticatedCredentialCapture::default()).await
     }
 
+    /// Renew credential roles only for the same captured principal/namespace.
+    pub(crate) fn refresh_owner(&mut self, owner: crate::uar::runtime::actor::messages::ActorOwner) -> anyhow::Result<()> {
+        anyhow::ensure!(self.owner == owner, "Actor authority belongs to another owner");
+        self.owner = owner;
+        Ok(())
+    }
+
     pub(crate) async fn execute_named_with_capture(
         &mut self,
         content: String,

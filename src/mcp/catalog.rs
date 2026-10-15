@@ -376,6 +376,14 @@ fn hash_configuration(configuration: &McpServerEntry) -> ServerConfigHash {
         }
     }
     // Appended only when present so every existing declaration keeps its hash.
+    if let McpServerEntry::RemoteHttp { grant_policy: Some(policy), .. } = configuration
+        && let Some(ids) = &policy.allowed_agent_ids
+    {
+        hasher.update(b"allowed_agent_ids\0");
+        hasher.update((ids.len() as u64).to_be_bytes());
+        for id in ids { hash_field(&mut hasher, id); }
+    }
+    // Appended only when present so every existing declaration keeps its hash.
     // A changed list changes descriptors, so it must not reuse a cached binding.
     let preapproved_tools = configuration.preapproved_tools();
     if !preapproved_tools.is_empty() {

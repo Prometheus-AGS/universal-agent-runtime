@@ -897,7 +897,7 @@ async fn run_server_with_listener(
     let mcp_config_path = mcp_config_path
         .as_deref()
         .unwrap_or_else(|| std::path::Path::new("mcp.json"));
-    let mut mcp_registry = if sidecar_mode {
+    let mut mcp_registry = if sidecar_mode || !config.server.mcp_shared_transports_enabled {
         // A sidecar never opens shared global transports. It does retain the
         // administrator-owned definitions so a trusted host can select an
         // exact registered destination and attach a run-owned credential.
@@ -930,7 +930,7 @@ async fn run_server_with_listener(
             }
         }
     } else {
-        match McpRegistry::load_from_file(mcp_config_path.to_string_lossy().as_ref()).await {
+        match McpRegistry::configured_catalog_from_file(mcp_config_path.to_string_lossy().as_ref()) {
             Ok(registry) => registry,
             Err(e) => {
                 tracing::warn!(
@@ -939,7 +939,7 @@ async fn run_server_with_listener(
                     "Could not load MCP config — starting with empty MCP registry. \
                      Tools from the configured file will not be available until it is created."
                 );
-                McpRegistry::empty()
+                McpRegistry::configured_empty()
             }
         }
     };
@@ -986,7 +986,7 @@ async fn run_server_with_listener(
     )?);
     let projected_mcp_runtime = crate::mcp::runtime::McpRuntimeManager::new(
         crate::mcp::binding_cache::McpBindingCache::default(),
-        Arc::new(crate::mcp::runtime::ConfiguredMcpConnector::default()),
+        Arc::new(crate::mcp::runtime::ConfiguredMcpConnector::with_registry(Arc::clone(&mcp))),
         Duration::from_secs(30),
         Duration::from_secs(30),
     )?;
@@ -999,10 +999,11 @@ async fn run_server_with_listener(
     let native_skill_registry = Arc::new(NativeSkillRegistry::new());
 
     #[cfg(feature = "response-quality")]
-    let orchestrator = if sidecar_mode {
-        // The host configures providers through the authenticated API after
-        // startup. Do not require a default OpenAI credential just to open
-        // the administration surface. Runs resolve their own provider binding.
+    let orchestrator = if sidecar_mode || llm_config.model.trim().is_empty() {
+        // The host can configure a provider after startup, and the default
+        // profile intentionally has no model. The response-quality correction
+        // pass is optional, so it must not construct a provider client or
+        // initiate network access while no model is selected.
         None
     } else {
         Some(Arc::new(Orchestrator::new(
@@ -1187,12 +1188,8 @@ async fn run_server_with_listener(
                     {
                         tracing::error!(error = ?e, "Failed to hydrate provider registry from settings database");
                     }
-                    if !sidecar_mode
-                        && let Err(e) =
-                            crate::uar::api::mcp_admin::hydrate_registry(&mcp, &mgr).await
-                    {
-                        tracing::error!(error = ?e, "Failed to hydrate MCP registry from settings database");
-                    }
+                    crate::uar::api::mcp_admin::hydrate_registry(&mcp, &mgr).await
+                        .map_err(|error| anyhow::anyhow!("Failed to establish effective MCP destination policy: {error:#}"))?;
 
                     // ADR-010 §1a (c). Audited HERE, after hydration, because
                     // this is the first moment the registry reflects the
@@ -1243,6 +1240,11 @@ async fn run_server_with_listener(
             info!("No persistence layer — settings manager disabled");
             None
         };
+    if settings_manager.is_none() && !sidecar_mode {
+        for (name, entry) in mcp.server_entries() {
+            mcp.upsert_server(name, entry).await?;
+        }
+    }
     let native_tools = uar::runtime::native_skills::startup_config(
         &config.native_tools,
         settings_manager.as_deref(),
@@ -1318,6 +1320,7 @@ async fn run_server_with_listener(
         .await
         .with_agent_graph(uar::defaults::orchestrator_graph())
         .with_skill_service(Arc::clone(&skill_service))
+        .with_skill_required_roles(config.security.skill_required_roles.clone())
         .with_mcp_runtime(projected_mcp_runtime.clone(), Arc::clone(&mcp_environment))
         .with_harness_config(config.harness.clone())
         .with_world_state_config(config.project_instructions.clone(), config.world_state)
@@ -1483,6 +1486,10 @@ async fn run_server_with_listener(
     // Both A2A transports share the existing mailbox/persisted-thread host.
     #[cfg(feature = "a2a-transport")]
     let a2a_state = Arc::new(uar::api::a2a::A2AState {
+        admission: run_manager.clone(),
+        grpc_url: _a2a_grpc_listener.as_ref().map(|listener| listener.local_addr()
+            .map(|address| format!("http://{}:{}", config.server.host, address.port())))
+            .transpose()?,
         threads: Arc::new(
             uar::api::a2a::thread_service::A2AThreadService::new(Arc::clone(&actor_system))
                 .with_instance_id(service_instance.descriptor().instance.id.clone())
@@ -2258,11 +2265,14 @@ async fn run_server_with_listener(
         let grpc_service =
             crate::uar::api::a2a::grpc::GrpcAgentService::new(Arc::clone(&a2a_state))
                 .with_api_key_service(Arc::clone(&api_key_service));
+        let grpc_v1_service = crate::uar::api::a2a::grpc_v1::GrpcV1Service::new(Arc::clone(&a2a_state))
+            .with_api_key_service(Arc::clone(&api_key_service));
         let grpc_shutdown = run_cancellation_root.clone();
         info!(name: "a2a.grpc.serving", address = %grpc_addr, "A2A gRPC transport serving");
         Some(tokio::spawn(async move {
             let result = tonic::transport::Server::builder()
                 .add_service(grpc_service.into_server())
+                .add_service(grpc_v1_service.into_server())
                 .serve_with_incoming_shutdown(
                     tokio_stream::wrappers::TcpListenerStream::new(a2a_grpc_listener),
                     async move {

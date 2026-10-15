@@ -1,0 +1,166 @@
+{
+  "image": "uar:v1.1.0-candidate",
+  "image_kind": "local-tag",
+  "started_at": 1792070376,
+  "result": "incomplete",
+  "requested_gates": [
+    "profiles",
+    "mcp",
+    "a2a"
+  ],
+  "selected_gates": [
+    "profiles",
+    "mcp",
+    "a2a"
+  ],
+  "full_acceptance": false,
+  "shipped_profiles": {
+    "profiles": [
+      {
+        "name": "config-embedded",
+        "source_hashes": {
+          "config.embedded.yaml": "245417bdd6d3fa62a036fdad074dcd65e89c302283801ba31c292d664dddcf84"
+        },
+        "anonymous_statuses": {
+          "effective_settings": 401,
+          "agents": 401
+        },
+        "projection_receipt": "/private/tmp/uar-v1.1.0-candidate-evidence-r4/profiles/config-embedded/projection.json"
+      },
+      {
+        "name": "config-remote-surreal",
+        "source_hashes": {
+          "config.remote.surreal.yaml": "14935736be81dec8445079b2a888087cc8febc81eb5c3494134b1e1118547846"
+        },
+        "anonymous_statuses": {
+          "effective_settings": 401,
+          "agents": 401
+        },
+        "projection_receipt": "/private/tmp/uar-v1.1.0-candidate-evidence-r4/profiles/config-remote-surreal/projection.json"
+      },
+      {
+        "name": "config-remote-postgres",
+        "source_hashes": {
+          "config.remote.postgres.yaml": "90b1a600ca8ee1bf562ddda382924ee79f2a27634bb828888808c152ef058626"
+        },
+        "anonymous_statuses": {
+          "effective_settings": 401,
+          "agents": 401
+        },
+        "projection_receipt": "/private/tmp/uar-v1.1.0-candidate-evidence-r4/profiles/config-remote-postgres/projection.json"
+      },
+      {
+        "name": "config-test",
+        "source_hashes": {
+          "config.test.yaml": "157917cd522667922579b059468f80547761545230a017d0bc071188320563ec"
+        },
+        "anonymous_statuses": {
+          "effective_settings": 401,
+          "agents": 401
+        },
+        "projection_receipt": "/private/tmp/uar-v1.1.0-candidate-evidence-r4/profiles/config-test/projection.json"
+      },
+      {
+        "name": "compose-dev",
+        "source_hashes": {
+          "docker-compose.dev.yaml": "d04b430bf2ed9926f5fb68ad85ec650cfc0c164e24467d55d313a87bae656e0c",
+          "docker-compose.override.yaml": "be3c3f4ac84d0f60a0f540f1214bcf45de1da8a5d1778875a710f9e1dd63c194",
+          "src/config.rs": "8706aa18c9a48ce1adf3b55bc4f129e6e9bc75d5e6124625afda183c98f5fad1"
+        },
+        "anonymous_statuses": {
+          "effective_settings": 401,
+          "agents": 401
+        },
+        "projection_receipt": "/private/tmp/uar-v1.1.0-candidate-evidence-r4/profiles/compose-dev/projection.json"
+      },
+      {
+        "name": "compose-test",
+        "source_hashes": {
+          "docker-compose.test.yaml": "5cae394cccfe07f43f3524caf3fd92db32020ca017cca24b621824354533e279",
+          "src/config.rs": "8706aa18c9a48ce1adf3b55bc4f129e6e9bc75d5e6124625afda183c98f5fad1"
+        },
+        "anonymous_statuses": {
+          "effective_settings": 401,
+          "agents": 401
+        },
+        "projection_receipt": "/private/tmp/uar-v1.1.0-candidate-evidence-r4/profiles/compose-test/projection.json"
+      },
+      {
+        "name": "compose-prod",
+        "source_hashes": {
+          "docker-compose.prod.yaml": "8b7614274967b78dc1714a550a21adbcb6cf5343c0973f594f5439b72a1092f6"
+        },
+        "anonymous_statuses": {
+          "effective_settings": 401,
+          "agents": 401
+        },
+        "projection_receipt": "/private/tmp/uar-v1.1.0-candidate-evidence-r4/profiles/compose-prod/projection.json"
+      },
+      {
+        "name": "compose-prod-postgres",
+        "source_hashes": {
+          "docker-compose.prod.postgres.yaml": "655c3df5c7a694d1e85bedd94f762938522bc26d904fb02295fda62136c8be03"
+        },
+        "anonymous_statuses": {
+          "effective_settings": 401,
+          "agents": 401
+        },
+        "projection_receipt": "/private/tmp/uar-v1.1.0-candidate-evidence-r4/profiles/compose-prod-postgres/projection.json"
+      },
+      {
+        "name": "k8s-base",
+        "source_hashes": {
+          "k8s/base/configmap.yaml": "593cdcdb617a43cbd6194ca73a7a1ae02af997f5804cd5a3f196ed8077f337f6",
+          "src/config.rs": "8706aa18c9a48ce1adf3b55bc4f129e6e9bc75d5e6124625afda183c98f5fad1"
+        },
+        "anonymous_statuses": {
+          "effective_settings": 401,
+          "agents": 401
+        },
+        "projection_receipt": "/private/tmp/uar-v1.1.0-candidate-evidence-r4/profiles/k8s-base/projection.json"
+      },
+      {
+        "name": "helm",
+        "source_hashes": {
+          "k8s/helm/uar/values.yaml": "480d4ed94db04a347cd692246984927d50d2d8145c1ef68da3dca7d13d74dca2",
+          "k8s/helm/uar/templates/configmap.yaml": "96079b716b99f996b5802bc1c4c5661776007ad522458e3eeea1c8a7a595ae26",
+          "src/config.rs": "8706aa18c9a48ce1adf3b55bc4f129e6e9bc75d5e6124625afda183c98f5fad1"
+        },
+        "anonymous_statuses": {
+          "effective_settings": 401,
+          "agents": 401
+        },
+        "projection_receipt": "/private/tmp/uar-v1.1.0-candidate-evidence-r4/profiles/helm/projection.json"
+      },
+      {
+        "name": "opentofu",
+        "source_hashes": {
+          "k8s/opentofu/configmap.tf": "c99923dee2cea24144ec968bdf82daeabfb1d578bda56603f73eb8d0d1892cc5",
+          "k8s/opentofu/deployment.tf": "b7edb8cae77be56b4aab940fb243423ed0f7c6e0cc5d2c60dab6f7c46e4a0268",
+          "k8s/opentofu/secrets.tf": "3308d4cb548deeb73da2497ac2e58822f22c77fb94dc3cdfc5f21b53471f9de2",
+          "k8s/opentofu/variables.tf": "dbb8a2893fc2e056cb621c825d8cded6d5cfccf82bad525ee1e1a0ff90ea3488"
+        },
+        "anonymous_statuses": {
+          "effective_settings": 401,
+          "agents": 401
+        },
+        "projection_receipt": "/private/tmp/uar-v1.1.0-candidate-evidence-r4/profiles/opentofu/projection.json"
+      },
+      {
+        "name": "example-config",
+        "source_hashes": {
+          "example.config.yaml": "f3f362a5173239926adcedc7d297bbe75b21cc6770cd261b8c141a014d3d4be6"
+        },
+        "anonymous_statuses": {
+          "effective_settings": 401,
+          "agents": 401
+        },
+        "projection_receipt": "/private/tmp/uar-v1.1.0-candidate-evidence-r4/profiles/example-config/projection.json"
+      }
+    ],
+    "profile_count": 12,
+    "acceptance": "each installed candidate projection returned HTTP 401 for unauthenticated effective-settings and agent-list requests"
+  },
+  "failure": "timed out waiting for uar-release-1f4067a42501 restart health: <urlopen error [Errno 61] Connection refused>",
+  "finished_at": 1792070629
+}

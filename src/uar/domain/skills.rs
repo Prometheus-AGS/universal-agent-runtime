@@ -83,6 +83,13 @@ pub struct Skill {
     pub description: String,
     pub triggers: SkillTriggers,
     pub prompt_overlay: String,
+    /// Exact `SKILL.md` content received through the remote content-import API.
+    ///
+    /// The parsed prompt overlay intentionally remains separate: parsing trims
+    /// presentation whitespace for activation, while this field preserves the
+    /// submitted bytes for retrieval and digest verification.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub skill_markdown: Option<String>,
     #[serde(default)]
     pub preferred_tools: Vec<String>,
     #[serde(default, skip)]

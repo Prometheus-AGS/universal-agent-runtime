@@ -17,7 +17,7 @@ pub(super) async fn create(store: &SurrealDbProvider, record: &A2aBinding) -> an
     }
 }
 
-pub(super) async fn load(store: &SurrealDbProvider, owner: &str, agent: &str, task: &str) -> anyhow::Result<Option<A2aBinding>> {
+async fn load_raw(store: &SurrealDbProvider, owner: &str, agent: &str, task: &str) -> anyhow::Result<Option<(String, A2aBinding)>> {
     anyhow::ensure!(store.durable_instances, "Durable A2A correlation unavailable");
     let mut response = store.db.query("SELECT VALUE data FROM type::record('a2a_bindings', $key) WHERE owner_key = $owner AND agent_id = $agent")
         .bind(("key", A2aBinding::storage_key_for(owner, agent, task)))
@@ -27,15 +27,25 @@ pub(super) async fn load(store: &SurrealDbProvider, owner: &str, agent: &str, ta
         let record: A2aBinding = serde_json::from_str(&row)?;
         record.validate()?;
         anyhow::ensure!(record.owner_key == owner && record.agent_id == agent && record.task_id == task, "A2A persisted scope mismatch");
-        Ok(record)
+        Ok((row, record))
     }).transpose()
+}
+
+pub(super) async fn load(store: &SurrealDbProvider, owner: &str, agent: &str, task: &str) -> anyhow::Result<Option<A2aBinding>> {
+    Ok(load_raw(store, owner, agent, task).await?.map(|(_, record)| record))
 }
 
 pub(super) async fn transition(store: &SurrealDbProvider, before: &A2aBinding, after: &A2aBinding) -> anyhow::Result<bool> {
     anyhow::ensure!(store.durable_instances, "Durable A2A correlation unavailable");
     before.validate_transition(after)?;
+    let Some((raw, current)) = load_raw(store, &before.owner_key, &before.agent_id, &before.task_id).await? else {
+        return Ok(false);
+    };
+    if serde_json::to_value(&current)? != serde_json::to_value(before)? {
+        return Ok(false);
+    }
     let mut response = store.db.query("UPDATE type::record('a2a_bindings', $key) SET data = $after, context_closed = $closed WHERE data = $before RETURN VALUE data")
-        .bind(("key", before.storage_key())).bind(("before", serde_json::to_string(before)?))
+        .bind(("key", before.storage_key())).bind(("before", raw))
         .bind(("after", serde_json::to_string(after)?)).bind(("closed", after.context_closed())).await?.check()?;
     let rows: Vec<String> = response.take(0)?;
     Ok(rows.len() == 1)
@@ -61,7 +71,7 @@ pub(super) async fn reconcile_cancellation(store: &SurrealDbProvider, owner: &st
     agent: &str, task: &str) -> anyhow::Result<Option<A2aBinding>> {
     use crate::uar::{persistence::{PersistenceLayer, checkpoint_resume::CheckpointResumeError},
         runtime::thread::{AgentThreadResult, AgentThreadStatus}};
-    let Some(before) = load(store,owner,agent,task).await? else { return Ok(None); };
+    let Some((before_raw, before)) = load_raw(store,owner,agent,task).await? else { return Ok(None); };
     if !before.cancellation_requested || before.context_closed() { return Ok(None); }
     let Some(epoch) = before.runtime_epoch.as_deref().filter(|epoch| !epoch.is_empty()) else { return Ok(None); };
     let mut response = store.db.query("SELECT VALUE state FROM type::record('checkpoint_runtime_epochs',$epoch)")
@@ -119,7 +129,7 @@ pub(super) async fn reconcile_cancellation(store: &SurrealDbProvider, owner: &st
         UPDATE type::record('a2a_bindings',$key) SET data=$after,context_closed=true;
         COMMIT TRANSACTION;")
         .bind(("epoch_id",epoch.to_owned())).bind(("key",before.storage_key()))
-        .bind(("before",serde_json::to_string(&before)?)).bind(("after",serde_json::to_string(&after)?))
+        .bind(("before",before_raw)).bind(("after",serde_json::to_string(&after)?))
         .bind(("claim_key",crate::uar::persistence::tenant_storage_key(owner,&before.run_id)))
         .bind(("owner",owner.to_owned())).bind(("run",before.run_id.clone()))
         .bind(("threads",changes)).await?;

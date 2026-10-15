@@ -1,0 +1,16 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 15,
+  "task": {
+    "action": "complete",
+    "id": "uar110-trust-finish",
+    "owner": "uar-trust-tools",
+    "expectedTaskRevision": 1,
+    "evidence": [
+      "tests/fixtures/uar_1_1_mcp_contract.py",
+      ".kbd-orchestrator/phases/uar-1-1-0-kubo-conformance/handoffs/trust.md",
+      "Source-authored handoff; no runtime checks run."
+    ],
+    "remaining": []
+  }
+}

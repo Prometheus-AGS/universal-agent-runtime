@@ -469,6 +469,7 @@ pub struct RunManager {
     // Map session_id -> most recent run_id for deterministic session lookup.
     session_current_run: Arc<RwLock<HashMap<String, String>>>,
     llm_config: LlmConfig,
+    skill_required_roles: BTreeMap<String, BTreeSet<String>>,
     global_mcp: Arc<McpRegistry>,
     /// Shared projected runtime for verified root turns. Definitions remain in
     /// `global_mcp`/the skill catalog and are frozen into each root request.
@@ -1036,6 +1037,7 @@ impl RunManager {
             tag_matcher,
             intent_classifier,
             classifier_config,
+            skill_required_roles: BTreeMap::new(),
             harness_config: crate::config::HarnessConfig::default(),
             project_instructions_config: Default::default(),
             world_state_config: Default::default(),
@@ -1272,6 +1274,56 @@ impl RunManager {
         }
     }
 
+    /// Install operator-owned skill policy before accepting requests.
+    #[must_use]
+    pub fn with_skill_required_roles(mut self, roles: BTreeMap<String, BTreeSet<String>>) -> Self {
+        self.skill_required_roles = roles;
+        self
+    }
+
+    fn skill_role_allowed(&self, skill_id: &str, owner: Option<&crate::uar::runtime::actor::messages::ActorOwner>) -> bool {
+        self.skill_required_roles.get(skill_id).is_none_or(|required| {
+            required.is_empty() || owner.is_some_and(|owner| required.is_subset(owner.verified_roles()))
+        })
+    }
+
+    /// Warm continuation cannot retain protected eligibility after credential-role removal.
+    pub(crate) async fn authorize_run_skill_roles(
+        &self, user: &crate::uar::security::claims::UserContext, run_id: &str,
+    ) -> anyhow::Result<()> {
+        if self.skill_required_roles.is_empty() { return Ok(()); }
+        let owner = crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user)?;
+        let run = self.get_run_for_context(user, run_id).await
+            .ok_or_else(|| anyhow::anyhow!("Protected continuation run is unavailable"))?;
+        let policy: EffectiveRunPolicy = serde_json::from_value(run.context.get("effective_run_policy")
+            .cloned().ok_or_else(|| anyhow::anyhow!("Protected continuation policy is unavailable"))?)?;
+        anyhow::ensure!(policy.skills.ids.iter().all(|id| self.skill_role_allowed(id, Some(&owner))),
+            "Insufficient skill roles for protected continuation");
+        Ok(())
+    }
+
+    /// Check explicit protected selections before a transport reserves a task.
+    pub(crate) async fn authorize_preferred_skills(
+        &self,
+        user: &crate::uar::security::claims::UserContext,
+        artifact: &AgentArtifact,
+    ) -> Result<(), crate::uar::security::skill_roles::SkillAdmissionError> {
+        use crate::uar::security::skill_roles::SkillAdmissionError;
+        let owner = crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user)
+            .map_err(|_| SkillAdmissionError::Forbidden)?;
+        let protected = artifact.policy.skills.prefer.iter()
+            .filter(|id| self.skill_required_roles.contains_key(*id)).collect::<Vec<_>>();
+        if protected.iter().any(|id| !self.skill_role_allowed(id, Some(&owner))) {
+            return Err(SkillAdmissionError::Forbidden);
+        }
+        let skills = self.catalog_skills().await;
+        if protected.iter().any(|id| !skills.iter().any(|skill| &skill.skill_id == *id
+            && skill.enabled_for(Some(&artifact.id), None))) {
+            return Err(SkillAdmissionError::Unavailable);
+        }
+        Ok(())
+    }
+
     #[must_use]
     pub(crate) fn with_a2a_config(mut self, config: &crate::config::A2aConfig) -> Self {
         self.a2a_peers = Arc::new(crate::uar::api::a2a::peer::TrustedA2APeers::from_config(
@@ -1488,7 +1540,9 @@ impl RunManager {
         Ok(Some(McpRunResources::new(
             owner.clone(),
             runtime.clone(),
-            self.root_mcp_catalog().await?,
+            Arc::new(McpCatalog::from_definitions(self.root_mcp_catalog().await?
+                .definitions().filter(|definition| !definition.configuration().requires_agent_grant())
+                .map(|definition| definition.as_ref().clone()))?),
             Arc::clone(environment),
         )))
     }
@@ -1499,6 +1553,7 @@ impl RunManager {
         user: &crate::uar::security::claims::UserContext,
         owner: crate::uar::runtime::actor::messages::ActorOwner,
         working_directory: std::path::PathBuf,
+        agent: Option<&AgentArtifact>,
     ) -> Result<
         (
             crate::uar::runtime::turn::host::RunMcpServers,
@@ -1506,16 +1561,12 @@ impl RunManager {
         ),
         crate::uar::runtime::turn::host::HostInputError,
     > {
-        let catalog = if inputs.iter().any(|input| input.grant.is_some()) {
-            self.root_mcp_catalog().await.map_err(|_| {
-                crate::uar::runtime::turn::host::HostInputError::new(
-                    "run_mcp_destination_unavailable",
-                    "registered MCP destinations are unavailable",
-                )
-            })?
-        } else {
-            Arc::new(McpCatalog::default())
-        };
+        let catalog = self.root_mcp_catalog().await.map_err(|_| {
+            crate::uar::runtime::turn::host::HostInputError::new(
+                "run_mcp_destination_unavailable", "registered MCP destinations are unavailable")
+        })?;
+        let registered = crate::uar::runtime::turn::host::RegisteredMcpAgent::capture(
+            self.persistence.clone(), Arc::clone(&self.global_mcp), agent).await?;
         let environment = match &self.mcp_environment {
             Some(environment) => Arc::clone(environment),
             None => Arc::new(
@@ -1529,12 +1580,13 @@ impl RunManager {
                 )?,
             ),
         };
-        let servers = crate::uar::runtime::turn::host::RunMcpServers::from_inputs(
+        let servers = crate::uar::runtime::turn::host::RunMcpServers::from_inputs_for_agent(
             inputs,
             user,
             &catalog,
             &environment,
-        )?;
+            registered.as_ref(),
+        )?.with_registry(Arc::clone(&self.global_mcp));
         let resources = servers.resources(owner, working_directory, environment.as_ref())?;
         Ok((servers, resources))
     }
@@ -3456,6 +3508,7 @@ impl RunManager {
         if let Some(resources) = &mcp_resources {
             emitter.secret_scrubber.extend(resources.secret_scrubber());
             let invalid_capture = verified_owner.as_ref() != Some(resources.owner())
+                || !resources.matches_agent(&artifact)
                 || inherited.is_some()
                 || working_directory
                     .as_ref()
@@ -3490,6 +3543,7 @@ impl RunManager {
                 && thread.run_id.as_deref() == Some(run_id.as_str())
                 && thread.owner_id == bindings.policy.owner_id()
                 && bindings.presentations.owner() == verified_owner.as_ref()
+                && bindings.mcp.matches_agent(&artifact)
                 && thread.artifact_id == bindings.policy.artifact().id
                 && thread.artifact_id == artifact.id
                 && user_id.as_deref() == Some(thread.owner_id.as_str())
@@ -3831,6 +3885,11 @@ impl RunManager {
                 return run_id;
             }
         }
+
+        // Only the host's verified owner can grant protected skills. This
+        // narrowing is repeated on every authenticated continuation and also
+        // constrains dynamically selected/activated skills and inherited policy.
+        effective_policy.skills.ids.retain(|id| self.skill_role_allowed(id, verified_owner.as_ref()));
 
         let representation_context = match async {
             let Some(binding) = collaboration_binding.as_ref().filter(|binding| binding.has_representation()) else {
@@ -4799,6 +4858,22 @@ impl RunManager {
                         .await?;
                     }
                 }
+                if let Some(bindings) = &inherited {
+                    let controls = crate::uar::runtime::native_skills::agents::registry_for_turn(
+                        Arc::clone(&bindings.controls),
+                    )
+                    .await?;
+                    for name in controls.names().await {
+                        if let Some(handler) = controls.get(&name).await {
+                            native_skills.register_arc(handler).await?;
+                        }
+                    }
+                }
+            }
+            if effective_policy.allows_model_control_tool(
+                crate::uar::domain::policy::ACTIVATE_SKILL_TOOL,
+                crate::uar::domain::policy::ACTIVATE_SKILL_TOOL,
+            ) {
                 native_skills
                     .register(
                         crate::uar::runtime::native_skills::activate_skill::ActivateSkillTool::new(
@@ -4811,17 +4886,6 @@ impl RunManager {
                         ),
                     )
                     .await?;
-                if let Some(bindings) = &inherited {
-                    let controls = crate::uar::runtime::native_skills::agents::registry_for_turn(
-                        Arc::clone(&bindings.controls),
-                    )
-                    .await?;
-                    for name in controls.names().await {
-                        if let Some(handler) = controls.get(&name).await {
-                            native_skills.register_arc(handler).await?;
-                        }
-                    }
-                }
             }
             Ok::<(), crate::uar::tools::descriptor::ToolAssemblyError>(())
         };
@@ -4844,10 +4908,9 @@ impl RunManager {
             self.run_cancellations.write().await.remove(&run_id);
             return run_id;
         }
-        // Built-in model-control tools (`activate_skill`, team and agent
-        // controls) were registered above regardless of policy. Keep only the
-        // ones the effective policy allows, so a run that allows no skills is
-        // not offered `activate_skill`.
+        // Built-in model-control tools were registered only when their
+        // policy-specific conditions permit them. Filter every descriptor once
+        // more before advertising it to the model.
         let native_skills = {
             let allowed = native_skills
                 .descriptors()

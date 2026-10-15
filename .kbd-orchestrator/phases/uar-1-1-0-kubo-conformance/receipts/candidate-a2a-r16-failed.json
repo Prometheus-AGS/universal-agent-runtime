@@ -1,0 +1,15 @@
+{
+  "image": "uar:v1.1.0-candidate",
+  "image_kind": "local-tag",
+  "started_at": 1792075254,
+  "result": "incomplete",
+  "requested_gates": [
+    "a2a"
+  ],
+  "selected_gates": [
+    "a2a"
+  ],
+  "full_acceptance": false,
+  "failure": "{\n  \"command\": [\n    \"docker\",\n    \"run\",\n    \"--rm\",\n    \"--network\",\n    \"container:uar-a2a-8a12145b6378\",\n    \"--user\",\n    \"501:20\",\n    \"--entrypoint\",\n    \"python3\",\n    \"--volume\",\n    \"/Users/gqadonis/Projects/prometheus/universal-agent-runtime:/acceptance:ro\",\n    \"--volume\",\n    \"/private/tmp/uar-v1.1.0-candidate-evidence-r16:/private/tmp/uar-v1.1.0-candidate-evidence-r16\",\n    \"--volume\",\n    \"/private/tmp/uar-v1.1.0-candidate-evidence-r16/tools/grpcurl:/tools/grpcurl:ro\",\n    \"--env\",\n    \"UAR_RELEASE_TRUSTED_TOKEN\",\n    \"--env\",\n    \"UAR_RELEASE_LIMITED_TOKEN\",\n    \"--env\",\n    \"UAR_RELEASE_HOST_TOKEN\",\n    \"uar:v1.1.0-candidate\",\n    \"/acceptance/scripts/release/uar_1_1_loopback_client.py\",\n    \"--governance\",\n    \"enforced\",\n    \"--transport\",\n    \"jsonrpc\",\n    \"--decision\",\n    \"approve\",\n    \"--peer-port\",\n    \"51571\",\n    \"--peer-url\",\n    \"http://0.250.250.254:51571\",\n    \"--peer-trace\",\n    \"/private/tmp/uar-v1.1.0-candidate-evidence-r16/work/a2a-enforced-jsonrpc-approve/mcp-peer.jsonl\",\n    \"--provider-trace\",\n    \"/private/tmp/uar-v1.1.0-candidate-evidence-r16/work/a2a-enforced-jsonrpc-approve/provider.jsonl\",\n    \"--receipt\",\n    \"/private/tmp/uar-v1.1.0-candidate-evidence-r16/a2a-enforced-jsonrpc-approve.json\",\n    \"--result\",\n    \"/private/tmp/uar-v1.1.0-candidate-evidence-r16/a2a-enforced-jsonrpc-approve.client.json\"\n  ],\n  \"stdout\": \"\",\n  \"stderr\": \"Traceback (most recent call last):\\n  File \\\"/acceptance/scripts/release/uar_1_1_loopback_client.py\\\", line 100, in <module>\\n    main()\\n    ~~~~^^\\n  File \\\"/acceptance/scripts/release/uar_1_1_loopback_client.py\\\", line 86, in main\\n    raise RuntimeError(\\n    ...<3 lines>...\\n    )\\nRuntimeError: A2A fixture failed: {\\n  \\\"stdout\\\": \\\"\\\",\\n  \\\"stderr\\\": \\\"Traceback (most recent call last):\\\\n  File \\\\\\\"/acceptance/tests/fixtures/a2a_v1_approval_governance.py\\\\\\\", line 385, in <module>\\\\n    assert any(\\\\n           ~~~^\\\\n        result.get(\\\\\\\"failure\\\\\\\", {}).get(\\\\\\\"code\\\\\\\") == \\\\\\\"ineligible\\\\\\\"\\\\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\\\n        and result[\\\\\\\"failure\\\\\\\"].get(\\\\\\\"skill_id\\\\\\\") == dynamic_skill_id\\\\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\\\n        for result in activation_results\\\\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\\\n    ), \\\\\\\"native activate_skill did not report the protected skill as ineligible\\\\\\\"\\\\n    ^\\\\nAssertionError: native activate_skill did not report the protected skill as ineligible\\\\n\\\"\\n}\\n\"\n}",
+  "finished_at": 1792075270
+}

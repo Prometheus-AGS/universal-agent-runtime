@@ -1,0 +1,15 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 18,
+  "task": {
+    "action": "add",
+    "id": "uar110-runtime-http-errors",
+    "owner": "uar-runtime",
+    "title": "Complete A2A HTTP and protocol error handling",
+    "harness": "codex",
+    "dependsOn": [],
+    "remaining": [
+      "Finish all middleware/protocol error contract paths before any check"
+    ]
+  }
+}

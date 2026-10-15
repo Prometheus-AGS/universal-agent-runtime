@@ -1,0 +1,16 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 11,
+  "task": {
+    "action": "add",
+    "id": "uar110-trust-finish",
+    "title": "Complete AG-UI approval denial acceptance fixture",
+    "owner": "uar-trust-tools",
+    "harness": "codex",
+    "dependsOn": [],
+    "evidence": [],
+    "remaining": [
+      "tests/fixtures/uar_1_1_mcp_contract.py"
+    ]
+  }
+}

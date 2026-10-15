@@ -525,6 +525,14 @@ impl PersistenceLayer for InMemoryProvider {
         write(&self.skills)?.insert(skill.skill_id.clone(), skill.clone());
         Ok(())
     }
+    async fn create_skill_if_absent(&self, skill: &Skill, _embedding: &[f32]) -> Result<bool> {
+        let mut skills = write(&self.skills)?;
+        if skills.contains_key(&skill.skill_id) {
+            return Ok(false);
+        }
+        skills.insert(skill.skill_id.clone(), skill.clone());
+        Ok(true)
+    }
     async fn update_skill_selection(
         &self,
         skill_id: &str,

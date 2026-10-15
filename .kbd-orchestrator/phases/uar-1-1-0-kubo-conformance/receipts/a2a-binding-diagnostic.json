@@ -1,0 +1,27 @@
+[
+  {
+    "result": [
+      {
+        "agent_id": "release-a2a-protected-940a673644da4bc38553f3ac0c9be0b5",
+        "context_closed": false,
+        "data": "{\"schema_version\":1,\"owner_key\":\"v1:k:issuer:i:22:uar-release-acceptance:t:14:release-tenant:s:13:release-owner\",\"agent_id\":\"release-a2a-protected-940a673644da4bc38553f3ac0c9be0b5\",\"task_id\":\"a2a-393d6da472e118b50a1fdebd9ec8047da8d707480be408ded44eddc147805e22\",\"context_id\":\"a2a-393d6da472e118b50a1fdebd9ec8047da8d707480be408ded44eddc147805e22\",\"revision\":3,\"process_id\":\"645fe04a-d4c8-43ca-99d6-58db53723e03\",\"runtime_epoch\":\"8e3f3958-9066-4674-ab47-34c821ee392f\",\"run_id\":\"69fc4c5d-a754-4128-becd-311b66636b43\",\"request_digest\":\"e90a3fbb0b15bef2c3c7856f561ad473f6f852dfaa4c61a6b469b66a4b03c774\",\"cancellation_requested\":false,\"task\":{\"id\":\"a2a-393d6da472e118b50a1fdebd9ec8047da8d707480be408ded44eddc147805e22\",\"context_id\":\"a2a-393d6da472e118b50a1fdebd9ec8047da8d707480be408ded44eddc147805e22\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-15T14:21:07.466239880+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"{\\\"dot_action\\\": \\\"tool\\\", \\\"tool\\\": \\\"a2a-qualification__effect\\\", \\\"arguments\\\": {}}\"}],\"metadata\":{\"uar_a2a_message_id\":\"approval-87c3af4d-1524-472c-851a-930991c1b710\"}}],\"metadata\":{\"agent_id\":\"release-a2a-protected-940a673644da4bc38553f3ac0c9be0b5\",\"run_id\":\"69fc4c5d-a754-4128-becd-311b66636b43\",\"uar.approvals\":[]}},\"contract\":null}",
+        "id": "a2a_bindings:74f8844f7e6fb4eed00d606d1bbd7ddffb9222e0cab972697931fb54385f9e01",
+        "owner_key": "v1:k:issuer:i:22:uar-release-acceptance:t:14:release-tenant:s:13:release-owner"
+      }
+    ],
+    "status": "OK",
+    "time": "8.438863ms",
+    "type": null
+  },
+  {
+    "result": [
+      {
+        "binding_key": "74f8844f7e6fb4eed00d606d1bbd7ddffb9222e0cab972697931fb54385f9e01",
+        "id": "a2a_contexts:74f8844f7e6fb4eed00d606d1bbd7ddffb9222e0cab972697931fb54385f9e01"
+      }
+    ],
+    "status": "OK",
+    "time": "130.876\u00b5s",
+    "type": null
+  }
+]

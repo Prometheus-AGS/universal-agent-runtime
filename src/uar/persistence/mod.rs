@@ -376,6 +376,14 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
 
     // Skill Management
     async fn save_skill(&self, skill: &Skill, embedding: &[f32]) -> Result<()>;
+    /// Insert one skill only when its ID is not already durable.
+    ///
+    /// Returns `false` on an existing ID without changing that existing row.
+    /// Unlike [`Self::save_skill`], this operation is the collision-safe
+    /// create path for remote skill-content import.
+    async fn create_skill_if_absent(&self, _skill: &Skill, _embedding: &[f32]) -> Result<bool> {
+        anyhow::bail!("skill_create_if_absent_unsupported")
+    }
     /// Change only existing skill selection fields; preserve every other stored field.
     /// Returns false when no durable skill row exists.
     async fn update_skill_selection(

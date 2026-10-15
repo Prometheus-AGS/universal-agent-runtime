@@ -182,10 +182,19 @@ async fn harness(keys: impl FnOnce() -> Vec<Jwk>) -> Harness {
         .with_llm_driver(Arc::new(MockLlmDriver::echo())),
     );
     let state = Arc::new(A2AState {
+        admission: manager.clone(),
+        grpc_url: None,
         threads: Arc::new(A2AThreadService::new(Arc::new(ActorCollaboration::new(
             manager,
         )))),
         security: SecurityConfig {
+            deployment_profile: Default::default(),
+            jwt_algorithm: None,
+            workspace_authorities: Vec::new(),
+            skill_required_roles: Default::default(),
+            api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
+            api_key_admin_principals: Vec::new(),
+            trusted_host_principals: Vec::new(),
             jwt_required: false,
             jwt_secret: "unused-when-jwks-is-configured".to_owned().into(),
             jwks_url: Some(format!("{}/.well-known/jwks.json", jwks.uri())),

@@ -1,9 +1,20 @@
 # A2A 1.0 interface
 
 Discover the compiler with `GET /.well-known/agent-card.json`. The public card
-advertises the JSONRPC interface `/a2a/v1/compiler`. Named registered agents use
-`/a2a/v1/agents/{agent_id}`. Task operations require current verified credentials;
-only the exact card GET paths are anonymous.
+advertises the JSONRPC interface `/a2a/v1/compiler` and, when the official
+service is bound, the `GRPC` interface on the configured gRPC listener. Named
+registered agents use `/a2a/v1/agents/{agent_id}` for JSONRPC. For official
+`lf.a2a.v1.A2AService` gRPC requests, use `x-uar-agent-id` metadata to select
+the registered agent; omitting it selects `compiler-agent`. The optional A2A
+request `tenant` field must be empty or exactly match the verified credential's
+tenant claim. It never selects an agent or replaces the verified tenant identity
+or workspace authority.
+
+The v1 gRPC service implements `SendMessage`, `GetTask`, `ListTasks`, and
+`CancelTask` over the same durable task service as JSONRPC. Streaming, push
+notification, and extended-card RPCs return `UNIMPLEMENTED`. The legacy
+`a2a.AgentService` remains mounted on the same listener for compatibility and
+is not advertised as a 1.0 interface.
 
 Send `A2A-Version: 1.0` and `Content-Type: application/json` with bearer JWT or
 X-API-Key authentication. The schema is pinned to the official
@@ -61,6 +72,30 @@ Governed peer requests must include their freshly authenticated delegation
 contract. Repeating the same committed decision does not invoke the tool again;
 a contradictory decision conflicts. Denial projects `TASK_STATE_REJECTED` only
 after the host confirms terminal cleanup.
+
+## Installed-artifact approval acceptance
+
+`tests/fixtures/a2a_v1_approval_governance.py` targets a running local
+candidate or published image. It requires verified trusted and role-limited
+credentials with the same explicit tenant claim, a named native agent whose
+explicit preferred skill is role protected, and a controlled local MCP-peer
+trace. Run a
+fresh target for each JSONRPC/GRPC, enforced/disabled-governance, and
+approve/deny tuple. The fixture requires a role-limited submission to produce
+the transport's authorization error before it can reserve a task, then records
+zero peer calls at input-required, one after approval, or zero after denial.
+It verifies an explicit matching tenant across both transports, then a
+mismatched tenant denial with an unchanged `ListTasks` inventory. It verifies
+unsupported gRPC streaming returns `UNIMPLEMENTED` without a reservation, and
+projects the same terminal task through both JSON-RPC and gRPC to compare its
+complete and `historyLength: 1` history plus artifacts. A separate dynamic
+agent is configured to offer
+`activate_skill`; its protected non-preferred skill exposes the same controlled
+peer tool. A role-limited provider sequence requests activation. The provider
+trace must record the native `activation_failed` result with `ineligible` for
+that skill, and a unique protected prompt marker must remain absent from later
+provider requests. It does not start a development binary or replace the
+host/provider path.
 
 The uncomfortable limit: a dead producer with uncertain effects cannot safely
 be called canceled or restarted from a task ID. It needs supervisor exclusion;

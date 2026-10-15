@@ -1748,3 +1748,27 @@ Dot memory-owner production gate failed both durable profiles at legacy import, 
 ## 2026-10-14 — Removing scoped host privilege must retain captured owner identity
 
 Installed The Boss2.2.38 exposed fresh BossFang registration returning delegated_host_context_mismatch after consuming Dot main482c4180. ActorOwner now compares complete CredentialPrincipal, but grant issuance removed the sole local-host proof, yielding a different owner. Scoped VerifiedIdentity now retains the captured owner independently before host_authority is removed. Never restore host privilege or reduce owner equality to raw subject strings. Source review passed; rebuilt payload and installed consumer operation are recorded separately in preserve-scoped-delegation-principal.
+
+## 2026-10-15 — Stable actor ownership is not fresh credential authority
+
+Source inspection during #379 found same-principal A2A task continuation reuses a cached actor whose owner was captured at first submission. Role changes were therefore invisible to subsequent runs. The mailbox now carries a fresh host-created owner for each authenticated submission; principal equality remains stable while role evidence is refreshed before kernel admission. Persisted observer/schedule identities without fresh credentials receive no implicit skill roles. Verification remains pending until full phase inventory.
+
+- 2026-10-15 #379 artifact review: official gRPC A2A message projection must preserve the same public identity as JSON-RPC. Persist inbound message_id via the existing internal uar_a2a_message_id convention, prefer it on output, strip that internal key from public metadata, and use original full-history indexes when truncating. Comparing only artifact fields misses this protocol divergence.
+
+- 2026-10-15 UAR 1.1.0 production image gate: build.rs failed E0308 because compile_protos inferred &str from protobuf filenames but its include list used &Path. Use Path values consistently in both lists when adding the vendored protobuf include directory. The failure was observed in the actual release build; changing both lists keeps the pinned schema inputs unchanged.
+
+## 2026-10-15 — Optional response-quality client blocked offline startup
+
+The v1.1.0 installed-image acceptance gate reproduced default startup exiting after MCP discovery with Provider client construction failed. The server constructed its optional response-quality Orchestrator despite an empty configured model; the provider builder correctly rejected that model. server.rs now leaves the optional component unset until a model is configured, matching sidecar behavior. No implicit provider/model is introduced. Retained container logs are necessary because automatic container removal otherwise hides the causal startup error behind health timeouts. Rebuilt-image acceptance remains pending.
+
+## 2026-10-15 — Release fixture authority and network classification
+
+Trusted-host JWTs require `uar_credential_kind: "issuer"` in the signed payload; putting it in the JOSE header leaves VerifiedJwtClaims unclassified and rejects run grants before per-agent policy. The installed-image r7 receipt established this fixture error. OrbStack host.docker.internal resolved to0.250.250.254 during r9: Python ipaddress calls it private, but UAR intentionally permits only loopback/RFC1918 private development HTTP. Use a disposable RFC1918 Docker-network peer relay for acceptance; do not broaden production destination authorization to accommodate a test host.
+
+## 2026-10-15 — A2A Surreal CAS must not compare reserialized HashMaps
+
+Installed v1.1.0 acceptance reproduced GetTask-32004 after task creation. The initial contention diagnosis and bounded read retry were insufficient and are superseded. Retained Surreal data stayed at revision3/working. A2A bindings store JSON as a string, while task/message/artifact metadata use Rust HashMaps: loading and reserializing can change key order and fail the raw-string CAS without any competing writer. A readonly query comparing equivalent reordered metadata observed byte_equal:false and revision_equal:true. Repair uses semantically checked parsed bindings and the exact raw stored snapshot for atomic CAS; cancellation reconciliation shares this requirement. Production verification remains pending until rebuild.
+
+## 2026-10-15 — Per-turn skill activation registration
+
+Installed-image A2A acceptance r16 selected an eligible baseline skill but advertised no native activate_skill. Ordinary tool resolution excludes this per-turn control and resolved tools to none; manager registration incorrectly depended on that ordinary mode. Register ActivateSkillTool through EffectiveRunPolicy::allows_model_control_tool, whose existing contract follows selected skills. Do not widen the ordinary tool allowlist to make the acceptance fixture pass. The production repair is authored; r8 build and affected acceptance remain pending.

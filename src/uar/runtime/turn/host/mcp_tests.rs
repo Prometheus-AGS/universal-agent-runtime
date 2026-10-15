@@ -80,6 +80,7 @@ impl Destination {
                 env: HashMap::new(),
                 headers: HashMap::new(),
                 grant_policy: Some(RemoteHttpGrantPolicy {
+                    allowed_agent_ids: None,
                     destination_id: "fixture-destination".to_owned(),
                     trusted_hosts: BTreeSet::from([
                         "sidecar-launch-host".to_owned(),

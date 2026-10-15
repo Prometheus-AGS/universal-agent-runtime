@@ -1,0 +1,17 @@
+{
+  "image": "uar:v1.1.0-candidate",
+  "image_kind": "local-tag",
+  "started_at": 1792070935,
+  "result": "incomplete",
+  "requested_gates": [
+    "mcp",
+    "a2a"
+  ],
+  "selected_gates": [
+    "mcp",
+    "a2a"
+  ],
+  "full_acceptance": false,
+  "failure": "wrong agent denial code",
+  "finished_at": 1792070987
+}

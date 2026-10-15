@@ -1,0 +1,16 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 2,
+  "task": {
+    "action": "add",
+    "id": "uar110-trust",
+    "owner": "uar-trust-tools",
+    "title": "Agent-bound MCP grants",
+    "harness": "codex",
+    "dependsOn": [],
+    "evidence": [],
+    "remaining": [
+      "Implementation and deferred acceptance"
+    ]
+  }
+}

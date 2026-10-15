@@ -7,7 +7,7 @@ use std::sync::Arc;
 use futures::Stream;
 use tonic::{Request, Response, Status};
 
-use super::handler::A2AState;
+use super::{admission::A2aAdmissionError, handler::A2AState};
 use super::thread_service::TaskError;
 use super::types::{
     Message as A2aMessage, MessageSendParams, Part as A2aPart, Role, Task, TaskState,
@@ -39,6 +39,107 @@ pub struct GrpcAgentService {
     api_keys: Option<Arc<crate::uar::security::api_keys::ApiKeyService>>,
 }
 
+/// Authenticated gRPC caller shared by the legacy and official bindings.
+pub(crate) struct VerifiedGrpcCaller {
+    pub(crate) owner: ActorOwner,
+    pub(crate) user: UserContext,
+    pub(crate) instance_id: Option<String>,
+    pub(crate) agent_id: String,
+    pub(crate) credential_capture: AuthenticatedCredentialCapture,
+}
+
+pub(crate) async fn authenticate<T>(
+    state: &A2AState,
+    api_keys: Option<&Arc<crate::uar::security::api_keys::ApiKeyService>>,
+    request: &Request<T>,
+) -> Result<VerifiedGrpcCaller, Status> {
+    let token = request
+        .metadata()
+        .get("authorization")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.strip_prefix("Bearer "))
+        .ok_or_else(|| Status::unauthenticated("verified user context required"))?;
+    let principal =
+        verify_token(&state.security, token)
+            .await
+            .map_err(|error| match error {
+                VerificationError::ProviderConflict => Status::internal("JWT provider conflict"),
+                VerificationError::IdentityPolicy(_) => {
+                    Status::unavailable("identity policy is unavailable")
+                }
+                _ => Status::unauthenticated("token verification failed"),
+            })?;
+    if state.security.jwt_required && principal.tenant_id.is_none() {
+        return Err(Status::unauthenticated("verified tenant claim required"));
+    }
+    let user = UserContext {
+        host_authority: principal.host_authority,
+        authority: principal.authority,
+        user_id: principal.subject,
+        tenant_id: principal.tenant_id,
+        claims: principal.claims,
+    };
+    if user
+        .verified_identity()
+        .is_some_and(|identity| identity.is_api_key_credential())
+    {
+        let service = api_keys
+            .ok_or_else(|| Status::unavailable("API-key authority storage is not bound"))?;
+        let valid = service.validate_admission(&user).await.map_err(|error| {
+            if error
+                .downcast_ref::<crate::uar::security::api_keys::ApiKeyStorageError>()
+                .is_some()
+            {
+                Status::unavailable("API-key authority storage is unavailable")
+            } else {
+                Status::unauthenticated("API key requires reissue")
+            }
+        })?;
+        if !valid {
+            return Err(Status::unauthenticated("API key is revoked or expired"));
+        }
+    }
+    let workspace = if state.security.is_remote() {
+        grpc_workspace(request)?
+    } else {
+        None
+    };
+    if state.security.is_remote()
+        && request.metadata().contains_key("x-uar-workspace-id")
+        && workspace.is_none()
+    {
+        return Err(Status::permission_denied("workspace authority denied"));
+    }
+    authorize_context(&state.security, Some(&user), workspace.as_deref()).map_err(|error| {
+        match error {
+            AdmissionError::Configuration => Status::unavailable("identity policy is unavailable"),
+            AdmissionError::Unauthenticated => {
+                Status::unauthenticated("verified remote identity required")
+            }
+            AdmissionError::Forbidden => Status::permission_denied("workspace authority denied"),
+        }
+    })?;
+    let instance_id = user.claims.uar_instance_id.clone();
+    let owner = ActorOwner::from_verified_context(&user)
+        .map_err(|_| Status::unauthenticated("verified user context required"))?;
+    let agent_id = match request.metadata().get("x-uar-agent-id") {
+        Some(value) => value
+            .to_str()
+            .map_err(|_| Status::invalid_argument("invalid agent id"))?,
+        None => "compiler-agent",
+    };
+    if agent_id.trim().is_empty() {
+        return Err(Status::invalid_argument("agent id must not be empty"));
+    }
+    Ok(VerifiedGrpcCaller {
+        owner,
+        user,
+        instance_id,
+        agent_id: agent_id.to_owned(),
+        credential_capture: AuthenticatedCredentialCapture::bearer(token),
+    })
+}
+
 impl GrpcAgentService {
     pub fn new(state: Arc<A2AState>) -> Self {
         Self { state, api_keys: None }
@@ -57,66 +158,22 @@ impl GrpcAgentService {
     async fn caller<T>(
         &self,
         request: &Request<T>,
-    ) -> Result<(ActorOwner, Option<String>, String, AuthenticatedCredentialCapture), Status> {
-        let token = request
-            .metadata()
-            .get("authorization")
-            .and_then(|value| value.to_str().ok())
-            .and_then(|value| value.strip_prefix("Bearer "))
-            .ok_or_else(|| Status::unauthenticated("verified user context required"))?;
-        let principal =
-            verify_token(&self.state.security, token)
-                .await
-                .map_err(|error| match error {
-                    VerificationError::ProviderConflict => {
-                        Status::internal("JWT provider conflict")
-                    }
-                    VerificationError::IdentityPolicy(_) => Status::unavailable("identity policy is unavailable"),
-                    _ => Status::unauthenticated("token verification failed"),
-                })?;
-        if self.state.security.jwt_required && principal.tenant_id.is_none() {
-            return Err(Status::unauthenticated("verified tenant claim required"));
-        }
-        let user = UserContext {
-            host_authority: principal.host_authority, authority: principal.authority,
-            user_id: principal.subject,
-            tenant_id: principal.tenant_id,
-            claims: principal.claims,
-        };
-        if user.verified_identity().is_some_and(|identity| identity.is_api_key_credential()) {
-            let service = self.api_keys.as_ref()
-                .ok_or_else(|| Status::unavailable("API-key authority storage is not bound"))?;
-            let valid = service.validate_admission(&user).await.map_err(|error| {
-                if error.downcast_ref::<crate::uar::security::api_keys::ApiKeyStorageError>().is_some() {
-                    Status::unavailable("API-key authority storage is unavailable")
-                } else { Status::unauthenticated("API key requires reissue") }
-            })?;
-            if !valid { return Err(Status::unauthenticated("API key is revoked or expired")); }
-        }
-        let workspace = if self.state.security.is_remote() { grpc_workspace(request)? } else { None };
-        if self.state.security.is_remote() && request.metadata().contains_key("x-uar-workspace-id")
-            && workspace.is_none() {
-            return Err(Status::permission_denied("workspace authority denied"));
-        }
-        authorize_context(&self.state.security, Some(&user), workspace.as_deref())
-            .map_err(|error| match error {
-                AdmissionError::Configuration => Status::unavailable("identity policy is unavailable"),
-                AdmissionError::Unauthenticated => Status::unauthenticated("verified remote identity required"),
-                AdmissionError::Forbidden => Status::permission_denied("workspace authority denied"),
-            })?;
-        let instance_id = user.claims.uar_instance_id.clone();
-        let owner = ActorOwner::from_verified_context(&user)
-            .map_err(|_| Status::unauthenticated("verified user context required"))?;
-        let agent_id = match request.metadata().get("x-uar-agent-id") {
-            Some(value) => value
-                .to_str()
-                .map_err(|_| Status::invalid_argument("invalid agent id"))?,
-            None => "compiler-agent",
-        };
-        if agent_id.trim().is_empty() {
-            return Err(Status::invalid_argument("agent id must not be empty"));
-        }
-        Ok((owner, instance_id, agent_id.to_owned(), AuthenticatedCredentialCapture::bearer(token)))
+    ) -> Result<(ActorOwner, UserContext, Option<String>, String, AuthenticatedCredentialCapture), Status> {
+        let caller = authenticate(&self.state, self.api_keys.as_ref(), request).await?;
+        Ok((
+            caller.owner,
+            caller.user,
+            caller.instance_id,
+            caller.agent_id,
+            caller.credential_capture,
+        ))
+    }
+}
+
+fn admission_error(error: A2aAdmissionError) -> Status {
+    match error {
+        A2aAdmissionError::Forbidden => Status::permission_denied("insufficient scope"),
+        A2aAdmissionError::Unavailable => Status::unavailable("task admission unavailable"),
     }
 }
 
@@ -179,7 +236,12 @@ impl AgentService for GrpcAgentService {
         &self,
         request: Request<SendMessageRequest>,
     ) -> Result<Response<PbTaskResponse>, Status> {
-        let (owner, instance_id, agent_id, credential_capture) = self.caller(&request).await?;
+        let (owner, user, instance_id, agent_id, credential_capture) = self.caller(&request).await?;
+        self.state
+            .admission
+            .admit(&user, &agent_id)
+            .await
+            .map_err(admission_error)?;
         let req = request.into_inner();
         let message = req
             .message
@@ -211,7 +273,7 @@ impl AgentService for GrpcAgentService {
         &self,
         request: Request<GetTaskRequest>,
     ) -> Result<Response<PbTaskResponse>, Status> {
-        let (owner, _, agent_id, _) = self.caller(&request).await?;
+        let (owner, _, _, agent_id, _) = self.caller(&request).await?;
         let workspace_id = grpc_workspace(&request)?;
         let task_id = request.into_inner().task_id;
         let task = if let Some(authority) = self.state.threads.full_harness()
@@ -240,7 +302,7 @@ impl AgentService for GrpcAgentService {
         &self,
         request: Request<CancelTaskRequest>,
     ) -> Result<Response<PbTaskResponse>, Status> {
-        let (owner, _, agent_id, _) = self.caller(&request).await?;
+        let (owner, _, _, agent_id, _) = self.caller(&request).await?;
         let workspace_id = grpc_workspace(&request)?;
         let task_id = request.get_ref().task_id.clone();
         let task = if let Some(authority) = self.state.threads.full_harness()
@@ -446,9 +508,11 @@ mod tests {
         );
         let service = GrpcAgentService::new(Arc::new(A2AState {
             threads: Arc::new(A2AThreadService::new(Arc::new(ActorCollaboration::new(
-                manager,
+                Arc::clone(&manager),
             )))),
+            admission: manager,
             security: SecurityConfig {
+                skill_required_roles: Default::default(),
                 deployment_profile: Default::default(),
                 jwt_algorithm: None,
                 workspace_authorities: Vec::new(),
@@ -465,6 +529,7 @@ mod tests {
                 settings_admin_key: Some("test-admin-key".to_owned().into()),
             },
             base_url: "http://127.0.0.1:3928".to_owned(),
+            grpc_url: None,
         }));
         (service, database)
     }

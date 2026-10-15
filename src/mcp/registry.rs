@@ -43,6 +43,21 @@ use crate::uar::tools::descriptor::{
 };
 use crate::uar::tools::validate::ValidatorCompiler;
 
+/// Unregistered declarations cannot rename a restricted HTTP origin through
+/// paths, queries or fragments. Local listener addresses conservatively share
+/// authority; this comparison never rewrites launch URLs or resolves DNS.
+pub(crate) fn same_http_origin(left: &Url, right: &Url) -> bool {
+    let loopback = |url: &Url| match url.host() {
+        Some(url::Host::Domain(host)) => host.eq_ignore_ascii_case("localhost"),
+        Some(url::Host::Ipv4(address)) => address.is_loopback(),
+        Some(url::Host::Ipv6(address)) => address.is_loopback(),
+        None => false,
+    };
+    (left.host() == right.host() || (loopback(left) && loopback(right)))
+        && left.scheme() == right.scheme()
+        && left.port_or_known_default() == right.port_or_known_default()
+}
+
 /// How long one MCP server gets to complete its handshake before it is
 /// skipped.
 ///
@@ -459,6 +474,19 @@ fn authorize_service_slot(slot: &SharedClientService, server: &str) -> Result<()
     result
 }
 
+async fn authorize_current_service_slot(slot: &SharedClientService, server: &str) -> Result<(), McpBindingError> {
+    let credential = {
+        let state = slot.read().map_err(|_| McpBindingError::InvalidBinding { server: server.to_owned() })?;
+        if let Some(snapshot) = &state.snapshot { snapshot.request.authorize_current_definition()?; }
+        state.snapshot.as_ref().and_then(|snapshot| match &snapshot.transport {
+            SnapshotTransport::RemoteHttp { credential, .. } => credential.clone(),
+            SnapshotTransport::Stdio(_) => None,
+        })
+    };
+    if let Some(credential) = credential { credential.authorize_current(server).await?; }
+    Ok(())
+}
+
 fn new_service_slot(
     service: DynClientService,
     reconnect_entry: McpServerEntry,
@@ -724,6 +752,7 @@ fn stdio_child_command(
 }
 
 async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<DynClientService> {
+    anyhow::ensure!(!entry.requires_agent_grant(), "MCP destination requires an agent-bound run grant");
     entry.validate_sandbox_policy(name)?;
     match entry {
         McpServerEntry::Stdio {
@@ -747,6 +776,7 @@ async fn connect_configured_http(
     name: &str,
     entry: &McpServerEntry,
 ) -> anyhow::Result<DynClientService> {
+    anyhow::ensure!(!entry.requires_agent_grant(), "MCP destination requires an agent-bound run grant");
     let McpServerEntry::RemoteHttp { url, env, .. } = entry else {
         anyhow::bail!("MCP server '{name}' is not remote HTTP");
     };
@@ -775,6 +805,7 @@ async fn connect_stdio_snapshot(
     request: &McpBindingRequest,
     processes: &StdioProcessSupervisor,
 ) -> Result<DynClientService, McpBindingError> {
+    request.authorize_current_definition()?;
     let definition = request.definition();
     let name = definition.name();
     definition
@@ -839,6 +870,7 @@ async fn connect_http_snapshot(
     headers: Option<&super::runtime::RunHttpHeaders>,
     credential: Option<super::runtime::RunMcpCredentialLease>,
 ) -> Result<DynClientService, McpBindingError> {
+    request.authorize_current_definition()?;
     let definition = request.definition();
     let name = definition.name();
     let McpServerEntry::RemoteHttp { url, .. } = definition.configuration() else {
@@ -846,6 +878,12 @@ async fn connect_http_snapshot(
             server: name.to_owned(),
         });
     };
+    if definition.configuration().requires_agent_grant()
+        && !credential.as_ref().is_some_and(super::runtime::RunMcpCredentialLease::has_agent_authority)
+    {
+        return Err(McpBindingError::AuthenticationRequired { server: name.to_owned() });
+    }
+    if let Some(credential) = &credential { credential.authorize_current(name).await?; }
     if matches!(
         definition.authentication(),
         ServerAuthentication::Unknown | ServerAuthentication::Required
@@ -1020,6 +1058,10 @@ async fn reconnect_snapshot(
     };
     let server = snapshot.request.definition().name();
     let catalog_check = async {
+        snapshot.request.authorize_current_definition()?;
+        if let SnapshotTransport::RemoteHttp { credential: Some(credential), .. } = &snapshot.transport {
+            credential.authorize_current(server).await?;
+        }
         let tools = service.list_all_tools().await?;
         let discovered = compile_discovered_tools(
             compiler,
@@ -1139,6 +1181,44 @@ impl std::fmt::Debug for McpRegistry {
 }
 
 impl McpRegistry {
+    /// Recheck ambient authority without replacing the captured launch inputs.
+    /// A cached global definition cannot outlive removal/restriction, and a
+    /// skill declaration cannot alias a currently restricted destination.
+    pub(crate) fn authorize_ambient_definition(&self, request: &McpBindingRequest, registered: bool, agent_bound: bool) -> Result<(), McpBindingError> {
+        use super::catalog::{ServerDefinition, ServerSource};
+        let definition = request.definition();
+        let denied = || McpBindingError::Invalidated { server: definition.name().to_owned() };
+        let entries = self.inspect_server_entries(|entries| entries).map_err(|_| denied())?;
+        if registered {
+            let current = entries.get(definition.name()).ok_or_else(denied)?;
+            let current = ServerDefinition::new(definition.name().to_owned(), ServerSource::Global,
+                current.clone(), definition.is_required(), definition.authentication().clone())
+                .map_err(|_| denied())?;
+            if current.config_hash() != definition.config_hash() { return Err(denied()); }
+            if current.configuration().requires_agent_grant() && !agent_bound { return Err(denied()); }
+            // Separately registered destinations retain their own administrator
+            // policy even when they share an HTTP origin. An agent-bound lease
+            // performs its additional persisted identity checks at dispatch.
+            return Ok(());
+        }
+        let endpoint = |entry: &McpServerEntry| -> Option<Url> {
+            let McpServerEntry::RemoteHttp { url, .. } = entry else { return None; };
+            let environment = McpBindingEnvironment::resolve(request.environment().directory().to_path_buf(),
+                request.environment().variables().clone(), entry).ok()?;
+            Url::parse(&expand_from_environment(url, environment.variables()).ok()?).ok()
+        };
+        let selected_endpoint = endpoint(definition.configuration());
+        for (name, entry) in entries.iter().filter(|(_, entry)| entry.requires_agent_grant()) {
+            if name == definition.name()
+                || selected_endpoint.as_ref().is_some_and(|selected| endpoint(entry).as_ref()
+                    .is_some_and(|registered| same_http_origin(selected, registered)))
+            {
+                return Err(denied());
+            }
+        }
+        Ok(())
+    }
+
     pub(crate) fn attach_lifecycle(&self, lifecycle: McpLifecycle, generation: Uuid) {
         let services = self
             .services
@@ -1195,6 +1275,10 @@ impl McpRegistry {
         let server = request.definition().name().to_owned();
         let compiler = Arc::new(ValidatorCompiler::default());
         let discovery = async {
+            request.authorize_current_definition()?;
+            if let SnapshotTransport::RemoteHttp { credential: Some(credential), .. } = &transport {
+                credential.authorize_current(&server).await?;
+            }
             let tools = service.list_all_tools().await?;
             let discovered = compile_discovered_tools(
                 &compiler,
@@ -1270,6 +1354,21 @@ impl McpRegistry {
         Self::catalog_from_config(&config)
     }
 
+    /// Defer standalone connections until stored administrator policy has been
+    /// hydrated. Sidecars must continue using the grant-only catalog constructor.
+    pub(crate) fn configured_catalog_from_file(path: &str) -> anyhow::Result<Self> {
+        let mut registry = Self::catalog_from_file(path)?;
+        registry.shared_transports_enabled = true;
+        Ok(registry)
+    }
+
+    /// Preserve standalone transport policy when no file catalog exists yet.
+    pub(crate) fn configured_empty() -> Self {
+        let mut registry = Self::empty();
+        registry.shared_transports_enabled = true;
+        registry
+    }
+
     /// Retain validated definitions while leaving the executable registry
     /// empty. This separates administrator registration from run authority.
     pub fn catalog_from_config(config: &crate::mcp::config::McpConfig) -> anyhow::Result<Self> {
@@ -1294,6 +1393,7 @@ impl McpRegistry {
         let mut services: HashMap<String, SharedClientService> = HashMap::new();
 
         for (name, entry) in &cfg.mcp_servers {
+            if entry.requires_agent_grant() { continue; }
             // A server that never completes its handshake must not be able to
             // hang startup. Observed 2026-09-01: a stdio server printed
             // "running on stdio" and neither side ever finished, so the
@@ -1416,6 +1516,7 @@ impl McpRegistry {
         entry: &McpServerEntry,
     ) -> anyhow::Result<DynClientService> {
         entry.validate_sandbox_policy(name)?;
+        anyhow::ensure!(!entry.requires_agent_grant(), "MCP destination requires an agent-bound run grant");
         match entry {
             McpServerEntry::Stdio {
                 command, args, env, ..
@@ -1662,6 +1763,7 @@ impl McpRegistry {
         let mut connections = HashMap::new();
         for (name, slot) in &slots {
             authorize_service_slot(slot, name)?;
+            authorize_current_service_slot(slot, name).await?;
             let service = current_service(slot);
             validate_bound_service(slot, &service)?;
             connections.insert(name.clone(), service);
@@ -1770,6 +1872,19 @@ impl McpRegistry {
     /// Return whether the namespaced tool is backed by an in-process native tool.
     pub fn is_native_tool(&self, namespaced_name: &str) -> bool {
         self.native_tools.contains_key(namespaced_name)
+    }
+
+    /// A delegated executable view cannot transfer an agent-restricted lease
+    /// to another agent, even under the same verified owner.
+    pub(crate) fn matches_agent(&self, artifact: &crate::uar::domain::artifact::AgentArtifact) -> bool {
+        let Ok(services) = self.services.read() else { return false; };
+        services.values().all(|slot| slot.read().is_ok_and(|state| {
+            state.snapshot.as_ref().is_none_or(|snapshot| match &snapshot.transport {
+                SnapshotTransport::RemoteHttp { credential, .. } =>
+                    credential.as_ref().is_none_or(|lease| lease.matches_agent(artifact)),
+                SnapshotTransport::Stdio(_) => true,
+            })
+        }))
     }
 
     /// Check the actual captured implementation, not a descriptor's effect.
@@ -1881,6 +1996,15 @@ impl McpRegistry {
             anyhow::bail!("Cannot replace a frozen MCP binding");
         }
         let _admission = self.admission.enter()?;
+        entry.validate_sandbox_policy(&name)?;
+        if !self.shared_transports_enabled || entry.requires_agent_grant() {
+            // Retiring the old slot also closes executable filtered views;
+            // catalog-only registration never initializes a destination.
+            self.remove_server(&name);
+            self.server_config.write().map_err(|_| anyhow!("MCP configuration unavailable"))?
+                .insert(name, entry);
+            return Ok(());
+        }
         // A merged/filtered registry may own an independent service index but
         // share this slot. Register before replacement I/O so shutdown through
         // any view cannot declare the slot closed while a producer remains.
@@ -2432,6 +2556,7 @@ impl McpRegistry {
             .cloned()
             .ok_or_else(|| anyhow!("missing server handle: {server_name}"))?;
         authorize_service_slot(&service_slot, &server_name)?;
+        authorize_current_service_slot(&service_slot, &server_name).await?;
         let service = match &self.bound_services {
             Some(bindings) => {
                 let bound = bindings

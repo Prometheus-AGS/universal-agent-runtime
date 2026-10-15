@@ -1,0 +1,18 @@
+{
+  "image": "uar:v1.1.0-candidate",
+  "image_kind": "local-tag",
+  "started_at": 1792067189,
+  "result": "incomplete",
+  "requested_gates": [
+    "all"
+  ],
+  "selected_gates": [
+    "defaults",
+    "profiles",
+    "mcp",
+    "a2a"
+  ],
+  "full_acceptance": true,
+  "failure": "timed out waiting for default image loopback health: {\n  \"command\": [\n    \"docker\",\n    \"exec\",\n    \"uar-default-profile-da9ec167997f\",\n    \"python3\",\n    \"-c\",\n    \"\\nimport json\\nimport sys\\nimport urllib.error\\nimport urllib.request\\n\\nmethod, path, token, admin_key, origin, encoded_body = sys.argv[1:]\\nheaders = {\\\"Accept\\\": \\\"application/json\\\"}\\nif token:\\n    headers[\\\"Authorization\\\"] = \\\"Bearer \\\" + token\\nif admin_key:\\n    headers[\\\"X-UAR-Admin-Key\\\"] = admin_key\\nif origin:\\n    headers[\\\"Origin\\\"] = origin\\ndata = encoded_body.encode(\\\"utf-8\\\") if encoded_body else None\\nif data is not None:\\n    headers[\\\"Content-Type\\\"] = \\\"application/json\\\"\\nrequest = urllib.request.Request(\\n    \\\"http://127.0.0.1:1906\\\" + path,\\n    data=data,\\n    method=method,\\n    headers=headers,\\n)\\ntry:\\n    with urllib.request.urlopen(request, timeout=20) as response:\\n        status = response.status\\n        response_headers = dict(response.headers.items())\\n        raw = response.read()\\nexcept urllib.error.HTTPError as error:\\n    status = error.code\\n    response_headers = dict(error.headers.items())\\n    raw = error.read()\\ntry:\\n    body = json.loads(raw)\\nexcept (UnicodeDecodeError, json.JSONDecodeError):\\n    body = raw.decode(\\\"utf-8\\\", errors=\\\"replace\\\")\\nprint(json.dumps({\\\"status\\\": status, \\\"headers\\\": response_headers, \\\"body\\\": body}))\\n\",\n    \"GET\",\n    \"/health\",\n    \"\",\n    \"\",\n    \"\",\n    \"\"\n  ],\n  \"stdout\": \"\",\n  \"stderr\": \"Error response from daemon: No such container: uar-default-profile-da9ec167997f\\n\"\n}",
+  "finished_at": 1792067319
+}

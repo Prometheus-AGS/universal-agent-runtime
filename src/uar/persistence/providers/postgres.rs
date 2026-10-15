@@ -815,6 +815,30 @@ impl PersistenceLayer for PostgresProvider {
         Ok(())
     }
 
+    async fn create_skill_if_absent(&self, skill: &Skill, embedding: &[f32]) -> Result<bool> {
+        let embedding_vector = if embedding.is_empty() {
+            None
+        } else {
+            Some(Vector::from(embedding.to_vec()))
+        };
+        let definition = serde_json::to_value(skill)?;
+        let result = sqlx::query(
+            r"
+            INSERT INTO skills (skill_id, name, description, definition, embedding, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+            ON CONFLICT (skill_id) DO NOTHING
+            ",
+        )
+        .bind(&skill.skill_id)
+        .bind(&skill.title)
+        .bind(&skill.description)
+        .bind(definition)
+        .bind(embedding_vector)
+        .execute(&self.pool)
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
     async fn update_skill_selection(
         &self,
         skill_id: &str,

@@ -58,10 +58,19 @@ pub struct StdioMcpConnector {
 
 /// Default host connector for configured stdio and remote HTTP declarations.
 /// Every connection is built from the immutable binding request; the connector
-/// never re-reads process environment or configuration during a run.
+/// never replaces captured launch inputs. Current administrator policy may
+/// revoke those inputs before connection or subsequent dispatch.
 #[derive(Debug, Default)]
 pub struct ConfiguredMcpConnector {
     processes: StdioProcessSupervisor,
+    registry: Option<Arc<McpRegistry>>,
+}
+
+impl ConfiguredMcpConnector {
+    /// Bind ambient connections to the administrator's current policy ledger.
+    pub fn with_registry(registry: Arc<McpRegistry>) -> Self {
+        Self { processes: StdioProcessSupervisor::default(), registry: Some(registry) }
+    }
 }
 
 /// Parsed request-scoped HTTP headers. Values remain private and Debug never
@@ -196,6 +205,14 @@ impl RunHttpHeaders {
 pub(crate) struct RunMcpCredentialLease {
     expires_at_unix: u64,
     revoked: tokio_util::sync::CancellationToken,
+    authority: Option<Arc<dyn RunMcpAgentAuthority>>,
+}
+
+/// Host-only live authority for a registered agent's exact destination binding.
+#[async_trait]
+pub(crate) trait RunMcpAgentAuthority: Send + Sync + fmt::Debug {
+    async fn authorize(&self) -> anyhow::Result<()>;
+    fn matches_agent(&self, artifact: &crate::uar::domain::artifact::AgentArtifact) -> bool;
 }
 
 impl fmt::Debug for RunMcpCredentialLease {
@@ -213,7 +230,30 @@ impl RunMcpCredentialLease {
         Self {
             expires_at_unix,
             revoked: tokio_util::sync::CancellationToken::new(),
+            authority: None,
         }
+    }
+
+    pub(crate) fn with_authority(mut self, authority: Arc<dyn RunMcpAgentAuthority>) -> Self {
+        self.authority = Some(authority);
+        self
+    }
+
+    pub(crate) fn has_agent_authority(&self) -> bool { self.authority.is_some() }
+
+    pub(crate) fn matches_agent(&self, artifact: &crate::uar::domain::artifact::AgentArtifact) -> bool {
+        self.authority.as_ref().is_none_or(|authority| authority.matches_agent(artifact))
+    }
+
+    pub(crate) async fn authorize_current(&self, server: &str) -> Result<(), McpBindingError> {
+        self.authorize(server)?;
+        if let Some(authority) = &self.authority
+            && authority.authorize().await.is_err()
+        {
+            self.revoke();
+            return Err(McpBindingError::AuthenticationRequired { server: server.to_owned() });
+        }
+        self.authorize(server)
     }
 
     pub(crate) fn authorize(&self, server: &str) -> Result<(), McpBindingError> {
@@ -239,6 +279,7 @@ impl RunMcpCredentialLease {
 pub(crate) struct RunMcpConnection {
     headers: BTreeMap<String, secrecy::SecretString>,
     credential: Option<RunMcpCredentialLease>,
+    registered: bool,
 }
 
 impl fmt::Debug for RunMcpConnection {
@@ -255,10 +296,12 @@ impl RunMcpConnection {
     pub(crate) fn new(
         headers: BTreeMap<String, secrecy::SecretString>,
         credential: Option<RunMcpCredentialLease>,
+        registered: bool,
     ) -> Self {
         Self {
             headers,
             credential,
+            registered,
         }
     }
 }
@@ -312,10 +355,11 @@ impl RunMcpGrantControl {
 }
 
 /// Run-owned connector. It can only connect the exact HTTP names captured in
-/// the request and has no process supervisor or global configuration access.
+/// the request. Live registry access can revoke authority, never change inputs.
 pub(crate) struct RunMcpConnector {
     connections: HashMap<String, RunMcpConnection>,
     grants: RunMcpGrantControl,
+    registry: Option<Arc<McpRegistry>>,
 }
 
 impl fmt::Debug for RunMcpConnector {
@@ -334,7 +378,13 @@ impl RunMcpConnector {
         Self {
             connections,
             grants,
+            registry: None,
         }
+    }
+
+    pub(crate) fn with_registry(mut self, registry: Option<Arc<McpRegistry>>) -> Self {
+        self.registry = registry;
+        self
     }
 }
 
@@ -351,6 +401,14 @@ impl McpConnector for RunMcpConnector {
                 .ok_or_else(|| McpBindingError::InvalidBinding {
                     server: name.to_owned(),
                 })?;
+        let request = match &self.registry {
+            Some(registry) => Arc::new(request.as_ref().clone().with_destination_registry(
+                Arc::clone(registry), connection.registered,
+                connection.credential.as_ref().is_some_and(RunMcpCredentialLease::has_agent_authority))),
+            None => request,
+        };
+        request.authorize_current_definition()?;
+        let name = request.definition().name();
         let headers = RunHttpHeaders::from_configuration(
             request.definition().configuration(),
             request.environment(),
@@ -379,6 +437,11 @@ impl McpConnector for ConfiguredMcpConnector {
         &self,
         request: Arc<McpBindingRequest>,
     ) -> Result<ConnectedMcpServer, McpBindingError> {
+        let request = match &self.registry {
+            Some(registry) => Arc::new(request.as_ref().clone().with_ambient_registry(Arc::clone(registry))),
+            None => request,
+        };
+        request.authorize_current_definition()?;
         match request.definition().configuration() {
             McpServerEntry::Stdio { .. } => {
                 McpRegistry::connect_stdio_binding(request, self.processes.clone()).await
@@ -484,6 +547,11 @@ pub struct McpRunResources {
 }
 
 impl McpRunResources {
+    /// A captured restricted credential cannot be moved to another artifact.
+    pub(crate) fn matches_agent(&self, artifact: &crate::uar::domain::artifact::AgentArtifact) -> bool {
+        self.run_grants.as_ref().is_none_or(|grants| grants.credentials.values().all(|lease|
+            lease.matches_agent(artifact)))
+    }
     /// Capture trusted root inputs without connecting, reading ambient state,
     /// assigning declaration authority or changing the caller's run policy.
     pub fn new(

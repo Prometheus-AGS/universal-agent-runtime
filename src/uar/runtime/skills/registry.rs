@@ -92,6 +92,23 @@ impl SkillRegistry {
         Ok(())
     }
 
+    /// Persist a new skill only if its ID is still absent, then publish it to
+    /// the registry. The persistence provider owns the compare-and-insert so
+    /// separate runtime processes cannot turn a collision into an overwrite.
+    pub(crate) async fn register_if_absent_checked(
+        &mut self,
+        skill: Skill,
+    ) -> anyhow::Result<bool> {
+        let embedding = self.embedding_for(&skill).await;
+        if let Some(db) = &self.persistence
+            && !db.create_skill_if_absent(&skill, &embedding).await?
+        {
+            return Ok(false);
+        }
+        self.skills.insert(skill.skill_id.clone(), skill);
+        Ok(true)
+    }
+
     /// Register and persist changed skills without waiting for optional vector
     /// enrichment. Startup reconciliation must finish before readiness even
     /// when the standard directory contains hundreds of skills and the local
@@ -169,6 +186,11 @@ impl SkillRegistry {
             Some(db) => db.list_skills().await,
             None => Ok(Vec::new()),
         }
+    }
+
+    /// Whether this registry can confirm writes through a persistence layer.
+    pub(crate) const fn has_persistence(&self) -> bool {
+        self.persistence.is_some()
     }
 
     async fn embedding_for(&self, skill: &Skill) -> Vec<f32> {

@@ -24,9 +24,8 @@ resource "kubernetes_config_map" "uar_config" {
     UAR_PERSISTENCE__VECTOR_DIMENSION = "1536"
 
     # ── Security ────────────────────────────────────────────────────────────
-    # JWT is validated when present but not enforced — requests without a token
-    # run as anonymous. Set to "true" to require a valid token on every request.
-    UAR_SECURITY__JWT_REQUIRED = "false"
+    # Protected runtime endpoints always require an authenticated caller.
+    UAR_SECURITY__JWT_REQUIRED = "true"
 
     # ── Resilience ──────────────────────────────────────────────────────────
     UAR_RESILIENCE__RATE_LIMIT_ENABLED = "true"
@@ -39,9 +38,9 @@ resource "kubernetes_config_map" "uar_config" {
     UAR_UNSTRUCTURED__API_URL = "https://api.unstructured.io/general/v0/general"
 
     # ── Memory system ────────────────────────────────────────────────────────
-    UAR_MEMORY__ENABLED            = "true"
-    UAR_MEMORY__EMBEDDING_PROVIDER = "openai"
-    UAR_MEMORY__EMBEDDING_MODEL    = "text-embedding-3-small"
+    UAR_MEMORY__ENABLED            = "false"
+    UAR_MEMORY__EMBEDDING_PROVIDER = "local"
+    UAR_MEMORY__EMBEDDING_MODEL    = "BAAI/bge-small-en-v1.5"
     UAR_MEMORY__AUTO_CAPTURE       = "true"
     UAR_MEMORY__INJECT_CONTEXT     = "true"
     UAR_MEMORY__MCP_HTTP_ENABLED   = "true"

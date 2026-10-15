@@ -1,0 +1,17 @@
+{
+  "image": "uar:v1.1.0-candidate",
+  "image_kind": "local-tag",
+  "started_at": 1792071518,
+  "result": "incomplete",
+  "requested_gates": [
+    "mcp",
+    "a2a"
+  ],
+  "selected_gates": [
+    "mcp",
+    "a2a"
+  ],
+  "full_acceptance": false,
+  "failure": "unexpected runtime rejection for /api/uar/ag-ui/agents/release-agent-a-e94c546608094cbea99155d03787dde0: expected 200, received 422: {\"code\":\"run_mcp_destination_invalid\",\"error\":\"remote MCP destination requires HTTPS or authorized private development HTTP\"}",
+  "finished_at": 1792071576
+}

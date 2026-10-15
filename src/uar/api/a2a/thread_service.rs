@@ -542,9 +542,14 @@ impl A2AThreadService {
                 }
                 entry.durable = Some(record.clone());
             }
-            entry.actor.submit_captured_prompt(record.run_id, content, credential_capture)
+            entry.actor.submit_authorized_prompt(owner, record.run_id, content, credential_capture)
         } else {
-            entry.actor.submit_prompt_with_capture(content, credential_capture)
+            entry.actor.submit_authorized_prompt(
+                owner,
+                uuid::Uuid::new_v4().to_string(),
+                content,
+                credential_capture,
+            )
         }.map_err(TaskError::Host)?;
         // Publication is synchronous after enqueue: request cancellation cannot
         // abandon the completion receiver between dispatch and registration.

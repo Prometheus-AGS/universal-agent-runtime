@@ -52,6 +52,7 @@ struct ObservedCall {
 #[derive(Default)]
 struct PeerState {
     calls: Mutex<Vec<ObservedCall>>,
+    requests: Mutex<Vec<String>>,
     next_session: std::sync::atomic::AtomicUsize,
     disconnect_once: Mutex<HashMap<&'static str, bool>>,
 }
@@ -111,6 +112,7 @@ async fn mcp_handler(
     Json(request): Json<Value>,
 ) -> Response {
     let method = request["method"].as_str().unwrap_or_default().to_owned();
+    state.requests.lock().expect("peer request log").push(method.clone());
     let id = request.get("id").cloned().unwrap_or(Value::Null);
     let caller = identity(&headers);
     let session = headers
@@ -265,6 +267,10 @@ struct GateHost {
 
 impl GateHost {
     async fn boot(peer: &RemotePeer, fixtures: FixtureSet) -> Self {
+        Self::boot_with_agents(peer, fixtures, None).await
+    }
+
+    async fn boot_with_agents(peer: &RemotePeer, fixtures: FixtureSet, agents: Option<Vec<&str>>) -> Self {
         let stub = start_stub_llm(fixtures).await;
         let workspace = Workspace::new();
         std::fs::write(
@@ -277,7 +283,8 @@ impl GateHost {
                             "destination_id": "gate-r-tenant-tools",
                             "trusted_hosts": ["sidecar-launch-host"],
                             "required_scopes": [SCOPE],
-                            "allow_private_http": true
+                            "allow_private_http": true,
+                            "allowed_agent_ids": agents
                         }
                     }
                 }
@@ -408,6 +415,55 @@ async fn create_run(host: &GateHost, principal: &str, input: &str, grant: Value)
         })),
     )
     .await
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn restricted_destination_uses_persisted_agent_before_any_peer_contact() {
+    let peer = start_remote_peer().await;
+    let input = "restricted agent identity";
+    let host = GateHost::boot_with_agents(&peer, tool_fixtures(&[(input, "forged-agent-b")]),
+        Some(vec!["gate-r-agent"])).await;
+    let mut agent_a = test_agent(None);
+    agent_a["id"] = json!("gate-r-agent");
+    let mut agent_b = agent_a.clone();
+    agent_b["id"] = json!("gate-r-agent-b");
+    for agent in [agent_a.clone(), agent_b] {
+        let (status, body) = host.call(Method::POST, "/api/agents", Some(P1), Some(agent)).await;
+        assert_eq!(status, 201, "register restricted fixture agent: {body}");
+    }
+    assert!(peer.state.requests.lock().expect("peer requests").is_empty(),
+        "catalog registration initialized an agent-restricted server");
+    let credential = grant("agent-a-v1", "gate-r-p1", P1, now_unix() + 600, &[SCOPE]);
+    for request in [
+        json!({"agent_id":"gate-r-agent-b","input":input,"mcp_servers":[credential.clone()]}),
+        json!({"artifact":agent_a.clone(),"input":input,"mcp_servers":[credential.clone()]}),
+        json!({"agent_id":"gate-r-agent-b","input":input,
+            "mcp_servers":[{"name":"alias","url":peer.url,"headers":{"Authorization":"Bearer gate-r-p1"}}]}),
+    ] {
+        let (status, body) = host.call(Method::POST, "/api/uar/runs", Some(P1), Some(request)).await;
+        assert_eq!(status, 422, "restricted admission was not denied: {body}");
+        assert!(body.contains("run_mcp_agent_forbidden"), "wrong denial: {body}");
+        assert!(peer.state.requests.lock().expect("peer requests").is_empty(),
+            "rejected identity initialized, discovered or called the destination");
+    }
+    let (status, body) = create_run(&host, P1, input, credential.clone()).await;
+    assert_eq!(status, 200, "allowed persisted agent admission: {body}");
+    let run = serde_json::from_str::<Value>(&body).expect("run JSON")["run_id"]
+        .as_str().expect("run id").to_owned();
+    let stream = host.follow(P1, &run).await;
+    assert!(stream.contains("event: agui.done"), "allowed agent failed: {stream}");
+    assert!(peer.state.calls.lock().expect("peer calls").iter().any(|call|
+        call.method == "echo_identity" && call.identity == P1));
+    let before = peer.state.requests.lock().expect("peer requests").len();
+    agent_a["metadata"]["title"] = json!("Changed registered identity");
+    let (status, body) = host.call(Method::PUT, "/api/agents/gate-r-agent", Some(P1), Some(agent_a)).await;
+    assert_eq!(status, 200, "update restricted agent: {body}");
+    let (status, body) = host.call(Method::POST, &format!("/api/uar/runs/{run}/resume"), Some(P1),
+        Some(json!({"input":input,"mcp_servers":[credential]}))).await;
+    assert_eq!(status, 422, "changed agent resumed restricted credential: {body}");
+    assert!(body.contains("run_mcp_agent_forbidden"), "wrong continuation denial: {body}");
+    assert_eq!(peer.state.requests.lock().expect("peer requests").len(), before,
+        "stale continuation reached the MCP peer");
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]

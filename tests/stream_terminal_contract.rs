@@ -91,6 +91,7 @@ async fn user() -> UserContext {
     let config = universal_agent_runtime::config::SecurityConfig {
         deployment_profile: Default::default(), jwt_algorithm: None,
         workspace_authorities: Vec::new(),
+        skill_required_roles: Default::default(),
         api_key_delegable_roles: universal_agent_runtime::config::SecurityConfig::default_api_key_delegable_roles(),
         api_key_admin_principals: Vec::new(), trusted_host_principals: Vec::new(),
         jwt_required: true, jwt_secret: secret.to_owned().into(), jwks_url: None,

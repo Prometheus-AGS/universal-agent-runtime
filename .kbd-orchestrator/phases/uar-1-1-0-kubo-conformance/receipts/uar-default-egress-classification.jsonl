@@ -1,0 +1,12 @@
+{"time": 1792069143.3520384, "interface": "eth0", "ether_type": "86dd", "bytes": 110, "src": "::", "dst": "ff02::16", "next_header": 0, "payload_type": 58}
+{"time": 1792069144.0319977, "interface": "eth0", "ether_type": "86dd", "bytes": 86, "src": "::", "dst": "ff02::1:ff0a:f760", "next_header": 58, "payload_type": 135}
+{"time": 1792069144.1313794, "interface": "eth0", "ether_type": "0806", "bytes": 42, "operation": 1, "sender": "192.168.215.4", "target": "192.168.215.4"}
+{"time": 1792069144.1320837, "interface": "eth0", "ether_type": "86dd", "bytes": 86, "src": "fd07:b51a:cc66:1::4", "dst": "ff02::1", "next_header": 58, "payload_type": 136}
+{"time": 1792069145.0569792, "interface": "eth0", "ether_type": "86dd", "bytes": 110, "src": "fe80::3450:d4ff:fe0a:f760", "dst": "ff02::16", "next_header": 0, "payload_type": 58}
+{"time": 1792069145.057218, "interface": "eth0", "ether_type": "86dd", "bytes": 70, "src": "fe80::3450:d4ff:fe0a:f760", "dst": "ff02::2", "next_header": 58, "payload_type": 133}
+{"time": 1792069145.1322114, "interface": "eth0", "ether_type": "0806", "bytes": 42, "operation": 1, "sender": "192.168.215.4", "target": "192.168.215.4"}
+{"time": 1792069145.1325362, "interface": "eth0", "ether_type": "86dd", "bytes": 86, "src": "fd07:b51a:cc66:1::4", "dst": "ff02::1", "next_header": 58, "payload_type": 136}
+{"time": 1792069145.7601297, "interface": "eth0", "ether_type": "86dd", "bytes": 110, "src": "fe80::3450:d4ff:fe0a:f760", "dst": "ff02::16", "next_header": 0, "payload_type": 58}
+{"time": 1792069149.0883136, "interface": "eth0", "ether_type": "86dd", "bytes": 70, "src": "fe80::3450:d4ff:fe0a:f760", "dst": "ff02::2", "next_header": 58, "payload_type": 133}
+{"time": 1792069157.7292454, "interface": "eth0", "ether_type": "86dd", "bytes": 70, "src": "fe80::3450:d4ff:fe0a:f760", "dst": "ff02::2", "next_header": 58, "payload_type": 133}
+{"time": 1792069174.112265, "interface": "eth0", "ether_type": "86dd", "bytes": 70, "src": "fe80::3450:d4ff:fe0a:f760", "dst": "ff02::2", "next_header": 58, "payload_type": 133}

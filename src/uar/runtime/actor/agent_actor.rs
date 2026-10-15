@@ -47,7 +47,7 @@ impl std::fmt::Debug for AgentActorArgs {
 }
 
 impl AgentActorState {
-    async fn execute(&mut self, content: String) -> AgentReply {
+    async fn execute(&mut self, owner: super::messages::ActorOwner, content: String) -> AgentReply {
         if self.cancellation.is_cancelled() {
             return AgentReply {
                 content: "Actor has been stopped".into(),
@@ -55,7 +55,12 @@ impl AgentActorState {
                 metadata: serde_json::json!({"code": "actor_stopped"}),
             };
         }
-        match self.session.lock().await.execute(content).await {
+        let mut session = self.session.lock().await;
+        let result = match session.refresh_owner(owner) {
+            Ok(()) => session.execute(content).await,
+            Err(error) => Err(error),
+        };
+        match result {
             Ok(record) => {
                 let metadata = serde_json::json!({
                     "thread_id": record.thread.thread_id,
@@ -116,6 +121,7 @@ impl Actor for AgentActor {
     ) -> Result<(), ActorProcessingErr> {
         match message {
             AgentMessage::UserRun {
+                owner,
                 run_id,
                 content,
                 credential_capture,
@@ -125,13 +131,12 @@ impl Actor for AgentActor {
                 let result = if state.cancellation.is_cancelled() {
                     Err(super::messages::ActorRunError::Stopped)
                 } else {
-                    state
-                        .session
-                        .lock()
-                        .await
-                        .execute_named_with_capture(content, run_id, Some(artifacts.clone()), credential_capture)
-                        .await
-                        .map_err(super::messages::ActorRunError::Host)
+                    let mut session = state.session.lock().await;
+                    match session.refresh_owner(owner) {
+                        Ok(()) => session.execute_named_with_capture(content, run_id, Some(artifacts.clone()), credential_capture)
+                            .await.map_err(super::messages::ActorRunError::Host),
+                        Err(error) => Err(super::messages::ActorRunError::Host(error)),
+                    }
                 };
                 let result = artifacts
                     .close()
@@ -139,8 +144,8 @@ impl Actor for AgentActor {
                     .and(result);
                 let _ = reply.send(result);
             }
-            AgentMessage::UserPrompt { content, reply } => {
-                let result = state.execute(content).await;
+            AgentMessage::UserPrompt { owner, content, reply } => {
+                let result = state.execute(owner, content).await;
                 if let Some(reply) = reply {
                     let _ = reply.send(result);
                 }

@@ -1,0 +1,16 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 0,
+  "task": {
+    "action": "add",
+    "id": "uar110-runtime",
+    "owner": "uar-runtime",
+    "title": "A2A 1.0 conformance",
+    "harness": "codex",
+    "dependsOn": [],
+    "evidence": [],
+    "remaining": [
+      "Implementation and deferred acceptance"
+    ]
+  }
+}

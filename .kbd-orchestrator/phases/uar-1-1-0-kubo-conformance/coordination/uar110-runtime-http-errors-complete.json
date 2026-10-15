@@ -1,0 +1,15 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 20,
+  "task": {
+    "action": "complete",
+    "id": "uar110-runtime-http-errors",
+    "owner": "uar-runtime",
+    "expectedTaskRevision": 1,
+    "evidence": [
+      ".kbd-orchestrator/phases/uar-1-1-0-kubo-conformance/handoffs/runtime.md",
+      ".kbd-orchestrator/phases/uar-1-1-0-kubo-conformance/implementation-complete.md"
+    ],
+    "remaining": []
+  }
+}

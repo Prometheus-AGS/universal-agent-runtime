@@ -17,6 +17,64 @@ use crate::mcp::runtime::{
 };
 use crate::uar::runtime::actor::messages::ActorOwner;
 
+/// Captured by host admission from the persisted native agent, never from a
+/// caller's inline artifact or an MCP description.
+#[derive(Clone)]
+pub(crate) struct RegisteredMcpAgent {
+    artifact: crate::uar::domain::artifact::AgentArtifact,
+    persistence: Arc<dyn crate::uar::persistence::PersistenceLayer>,
+    registry: Arc<crate::mcp::registry::McpRegistry>,
+}
+
+impl std::fmt::Debug for RegisteredMcpAgent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("RegisteredMcpAgent([host captured])")
+    }
+}
+
+impl RegisteredMcpAgent {
+    pub(crate) async fn capture(
+        persistence: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
+        registry: Arc<crate::mcp::registry::McpRegistry>,
+        artifact: Option<&crate::uar::domain::artifact::AgentArtifact>,
+    ) -> Result<Option<Self>, HostInputError> {
+        let (Some(persistence), Some(artifact)) = (persistence, artifact) else { return Ok(None); };
+        let saved = persistence.load_agent(&artifact.id).await.map_err(|_| HostInputError::new(
+            "run_mcp_agent_unavailable", "registered agent storage is unavailable"))?;
+        let Some(saved) = saved else { return Ok(None); };
+        let saved = saved.with_catalog_metadata("uar_api");
+        if saved.content_revision() != artifact.content_revision() { return Ok(None); }
+        Ok(Some(Self { artifact: saved, persistence, registry }))
+    }
+}
+
+#[derive(Debug)]
+struct AgentDestinationAuthority {
+    agent: RegisteredMcpAgent,
+    definition: ServerDefinition,
+}
+
+#[async_trait::async_trait]
+impl crate::mcp::runtime::RunMcpAgentAuthority for AgentDestinationAuthority {
+    async fn authorize(&self) -> anyhow::Result<()> {
+        let saved = self.agent.persistence.load_agent(&self.agent.artifact.id).await?
+            .ok_or_else(|| anyhow::anyhow!("registered MCP agent unavailable"))?
+            .with_catalog_metadata("uar_api");
+        anyhow::ensure!(self.matches_agent(&saved), "registered MCP agent changed");
+        let entry = self.agent.registry.server_entries().remove(self.definition.name())
+            .ok_or_else(|| anyhow::anyhow!("registered MCP destination unavailable"))?;
+        let current = ServerDefinition::new(self.definition.name().to_owned(), ServerSource::Global,
+            entry, self.definition.is_required(), self.definition.authentication().clone())?;
+        anyhow::ensure!(current.config_hash() == self.definition.config_hash(), "registered MCP destination changed");
+        Ok(())
+    }
+
+    fn matches_agent(&self, artifact: &crate::uar::domain::artifact::AgentArtifact) -> bool {
+        self.agent.artifact.id == artifact.id
+            && self.agent.artifact.content_revision() == artifact.content_revision()
+    }
+}
+
 #[derive(Clone, Deserialize)]
 pub struct RunMcpServerInput {
     pub name: String,
@@ -73,7 +131,7 @@ struct RunMcpServer {
 
 /// Complete request-owned MCP universe. It deliberately has no Serialize impl.
 #[derive(Clone, Default)]
-pub struct RunMcpServers(Vec<RunMcpServer>);
+pub struct RunMcpServers(Vec<RunMcpServer>, Option<Arc<crate::mcp::registry::McpRegistry>>);
 
 impl std::fmt::Debug for RunMcpServers {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -84,11 +142,25 @@ impl std::fmt::Debug for RunMcpServers {
 }
 
 impl RunMcpServers {
+    pub(crate) fn with_registry(mut self, registry: Arc<crate::mcp::registry::McpRegistry>) -> Self {
+        self.1 = Some(registry);
+        self
+    }
     pub fn from_inputs(
         inputs: Vec<RunMcpServerInput>,
         user: &crate::uar::security::claims::UserContext,
         catalog: &McpCatalog,
         environment: &McpBindingEnvironment,
+    ) -> Result<Self, HostInputError> {
+        Self::from_inputs_for_agent(inputs, user, catalog, environment, None)
+    }
+
+    pub(crate) fn from_inputs_for_agent(
+        inputs: Vec<RunMcpServerInput>,
+        user: &crate::uar::security::claims::UserContext,
+        catalog: &McpCatalog,
+        environment: &McpBindingEnvironment,
+        agent: Option<&RegisteredMcpAgent>,
     ) -> Result<Self, HostInputError> {
         if inputs.is_empty() {
             return Err(HostInputError::new(
@@ -107,9 +179,31 @@ impl RunMcpServers {
                 ));
             }
             servers.push(match (input.url, input.grant) {
-                (Some(url), None) => direct_loopback_server(name, url, input.headers)?,
+                (Some(url), None) => {
+                    // A direct URL must not shadow a restricted registered
+                    // origin, including a different path or local hostname.
+                    let requested = Url::parse(url.expose_secret()).ok();
+                    for definition in catalog.definitions().filter(|definition|
+                        matches!(definition.source(), ServerSource::Global)
+                            && definition.configuration().requires_agent_grant())
+                    {
+                        let same_endpoint = if let McpServerEntry::RemoteHttp { url, .. } = definition.configuration() {
+                            McpBindingEnvironment::resolve(environment.directory().to_path_buf(),
+                                environment.variables().clone(), definition.configuration()).ok()
+                                .and_then(|resolved| expand_from_environment(url, resolved.variables()).ok())
+                                .and_then(|url| Url::parse(&url).ok())
+                                .is_some_and(|registered| requested.as_ref().is_some_and(|requested|
+                                    crate::mcp::registry::same_http_origin(requested, &registered)))
+                        } else { false };
+                        if definition.name() == name || same_endpoint {
+                            return Err(HostInputError::new("run_mcp_agent_forbidden",
+                                "registered MCP destination requires an agent-bound run grant"));
+                        }
+                    }
+                    direct_loopback_server(name, url, input.headers)?
+                }
                 (None, Some(grant)) if input.headers.is_empty() => {
-                    trusted_destination_server(name, grant, user, catalog, environment)?
+                    trusted_destination_server(name, grant, user, catalog, environment, agent)?
                 }
                 _ => {
                     return Err(HostInputError::new(
@@ -119,7 +213,7 @@ impl RunMcpServers {
                 }
             });
         }
-        Ok(Self(servers))
+        Ok(Self(servers, None))
     }
 
     #[must_use]
@@ -169,7 +263,7 @@ impl RunMcpServers {
             );
             connections.insert(
                 server.name.clone(),
-                RunMcpConnection::new(server.headers.clone(), server.credential.clone()),
+                RunMcpConnection::new(server.headers.clone(), server.credential.clone(), server.grant_marker.is_some()),
             );
         }
         let catalog = McpCatalog::from_definitions(definitions).map_err(|_| {
@@ -185,7 +279,7 @@ impl RunMcpServers {
         let grants = RunMcpGrantControl::from_connections(&connections);
         let runtime = McpRuntimeManager::new(
             McpBindingCache::default(),
-            Arc::new(RunMcpConnector::new(connections, grants.clone())),
+            Arc::new(RunMcpConnector::new(connections, grants.clone()).with_registry(self.1.clone())),
             Duration::from_secs(15),
             Duration::from_secs(60),
         )
@@ -254,6 +348,7 @@ fn trusted_destination_server(
     user: &crate::uar::security::claims::UserContext,
     catalog: &McpCatalog,
     environment: &McpBindingEnvironment,
+    agent: Option<&RegisteredMcpAgent>,
 ) -> Result<RunMcpServer, HostInputError> {
     let host_id = trusted_host_id(user).ok_or_else(|| {
         HostInputError::new(
@@ -286,6 +381,27 @@ fn trusted_destination_server(
         )
     })?;
     validate_grant_policy(host_id, &grant, policy)?;
+    let agent_binding = match &policy.allowed_agent_ids {
+        None => None,
+        Some(allowed) => {
+            let agent = agent.filter(|agent| allowed.contains(&agent.artifact.id)).ok_or_else(||
+                HostInputError::new("run_mcp_agent_forbidden", "MCP destination does not permit this registered agent"))?;
+            use sha2::{Digest, Sha256};
+            use std::fmt::Write as _;
+            let policy_bytes = serde_json::to_vec(policy).map_err(|_| HostInputError::new(
+                "run_mcp_destination_invalid", "MCP destination policy is invalid"))?;
+            let mut grant_policy_revision = String::from("sha256:");
+            for byte in Sha256::digest(policy_bytes) {
+                write!(&mut grant_policy_revision, "{byte:02x}")
+                    .expect("writing to String cannot fail");
+            }
+            Some(super::HostMcpAgentBinding {
+                agent_id: agent.artifact.id.clone(),
+                agent_revision: agent.artifact.content_revision(),
+                grant_policy_revision,
+            })
+        }
+    };
     let resolved_environment = McpBindingEnvironment::resolve(
         environment.directory().to_path_buf(),
         environment.variables().clone(),
@@ -324,7 +440,12 @@ fn trusted_destination_server(
             "remote MCP grant owner is invalid",
         )
     })?;
-    let credential = RunMcpCredentialLease::new(grant.expires_at_unix);
+    let mut credential = RunMcpCredentialLease::new(grant.expires_at_unix);
+    if agent_binding.is_some() && let Some(agent) = agent {
+        credential = credential.with_authority(Arc::new(AgentDestinationAuthority {
+            agent: agent.clone(), definition: definition.as_ref().clone(),
+        }));
+    }
     let grant_marker = super::HostMcpGrantMarker {
         server: name.to_owned(),
         destination_id: policy.destination_id.clone(),
@@ -332,15 +453,18 @@ fn trusted_destination_server(
         scopes: grant.scopes.clone(),
         credential_revision: grant.credential_revision.clone(),
         expires_at_unix: grant.expires_at_unix,
+        agent_binding: agent_binding.clone(),
     };
     Ok(RunMcpServer {
         name: name.to_owned(),
         configuration: definition.configuration().clone(),
         authentication: ServerAuthentication::Authenticated {
             binding_id: format!(
-                "run-grant:{host_id}:{}:{name}:{}",
+                "run-grant:{host_id}:{}:{name}:{}:{}",
                 owner.presentation_owner_key(),
-                grant.credential_revision
+                grant.credential_revision,
+                agent_binding.as_ref().map(|binding| format!("{}:{}:{}", binding.agent_id,
+                    binding.agent_revision, binding.grant_policy_revision)).unwrap_or_default()
             ),
         },
         secret_values,

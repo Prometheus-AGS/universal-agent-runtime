@@ -2005,6 +2005,44 @@ impl PersistenceLayer for SurrealDbProvider {
         Ok(())
     }
 
+    async fn create_skill_if_absent(&self, skill: &Skill, embedding: &[f32]) -> Result<bool> {
+        #[derive(Serialize, Deserialize)]
+        struct SkillRecord {
+            #[serde(flatten)]
+            skill: Skill,
+            embedding: Vec<f32>,
+        }
+
+        let payload = to_db_value(&SkillRecord {
+            skill: skill.clone(),
+            embedding: embedding.to_vec(),
+        })?;
+        let response = self
+            .db
+            .query(
+                "BEGIN TRANSACTION;
+                 LET $old = (SELECT * FROM type::record('skills', $key))[0];
+                 IF $old != NONE { THROW 'uar_skill_exists'; };
+                 CREATE type::record('skills', $key) CONTENT $payload;
+                 COMMIT TRANSACTION;",
+            )
+            .bind(("key", skill.skill_id.clone()))
+            .bind(("payload", payload))
+            .await?;
+        let mut response = response;
+        let errors = response.take_errors();
+        if errors
+            .values()
+            .any(|error| error.to_string().contains("uar_skill_exists"))
+        {
+            return Ok(false);
+        }
+        if let Some((_, error)) = errors.into_iter().next() {
+            return Err(error.into());
+        }
+        Ok(true)
+    }
+
     async fn update_skill_selection(
         &self,
         skill_id: &str,

@@ -1,0 +1,18 @@
+{
+  "image": "uar:v1.1.0-candidate",
+  "image_kind": "local-tag",
+  "started_at": 1792069367,
+  "result": "incomplete",
+  "requested_gates": [
+    "all"
+  ],
+  "selected_gates": [
+    "defaults",
+    "profiles",
+    "mcp",
+    "a2a"
+  ],
+  "full_acceptance": true,
+  "failure": "governance update failed",
+  "finished_at": 1792069669
+}

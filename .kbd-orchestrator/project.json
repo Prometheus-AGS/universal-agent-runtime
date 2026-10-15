@@ -3,8 +3,8 @@
   "displayName": "Universal Agent Runtime",
   "sourceOfTruth": ".kbd-orchestrator",
   "specSystem": "openspec",
-  "activeChange": null,
-  "activePhase": "dot-feature-support",
+  "activeChange": "uar-1-1-0-kubo-conformance",
+  "activePhase": "uar-1-1-0-kubo-conformance",
   "memoryMirror": {
     "provider": "surreal_memory",
     "mcpServer": "surreal_memory",

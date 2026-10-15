@@ -1,0 +1,528 @@
+{
+  "capture": {
+    "duration_seconds": 300.10589175799396,
+    "received_packets": 422,
+    "dropped_packets": 0,
+    "observations": [
+      {
+        "seconds": 0.5158866879937705,
+        "interface": "eth0",
+        "bytes": 110,
+        "ether_type": "86dd",
+        "classification": "ipv6_multicast_listener_report",
+        "source": "::",
+        "destination": "ff02::16",
+        "protocol": 58,
+        "icmpv6_type": 143,
+        "icmpv6_code": 0
+      },
+      {
+        "seconds": 0.70886153599713,
+        "interface": "eth0",
+        "bytes": 86,
+        "ether_type": "86dd",
+        "classification": "ipv6_neighbor_discovery",
+        "source": "::",
+        "destination": "ff02::1:ffc7:a9d6",
+        "protocol": 58,
+        "icmpv6_type": 135,
+        "icmpv6_code": 0
+      },
+      {
+        "seconds": 0.8839455989946146,
+        "interface": "eth0",
+        "bytes": 42,
+        "ether_type": "0806",
+        "classification": "gratuitous_arp",
+        "operation": 1,
+        "sender": "192.168.215.3",
+        "target": "192.168.215.3"
+      },
+      {
+        "seconds": 0.8841598930011969,
+        "interface": "eth0",
+        "bytes": 86,
+        "ether_type": "86dd",
+        "classification": "ipv6_neighbor_discovery",
+        "source": "fd07:b51a:cc66:1::3",
+        "destination": "ff02::1",
+        "protocol": 58,
+        "icmpv6_type": 136,
+        "icmpv6_code": 0
+      },
+      {
+        "seconds": 1.7315202900208533,
+        "interface": "eth0",
+        "bytes": 110,
+        "ether_type": "86dd",
+        "classification": "ipv6_multicast_listener_report",
+        "source": "fe80::88cf:2eff:fec7:a9d6",
+        "destination": "ff02::16",
+        "protocol": 58,
+        "icmpv6_type": 143,
+        "icmpv6_code": 0
+      },
+      {
+        "seconds": 1.7318128760089166,
+        "interface": "eth0",
+        "bytes": 70,
+        "ether_type": "86dd",
+        "classification": "ipv6_neighbor_discovery",
+        "source": "fe80::88cf:2eff:fec7:a9d6",
+        "destination": "ff02::2",
+        "protocol": 58,
+        "icmpv6_type": 133,
+        "icmpv6_code": 0
+      },
+      {
+        "seconds": 1.8817102970206179,
+        "interface": "eth0",
+        "bytes": 42,
+        "ether_type": "0806",
+        "classification": "gratuitous_arp",
+        "operation": 1,
+        "sender": "192.168.215.3",
+        "target": "192.168.215.3"
+      },
+      {
+        "seconds": 1.8820810090110172,
+        "interface": "eth0",
+        "bytes": 86,
+        "ether_type": "86dd",
+        "classification": "ipv6_neighbor_discovery",
+        "source": "fd07:b51a:cc66:1::3",
+        "destination": "ff02::1",
+        "protocol": 58,
+        "icmpv6_type": 136,
+        "icmpv6_code": 0
+      },
+      {
+        "seconds": 2.228513142996235,
+        "interface": "eth0",
+        "bytes": 110,
+        "ether_type": "86dd",
+        "classification": "ipv6_multicast_listener_report",
+        "source": "fe80::88cf:2eff:fec7:a9d6",
+        "destination": "ff02::16",
+        "protocol": 58,
+        "icmpv6_type": 143,
+        "icmpv6_code": 0
+      },
+      {
+        "seconds": 5.571428110008128,
+        "interface": "eth0",
+        "bytes": 70,
+        "ether_type": "86dd",
+        "classification": "ipv6_neighbor_discovery",
+        "source": "fe80::88cf:2eff:fec7:a9d6",
+        "destination": "ff02::2",
+        "protocol": 58,
+        "icmpv6_type": 133,
+        "icmpv6_code": 0
+      },
+      {
+        "seconds": 13.445454108004924,
+        "interface": "eth0",
+        "bytes": 70,
+        "ether_type": "86dd",
+        "classification": "ipv6_neighbor_discovery",
+        "source": "fe80::88cf:2eff:fec7:a9d6",
+        "destination": "ff02::2",
+        "protocol": 58,
+        "icmpv6_type": 133,
+        "icmpv6_code": 0
+      },
+      {
+        "seconds": 28.80387125600828,
+        "interface": "eth0",
+        "bytes": 70,
+        "ether_type": "86dd",
+        "classification": "ipv6_neighbor_discovery",
+        "source": "fe80::88cf:2eff:fec7:a9d6",
+        "destination": "ff02::2",
+        "protocol": 58,
+        "icmpv6_type": 133,
+        "icmpv6_code": 0
+      },
+      {
+        "seconds": 59.52552396201645,
+        "interface": "eth0",
+        "bytes": 70,
+        "ether_type": "86dd",
+        "classification": "ipv6_neighbor_discovery",
+        "source": "fe80::88cf:2eff:fec7:a9d6",
+        "destination": "ff02::2",
+        "protocol": 58,
+        "icmpv6_type": 133,
+        "icmpv6_code": 0
+      },
+      {
+        "seconds": 125.57265108000138,
+        "interface": "eth0",
+        "bytes": 70,
+        "ether_type": "86dd",
+        "classification": "ipv6_neighbor_discovery",
+        "source": "fe80::88cf:2eff:fec7:a9d6",
+        "destination": "ff02::2",
+        "protocol": 58,
+        "icmpv6_type": 133,
+        "icmpv6_code": 0
+      },
+      {
+        "seconds": 256.6434901730099,
+        "interface": "eth0",
+        "bytes": 70,
+        "ether_type": "86dd",
+        "classification": "ipv6_neighbor_discovery",
+        "source": "fe80::88cf:2eff:fec7:a9d6",
+        "destination": "ff02::2",
+        "protocol": 58,
+        "icmpv6_type": 133,
+        "icmpv6_code": 0
+      }
+    ]
+  },
+  "interface_counters": [
+    {
+      "seconds": 0,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 110,
+          "rx_packets": 1,
+          "tx_bytes": 238,
+          "tx_packets": 3
+        }
+      }
+    },
+    {
+      "seconds": 10,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1558,
+          "rx_packets": 17,
+          "tx_bytes": 1050,
+          "tx_packets": 13
+        }
+      }
+    },
+    {
+      "seconds": 20,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1628,
+          "rx_packets": 18,
+          "tx_bytes": 1120,
+          "tx_packets": 14
+        }
+      }
+    },
+    {
+      "seconds": 30,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1698,
+          "rx_packets": 19,
+          "tx_bytes": 1190,
+          "tx_packets": 15
+        }
+      }
+    },
+    {
+      "seconds": 40,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1698,
+          "rx_packets": 19,
+          "tx_bytes": 1190,
+          "tx_packets": 15
+        }
+      }
+    },
+    {
+      "seconds": 50,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1698,
+          "rx_packets": 19,
+          "tx_bytes": 1190,
+          "tx_packets": 15
+        }
+      }
+    },
+    {
+      "seconds": 60,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1768,
+          "rx_packets": 20,
+          "tx_bytes": 1260,
+          "tx_packets": 16
+        }
+      }
+    },
+    {
+      "seconds": 70,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1768,
+          "rx_packets": 20,
+          "tx_bytes": 1260,
+          "tx_packets": 16
+        }
+      }
+    },
+    {
+      "seconds": 80,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1768,
+          "rx_packets": 20,
+          "tx_bytes": 1260,
+          "tx_packets": 16
+        }
+      }
+    },
+    {
+      "seconds": 90,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1768,
+          "rx_packets": 20,
+          "tx_bytes": 1260,
+          "tx_packets": 16
+        }
+      }
+    },
+    {
+      "seconds": 100,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1768,
+          "rx_packets": 20,
+          "tx_bytes": 1260,
+          "tx_packets": 16
+        }
+      }
+    },
+    {
+      "seconds": 110,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1768,
+          "rx_packets": 20,
+          "tx_bytes": 1260,
+          "tx_packets": 16
+        }
+      }
+    },
+    {
+      "seconds": 120,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1768,
+          "rx_packets": 20,
+          "tx_bytes": 1260,
+          "tx_packets": 16
+        }
+      }
+    },
+    {
+      "seconds": 130,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1838,
+          "rx_packets": 21,
+          "tx_bytes": 1330,
+          "tx_packets": 17
+        }
+      }
+    },
+    {
+      "seconds": 140,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1838,
+          "rx_packets": 21,
+          "tx_bytes": 1330,
+          "tx_packets": 17
+        }
+      }
+    },
+    {
+      "seconds": 150,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1838,
+          "rx_packets": 21,
+          "tx_bytes": 1330,
+          "tx_packets": 17
+        }
+      }
+    },
+    {
+      "seconds": 160,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1838,
+          "rx_packets": 21,
+          "tx_bytes": 1330,
+          "tx_packets": 17
+        }
+      }
+    },
+    {
+      "seconds": 170,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1838,
+          "rx_packets": 21,
+          "tx_bytes": 1330,
+          "tx_packets": 17
+        }
+      }
+    },
+    {
+      "seconds": 180,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1838,
+          "rx_packets": 21,
+          "tx_bytes": 1330,
+          "tx_packets": 17
+        }
+      }
+    },
+    {
+      "seconds": 190,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1838,
+          "rx_packets": 21,
+          "tx_bytes": 1330,
+          "tx_packets": 17
+        }
+      }
+    },
+    {
+      "seconds": 200,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1838,
+          "rx_packets": 21,
+          "tx_bytes": 1330,
+          "tx_packets": 17
+        }
+      }
+    },
+    {
+      "seconds": 210,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1838,
+          "rx_packets": 21,
+          "tx_bytes": 1330,
+          "tx_packets": 17
+        }
+      }
+    },
+    {
+      "seconds": 220,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1838,
+          "rx_packets": 21,
+          "tx_bytes": 1330,
+          "tx_packets": 17
+        }
+      }
+    },
+    {
+      "seconds": 230,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1838,
+          "rx_packets": 21,
+          "tx_bytes": 1330,
+          "tx_packets": 17
+        }
+      }
+    },
+    {
+      "seconds": 240,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1838,
+          "rx_packets": 21,
+          "tx_bytes": 1330,
+          "tx_packets": 17
+        }
+      }
+    },
+    {
+      "seconds": 250,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1838,
+          "rx_packets": 21,
+          "tx_bytes": 1330,
+          "tx_packets": 17
+        }
+      }
+    },
+    {
+      "seconds": 260,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1908,
+          "rx_packets": 22,
+          "tx_bytes": 1400,
+          "tx_packets": 18
+        }
+      }
+    },
+    {
+      "seconds": 270,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1908,
+          "rx_packets": 22,
+          "tx_bytes": 1400,
+          "tx_packets": 18
+        }
+      }
+    },
+    {
+      "seconds": 280,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1908,
+          "rx_packets": 22,
+          "tx_bytes": 1400,
+          "tx_packets": 18
+        }
+      }
+    },
+    {
+      "seconds": 290,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1908,
+          "rx_packets": 22,
+          "tx_bytes": 1400,
+          "tx_packets": 18
+        }
+      }
+    },
+    {
+      "seconds": 300,
+      "counters": {
+        "eth0": {
+          "rx_bytes": 1908,
+          "rx_packets": 22,
+          "tx_bytes": 1400,
+          "tx_packets": 18
+        }
+      }
+    }
+  ]
+}

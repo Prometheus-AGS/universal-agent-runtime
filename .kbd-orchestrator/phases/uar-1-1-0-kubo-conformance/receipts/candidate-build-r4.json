@@ -1,0 +1,76 @@
+{
+  "command": "docker buildx build --platform linux/arm64 --load --tag uar:v1.1.0-candidate --metadata-file /tmp/uar-v1.1.0-candidate-build-r4.json --progress plain .",
+  "exit_code": 0,
+  "metadata": {
+    "buildx.build.provenance": {
+      "builder": {
+        "id": ""
+      },
+      "buildType": "https://mobyproject.org/buildkit@v1",
+      "materials": [
+        {
+          "uri": "pkg:docker/docker/dockerfile@1.7",
+          "digest": {
+            "sha256": "a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e"
+          }
+        },
+        {
+          "uri": "pkg:docker/ubuntu@24.04?platform=linux%2Farm64",
+          "digest": {
+            "sha256": "534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55"
+          }
+        }
+      ],
+      "invocation": {
+        "configSource": {
+          "entryPoint": "Dockerfile"
+        },
+        "parameters": {
+          "frontend": "gateway.v0",
+          "args": {
+            "cmdline": "docker/dockerfile:1.7",
+            "source": "docker/dockerfile:1.7"
+          },
+          "secrets": [
+            {
+              "id": "github_token",
+              "optional": true
+            }
+          ],
+          "locals": [
+            {
+              "name": "context"
+            },
+            {
+              "name": "dockerfile"
+            }
+          ],
+          "root": {
+            "configSource": {
+              "path": "Dockerfile"
+            },
+            "request": {
+              "args": {
+                "vcs:localdir:context": ".",
+                "vcs:localdir:dockerfile": ".",
+                "vcs:revision": "c9dca17084ab30a7c602df9fe99e5618fa42349e",
+                "vcs:source": "git@github.com:Prometheus-AGS/universal-agent-runtime.git"
+              }
+            }
+          },
+          "compatibilityVersion": 30
+        },
+        "environment": {
+          "platform": "linux/arm64"
+        }
+      }
+    },
+    "buildx.build.ref": "orbstack/orbstack/6lhpzh7qv62ewsobprxl70u44",
+    "containerimage.config.digest": "sha256:214487056f166fe5a81803caf4c216b97ac7beee1fd9550c1c4a142a0c1e2360",
+    "containerimage.digest": "sha256:214487056f166fe5a81803caf4c216b97ac7beee1fd9550c1c4a142a0c1e2360",
+    "image.name": "docker.io/library/uar:v1.1.0-candidate"
+  },
+  "log_path": "/tmp/uar-v1.1.0-candidate-build-r4.log",
+  "log_sha256": "e933085a0cb68b562d9f7275019d5b9afa5b20aa6a980496de41e0b14ec16bab",
+  "acceptance": "failed default startup; superseded candidate requires source correction"
+}

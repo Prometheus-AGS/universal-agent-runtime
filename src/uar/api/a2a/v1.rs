@@ -6,17 +6,21 @@ use axum::{Extension, Json, body::Bytes, extract::{Path, Query, State}, http::{H
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use super::{handler::A2AState, thread_service::TaskError, types::{self, JsonRpcRequest, JsonRpcResponse, Task}};
+use super::{admission::A2aAdmissionError, handler::A2AState, thread_service::TaskError, types::{self, JsonRpcRequest, JsonRpcResponse, Task}};
 use crate::uar::{runtime::actor::messages::ActorOwner, security::{authority::authorize_context, claims::UserContext, credential_capture::AuthenticatedCredentialCapture}};
 
-/// Exact discovery shape from the pinned 1.0 schema; gRPC remains legacy.
-pub fn agent_card(base_url: &str) -> Value {
+/// Exact discovery shape from the pinned 1.0 schema.
+pub fn agent_card(base_url: &str, grpc_url: Option<&str>) -> Value {
     let legacy = super::agent_card::build_agent_card(base_url);
+    let mut interfaces = vec![json!({"url": format!("{}/a2a/v1/compiler", base_url.trim_end_matches('/')),
+        "protocolBinding": "JSONRPC", "protocolVersion": "1.0"})];
+    if let Some(grpc_url) = grpc_url.filter(|url| !url.trim().is_empty()) {
+        interfaces.push(json!({"url": grpc_url, "protocolBinding": "GRPC", "protocolVersion": "1.0"}));
+    }
     json!({
         "name": legacy.name, "description": legacy.description,
         "version": env!("CARGO_PKG_VERSION"), "documentationUrl": legacy.documentation_url,
-        "supportedInterfaces": [{"url": format!("{}/a2a/v1/compiler", base_url.trim_end_matches('/')),
-            "protocolBinding": "JSONRPC", "protocolVersion": "1.0"}],
+        "supportedInterfaces": interfaces,
         "capabilities": {"streaming": false, "pushNotifications": false, "extendedAgentCard": false},
         "securitySchemes": {
             "bearer": {"httpAuthSecurityScheme": {"scheme": "Bearer", "bearerFormat": "JWT"}},
@@ -33,7 +37,7 @@ pub fn agent_card(base_url: &str) -> Value {
 }
 
 pub async fn handle_agent_card(State(state): State<Arc<A2AState>>) -> Json<Value> {
-    Json(agent_card(&state.base_url))
+    Json(agent_card(&state.base_url, state.grpc_url.as_deref()))
 }
 
 pub async fn handle_rpc(
@@ -113,6 +117,18 @@ fn task_error(id: Option<Value>, failure: TaskError, cancel: bool) -> Response {
     };
     error(id, code, message)
 }
+fn admission_error(id: Option<Value>, failure: A2aAdmissionError) -> Response {
+    match failure {
+        A2aAdmissionError::Forbidden => response(
+            StatusCode::FORBIDDEN,
+            JsonRpcResponse::err(id, -32011, "Insufficient scope"),
+        ),
+        A2aAdmissionError::Unavailable => response(
+            StatusCode::SERVICE_UNAVAILABLE,
+            JsonRpcResponse::err(id, -32603, "Task admission unavailable"),
+        ),
+    }
+}
 fn parse<T: serde::de::DeserializeOwned>(value: Option<Value>) -> Result<T, ()> {
     serde_json::from_value(value.unwrap_or_else(|| json!({}))).map_err(|_| ())
 }
@@ -184,6 +200,9 @@ async fn dispatch(
                 message: types::Message { role: types::Role::User, parts, metadata: message_metadata },
                 task_id: params.message.task_id, context_id: params.message.context_id, metadata: params.metadata,
             };
+            if let Err(failure) = state.admission.admit(&user, agent).await {
+                return admission_error(req.id, failure);
+            }
             let mut task = match state.threads.send_durable(&owner, &user, user.claims.uar_instance_id.as_deref(), agent,
                 params_legacy, &params.message.message_id, capture.map(|Extension(value)| value).unwrap_or_default()).await {
                 Ok(task) => task, Err(failure) => return task_error(req.id, failure, false),

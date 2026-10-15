@@ -14,7 +14,7 @@ use crate::uar::domain::skills::{
 };
 use crate::uar::runtime::skills::provenance::{PackProvenance, read_provenance};
 use crate::uar::runtime::skills::service::{
-    SkillMatchingConfig, SkillSelectionError, SkillService, SkillUpdate,
+    SkillContentImportError, SkillMatchingConfig, SkillSelectionError, SkillService, SkillUpdate,
 };
 use axum::{
     Json, Router,
@@ -63,6 +63,7 @@ pub fn build_router() -> Router<Arc<SkillService>> {
         .route("/refresh", post(refresh_skills))
         // Matching configuration
         .route("/import", post(import_skill_from_disk))
+        .route("/import-content", post(import_skill_content))
         .route("/config", get(get_config))
         .route("/config", put(set_config))
 }
@@ -130,6 +131,8 @@ pub fn build_agent_skills_router() -> Router<Arc<SkillService>> {
 #[derive(Serialize)]
 struct SkillResponse {
     skill_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    artifact_digest: Option<String>,
     title: String,
     description: String,
     version: String,
@@ -139,6 +142,8 @@ struct SkillResponse {
     triggers: crate::uar::domain::skills::SkillTriggers,
     preferred_tools: Vec<String>,
     prompt_overlay: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    skill_markdown: Option<String>,
     execution_config: SkillExecutionConfig,
 }
 
@@ -146,6 +151,7 @@ impl From<crate::uar::domain::skills::Skill> for SkillResponse {
     fn from(s: crate::uar::domain::skills::Skill) -> Self {
         Self {
             skill_id: s.skill_id,
+            artifact_digest: s.artifact_digest,
             title: s.title,
             description: s.description,
             version: s.version,
@@ -155,6 +161,7 @@ impl From<crate::uar::domain::skills::Skill> for SkillResponse {
             triggers: s.triggers,
             preferred_tools: s.preferred_tools,
             prompt_overlay: s.prompt_overlay,
+            skill_markdown: s.skill_markdown,
             execution_config: s.execution_config,
         }
     }
@@ -225,6 +232,12 @@ struct AgentSkillsRequest {
 #[derive(Debug, Deserialize)]
 pub struct SkillImportRequest {
     pub path: String,
+}
+
+/// Request body for importing one persisted SKILL.md document over HTTP.
+#[derive(Debug, Deserialize)]
+pub struct SkillContentImportRequest {
+    pub skill_markdown: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -433,6 +446,48 @@ async fn refresh_skills(State(service): State<Arc<SkillService>>) -> impl IntoRe
             Json(serde_json::json!({ "error": format!("{e:?}") })),
         )
             .into_response(),
+    }
+}
+
+/// POST /api/uar/skills/import-content imports one complete SKILL.md document,
+/// persists it, and returns its registered representation.
+async fn import_skill_content(
+    State(service): State<Arc<SkillService>>,
+    Json(req): Json<SkillContentImportRequest>,
+) -> axum::response::Response {
+    match service.import_skill_markdown(req.skill_markdown).await {
+        Ok(skill) => (StatusCode::CREATED, Json(SkillResponse::from(skill))).into_response(),
+        Err(SkillContentImportError::InvalidManifest(message)) => (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "error": "skill_markdown_invalid",
+                "message": message,
+            })),
+        )
+            .into_response(),
+        Err(SkillContentImportError::Conflict) => (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({ "error": "skill_id_conflict" })),
+        )
+            .into_response(),
+        Err(SkillContentImportError::MutationDenied) => (
+            StatusCode::FORBIDDEN,
+            Json(serde_json::json!({ "error": "skill_mutation_denied" })),
+        )
+            .into_response(),
+        Err(SkillContentImportError::PersistenceUnavailable) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({ "error": "skill_persistence_unavailable" })),
+        )
+            .into_response(),
+        Err(SkillContentImportError::Persistence(error)) => {
+            tracing::error!(?error, "failed to persist imported skill content");
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(serde_json::json!({ "error": "skill_persistence_failed" })),
+            )
+                .into_response()
+        }
     }
 }
 

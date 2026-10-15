@@ -69,8 +69,11 @@ impl McpInteractionChannel {
 
     async fn wait(self: Arc<Self>, server: String, connection: String, request: ElicitRequestParams,
         context: RequestContext<RoleClient>, abandoned: CancellationToken,
-        credential: Option<super::runtime::RunMcpCredentialLease>) -> anyhow::Result<ElicitResult> {
+        credential: Option<super::runtime::RunMcpCredentialLease>,
+        binding: Option<Arc<super::binding_cache::McpBindingRequest>>) -> anyhow::Result<ElicitResult> {
         anyhow::ensure!(self.available(), "interaction_channel_closed");
+        if let Some(binding) = &binding { binding.authorize_current_definition()?; }
+        if let Some(credential) = &credential { credential.authorize_current(&server).await?; }
         // Validate the supported request before persistence. URLs are presented
         // as untrusted links; neither the host nor an agent opens them.
         match &request {
@@ -94,24 +97,29 @@ impl McpInteractionChannel {
         {
             let mut pending = self.pending.lock().map_err(|_|anyhow::anyhow!("interaction_channel_unavailable"))?;
             pending.insert(row.id.clone(), PendingAvailability {credential:credential.clone(),
+                binding:binding.clone(),
                 cancellation:context.ct.clone(), abandoned:abandoned.clone(), peer:context.peer.clone()});
             self.activity.send_replace(pending.len());
         }
         let _pending = PendingRequest {channel:Arc::clone(&self),id:row.id.clone()};
         self.store.create_mcp_elicitation(&row).await?;
         loop {
+            let credential_valid = match &credential {
+                Some(lease) => lease.authorize_current(&row.server_name).await.is_ok(),
+                None => true,
+            } && binding.as_ref().is_none_or(|binding| binding.authorize_current_definition().is_ok());
             let current = self.store.list_mcp_elicitations(&self.owner_key,&self.run_id).await?
                 .into_iter().find(|saved|saved.id == row.id).ok_or_else(||anyhow::anyhow!("elicitation_record_missing"))?;
             if current.state != ElicitationState::Pending {
                 // A durable answer is consumed by its original handler only.
                 if !self.available() || context.ct.is_cancelled() || abandoned.is_cancelled()
-                    || context.peer.is_transport_closed() || credential.as_ref().is_some_and(|lease|lease.authorize(&row.server_name).is_err()) {
+                    || context.peer.is_transport_closed() || !credential_valid {
                     return Ok(ElicitResult::new(ElicitationAction::Cancel));
                 }
                 return Ok(current.response.unwrap_or_else(||ElicitResult::new(ElicitationAction::Cancel)));
             }
             let disposition = if self.cancellation.is_cancelled() || context.ct.is_cancelled()
-                || credential.as_ref().is_some_and(|lease|lease.authorize(&row.server_name).is_err()) {
+                || !credential_valid {
                 Some(ElicitationState::Cancelled)
             } else if abandoned.is_cancelled() || context.peer.is_transport_closed() {
                 Some(ElicitationState::Disconnected)
@@ -136,6 +144,7 @@ impl McpInteractionChannel {
 #[derive(Debug)]
 struct PendingAvailability {
     credential: Option<super::runtime::RunMcpCredentialLease>,
+    binding: Option<Arc<super::binding_cache::McpBindingRequest>>,
     cancellation: CancellationToken,
     abandoned: CancellationToken,
     peer: rmcp::service::Peer<RoleClient>,
@@ -144,6 +153,7 @@ impl PendingAvailability {
     fn available(&self, server: &str) -> bool {
         !self.cancellation.is_cancelled() && !self.abandoned.is_cancelled() && !self.peer.is_transport_closed()
             && self.credential.as_ref().is_none_or(|lease|lease.authorize(server).is_ok())
+            && self.binding.as_ref().is_none_or(|binding|binding.authorize_current_definition().is_ok())
     }
 }
 
@@ -164,6 +174,7 @@ pub(crate) struct RunMcpClient {
     server: String,
     connection: String,
     credential: Option<super::runtime::RunMcpCredentialLease>,
+    binding: Option<Arc<super::binding_cache::McpBindingRequest>>,
 }
 impl RunMcpClient {
     pub(crate) fn with_credential(mut self, credential: Option<super::runtime::RunMcpCredentialLease>) -> Self {
@@ -172,7 +183,8 @@ impl RunMcpClient {
     pub(crate) fn channel(&self) -> Option<&Arc<McpInteractionChannel>> { self.channel.as_ref() }
     pub(crate) fn for_request(request: &super::binding_cache::McpBindingRequest) -> Self {
         Self { channel:request.interactions().cloned(), server:request.definition().name().to_owned(),
-            connection:uuid::Uuid::new_v4().to_string(), credential:None }
+            connection:uuid::Uuid::new_v4().to_string(), credential:None,
+            binding:Some(Arc::new(request.clone())) }
     }
 }
 impl ClientHandler for RunMcpClient {
@@ -200,11 +212,12 @@ impl ClientHandler for RunMcpClient {
         let _guard = abandoned.clone().drop_guard();
         let server = self.server.clone(); let connection = self.connection.clone();
         let credential = self.credential.clone();
+        let binding = self.binding.clone();
         // rmcp may drop the callback on disconnect. Its independently owned
         // settlement task still commits the cancellation; process death leaves
         // explicit pending history, never a response or replay authorization.
         tokio::spawn(async move {
-            let result = channel.wait(server,connection,request,context,abandoned,credential).await;
+            let result = channel.wait(server,connection,request,context,abandoned,credential,binding).await;
             if result.is_err() { tracing::warn!("MCP elicitation settlement unconfirmed; durable pending state retained"); }
             result
         })

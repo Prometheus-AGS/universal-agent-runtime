@@ -270,6 +270,19 @@ pub(crate) async fn attach_host_resources(
     reasoning_effort: Option<String>,
     history: Option<crate::uar::runtime::turn::host::HostHistoryInput>,
 ) -> Result<(), RunApiError> {
+    manager.authorize_preferred_skills(user, &request.artifact).await.map_err(|error| {
+        use crate::uar::security::skill_roles::SkillAdmissionError;
+        match error {
+            SkillAdmissionError::Forbidden => RunApiError {
+                status: StatusCode::FORBIDDEN, code: "skill_forbidden",
+                message: "the verified principal cannot use a selected skill".to_owned(),
+            },
+            SkillAdmissionError::Unavailable => RunApiError {
+                status: StatusCode::SERVICE_UNAVAILABLE, code: "skill_unavailable",
+                message: "a selected protected skill is unavailable".to_owned(),
+            },
+        }
+    })?;
     if working_directory.is_some() {
         request.working_directory = canonical_working_directory(working_directory)?;
     }
@@ -366,7 +379,9 @@ pub(crate) async fn attach_host_resources(
                 ))
             })?;
         let (servers, resources) = manager
-            .admit_run_mcp_servers(servers, user, owner, cwd)
+            .admit_run_mcp_servers(servers, user, owner, cwd,
+                (!request.host_resources_marker.artifact_inline && request.collaboration_binding.is_none())
+                    .then_some(&request.artifact))
             .await?;
         request.host_resources_marker.mcp_servers = server_names.into_iter().collect();
         request.host_resources_marker.mcp_grants = servers.grant_markers();
@@ -977,6 +992,9 @@ async fn api_tool_approval(
     Json(body): Json<ToolApprovalRequest>,
 ) -> axum::response::Response {
     let manager = &state.manager;
+    if body.approved && manager.authorize_run_skill_roles(&user, &run_id).await.is_err() {
+        return (StatusCode::FORBIDDEN, Json(serde_json::json!({"resolved":false,"code":"skill_forbidden"}))).into_response();
+    }
     let Some(approval_id) = body.approval_id.as_deref().filter(|id| !id.trim().is_empty()) else {
         return (StatusCode::BAD_REQUEST, Json(serde_json::json!({
             "resolved": false, "error": "approval_id_required",
@@ -1590,6 +1608,11 @@ pub(crate) async fn resolve_host_approval(
     fresh_a2a_contract: Option<crate::uar::api::a2a::contract::UarDelegationContract>,
 ) -> Result<HostApprovalResolution, axum::response::Response> {
     use crate::uar::persistence::approval_decisions::ApprovalState;
+    if approved {
+        state.manager.authorize_run_skill_roles(&user, &run_id).await.map_err(|_| {
+            (StatusCode::FORBIDDEN, Json(serde_json::json!({"code":"skill_forbidden"}))).into_response()
+        })?;
+    }
     let (_, records) = state.manager.approval_records_for_context(&user, &run_id, workspace.as_deref())
         .await.map_err(|error| checkpoint_resume_api_error(error).into_response())?;
     let view = records.into_iter().find(|view| view.record.challenge_id == approval_id)

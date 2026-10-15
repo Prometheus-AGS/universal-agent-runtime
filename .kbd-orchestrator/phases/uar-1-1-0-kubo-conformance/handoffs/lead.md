@@ -1,0 +1,44 @@
+# Current lead handoff
+
+**Entire-phase implementation complete.** `implementation-complete.md` records all owner handoffs, code, fixtures and documentation. `requirements-inventory.md` maps every approved item. Next is the complete serialized local acceptance program, then source/spec gates and immutable publication. Historical entries below do not supersede this current handoff.
+
+# Lead continuation — UAR v1.1.0
+
+Phase Execute, task 6 acceptance. User explicitly authorizes source/tag push, GHCR publication, GitHub release and #379 comment. Do not request approval again. Nothing is published yet; return OG-4 only after immutable published-image acceptance.
+
+## Source and review
+Branch codex/uar-1-1-0-kubo-conformance, baseline c9dca170. All changes uncommitted. Original fixes already committed in 22088cee. Complete production/docs/fixtures plus final review corrections are in the working tree. See implementation-inventory.md and three domain handoffs. Existing Dot closure remains closed; cancelled qualification is not revived.
+
+Independent artifact_critic report .agent-team/uar-core/reviews/uar-1-1-0-kubo-conformance/artifact-review.md contains initial findings and the single completed corrective review: C1/W1/W2/W3 source-addressed, no unresolved finding among them. It is a same-family independent fallback, not cross-family proof. Final screening score0.0. Runtime remains unverified.
+
+C1 uses restricted-origin comparison for unregistered/direct MCP resources (loopback aliases, alternate path/query/fragment); explicit registered leases retain own admin policy. A2A tenant validates caller tenant; agent routes through x-uar-agent-id. gRPC original message IDs persist internally then strip from publicmetadata; fallback task:index and task:status exactly matches JSON. Artifacts/completion/history parity and unsupported streaming no-task behavior corrected. Fixtures cover these differences.
+
+## Current integration status
+Production build r4 passed exit0, local image sha256:214487056f166fe5a81803caf4c216b97ac7beee1fd9550c1c4a142a0c1e2360. No publication. Acceptance session61512 exited1 in default startup. Evidence: receipts/candidate-build-r4.json, candidate-default-first-failure.json, default-startup-failure.log. The default no-model profile unconditionally constructed optional response-quality Orchestrator; server.rs now skips it when model empty. Runtime owner source handoff complete, no checks run by teammate. Lead fixed defaults fixture to retain logs/abort exited runtime and invoke executable before CORS --config. Final correction boundary recorded in implementation-inventory.md. Build r5 running as exec27030; log /tmp/uar-v1.1.0-candidate-build-r5.log, metadata same prefix .json. Canonical waypoint revision2891. Do not start another writer.
+
+## Next gates and delivery
+1. Complete current Docker build, repair actual failures only; preserve one build writer. Workflow-invoked script/Dockerfile edits require pnpm github-actions-policy:validate before and after.
+2. Run `python3 scripts/release/uar_1_1_acceptance.py --image uar:v1.1.0-candidate --local-tag --evidence /tmp/uar-v1.1.0-candidate-evidence`. Capture actual log/exit. This is the sole planned real production integration program (default300s,12sourceauthprofiles,MCP+skillpersistence,bothA2Atransports×governance×approvaldecisions). Failed gates can rerun via --gate defaults|profiles|mcp|a2a; partial receipts never full success. Corrected production source requires rebuilt image and relevant acceptance; all final artifact gates must be accounted for.
+3. Complete required local artifact validation and source/evidence inventory; commit bounded changes. User authorizes release. Check remote ref/tag absence again before push. Existing deploy.yml publishes on v* tags, native amd64/arm64; no product testing in Actions. Tag immutablev1.1.0, push approvedsource+tag. Do not move tag if acceptance fails.
+4. Observe existing deployment workflow, record exact commit/run, multi-platform and architecture digests. Pull immutable digest; rerun installed-image acceptance with no runtime source patches.
+5. Create GitHubRelease with setup/compatibility/digest/receipts; post #379 results. Final exact handoff: OG-4: v1.1.0, ghcr.io/prometheus-ags/universal-agent-runtime@sha256:<verified>.
+6. Record phase reflection/completion and published receipts, commit audit followup if needed without moving release tag. Do not claim completion early.
+
+## Coordination
+Canonical KBD task1–5 completed source handoffs; task6 active; task7 pending. Waypoint revision2890 before any future updates. Canonical mutation through prometheus kbd/managed kbd-apply only, not hand-edited projections. Team source tasks complete (state revision9); final supplemental W2 handoff is part of task6 correction. Full-phase boundary complete; no further implementation pending at this writing.
+
+Latest: r5 PASSED exit0, image88efe49c982e660f809a73c8791919d6190c7c9c210d7a42625568d3d3595ba9. Full acceptance exec31358 running, log/evidence r1 paths in execution.md. No build active.
+
+Current acceptance: r3 exec79327, log /tmp/uar-v1.1.0-candidate-acceptance-r3.log, evidence /tmp/uar-v1.1.0-candidate-evidence-r3. r1 failed aggregateTX due interface-control traffic; corrected AF_PACKET observer. r2 passed300s capture with0drops/application traffic, then failed default governance-disable fixture because jwt_required intentionally forbids disable. Corrected revision mutation to deny-all MCPcatalog add/remove and synthetic A2A disabled profile to optionalJWT+allloopback (tokens stillverify). No production changes after r5. Exact source snapshots and correction boundaries recorded; no build running. Next inspect r3 completion and fix only actual failures. Publication still untouched.
+
+Current: buildr5 image88efe49c unchanged. Defaults PASSED r3 and all12 shipped profiles PASSED r4, receipts copied under phase/receipts. r4 failed skill restart due stale ephemeral binding; fixed explicit host ports (r5 restart succeeds). r5 reaches real persistence outage and returns408 existing request timeout; fixture originally expected503. Corrected permitted statuses408 exacttimeout or503 named persistence failure, still verify failedskill404 afterrecovery. Remaining MCP/A2A running r6 exec83072, log /tmp/uar-v1.1.0-candidate-acceptance-r6.log, evidence /tmp/uar-v1.1.0-candidate-evidence-r6. No build active; no publish/commit yet. Canonical waypoint revised after r5 build to remaining installedimagegate.
+
+- r7 fixture correction complete: signed issuer classification moved from JOSE header into JWT payload, matching VerifiedJwtClaims and HostAuthority. Trusted-host setup documents the payload requirement. No production change; image88efe49c remains current. Implementation complete; rerun only MCP/A2A as r8, preserving passed defaults/profiles.
+
+- r9 correction inventory complete: disposable RFC1918 Docker-network TCP relay forwards untouched peer bytes, no host-published port; loopback alias fixture forwards through same relay; checked cleanup/log retention. Stateless AGUI inputs omit optional state to preserve exact controlled provider command. No runtime source/image changes. All implementation/docs/fixture work complete; rerun MCP/A2A r10 against image88efe49c.
+
+- r12 MCP PASSED all4 profiles (sharing false/true × external private relay/loopback),12 exact elicitation decisions, initialization session/credential assertions, required approval, pending coverage/reconnect, A/B/inline/alias isolation, durable restart and restriction transitions including ambient revocation; skill import/restart/faultchecks passed in bothsharing modes. Next first A2A enforced JSONRPC approve GetTask returned -32004 Conflict immediately aftersubmit. Runtime owner source/log diagnosis active. Retained complete partial receipt and marked MCPpassed in aggregate; preserve defaults/profiles/MCP and rerun onlyA2A once causecorrected.
+
+- A2A read-race correction complete: get_durable reloads at most3 times for changedcurrentrun, local read projectionConflict or finalCASmiss; localprojectionrequiresmatchingrun/process, allothererrorspropagate. Cancellation/reservation/continuationmutationpaths unchanged. Existing immediateGet realclientfixture retained. Allproduction/docs/fixturescomplete again. Rebuild productioncandidate r6; then onlyA2Aaffectedgate; fullpublishedimagegate remainsmandatory.
+
+- Raw-snapshot Surreal A2A repair complete in src/uar/persistence/providers/a2a_bindings/surreal.rs: validate/semanticcompare parsedcurrentbinding againstexpected; CASexactstoredbytes; cancellationtransaction preservesrawsnapshotfence. Legacydefaultsnormalizedbytypedparse; no schema/dependencychange. Unprovenget_durableretry removed, pre-r12functionrestored. Allproduction/docs/fixturescomplete. Retainedr15database evidence copiedbeforefixturecleanup. Rebuildproduction r7 thenA2Arerunonly.

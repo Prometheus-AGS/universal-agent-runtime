@@ -1,0 +1,12 @@
+{
+  "command_receipt": "kbd-execute-0",
+  "raw_sha256": "08ea5206a04c741682ead650ccdd057a21d77c15c487140a88e4527e7adb09de",
+  "result_keys": [
+    "state",
+    "committedLocally",
+    "controlPlane"
+  ],
+  "revision": null,
+  "status": null,
+  "source": "canonical KBD journal"
+}

@@ -1,0 +1,16 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 16,
+  "task": {
+    "action": "complete",
+    "id": "uar110-runtime-finish",
+    "owner": "uar-runtime",
+    "expectedTaskRevision": 1,
+    "evidence": [
+      ".kbd-orchestrator/phases/uar-1-1-0-kubo-conformance/implementation-complete.md",
+      ".kbd-orchestrator/phases/uar-1-1-0-kubo-conformance/requirements-inventory.md",
+      "Entire assigned implementation delivered; runtime acceptance remains pending."
+    ],
+    "remaining": []
+  }
+}

@@ -119,9 +119,19 @@ pub struct RemoteHttpGrantPolicy {
     /// Permit plain HTTP only for loopback or literal private development IPs.
     #[serde(default)]
     pub allow_private_http: bool,
+    /// Exact persisted native agents permitted to receive a run grant. Absent
+    /// preserves legacy host grants; an explicitly empty set denies every agent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_agent_ids: Option<BTreeSet<String>>,
 }
 
 impl McpServerEntry {
+    /// Agent-restricted destinations have no ambient executable connection.
+    #[must_use]
+    pub fn requires_agent_grant(&self) -> bool {
+        matches!(self, Self::RemoteHttp { grant_policy: Some(policy), .. }
+            if policy.allowed_agent_ids.is_some())
+    }
     /// Raw tool names (as the server lists them, not the namespaced provider
     /// name) that the administrator pre-approved for unattended execution.
     ///
@@ -214,6 +224,11 @@ impl McpServerEntry {
                 }
             }
             if let Some(policy) = grant_policy {
+                anyhow::ensure!(
+                    policy.allowed_agent_ids.as_ref().is_none_or(|ids| ids.iter().all(|id|
+                        !id.is_empty() && id.trim() == id && !id.chars().any(char::is_control))),
+                    "MCP server {name:?} grant policy has an invalid agent ID"
+                );
                 anyhow::ensure!(
                     !policy.destination_id.trim().is_empty()
                         && policy.destination_id.len() <= 128

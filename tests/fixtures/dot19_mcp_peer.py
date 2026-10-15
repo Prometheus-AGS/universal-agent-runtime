@@ -25,11 +25,22 @@ args_parser.add_argument("--port-file")
 args_parser.add_argument("--port", type=int, default=0)
 args_parser.add_argument("--host", choices=["127.0.0.1", "0.0.0.0"], default="127.0.0.1")
 args_parser.add_argument("--disconnect-file")
+args_parser.add_argument("--expected-authorization-file")
+args_parser.add_argument("--require-authorization", action="store_true")
 args = args_parser.parse_args()
+expected_authorization = None
+if args.expected_authorization_file:
+    expected_authorization = pathlib.Path(args.expected_authorization_file).read_text().strip()
+    if not expected_authorization:
+        raise SystemExit("expected authorization file must not be empty")
+if args.require_authorization and expected_authorization is None:
+    raise SystemExit("required authorization needs an expected authorization file")
 wire = json.loads(pathlib.Path(__file__).with_name("dot19_mcp_wire.json").read_text())
 trace_lock = threading.Lock()
 pending_lock = threading.Lock()
 pending = {}
+sessions_lock = threading.Lock()
+sessions = set()
 
 
 def trace(event):
@@ -48,25 +59,29 @@ def tool_result(value):
     return {"content": [{"type": "text", "text": json.dumps(value)}], "isError": False}
 
 
-def receive(request):
+def receive(request, credential_matches=None, session_id=None):
+    session_trace = {"session_id": session_id} if session_id is not None else {}
     method = request.get("method")
     request_id = request.get("id")
     if method is None:
         with pending_lock:
             slot = pending.get(request_id)
-            if slot is not None:
+            if slot is not None and slot.get("session_id") == session_id:
                 slot["answer"] = request.get("result", {"error": request.get("error")})
                 slot["ready"].set()
-        trace({"event": "elicitation_response", "request_id": request_id, "message": request})
+        trace({"event": "elicitation_response", "request_id": request_id, "message": request, **session_trace})
         return None, None
     if request_id is None:
         return None, None
     if method == "initialize":
-        trace({"event": "initialize", "params": request["params"]})
+        trace({"event": "initialize", "params": request["params"], **session_trace,
+               **({"credential_matches": credential_matches} if credential_matches is not None else {})})
         return reply(request_id, {"protocolVersion": request["params"]["protocolVersion"],
                                   "capabilities": {"tools": {}},
                                   "serverInfo": {"name": "dot19-elicitation", "version": "1"}}), None
     if method == "tools/list":
+        if session_id is not None:
+            trace({"event": "tools_list", **session_trace})
         schema = {"type": "object", "properties": {"mode": {"type": "string", "enum": ["form", "url", "mrtr"]}}}
         return reply(request_id, {"tools": [
             {"name": "elicit", "description": "Request a governed human input", "inputSchema": schema,
@@ -75,9 +90,10 @@ def receive(request):
              "inputSchema": {"type": "object", "properties": {}},
              "annotations": {"readOnlyHint": False, "destructiveHint": True}}]}), None
     if method == "tools/call":
-        trace({"event": "tool_call", "request_id": request_id, "params": request["params"]})
+        trace({"event": "tool_call", "request_id": request_id, "params": request["params"], **session_trace,
+               **({"credential_matches": credential_matches} if credential_matches is not None else {})})
         if request["params"]["name"] == "effect":
-            trace({"event": "effect", "request_id": request_id, "effect": True})
+            trace({"event": "effect", "request_id": request_id, "effect": True, **session_trace})
             return reply(request_id, tool_result({"effect": True})), None
         mode = request["params"].get("arguments", {}).get("mode", "form")
         if mode == "mrtr":
@@ -87,9 +103,11 @@ def receive(request):
         elicitation = json.loads(json.dumps(wire["urlRequest" if mode == "url" else "formRequest"]))
         elicitation["id"] = "elicitation-" + str(uuid.uuid4())
         slot = {"request_id": request_id, "elicitation_id": elicitation["id"], "ready": threading.Event()}
+        if session_id is not None:
+            slot["session_id"] = session_id
         with pending_lock:
             pending[elicitation["id"]] = slot
-        trace({"event": "elicitation_request", "message": elicitation})
+        trace({"event": "elicitation_request", "message": elicitation, **session_trace})
         return elicitation, slot
     if method == "ping":
         return reply(request_id, {}), None
@@ -139,13 +157,34 @@ else:
             self.end_headers()
 
         def do_DELETE(self):
-            self.send_response(200)
+            self.send_response(405)
             self.send_header("Content-Length", "0")
             self.end_headers()
 
         def do_POST(self):
             request = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
-            message, slot = receive(request)
+            initializing = request.get("method") == "initialize"
+            session_id = str(uuid.uuid4()) if initializing else self.headers.get("Mcp-Session-Id")
+            credential_matches = None
+            if expected_authorization is not None:
+                credential_matches = self.headers.get("Authorization") == expected_authorization
+                trace({"event": "http_request", "method": request.get("method"),
+                       "credential_matches": credential_matches, "session_id": session_id})
+                if args.require_authorization and not credential_matches:
+                    self.send_response(401)
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+            with sessions_lock:
+                if initializing:
+                    sessions.add(session_id)
+                known_session = session_id in sessions
+            if not known_session:
+                self.send_response(400 if session_id is None else 404)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+            message, slot = receive(request, credential_matches, session_id)
             if message is None:
                 self.send_response(202)
                 self.send_header("Content-Length", "0")
@@ -154,6 +193,8 @@ else:
             if slot is None:
                 encoded = json.dumps(message).encode()
                 self.send_response(200)
+                if initializing:
+                    self.send_header("Mcp-Session-Id", session_id)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(encoded)))
                 self.end_headers()

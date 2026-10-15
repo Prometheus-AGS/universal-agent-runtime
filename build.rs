@@ -4,7 +4,7 @@ use std::path::Path;
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=proto/a2a.proto");
+    println!("cargo:rerun-if-changed=proto");
 
     // The macOS debug test image exceeds Apple's 16 MiB __eh_frame compact-
     // unwind offset range. Keep compact unwind enabled, but suppress only that
@@ -17,22 +17,24 @@ fn main() {
     }
 
     // -------------------------------------------------------------------------
-    // gRPC Proto Compilation (A2A v0.3)
+    // Compile both the legacy compatibility service and official A2A 1.0.
+    // Protocol inputs and imported annotations are committed with provenance;
+    // builds never fetch schema sources from the network.
     // -------------------------------------------------------------------------
-    // A2A v0.3 gRPC: Proto file is at proto/a2a.proto for reference.
-    // Code generation requires tonic-build with prost feature which is
-    // undergoing API changes in v0.14. The gRPC service is defined manually
-    // in src/uar/api/a2a/grpc.rs using tonic's manual service builder.
-    // To enable auto-generation, add `tonic-build = { version = "0.14", features = ["prost"] }`
-    // to [build-dependencies] and uncomment the compile_protos call below.
-    // tonic 0.14 moved prost codegen to the separate `tonic-prost-build` crate.
     if env::var_os("CARGO_FEATURE_A2A_TRANSPORT").is_some() && Path::new("proto/a2a.proto").exists()
     {
         let protoc = protoc_bin_vendored::protoc_bin_path().expect("Failed to locate vendored protoc");
         // SAFETY: this build script has not started any threads, so no other
         // thread can read or mutate the process environment concurrently.
         unsafe { env::set_var("PROTOC", protoc) };
-        tonic_prost_build::compile_protos("proto/a2a.proto").expect("Failed to compile A2A proto");
+        let protobuf_include = protoc_bin_vendored::include_path()
+            .expect("Failed to locate pinned protobuf well-known types");
+        tonic_prost_build::configure()
+            .compile_protos(
+                &[Path::new("proto/a2a.proto"), Path::new("proto/a2a_v1.proto")],
+                &[Path::new("proto"), protobuf_include.as_path()],
+            )
+            .expect("Failed to compile A2A protocol definitions");
     }
 
     // -------------------------------------------------------------------------

@@ -1985,3 +1985,9 @@ Operator explicitly cancelled qualification blocking of code-complete UAR consum
 ## Final operator closeout — 2026-10-14
 
 Only resource cleanup, consolidation on main, and phase closure/archive remain authorized. All further qualification, builds, deployment, reviews, and consumer-use gates are cancelled, without recording them as passed. See the Dot phase closeout record and decision dot-operator-closeout-20261014.
+
+## 2026-10-15 — UAR 1.1.0 Kubo conformance release
+
+Operator approved the bounded uar-1-1-0-kubo-conformance phase, all #379 requirements, and source/tag/image/GitHub publication. Dot remains closed and its cancelled qualification stays cancelled. Official A2A 1.0 coexists with legacy compatibility; protected skill authorization uses existing verified roles, not new claims. MCP restrictions bind persisted agent identity and current policy. Single-manifest upload requires checked atomic create. Explicit deployment network/DB settings remain; default startup alone carries the 300-second zero-egress criterion. All product verification waits for full implementation inventory; only the named GitHub Actions policy validator may run early.
+
+- 2026-10-15, UAR 1.1.0 review C1: unregistered direct MCP declarations cannot borrow a restricted HTTP origin through alternate loopback hosts, paths, queries or fragments. Restriction matching is conservative; request URLs are not rewritten and explicit registered leases retain their own administrator policy. Rationale: the observable MCP peer accepts alternate request paths, so exact URL matching does not establish destination isolation.

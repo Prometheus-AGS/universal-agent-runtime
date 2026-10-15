@@ -1,0 +1,18 @@
+{
+  "image": "uar:v1.1.0-candidate",
+  "image_kind": "local-tag",
+  "started_at": 1792068703,
+  "result": "incomplete",
+  "requested_gates": [
+    "all"
+  ],
+  "selected_gates": [
+    "defaults",
+    "profiles",
+    "mcp",
+    "a2a"
+  ],
+  "full_acceptance": true,
+  "failure": "default profile emitted packets on eth0 during the 300-second observation",
+  "finished_at": 1792069006
+}

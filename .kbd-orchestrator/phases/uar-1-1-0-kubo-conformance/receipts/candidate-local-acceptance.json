@@ -1,0 +1,45 @@
+{
+  "result": "passed",
+  "scope": "local candidate gate aggregate",
+  "local_image_id": "sha256:2bf3ce5fea8aeb739f98080a5393772aaa4833fae9ff27e292da433b5fc4e00f",
+  "full_acceptance": true,
+  "execution": "Serialized full program r20, then affected A2A gate r22 after fixture-only correction; runtime production source unchanged. Raw partial/failure receipts retained.",
+  "gates": {
+    "defaults": {
+      "result": "passed",
+      "receipt": "candidate-r20-incomplete.json",
+      "field": "safe_default"
+    },
+    "profiles": {
+      "result": "passed",
+      "receipt": "candidate-r20-incomplete.json",
+      "field": "shipped_profiles",
+      "count": 12
+    },
+    "mcp_skills_agui": {
+      "result": "passed",
+      "receipt": "candidate-r20-incomplete.json",
+      "field": "profiles",
+      "count": 4,
+      "elicitation_decisions": 12,
+      "explicit_approval_denials": 4
+    },
+    "a2a": {
+      "result": "passed",
+      "receipt": "candidate-a2a-r22-passed.json",
+      "field": "a2a_profiles",
+      "count": 8
+    }
+  },
+  "source_checks": {
+    "git_diff_check": {
+      "exit_code": 0,
+      "output": ""
+    },
+    "openspec_validate": {
+      "exit_code": 0,
+      "output": "Change 'uar-1-1-0-kubo-conformance' is valid\n{\"code\":0,\"schemaVersion\":1,\"time\":\"2026-10-15T17:17:47.475Z\",\"operation\":\"run\",\"project\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime\",\"status\":\"completed\",\"version\":\"1.14.2\",\"latestVerified\":false,\"policy\":\"selected-cache\",\"cliExitCode\":0,\"receipt\":\"/Users/gqadonis/.prometheus/openspec/receipts/3612a6e09dc2e6a06683ca3d/1792084667476-f1266a3f-0da4-46b5-842d-3d60e2d2fee2.json\"}\n"
+    }
+  },
+  "published_acceptance": false
+}
