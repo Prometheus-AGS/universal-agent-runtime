@@ -190,3 +190,41 @@ async fn test_run_manager_prefers_registry_over_llm_config() {
         "provider registry should take precedence over llm_config"
     );
 }
+
+// ── Operator-global settings survive per-provider resolution ─────────────────
+
+#[tokio::test]
+async fn resolved_provider_config_inherits_operator_timeout_and_retries() {
+    let registry = ProviderRegistry::new();
+    registry
+        .set_llm_defaults(&LlmConfig {
+            timeout_secs: 240,
+            max_retries: 7,
+            ..LlmConfig::default()
+        })
+        .await;
+    registry
+        .register(ProviderConfig {
+            id: "groq".to_string(),
+            display_name: "Groq".to_string(),
+            api_key: Some("gsk_test".to_string()),
+            default_model: Some("llama-3.3-70b".to_string()),
+            enabled: true,
+            base_url: String::new(),
+            protocol: universal_agent_runtime::llm::registry::ProtocolSetting::Auto,
+            models: vec![],
+        })
+        .await
+        .expect("register should succeed");
+
+    let resolved = registry
+        .resolve_to_llm_config("groq", "llama-3.3-70b")
+        .await
+        .expect("registered provider resolves");
+
+    assert_eq!(
+        (resolved.timeout_secs, resolved.max_retries),
+        (240, 7),
+        "per-provider resolution must keep the operator-configured timeout and retries"
+    );
+}
