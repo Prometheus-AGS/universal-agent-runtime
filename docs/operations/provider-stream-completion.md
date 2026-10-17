@@ -24,6 +24,20 @@ malformed JSON, inconsistent Anthropic/Cohere event names, or data after a termi
 sentinel fails the model turn. Neither a finish chunk nor `content_block_stop`
 substitutes for an Anthropic `message_stop` or an OpenAI `[DONE]` event.
 
+The native Anthropic adapter accepts one initial UTF-8 BOM and canonicalizes LF,
+CRLF, and lone CR before forwarding bytes to the pinned Liter SSE decoder. The
+adapter emits LF immediately for CR and only swallows a following LF, so a complete
+CR-terminated event never waits for a later transport byte. It does not buffer an
+SSE event or replace Liter's 1 MiB incomplete-frame limit, UTF-8 validation, or
+field parsing. A partial initial BOM, a partial SSE event, or an oversized frame at
+EOF remains a stream failure. A later BOM is payload data.
+
+Native Anthropic accepts a future top-level event kind only when its JSON `type` is
+a string and an explicit SSE event name is empty or exactly matches it. Such a
+well-formed unknown kind is ignored without changing stream state. Missing or
+non-string `type`, invalid JSON, an event/type disagreement, malformed known data,
+or any data after `message_stop` remains fatal.
+
 The existing byte-buffer limit is reused. No retry, timeout, cancellation or tool
 permission is added. The existing stream idle timeout still applies when a peer
 sends its terminal event but does not close the transport. Dropping/cancelling the
@@ -39,6 +53,15 @@ retain their failure and the host records `RunStatus::Error`; interrupted assist
 history keeps its existing `TurnInterrupted` marker. Successful graph checkpoint
 edges must not run after a failed model turn.
 
+The ordinary `RunManager` loop additionally requires its own observed
+`NormalizedEvent::Done` from the orchestrator before success settlement. EOF after
+text, metadata, a provider terminal, or a completed tool result does not prove
+orchestration completion. If EOF arrives without that event and cancellation was
+not confirmed, the manager records `orchestrator_completion_missing` through the
+existing error projection before its normal cleanup and final-status flow. It does
+not publish a synthetic completion or execute a pending tool. Cancellation still
+owns the existing cancellation and joined-cleanup path.
+
 Graph API `RunDone` is an established stream-close event and can follow `Error`.
 Consumers must inspect `Error`, `Cancelled` and run status; the existence of
 `RunDone` alone is not a success receipt. Explicit cancellation remains
@@ -52,7 +75,11 @@ names and JSON arguments. Native Anthropic may announce a tool at
 `content_block_stop`, but both orchestrator paths wait for validated model completion
 before dispatch. Incomplete/malformed streams cannot execute those calls. Existing
 MCP application failures and uncertain post-dispatch effects retain their dot-04
-classification and do not gain retry authority.
+classification and do not gain retry authority. The controlled production peer distinguishes
+an explicit `isError: true`, explicit `isError: false`, an omitted `isError`, a JSON-RPC
+protocol error, an elapsed response timeout, and a post-effect disconnect. Only the final
+case remains uncertain; no later recovery may rewrite its original receipt or automatically
+repeat the effect.
 
 ## Qualification
 

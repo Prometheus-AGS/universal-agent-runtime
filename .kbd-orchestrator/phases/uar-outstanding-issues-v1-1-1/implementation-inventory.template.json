@@ -1,0 +1,266 @@
+{
+  "document_kind": "unfulfilled_implementation_inventory_template",
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "boundary": "closed",
+  "implementation_complete": false,
+  "source_commit": null,
+  "source_tree": null,
+  "fixture_tree": null,
+  "recorded_by": null,
+  "recorded_at": null,
+  "items": [
+    {
+      "id": "1.1",
+      "stable_id": "L1",
+      "owner": "uar-lead",
+      "required_deliverable": "Lead records the candidate baseline, exclusive file/build ownership, dependency handoffs and the complete implementation inventory template for this change, preserving prior work and cancelled Dot scope. Completion artifact: canonical execution ledger and source ownership map; no product check.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/L1.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "3.1",
+      "stable_id": "S1",
+      "owner": "uar-state",
+      "required_deliverable": "State adds safe captured store eligibility to existing persistence capabilities; runtime consumes it under R1. Preserve durable accounting, explicit budgets, owner partitioning, unknown liabilities and exact reconciliation. Deliver typed interface and diagnostic documentation inputs; deferred `binding`/`recovery` acceptance covers unattested refusal, qualified success and restart.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/S1.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "2.1",
+      "stable_id": "T1",
+      "owner": "uar-trust-tools",
+      "required_deliverable": "Trust implements `security.provider_credentials` policy types and private credential-owner binding: omitted single-owner compatibility, explicit shared issuer/tenant eligibility, exact issuer/tenant/provider/source grants, local-only stable installation UUID, unchanged external/general principal keys and safe errors. Deliver source plus policy documentation inputs; acceptance is the deferred `credentials` group.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/T1.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "4.3",
+      "stable_id": "R3",
+      "owner": "uar-runtime",
+      "required_deliverable": "Runtime implements a local native-Anthropic adapter for initial BOM and CR/LF/CRLF with bounded incremental state around the pinned Liter decoder; tolerate only well-formed unknown top-level kinds and retain known-error/terminal semantics. Deliver source and framing documentation; deferred `streams` covers all two-way splits, bytewise/fixed partitions, UTF-8/escapes, fields, limits and EOF.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/R3.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "2.3",
+      "stable_id": "S3",
+      "owner": "uar-state",
+      "required_deliverable": "State delivers additive credential row-revision and journal metadata schema upgrades for the T3 contract, preserving ciphertext, hints, timestamps, original owner rows and legacy receipt keys; initialize revisions through explicit supported upgrade under quiescence, never in preview. Hand exact schema/revision interfaces to the sole trust store writer. Deferred acceptance: migration, restart and old-receipt cases on actual Surreal and PostgreSQL plus the memory contract supplement.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/S3.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "3.2",
+      "stable_id": "S2",
+      "owner": "uar-state",
+      "required_deliverable": "State integrates safe eligibility diagnostics into knowledge upload/dispatcher and writes durable-ingestion/knowledge recovery guidance, incorporating runtime text by handoff. Describe authenticated reupload, retained legacy rows, unavailable originals, separate model verification, existing qualified quiesce/exclusion/reclaim and blocked takeover without proof. Deliver docs/source with no new KB import or fencing bypass; deferred `recovery` controls establish behavior.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/S2.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "2.4",
+      "stable_id": "T3",
+      "owner": "uar-trust-tools",
+      "required_deliverable": "Trust extends credential stores/API with exact fixed-local mapping and `/migrate-principal`, metadata-only trusted-host `/migration-preview`, bounded pagination/counts, transactional source revision/preconditions, compatible optional legacy If-Match, immutable replay and explicit unresolved-source quarantine. Include all supported writers in revision maintenance and preserve strict legacy bodies. Deferred `credentials` acceptance proves conflict/drift/no-partial-copy/no-leak/rotation/deletion/replay controls.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/T3.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "2.2",
+      "stable_id": "T2",
+      "owner": "uar-runtime",
+      "required_deliverable": "Runtime integrates the trust source-decision interface across primary, ordinary fallback, team, graph, summarization, SDK-supplied, inherited/delegated and credential-free bindings, including absent encrypted service; lead wires shared construction roots and administrative paths under L2. Preserve timeout/retry inheritance and do not turn a policy denial into fallback. Completion evidence is zero denied provider contact and allowed controls in deferred `credentials`/`combined` groups.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/T2.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "4.1",
+      "stable_id": "R1",
+      "owner": "uar-runtime",
+      "required_deliverable": "Runtime classifies originating budget/accounting/inherited/team/client binding failures with typed safe stages/categories/references, maps S1 eligibility without raw error chains, retains ordinary/team public codes and AG-UI code/message fields, and preserves #384 settings. Deliver source and diagnostic guidance; deferred `binding` verifies safe public/log output and zero effects before refusal.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/R1.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "4.2",
+      "stable_id": "R2",
+      "owner": "uar-runtime",
+      "required_deliverable": "Runtime requires observed orchestration completion before ordinary-manager success, preserving cancellation, joined cleanup, interrupted history, reservation ownership and existing graph/provider terminal guards. Deliver source and completion documentation; deferred `streams`/`combined` prove EOF failures and valid text/tool-loop controls.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/R2.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "4.4",
+      "stable_id": "R4",
+      "owner": "uar-runtime",
+      "required_deliverable": "Runtime preserves the existing typed MCP production path and completes missing peer scenario support for true/false/omitted isError, protocol error, timeout and uncertain effects, native incidental fields and later independent recovery. Do not rewrite already-correct outcome code without an observed defect. Deliver scenario fixtures and truthful-tool-outcomes documentation; deferred `mcp-outcomes` proves contact counts, payload meaning and immutable receipts.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/R4.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "2.5",
+      "stable_id": "T4",
+      "owner": "uar-trust-tools",
+      "required_deliverable": "Trust authors the credential real-process and installed-image scenario adapters plus `principal-provider-credentials.md` cutover/rollback/preview guidance before the full-phase boundary. Include every T2 source seam, both migration sources, issuer/tenant/installation isolation, exact positive/negative grants and all backend cases. Delivered fixtures/docs establish implementation inventory only; run `credentials` and `combined` through L3 at V2/P2.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/T4.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "3.3",
+      "stable_id": "S4",
+      "owner": "uar-state",
+      "required_deliverable": "State authors durable-upload, owner-isolated reupload/retrieval, restart/liability and bounded existing recovery proof fixtures plus installed-image adapters; actual Surreal/PostgreSQL and owned process/volume boundaries are mandatory where supported. Include legacy retention, other-owner denial, absent/replayed proof and missing-source documentation cases. Fixtures remain unexecuted until V2/P2 `recovery` and `combined`.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/S4.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "5.1",
+      "stable_id": "L2",
+      "owner": "uar-lead",
+      "required_deliverable": "Lead completes shared config/server/module-export and provider-admin/settings handoffs, operator examples, runtime Cargo package/lock version 1.1.1, and new `docs/releases/v1.1.1.md` setup/upgrade/compatibility text. Keep pins and existing workflow unchanged. Documentation source must be complete now; later observed receipt values are publication evidence. Deferred V2 exercises config/identity compatibility and production image version.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/L2.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "4.5",
+      "stable_id": "R5",
+      "owner": "uar-runtime",
+      "required_deliverable": "Runtime authors and integrates the full-harness diagnostic/completion/framing and combined failed-MCP/incomplete-stream scenarios with R4/T4/S4 adapters and required operator docs. Include sanitized resolved-root/path/error skill-warning triage without speculative pack edits. Deliver complete fixtures/docs; acceptance remains deferred to all applicable L3 groups.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/R5.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "5.2",
+      "stable_id": "L3",
+      "owner": "uar-lead",
+      "required_deliverable": "Lead authors the NEW `scripts/release/uar_1_1_1_acceptance.py` runner and manifest contract/templates specified in verification.md; integrate existing Kubo runner and domain adapters without reducing coverage. Deliver seven complete groups, serial source/candidate/published modes, isolation/cleanup, exact identity checks, blocked/failed/interrupted receipts, single-failed-group rerun support and usage docs. No invocation, import probe or packaging check occurs while implementation is incomplete.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/L3.md",
+      "implemented": false,
+      "unresolved": [
+        "Implementation not started"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "4.6",
+      "stable_id": "R6",
+      "owner": "uar-lead",
+      "required_deliverable": "Implement safe per-call conservative-reservation refusal diagnostics and persisted bounded-agent startup warning; complete remote-Surreal upgrade and historical advisory guidance; author actual eligible16000 refusal/startup observations and truthful unsupported-memory source control. Preserve budgets and timeout inheritance; include complete issue385 coverage before L4.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/R6.md",
+      "implemented": false,
+      "unresolved": [
+        "Confirmed-cause follow-up fixture authoring pending"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "4.7",
+      "stable_id": "R7",
+      "owner": "uar-lead with exclusive runtime handoff",
+      "required_deliverable": "Correct team fallback provider identity and disabled fallback authority, require real positive/negative controls, detect leaks on raw transient logs and bind published image children to actual successful workflow/source artifacts. Finish all four findings before a renewed inventory. No verification while repairs remain.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/R7.md",
+      "implemented": false,
+      "unresolved": [
+        "Full repair cohort and renewed inventory not yet recorded"
+      ],
+      "verification_executed": false
+    },
+    {
+      "id": "4.8",
+      "stable_id": "R8",
+      "owner": "uar-lead and exclusive trust fixture/API writer",
+      "required_deliverable": "Correct runtime fixture public classifier import, fixture JWT initialization before signing with exact401 preflight, disposable backend HTTP-status readiness and stale timeout cause, and safe credential API state Debug. Preserve all production authority. Complete fixtures/docs before renewed L6; no checks during repair.",
+      "files": [],
+      "source_handoff": "coordination/handoffs/R8.md",
+      "implemented": false,
+      "unresolved": [
+        "Renewed L6 not recorded"
+      ],
+      "verification_executed": false
+    }
+  ],
+  "gate_record": {
+    "L4_complete": false,
+    "independent_review": null,
+    "acceptance": null
+  },
+  "instructions": "Copy into a concrete L4 record only when every production, fixture, configuration, migration and required documentation deliverable is implemented. Populate exact source identities and files. Empty fields and unresolved items keep boundary closed. This template is not an executable manifest or acceptance receipt."
+}

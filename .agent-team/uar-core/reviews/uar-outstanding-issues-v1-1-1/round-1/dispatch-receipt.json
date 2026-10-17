@@ -1,0 +1,18 @@
+{
+  "command": [
+    "bash",
+    "/Users/gqadonis/.codex/skills/adversarial-review/scripts/dispatch-judge.sh",
+    "--mode",
+    "diff",
+    "--packet",
+    ".agent-team/uar-core/reviews/uar-outstanding-issues-v1-1-1/round-1/packet.json",
+    "--mandate",
+    ".agent-team/uar-core/reviews/uar-outstanding-issues-v1-1-1/round-1/mandate.md",
+    "--out",
+    ".agent-team/uar-core/reviews/uar-outstanding-issues-v1-1-1/round-1/rest-findings.json"
+  ],
+  "exit_code": 4,
+  "completed_at": "2026-10-16T10:26:43.903624+00:00",
+  "log": ".agent-team/uar-core/reviews/uar-outstanding-issues-v1-1-1/round-1/dispatch.log",
+  "product_execution": false
+}

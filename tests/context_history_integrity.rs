@@ -2195,6 +2195,7 @@ async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mut
     ).await.with_llm_driver(driver.clone()).with_agent_graph(graph));
     let secret = "legacy-checkpoint-signed-fixture";
     let security = SecurityConfig {
+        provider_credentials: Default::default(),
         deployment_profile: Default::default(), jwt_algorithm: None, workspace_authorities: Vec::new(),
         skill_required_roles: Default::default(),
         api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(), api_key_admin_principals: Vec::new(),

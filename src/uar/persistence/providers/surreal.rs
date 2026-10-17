@@ -30,7 +30,7 @@ use crate::uar::domain::knowledge::{
 };
 use crate::uar::domain::prompt_caching::UserPromptCachingSettings;
 use crate::uar::domain::skills::{Skill, SkillMatch};
-use crate::uar::persistence::PersistenceLayer;
+use crate::uar::persistence::{DurableStoreEligibility, PersistenceLayer};
 use crate::uar::persistence::agent_instances::{AgentInstanceRecord, AgentInstanceStoreError};
 use crate::uar::persistence::agent_threads::{
     self, AgentThreadStoreError, CanonicalReceiptStoreError, CanonicalToolReceipt,
@@ -57,6 +57,7 @@ use surrealdb::opt::auth::{Database, Namespace, Root};
 pub struct SurrealDbProvider {
     db: Surreal<Any>,
     durable_instances: bool,
+    durable_store_eligibility: DurableStoreEligibility,
     catalog_storage_backend: &'static str,
     remote_requires_durability_attestation: bool,
 }
@@ -156,7 +157,19 @@ impl SurrealDbProvider {
         let remote = is_server_endpoint(&endpoint);
         let attested = std::env::var("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED")
             .is_ok_and(|value| value == "1");
-        let durable_instances = local_durable || (remote && attested);
+        let durable_store_eligibility = if local_durable {
+            DurableStoreEligibility::LocalDurable
+        } else if remote && attested {
+            DurableStoreEligibility::RemoteAttested
+        } else if remote {
+            DurableStoreEligibility::RemoteNotAttested
+        } else {
+            DurableStoreEligibility::UnsupportedBackend
+        };
+        let durable_instances = matches!(
+            durable_store_eligibility,
+            DurableStoreEligibility::LocalDurable | DurableStoreEligibility::RemoteAttested
+        );
         let catalog_storage_backend = if remote {
             "surrealdb"
         } else if local_durable {
@@ -167,6 +180,7 @@ impl SurrealDbProvider {
         Ok(Self {
             db,
             durable_instances,
+            durable_store_eligibility,
             catalog_storage_backend,
             remote_requires_durability_attestation: remote && !attested,
         })
@@ -621,6 +635,9 @@ impl PersistenceLayer for SurrealDbProvider {
     async fn list_a2a_bindings(&self, owner: &str, agent: &str) -> Result<Vec<crate::uar::api::a2a::durable::A2aBinding>> { a2a_bindings::list(self, owner, agent).await }
 
     fn supports_durable_accounting(&self) -> bool { self.durable_instances }
+    fn durable_store_eligibility(&self) -> DurableStoreEligibility {
+        self.durable_store_eligibility
+    }
     async fn admit_remote_grant(&self, owner: &str, accounting_id: &str,
         grant: &crate::uar::api::a2a::contract::UarUsageGrant,
         activity: accounting::RemoteGrantActivity) -> Result<accounting::RemoteGrantState> {

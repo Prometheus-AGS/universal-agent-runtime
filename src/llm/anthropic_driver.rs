@@ -11,6 +11,7 @@ use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue, RETRY_AFTER};
 use tracing::{debug, warn};
 
 use super::anthropic_cache::CacheStrategy;
+use super::anthropic_sse::AnthropicSseFramer;
 use super::anthropic_streaming::StreamState;
 use super::anthropic_types::*;
 use super::{LlmDriver, LlmRequest, ProviderError};
@@ -378,6 +379,7 @@ impl LlmDriver for AnthropicDriver {
             use futures::StreamExt;
 
             let mut decoder = liter_llm::SseDecoder::default();
+            let mut framer = AnthropicSseFramer::default();
             let mut saw_terminal = false;
 
             // Pin the byte_stream for iteration
@@ -393,7 +395,8 @@ impl LlmDriver for AnthropicDriver {
                     }
                 };
 
-                if let Err(error) = decoder.push(&chunk) {
+                let canonical = framer.push(&chunk);
+                if let Err(error) = decoder.push(&canonical) {
                     yield Err(ProviderError::from_liter(error).into());
                     return;
                 }
@@ -411,11 +414,18 @@ impl LlmDriver for AnthropicDriver {
                             return;
                         }
                     };
-                    if !frame.event.is_empty()
-                        && payload.get("type").and_then(serde_json::Value::as_str) != Some(frame.event.as_str()) {
+                    let Some(event_type) = payload.get("type").and_then(serde_json::Value::as_str) else {
+                        yield Err(ProviderError::new(None, super::ProviderErrorKind::Stream, None,
+                            "Malformed Anthropic SSE event").into());
+                        return;
+                    };
+                    if !frame.event.is_empty() && event_type != frame.event {
                         yield Err(ProviderError::new(None, super::ProviderErrorKind::Stream, None,
                             "Anthropic SSE event name disagrees with payload type").into());
                         return;
+                    }
+                    if !is_known_stream_event_type(event_type) {
+                        continue;
                     }
                     let event: StreamEvent = match serde_json::from_value(payload) {
                         Ok(event) => event,
@@ -451,6 +461,11 @@ impl LlmDriver for AnthropicDriver {
                         if failed { return; }
                     }
                 }
+            }
+            if let Err(error) = framer.finish() {
+                yield Err(ProviderError::new(None, super::ProviderErrorKind::Stream, None,
+                    error.to_string()).into());
+                return;
             }
             if let Err(error) = decoder.finish() {
                 yield Err(ProviderError::from_liter(error).into());

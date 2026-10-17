@@ -512,6 +512,7 @@ mod tests {
             )))),
             admission: manager,
             security: SecurityConfig {
+                provider_credentials: Default::default(),
                 skill_required_roles: Default::default(),
                 deployment_profile: Default::default(),
                 jwt_algorithm: None,

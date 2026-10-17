@@ -4,6 +4,13 @@ An authenticated document upload returns HTTP 202 only after the configured data
 
 Supported stores are local SurrealKV, qualified durable networked SurrealDB, and PostgreSQL. Networked SurrealDB requires the existing trusted-host `UAR_REMOTE_SURREAL_DURABILITY_ATTESTED=1` attestation. An in-memory or unsupported store returns 503 for uploads. A database failure returns a non-202 response; a transport error after a database commit can have an unknown outcome, so clients should list documents before resubmitting. There is no cross-request upload deduplication key.
 
+The trusted host captures backing-store eligibility while it constructs the
+provider: `local_durable`, `remote_attested`, `remote_not_attested`, or
+`unsupported_backend`. An unattested remote endpoint is refused before source
+bytes, a document, or an ingestion job are committed. A successful connection,
+health response, writable account, replica count, or later environment change
+does not upgrade that captured eligibility.
+
 The server starts durable discovery alongside the ingestion pool. It scans on startup and every five seconds, and a successful upload sends an optional wake notification. Queue saturation or process death cannot remove the committed job. Acceptance without an available worker is intentional: processing begins when a compatible worker starts against that database.
 
 ## Job state and recovery
@@ -20,6 +27,30 @@ Jobs progress from pending to processing and then indexed. Processing failures e
 A crashed processing attempt remains discoverable. Workers may repeat extraction and embedding for the same immutable generation, including on different runtimes. Preparation has no chunk writes. Only a fenced database transaction can replace the complete document chunk set, bind its embedding identity, update its count, and publish Indexed. Duplicate, deleted, or superseded attempts cannot publish. The job's source is retained through indexed and failed states and is collected by document or KB deletion.
 
 The uncomfortable tradeoff: crash recovery may repeat hosted extraction or embedding requests and therefore incur additional provider cost. This is not exactly-once provider invocation. Fencing guarantees one visible committed chunk generation, not one computation. Database transaction size scales with the accepted source and complete chunk generation; operational database limits can reject a commit. Such rejection never produces a successful indexing status.
+
+## Authenticated reupload procedure
+
+1. Establish an operator-attested durable backing and capture the verified
+   principal with its selected namespace and database identity.
+2. Inventory legacy and principal knowledge rows read-only. Legacy rows remain
+   preserved and are not candidates for ownership adoption.
+3. Create or reuse a knowledge base in the verified principal's partition, then
+   upload retained source bytes through the authenticated upload route.
+4. Wait for the durable job to index and retrieve using that same verified
+   principal.
+
+Missing original bytes require a new source upload. Storage eligibility does
+not reverify provider or model configuration; that remains a separate
+operational check.
+
+## Qualified recovery boundary
+
+Recovery documentation covers only authenticated quiesce/reclaim with its exact
+joined receipt, or qualified trusted-supervisor exclusion with single-use
+evidence. Active effects and accounting remain uncertain until their existing
+reconciliation completes. Recovery stays blocked without that qualified proof;
+there is no force operation or timeout, deletion, Pod absence, or replica count
+substitute for exclusion.
 
 ## Migration and rollback
 

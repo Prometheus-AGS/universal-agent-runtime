@@ -867,6 +867,31 @@ async fn run_server_with_listener(
             tracing::warn!("Failed to seed built-in agents: {:?}", e);
         }
 
+        if !p.supports_durable_accounting() {
+            match p.list_agents().await {
+                Ok(agents) => {
+                    let bounded_agent_count = agents.iter().filter(|agent| {
+                        uar::runtime::thread::policy_intersection::ThreadBudgets::from_artifact(agent)
+                            .is_ok_and(|limits| limits.max_tokens_per_turn.is_some()
+                                || limits.max_tokens_per_session.is_some()
+                                || limits.max_cost_per_session_usd.is_some())
+                    }).count();
+                    if bounded_agent_count > 0 {
+                        tracing::warn!(
+                            category = "budget_durable_storage_unavailable",
+                            eligibility = p.durable_store_eligibility().as_str(),
+                            bounded_agent_count,
+                            "Persisted agent budgets require durable accounting; bounded runs will be refused before provider contact"
+                        );
+                    }
+                }
+                Err(_) => tracing::warn!(
+                    category = "budget_preflight_inventory_unavailable",
+                    "Startup could not inspect persisted agent budgets; run admission remains authoritative"
+                ),
+            }
+        }
+
         info!("Persistence and RAG enabled.");
     }
 
@@ -998,20 +1023,11 @@ async fn run_server_with_listener(
     // Capture the registry now; register after persisted preferences load.
     let native_skill_registry = Arc::new(NativeSkillRegistry::new());
 
+    // Correction clients are authorized for the requesting principal when used.
+    // Retain this optional state field for callers of AppState; startup never
+    // captures an unscoped correction client from a house credential.
     #[cfg(feature = "response-quality")]
-    let orchestrator = if sidecar_mode || llm_config.model.trim().is_empty() {
-        // The host can configure a provider after startup, and the default
-        // profile intentionally has no model. The response-quality correction
-        // pass is optional, so it must not construct a provider client or
-        // initiate network access while no model is selected.
-        None
-    } else {
-        Some(Arc::new(Orchestrator::new(
-            llm_config.clone(),
-            Arc::clone(&mcp),
-            Arc::clone(&native_skill_registry),
-        )?))
-    };
+    let orchestrator: Option<Arc<Orchestrator>> = None;
 
     // Session store
     let sessions = SessionStore::new();
@@ -1102,11 +1118,12 @@ async fn run_server_with_listener(
             .await;
     }
 
-    // Multi-tenant provider credentials. Active only when CREDENTIAL_ENCRYPTION_KEY
-    // is set; otherwise `None` ⇒ single-tenant (env/config key path, unchanged).
-    // Uses the durable SurrealDB-backed store when persistence is Surreal;
-    // PostgreSQL uses its durable store. Explicit memory development mode uses
-    // an in-memory store; configuration errors never disable credential authority.
+    // Credential source authority is independent of encrypted-service availability.
+    let credential_policy = Arc::new(
+        uar::security::credentials::CredentialTenancyPolicy::from_config(
+            config.security.provider_credentials.clone(),
+        ).map_err(|_| anyhow::anyhow!("Provider credential policy configuration is invalid"))?,
+    );
     let provider_service: Option<Arc<uar::security::credentials::ProviderService>> = {
         let store: Arc<dyn uar::security::credentials::CredentialStore> =
             credential_store.clone().unwrap_or_else(|| {
@@ -1115,7 +1132,8 @@ async fn run_server_with_listener(
         match uar::security::credentials::ProviderService::from_env(store) {
             Ok(Some(svc)) => {
                 tracing::info!("Multi-tenant provider credentials enabled");
-                Some(Arc::new(svc))
+                Some(Arc::new(svc.with_policy(Arc::clone(&credential_policy))
+                    .map_err(|_| anyhow::anyhow!("Provider credential policy configuration is invalid"))?))
             }
             Ok(None) => None,
             Err(_) => {
@@ -1322,6 +1340,7 @@ async fn run_server_with_listener(
         .with_agent_graph(uar::defaults::orchestrator_graph())
         .with_skill_service(Arc::clone(&skill_service))
         .with_skill_required_roles(config.security.skill_required_roles.clone())
+        .with_credential_policy(Arc::clone(&credential_policy))
         .with_mcp_runtime(projected_mcp_runtime.clone(), Arc::clone(&mcp_environment))
         .with_harness_config(config.harness.clone())
         .with_world_state_config(config.project_instructions.clone(), config.world_state)
@@ -1548,6 +1567,7 @@ async fn run_server_with_listener(
         actor_system: Arc::clone(&actor_system),
         governance_engine: Arc::clone(&governance_engine),
         api_key_service: Some(Arc::clone(&api_key_service)),
+        credential_policy: Arc::clone(&credential_policy),
         provider_service: provider_service.clone(),
         compiler_service: Some(Arc::clone(&compiler_service)),
         collaboration_catalog: Arc::clone(&collaboration_catalog),
@@ -1687,6 +1707,9 @@ async fn run_server_with_listener(
     } else {
         app
     };
+    let compiler_rest_available = !config.security.is_remote()
+        && config.security.provider_credentials.mode
+            != crate::uar::security::credentials::policy::CredentialTenancyMode::Shared;
     let app = app
         .route("/health", get(liveness_handler))
         .route("/healthz", get(liveness_handler))
@@ -1833,7 +1856,7 @@ async fn run_server_with_listener(
         // Compiler API (spec management + compilation)
         .nest(
             "/api/uar/compiler",
-            uar::api::compiler::build_router().with_state(Arc::new(
+            uar::api::compiler::build_router(compiler_rest_available).with_state(Arc::new(
                 uar::api::compiler::CompilerApiState {
                     compiler_service: Arc::clone(&compiler_service),
                     persistence: persistence.clone(),
@@ -1899,7 +1922,10 @@ async fn run_server_with_listener(
         // Per-user provider credential API (multi-tenant BYO keys)
         .nest(
             "/api/uar/credentials",
-            uar::api::credentials::build_router().with_state(state.provider_service.clone()),
+            uar::api::credentials::build_router().with_state(uar::api::credentials::CredentialApiState {
+                policy: Arc::clone(&state.credential_policy),
+                service: state.provider_service.clone(),
+            }),
         )
         .nest(
             "/api/uar/accounting",
@@ -1985,7 +2011,7 @@ async fn run_server_with_listener(
         // Compiler: GET/POST /api/compiler/sessions, etc.
         .nest(
             "/api/compiler",
-            uar::api::compiler::build_router().with_state(Arc::new(
+            uar::api::compiler::build_router(compiler_rest_available).with_state(Arc::new(
                 uar::api::compiler::CompilerApiState {
                     compiler_service: Arc::clone(&compiler_service),
                     persistence: persistence.clone(),
@@ -4174,6 +4200,37 @@ async fn resolve_anthropic_model(
     })
 }
 
+/// Resolve one direct HTTP model operation under the same host source policy
+/// as managed runs, before a provider constructor can inspect ambient keys.
+async fn authorized_http_model(
+    state: &AppState,
+    user: Option<&UserContext>,
+    provider: &str,
+    model: &str,
+    session_id: Option<&str>,
+) -> Result<crate::config::LlmConfig, (StatusCode, &'static str)> {
+    let config = state.provider_registry.resolve_to_llm_config(provider, model).await
+        .ok_or((StatusCode::UNPROCESSABLE_ENTITY, "provider_configuration_unavailable"))?;
+    let principal = user.map(uar::security::claims::CredentialPrincipal::from_verified_context)
+        .transpose().map_err(|_| (StatusCode::FORBIDDEN, "credential_identity_required"))?;
+    let decision = state.credential_policy.resolve_source(
+        state.provider_service.as_deref(), principal.as_ref(), provider,
+        config.base_url.as_deref().unwrap_or("configured-provider"), session_id, None,
+        config.api_key.as_deref(),
+    ).await.map_err(|error| {
+        use uar::security::credentials::CredentialPolicyError;
+        match error.downcast_ref::<CredentialPolicyError>() {
+            Some(CredentialPolicyError::IdentityRequired) => (StatusCode::FORBIDDEN, "credential_identity_required"),
+            Some(CredentialPolicyError::InstallationIdRequired) => (StatusCode::SERVICE_UNAVAILABLE, "credential_installation_id_required"),
+            Some(CredentialPolicyError::MigrationRequired) => (StatusCode::CONFLICT, "credential_migration_required"),
+            Some(CredentialPolicyError::SourceDenied) => (StatusCode::FORBIDDEN, "credential_source_denied"),
+            None => (StatusCode::SERVICE_UNAVAILABLE, "credential_source_unavailable"),
+        }
+    })?;
+    uar::runtime::turn::bindings::apply_credential_decision(config, &decision)
+        .map_err(|_| (StatusCode::FORBIDDEN, "credential_source_denied"))
+}
+
 async fn api_messages(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -4227,18 +4284,12 @@ async fn api_messages(
         Err(resp) => return resp,
     };
 
-    let resolved_llm_config = match state
-        .provider_registry
-        .resolve_to_llm_config(&resolved_model.provider_id, &resolved_model.model_id)
-        .await
-    {
-        Some(cfg) => cfg,
-        None => {
-            return anthropic_error_response(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to resolve provider settings",
-            );
-        }
+    let resolved_llm_config = match authorized_http_model(
+        &state, user_ctx.as_ref().map(|user| &user.0), &resolved_model.provider_id,
+        &resolved_model.model_id, req.session_id.as_deref(),
+    ).await {
+        Ok(config) => config,
+        Err((status, code)) => return anthropic_error_response(status, code),
     };
 
     let global_prompt_caching = match &state.settings_manager {
@@ -4323,8 +4374,8 @@ async fn api_messages(
 
     let driver = match crate::llm::orchestrator::build_driver(&resolved_llm_config) {
         Ok(driver) => driver,
-        Err(err) => {
-            tracing::error!(error = %err, "Failed to create LLM driver");
+        Err(_) => {
+            tracing::error!("Failed to create authorized LLM driver");
             return anthropic_error_response(
                 StatusCode::BAD_GATEWAY,
                 "Failed to initialize upstream model client",
@@ -4333,8 +4384,8 @@ async fn api_messages(
     };
     let driver_stream = match driver.stream(llm_request).await {
         Ok(stream) => stream,
-        Err(err) => {
-            tracing::error!(error = %err, "Anthropic adapter failed to start stream");
+        Err(_) => {
+            tracing::error!("Anthropic adapter failed to start authorized stream");
             return anthropic_error_response(
                 StatusCode::BAD_GATEWAY,
                 "Upstream model request failed",
@@ -6385,7 +6436,10 @@ pub(crate) async fn api_chat_completion(
                                 let mgr = Arc::clone(&state.run_manager);
                                 let rid = run_id.clone();
                                 let text = assistant_text_for_capture.clone();
-                                let orchestrator = state.orchestrator.clone();
+                                let correction_state = state.clone();
+                                let correction_user = stream_user_ctx.clone();
+                                let correction_model = stream_model_name.clone();
+                                let correction_session = stream_session_id.clone();
                                 tokio::spawn(async move {
                                     let Some(outcome) = uar::quality::detect(&sycophancy_cfg, &text)
                                     else {
@@ -6418,12 +6472,28 @@ pub(crate) async fn api_chat_completion(
                                         // rewrite the flagged response and emit it as a
                                         // follow-up. Never delays the original stream.
                                         if sycophancy_cfg.auto_correct && !sycophancy_cfg.log_only {
-                                            let Some(orchestrator) = orchestrator else {
-                                                tracing::warn!(
-                                                    run_id = %rid,
-                                                    "Response correction is unavailable in an unconfigured sidecar"
-                                                );
+                                            let Some((provider, model)) = correction_model.split_once('/') else {
+                                                tracing::warn!(run_id = %rid, "Response correction model is unavailable");
                                                 return;
+                                            };
+                                            let config = match authorized_http_model(
+                                                &correction_state, Some(&correction_user), provider, model,
+                                                Some(&correction_session),
+                                            ).await {
+                                                Ok(config) => config,
+                                                Err((_, code)) => {
+                                                    tracing::warn!(run_id = %rid, category = code, "Response correction credential admission refused");
+                                                    return;
+                                                }
+                                            };
+                                            let orchestrator = match Orchestrator::new(
+                                                config, Arc::new(McpRegistry::empty()), Arc::new(NativeSkillRegistry::new()),
+                                            ) {
+                                                Ok(orchestrator) => orchestrator,
+                                                Err(_) => {
+                                                    tracing::warn!(run_id = %rid, "Response correction client construction failed");
+                                                    return;
+                                                }
                                             };
                                             match orchestrator
                                                 .chat_non_streaming(
@@ -6445,9 +6515,8 @@ pub(crate) async fn api_chat_completion(
                                                     run_id = %rid,
                                                     "Sycophancy auto-correct produced empty output"
                                                 ),
-                                                Err(e) => tracing::warn!(
+                                                Err(_) => tracing::warn!(
                                                     run_id = %rid,
-                                                    error = %e,
                                                     "Sycophancy auto-correct failed"
                                                 ),
                                             }

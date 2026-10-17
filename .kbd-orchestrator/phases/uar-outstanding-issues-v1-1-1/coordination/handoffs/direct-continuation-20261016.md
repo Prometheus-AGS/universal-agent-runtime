@@ -1,0 +1,13 @@
+# Direct UAR continuation
+
+2026-10-16T22:19:03.568Z
+
+Phase Exit development is stopped and its decisions are removed as a prerequisite for this release. The existing KBD/OpenSpec criteria and exact acceptance program remain authoritative. Preserve approved revision3 and all tool evidence as history; no further tool adoption is needed to execute the UAR plan. Resolve the scoped supervisor qualification, then stage fresh same-artifact predecessor/replacement work before the affected six-group local program and four source supplements. Publication still requires every local gate, both full published child-image programs, and release/issue receipts.
+
+Dot architecture feedback is expected. Record its concrete observations and map each to the existing criteria before changing the plan. Any authorized implementation adjustment joins the same whole-phase boundary; complete its entire repair cohort and renewed inventory before affected verification. Do not add speculative requirements or repeat passing gates.
+
+Current source/fixture inventory06 remains unchanged. rc04 image sha256:d221cda1aacc969b0e455f69a9894fdf171bc0f33f23d5922c3f9690385775fe exported executable 1aca3bb28ff1e345b9c76c6e6922b9664a3efe80b966bd9c184361ec4b058d95. Actual candidate native proof passed; normal controller qualification is pending evidence review and operator retention. No local04 full program has started. Candidate proof consumed its own challenge; final acceptance needs fresh scoped state and a guest-only reboot. No know-me mutations. Production source review cap remains exhausted; current review is qualification-evidence only.
+
+Future Phase Exit lessons are recorded in the separate repository at docs/research/uar-first-example-lessons-20261016.md. The note proposes artifact/dependency-aware carry, real runner-attempt accounting across revisions, and measured real completion/overhead before re-adoption. No tool code, contract or skill changed; no model call or product check was run. Qualification evidence review PASS is retained under evidence/supervisor-native-evidence-review-20261016.{json,md}; operator retention remains pending.
+
+Operator retained qualification 0a3710de…182e5cd5. Normal controller startup passed without candidate flag. Fresh predecessor/replacement staging ready after actual guest-only boot37eab96d→5e03b641; one queued/one active predecessor retained, proof unconsumed. Exact installed rc04 executable hash matches. Prior temporary infrastructure input was absent; new private disposable credentials and immutable cached backend images are retained outside /tmp. Inventory06 all21 implementation items complete and no source/fixture edits. Existing serialized local04 six-group/four-source program is now authorized to start.

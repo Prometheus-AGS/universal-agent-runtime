@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "screened_artifact": "findings.json",
+  "tool": "mcp__sycophancy_correction__detect_sycophancy",
+  "status": "completed",
+  "parameters": {
+    "target": "completion",
+    "strictness": "strict",
+    "evaluation_domain": "technical review"
+  },
+  "raw_result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"audit_trail\": {\n    \"agent_did\": null,\n    \"executed_at\": \"2026-10-16T10:43:56.676907Z\",\n    \"hook_log\": [],\n    \"passes\": 0,\n    \"skill_id\": \"sycophancy.correction\",\n    \"strictness\": \"strict\",\n    \"version\": \"1.0.0\"\n  },\n  \"classifications\": [\n    {\n      \"location\": null,\n      \"pattern_id\": \"S-07\",\n      \"rationale\": \"Response is 882 words — substantially exceeds typical task scope. Verify added content delivers analytical value rather than visible effort.\",\n      \"severity\": \"low\"\n    }\n  ],\n  \"correction_mandatory\": false,\n  \"delta_summary\": \"Score: 0.02. 1 pattern(s) detected (detect_only mode — no correction applied):\\n[S-07] Low — Response is 882 words — substantially exceeds typical task scope. Verify added content delivers analytical value rather than visible effort.\",\n  \"sycophancy_score\": 0.01785714365541935\n}"
+      }
+    ],
+    "isError": false
+  },
+  "manual_screen": {
+    "performed": true,
+    "disposition": "Retain the low S-07 length concern in this receipt. The report length serves the requested four correction dispositions, exact source citations, falsifying observations, identity limits and runtime exclusions; no praise or preferred verdict was added.",
+    "automatic_rewrite": false,
+    "certification_limit": "Sycophancy detection scores prose; it does not verify source correctness, independence or runtime behavior."
+  }
+}

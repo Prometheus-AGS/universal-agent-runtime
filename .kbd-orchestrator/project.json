@@ -3,8 +3,8 @@
   "displayName": "Universal Agent Runtime",
   "sourceOfTruth": ".kbd-orchestrator",
   "specSystem": "openspec",
-  "activeChange": "uar-1-1-0-kubo-conformance",
-  "activePhase": "uar-1-1-0-kubo-conformance",
+  "activeChange": null,
+  "activePhase": "uar-outstanding-issues-v1-1-1",
   "memoryMirror": {
     "provider": "surreal_memory",
     "mcpServer": "surreal_memory",
@@ -18,5 +18,5 @@
     "opencode"
   ],
   "worktreeRoot": "${HOME}/.claude/worktrees",
-  "updatedAt": "2026-10-11T16:00:22Z"
+  "updatedAt": "2026-10-15T21:02:00Z"
 }

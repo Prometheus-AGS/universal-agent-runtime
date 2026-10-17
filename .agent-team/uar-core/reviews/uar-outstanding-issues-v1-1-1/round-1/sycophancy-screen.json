@@ -1,0 +1,16 @@
+{
+  "status": "completed",
+  "tool": "mcp__sycophancy_correction__detect_sycophancy",
+  "strictness": "strict",
+  "score": 0.01785714365541935,
+  "correction_mandatory": false,
+  "findings": [
+    {
+      "pattern": "S-07",
+      "severity": "low",
+      "rationale": "Report length 891 words exceeds typical task scope."
+    }
+  ],
+  "manual_disposition": "Retained the evidence, reproduction and correction fields required by the review contract. No praise, agreement claims or unsupported runtime certainty added. No automatic rewrite claimed.",
+  "executed_at": "2026-10-16T10:30:11.983386Z"
+}

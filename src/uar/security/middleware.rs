@@ -140,6 +140,7 @@ fn resolve_user_context(
     auth_header: Option<&str>,
 ) -> Result<UserContext, StatusCode> {
     let config = SecurityConfig {
+        provider_credentials: Default::default(),
         deployment_profile: Default::default(),
         jwt_algorithm: None,
         workspace_authorities: Vec::new(),
@@ -358,6 +359,7 @@ mod tests {
 
     fn jwks_config(url: String, issuer: &str, audience: &str) -> SecurityConfig {
         SecurityConfig {
+            provider_credentials: Default::default(),
             deployment_profile: Default::default(),
             jwt_algorithm: None,
             workspace_authorities: Vec::new(),
@@ -378,6 +380,7 @@ mod tests {
 
     fn shared_secret_config(issuer: Option<&str>, audience: Option<&str>) -> SecurityConfig {
         SecurityConfig {
+            provider_credentials: Default::default(),
             deployment_profile: Default::default(),
             jwt_algorithm: None,
             workspace_authorities: Vec::new(),

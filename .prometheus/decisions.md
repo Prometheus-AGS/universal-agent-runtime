@@ -1991,3 +1991,173 @@ Only resource cleanup, consolidation on main, and phase closure/archive remain a
 Operator approved the bounded uar-1-1-0-kubo-conformance phase, all #379 requirements, and source/tag/image/GitHub publication. Dot remains closed and its cancelled qualification stays cancelled. Official A2A 1.0 coexists with legacy compatibility; protected skill authorization uses existing verified roles, not new claims. MCP restrictions bind persisted agent identity and current policy. Single-manifest upload requires checked atomic create. Explicit deployment network/DB settings remain; default startup alone carries the 300-second zero-egress criterion. All product verification waits for full implementation inventory; only the named GitHub Actions policy validator may run early.
 
 - 2026-10-15, UAR 1.1.0 review C1: unregistered direct MCP declarations cannot borrow a restricted HTTP origin through alternate loopback hosts, paths, queries or fragments. Restriction matching is conservative; request URLs are not rewritten and explicit registered leases retain their own administrator policy. Rationale: the observable MCP peer accepts alternate request paths, so exact URL matching does not establish destination isolation.
+
+## 2026-10-15 — Bound the outstanding-issues phase before implementation
+
+Decision: assess all open UAR issues in uar-outstanding-issues-v1-1-1; prioritize385 and remaining380, reconcile delivered379/383, record382 external dependencies. Rationale: the operator selected this scope and requested assessment first. Existing published receipts and cancelled qualification remain historical, not a mandate to restart global certification. KB import and installation-identity migration design are explicit Analyze decisions. Preserve #384 timeout inheritance, strict principal isolation, durable admission and immutable v1.1.0. No model verification workaround or durability bypass is justified by the generic binding log.
+
+## 2026-10-15 — Outstanding-issues Analyze scope
+
+Phase uar-outstanding-issues-v1-1-1 selected targeted adaptation of pinned streaming, credential and persistence contracts. Preserve durable budgets and fenced ownership; #385 recovery is authenticated KB reupload with legacy rows retained. Local credential installation identity is scoped to credentials because generic principal keys also own sessions/schedules/knowledge. Retain single-owner compatibility by default and require explicit shared policy/grants. No new dependency, global principal rewrite, privileged KB import or revived Dot qualification. Canonical analysis and A01–A11 decisions are in the phase directory; acceptance is deferred until the entire planned implementation, fixtures and docs are complete.
+
+
+## 2026-10-16 — Outstanding-issues Spec boundary
+
+One coordinated OpenSpec change specifies eight capability deltas and 22 pending
+tasks for uar-outstanding-issues-v1-1-1. Preserve explicit durable admission, scope
+installation identity to credentials, bind migration to exact operator mappings
+and metadata revisions, and require full published arm64/amd64 acceptance.
+Rationale: these contracts address reported #380/#385 failures while preserving
+#379/#383 behavior and immutable v1.1.0. Checks and independent review remain
+deferred until the entire phase implementation inventory is complete. Plan must
+register exact file ownership and dependencies before implementation.
+
+
+## 2026-10-16 — Outstanding-issues executable Plan
+
+Preserve one OpenSpec change and register all 22 tasks pending. Assign exclusive
+source ownership and source handoff dependencies before execution. Concretize
+credential metadata initialization as an explicit local host maintenance command
+under documented backup/quiescence; startup and preview cannot backfill. This
+resolves the missing operational entrypoint without adding a public authority or
+waiving the full-phase boundary. All fixtures, adapters and docs precede L4.
+
+## 2026-10-16 — complete review repair cohort before acceptance
+
+Phase uar-outstanding-issues-v1-1-1 round1 found team fallback provider identity, inert disabled fallback authority, ineffective redacted-log negative control and image/source provenance gaps. R7 authors all corrections together; L5 records a renewed18-item source inventory before the corrective isolated review and real six-group program. Existing deployment digest artifacts establish source/run/image linkage without editing the workflow. Their one-day retention is an acceptance prerequisite. Initial L4 and review findings are retained. A genuine isolated qualified supervisor remains unavailable; no production mutation or invented qualification is authorized.
+
+
+## 2026-10-16 — Complete local-02 cohort before retest
+
+The terminal acceptance receipt failed all six groups and cleanup. R9/L7 close
+the implementation boundary; all old successful authoring/inventory records are
+historical. Source inspection found missing memory-verifier initialization and
+a settled AG-UI observer subscribing after the final cursor. OrbStack retained
+StorageFull and forced stop, explaining later Docker absence independently of
+the stream hang. Shared observer reads now have a finite total deadline and
+failed owned removals remain failures. No source fix is a passing gate.
+
+Supervisor setup selects one genuine native Linux mechanism within UAR recovery,
+not both native/LKE or the cancelled Dot matrix. The old isolated guest was
+removed. A concrete4CPU/8GiB/24GiB guest-only setup/reboot proposal is awaiting
+operator approval under the disruptive-operation rule. No true qualification
+record, containment proof, release tag, image or success claim is fabricated.
+
+Phase Exit historical WAIT expired. Its retained Rust CLI was restored from
+the exact compressed bytes without Cargo. Learning records the terminal failure;
+its adapter source now supports explicit current inventory and a closed repair
+boundary. Packages/affected real-import gate remain deferred with this cohort.
+
+
+2026-10-16 operator explicitly approved dedicated local Linux ARM64 guest setup and
+guest-only reboots for the required native supervisor proof. This resolves the
+setup authorization prerequisite, not the physical qualification/evidence gate.
+No Mac reboot, LKE inhibition, know-me mutation or paid infrastructure authorized.
+
+### 2026-10-16 — explicit Phase Exit UAR revision2 adoption
+
+Operator explicitly adopted reviewed revision2, digest6918a0b429f7f3264f4d1e3f40dca9a90352f0f4696275554294fb44d6c5399d.
+CM-01 mapping error corrected through existing-scope external supervisor-setup
+prerequisite before local retest. Source review cap preserved. Rust adoption
+succeeded; actual local decision BLOCKED/phasefalse with no next action, as genuine
+physical qualification is not yet available. Manual dedicated guest setup and
+guest-only reboots remain separately authorized. No publication waiver.
+
+## 2026-10-16 Native setup stays within approved model-request scope
+
+Source-only runtime handoff initially inferred a host-context prerequisite and
+delay<timeout condition; both were retracted after reading the actual guards.
+The team definition has empty extensions, so require_host_context returns Ok
+without teamHostWorkspaceRequired. The fixture fsyncs trace before delay;600
+timeout and601 delay support immediate hardboot before either expires. No new
+MCP authority, host-context call, fixture mode or acceptance gate was added.
+This records a clarified existing requirement, not an amended release condition.
+
+## 2026-10-16T22:19:03.568Z — Stop Phase Exit as a UAR prerequisite
+
+Operator stopped tool development and directed direct UAR completion under the existing KBD criteria. Retain all contracts/approvals/evidence. Record tool lessons as future specification proposals without new implementation or release gates. Expected Dot feedback is an input to bounded plan assessment, not an automatic scope addition.
+
+## 2026-10-16T22:30:40.321Z — Scoped supervisor qualification retained
+
+Operator explicitly approved reviewed qualification SHA256 0a3710de687bf1bb3f02ca19ab45438082c946f9dd8ad9a6e10d603e182e5cd5. Select normal controller only for the retained isolated Linux arm64 native mechanism. Fresh same-artifact acceptance staging remains required. No published-image acceptance or customer qualification follows from this record.
+
+## 2026-10-17 — UAR issue-first cadence plan
+
+The active UAR 1.1.1 phase prioritizes #385 before the broader issue queue.
+Terminal local04 acceptance failed and its image identity differs from the
+staged candidate, so the team must classify actual causes, finish any full
+repair cohort and renew the implementation inventory before affected gates.
+Dot issues #387–#396 are reconciled against advertised profiles; #386 remains a
+cross-project media dependency. The source-observed #387 shared-tenant compiler
+authoring boundary requires an actual restriction or owner-scoped repair before
+claiming that profile. Unselected issues move to separately specified successor
+KBD phases rather than silently expanding this release.
+
+Use the installed delivery-cadence skill for 120-minute work checkpoints and a
+soft seven-day issue-sized delivery opportunity. This is a planning hypothesis:
+one illustrative set of three serial six-group programs plus observed build
+preparation already exceeds eight hours after implementation, excluding review,
+publication and rework. Start #385 immediately. A time tick cannot open an
+early verification gate or count as a completed release. The active phase plan
+and `planning/issue-queue-and-cadence.md` carry the exact rationale and limits.
+
+## 2026-10-17 — Compiler REST profile restriction
+
+Source inspection found both compiler REST aliases mounted while compiler
+specs and sessions have no verified owner. For UAR 1.1.1, restrict the full
+subtree for remote ingress or shared provider credential mode, preserve local
+single-owner behavior and record a real two-principal denial case after the
+full-phase implementation boundary. The release must disclose the limit.
+Full owner-scoped compiler authoring remains open under #387. This decision
+comes from the exposed trust boundary; no live exploit or gate has been run.
+
+## 2026-10-17 — R11 local04 cause separation
+
+The #385 reduced host admission failure reached EventHistory, which synthesized
+an otherwise unadmitted `/presentation` patch after the terminal Error. Suppress
+only that synthetic observation for reduced failures; retain normal presentation
+history. The streams fixture mounted `/opt/uar/mcp.json` but omitted the matching
+`MCP_CONFIG_PATH`, selecting an empty default catalog; bind the mounted path.
+Recovery, combined, relay readiness and cleanup timed out in Docker before UAR
+ran. Do not change persistence or MCP product behavior on that evidence. Exclude
+`.kbd-orchestrator/` and `.prometheus/` from the Docker build context, which
+previously included about 686 MB of operational history; the next build must
+still establish exact image identity. All R11 behavior awaits L9 and real gates.
+
+## 2026-10-17 — Operator-controlled whole-phase verification lock
+
+The operator rejected using a repair-cohort inventory as unilateral permission
+for another gate. For the active UAR 1.1.1 phase, no agent may run any test,
+check or build until every planned implementation task across the entire phase
+is complete, the lead has recorded an exact whole-phase inventory and presented
+it with the proposed commands, and the operator explicitly instructs the lead
+to run those commands. This also prohibits `git diff --check` and delegation of
+checks while the gate is closed. A 120-minute checkpoint only audits compliance;
+it never grants permission. New implementation edits close the gate again.
+The durable instruction is in `AGENTS.md`; current state and incidents are in
+the phase `execution.md`.
+
+## 2026-10-17 — Selected model retry budget bounds stream opening
+
+Local08 binding exposed outer pre-semantic stream-open retries despite the
+selected model's `max_retries=0`. The R12 source repair caps those attempts at
+the lesser of the resilience policy's count and the selected model's retry
+budget plus one initial call. The resilience policy still determines whether
+an error is retryable and its delay; post-output stream behavior is unchanged.
+This honors the existing timeout/retry inheritance contract. The change is
+source complete but not acceptance evidence while the operator verification
+gate is closed.
+
+## 2026-10-17 — Local09 network prerequisite is blocked, not product failure
+
+The first local09 binding command exited before image build or any scenario
+because the OrbStack Docker socket was absent. The runner had reported a
+generic failure and then attempted to remove the network it had never
+created. R13 changes only the runner's owned-network lifecycle: failed
+creation raises `Blocked`, and cleanup removes the network only after a
+successful create. The command log remains the detailed diagnostic receipt.
+The `uar-core` source-only audit found no other missing code in the selected
+#385, #387 restriction or local08 repair scope; full owner-scoped compiler
+authoring remains the documented successor scope. Inventory14 is obsolete
+after R13's source edit. L11 must renew the whole-phase inventory, and the
+operator lock stays closed; no test or build was used to make this decision.

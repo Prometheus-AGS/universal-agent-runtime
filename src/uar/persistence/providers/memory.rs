@@ -30,7 +30,7 @@ use crate::{
             prompt_caching::UserPromptCachingSettings,
             skills::{Skill, SkillMatch},
         },
-        persistence::{CostEntry, PersistenceLayer},
+        persistence::{CostEntry, DurableStoreEligibility, PersistenceLayer},
         settings::schema::{Settings, SettingsType},
     },
 };
@@ -110,6 +110,9 @@ fn write<T>(lock: &RwLock<T>) -> Result<std::sync::RwLockWriteGuard<'_, T>> {
 
 #[async_trait]
 impl PersistenceLayer for InMemoryProvider {
+    fn durable_store_eligibility(&self) -> DurableStoreEligibility {
+        DurableStoreEligibility::UnsupportedBackend
+    }
     async fn create_approval_record(&self, record: &ApprovalRecord) -> Result<()> {
         anyhow::ensure!(record.state == ApprovalState::Pending && record.decision.is_none(), "New approval must be pending");
         let mut records = write(&self.approval_records)?;

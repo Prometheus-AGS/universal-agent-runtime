@@ -104,6 +104,7 @@ impl EventHistory {
         run_id: &str,
         event: NormalizedEvent,
         snapshot: Option<&super::presentations::RunPresentationSnapshot>,
+        presentation_enabled: bool,
         sender: &broadcast::Sender<StreamEvent>,
         completion: Option<
             &std::sync::Mutex<crate::uar::runtime::thread::execution::RunCompletionCapture>,
@@ -130,7 +131,7 @@ impl EventHistory {
                     | NormalizedEvent::PresentationDiagnostic { .. }
                     | NormalizedEvent::ToolEnd { .. }
             );
-        if let Some(snapshot) = snapshot.filter(|_| observation_changed) {
+        if let Some(snapshot) = snapshot.filter(|_| presentation_enabled && observation_changed) {
             let observation = self.presentation.get_or_insert_with(|| {
                 super::presentations::PresentationObservation::new(snapshot)
             });
@@ -278,7 +279,10 @@ struct RunEventEmitter {
 
 impl RunEventEmitter {
     async fn emit(&self, mut event: NormalizedEvent) {
-        let Some(projected) = self.admission_projection.lock().await.project_or_stage(event) else { return; };
+        let mut projection = self.admission_projection.lock().await;
+        let Some(projected) = projection.project_or_stage(event) else { return; };
+        let presentation_enabled = !projection.suppresses_presentation();
+        drop(projection);
         event = projected;
         if matches!(
             &event,
@@ -298,6 +302,7 @@ impl RunEventEmitter {
             &self.run_id,
             event,
             self.presentations.as_deref(),
+            presentation_enabled,
             &self.sender,
             self.completion.as_deref(),
         );
@@ -507,6 +512,10 @@ pub struct RunManager {
     /// Multi-tenant credential service (per-user encrypted provider keys).
     /// `None` ⇒ single-tenant: the env/config key on `llm_config` is used as-is.
     provider_service: Option<Arc<crate::uar::security::credentials::ProviderService>>,
+    /// Trusted host policy that authorizes every provider source before client
+    /// construction. It remains present when encrypted credential storage is
+    /// intentionally unavailable.
+    credential_policy: Arc<crate::uar::security::credentials::CredentialTenancyPolicy>,
     /// Native skill registry for in-process tool execution
     native_skills: Arc<NativeSkillRegistry>,
     /// Backend selected by the trusted host, never by model arguments.
@@ -584,50 +593,74 @@ const MEMORY_CREATE_TOOLS: &[&str] = &[
 const MEMORY_UPDATE_TOOLS: &[&str] = &["memory_update"];
 const MEMORY_DELETE_TOOLS: &[&str] = &["memory_delete", "memory_delete_all"];
 
-/// Apply the multi-tenant credential layer to a run's LLM config.
-///
-/// When `provider_service` is `Some` and a per-scope credential resolves for the
-/// run's provider (chain: session → agent → user → system), override
-/// `cfg.api_key` with the decrypted per-tenant key. When `provider_service` is
-/// `None` or no credential resolves, `cfg.api_key` is left untouched. Storage
-/// failures stop model binding rather than silently using a different account.
-///
-/// Extracted from `start_run` so the resolution-and-override behavior is unit
-/// testable without constructing an `Orchestrator` or making LLM calls.
-async fn apply_credential_layer(
-    mut cfg: LlmConfig,
+/// Capture one policy-authorized provider source before a client constructor can
+/// inspect configuration or an ambient credential. The returned decision remains
+/// in the run binding; descendants can only select that captured client.
+async fn resolve_credential_binding(
+    cfg: LlmConfig,
+    policy: &crate::uar::security::credentials::CredentialTenancyPolicy,
     provider_service: Option<&Arc<crate::uar::security::credentials::ProviderService>>,
     principal: Option<&crate::uar::security::claims::CredentialPrincipal>,
     session_id: Option<&str>,
-    agent_id: &str,
-) -> anyhow::Result<LlmConfig> {
-    let Some(provider_service) = provider_service else {
-        return Ok(cfg);
-    };
+    agent_id: Option<&str>,
+    explicit_request_authorized: bool,
+) -> anyhow::Result<(LlmConfig, crate::uar::security::credentials::CredentialSourceDecision)> {
     let provider_id = provider_id_for_config(&cfg);
-    let resolver = provider_service.resolver();
-    let resolved = match principal {
-        Some(principal) => resolver.resolve_with_context(principal, &provider_id, session_id, Some(agent_id)).await,
-        None => resolver.resolve_system(&provider_id).await,
-    }.map_err(|_| anyhow::anyhow!("credential resolution unavailable"))?;
-    match resolved {
-        Some(resolved) => {
-            use secrecy::ExposeSecret;
-            cfg.api_key = Some(resolved.api_key.expose_secret().to_string());
-            tracing::debug!(
-                provider = %provider_id,
-                scope = resolved.scope.as_str(),
-                "Resolved per-tenant provider credential"
-            );
-        }
-        None => {
-            tracing::trace!(
-                provider = %provider_id,
-                "No per-tenant credential; using env/config key"
-            );
-        }
+    let endpoint = cfg.base_url.as_deref().unwrap_or("configured-provider");
+    let decision = if explicit_request_authorized {
+        policy.explicit_request(principal, &provider_id, endpoint, cfg.api_key.as_deref())?
+    } else {
+        policy
+            .resolve_source(
+                provider_service.map(Arc::as_ref),
+                principal,
+                &provider_id,
+                endpoint,
+                session_id,
+                agent_id,
+                cfg.api_key.as_deref(),
+            )
+            .await?
+    };
+    let cfg = crate::uar::runtime::turn::bindings::apply_credential_decision(cfg, &decision)?;
+    Ok((cfg, decision))
+}
+
+/// Classify host binding failures without projecting provider, storage, or
+/// constructor details into the run stream or trusted logs.
+fn run_binding_failure(error: &anyhow::Error) -> (&'static str, &'static str) {
+    if let Some(origin) = error.downcast_ref::<crate::uar::runtime::cost_budget::BudgetFailureOrigin>() {
+        return ("budget_admission", origin.category());
     }
-    Ok(cfg)
+    if matches!(
+        error.downcast_ref::<crate::uar::runtime::thread::policy_intersection::PolicyIntersectionError>(),
+        Some(crate::uar::runtime::thread::policy_intersection::PolicyIntersectionError::UnsupportedShape { section: "budgets" })
+    ) {
+        return ("budget_admission", "budget_admission_failed");
+    }
+    match error.to_string().as_str() {
+        "remote_surreal_durability_not_attested" => {
+            ("durable_accounting", "remote_surreal_durability_not_attested")
+        }
+        "durable_storage_unsupported" | "durable_accounting_unsupported" => {
+            ("durable_accounting", "durable_storage_unsupported")
+        }
+        "accounting_verified_principal_required" => {
+            ("durable_accounting", "verified_principal_required")
+        }
+        "budget_admission_failed" => ("budget_admission", "budget_admission_failed"),
+        "shared credential policy cannot verify a supplied primary driver" => {
+            ("client_construction", "opaque_driver_provenance_missing")
+        }
+        "Fallback model lacks credential decision" | "credential binding unavailable" => {
+            ("credential_binding", "credential_binding_missing")
+        }
+        "credential_source_denied" | "credential_identity_required"
+        | "credential_installation_id_required" | "credential_migration_required" => {
+            ("credential_binding", "credential_source_denied")
+        }
+        _ => ("client_construction", "client_capture_failed"),
+    }
 }
 
 fn provider_id_for_config(config: &LlmConfig) -> String {
@@ -638,13 +671,14 @@ fn provider_id_for_config(config: &LlmConfig) -> String {
 }
 
 fn qualified_model_name(config: &LlmConfig) -> String {
-    let model_id = if config.host_supplied_connection || config.base_url.is_some() {
-        config.model.clone()
-    } else {
-        crate::llm::registry::split_model_string_pub(&config.model)
-            .1
-    };
     let provider_id = provider_id_for_config(config);
+    let (model_provider, split_model_id) =
+        crate::llm::registry::split_model_string_pub(&config.model);
+    let model_id = if config.model.contains('/') && model_provider == provider_id {
+        split_model_id
+    } else {
+        config.model.clone()
+    };
     format!("{provider_id}/{model_id}")
 }
 
@@ -1048,6 +1082,7 @@ impl RunManager {
             skill_evolution_config: SkillEvolutionConfig::default(),
             provider_registry: None,
             provider_service: None,
+            credential_policy: Arc::new(Default::default()),
             native_skills,
             sandbox_runner: None,
             sandbox_operations: Arc::new(crate::sandbox::execution::SandboxSupervisor::default()),
@@ -1748,6 +1783,18 @@ impl RunManager {
         service: Arc<crate::uar::security::credentials::ProviderService>,
     ) -> Self {
         self.provider_service = Some(service);
+        self
+    }
+
+    /// Install the startup-captured provider credential policy independently of
+    /// encrypted credential storage. The policy authorizes source selection; it
+    /// does not grant kernels a resolver or mutation capability.
+    #[must_use]
+    pub fn with_credential_policy(
+        mut self,
+        policy: Arc<crate::uar::security::credentials::CredentialTenancyPolicy>,
+    ) -> Self {
+        self.credential_policy = policy;
         self
     }
 
@@ -5150,32 +5197,7 @@ impl RunManager {
                 }
                 config
             };
-            let mut run_llm_config = if run_credentials.is_some() {
-                run_llm_config
-            } else {
-                match apply_credential_layer(
-                    run_llm_config,
-                    self.provider_service.as_ref(),
-                    principal_for_creds.as_ref(),
-                    session_id_for_creds.as_deref(),
-                    artifact.id.as_str(),
-                )
-                .await {
-                    Ok(config) => config,
-                    Err(_) => {
-                        if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
-                            state.run.status = RunStatus::Error;
-                        }
-                        activation_context.lock().await.record_outcomes(false);
-                        emitter.emit(NormalizedEvent::Error { run_id: run_id.clone(),
-                            code: "credential_resolution_unavailable".to_owned(),
-                            message: "Provider credential resolution unavailable".to_owned() }).await;
-                        emitter.emit(NormalizedEvent::RunDone { run_id: run_id.clone() }).await;
-                        self.run_cancellations.write().await.remove(&run_id);
-                        return run_id;
-                    }
-                }
-            };
+            let mut run_llm_config = run_llm_config;
             if let Some(credentials) = &run_credentials {
                 let policy_route = effective_policy.model.as_ref();
                 let mut provider_id = policy_route
@@ -5221,6 +5243,7 @@ impl RunManager {
                 run_llm_config.reasoning_effort = Some(effort);
                 run_llm_config.thinking_budget = effort.thinking_budget();
             }
+            let mut run_llm_config = run_llm_config;
             let mut run_failover_config =
                 if target_selection.is_some() {
                     // Explicit target selection never authorizes another model or billing route.
@@ -5285,14 +5308,35 @@ impl RunManager {
                         .ok_or_else(|| anyhow::anyhow!("TEAM_ROUTE_PROFILE_MISMATCH"))?;
                     let config = match &run_credentials {
                         Some(credentials) => credentials.config_for(&profile.provider_id, Some(&model_id), config)?,
-                        None => apply_credential_layer(config, self.provider_service.as_ref(),
-                            principal_for_creds.as_ref(), session_id_for_creds.as_deref(), artifact.id.as_str()).await?,
+                        None => config,
                     };
                     fallback.api_key = config.api_key;
                     fallback.base_url = config.base_url;
                 }
                 Ok::<_, anyhow::Error>((profiles, pricing_models))
             }.await;
+
+            // Team endpoint profiles can replace the selected model alias. Resolve
+            // credentials only after that route is final so the policy decision,
+            // bound client, and provider identity remain identical. A rejected team
+            // profile remains its established public refusal; it does not trigger a
+            // separate credential lookup.
+            let primary_credential_binding = if team_profiles.is_ok() {
+                Some(
+                    resolve_credential_binding(
+                        run_llm_config.clone(),
+                        self.credential_policy.as_ref(),
+                        self.provider_service.as_ref(),
+                        principal_for_creds.as_ref(),
+                        session_id_for_creds.as_deref(),
+                        Some(artifact.id.as_str()),
+                        run_credentials.is_some(),
+                    )
+                    .await,
+                )
+            } else {
+                None
+            };
 
             // This artifact's session ceiling belongs to the captured root session,
             // not the aggregate spend of every session using the same agent.
@@ -5323,18 +5367,66 @@ impl RunManager {
                 Err(error) => Err(error),
             };
 
+            let fallback_credential_decisions = async {
+                let mut decisions = std::collections::BTreeMap::new();
+                if !run_failover_config.enabled {
+                    return Ok(decisions);
+                }
+                for fallback in &run_failover_config.fallback_models {
+                    let fallback_config = crate::llm::Orchestrator::fallback_llm_config(
+                        &run_llm_config,
+                        fallback,
+                    );
+                    let (fallback_provider, _) =
+                        crate::llm::registry::split_model_string_pub(&fallback.model);
+                    let fallback_config = match &run_credentials {
+                        Some(credentials) => credentials
+                            .config_for(&fallback_provider, Some(&fallback.model), fallback_config)
+                            .map_err(anyhow::Error::from)?,
+                        None => fallback_config,
+                    };
+                    let (_, decision) = resolve_credential_binding(
+                        fallback_config,
+                        self.credential_policy.as_ref(),
+                        self.provider_service.as_ref(),
+                        principal_for_creds.as_ref(),
+                        session_id_for_creds.as_deref(),
+                        Some(artifact.id.as_str()),
+                        run_credentials.is_some(),
+                    )
+                    .await?;
+                    decisions.insert(fallback.model.clone(), decision);
+                }
+                Ok::<_, anyhow::Error>(decisions)
+            }
+            .await;
+
             // Capture once before any summarization or model execution. Rebuilding
             // a client from the same config can resolve different environment or
             // provider credentials, and cannot serve as an inherited binding.
-            match (model_budget, team_profiles) {
-                (Ok(model_budget), Ok((profiles, pricing_models))) => {
+            match (
+                model_budget,
+                team_profiles,
+                primary_credential_binding,
+                fallback_credential_decisions,
+            ) {
+                (Ok(model_budget), Ok((profiles, pricing_models)), Some(Ok((bound_config, primary_credential_decision))), Ok(fallback_credential_decisions)) => {
+                    if self.primary_driver.is_some()
+                        && self.credential_policy.is_shared()
+                        && run_credentials.is_none()
+                        && !is_team_attempt
+                    {
+                        Err(anyhow::anyhow!("shared credential policy cannot verify a supplied primary driver"))
+                    } else {
                     crate::uar::runtime::turn::bindings::RunModelBindings::capture(
-                        run_llm_config.clone(),
+                        bound_config,
                         if run_credentials.is_some() || is_team_attempt {
                             None
                         } else {
                             self.primary_driver.clone()
                         },
+                        primary_credential_decision,
+                        fallback_credential_decisions,
                         run_failover_config,
                         if run_credentials.is_some() {
                             None
@@ -5350,8 +5442,13 @@ impl RunManager {
                         &mut emitter.secret_scrubber,
                     )
                     .await
+                    }
                 }
-                (Err(error), _) | (_, Err(error)) => Err(error),
+                (Err(error), _, _, _) => Err(error),
+                (_, Err(error), _, _) => Err(error),
+                (_, _, Some(Err(error)), _) => Err(error),
+                (_, _, _, Err(error)) => Err(error),
+                (_, _, None, _) => Err(anyhow::anyhow!("credential binding unavailable")),
             }
         };
         let model_bindings = match model_bindings_result {
@@ -5359,32 +5456,42 @@ impl RunManager {
             Err(error) => {
                 // Constructor-owned/opaque credentials may not be captured.
                 // Preserve only public contract codes at this early failure seam.
-                let error = match error.to_string().as_str() {
-                    "TEAM_PROFILE_UNSUPPORTED" => "TEAM_PROFILE_UNSUPPORTED",
-                    "TEAM_ROUTE_PROFILE_MISMATCH" => "TEAM_ROUTE_PROFILE_MISMATCH",
-                    "TEAM_REVISION_CONFLICT" => "TEAM_REVISION_CONFLICT",
-                    "TEAM_REASONING_UNSUPPORTED" => "TEAM_REASONING_UNSUPPORTED",
-                    _ => "Run model binding failed",
-                }.to_owned();
-                if !is_team_attempt {
-                    tracing::error!(%error, "Failed to capture run model bindings");
-                }
+                // Model binding runs before normal admission publication. Its
+                // error is reduced to a public stage/category below. Discard
+                // private staged content and enable only this terminal failure;
+                // otherwise the pre-admission guard replaces the diagnostic
+                // reference with generic admission-failure text.
+                emitter
+                    .admission_projection
+                    .lock()
+                    .await
+                    .begin_reduced_failure(emitter.secret_scrubber.clone());
+                let raw_code = error.to_string();
+                let team_error = match raw_code.as_str() {
+                    "TEAM_PROFILE_UNSUPPORTED" => Some("TEAM_PROFILE_UNSUPPORTED"),
+                    "TEAM_ROUTE_PROFILE_MISMATCH" => Some("TEAM_ROUTE_PROFILE_MISMATCH"),
+                    "TEAM_REVISION_CONFLICT" => Some("TEAM_REVISION_CONFLICT"),
+                    "TEAM_REASONING_UNSUPPORTED" => Some("TEAM_REASONING_UNSUPPORTED"),
+                    _ => None,
+                };
+                let (stage, category) = run_binding_failure(&error);
                 activation_context.lock().await.record_outcomes(false);
                 if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
                     state.run.status = RunStatus::Error;
                 }
                 let code = if is_team_attempt {
-                    match error.as_str() {
-                        "TEAM_PROFILE_UNSUPPORTED" | "TEAM_ROUTE_PROFILE_MISMATCH"
-                        | "TEAM_REVISION_CONFLICT" | "TEAM_REASONING_UNSUPPORTED" => error.as_str(),
-                        _ => "TEAM_PROVIDER_REQUEST_REJECTED",
-                    }
-                } else { "orchestrator_start_failed" };
+                    team_error.unwrap_or("TEAM_PROVIDER_REQUEST_REJECTED")
+                } else {
+                    "orchestrator_start_failed"
+                };
+                let reference = uuid::Uuid::new_v4();
+                tracing::error!(code, stage, category, diagnostic_reference = %reference,
+                    "Run model capture refused");
                 let message = if is_team_attempt {
-                    let reference = uuid::Uuid::new_v4();
-                    tracing::error!(code, diagnostic_reference = %reference, "Team model capture refused");
                     format!("{code}; diagnostic reference {reference}")
-                } else { "Failed to create the run orchestrator".into() };
+                } else {
+                    format!("Run binding refused during {stage}; diagnostic reference {reference}")
+                };
                 emitter
                     .emit(NormalizedEvent::Error {
                         run_id: run_id.clone(),
@@ -6673,7 +6780,11 @@ impl RunManager {
         }
         let representation_disclosure = representation_context.as_ref().map(|context| context.disclosure());
         let representation_binding = collaboration_binding.clone().filter(|binding| binding.has_representation());
-        let execution = async move {
+        // The admitted producer captures the full tool loop, checkpoint host,
+        // and finalizers. Keep both layers heap-indirected before handing them
+        // to Tokio so a real native-tool turn does not build that state on the
+        // caller's task stack.
+        let execution = Box::pin(async move {
             let _delegation_lifetime = delegation_lifetime;
             let _sandbox_lease = sandbox_lease;
             let _terminal_lease = terminal_lease;
@@ -6938,6 +7049,7 @@ impl RunManager {
             let mut accumulated_content = String::new();
             let mut run_cancelled = false;
             let mut run_failed = false;
+            let mut orchestrator_completed = false;
             let mut accumulated_tool_calls: Vec<crate::llm::ToolCall> = Vec::new();
             let mut tool_call_indices: HashMap<String, usize> = HashMap::new();
             let mut tool_call_names: HashMap<String, String> = HashMap::new();
@@ -7298,6 +7410,10 @@ impl RunManager {
                                     code: code.unwrap_or_default(),
                                 })
                             }
+                            crate::normalized::NormalizedEvent::Done => {
+                                orchestrator_completed = true;
+                                None
+                            }
                             crate::normalized::NormalizedEvent::Usage {
                                 prompt_tokens,
                                 completion_tokens,
@@ -7371,6 +7487,17 @@ impl RunManager {
                         })
                         .await;
                 }
+            }
+
+            if !run_cancelled && !run_failed && !orchestrator_completed {
+                run_failed = true;
+                emitter
+                    .emit(NormalizedEvent::Error {
+                        run_id: execute_run_id.clone(),
+                        code: "orchestrator_completion_missing".into(),
+                        message: "Orchestrator stream ended before completion".into(),
+                    })
+                    .await;
             }
 
             if let Err(error) = terminal_operations.finish_run(&terminal_scope).await {
@@ -7693,7 +7820,7 @@ impl RunManager {
                     );
                 }
             }
-        };
+        });
         // Acquire the actor's empty producer slot before launch. Publishing the
         // join handle then has no await/cancellation gap after tokio::spawn.
         let mut actor_producer_slot = match &actor_producer {
@@ -7701,7 +7828,7 @@ impl RunManager {
             None => None,
         };
         let mut checkpoint_producers = self.checkpoint_producers.lock().await;
-        let producer = tokio::spawn(
+        let producer = tokio::spawn(Box::pin(
             async move {
                 use futures::FutureExt;
                 // Keep completion outside the fallible execution body so a
@@ -7776,7 +7903,7 @@ impl RunManager {
                     tracing::error!(run_id = %finalizer_run_id, %error, "Run retains unconfirmed terminal processes");
                 }
             }.instrument(run_span),
-        );
+        ));
         if let Some(slot) = actor_producer_slot.as_mut() {
             slot.handle = Some(producer);
             if let Some(root) = checkpoint_actor_root {
@@ -7851,6 +7978,7 @@ impl RunManager {
                 run_id,
                 event,
                 state.presentations.as_deref(),
+                true,
                 &state.sender,
                 None,
             );
@@ -8345,93 +8473,122 @@ mod cost_budget_wiring_tests {
 #[cfg(test)]
 mod credential_layer_tests {
     #![allow(clippy::unwrap_used, clippy::expect_used)]
-    use super::apply_credential_layer;
+
+    use super::resolve_credential_binding;
     use crate::config::LlmConfig;
     use crate::uar::security::credentials::{
-        CredentialEncryption, CredentialRecord, CredentialScope, PrincipalCredentialStore,
-        InMemoryCredentialStore, ProviderService,
+        CredentialEncryption, CredentialRecord, CredentialScope, CredentialTenancyPolicy,
+        InMemoryCredentialStore, PrincipalCredentialStore, ProviderCredentialPolicyConfig,
+        ProviderService,
     };
     use std::sync::Arc;
 
     const KEY: &[u8; 32] = b"0123456789abcdef0123456789abcdef";
 
-    fn cfg_with_env_key() -> LlmConfig {
+    fn config_with_key() -> LlmConfig {
         LlmConfig {
             model: "openai/gpt-4o".to_string(),
-            api_key: Some("env-key".to_string()),
+            api_key: Some("configured-key".to_string()),
             ..Default::default()
         }
     }
 
-    async fn service_with_user_key(user: &str, provider: &str, key: &str) -> Arc<ProviderService> {
+    fn policy() -> CredentialTenancyPolicy {
+        CredentialTenancyPolicy::from_config(ProviderCredentialPolicyConfig {
+            installation_id: Some("6dcf767e-0888-44cb-b52a-9806fa13c1f6".to_string()),
+            ..Default::default()
+        })
+        .expect("valid fixture credential policy")
+    }
+
+    async fn service_with_user_key(
+        policy: &CredentialTenancyPolicy,
+        user: &str,
+        provider: &str,
+        key: &str,
+    ) -> Arc<ProviderService> {
         let store = Arc::new(InMemoryCredentialStore::new());
-        let enc = CredentialEncryption::from_key(KEY);
+        let encryption = CredentialEncryption::from_key(KEY);
         let now = chrono::Utc::now();
+        let principal = crate::uar::security::claims::CredentialPrincipal::for_test(user);
+        let owner = policy.bind_principal(&principal).expect("bound fixture owner");
         store
-            .put_principal(&crate::uar::security::claims::CredentialPrincipal::for_test(user), CredentialRecord {
-                scope: CredentialScope::User,
-                scope_id: user.to_string(),
-                provider_id: provider.to_string(),
-                api_key_encrypted: enc.encrypt(key).expect("encrypt"),
-                api_key_hint: CredentialEncryption::key_hint(key, 4),
-                created_at: now,
-                updated_at: now,
-            })
+            .put_principal(
+                &owner,
+                CredentialRecord {
+                    scope: CredentialScope::User,
+                    scope_id: user.to_string(),
+                    provider_id: provider.to_string(),
+                    api_key_encrypted: encryption.encrypt(key).expect("encrypt"),
+                    api_key_hint: CredentialEncryption::key_hint(key, 4),
+                    created_at: now,
+                    updated_at: now,
+                    row_revision: None,
+                },
+            )
             .await
             .expect("put");
-        Arc::new(ProviderService::new(store, Arc::new(enc)))
+        Arc::new(ProviderService::new(store, Arc::new(encryption)))
     }
 
-    // Single-tenant: no ProviderService ⇒ env/config key is left untouched.
     #[tokio::test]
-    async fn single_tenant_no_service_keeps_env_key() {
-        let out =
-            apply_credential_layer(cfg_with_env_key(), None, Some(&crate::uar::security::claims::CredentialPrincipal::for_test("alice")), None, "agent-1").await.unwrap();
-        assert_eq!(out.api_key.as_deref(), Some("env-key"));
-    }
-
-    // Multi-tenant: a stored user key for this provider overrides the env key.
-    #[tokio::test]
-    async fn multi_tenant_user_key_overrides_env_key() {
-        let svc = service_with_user_key("alice", "openai", "sk-alice-USER").await;
-        let out = apply_credential_layer(
-            cfg_with_env_key(),
-            Some(&svc),
-            Some(&crate::uar::security::claims::CredentialPrincipal::for_test("alice")),
+    async fn configured_key_becomes_host_supplied_without_environment_lookup() {
+        let policy = policy();
+        let principal = crate::uar::security::claims::CredentialPrincipal::for_test("alice");
+        let (config, _) = resolve_credential_binding(
+            config_with_key(),
+            &policy,
             None,
-            "agent-1",
+            Some(&principal),
+            None,
+            Some("agent-1"),
+            false,
         )
-        .await.unwrap();
-        assert_eq!(out.api_key.as_deref(), Some("sk-alice-USER"));
+        .await
+        .expect("configured credential decision");
+        assert_eq!(config.api_key.as_deref(), Some("configured-key"));
+        assert!(config.host_supplied_connection);
+        assert!(config.api_key_env.is_none());
+        assert!(config.provider_keys.is_empty());
     }
 
-    // Multi-tenant but no credential for this user ⇒ falls back to env key.
     #[tokio::test]
-    async fn multi_tenant_no_user_credential_falls_back_to_env() {
-        let svc = service_with_user_key("alice", "openai", "sk-alice-USER").await;
-        let out = apply_credential_layer(
-            cfg_with_env_key(),
-            Some(&svc),
-            Some(&crate::uar::security::claims::CredentialPrincipal::for_test("bob")), // bob has no stored key
+    async fn stored_user_key_replaces_the_configured_key_before_capture() {
+        let policy = policy();
+        let service = service_with_user_key(&policy, "alice", "openai", "sk-alice-user").await;
+        let principal = crate::uar::security::claims::CredentialPrincipal::for_test("alice");
+        let (config, _) = resolve_credential_binding(
+            config_with_key(),
+            &policy,
+            Some(&service),
+            Some(&principal),
             None,
-            "agent-1",
+            Some("agent-1"),
+            false,
         )
-        .await.unwrap();
-        assert_eq!(out.api_key.as_deref(), Some("env-key"));
+        .await
+        .expect("stored credential decision");
+        assert_eq!(config.api_key.as_deref(), Some("sk-alice-user"));
+        assert!(config.host_supplied_connection);
     }
 
-    // A stored key for a *different* provider must not be used.
     #[tokio::test]
-    async fn provider_isolation_keeps_env_key() {
-        let svc = service_with_user_key("alice", "anthropic", "sk-anthropic").await;
-        let out = apply_credential_layer(
-            cfg_with_env_key(), // model is openai/*
-            Some(&svc),
-            Some(&crate::uar::security::claims::CredentialPrincipal::for_test("alice")),
+    async fn provider_miss_retains_only_the_policy_approved_config_source() {
+        let policy = policy();
+        let service = service_with_user_key(&policy, "alice", "anthropic", "sk-anthropic").await;
+        let principal = crate::uar::security::claims::CredentialPrincipal::for_test("alice");
+        let (config, _) = resolve_credential_binding(
+            config_with_key(),
+            &policy,
+            Some(&service),
+            Some(&principal),
             None,
-            "agent-1",
+            Some("agent-1"),
+            false,
         )
-        .await.unwrap();
-        assert_eq!(out.api_key.as_deref(), Some("env-key"));
+        .await
+        .expect("config source decision");
+        assert_eq!(config.api_key.as_deref(), Some("configured-key"));
+        assert!(config.host_supplied_connection);
     }
 }

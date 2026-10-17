@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 21,
+  "revision": 45,
   "team": {
     "schemaVersion": 1,
     "id": "uar-core",
@@ -448,6 +448,148 @@
         ".kbd-orchestrator/phases/uar-1-1-0-kubo-conformance/implementation-complete.md"
       ],
       "remaining": []
+    },
+    {
+      "id": "uar111-d1-lead",
+      "title": "Reconcile urgent #385 evidence and local04 blocker",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D1.md"
+      ],
+      "remaining": [],
+      "kbd": {
+        "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+        "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+        "phaseId": "uar-outstanding-issues-v1-1-1",
+        "changeId": "uar-outstanding-issues-v1-1-1",
+        "taskId": "8.1"
+      }
+    },
+    {
+      "id": "uar111-d2-lead",
+      "title": "Decide Dot supported scope and measured cadence",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D2.md"
+      ],
+      "remaining": [],
+      "kbd": {
+        "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+        "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+        "phaseId": "uar-outstanding-issues-v1-1-1",
+        "changeId": "uar-outstanding-issues-v1-1-1",
+        "taskId": "8.2"
+      }
+    },
+    {
+      "id": "uar111-d1-runtime",
+      "title": "Source-inspect #385 binding and local04 runtime failures",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D1.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "uar111-d1-state",
+      "title": "Source-inspect #385 recovery and local04 durable-store failures",
+      "owner": "uar-state",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D1.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "uar111-d2-trust",
+      "title": "Source-inspect #387 shared-tenant authoring boundary",
+      "owner": "uar-trust-tools",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D2.md"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "uar111-r11-lead",
+      "title": "Integrate #385 local04 repairs and #387 restriction under one boundary",
+      "owner": "uar-lead",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [
+        "uar111-d1-lead",
+        "uar111-d2-lead"
+      ],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/specs/compiler-authoring-isolation/spec.md",
+        "src/server.rs",
+        "scripts/release/uar_1_1_1_acceptance.py",
+        ".dockerignore"
+      ],
+      "remaining": [],
+      "kbd": {
+        "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+        "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+        "phaseId": "uar-outstanding-issues-v1-1-1",
+        "changeId": "uar-outstanding-issues-v1-1-1",
+        "taskId": "8.3"
+      }
+    },
+    {
+      "id": "uar111-r11-runtime",
+      "title": "Repair #385 host binding refusal and trace stream policy",
+      "owner": "uar-runtime",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [
+        "uar111-d1-runtime"
+      ],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md",
+        "src/uar/runtime/manager.rs",
+        "src/uar/runtime/turn/host/event_projection.rs",
+        "scripts/release/uar_1_1_1_runtime.py"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "uar111-r11-trust",
+      "title": "Restrict #387 compiler REST in remote and shared profiles",
+      "owner": "uar-trust-tools",
+      "harness": "codex",
+      "status": "complete",
+      "revision": 2,
+      "dependsOn": [
+        "uar111-d2-trust"
+      ],
+      "evidence": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md",
+        "src/uar/api/compiler.rs",
+        "scripts/release/uar_1_1_1_compiler.py",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/specs/compiler-authoring-isolation/spec.md"
+      ],
+      "remaining": []
     }
   ],
   "handoffs": [],
@@ -823,6 +965,478 @@
           ".kbd-orchestrator/phases/uar-1-1-0-kubo-conformance/implementation-complete.md"
         ],
         "remaining": []
+      }
+    },
+    {
+      "id": "ccdf4a14-0523-4e2d-892d-eb5001d40b95",
+      "at": "2026-10-17T12:50:45.081Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-d1-lead",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "c9c4e8d5-c56d-4974-9561-3170a2cc1285",
+      "at": "2026-10-17T12:50:45.208Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-d2-lead",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "3447b9e0-961c-4fb3-ad93-47eea66c1293",
+      "at": "2026-10-17T12:50:45.336Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-d1-runtime",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "8c52c03f-1a18-4ce7-9ced-975a91269913",
+      "at": "2026-10-17T12:50:45.465Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-d1-state",
+        "owner": "uar-state",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "815f2d00-1b75-4820-ba47-e7d8a8c087a0",
+      "at": "2026-10-17T12:50:45.594Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-d2-trust",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "65494866-5044-4af0-a53b-d34ef445df15",
+      "at": "2026-10-17T12:51:33.612Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-d1-lead",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "Map every #385 criterion to actual local04 receipt and identify missing product versus customer evidence"
+        ]
+      }
+    },
+    {
+      "id": "230e780e-efd4-4956-84ca-a3c758482595",
+      "at": "2026-10-17T12:51:33.733Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-d2-lead",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "Resolve #387 shared-profile exposure and issue dispositions; keep cadence as metadata until exact operations are bound"
+        ]
+      }
+    },
+    {
+      "id": "515498b9-288e-4a18-82aa-9ba6453e3186",
+      "at": "2026-10-17T12:51:33.866Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-d1-runtime",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "Read-only cause map for binding, streams, MCP and combined; no test, build or edit"
+        ]
+      }
+    },
+    {
+      "id": "00f11f2b-3f6f-48e3-bcd7-7dc9cb14c51c",
+      "at": "2026-10-17T12:51:33.985Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-d1-state",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "Read-only cause map for recovery, supervisor and resource cleanup; no test, build or edit"
+        ]
+      }
+    },
+    {
+      "id": "6cfd5a12-b9c9-4f57-8c77-444134d619c7",
+      "at": "2026-10-17T12:51:34.127Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-d2-trust",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "Read-only route exposure and tenant authority decision for current release; no test, build or edit"
+        ]
+      }
+    },
+    {
+      "id": "ba6fba82-fb60-45c6-af52-6832d916c064",
+      "at": "2026-10-17T12:57:18.750Z",
+      "kind": "kbd.task.completed",
+      "detail": {
+        "taskId": "uar111-d2-lead",
+        "taskRevision": 2,
+        "owner": "uar-lead",
+        "kbd": {
+          "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+          "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+          "phaseId": "uar-outstanding-issues-v1-1-1",
+          "changeId": "uar-outstanding-issues-v1-1-1",
+          "taskId": "8.2"
+        },
+        "commandId": "agent-team-c641ffafdbfc1bbb822e7d21b1fd1602f4561a3b91d54e9905f5d77282379b63",
+        "mode": "reconciled-existing-completion",
+        "executable": "/Users/gqadonis/.local/bin/prometheus",
+        "argv": [
+          "kbd",
+          "--path",
+          "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
+          "status",
+          "--json"
+        ],
+        "canonicalRevision": 3038,
+        "canonicalTaskStatus": "complete",
+        "canonicalEventId": "a2d04302-3ed0-42b7-99a5-7fc710a37639",
+        "receiptSha256": "03f5682ddb4808d23e08af725020cd68cb3ce17a915673a4341f3c3f3e335c29",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D2.md"
+        ]
+      }
+    },
+    {
+      "id": "dcd91e96-09ec-4130-bf9c-5bb603512809",
+      "at": "2026-10-17T12:58:07.663Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "uar111-d2-trust",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D2.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "d4d3d06c-da6a-4d23-8890-7d2f3cd57a0e",
+      "at": "2026-10-17T12:59:22.054Z",
+      "kind": "kbd.task.completed",
+      "detail": {
+        "taskId": "uar111-d1-lead",
+        "taskRevision": 2,
+        "owner": "uar-lead",
+        "kbd": {
+          "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+          "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+          "phaseId": "uar-outstanding-issues-v1-1-1",
+          "changeId": "uar-outstanding-issues-v1-1-1",
+          "taskId": "8.1"
+        },
+        "commandId": "agent-team-b86717bd4684b03a345d2f5650631803c0042c8d1d02b2dce9f77e8523a721ed",
+        "mode": "reconciled-existing-completion",
+        "executable": "/Users/gqadonis/.local/bin/prometheus",
+        "argv": [
+          "kbd",
+          "--path",
+          "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
+          "status",
+          "--json"
+        ],
+        "canonicalRevision": 3039,
+        "canonicalTaskStatus": "complete",
+        "canonicalEventId": "19dc71f5-5e12-418d-b249-11e1b8dba1e8",
+        "receiptSha256": "f7831a9269f8051be43a073fe7b1da29b53ad7f5ee06e9ad3e05956da3a06c41",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D1.md"
+        ]
+      }
+    },
+    {
+      "id": "4229947b-231c-425b-84ae-9db79cf46194",
+      "at": "2026-10-17T12:59:32.399Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "uar111-d1-runtime",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D1.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "123626ca-c5df-4276-98ba-e5c15ba133be",
+      "at": "2026-10-17T12:59:37.177Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "uar111-d1-state",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-state",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-state",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/D1.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "9d000713-57ba-4458-917e-57c7086e6656",
+      "at": "2026-10-17T13:00:49.689Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-r11-lead",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "ed326462-7697-4696-bade-4ba7c5845c73",
+      "at": "2026-10-17T13:00:50.003Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-r11-runtime",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "e82e32ae-9545-4a1f-acb9-50a0180c92f7",
+      "at": "2026-10-17T13:00:50.139Z",
+      "kind": "task.added",
+      "detail": {
+        "taskId": "uar111-r11-trust",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "taskRevision": 0
+      }
+    },
+    {
+      "id": "e992b6c0-8e15-4b88-b621-577098f2b1c1",
+      "at": "2026-10-17T13:09:03.084Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-r11-lead",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "Own scripts/release/uar_1_1_1_acceptance.py and support.py, src/server.rs, docs/releases/v1.1.1.md, canonical plan and source ownership; classify relay/Docker/image causes, integrate domain adapters, and complete the whole R11 source cohort before L9"
+        ]
+      }
+    },
+    {
+      "id": "1ee8ba07-31d6-4ad5-976b-e913ecd73dd8",
+      "at": "2026-10-17T13:09:03.224Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-r11-runtime",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "Own src/uar/runtime/manager.rs and scripts/release/uar_1_1_1_runtime.py; use event_projection.rs only if required for minimal host fix. Preserve binding fixture assertion and investigate zero effective MCP policy by source before editing. No tests/builds/gates until lead records L9."
+        ]
+      }
+    },
+    {
+      "id": "9656346a-4470-4ba5-8c9e-905b0d884d55",
+      "at": "2026-10-17T13:09:03.391Z",
+      "kind": "task.start",
+      "detail": {
+        "taskId": "uar111-r11-trust",
+        "previousRevision": 0,
+        "taskRevision": 1,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "pending",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "running",
+        "evidence": [],
+        "remaining": [
+          "After lead implementation handoff, own src/uar/api/compiler.rs and new scripts/release/uar_1_1_1_compiler.py. Deny complete aliases from trusted host configuration before effects; preserve local single-owner behavior. Author but do not run two-principal acceptance until L9."
+        ]
+      }
+    },
+    {
+      "id": "f9e88ca1-7907-4b91-8533-513aae2a8a4b",
+      "at": "2026-10-17T13:17:23.302Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "uar111-r11-runtime",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-runtime",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-runtime",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md",
+          "src/uar/runtime/manager.rs",
+          "src/uar/runtime/turn/host/event_projection.rs",
+          "scripts/release/uar_1_1_1_runtime.py"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "3b8573fc-c987-495c-91fe-93e1c05c3611",
+      "at": "2026-10-17T13:17:26.840Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "uar111-r11-trust",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-trust-tools",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-trust-tools",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md",
+          "src/uar/api/compiler.rs",
+          "scripts/release/uar_1_1_1_compiler.py",
+          "openspec/changes/uar-outstanding-issues-v1-1-1/specs/compiler-authoring-isolation/spec.md"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "e98776c8-84f7-4e2f-8a8e-bd30afa7486b",
+      "at": "2026-10-17T13:17:44.570Z",
+      "kind": "kbd.task.completed",
+      "detail": {
+        "taskId": "uar111-r11-lead",
+        "taskRevision": 2,
+        "owner": "uar-lead",
+        "kbd": {
+          "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+          "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+          "phaseId": "uar-outstanding-issues-v1-1-1",
+          "changeId": "uar-outstanding-issues-v1-1-1",
+          "taskId": "8.3"
+        },
+        "commandId": "agent-team-93138271efe65359fe0b8ba08c164b10dc52104a09382b226f4e226513a4508a",
+        "mode": "transition-committed",
+        "executable": "/Users/gqadonis/.local/bin/prometheus",
+        "argv": [
+          "kbd",
+          "--path",
+          "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
+          "task",
+          "transition",
+          "--command-id",
+          "agent-team-93138271efe65359fe0b8ba08c164b10dc52104a09382b226f4e226513a4508a",
+          "--phase",
+          "uar-outstanding-issues-v1-1-1",
+          "--change",
+          "uar-outstanding-issues-v1-1-1",
+          "--id",
+          "8.3",
+          "--status",
+          "complete",
+          "--summary",
+          "Team uar-core, task uar111-r11-lead. Evidence: .kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md; openspec/changes/uar-outstanding-issues-v1-1-1/specs/compiler-authoring-isolation/spec.md; src/server.rs; scripts/release/uar_1_1_1_acceptance.py; .dockerignore"
+        ],
+        "canonicalRevision": 3042,
+        "canonicalTaskStatus": "complete",
+        "canonicalEventId": "4a97f2b3-f95a-4dfa-832d-8923e93411f4",
+        "receiptSha256": "83dd48bd0b9fb096f9e379d2d3e25552a9ad19e1d58616b1a837ad158a58f0b6",
+        "evidence": [
+          ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/coordination/handoffs/R11.md",
+          "openspec/changes/uar-outstanding-issues-v1-1-1/specs/compiler-authoring-isolation/spec.md",
+          "src/server.rs",
+          "scripts/release/uar_1_1_1_acceptance.py",
+          ".dockerignore"
+        ]
       }
     }
   ]

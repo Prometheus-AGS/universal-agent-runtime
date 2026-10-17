@@ -408,7 +408,9 @@ async fn upload_document(
     mut multipart: Multipart,
 ) -> Result<(StatusCode, Json<DocumentResponse>), (StatusCode, String)> {
     let owner_key = user.session_owner_key().map_err(|error| (StatusCode::UNAUTHORIZED, error.to_string()))?;
-    if !state.persistence.supports_durable_ingestion() {
+    let eligibility = state.persistence.durable_store_eligibility();
+    if !eligibility.permits_durable_work() || !state.persistence.supports_durable_ingestion() {
+        tracing::warn!(durable_store_eligibility = eligibility.as_str(), "Durable ingestion upload refused");
         return Err((StatusCode::SERVICE_UNAVAILABLE, "Durable ingestion storage is unavailable".to_string()));
     }
     // Verify KB exists

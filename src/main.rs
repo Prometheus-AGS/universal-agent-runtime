@@ -13,7 +13,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 use clap::Parser as _;
 use dotenvy::{dotenv, from_path};
 use std::path::PathBuf;
-use universal_agent_runtime::config::{Cli, Command, LogFormat};
+use universal_agent_runtime::config::{Cli, Command, CredentialAction, LogFormat};
 use universal_agent_runtime::config_manager::ConfigManager;
 use universal_agent_runtime::server;
 use universal_agent_runtime::uar;
@@ -117,6 +117,24 @@ async fn run_main() {
                 eprintln!("Server error: {e:?}");
                 std::process::exit(1);
             }
+        }
+        Some(Command::Credentials { action }) => {
+            let CredentialAction::InitializeRevisions { writers_quiesced } = action;
+            let result = uar::security::credentials::maintenance::initialize_revisions(
+                &config_manager.current(), writers_quiesced,
+            ).await;
+            let code = match result {
+                Ok(summary) => match serde_json::to_string(&summary) {
+                    Ok(summary) => { println!("{summary}"); 0 }
+                    Err(_) => { eprintln!("credential_revision_output_failed"); 1 }
+                },
+                Err(_) => {
+                    eprintln!("credential_revision_initialization_refused_or_unavailable");
+                    1
+                }
+            };
+            if let Some(provider) = &otel_provider { let _ = provider.shutdown(); }
+            std::process::exit(code);
         }
         // `eval …`: run the harness and exit with its status code (CI gate).
         Some(Command::Eval { action }) => {

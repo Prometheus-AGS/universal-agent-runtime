@@ -1,0 +1,680 @@
+{
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "change_id": "uar-outstanding-issues-v1-1-1",
+  "status": "local08_terminal_failed_operator_verification_lock_closed",
+  "baseline": "91a091d647fe2ce63651c07140172aba2c6c6302",
+  "source_of_status": "canonical KBD task events; this file defines dependencies, ownership and stable identity mapping",
+  "boundary": "closed_pending_R13_L11_and_new_operator_instruction",
+  "tasks": [
+    {
+      "id": "1.1",
+      "stable_id": "L1",
+      "title": "Record exclusive ownership and complete-phase inventory",
+      "specification": "Lead records the candidate baseline, exclusive file/build ownership, dependency handoffs and the complete implementation inventory template for this change, preserving prior work and cancelled Dot scope. Completion artifact: canonical execution ledger and source ownership map; no product check.",
+      "sequence": 1,
+      "owner": "uar-lead",
+      "depends_on": [],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/L1.md"
+    },
+    {
+      "id": "3.1",
+      "stable_id": "S1",
+      "title": "Capture durable-store eligibility",
+      "specification": "State adds safe captured store eligibility to existing persistence capabilities; runtime consumes it under R1. Preserve durable accounting, explicit budgets, owner partitioning, unknown liabilities and exact reconciliation. Deliver typed interface and diagnostic documentation inputs; deferred `binding`/`recovery` acceptance covers unattested refusal, qualified success and restart.",
+      "sequence": 2,
+      "owner": "uar-state",
+      "depends_on": [
+        "L1"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/S1.md"
+    },
+    {
+      "id": "2.1",
+      "stable_id": "T1",
+      "title": "Implement credential tenancy and bound owner",
+      "specification": "Trust implements `security.provider_credentials` policy types and private credential-owner binding: omitted single-owner compatibility, explicit shared issuer/tenant eligibility, exact issuer/tenant/provider/source grants, local-only stable installation UUID, unchanged external/general principal keys and safe errors. Deliver source plus policy documentation inputs; acceptance is the deferred `credentials` group.",
+      "sequence": 3,
+      "owner": "uar-trust-tools",
+      "depends_on": [
+        "L1"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/T1.md"
+    },
+    {
+      "id": "4.3",
+      "stable_id": "R3",
+      "title": "Normalize native Anthropic framing",
+      "specification": "Runtime implements a local native-Anthropic adapter for initial BOM and CR/LF/CRLF with bounded incremental state around the pinned Liter decoder; tolerate only well-formed unknown top-level kinds and retain known-error/terminal semantics. Deliver source and framing documentation; deferred `streams` covers all two-way splits, bytewise/fixed partitions, UTF-8/escapes, fields, limits and EOF.",
+      "sequence": 4,
+      "owner": "uar-runtime",
+      "depends_on": [
+        "L1"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/R3.md"
+    },
+    {
+      "id": "2.3",
+      "stable_id": "S3",
+      "title": "Add credential revision schema upgrade",
+      "specification": "State delivers additive credential row-revision and journal metadata schema upgrades for the T3 contract, preserving ciphertext, hints, timestamps, original owner rows and legacy receipt keys; initialize revisions through explicit supported upgrade under quiescence, never in preview. Hand exact schema/revision interfaces to the sole trust store writer. Deferred acceptance: migration, restart and old-receipt cases on actual Surreal and PostgreSQL plus the memory contract supplement.",
+      "sequence": 5,
+      "owner": "uar-state",
+      "depends_on": [
+        "T1"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/S3.md"
+    },
+    {
+      "id": "3.2",
+      "stable_id": "S2",
+      "title": "Integrate ingestion diagnostics and recovery guidance",
+      "specification": "State integrates safe eligibility diagnostics into knowledge upload/dispatcher and writes durable-ingestion/knowledge recovery guidance, incorporating runtime text by handoff. Describe authenticated reupload, retained legacy rows, unavailable originals, separate model verification, existing qualified quiesce/exclusion/reclaim and blocked takeover without proof. Deliver docs/source with no new KB import or fencing bypass; deferred `recovery` controls establish behavior.",
+      "sequence": 6,
+      "owner": "uar-state",
+      "depends_on": [
+        "S1"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/S2.md"
+    },
+    {
+      "id": "2.4",
+      "stable_id": "T3",
+      "title": "Implement conditional credential preview and migration",
+      "specification": "Trust extends credential stores/API with exact fixed-local mapping and `/migrate-principal`, metadata-only trusted-host `/migration-preview`, bounded pagination/counts, transactional source revision/preconditions, compatible optional legacy If-Match, immutable replay and explicit unresolved-source quarantine. Include all supported writers in revision maintenance and preserve strict legacy bodies. Deferred `credentials` acceptance proves conflict/drift/no-partial-copy/no-leak/rotation/deletion/replay controls.",
+      "sequence": 7,
+      "owner": "uar-trust-tools",
+      "depends_on": [
+        "T1",
+        "S3"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/T3.md"
+    },
+    {
+      "id": "2.2",
+      "stable_id": "T2",
+      "title": "Authorize every model credential binding seam",
+      "specification": "Runtime integrates the trust source-decision interface across primary, ordinary fallback, team, graph, summarization, SDK-supplied, inherited/delegated and credential-free bindings, including absent encrypted service; lead wires shared construction roots and administrative paths under L2. Preserve timeout/retry inheritance and do not turn a policy denial into fallback. Completion evidence is zero denied provider contact and allowed controls in deferred `credentials`/`combined` groups.",
+      "sequence": 8,
+      "owner": "uar-runtime",
+      "depends_on": [
+        "T1",
+        "T3"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/T2.md"
+    },
+    {
+      "id": "4.1",
+      "stable_id": "R1",
+      "title": "Preserve safe typed run-binding diagnostics",
+      "specification": "Runtime classifies originating budget/accounting/inherited/team/client binding failures with typed safe stages/categories/references, maps S1 eligibility without raw error chains, retains ordinary/team public codes and AG-UI code/message fields, and preserves #384 settings. Deliver source and diagnostic guidance; deferred `binding` verifies safe public/log output and zero effects before refusal.",
+      "sequence": 9,
+      "owner": "uar-runtime",
+      "depends_on": [
+        "S1",
+        "T2"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/R1.md"
+    },
+    {
+      "id": "4.2",
+      "stable_id": "R2",
+      "title": "Require observed ordinary orchestration completion",
+      "specification": "Runtime requires observed orchestration completion before ordinary-manager success, preserving cancellation, joined cleanup, interrupted history, reservation ownership and existing graph/provider terminal guards. Deliver source and completion documentation; deferred `streams`/`combined` prove EOF failures and valid text/tool-loop controls.",
+      "sequence": 10,
+      "owner": "uar-runtime",
+      "depends_on": [
+        "R1"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/R2.md"
+    },
+    {
+      "id": "4.4",
+      "stable_id": "R4",
+      "title": "Complete typed MCP outcome scenarios",
+      "specification": "Runtime preserves the existing typed MCP production path and completes missing peer scenario support for true/false/omitted isError, protocol error, timeout and uncertain effects, native incidental fields and later independent recovery. Do not rewrite already-correct outcome code without an observed defect. Deliver scenario fixtures and truthful-tool-outcomes documentation; deferred `mcp-outcomes` proves contact counts, payload meaning and immutable receipts.",
+      "sequence": 11,
+      "owner": "uar-runtime",
+      "depends_on": [
+        "R2",
+        "R3"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/R4.md"
+    },
+    {
+      "id": "2.5",
+      "stable_id": "T4",
+      "title": "Author credential fixtures and cutover guidance",
+      "specification": "Trust authors the credential real-process and installed-image scenario adapters plus `principal-provider-credentials.md` cutover/rollback/preview guidance before the full-phase boundary. Include every T2 source seam, both migration sources, issuer/tenant/installation isolation, exact positive/negative grants and all backend cases. Delivered fixtures/docs establish implementation inventory only; run the phase `credentials` and `combined` groups through L3 at V2/P2.",
+      "sequence": 12,
+      "owner": "uar-trust-tools",
+      "depends_on": [
+        "T2",
+        "T3"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/T4.md"
+    },
+    {
+      "id": "3.3",
+      "stable_id": "S4",
+      "title": "Author durable recovery fixtures",
+      "specification": "State authors durable-upload, owner-isolated reupload/retrieval, restart/liability and bounded existing recovery proof fixtures plus installed-image adapters; actual Surreal/PostgreSQL and owned process/volume boundaries are mandatory where supported. Include legacy retention, other-owner denial, absent/replayed proof and missing-source documentation cases. Fixtures remain unexecuted until V2/P2 `recovery` and `combined`.",
+      "sequence": 13,
+      "owner": "uar-state",
+      "depends_on": [
+        "S2",
+        "T3"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/S4.md"
+    },
+    {
+      "id": "5.1",
+      "stable_id": "L2",
+      "title": "Integrate shared roots configuration version and release docs",
+      "specification": "Lead completes shared config/server/module-export and provider-admin/settings handoffs, operator examples, runtime Cargo package/lock version 1.1.1, and new `docs/releases/v1.1.1.md` setup/upgrade/compatibility text. Keep pins and existing workflow unchanged. Documentation source must be complete now; later observed receipt values are publication evidence. Deferred V2 exercises config/identity compatibility and production image version.",
+      "sequence": 14,
+      "owner": "uar-lead",
+      "depends_on": [
+        "S1",
+        "S2",
+        "T1",
+        "T2",
+        "T3",
+        "R1",
+        "R2",
+        "R3"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/L2.md"
+    },
+    {
+      "id": "4.5",
+      "stable_id": "R5",
+      "title": "Integrate runtime and combined production fixtures",
+      "specification": "Runtime authors and integrates the full-harness diagnostic/completion/framing and combined failed-MCP/incomplete-stream scenarios with R4/T4/S4 adapters and required operator docs. Include sanitized resolved-root/path/error skill-warning triage without speculative pack edits. Deliver complete fixtures/docs; acceptance remains deferred to all applicable L3 groups.",
+      "sequence": 15,
+      "owner": "uar-runtime",
+      "depends_on": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "T4",
+        "S4",
+        "L2"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/R5.md"
+    },
+    {
+      "id": "4.6",
+      "stable_id": "R6",
+      "title": "Complete confirmed issue385 follow-up",
+      "specification": "Implement safe per-call conservative-reservation refusal diagnostics and persisted bounded-agent startup warning; complete remote-Surreal upgrade and historical advisory guidance; author actual eligible16000 refusal/startup observations and truthful unsupported-memory source control. Preserve budgets and timeout inheritance; include complete issue385 coverage before L4.",
+      "sequence": 16,
+      "owner": "uar-lead",
+      "depends_on": [
+        "R1",
+        "R5",
+        "L2"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/R6.md"
+    },
+    {
+      "id": "5.2",
+      "stable_id": "L3",
+      "title": "Implement complete source and image acceptance runner",
+      "specification": "Lead authors the NEW `scripts/release/uar_1_1_1_acceptance.py` runner and manifest contract/templates specified in verification.md; integrate domain adapters covering every known phase scenario. Deliver six phase integration groups, serial source/candidate/published modes, isolation/cleanup, exact identity checks, blocked/failed/interrupted receipts, single-failed-group rerun support and usage docs. No invocation, import probe or packaging check occurs while implementation is incomplete.",
+      "sequence": 16,
+      "owner": "uar-lead",
+      "depends_on": [
+        "R5",
+        "T4",
+        "S4",
+        "L2",
+        "R6"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/L3.md"
+    },
+    {
+      "id": "5.3",
+      "stable_id": "L4",
+      "title": "Record full-phase implementation-complete inventory",
+      "specification": "Lead records an explicit implementation-complete inventory showing every L1–L3, R1–R5, T1–T4 and S1–S4 production/fixture/config/schema/doc deliverable present and all scope additions incorporated, with exact source/fixture identity and no uncertain implementation item. This is a source inventory, not a passed product gate. If any item is incomplete, leave the boundary closed and continue implementation.",
+      "sequence": 17,
+      "owner": "uar-lead",
+      "depends_on": [
+        "L1",
+        "S1",
+        "T1",
+        "R3",
+        "S3",
+        "S2",
+        "T3",
+        "T2",
+        "R1",
+        "R2",
+        "R4",
+        "T4",
+        "S4",
+        "L2",
+        "R5",
+        "L3"
+      ],
+      "status": "complete",
+      "kind": "implementation_inventory",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/L4.md"
+    },
+    {
+      "id": "6.1",
+      "stable_id": "V1",
+      "title": "Obtain isolated artifact review after complete implementation",
+      "specification": "After L4, obtain isolated artifact-only review under the repository team/review contract; reviewer receives artifacts/diff/requirements without generation history. Resolve findings and preserve the review receipt. The operator-selected real integration program follows this boundary; no routine schema or broad validation sweep is selected.",
+      "sequence": 18,
+      "owner": "uar-verifier",
+      "depends_on": [
+        "L4"
+      ],
+      "status": "complete",
+      "kind": "verification",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/V1.md"
+    },
+    {
+      "id": "6.2",
+      "stable_id": "V2",
+      "title": "Run serialized local source and candidate acceptance",
+      "specification": "After V1 dispositions, populate concrete private local manifest and run the exact local invocation in verification.md, including only phase-specific real integration cases, the production Dockerfile candidate build and all six installed-image groups. Record each command/observation/backend and blocked or failed cases. Repair failures coherently and rerun only affected gates; proceed only with complete passing required evidence bound to the frozen source/fixtures.",
+      "sequence": 19,
+      "owner": "uar-lead",
+      "depends_on": [
+        "V1"
+      ],
+    "resume_depends_on": [
+      "L9",
+      "L10"
+    ],
+    "status": "in_progress",
+      "kind": "verification",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/V2.md"
+    },
+    {
+      "id": "7.1",
+      "stable_id": "P1",
+      "title": "Publish immutable v1.1.1 source tag and images",
+      "specification": "With V1/V2 accepted, commit bounded source/docs/evidence and push the authorized source plus immutable annotated v1.1.1 tag. Use the existing deployment workflow to publish native-built arm64/amd64 images; record source/workflow commit/run, index and child digests. A successful workflow or tag alone does not satisfy release acceptance.",
+      "sequence": 20,
+      "owner": "uar-lead",
+      "depends_on": [
+        "V2"
+      ],
+      "status": "pending",
+      "kind": "publication",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/P1.md"
+    },
+    {
+      "id": "7.2",
+      "stable_id": "P2",
+      "title": "Run full acceptance on both published architecture images",
+      "specification": "Pull each published child by digest, populate observed arm64/amd64 manifests and run both exact phase integration invocations in verification.md locally and serially without rebuilding or patching UAR. Record native/emulated execution, fixture identity and each required group. Failure or missing evidence withholds success and never moves the tag.",
+      "sequence": 21,
+      "owner": "uar-lead",
+      "depends_on": [
+        "P1"
+      ],
+      "status": "pending",
+      "kind": "verification",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/P2.md"
+    },
+    {
+      "id": "7.3",
+      "stable_id": "P3",
+      "title": "Publish release receipts issue dispositions and reflection",
+      "specification": "Create/update the v1.1.1 GitHub Release with exact digests, complete setup/upgrade instructions and immutable accepted receipts; post criterion-specific evidence on #380/#385 and reconcile #379/#383 historical delivery while retaining #382 external dependencies. Separate actual customer recovery from isolated product repair, retain unverified criteria, and record publication/comment readbacks. Return the verified image reference only after P2 passes; append phase reflection/memory with plan-versus-delivery limits.",
+      "sequence": 22,
+      "owner": "uar-lead",
+      "depends_on": [
+        "P2"
+      ],
+      "status": "pending",
+      "kind": "publication",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/P3.md"
+    },
+    {
+      "id": "4.7",
+      "stable_id": "R7",
+      "title": "Resolve complete first-review repair cohort",
+      "specification": "Correct team fallback provider identity and disabled fallback authority, require real positive/negative controls, detect leaks on raw transient logs and bind published image children to actual successful workflow/source artifacts. Finish all four findings before a renewed inventory. No verification while repairs remain.",
+      "sequence": 18,
+      "owner": "uar-lead with exclusive runtime handoff",
+      "depends_on": [
+        "V1"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/R7.md"
+    },
+    {
+      "id": "5.4",
+      "stable_id": "L5",
+      "title": "Record renewed complete implementation inventory",
+      "specification": "Retain original L4 and round1 findings; record every original implementation item plus complete R7 repairs, all production/fixture/doc byte identities and no unresolved implementation item. Only then permit corrective artifact review and serial phase acceptance.",
+      "sequence": 19,
+      "owner": "uar-lead",
+      "depends_on": [
+        "R7"
+      ],
+      "status": "complete",
+      "kind": "boundary",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/L5.md"
+    },
+    {
+      "id": "4.8",
+      "stable_id": "R8",
+      "title": "Repair complete first real acceptance defect cohort",
+      "specification": "Correct runtime fixture public classifier import, fixture JWT initialization before signing with exact401 preflight, disposable backend HTTP-status readiness and stale timeout cause, and safe credential API state Debug. Preserve all production authority. Complete fixtures/docs before renewed L6; no checks during repair.",
+      "sequence": 26,
+      "owner": "uar-lead and exclusive trust fixture/API writer",
+      "depends_on": [
+        "V2"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/R8.md"
+    },
+    {
+      "id": "5.5",
+      "stable_id": "L6",
+      "title": "Record renewed whole-phase inventory after actual gate repairs",
+      "specification": "Record all19 authored implementation items including complete R8 and exact bytes. Preserve failed first receipt and missing genuine supervisor prerequisite. Rerun only affected gates after this boundary; all six first-run groups failed or blocked.",
+      "sequence": 27,
+      "owner": "uar-lead",
+      "depends_on": [
+        "R8"
+      ],
+      "status": "complete",
+      "kind": "boundary",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/L6.md"
+    },
+    {
+      "id": "4.9",
+      "stable_id": "R9",
+      "title": "Repair complete second acceptance cohort and isolated supervisor qualification prerequisites",
+      "specification": "Preserve terminal local-02 evidence. Resolve binding diagnostic assertion, stream interruption, native MCP stack overflow, memory auth500, Docker availability/owned cleanup and genuine isolated supervisor qualification setup. Complete production, fixtures, docs and Phase Exit revision integration before any further verification. No third artifact review or production mutation.",
+      "sequence": 28,
+      "owner": "uar-lead with exclusive runtime/trust/state writers",
+      "depends_on": [
+        "V2"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/R9.md"
+    },
+    {
+      "id": "5.6",
+      "stable_id": "L7",
+      "title": "Record renewed whole-phase inventory after complete R9 repairs and qualification setup",
+      "specification": "Preserve original inventories and failed receipts; derive item counts from current exact ledger and include every R9 source/fixture/doc/setup deliverable. Do not open verification with unresolved implementation or missing genuine qualification prerequisites. Only affected approved gates may follow.",
+      "sequence": 29,
+      "owner": "uar-lead",
+      "depends_on": [
+        "R9"
+      ],
+      "status": "complete",
+      "kind": "boundary",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/L7.md"
+    },
+    {
+      "id": "4.10",
+      "stable_id": "R10",
+      "title": "Repair complete observed native supervisor bootstrap cohort",
+      "specification": "Pin supervisor rustls backend for its PEM identity under actual native-TLS feature unification; correct documented/private timeout range and actual service-group permissions; preserve failed stores and stage a fresh disposable predecessor store. Finish all code/config/docs before renewed L8. No extra tests, dependency pins, TLS relaxation or new qualification matrix.",
+      "sequence": 30,
+      "owner": "uar-state supervisor writer; lead integration/config/records",
+      "depends_on": [
+        "V2"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/R10.md"
+    },
+    {
+      "id": "5.7",
+      "stable_id": "L8",
+      "title": "Record renewed whole-phase inventory after native bootstrap repair cohort",
+      "specification": "Derive all21 implementation IDs including complete R10, bind every code/config/fixture/doc byte and preserve all prior inventories and failed setup receipts. Native same-artifact physical qualification remains first before local retesting. No new review beyond exhausted cap.",
+      "sequence": 31,
+      "owner": "uar-lead",
+      "depends_on": [
+        "R10"
+      ],
+      "status": "complete",
+      "kind": "boundary",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/L8.md"
+    },
+    {
+      "id": "8.1",
+      "stable_id": "D1",
+      "title": "Reconcile urgent #385 blocker against terminal local04 evidence",
+      "specification": "Read every #385 criterion, terminal local04 binding/recovery/source-supplement receipt and current source. Record exact absent evidence, supported remote-Surreal/budget/KB/team operator guidance and actual customer recovery limit. No customer mutation or early check.",
+      "sequence": 32,
+      "owner": "uar-lead with read-only uar-runtime and uar-state inputs",
+      "depends_on": [
+        "L8"
+      ],
+      "status": "complete",
+      "kind": "planning",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/D1.md"
+    },
+    {
+      "id": "8.2",
+      "stable_id": "D2",
+      "title": "Reconcile Dot issues, supported profiles, team ownership and cadence",
+      "specification": "Map #386-#396 to actual #380/#385 scope and v1.1.1 advertised profiles; decide required release blockers versus successor phases with evidence and exact file owners. Preserve issue-sized 120-minute work checkpoints and soft weekly delivery target without treating time as gate permission.",
+      "sequence": 33,
+      "owner": "uar-lead with uar-core domain inputs",
+      "depends_on": [
+        "L8"
+      ],
+      "status": "complete",
+      "kind": "planning",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/D2.md"
+    },
+    {
+      "id": "8.3",
+      "stable_id": "R11",
+      "title": "Repair complete observed local04 and selected release-blocking cohort",
+      "specification": "After D1/D2 source triage, repair the #385 host event-history presentation bypass, trace the zero-MCP stream policy, repair only confirmed relay/Docker/cleanup and candidate image-provenance causes, and assign exclusive runtime/trust/state/lead files. No state or MCP product defect is inferred from containers that never started. Restrict both compiler REST aliases for remote or shared profiles, document that limit and author real two-principal denial acceptance; full owner-scoped compiler authoring remains open #387. Include only other Dot gaps confirmed in the shipped 1.1.1 profile. No verification during authoring.",
+      "sequence": 34,
+      "owner": "uar-lead with exclusive uar-runtime, uar-trust-tools and uar-state writers",
+      "depends_on": [
+        "D1",
+        "D2"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/R11.md"
+    },
+    {
+      "id": "8.4",
+      "stable_id": "L9",
+      "title": "Record renewed whole-phase inventory after local04 repair",
+      "specification": "Retain original inventories and failed receipts; bind all original and R11 production/fixture/config/migration/doc items with exact source and fixture identity. No uncertain implementation item may remain. Resume only affected approved V2 gates after this boundary.",
+      "sequence": 35,
+      "owner": "uar-lead",
+      "depends_on": [
+        "R11"
+      ],
+      "status": "complete",
+      "kind": "boundary",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/L9.md"
+    },
+    {
+      "id": "8.5",
+      "stable_id": "R12",
+      "title": "Repair complete observed local08 cohort",
+      "specification": "Address only the four terminal local08 observations: binding stream-open retry inheritance, owner-scoped legacy recovery fixture, restarted backend host-port readiness, and graph approval resolution in the streams fixture. Preserve production authorization and prior receipts; no test, check or build during implementation. Record source handoffs and the two early diff-check violations without acceptance credit.",
+      "sequence": 36,
+      "owner": "uar-lead with exclusive binding, recovery and streams uar-core source writers",
+      "depends_on": [
+        "R11"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/V2-local08-repair.md"
+    },
+    {
+      "id": "8.6",
+      "stable_id": "L10",
+      "title": "Record renewed whole-phase inventory after local08 repair",
+      "specification": "After R12 and every other phase implementation item, bind all production, fixture, configuration and required documentation bytes with exact source and fixture identity in a fresh whole-phase inventory. Preserve prior inventories and failed receipts. Present the completed inventory and exact proposed commands to the operator; a recorded inventory alone never opens verification.",
+      "sequence": 37,
+      "owner": "uar-lead",
+      "depends_on": [
+        "R12"
+      ],
+      "status": "complete",
+      "kind": "boundary",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/L10.md"
+    },
+    {
+      "id": "8.7",
+      "stable_id": "R13",
+      "title": "Classify local09 pre-build Docker network prerequisite",
+      "specification": "After the retained local09 binding failure, classify failed owned Docker network creation as blocked before image or scenario execution and skip cleanup of a network never created. Retain the prior failed receipt. Source-only uar-core audit of selected #385, #387 and local08 implementation finds and repairs only concrete missing code; no check, test, build or product probe during authoring.",
+      "sequence": 38,
+      "owner": "uar-lead with read-only uar-runtime, uar-trust-tools and uar-state source auditors",
+      "depends_on": [
+        "L10"
+      ],
+      "status": "complete",
+      "kind": "implementation",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/R13.md"
+    },
+    {
+      "id": "8.8",
+      "stable_id": "L11",
+      "title": "Renew whole-phase inventory after R13 code completion",
+      "specification": "After all current-phase production, fixture, configuration and documentation implementation is source complete, record exact new whole-phase source and fixture identity with no unresolved implementation row. Inventory is bookkeeping only; no check, test, build or gate without a new exact operator instruction.",
+      "sequence": 39,
+      "owner": "uar-lead",
+      "depends_on": [
+        "R13"
+      ],
+      "status": "pending",
+      "kind": "boundary",
+      "verification_allowed": false,
+      "handoff": "coordination/handoffs/L11.md"
+    }
+  ],
+  "ownership": "ownership.md",
+  "domain_packets": [
+    "planning/runtime.md",
+    "planning/trust.md",
+    "planning/state.md"
+  ],
+  "inventory_template": "implementation-inventory.template.json",
+  "dependency_semantics": "Source handoffs permit dependent authoring; original L4 and later inventories remain historical. Terminal local08 findings required R12/L10; local09 pre-build runner failure requires R13/L11. V2 history is preserved; affected resumption depends on L11 and a new explicit operator instruction for named commands. No time checkpoint, prior inventory or team handoff permits verification.",
+  "validation_scope": {
+    "authority": "operator Execute instruction 2026-10-16",
+    "groups": [
+      "binding",
+      "streams",
+      "mcp-outcomes",
+      "credentials",
+      "recovery",
+      "combined"
+    ],
+    "known_phase_real_integration_only": true,
+    "full_validation": false,
+    "boundary": "operator_lock_closed_pending_L11_and_new_named_instruction",
+    "order": [
+      "preserve retained native qualification, fresh staging and terminal local04 receipt",
+      "D1 urgent #385 and D2 Dot supported-scope source reconciliation",
+      "R11/L9 and R12/L10 retained as historical completed work; R13 complete local09 pre-build runner repair; L11 renewed whole-phase inventory pending",
+      "present L11 inventory and exact proposed gate commands to operator; wait for a new explicit instruction",
+      "affected six-group local program and four exact real-source supplements",
+      "authorized publication after all required local gates pass",
+      "both full published child-image programs",
+      "release and issue receipts"
+    ]
+  },
+  "latest_inventory": "implementation-inventory-20261017-14.json",
+  "current_repair": "R13_source_authored_L11_inventory_pending_operator_gate_closed",
+  "latest_inventory_status": "inventory14_superseded_by_R13_source_edit",
+  "phase_exit_disposition": {
+    "recorded_at": "2026-10-16T22:19:03.568Z",
+    "authority": "operator: Stop Phase Exit development and finish UAR v1.1.1 directly",
+    "status": "development_stopped_not_a_release_prerequisite",
+    "retained_revision3": "operator approved; not CLI-adopted",
+    "lessons": "phase-exit/docs/research/uar-first-example-lessons-20261016.md"
+  }
+}

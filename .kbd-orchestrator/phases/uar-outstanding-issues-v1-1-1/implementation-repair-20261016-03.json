@@ -1,0 +1,16 @@
+{
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "boundary": "closed",
+  "implementation_complete": false,
+  "recorded_at": "2026-10-16T11:57:21.417476+00:00",
+  "reason": "Complete first real acceptance defect cohort before any further verification",
+  "parent_receipt": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/acceptance/20261016-local-01/receipt.json",
+  "observations": [
+    "Production image built with one missing-Debug warning at credential API state",
+    "Both runtime native groups fail E0603 private ClassifierConfig import before any scenario",
+    "SDK native scenario executes then fails JWT ProviderConflict due fixture signing before guarded provider initialization",
+    "All three real Surreal containers start successfully; streams/recovery/combined block in host readiness predicate"
+  ],
+  "scope": "Repair fixtures and safe Debug only; do not weaken production credential, budget, durability or supervisor boundaries",
+  "no_verification_until": "R8 complete and renewed L6 inventory"
+}

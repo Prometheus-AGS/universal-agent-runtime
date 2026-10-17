@@ -194,6 +194,8 @@ impl EmbeddedRuntime {
 #[derive(Default)]
 pub struct EmbeddedRuntimeBuilder {
     llm_config: Option<LlmConfig>,
+    credential_policy: Option<Arc<crate::uar::security::credentials::CredentialTenancyPolicy>>,
+    provider_service: Option<Arc<crate::uar::security::credentials::ProviderService>>,
     driver: Option<Arc<dyn LlmDriver>>,
     provider: Option<ProviderConfig>,
     persistence: Option<Arc<dyn PersistenceLayer>>,
@@ -243,6 +245,20 @@ impl EmbeddedRuntimeBuilder {
     #[must_use]
     pub fn llm_config(mut self, config: LlmConfig) -> Self {
         self.llm_config = Some(config);
+        self
+    }
+
+    /// Install operator credential policy independently of encrypted storage.
+    #[must_use]
+    pub fn credential_policy(mut self, policy: Arc<crate::uar::security::credentials::CredentialTenancyPolicy>) -> Self {
+        self.credential_policy = Some(policy);
+        self
+    }
+
+    /// Attach the host's encrypted credential service; this does not grant fallback.
+    #[must_use]
+    pub fn provider_service(mut self, service: Arc<crate::uar::security::credentials::ProviderService>) -> Self {
+        self.provider_service = Some(service);
         self
     }
 
@@ -441,8 +457,10 @@ impl EmbeddedRuntimeBuilder {
             Arc::clone(&driver),
         ));
 
-        let run_manager = Arc::new(
-            RunManager::new(
+        let credential_policy = self.credential_policy.unwrap_or_else(|| Arc::new(
+            crate::uar::security::credentials::CredentialTenancyPolicy::default(),
+        ));
+        let mut manager = RunManager::new(
                 llm_config.clone(),
                 Arc::clone(&mcp),
                 sessions,
@@ -453,14 +471,18 @@ impl EmbeddedRuntimeBuilder {
             .await
             .with_agent_graph(crate::uar::defaults::orchestrator_graph())
             .with_llm_driver(driver)
+            .with_credential_policy(credential_policy)
             .with_skill_service(Arc::clone(&skill_service))
             .with_provider_registry(Arc::clone(&provider_registry))
             .with_native_skills(Arc::clone(&native_skills))
             .with_a2ui_backbone(Arc::clone(&a2ui_backbone))
             .with_governance_engine(governance)
             .with_host_tool_admission(host_tool_admission)
-            .with_settings_manager(Arc::clone(&settings_manager)),
-        );
+            .with_settings_manager(Arc::clone(&settings_manager));
+        if let Some(service) = self.provider_service {
+            manager = manager.with_provider_service(service);
+        }
+        let run_manager = Arc::new(manager);
 
         Ok(EmbeddedRuntime {
             llm_config: Arc::new(llm_config),

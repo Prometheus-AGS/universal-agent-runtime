@@ -67,6 +67,33 @@ pub struct AttachmentMeta {
 #[derive(Debug)]
 pub struct PostgresProvider;
 
+/// Store eligibility captured by the trusted host when it constructs a provider.
+///
+/// This intentionally contains no endpoint, namespace, credential, or mutable
+/// configuration. Callers project it onto their own admission diagnostics.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DurableStoreEligibility {
+    LocalDurable,
+    RemoteAttested,
+    RemoteNotAttested,
+    UnsupportedBackend,
+}
+
+impl DurableStoreEligibility {
+    pub(crate) const fn as_str(self) -> &'static str {
+        match self {
+            Self::LocalDurable => "local_durable",
+            Self::RemoteAttested => "remote_attested",
+            Self::RemoteNotAttested => "remote_not_attested",
+            Self::UnsupportedBackend => "unsupported_backend",
+        }
+    }
+
+    pub(crate) const fn permits_durable_work(self) -> bool {
+        matches!(self, Self::LocalDurable | Self::RemoteAttested)
+    }
+}
+
 #[async_trait]
 pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     fn supports_durable_mcp_elicitations(&self) -> bool { false }
@@ -92,6 +119,10 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     async fn get_accounting_delegation(&self, _digest: &str) -> Result<Option<accounting::AccountingCall>> { Err(accounting::AccountingError::Unsupported.into()) }
     /// Durable accounting is a host capability, not an in-memory fallback.
     fn supports_durable_accounting(&self) -> bool { false }
+    /// Captured backing-store eligibility for admission and durable-work gates.
+    fn durable_store_eligibility(&self) -> DurableStoreEligibility {
+        DurableStoreEligibility::UnsupportedBackend
+    }
     async fn admit_remote_grant(&self, _owner: &str, _accounting_id: &str,
         _grant: &crate::uar::api::a2a::contract::UarUsageGrant,
         _activity: accounting::RemoteGrantActivity) -> Result<accounting::RemoteGrantState> {

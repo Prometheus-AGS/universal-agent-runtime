@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "docker",
+    "network",
+    "create",
+    "uar111-network-bbeefe34e1"
+  ],
+  "cwd": "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
+  "started_at": 1792257014.9262972,
+  "status": "failed",
+  "exit_code": 1,
+  "finished_at": 1792257015.1221209
+}

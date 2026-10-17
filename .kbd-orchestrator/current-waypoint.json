@@ -2,10 +2,11 @@
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 2919,
-  "derivedRevision": 2919,
+  "sourceRevision": 3054,
+  "derivedRevision": 3054,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2515,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 2626,
+    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 24,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -22,29 +23,29 @@
   "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
   "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
   "path": [
-    "uar-1-1-0-kubo-conformance"
+    "uar-outstanding-issues-v1-1-1"
   ],
   "phaseIds": [
-    "uar-1-1-0-kubo-conformance"
+    "uar-outstanding-issues-v1-1-1"
   ],
-  "activePhaseId": "uar-1-1-0-kubo-conformance",
-  "activePhase": "uar-1-1-0-kubo-conformance",
-  "phase": "uar-1-1-0-kubo-conformance",
+  "activePhaseId": "uar-outstanding-issues-v1-1-1",
+  "activePhase": "uar-outstanding-issues-v1-1-1",
+  "phase": "uar-outstanding-issues-v1-1-1",
   "parentPhase": null,
   "childPointer": null,
-  "change": null,
-  "currentTask": null,
+  "change": "uar-outstanding-issues-v1-1-1",
+  "currentTask": "6.2",
   "status": "ready",
   "lifecycle": "ready",
-  "stageId": "reflect",
-  "stageStatus": "COMPLETE",
+  "stageId": "execute",
+  "stageStatus": "IN_PROGRESS",
   "completionMetric": "implementation",
   "implementationCompleted": 137,
-  "implementationTotal": 150,
-  "planRevision": 60,
-  "revision": 2919,
-  "exactNextCommand": "UAR v1.1.0 release complete. Return OG-4 with verified GHCR digest and Release link. No next development phase authorized; immutable tag must not move.",
-  "nextChange": null,
-  "nextTask": null,
-  "updatedAt": "2026-10-15T19:00:48.340326Z"
+  "implementationTotal": 151,
+  "planRevision": 63,
+  "revision": 3054,
+  "exactNextCommand": "R11 next: repair #385 host event-history refusal bypass first; trace zero-MCP stream policy and relay/Docker/image causes; restrict both #387 compiler REST aliases for remote/shared profiles with real acceptance adapter. Finish all selected production/fixture/config/docs work, then L9 whole-phase inventory before affected V2 gates.",
+  "nextChange": "uar-outstanding-issues-v1-1-1",
+  "nextTask": "6.2",
+  "updatedAt": "2026-10-17T17:51:56.497823Z"
 }

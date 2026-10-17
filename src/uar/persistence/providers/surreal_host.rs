@@ -1,5 +1,5 @@
 //! Trusted embedded-host composition. Not an HTTP-configurable durability assertion.
-use super::{SurrealDbProvider, Any, Surreal};
+use super::{DurableStoreEligibility, SurrealDbProvider, Any, Surreal};
 use anyhow::Result;
 
 #[derive(Debug, Clone, Copy)]
@@ -12,6 +12,7 @@ impl SurrealDbProvider {
     pub async fn from_existing_client(db: Surreal<Any>, backend: HostSurrealBackend) -> Result<Self> {
         migrate(&db).await?;
         Ok(Self { db, durable_instances: true,
+            durable_store_eligibility: DurableStoreEligibility::LocalDurable,
             catalog_storage_backend: match backend { HostSurrealBackend::RocksDb => "rocksdb", HostSurrealBackend::SurrealKv => "surrealkv" },
             remote_requires_durability_attestation: false })
     }
@@ -25,6 +26,12 @@ pub(super) async fn migrate(db: &Surreal<Any>) -> Result<()> {
 
     db.query(include_str!(
         "../../../../migrations/surrealdb/principal_credentials.surql"
+    ))
+    .await?
+    .check()?;
+
+    db.query(include_str!(
+        "../../../../migrations/surrealdb/credential_revisions.surql"
     ))
     .await?
     .check()?;

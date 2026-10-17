@@ -19,6 +19,8 @@ target/
 # Build artifacts
 **/dist
 **/.turbo
+**/__pycache__/
+**/*.pyc
 build/
 coverage/
 
@@ -72,6 +74,8 @@ openspec/
 .agent/
 .cursor/
 .codex/
+.kbd-orchestrator/
+.prometheus/
 .kilocode/
 .opencode/
 .roo/
