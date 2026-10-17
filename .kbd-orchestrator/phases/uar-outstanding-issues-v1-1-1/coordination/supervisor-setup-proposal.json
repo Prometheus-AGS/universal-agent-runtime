@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "candidate_configuration": "/Users/gqadonis/.local/state/uar-v1.1.1/uar-1.1.1-lima-candidate.yaml",
+  "sha256": "sha256:432d844b4bfd4df05e87cafcf15d1dc5b815c1a3939c150f57276670d1616078",
+  "capacity": {
+    "cpus": 4,
+    "memory_gib": 8,
+    "virtual_disk_gib": 24
+  },
+  "guest_created": true,
+  "guest_booted": true,
+  "qualification": false,
+  "approval": {
+    "operator": "gqadonis",
+    "authorization": "Approve dedicated guest setup and guest-only reboots",
+    "scope": "disposable local Linux ARM64 guest, independent controller/journal/TLS, guest-only reboots for real containment/reclaim proof",
+    "excludes": [
+      "macOS host reboot",
+      "know-me production mutation",
+      "LKE node inhibition",
+      "paid infrastructure"
+    ]
+  },
+  "runtime_started": false,
+  "current_setup_receipt": "../evidence/supervisor-guest-setup-20261016.json",
+  "note": "Administrative guest/controller setup only. No runtime startup, controller probe, guest reboot or qualification claim."
+}

@@ -1,0 +1,24 @@
+{
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "version": "1.1.1",
+  "status": "failed",
+  "started_at": 1792257014.9258082,
+  "source_commit": "91a091d647fe2ce63651c07140172aba2c6c6302",
+  "source_tree": "sha256:6d3b80446df3db3d21ae403a7f70a0f39174dc5f4d398d1dec50ec2d476f06f8",
+  "fixture_tree": "sha256:3297d4a60bb39968b468ffac7be0b1495c3dd6def42420056fc581072724ae87",
+  "stage": "local",
+  "image": "uar-phase:1.1.1-rc20261017-07",
+  "platform": "linux/arm64",
+  "index_digest": null,
+  "repair_parent": {
+    "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/acceptance/20261017-local-08-binding/receipt.json",
+    "digest": "sha256:bf5be389034a8a9cbcc6af18693381536ee4f0dfb40d188748a43ae9f03b1031"
+  },
+  "repair_source_change": "Inventory13 binds R12 local08 source and fixture repairs: selected-model stream-open retry cap, owner-scoped legacy recovery snapshot, refreshed Docker host-port readiness, and explicit owner graph approval. Prior local08 receipt remains failed or blocked; this command seeks new evidence only.",
+  "groups": {},
+  "execution_mode": null,
+  "error": "command failed (1), see /Volumes/T7/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/acceptance/20261017-local-09-binding/command-00001.json",
+  "cleanup_error": "owned resource cleanup incomplete: network_cleanup_failed",
+  "finished_at": 1792257015.1530612,
+  "exit_code": 1
+}

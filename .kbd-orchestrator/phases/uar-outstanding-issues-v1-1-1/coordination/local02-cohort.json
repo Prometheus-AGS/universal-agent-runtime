@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "cohort": "R9",
+  "boundary": "closed",
+  "origin": {
+    "receipt": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/acceptance/20261016-local-02/receipt.json",
+    "sha256": "sha256:7825a4d58daebd39e7245953c8b96dba632eee563a689b054237aa4fda7bbdbd",
+    "runner_session": "83623",
+    "state": "terminal",
+    "exit_code": 1
+  },
+  "observed_groups": {
+    "binding": {
+      "status": "failed",
+      "error": "command failed (101), see /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/acceptance/20261016-local-02/command-00005.json",
+      "started_at": 1792153318.6727092,
+      "finished_at": 1792153722.8747241
+    },
+    "streams": {
+      "status": "failed",
+      "error": "IncompleteRead(2568 bytes read)",
+      "started_at": 1792153722.8755698,
+      "finished_at": 1792161428.2297611
+    },
+    "mcp-outcomes": {
+      "status": "failed",
+      "error": "command failed (101), see /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/acceptance/20261016-local-02/command-00017.json",
+      "started_at": 1792161428.231175,
+      "finished_at": 1792161438.200162
+    },
+    "credentials": {
+      "status": "failed",
+      "error": "command failed (101), see /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/acceptance/20261016-local-02/command-00019.json",
+      "started_at": 1792161438.2004428,
+      "finished_at": 1792161459.266154
+    },
+    "recovery": {
+      "status": "failed",
+      "error": "command failed (1), see /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/acceptance/20261016-local-02/command-00020.json",
+      "started_at": 1792161459.267633,
+      "finished_at": 1792161459.379974
+    },
+    "combined": {
+      "status": "failed",
+      "error": "command failed (1), see /Users/gqadonis/Projects/prometheus/universal-agent-runtime/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/acceptance/20261016-local-02/command-00021.json",
+      "started_at": 1792161459.380387,
+      "finished_at": 1792161459.626262
+    }
+  },
+  "cleanup_error": "owned resource cleanup incomplete: volume_cleanup_failed,volume_cleanup_failed,network_cleanup_failed",
+  "repairs": [
+    {
+      "id": "binding-diagnostic-projection",
+      "owner": "uar-runtime",
+      "status": "authored_terminal_only_projection_unverified",
+      "gate": "binding"
+    },
+    {
+      "id": "agui-replay-and-total-stream-deadline",
+      "owner": "uar-runtime and lead",
+      "status": "authored_unverified",
+      "gate": "streams"
+    },
+    {
+      "id": "native-tool-stack-overflow",
+      "owner": "uar-runtime",
+      "status": "authored_heap_indirection_mitigation_exact_frame_unverified",
+      "gate": "mcp-outcomes"
+    },
+    {
+      "id": "memory-verifier-initialization",
+      "owner": "uar-trust-tools",
+      "status": "authored_unverified",
+      "gate": "credentials"
+    },
+    {
+      "id": "daemon-loss-and-owned-cleanup",
+      "owner": "lead",
+      "status": "host_cause_retained_cleanup_authored",
+      "gates": [
+        "recovery",
+        "combined"
+      ]
+    },
+    {
+      "id": "genuine-isolated-supervisor",
+      "owner": "uar-state and operator",
+      "status": "concrete_guest_configuration_prepared_operator_authorization_pending",
+      "gate": "recovery"
+    },
+    {
+      "id": "phase-exit-current-inventory",
+      "owner": "phase-exit team",
+      "status": "source_authored_distributables_deferred",
+      "gate": "real-uar-import"
+    }
+  ],
+  "passing_native_supplement": {
+    "command": "command-00018",
+    "status": "historical_pass_preserved",
+    "carry_forward": "Requires explicit dependency/artifact justification; no current phase pass inferred."
+  },
+  "next": "Complete cohort and isolated setup before renewed L7. No verification or publication authorized.",
+  "review_cap": "two rounds exhausted; no third review",
+  "implementation_complete": false,
+  "renewed_inventory": "not_recorded_qualification_setup_incomplete"
+}

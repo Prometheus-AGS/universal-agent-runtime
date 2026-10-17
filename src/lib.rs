@@ -88,8 +88,8 @@ pub struct AppState {
     /// MCP server registry for tool discovery and execution.
     #[allow(dead_code)]
     pub mcp: Arc<McpRegistry>,
-    /// LLM orchestrator for the optional response-quality correction pass.
-    /// A supervised sidecar can start before its host configures a provider.
+    /// Compatibility slot for a startup orchestrator. Correction clients are
+    /// authorized for the requesting principal when used; startup leaves this unset.
     #[cfg(feature = "response-quality")]
     pub orchestrator: Option<Arc<Orchestrator>>,
     /// Session store for conversation management.
@@ -124,8 +124,9 @@ pub struct AppState {
     pub governance_engine: Arc<GovernanceEngine>,
     /// API key service for PAT-based authentication
     pub api_key_service: Option<Arc<ApiKeyService>>,
-    /// Multi-tenant provider credential service (per-user encrypted keys).
-    /// `None` ⇒ single-tenant: provider keys come from env/config only.
+    /// Host-owned credential policy remains active without encrypted storage.
+    pub credential_policy: Arc<uar::security::credentials::CredentialTenancyPolicy>,
+    /// Optional encrypted provider credential service.
     pub provider_service: Option<Arc<uar::security::credentials::ProviderService>>,
     /// Memory service backed by surreal-memory + SurrealDB/SurrealKV (None if memory.enabled=false).
     pub memory_service: Option<Arc<MemoryService>>,

@@ -241,6 +241,9 @@ impl CredentialPrincipal {
             self.issuer.len(), self.issuer, tenant, self.subject.len(), self.subject)
     }
 
+    /// Authentication kind captured at ingress; retained across delegation.
+    pub fn issuer_kind(&self) -> &str { self.issuer_kind }
+
     /// Verified issuer, including the explicit local authentication namespace.
     pub fn issuer(&self) -> &str { &self.issuer }
 

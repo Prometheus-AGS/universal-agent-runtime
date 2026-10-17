@@ -21,6 +21,15 @@ server:
   cors_allowed_origins: []
 
 security:
+  # Credential authority is independent of encrypted key storage.
+  # Keep single_owner for an operator-owned deployment; shared requires verified
+  # external issuer + tenant + subject and exact system/config fallback grants.
+  provider_credentials:
+    mode: single_owner
+    # Provision once and back up for local/issuerless credential ownership.
+    # installation_id: "<canonical-installation-uuid>"
+    shared_fallbacks: []
+    # principal_mapping_file: "/operator/approved-local-credential-mappings.json"
   # Explicit identity profile: trusted_local preserves local launch semantics.
   # Remote admission requires JWT, issuer, audience, allowed algorithm,
   # not-before validation and exact operator-owned workspace mappings.

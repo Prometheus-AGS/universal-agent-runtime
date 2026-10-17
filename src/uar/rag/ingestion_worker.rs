@@ -417,8 +417,9 @@ impl IngestionWorkerPool {
 
     /// Called once by the trusted server after wrapping this pool in an Arc.
     pub fn start_durable_dispatch(self: &Arc<Self>) {
-        if !self.persistence.supports_durable_ingestion() {
-            warn!("Durable ingestion dispatcher disabled: storage does not support durable uploads");
+        let eligibility = self.persistence.durable_store_eligibility();
+        if !eligibility.permits_durable_work() || !self.persistence.supports_durable_ingestion() {
+            warn!(durable_store_eligibility = eligibility.as_str(), "Durable ingestion dispatcher disabled: storage does not support durable uploads");
             return;
         }
         let receiver = match self.completed.lock() {

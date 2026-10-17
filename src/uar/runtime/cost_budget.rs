@@ -1432,6 +1432,16 @@ impl ModelCallBudget {
     pub(crate) async fn with_durable_accounting(mut self, store: Option<Arc<dyn PersistenceLayer>>,
         owner: Option<&crate::uar::runtime::actor::messages::ActorOwner>) -> anyhow::Result<Self> {
         let store = store.ok_or(AccountingError::Unsupported)?;
+        match store.durable_store_eligibility() {
+            crate::uar::persistence::DurableStoreEligibility::RemoteNotAttested => {
+                anyhow::bail!("remote_surreal_durability_not_attested");
+            }
+            crate::uar::persistence::DurableStoreEligibility::UnsupportedBackend => {
+                anyhow::bail!("durable_storage_unsupported");
+            }
+            crate::uar::persistence::DurableStoreEligibility::LocalDurable
+            | crate::uar::persistence::DurableStoreEligibility::RemoteAttested => {}
+        }
         anyhow::ensure!(store.supports_durable_accounting(), "durable_accounting_unsupported");
         let owner = owner.and_then(|owner| owner.credential_principal())
             .ok_or_else(|| anyhow::anyhow!("accounting_verified_principal_required"))?.storage_key();
@@ -1510,7 +1520,27 @@ impl ModelCallBudget {
             call_id: uuid::Uuid::new_v4().to_string(), attempt: 1 };
         durable.store.admit_accounting_call(&CallAdmission { identity: identity.clone(), model: model.into(),
             scopes: durable.scopes.clone(), reserved_cost_usd: cost, reserved_tokens: tokens,
-            source_reservation: durable.source_reservation.clone() }).await?;
+            source_reservation: durable.source_reservation.clone() }).await.map_err(|error| {
+                // Only this closed, field-free error enum may supply a cause.
+                // Provider/storage error chains and request content stay private.
+                let cause = error.downcast_ref::<AccountingError>()
+                    .map(ToString::to_string)
+                    .unwrap_or_else(|| "accounting_admission_unavailable".to_owned());
+                let reference = uuid::Uuid::new_v4();
+                tracing::error!(
+                    run_id = %self.usage_id,
+                    stage = "model_call_admission",
+                    category = BudgetFailureOrigin::Admission.category(),
+                    cause,
+                    diagnostic_reference = %reference,
+                    reservation_source = if request.budget_contract.is_some() { "final_wire_contract" } else { "catalog_context_and_output" },
+                    reserved_tokens = ?tokens,
+                    configured_turn_token_limit = ?self.limits.max_tokens_per_turn,
+                    configured_session_token_limit = ?self.limits.max_tokens_per_session,
+                    "Model call budget admission refused"
+                );
+                error
+            })?;
         Ok(Some(DurableCall { store: durable.store.clone(), identity }))
     }
 

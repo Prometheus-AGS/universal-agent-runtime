@@ -62,6 +62,7 @@ fn integration_runtime() -> tokio::runtime::Runtime {
 
 fn security() -> SecurityConfig {
     SecurityConfig {
+        provider_credentials: Default::default(),
         deployment_profile: Default::default(),
         jwt_algorithm: None,
         workspace_authorities: Vec::new(),

@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "task": "uar-outstanding-issues-v1-1-1",
+  "round": 2,
+  "scope": "V1-01 through V1-04 and repair regressions; one corrective artifact-only review",
+  "verdict": "PASS",
+  "verdict_qualifier": "Static corrective review with limits; no runtime or release certification",
+  "counts": {
+    "CRITICAL": 0,
+    "WARNING": 0,
+    "SUGGESTION": 0
+  },
+  "findings": [],
+  "isolation": {
+    "producer_model": "unknown",
+    "producer_identity_status": "Canonical primary producer identity unavailable; packet lists team authors configured as gpt-6-astra and gpt-5.6-terra. Those labels do not establish canonical producer identity.",
+    "judge": "Native Codex uar-verifier /root/artifact_critic_v1_1_1_round2; role configuration identifies gpt-6-astra. No external gateway identity attestation.",
+    "method": "Fresh context containing final packet, mandate, standing instructions and actual source/requirements. No producer conversation or author handoffs read.",
+    "strength": "Weaker native fallback; same-family overlap is possible and distinct-family separation is not proven.",
+    "dispatcher_status": "Packet reports prior JUDGE_MODEL_COLLISION. Dispatcher was not retried in this corrective review."
+  },
+  "source_identity": {
+    "head": "91a091d647fe2ce63651c07140172aba2c6c6302",
+    "head_observed": true,
+    "packet_source_tree": "sha256:bc7c11d9107b6994187aaea33a1239290cb0b888a2c4716ca4460f40a15019ac",
+    "packet_fixture_tree": "sha256:998e3aac7ea03f9d00a81c4f046bdd940e16e496eed0c87598419d435a1a1d07",
+    "tree_identity_limit": "Packet tree digests were not recomputed by importing or executing the acceptance program. Inspected file hashes are recorded in receipt.md."
+  },
+  "corrections": [
+    {
+      "id": "V1-01",
+      "prior_severity": "CRITICAL",
+      "status": "corrected_in_source",
+      "evidence": [
+        "src/uar/runtime/turn/bindings.rs:316",
+        "src/uar/runtime/turn/bindings.rs:317",
+        "src/uar/runtime/turn/bindings.rs:319",
+        "src/llm/orchestrator.rs:1549",
+        "src/uar/runtime/manager.rs:5371",
+        "scripts/release/uar_1_1_1_runtime.py:632",
+        "scripts/release/uar_1_1_1_runtime.py:692",
+        "scripts/release/uar_1_1_1_runtime.py:707",
+        "scripts/release/uar_1_1_1_runtime.py:718"
+      ],
+      "mechanism": "The team fallback uses fallback_llm_config, replacing the primary model/key/base URL and clearing the inherited resolved provider. It then sets resolved_provider_id from the captured endpoint profile before the existing exact credential-decision equality check. Thus the prior primary-provider versus fallback-decision mismatch is removed without deleting that check.",
+      "falsifying_observation": "The former source counterexample required the primary resolved provider at apply_credential_decision. Line 317 now supplies the fallback profile provider. New team fixtures specify openai primary and azure fallback, deny or grant the fallback independently, force primary HTTP 503, and assert terminal outcome, exact contact counts/order and admitted endpoint/model.",
+      "requirement": "openspec/changes/uar-outstanding-issues-v1-1-1/specs/tenant-isolation/spec.md:74",
+      "limit": "Fixture and production path were inspected, not executed; successful distinct-provider team fallback remains unverified."
+    },
+    {
+      "id": "V1-02",
+      "prior_severity": "WARNING",
+      "status": "corrected_in_source",
+      "evidence": [
+        "src/uar/runtime/manager.rs:5365",
+        "src/uar/runtime/manager.rs:5367",
+        "src/uar/runtime/turn/bindings.rs:292",
+        "scripts/release/uar_1_1_1_runtime.py:515",
+        "scripts/release/uar_1_1_1_runtime.py:524",
+        "scripts/release/uar_1_1_1_runtime.py:529"
+      ],
+      "mechanism": "Disabled failover returns an empty decision map before resolving any fallback credential. Capture also skips fallback construction when disabled. Enabled fallbacks still resolve exact source authority and propagate denial.",
+      "falsifying_observation": "The prior disabled-but-populated list no longer reaches resolve_credential_binding. The disabled-denied-inert fixture retains an ungranted fallback and expects one primary call, no fallback call and success; enabled denial expects no provider calls.",
+      "requirement": "openspec/changes/uar-outstanding-issues-v1-1-1/specs/tenant-isolation/spec.md:63",
+      "limit": "The primary success and enabled refusal assertions have not run."
+    },
+    {
+      "id": "V1-03",
+      "prior_severity": "WARNING",
+      "status": "corrected_in_source",
+      "evidence": [
+        "scripts/release/uar_1_1_1_support.py:169",
+        "scripts/release/uar_1_1_1_support.py:174",
+        "scripts/release/uar_1_1_1_support.py:258",
+        "scripts/release/uar_1_1_1_support.py:264",
+        "scripts/release/uar_1_1_1_runtime.py:314",
+        "scripts/release/uar_1_1_1_runtime.py:435",
+        "scripts/release/uar_1_1_1_runtime.py:724"
+      ],
+      "mechanism": "Leak assertions explicitly request redact=False. run_command persists a redacted transcript but returns the original captured process result, so logs(redact=False) exposes raw output only in memory. Assertions retain a boolean and fixed error text, not the raw log.",
+      "falsifying_observation": "A raw log containing runtime-fixture-key now makes raw_log_secret_absent false before redaction. Both prior refusal assertions and the added team assertion use this path.",
+      "requirement": "openspec/changes/uar-outstanding-issues-v1-1-1/specs/provider-diagnostic-status/spec.md:22",
+      "limit": "No leaking or safe runtime was executed. This closes the identified fixture blind spot; it does not prove absence of arbitrary secrets or forbidden diagnostic fields."
+    },
+    {
+      "id": "V1-04",
+      "prior_severity": "WARNING",
+      "status": "corrected_in_source",
+      "evidence": [
+        "scripts/release/uar_1_1_1_acceptance.py:82",
+        "scripts/release/uar_1_1_1_acceptance.py:109",
+        "scripts/release/uar_1_1_1_acceptance.py:114",
+        "scripts/release/uar_1_1_1_acceptance.py:122",
+        "scripts/release/uar_1_1_1_acceptance.py:138",
+        "scripts/release/uar_1_1_1_acceptance.py:153",
+        "scripts/release/uar_1_1_1_acceptance.py:163",
+        "scripts/release/uar_1_1_1_manifest.schema.json:138",
+        "docs/operations/uar-1.1.1-acceptance.md:98",
+        ".github/workflows/deploy.yml:102"
+      ],
+      "mechanism": "Published inspection now requires a hash-bound publication receipt. It checks the remote annotated tag commit, completed successful push run for deploy.yml at the same source and attempt, both selected run artifact IDs and downloaded digest filenames, the selected child, both index children and the actual image OS/architecture. The existing deployment workflow exports those digest filenames; no workflow change is part of this review.",
+      "falsifying_observation": "Substituting a different source image while retaining the expected receipt now fails selected-child equality, actual workflow digest-export equality, or exact index-child equality. Merely matching the local tag no longer satisfies published provenance.",
+      "requirement": "openspec/changes/uar-outstanding-issues-v1-1-1/specs/kubo-runtime-conformance/spec.md:5",
+      "limit": "No GitHub API, artifact download, registry pull or published gate was executed. Actual publication receipt, immutable release identity and architecture acceptance remain pending; missing/expired exports deny acceptance."
+    }
+  ],
+  "interface_effects": [
+    "Runtime fallback identity and disabled failover handling change internally; the reviewed edits preserve the existing exact credential checks and public refusal contracts.",
+    "RuntimeLease.logs adds keyword-only redact with safe default true; selected negative controls opt into raw in-memory inspection.",
+    "Published acceptance manifests now require publication_receipt and actual GitHub publishing artifacts; local candidate manifests retain their existing path."
+  ],
+  "verification": {
+    "kind": "Static source/data-flow review and read-only identity receipts only",
+    "product_commands_run": [],
+    "runtime_evidence": "None supplied or executed",
+    "sycophancy_evidence": "sycophancy.json"
+  },
+  "limits": [
+    "Runtime certification is withheld. No tests, builds, imports, compiler probes, validators, lint, formatting, or acceptance execution were performed.",
+    "Qualified isolated supervisor inputs remain externally missing per the mandate; this blocks runtime acceptance and is not a source failure.",
+    "Candidate and published arm64/amd64 acceptance, successful cold recovery, customer recovery and release provenance are unverified.",
+    "Compass graph_stats reported 71048 nodes and 126259 edges. Repository map records stale Rust-only provenance, vendor duplication and parse failures; current source governs this review. The graph does not establish current runtime behavior.",
+    "The review cap is reached: one initial review plus this corrective round. No further corrective review was started.",
+    "The uncomfortable case is that corrected source and unexecuted fixtures can still fail compilation, real provider/store interaction, or GitHub artifact retrieval. PASS here cannot be used as product acceptance."
+  ],
+  "unrequested_changes": "None; only the assigned findings, receipt and screening evidence are written. No production guard or speculative hardening was added."
+}

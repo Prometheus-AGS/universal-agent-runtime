@@ -1,0 +1,19 @@
+{
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "boundary": "closed",
+  "implementation_complete": false,
+  "supersedes": "implementation-inventory-20261016-01.json",
+  "reason": "Independent V1 review found one critical and three warnings requiring cohesive source/fixture/provenance correction",
+  "findings": [
+    "V1-01",
+    "V1-02",
+    "V1-03",
+    "V1-04"
+  ],
+  "required_items": [
+    "4.7",
+    "5.4"
+  ],
+  "verification_allowed": false,
+  "recorded_at": "2026-10-16T10:32:52.223618+00:00"
+}

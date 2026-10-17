@@ -351,6 +351,11 @@ impl SettingsManager {
             .map(|setting| setting.data))
     }
 
+    /// Read a persisted row with its write marker for bootstrap decisions.
+    pub async fn load_optional_persisted_setting(&self, key: &str) -> Result<Option<Settings>> {
+        self.persistence.get_setting(key).await
+    }
+
     /// Apply the seed/normalization write required by a sealed governance plan.
     pub async fn apply_governance_preference_plan(
         &self,
@@ -1192,6 +1197,7 @@ pub async fn store_system_provider_credential(
     service
         .store()
         .put(CredentialRecord {
+            row_revision: None,
             scope: CredentialScope::System,
             scope_id: "system".to_string(),
             provider_id: provider_id.to_string(),

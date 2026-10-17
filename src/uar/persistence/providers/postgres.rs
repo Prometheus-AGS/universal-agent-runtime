@@ -24,7 +24,7 @@ use crate::uar::domain::knowledge::{
 use crate::uar::domain::policy::ConversationPolicyRecord;
 use crate::uar::domain::prompt_caching::UserPromptCachingSettings;
 use crate::uar::domain::skills::{Skill, SkillMatch};
-use crate::uar::persistence::PersistenceLayer;
+use crate::uar::persistence::{DurableStoreEligibility, PersistenceLayer};
 use crate::uar::persistence::agent_threads::{
     self, AgentThreadStoreError, CanonicalReceiptStoreError, CanonicalToolReceipt,
     PersistedAgentThread,
@@ -102,6 +102,9 @@ impl PersistenceLayer for PostgresProvider {
     async fn list_a2a_bindings(&self, owner: &str, agent: &str) -> Result<Vec<crate::uar::api::a2a::durable::A2aBinding>> { a2a_bindings::list(self, owner, agent).await }
 
     fn supports_durable_accounting(&self) -> bool { true }
+    fn durable_store_eligibility(&self) -> DurableStoreEligibility {
+        DurableStoreEligibility::LocalDurable
+    }
     async fn admit_remote_grant(&self, owner: &str, accounting_id: &str,
         grant: &crate::uar::api::a2a::contract::UarUsageGrant,
         activity: accounting::RemoteGrantActivity) -> Result<accounting::RemoteGrantState> {

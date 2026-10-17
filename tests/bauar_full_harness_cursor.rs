@@ -140,6 +140,11 @@ impl Fixture {
                 RunsConfig::default(),
             )),
             runs: runs.clone(),
+            contexts: Arc::new(full_harness::DelegatedHostContexts::new(Arc::new(
+                universal_agent_runtime::uar::security::delegation_grants::DelegationGrantAuthority::new(
+                    "cursor-instance".to_owned(), "cursor-runtime-epoch".to_owned(),
+                ),
+            ))),
         });
         let user = UserContext {
             user_id: "cursor-owner".to_owned(),
@@ -433,4 +438,17 @@ async fn lost_retained_history_remains_an_explicit_stream_gap() {
     assert_eq!(result[0].name, "agui.error");
     assert_eq!(result[0].payload["code"], "STREAM_GAP");
     assert_eq!(result[0].payload["request_id"], run);
+}
+
+#[path = "support/uar_1_1_1_runtime_fixture.rs"]
+mod phase_runtime_fixture;
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn phase_runtime_binding_refusals_use_real_host_store_and_provider() {
+    phase_runtime_fixture::binding_refusals().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn phase_runtime_native_incidental_error_retains_success() {
+    phase_runtime_fixture::native_incidental_error().await;
 }

@@ -1,0 +1,18 @@
+{
+  "stage": "spec",
+  "completedAt": "2026-10-16T08:40:01Z",
+  "outputs": [
+    "spec.md",
+    "../../../openspec/changes/uar-outstanding-issues-v1-1-1/proposal.md",
+    "../../../openspec/changes/uar-outstanding-issues-v1-1-1/design.md",
+    "../../../openspec/changes/uar-outstanding-issues-v1-1-1/tasks.md",
+    "../../../openspec/changes/uar-outstanding-issues-v1-1-1/verification.md",
+    "spec/runtime-contracts.md",
+    "spec/trust-contracts.md",
+    "spec/state-contracts.md"
+  ],
+  "nextStage": "plan",
+  "summaryForNext": "One coordinated OpenSpec change: eight capability deltas, 22 pending tasks, complete production acceptance contract. Plan must register exact source ownership/dependencies. Implementation, validation and isolated review remain pending; full-phase verification boundary closed.",
+  "skipped": false,
+  "skipReason": null
+}

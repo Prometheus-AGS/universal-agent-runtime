@@ -1,0 +1,28 @@
+{
+  "document_kind": "non-executable-template",
+  "schema_version": 1,
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "version": "1.1.1",
+  "stage": "local",
+  "source_commit": null,
+  "source_tree": null,
+  "fixture_tree": null,
+  "image": null,
+  "platform": null,
+  "groups": [
+    "binding",
+    "streams",
+    "mcp-outcomes",
+    "credentials",
+    "recovery",
+    "combined"
+  ],
+  "resource_root": null,
+  "evidence_root": null,
+  "infrastructure_file": null,
+  "implementation_inventory": {
+    "path": null,
+    "digest": null
+  },
+  "instructions": "After L4 and isolated review, populate actual frozen identities and new absolute owned paths in a separate manifest. Never execute this template."
+}

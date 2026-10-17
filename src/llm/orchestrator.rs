@@ -2187,10 +2187,15 @@ impl Orchestrator {
                 let driver_stream = {
                     let policy = &orchestrator.resilience_policy;
                     let max_attempts = if policy.retries_enabled {
-                        policy.retry_max_attempts.max(1)
+                        policy
+                            .retry_max_attempts
+                            .min(orchestrator.llm_config.max_retries.saturating_add(1))
+                            .max(1)
                     } else {
                         1
                     };
+                    let mut retry_backoff_policy = policy.clone();
+                    retry_backoff_policy.retry_max_attempts = max_attempts;
                     let retry_driver = Arc::clone(&orchestrator.driver);
                     let retry_orchestrator = orchestrator.clone();
                     let retry_source = attempt_source.clone();
@@ -2247,7 +2252,7 @@ impl Orchestrator {
                             Ok(prepend_attempt_manifest(stream, manifest))
                         }
                     })
-                    .retry(policy.retry_backoff_builder())
+                    .retry(retry_backoff_policy.retry_backoff_builder())
                     .when(|error| {
                         policy.retries_enabled
                             && super::ProviderError::from_anyhow(error)

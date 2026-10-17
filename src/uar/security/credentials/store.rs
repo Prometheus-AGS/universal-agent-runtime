@@ -7,7 +7,6 @@
 //! Stored API keys are AES-256-GCM ciphertext (`api_key_encrypted`). Plaintext is
 //! never persisted and never returned by the store.
 
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -67,6 +66,8 @@ pub struct CredentialRecord {
     pub api_key_hint: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    #[serde(default)]
+    pub row_revision: Option<String>,
 }
 
 /// Safe, plaintext-free view of a credential for API responses.
@@ -136,25 +137,24 @@ fn key_of(scope: CredentialScope, scope_id: &str, provider_id: &str) -> (String,
 /// matching the `InMemoryApiKeyStorage` precedent.
 #[derive(Debug, Default)]
 pub struct InMemoryCredentialStore {
-    pub(super) rows: RwLock<HashMap<(String, String, String), CredentialRecord>>,
-    pub(super) principals: RwLock<super::principal_store::PrincipalMemoryState>,
+    pub(super) state: RwLock<super::principal_store::PrincipalMemoryState>,
 }
 
 impl InMemoryCredentialStore {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            rows: RwLock::new(HashMap::new()),
-            principals: RwLock::new(super::principal_store::PrincipalMemoryState::default()),
+            state: RwLock::new(super::principal_store::PrincipalMemoryState::default()),
         }
     }
 }
 
 #[async_trait]
 impl CredentialStore for InMemoryCredentialStore {
-    async fn put(&self, record: CredentialRecord) -> anyhow::Result<()> {
+    async fn put(&self, mut record: CredentialRecord) -> anyhow::Result<()> {
+        record.row_revision = Some(uuid::Uuid::new_v4().to_string());
         let k = key_of(record.scope, &record.scope_id, &record.provider_id);
-        self.rows.write().await.insert(k, record);
+        self.state.write().await.legacy.insert(k, record);
         Ok(())
     }
 
@@ -165,7 +165,7 @@ impl CredentialStore for InMemoryCredentialStore {
         provider_id: &str,
     ) -> anyhow::Result<Option<CredentialRecord>> {
         let k = key_of(scope, scope_id, provider_id);
-        Ok(self.rows.read().await.get(&k).cloned())
+        Ok(self.state.read().await.legacy.get(&k).cloned())
     }
 
     async fn list(
@@ -174,9 +174,10 @@ impl CredentialStore for InMemoryCredentialStore {
         scope_id: &str,
     ) -> anyhow::Result<Vec<CredentialRecord>> {
         Ok(self
-            .rows
+            .state
             .read()
             .await
+            .legacy
             .values()
             .filter(|r| r.scope == scope && r.scope_id == scope_id)
             .cloned()
@@ -190,7 +191,7 @@ impl CredentialStore for InMemoryCredentialStore {
         provider_id: &str,
     ) -> anyhow::Result<bool> {
         let k = key_of(scope, scope_id, provider_id);
-        Ok(self.rows.write().await.remove(&k).is_some())
+        Ok(self.state.write().await.legacy.remove(&k).is_some())
     }
 }
 
@@ -238,8 +239,9 @@ fn records_from_values(
 #[cfg(feature = "surreal-backend")]
 #[async_trait]
 impl CredentialStore for SurrealCredentialStore {
-    async fn put(&self, record: CredentialRecord) -> anyhow::Result<()> {
+    async fn put(&self, mut record: CredentialRecord) -> anyhow::Result<()> {
         use crate::uar::persistence::providers::surreal::to_db_value;
+        record.row_revision = Some(uuid::Uuid::new_v4().to_string());
         let rid = Self::record_id(record.scope, &record.scope_id, &record.provider_id);
         let payload = to_db_value(&record)?;
         self.db
@@ -329,6 +331,7 @@ mod tests {
             api_key_hint: "1234".to_string(),
             created_at: now,
             updated_at: now,
+            row_revision: None,
         }
     }
 
@@ -437,15 +440,16 @@ impl PostgresCredentialStore {
 #[cfg(feature = "sqlx")]
 #[async_trait::async_trait]
 impl CredentialStore for PostgresCredentialStore {
-    async fn put(&self, record: CredentialRecord) -> anyhow::Result<()> {
+    async fn put(&self, mut record: CredentialRecord) -> anyhow::Result<()> {
+        record.row_revision = Some(uuid::Uuid::new_v4().to_string());
         sqlx::query(
             "INSERT INTO provider_credentials \
-             (scope, scope_id, provider_id, api_key_encrypted, api_key_hint, created_at, updated_at) \
-             VALUES ($1, $2, $3, $4, $5, $6, $7) \
+             (scope, scope_id, provider_id, api_key_encrypted, api_key_hint, created_at, updated_at, row_revision) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) \
              ON CONFLICT (scope, scope_id, provider_id) DO UPDATE SET \
              api_key_encrypted = EXCLUDED.api_key_encrypted, \
              api_key_hint = EXCLUDED.api_key_hint, \
-             updated_at = EXCLUDED.updated_at",
+             updated_at = EXCLUDED.updated_at, row_revision = EXCLUDED.row_revision",
         )
         .bind(record.scope.as_str())
         .bind(&record.scope_id)
@@ -454,6 +458,7 @@ impl CredentialStore for PostgresCredentialStore {
         .bind(&record.api_key_hint)
         .bind(record.created_at)
         .bind(record.updated_at)
+        .bind(record.row_revision)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -467,7 +472,7 @@ impl CredentialStore for PostgresCredentialStore {
     ) -> anyhow::Result<Option<CredentialRecord>> {
         let row = sqlx::query(
             "SELECT scope, scope_id, provider_id, api_key_encrypted, api_key_hint, \
-             created_at, updated_at FROM provider_credentials \
+             created_at, updated_at, row_revision FROM provider_credentials \
              WHERE scope = $1 AND scope_id = $2 AND provider_id = $3",
         )
         .bind(scope.as_str())
@@ -485,7 +490,7 @@ impl CredentialStore for PostgresCredentialStore {
     ) -> anyhow::Result<Vec<CredentialRecord>> {
         let rows = sqlx::query(
             "SELECT scope, scope_id, provider_id, api_key_encrypted, api_key_hint, \
-             created_at, updated_at FROM provider_credentials \
+             created_at, updated_at, row_revision FROM provider_credentials \
              WHERE scope = $1 AND scope_id = $2 ORDER BY provider_id",
         )
         .bind(scope.as_str())
@@ -525,6 +530,7 @@ pub(super) fn row_to_record(r: &sqlx::postgres::PgRow) -> CredentialRecord {
         api_key_hint: r.get("api_key_hint"),
         created_at: r.get("created_at"),
         updated_at: r.get("updated_at"),
+        row_revision: r.get("row_revision"),
     }
 }
 
@@ -567,6 +573,7 @@ mod postgres_tests {
             api_key_hint: "1234".to_string(),
             created_at: now,
             updated_at: now,
+            row_revision: None,
         }
     }
 

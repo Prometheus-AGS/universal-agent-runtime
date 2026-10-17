@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "purpose": "Exact original runner-owned resources only; candidate list is not a claim that resources still exist. Resolve prior failed cleanup without global pruning.",
+  "resources": {
+    "containers": [
+      "uar111-relay-410141323a",
+      "uar111-surreal-d2338b41e3",
+      "uar111-runtime-593fa3fc00",
+      "uar111-relay-228b089d0b"
+    ],
+    "volumes": [
+      "uar111-surreal-data-847fa80bd1",
+      "uar111-runtime-data-9be3eb5f76",
+      "uar111-recovery-unattested-data-69228ea8d5"
+    ],
+    "networks": [
+      "uar111-network-6eaa4ca863"
+    ]
+  },
+  "provenance": [
+    {
+      "command": "command-00001.json",
+      "kind": "networks",
+      "name": "uar111-network-6eaa4ca863",
+      "exit_code": 0,
+      "sha256": "sha256:9937bbf35f800723b97762627accbcfa4a8c61a05f8b5356cd94088f75ddf65b"
+    },
+    {
+      "command": "command-00006.json",
+      "kind": "containers",
+      "name": "uar111-relay-410141323a",
+      "exit_code": 0,
+      "sha256": "sha256:0f758441e616a6d71c216844259c11217239da9dce3e1f286d172445ddebdaa9"
+    },
+    {
+      "command": "command-00009.json",
+      "kind": "volumes",
+      "name": "uar111-surreal-data-847fa80bd1",
+      "exit_code": 0,
+      "sha256": "sha256:675b1773f6ffcb29a1e81a45ae40dfcb8078c04e3b263d236f7c4a998e8ae161"
+    },
+    {
+      "command": "command-00010.json",
+      "kind": "containers",
+      "name": "uar111-surreal-d2338b41e3",
+      "exit_code": 0,
+      "sha256": "sha256:4d90faf5c78e5214ee2b079c235589eec6e258a8efcb034dd16176cceec3d6c6"
+    },
+    {
+      "command": "command-00012.json",
+      "kind": "volumes",
+      "name": "uar111-runtime-data-9be3eb5f76",
+      "exit_code": 0,
+      "sha256": "sha256:0bce2d7686b3d654c5d60ff5dc27e3dccb420c26a09266151697209d9f707751"
+    },
+    {
+      "command": "command-00013.json",
+      "kind": "containers",
+      "name": "uar111-runtime-593fa3fc00",
+      "exit_code": 0,
+      "sha256": "sha256:3c5cb0cb38caf75c004d9005b2c313ce69ec7f99c8ed388990547d46f6da11ae"
+    },
+    {
+      "command": "command-00020.json",
+      "kind": "volumes",
+      "name": "uar111-recovery-unattested-data-69228ea8d5",
+      "exit_code": 1,
+      "sha256": "sha256:036c8b6593b75de7668b46fd8f64a1477b558d7fb65b4d0fb3b142eed18d8bd9"
+    },
+    {
+      "command": "command-00021.json",
+      "kind": "containers",
+      "name": "uar111-relay-228b089d0b",
+      "exit_code": 1,
+      "sha256": "sha256:fe22a1cbd0124ba38c48278d0d930eff2974f34b7e916f1605d1eacef8e68c70"
+    }
+  ],
+  "cleanup_executed": false
+}

@@ -1,0 +1,174 @@
+{
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "generated_at": "2026-10-15T21:18:28Z",
+  "research_budget": {
+    "max_queries_per_tier": 8,
+    "max_minutes": 20,
+    "queries_used": {
+      "tier_1": 3,
+      "tier_2": 4,
+      "tier_3": 1,
+      "tier_4": 4
+    }
+  },
+  "gaps_addressed": [
+    "385-binding-diagnostics",
+    "385-upgrade-recovery",
+    "380-terminal-truth",
+    "380-framing",
+    "380-credential-ownership",
+    "380-acceptance-debt",
+    "379-383-reconciliation",
+    "382-external-dependencies"
+  ],
+  "candidates": [
+    {
+      "id": "cand-001",
+      "name": "Pinned Liter SseDecoder with a UAR newline adapter",
+      "kind": "library",
+      "repo_url": "https://github.com/GQAdonis/liter-llm",
+      "registry": "crates",
+      "fit_for_gap": "380-framing",
+      "verdict": "adapt",
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/91a091d647fe2ce63651c07140172aba2c6c6302/vendor/git/liter-llm",
+          "claim": "Existing pinned submodule exports incremental SseDecoder; assessment of local pinned source identifies LF-only line scanning."
+        },
+        {
+          "tier": 4,
+          "source_url": "https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream",
+          "claim": "SSE accepts CR, LF and CRLF; local input normalization can retain the existing decoder."
+        }
+      ],
+      "risks": [
+        "Adapter must preserve CRLF across chunks, byte bounds, UTF-8 and incomplete EOF handling.",
+        "No vendor or pin change authorized; compatibility remains unverified until final gate."
+      ],
+      "decision_rationale": "Adapt at the native UAR transport seam; avoid replacing the provider stack to repair a framing gap."
+    },
+    {
+      "id": "cand-002",
+      "name": "eventsource-stream",
+      "kind": "library",
+      "repo_url": "https://github.com/jpopesculian/eventsource-stream",
+      "registry": "crates",
+      "fit_for_gap": "380-framing",
+      "verdict": "reject",
+      "license": "MIT OR Apache-2.0",
+      "maintenance": {
+        "last_release": "2022-02-17T19:33:45.863426Z",
+        "version": "0.2.3",
+        "downloads_observed": 28315847
+      },
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/jpopesculian/eventsource-stream",
+          "claim": "Rust byte-stream-to-EventSource building block."
+        },
+        {
+          "tier": 3,
+          "source_url": "https://crates.io/api/v1/crates/eventsource-stream",
+          "claim": "Registry reports version0.2.3, released2022-02-17; exact Rust Context7 match unavailable."
+        }
+      ],
+      "risks": [
+        "No exact API/version or memory-bound qualification performed.",
+        "Would add a dependency and replace working framing behavior unnecessarily."
+      ],
+      "decision_rationale": "Plausible general parser, but broader change than the observed gap; rejection is scope-based, not a claim of a defect."
+    },
+    {
+      "id": "cand-003",
+      "name": "eventsource-parser and official Anthropic streaming documentation",
+      "kind": "pattern",
+      "repo_url": "https://github.com/rexxars/eventsource-parser",
+      "registry": "npm",
+      "fit_for_gap": "380-framing-and-forward-compatibility",
+      "verdict": "reference",
+      "evidence": [
+        {
+          "tier": 2,
+          "source_url": "https://github.com/rexxars/eventsource-parser/blob/main/_autodocs/specification-compliance.md",
+          "claim": "Reference parser documents arbitrary chunk boundaries and CR/LF/CRLF."
+        },
+        {
+          "tier": 2,
+          "source_url": "https://github.com/rexxars/eventsource-parser/blob/main/_autodocs/README.md",
+          "claim": "Reference parser exposes bounded-buffer policy."
+        },
+        {
+          "tier": 4,
+          "source_url": "https://platform.claude.com/docs/en/build-with-claude/streaming",
+          "claim": "Provider documentation permits future event types and asks clients to handle unknown events gracefully."
+        }
+      ],
+      "risks": [
+        "JavaScript code is not directly adoptable in this Rust runtime.",
+        "Unknown top-level event tolerance must not turn malformed known events or incomplete tools into success."
+      ],
+      "decision_rationale": "Use behavior and fixtures as references; do not add a JS runtime or copy a new parser wholesale."
+    },
+    {
+      "id": "cand-004",
+      "name": "Existing UAR credential v2 storage and atomic migration journal",
+      "kind": "pattern",
+      "repo_url": "https://github.com/Prometheus-AGS/universal-agent-runtime",
+      "registry": "none",
+      "fit_for_gap": "380-credential-ownership",
+      "verdict": "adapt",
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/91a091d647fe2ce63651c07140172aba2c6c6302/src/uar/security/credentials/principal_store.rs",
+          "claim": "Assessment maps existing principal-keyed encrypted credential storage, explicit migration mappings, atomic copy/journal and preserved legacy source."
+        }
+      ],
+      "risks": [
+        "Generic principal storage key is also consumed by sessions and durable work; changing it globally expands migration scope.",
+        "Credential ownership policy must govern all fallback seams and migration sources."
+      ],
+      "decision_rationale": "Extend current host policy and migration contract; no new tenancy or credential framework."
+    },
+    {
+      "id": "cand-005",
+      "name": "Existing durable ingestion, accounting and fenced team ownership",
+      "kind": "pattern",
+      "repo_url": "https://github.com/Prometheus-AGS/universal-agent-runtime",
+      "registry": "none",
+      "fit_for_gap": "385-upgrade-recovery",
+      "verdict": "adapt",
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Prometheus-AGS/universal-agent-runtime/blob/91a091d647fe2ce63651c07140172aba2c6c6302/src/uar/persistence/providers/surreal.rs",
+          "claim": "Assessment identifies durable upload/accounting eligibility, principal KB namespaces, authenticated reupload and fenced ownership recovery already in source."
+        }
+      ],
+      "risks": [
+        "Healthy remote endpoint is not proof of durable storage.",
+        "Production live-agent state, backing volume and predecessor exclusion remain unverified."
+      ],
+      "decision_rationale": "Improve safe diagnostics and supported recovery guidance while retaining eligibility, owner boundaries and liabilities."
+    }
+  ],
+  "build_required": [
+    {
+      "need": "Typed allowlisted run-binding diagnostics and manager completion observation",
+      "why_no_candidate": "These encode UAR run lifecycle, authority and public error compatibility; a generic library cannot decide them.",
+      "capability_gap_id": "385-binding-diagnostics"
+    },
+    {
+      "need": "Operator credential ownership/fallback policy, credential-local authority and migration preview",
+      "why_no_candidate": "Must integrate current encrypted store and verified principal semantics without changing unrelated session keys.",
+      "capability_gap_id": "380-credential-ownership"
+    },
+    {
+      "need": "Production-path fixtures, supported upgrade runbook and immutable release receipts",
+      "why_no_candidate": "Evidence must exercise this runtime and its actual collaborators; an adopted framework does not supply product proof.",
+      "capability_gap_id": "380-acceptance-debt"
+    }
+  ]
+}

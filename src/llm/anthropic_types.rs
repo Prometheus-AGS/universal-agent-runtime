@@ -252,6 +252,23 @@ pub enum StreamEvent {
     Ping,
 }
 
+/// Whether a top-level Anthropic stream event type has a schema represented by
+/// [`StreamEvent`]. Future well-formed event kinds can therefore be ignored
+/// without treating malformed known events as forward-compatible.
+pub(crate) fn is_known_stream_event_type(event_type: &str) -> bool {
+    matches!(
+        event_type,
+        "message_start"
+            | "content_block_start"
+            | "content_block_delta"
+            | "content_block_stop"
+            | "message_delta"
+            | "message_stop"
+            | "error"
+            | "ping"
+    )
+}
+
 /// Initial message metadata from `message_start`.
 #[derive(Debug, Clone, Deserialize)]
 pub struct MessageStartData {

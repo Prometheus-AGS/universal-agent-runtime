@@ -113,6 +113,11 @@ pub enum Command {
     /// Run under the Windows Service Control Manager.
     #[cfg(windows)]
     Service,
+    /// Explicit trusted-host credential maintenance.
+    Credentials {
+        #[command(subcommand)]
+        action: CredentialAction,
+    },
     /// Run and inspect the LLM evaluation harness.
     Eval {
         #[command(subcommand)]
@@ -127,6 +132,17 @@ pub enum Command {
         /// Output path for the compiled+signed JSON. Prints to stdout when omitted.
         #[arg(long)]
         out: Option<String>,
+    },
+}
+
+/// Credential maintenance never starts the runtime or a network listener.
+#[derive(Subcommand, Debug, Clone)]
+pub enum CredentialAction {
+    /// Initialize missing credential metadata revisions after backup and quiescence.
+    InitializeRevisions {
+        /// Acknowledge that every credential writer and consumer has been stopped.
+        #[arg(long)]
+        writers_quiesced: bool,
     },
 }
 
@@ -677,6 +693,9 @@ pub struct TrustedHostPrincipal {
 
 #[derive(Deserialize, Clone, schemars::JsonSchema)]
 pub struct SecurityConfig {
+    /// Operator-owned credential authority, independent of encrypted storage.
+    #[serde(default)]
+    pub provider_credentials: crate::uar::security::credentials::ProviderCredentialPolicyConfig,
     /// Operator-owned role requirements; every listed role is required.
     #[serde(default)]
     pub skill_required_roles: std::collections::BTreeMap<String, std::collections::BTreeSet<String>>,
@@ -808,6 +827,11 @@ impl SecurityConfig {
 
     pub(crate) fn validate(&self) -> Result<(), config::ConfigError> {
         self.validate_identity_policy().map_err(|message| config::ConfigError::Message(message.to_owned()))?;
+        crate::uar::security::credentials::CredentialTenancyPolicy::from_config(
+            self.provider_credentials.clone(),
+        ).map_err(|_| config::ConfigError::Message(
+            "security.provider_credentials is invalid".to_owned(),
+        ))?;
         if self.jwt_required
             && secrecy::ExposeSecret::expose_secret(&self.jwt_secret) == FALLBACK_JWT_SECRET
         {
@@ -2502,6 +2526,7 @@ persistence:
     #[test]
     fn protected_settings_require_a_configured_admin_key() {
         let config = SecurityConfig {
+            provider_credentials: Default::default(),
             skill_required_roles: Default::default(),
             deployment_profile: Default::default(),
             jwt_algorithm: None,
@@ -2528,6 +2553,7 @@ persistence:
     #[test]
     fn protected_settings_accept_a_configured_admin_key() {
         let config = SecurityConfig {
+            provider_credentials: Default::default(),
             skill_required_roles: Default::default(),
             deployment_profile: Default::default(),
             jwt_algorithm: None,

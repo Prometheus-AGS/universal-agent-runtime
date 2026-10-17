@@ -146,3 +146,34 @@ These fixtures do not by themselves prove the shipped HTTP-to-provider path,
 remote-peer cleanup, outage terminal presentation, or independently usable
 customer artifact. Those remain final phase integration/customer-build work;
 no source-only inspection is acceptance evidence.
+
+## Safe binding refusals
+
+For remote-deployment upgrade guidance, both confirmed #385 admission causes,
+model verification, knowledge ownership and team reclaim, see
+[remote-Surreal upgrades](remote-surreal-upgrade.md).
+
+The trusted host projects durable-store eligibility into a fixed diagnostic category
+before provider capture. `remote_not_attested` becomes
+`remote_surreal_durability_not_attested`; an unsupported backend becomes
+`durable_storage_unsupported`; and a missing verified principal becomes
+`verified_principal_required`. Public run admission retains
+`orchestrator_start_failed` with a generated diagnostic reference. It does not
+publish an endpoint, namespace, provider URL, secret, database error chain, or
+constructor detail.
+
+A valid `local_durable` or `remote_attested` eligibility may proceed only through
+the existing durable-accounting admission path. This classification does not grant
+an untracked run durable budget authority and does not change reservation,
+settlement, cancellation, or join ownership.
+
+Startup warns when persisted token/cost-limited agents use a store without
+durable accounting, reporting `budget_durable_storage_unavailable`, captured
+eligibility and a count. It does not reject saving an agent or replace per-run
+admission. A later refused durable call logs `model_call_admission` and
+`budget_admission_failed`, an allowlisted accounting cause, diagnostic reference,
+reservation source/bound and configured turn/session token limits. It never logs
+the raw error chain or request. Without a final-wire contract, a 16,000-token
+envelope can refuse a large-context model even for a short prompt: the bound
+includes catalog context and maximum output. A request output limit alone does
+not establish a smaller complete bound. Explicit policies remain enforced.

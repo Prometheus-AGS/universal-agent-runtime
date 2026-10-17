@@ -1,0 +1,100 @@
+{
+  "mode": "diff",
+  "target": "uar-outstanding-issues-v1-1-1",
+  "round": 1,
+  "verdict": "BLOCK",
+  "judge_model": "gpt-6-astra (configured uar-verifier role; canonical provider identity unavailable)",
+  "producer_model": "unknown",
+  "cross_model_check": "unverified-producer-unknown",
+  "isolation_mode": "harness-native-fresh-context",
+  "isolation_limit": "Weaker same-family native fallback. The configured REST dispatcher exited 4 with JUDGE_MODEL_COLLISION; no independent REST judgment was obtained. Fresh child received the packet, mandate and standing instructions, not producer conversation or handoffs. Cross-family certification remains pending.",
+  "source_identity": {
+    "source_commit": "91a091d647fe2ce63651c07140172aba2c6c6302",
+    "source_tree": "sha256:fd5e8b17b263f1e2862f88daa3a95cd2c145ff4506229c427a970ee01d57df9f",
+    "fixture_tree": "sha256:ece26ae6261c7eebc68635368518dc6f2d56f012fbf63a026697bb8da6bf270f"
+  },
+  "findings": [
+    {
+      "id": "V1-01",
+      "severity": "CRITICAL",
+      "file": "src/uar/runtime/turn/bindings.rs",
+      "line": 316,
+      "claim": "A team with an authorized fallback on a different provider is rejected during capture because the fallback retains the primary resolved_provider_id.",
+      "evidence": "The Some(profile) branch clones primary config, changes model/api_key/base_url at lines 316–319, then apply_credential_decision checks resolved_provider_id before the model prefix (lines 30–36). Manager lines 5368–5389 creates the fallback decision with Orchestrator::fallback_llm_config, which clears resolved_provider_id (src/llm/orchestrator.rs:1552), so that decision has the fallback provider. A primary openai resolved identity and authorized anthropic fallback therefore compare unequal. The ? at line 321 aborts whole-run capture before fallback or primary execution. The current team adapter at scripts/release/uar_1_1_1_runtime.py:620 exercises one provider and does not cover this branch.",
+      "reproducer": "Unexecuted reproduction: install a team binding with distinct primary and fallback provider IDs and valid endpoint profiles, grant both exact source tuples, and admit a team attempt. Capture reaches line 321 with primary resolved_provider_id and fallback decision provider_id; the run reports TEAM_PROVIDER_REQUEST_REJECTED instead of using the authorized route. Falsifying evidence would be a source step that replaces resolved_provider_id before line 321; none is present.",
+      "suggested_fix": "Construct the team fallback config with the fallback provider identity (or reuse fallback_llm_config and explicitly bind the endpoint profile's provider), then apply its captured decision. Add the distinct-provider team case to the already selected real integration group.",
+      "requirement": "tenant-isolation: Credential source authority covers every provider capture; kubo-runtime-conformance: retain accepted Kubo conformance behaviors.",
+      "evidence_kind": "static source/data-flow; not runtime reproduction"
+    },
+    {
+      "id": "V1-02",
+      "severity": "WARNING",
+      "file": "src/uar/runtime/manager.rs",
+      "line": 5367,
+      "claim": "Disabled fallback entries can prevent an otherwise authorized primary run.",
+      "evidence": "fallback_credential_decisions resolves every entry without testing run_failover_config.enabled. A denied source returns Err at line 5389 and the tuple match propagates it at line 5442. Actual RunModelBindings::capture only uses fallback entries inside if failover.enabled (bindings.rs:292). Thus disabled entries still acquire policy/credential dependencies.",
+      "reproducer": "Unexecuted reproduction: shared mode, exact grant for the primary config source, failover.enabled=false, and a populated fallback_models entry with a config key but no fallback source grant. Primary capture is refused despite failover being disabled. The same primary succeeds when the inert list is empty.",
+      "suggested_fix": "Resolve fallback decisions only for the fallback set that can actually be captured, respecting failover.enabled; preserve fail-closed behavior for enabled fallbacks.",
+      "requirement": "tenant-isolation: exact selected source authority and compatibility deployment.",
+      "evidence_kind": "static source/data-flow; not runtime reproduction"
+    },
+    {
+      "id": "V1-03",
+      "severity": "WARNING",
+      "file": "scripts/release/uar_1_1_1_runtime.py",
+      "line": 314,
+      "claim": "The acceptance program's log secret-leak assertions cannot detect runtime leaks because logs are redacted before the assertions.",
+      "evidence": "RuntimeLease.logs returns resources.redact(stdout+stderr) at scripts/release/uar_1_1_1_support.py:169–171. RuntimeLease construction registers config api_key values, so runtime-fixture-key is removed first. The checks at runtime.py:314 and 434 consequently pass even if the raw runtime log contains that key. This does not demonstrate a production leak; it demonstrates that this negative control cannot observe one.",
+      "reproducer": "Unexecuted falsifying observation: supply a raw runtime log containing runtime-fixture-key through RuntimeLease.logs; it becomes [redacted] before the membership assertion. Both safe and leaking runtime output satisfy the assertion.",
+      "suggested_fix": "Perform leak detection against raw output in memory, then persist only a redacted transcript and safe detection result. Keep raw secrets out of retained evidence and error messages.",
+      "requirement": "provider-diagnostic-status: diagnostic origin is safe to log; verification.md: required positive/negative observations must be actual installed-artifact evidence.",
+      "evidence_kind": "static fixture data-flow; no leak or product test executed"
+    },
+    {
+      "id": "V1-04",
+      "severity": "WARNING",
+      "file": "scripts/release/uar_1_1_1_acceptance.py",
+      "line": 95,
+      "claim": "The published gate does not establish that the tested image was built from the receipt's source commit.",
+      "evidence": "inspect_image checks digest membership in the supplied index and OS/architecture, then records image ID. read_manifest checks the local v1.1.1 tag against source_commit at lines 178–180, independently from the supplied image/index. No check links the image to that commit or a publishing workflow run. Receipt lines 196–199 copy the manifest source identity. Documentation asks the operator to record workflow identity separately, so this is an unresolved provenance limit rather than a claim that a wrong image has already passed.",
+      "reproducer": "Unexecuted falsifying observation: replace image/index_digest with another immutable same-platform build that supports the same tested behavior while keeping source_commit and local tag unchanged. Existing identity checks do not reject the source mismatch. A separately verified publication receipt could close this gap, but none is supplied.",
+      "suggested_fix": "Before published acceptance is credited, verify and retain a publication receipt linking workflow run/commit, tag source commit, index and both child digests; make the gate bind to that receipt or explicitly require its independent verification in the release disposition.",
+      "requirement": "kubo-runtime-conformance: patch release claims identify accepted immutable artifacts; verification.md: wrong child/source/platform withholds success.",
+      "evidence_kind": "static acceptance/provenance review; publication not executed"
+    }
+  ],
+  "certification": {
+    "status": "blocked",
+    "reason": "V1-01 unresolved. Product execution and independent cross-family review are unverified.",
+    "runtime_evidence": "No tests, builds, lint, format, compiler, import, validator, product integration or publication commands executed.",
+    "supervisor_limit": "The genuine qualified-supervisor prerequisite remains externally unavailable per packet; configured positive adapter reviewed in source only. Absence must remain blocked.",
+    "waypoint_note": "Authoritative stage Execute. Lead clarified waypoint 137/151 is an inherited whole-run aggregate, not this phase's implementation inventory; no counter inconsistency finding is retained.",
+    "graph_limit": "Compass graph_stats returned 71048 nodes/126259 edges. Repository map records a 2026-09-24 Rust-only snapshot with parse failures including server.rs. Current source, not graph relationships, grounds findings.",
+    "coverage": "Reviewed supplied requirements and targeted source around credential owner/policy/migration/transaction code, provider binding/capture, native Anthropic framing, durability diagnostics and phase acceptance adapters. This is not exhaustive runtime or compile certification."
+  },
+  "commands": {
+    "dispatch": "bash /Users/gqadonis/.codex/skills/adversarial-review/scripts/dispatch-judge.sh --mode diff --packet .agent-team/uar-core/reviews/uar-outstanding-issues-v1-1-1/round-1/packet.json --mandate .agent-team/uar-core/reviews/uar-outstanding-issues-v1-1-1/round-1/mandate.md --out .agent-team/uar-core/reviews/uar-outstanding-issues-v1-1-1/round-1/rest-findings.json",
+    "dispatch_exit": 4,
+    "dispatch_output": "[judge] WARN: JUDGE_MODEL_COLLISION — no distinct available backup is configured\n[judge]       Review remains pending; refusing to claim independent judgment.",
+    "source_inspection": "cat, sed, nl, rg, git diff, and Python JSON reads only; no product modules imported or executed.",
+    "graph": "mcp__compass__graph_stats: Nodes 71048, Edges 126259, EXTRACTED 100% (graph extraction confidence only)."
+  },
+  "interface_effects": "None. Review artifacts only; no production changes or new guards.",
+  "unsolicited_changes": "None.",
+  "sycophancy_screen": {
+    "status": "completed",
+    "tool": "mcp__sycophancy_correction__detect_sycophancy",
+    "strictness": "strict",
+    "score": 0.01785714365541935,
+    "correction_mandatory": false,
+    "findings": [
+      {
+        "pattern": "S-07",
+        "severity": "low",
+        "rationale": "Report length 891 words exceeds typical task scope."
+      }
+    ],
+    "manual_disposition": "Retained the evidence, reproduction and correction fields required by the review contract. No praise, agreement claims or unsupported runtime certainty added. No automatic rewrite claimed.",
+    "executed_at": "2026-10-16T10:30:11.983386Z"
+  }
+}
