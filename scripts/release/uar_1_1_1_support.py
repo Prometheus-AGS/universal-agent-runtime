@@ -3,6 +3,7 @@
 Importing this module performs no I/O. Only the final phase runner invokes it.
 """
 import base64
+import codecs
 import hashlib
 import hmac
 import http.client
@@ -87,15 +88,33 @@ class Http:
         with response:
             raw = response.read()
             status = response.code
-            require(status in accepted,
-                    "%s %s status %s; expected %s" % (method, path, status, accepted))
+            if status not in accepted:
+                # Bounded, redacted failure context: surface only the error
+                # code (never credential-bearing bodies) so failures remain
+                # diagnosable (round-6 fixture improvement).
+                code = self._error_code(raw)
+                require(False, "%s %s status %s code=%s; expected %s"
+                        % (method, path, status, code, accepted))
             try:
                 result = json.loads(raw) if raw else None
             except (ValueError, UnicodeDecodeError):
                 result = raw.decode("utf-8", errors="replace")
             return (status, result) if return_status else result
 
-    def stream(self, path, timeout=180, *, total_timeout=240):
+    @staticmethod
+    def _error_code(raw):
+        try:
+            parsed = json.loads(raw[:4096])
+        except (ValueError, UnicodeDecodeError):
+            return "<unparseable>"
+        if not isinstance(parsed, dict):
+            return "<non-object>"
+        field = parsed.get("error")
+        if isinstance(field, dict) and isinstance(field.get("code"), str):
+            return field["code"][:96]
+        return "<absent>" if field is None else "<no-code>"
+
+    def stream(self, path, timeout=180, *, total_timeout=240, on_text=None):
         headers = {"Accept": "text/event-stream"}
         if self.token:
             headers["Authorization"] = "Bearer " + self.token
@@ -109,6 +128,8 @@ class Http:
         connection = connection_type(url.hostname, url.port, timeout=min(timeout, total_timeout))
         expired = threading.Event()
         chunks = []
+        decoded = []
+        decoder = codecs.getincrementaldecoder("utf-8")("strict")
         timer = None
         try:
             connection.connect()
@@ -141,13 +162,25 @@ class Http:
                     if not chunk:
                         break
                     chunks.append(chunk)
+                    text = decoder.decode(chunk, final=False)
+                    if text:
+                        decoded.append(text)
+                        if on_text is not None:
+                            on_text(text)
             if expired.is_set() or time.monotonic() >= deadline:
                 raise StreamDeadlineExceeded(b"".join(chunks))
-            return b"".join(chunks).decode("utf-8")
+            text = decoder.decode(b"", final=True)
+            if text:
+                decoded.append(text)
+                if on_text is not None:
+                    on_text(text)
+            return "".join(decoded)
         except Exception as error:
             partial = b"".join(chunks)
             if isinstance(error, http.client.IncompleteRead):
                 partial += error.partial
+                error.partial = partial
+            if on_text is not None:
                 error.partial = partial
             if expired.is_set() and not isinstance(error, StreamDeadlineExceeded):
                 raise StreamDeadlineExceeded(partial) from error
@@ -169,13 +202,40 @@ class RuntimeLease:
         self.base_url = None
         self.container = None
         self.volume = resources.unique_name(label + "-data")
-        self.config_path = resources.root / (self.name + ".json")
-        self.config_path.write_text(json.dumps(config))
-        self.config_path.chmod(0o644)
+        self.config_dir = resources.root / (self.name + "-config")
+        self.config_dir.mkdir()
+        self.config_path = None
+        self.config_target = None
+        self.launched_target = None
+        self.launch_args = None
+        self.probe_note = None
+        self.write_config()
         resources.register_secrets(config)
         resources.register_secrets(self.env)
         self.http_port = resources.free_port()
         self.grpc_port = resources.free_port()
+
+    def write_config(self):
+        """Atomically write the configuration under a fresh name per version.
+
+        Each content version gets its own file name (config-<sha12>.json). A
+        name no container has ever resolved cannot be served from a stale
+        file-view cache entry, which previously handed (re)starting processes
+        a truncated generation of the config (round-3: EOF at column 1355 of a
+        valid 1458-byte file; round-4: EOF at column 1217 with the probe view
+        already fresh). Stage + fsync + os.replace keeps each name's bytes
+        atomic."""
+        payload = json.dumps(self.config)
+        name = "config-%s.json" % hashlib.sha256(payload.encode()).hexdigest()[:12]
+        staged = self.config_dir / (name + ".staged")
+        with open(staged, "w") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(staged, self.config_dir / name)
+        self.config_path = self.config_dir / name
+        self.config_target = name
+        self.config_path.chmod(0o644)
 
     def start(self):
         r = self.resources
@@ -186,7 +246,7 @@ class RuntimeLease:
                 "--add-host", "host.docker.internal:host-gateway",
                 "--publish", "127.0.0.1:%s:1906" % self.http_port,
                 "--publish", "127.0.0.1:%s:50051" % self.grpc_port,
-                "--volume", str(self.config_path) + ":/opt/uar/phase-config.json:ro",
+                "--volume", str(self.config_dir) + ":/opt/uar/phase-config:ro",
                 "--volume", self.volume + ":/var/lib/uar"]
         for mount in self.mounts:
             if isinstance(mount, (tuple, list)):
@@ -194,25 +254,60 @@ class RuntimeLease:
             args.extend(["--volume", str(mount)])
         for key, value in self.effective_environment().items():
             args.extend(["--env", key + "=" + str(value)])
-        args.extend([r.image, "universal-agent-runtime", "--config", "/opt/uar/phase-config.json"])
+        args.extend([r.image, "universal-agent-runtime", "--config", "/opt/uar/phase-config/" + self.config_target])
         r.containers.append(self.name)
+        self.launch_args = list(args)
         self.container = r.docker(*args).stdout.strip()
+        self.launched_target = self.config_target
         self.base_url = "http://127.0.0.1:%s" % self.http_port
-        wait_for(self.name, self._health)
+        try:
+            wait_for(self.name, self._health)
+        except BaseException:
+            view = self._config_view()
+            r.capture_container(self.name, launch=self.launch_args,
+                                probe=self.probe_note, config_view=view)
+            raise
         return self
+
+    def _config_view(self):
+        """What a fresh container sees at the mounted config path, vs intended.
+
+        Every startup failure records the observable bytes so retries (or the
+        absence of them) cannot conceal stale or incorrect configuration."""
+        r = self.resources
+        intended = hashlib.sha256(json.dumps(self.config).encode()).hexdigest()
+        probe = r.docker("run", "--rm", "--volume", str(self.config_dir) + ":/probe:ro",
+                         "--entrypoint", "cat", r.image, "/probe/" + self.config_target,
+                         check=False, timeout=60)
+        seen = hashlib.sha256(probe.stdout.encode()).hexdigest() if probe.returncode == 0 else "unreadable"
+        return {"intended_sha256": intended, "visible_sha256": seen, "stale": seen != intended}
 
     def _health(self):
         status = self.resources.docker("inspect", "--format", "{{.State.Status}}", self.name).stdout.strip()
         if status == "exited":
-            self.resources.capture_container(self.name)
+            self.probe_note = "container exited before health (inspect state=exited)"
             raise Blocked("runtime exited before health: " + self.name)
         status, _ = Http(self.base_url).request("GET", "/health", expected=(200, 503), return_status=True)
+        self.probe_note = "GET /health -> %s" % status
         return status == 200
 
     def restart(self):
+        if self.launched_target != self.config_target:
+            # The configuration name changed: recreate the container so it
+            # receives the new --config argument. Observably equivalent to a
+            # docker restart for these scenarios (fresh process, same mounts,
+            # env and state volume).
+            self.stop()
+            return self.start()
         self.resources.docker("restart", self.name)
-        wait_for(self.name + " restart", self._health)
-        return self
+        try:
+            wait_for(self.name + " restart", self._health)
+            return self
+        except BaseException:
+            view = self._config_view()
+            self.resources.capture_container(self.name, launch=self.launch_args,
+                                             probe=self.probe_note, config_view=view)
+            raise
 
     def effective_environment(self):
         # Image defaults are later loader sources than the mounted file. Bind
@@ -242,7 +337,7 @@ class RuntimeLease:
 
     def stop(self):
         if self.container:
-            self.resources.capture_container(self.name)
+            self.resources.capture_container(self.name, probe=self.probe_note)
             result = self.resources.docker("rm", "--force", self.name, check=False)
             require(result.returncode == 0, "owned runtime container cleanup failed")
             self.container = None
@@ -394,13 +489,50 @@ class Resources:
             image = settings.get("image")
             if not isinstance(image, str) or "@sha256:" not in image:
                 raise Blocked("private infrastructure must pin the isolated PostgreSQL image digest")
+            # The pinned Supabase image completes first-boot initialization only
+            # when its bootstrap superuser is supabase_admin: migrate.sh
+            # authenticates as supabase_admin and then creates the postgres role
+            # with the same password. Provisioning POSTGRES_USER=postgres left
+            # supabase_admin missing -> migrate.sh FATAL -> entrypoint abort ->
+            # container exit 2 -> published bindings torn down -> the next
+            # `docker port` reported "no public port" (round-2 root cause).
             self.docker("run", "--detach", "--name", name, "--network", self.network,
                         "--network-alias", "postgres", "--publish", "127.0.0.1::5432",
-                        "--env", "POSTGRES_USER=" + user, "--env", "POSTGRES_PASSWORD=" + password,
+                        "--env", "POSTGRES_USER=supabase_admin", "--env", "POSTGRES_PASSWORD=" + password,
                         "--volume", volume + ":/var/lib/postgresql/data", image)
             wait_for("isolated PostgreSQL", lambda: self.docker(
                 "exec", name, "pg_isready", "-U", user, check=False).returncode == 0)
+            # A transient pg_isready success is not durable readiness: the
+            # pinned image's entrypoint runs its init migrations against a
+            # temporary server and then cycles it, so mid-init probes pass and
+            # connections drop in the restart window (round-3 observation: the
+            # published endpoint accepts TCP then closes the handshake while
+            # init is still running). Require the container to stay up and a
+            # stable authenticated query through the published endpoint.
             address = self.docker("port", name, "5432/tcp").stdout.strip()
+            require(address.startswith("127.0.0.1:"), "isolated PostgreSQL published no host endpoint")
+            host, _, port = address.rpartition(":")
+            confirmed = {"at": 0.0}
+
+            def endpoint_ready():
+                state = self.docker("inspect", "--format", "{{.State.Status}}", name, check=False)
+                if state.returncode != 0 or state.stdout.strip() != "running":
+                    confirmed["at"] = 0.0
+                    return False
+                result = self.run_command(
+                    ["docker", "run", "--rm", "--network", "host", "--env", "PGPASSWORD=" + password,
+                     "--entrypoint", "psql", image, "-h", host, "-p", port,
+                     "-U", user, "-d", "postgres", "-c", "select 1"],
+                    check=False, timeout=60)
+                if result.returncode != 0:
+                    confirmed["at"] = 0.0
+                    return False
+                now = time.time()
+                if confirmed["at"] == 0.0:
+                    confirmed["at"] = now
+                    return False
+                return now - confirmed["at"] >= 5.0
+            wait_for("isolated PostgreSQL published endpoint", endpoint_ready)
             entry = dict(name=name, username=user, password=password, image=image,
                          host_address=address)
         else:
@@ -484,10 +616,20 @@ class Resources:
     def new_runtime(self, label, config, env=None, mounts=None):
         return RuntimeLease(self, label, config, env, mounts)
 
-    def capture_container(self, name):
+    def capture_container(self, name, launch=None, probe=None, attempt=None, config_view=None):
         result = self.docker("logs", name, check=False)
         path = self.evidence / (name + "-" + uuid.uuid4().hex[:6] + ".log")
         path.write_text(self.redact(result.stdout + result.stderr))
+        state = self.docker("inspect", "--format",
+                            "{{.State.Status}}|{{.State.ExitCode}}|{{.State.Error}}", name, check=False)
+        diagnostics = {"container": name, "captured_at": time.time(),
+                       "container_logs": path.name,
+                       "container_state": self.redact(state.stdout.strip()) if state.returncode == 0 else "inspect-unavailable",
+                       "launch_command": self.redact(" ".join(str(part) for part in launch)) if launch else None,
+                       "health_probe": self.redact(str(probe)) if probe is not None else None,
+                       "attempt": attempt,
+                       "config_view": config_view}
+        (self.evidence / (path.stem + ".diag.json")).write_text(json.dumps(diagnostics, indent=2))
 
     def close(self):
         errors = []

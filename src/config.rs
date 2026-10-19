@@ -862,6 +862,9 @@ pub struct ResilienceConfig {
     pub timeout_disabled: bool,
     pub requests_per_second: f32,
     pub burst_size: f32,
+    /// Timeout applied to credential and admission store lookups.
+    #[serde(default = "ResilienceConfig::default_admission_timeout_ms")]
+    pub admission_timeout_ms: u64,
     #[serde(default = "ResilienceConfig::default_request_timeout_ms")]
     pub request_timeout_ms: u64,
     #[serde(default = "ResilienceConfig::default_stream_start_timeout_ms")]
@@ -891,6 +894,10 @@ pub struct ResilienceConfig {
 }
 
 impl ResilienceConfig {
+    fn default_admission_timeout_ms() -> u64 {
+        8_000
+    }
+
     fn default_request_timeout_ms() -> u64 {
         30_000
     }

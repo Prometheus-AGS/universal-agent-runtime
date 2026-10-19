@@ -25,6 +25,7 @@ pub mod checkpoint_resume;
 pub mod observers;
 pub mod presentations;
 pub mod providers;
+pub mod run_history;
 pub mod tool_admission;
 
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
@@ -114,6 +115,14 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     async fn load_a2a_binding(&self, _owner: &str, _agent: &str, _task: &str) -> Result<Option<crate::uar::api::a2a::durable::A2aBinding>> { anyhow::bail!("durable_a2a_bindings_unsupported") }
     async fn compare_and_swap_a2a_binding(&self, _before: &crate::uar::api::a2a::durable::A2aBinding, _after: &crate::uar::api::a2a::durable::A2aBinding) -> Result<bool> { anyhow::bail!("durable_a2a_bindings_unsupported") }
     async fn list_a2a_bindings(&self, _owner: &str, _agent: &str) -> Result<Vec<crate::uar::api::a2a::durable::A2aBinding>> { anyhow::bail!("durable_a2a_bindings_unsupported") }
+
+    /// Restart-durable public run history. Every published event is written
+    /// through; a terminal-only snapshot does not satisfy the contract.
+    fn supports_durable_run_history(&self) -> bool { false }
+    async fn upsert_run_history_record(&self, _record: &run_history::RunHistoryRecord) -> Result<()> { anyhow::bail!("durable_run_history_unsupported") }
+    async fn load_run_history_record(&self, _run_id: &str) -> Result<Option<run_history::RunHistoryRecord>> { anyhow::bail!("durable_run_history_unsupported") }
+    async fn append_run_history_event(&self, _event: &run_history::RunHistoryEvent) -> Result<()> { anyhow::bail!("durable_run_history_unsupported") }
+    async fn load_run_history_events(&self, _run_id: &str) -> Result<Vec<run_history::RunHistoryEvent>> { anyhow::bail!("durable_run_history_unsupported") }
 
     async fn bind_accounting_delegation(&self, _link: &accounting::AccountingDelegation) -> Result<()> { Err(accounting::AccountingError::Unsupported.into()) }
     async fn get_accounting_delegation(&self, _digest: &str) -> Result<Option<accounting::AccountingCall>> { Err(accounting::AccountingError::Unsupported.into()) }

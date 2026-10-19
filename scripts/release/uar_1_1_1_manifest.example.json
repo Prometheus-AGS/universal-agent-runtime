@@ -9,6 +9,12 @@
   "fixture_tree": null,
   "image": null,
   "platform": null,
+  "image_preparation": "prebuilt",
+  "prepared_image_id": null,
+  "image_preparation_receipt": {
+    "path": null,
+    "digest": null
+  },
   "groups": [
     "binding",
     "streams",
@@ -24,5 +30,5 @@
     "path": null,
     "digest": null
   },
-  "instructions": "After L4 and isolated review, populate actual frozen identities and new absolute owned paths in a separate manifest. Never execute this template."
+  "instructions": "After the new whole-phase inventory, populate actual frozen identities and new absolute owned paths in a separate manifest. Fill image fields only from separately authorized same-image preparation. Never execute this template."
 }

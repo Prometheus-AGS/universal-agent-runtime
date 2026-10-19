@@ -35,6 +35,44 @@
 
 ## ADDED Requirements
 
+### Requirement: Release observations prove public prompt and explicit skill propagation
+
+**Stable task:** function-first child FC2. The installed-image certification
+journey SHALL use public skill registration and run admission to activate an
+enabled explicit attachment. A controlled external provider SHALL receive both
+the unique user input and unique skill overlay and derive a deterministic answer
+from both. This observation SHALL NOT be reported as model-selected skill quality,
+external-model reasoning or real-provider latency certification.
+
+#### Scenario: Enabled attachment determines exact public and persisted answer
+
+- **WHEN** a caller registers an enabled skill through `POST /api/uar/skills/` and submits a unique prompt and its `skill_attachments` ID through `POST /api/uar/runs`
+- **THEN** the provider trace contains both the unique prompt and activated overlay and the run has no attachment failure
+- **AND** assembled public SSE answer text, assembled AG-UI answer text and persisted answer text each exactly equal the deterministic expected answer, without extra, missing or duplicated text
+- **AND** terminal and persisted status agree on successful completion
+- **AND** a second distinct prompt yields its different expected answer through the same path
+
+#### Scenario: Disabled eligible attachment fails without widening ordinary prompting
+
+- **WHEN** a caller attaches a disabled skill that is still in the effective eligible set and carries unique overlay and tool dependencies
+- **THEN** the run reports the existing `disabled` attachment activation failure
+- **AND** the provider request excludes that overlay and those dependencies and does not widen effective policy
+- **AND** ordinary prompt processing may contact the provider; this control does not require zero provider contact
+
+#### Scenario: Timing is observable without an invented performance claim
+
+- **WHEN** the controlled prompt/attachment journey executes
+- **THEN** its receipt records monotonic client before-POST, admission-response, first parsed content-delta and terminal-status timestamps and peer receive/first-write/last-write timestamps
+- **AND** reported durations respect clock domains and disclose client/network/polling uncertainty rather than asserting pure runtime overhead
+- **AND** release acceptance remains pending until the operator explicitly accepts the measured timing or requests investigation, with no implicit numeric SLO
+
+#### Scenario: Release partition reduction preserves production stream requirements
+
+- **WHEN** exhaustive newline/BOM/byte-partition and fixed-field permutations leave mandatory release execution
+- **THEN** the production arbitrary-boundary and framing requirements above remain in force and existing ordinary regression source coverage is retained
+- **AND** release observations retain text-without-terminal, pending-tool EOF, known malformed data, overflow, invalid UTF-8, post-terminal data, valid unknown event, tool completion, cancellation and graph controls
+- **AND** source presence alone is not reported as passing regression or runtime evidence
+
 ### Requirement: Native Anthropic streams preserve framing and bounded completion
 
 **Stable task:** R3. Native Anthropic streams SHALL accept one optional initial UTF-8 BOM and CR, LF or CRLF line endings independently of transport chunk boundaries. They SHALL retain strict UTF-8 and a 1 MiB incomplete-frame bound, reject incomplete EOF frames, and preserve payload, tool, usage and completion meaning.

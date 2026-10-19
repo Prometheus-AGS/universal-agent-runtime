@@ -35,12 +35,22 @@ pub struct ResolvedCredential {
 pub struct CredentialResolver {
     store: Arc<dyn CredentialStore>,
     encryption: Arc<CredentialEncryption>,
+    /// Bounds each credential-store read so a hanging backend surfaces as an
+    /// availability error instead of stalling run admission indefinitely.
+    store_timeout: std::time::Duration,
 }
 
 impl CredentialResolver {
     #[must_use]
     pub fn new(store: Arc<dyn CredentialStore>, encryption: Arc<CredentialEncryption>) -> Self {
-        Self { store, encryption }
+        Self { store, encryption, store_timeout: std::time::Duration::from_millis(10_000) }
+    }
+
+    /// Configure the per-read store timeout from the host resilience config.
+    #[must_use]
+    pub fn with_store_timeout(mut self, timeout: std::time::Duration) -> Self {
+        self.store_timeout = timeout.max(std::time::Duration::from_millis(500));
+        self
     }
 
     /// Resolve a verified principal's provider key with no session/agent context.
@@ -75,7 +85,14 @@ impl CredentialResolver {
         candidates.push((CredentialScope::User, principal.subject()));
 
         for (scope, scope_id) in candidates {
-            if let Some(row) = self.store.get_principal(principal, scope, scope_id, provider_id).await.map_err(safe_lookup_error)? {
+            let lookup = tokio::time::timeout(
+                self.store_timeout,
+                self.store.get_principal(principal, scope, scope_id, provider_id),
+            )
+            .await
+            .map_err(|_| anyhow::anyhow!("credential store unavailable: admission timeout elapsed"))?
+            .map_err(safe_lookup_error)?;
+            if let Some(row) = lookup {
                 // Decrypt only the matched row. The original crypto error is
                 // intentionally discarded (`_decrypt_err`) so no ciphertext or
                 // key material can leak through the error chain; we surface only
@@ -100,7 +117,13 @@ impl CredentialResolver {
     /// Resolve only the explicitly operator-owned platform credential. Callers
     /// without verified principal proof may never probe user/session/agent rows.
     pub async fn resolve_system(&self, provider_id: &str) -> anyhow::Result<Option<ResolvedCredential>> {
-        let Some(row) = self.store.get(CredentialScope::System, "system", provider_id).await.map_err(safe_lookup_error)? else {
+        let Some(row) = tokio::time::timeout(
+            self.store_timeout,
+            self.store.get(CredentialScope::System, "system", provider_id),
+        )
+        .await
+        .map_err(|_| anyhow::anyhow!("credential store unavailable: admission timeout elapsed"))?
+        .map_err(safe_lookup_error)? else {
             return Ok(None);
         };
         let plaintext = self.encryption.decrypt(&row.api_key_encrypted)

@@ -1,5 +1,10 @@
 # PLAN: uar-outstanding-issues-v1-1-1
 
+> Current certification authority: the 2026-10-17 function-first amendment at
+> the end of this document supersedes older gate-opening and full published-group
+> instructions. Historical task states and receipts are preserved. Gate CLOSED.
+
+
 Project: Universal Agent Runtime. Date: 2026-10-16. Stage: Plan.
 OpenSpec backend: existing change `uar-outstanding-issues-v1-1-1`.
 Changes: **one coordinated change, 22 pending tasks**. Baseline
@@ -567,3 +572,62 @@ they cannot certify or execute the changed bytes. L11 records exact current
 source/fixture identity only after every phase implementation handoff. The
 operator lock remains **CLOSED**. No source identity check, Docker preflight,
 test, build, compiler/import probe or gate is selected during code authoring.
+
+
+## Function-first child execution amendment — 2026-10-17
+
+The accepted child plan is `children/function-first-release-certification/plan.md`.
+Its exact FC1–FC9 ledger and ownership control this certification cohort; original
+parent task completions remain historical. Canonical KBD registration/transitions
+belong to the root lead through the actual CLI. No generated task/progress/waypoint
+file is edited by this amendment.
+
+FC1–FC5 finish all revised implementation, fixtures/configuration and required
+docs, including a closed prebuilt-image runner contract, then a fresh whole-parent/
+child inventory. FC6 separately requests exact image build/inspection and genuine
+qualified supervisor staging/physical-boot commands. FC7 requires explicitly
+authorized independent artifact review. FC8 requires the exact local functional
+command and explicit operator timing disposition. FC9 supplies the parent handoff.
+A completed inventory is not permission; all verification remains CLOSED pending
+the exact instruction. Later implementation edits invalidate prior preparation
+and require renewed inventory and instructions.
+
+V2 retains all six reduced local groups and four native supplements. P2 selects
+exactly streams/recovery on each immutable architecture child after separately
+authorized pull/inspection and fresh same-image supervisor preparation for that
+child. The functional invocation must not rebuild/pull or replace prepared UAR.
+Every recovery attempt needs fresh real predecessor work, journal registration,
+physical boot, distinct replacement fence and unconsumed qualified proof. Image
+identity does not establish controller qualification. FC5 published manifests
+remain templates until P1 and those preparation receipts exist.
+
+The uncomfortable tradeoff is lost direct per-child budget refusal, compiler
+restriction, credential-migration and MCP-failure evidence; these remain local
+release blockers. Explicit attachment/output equality is certified, not a model's
+skill-selection quality. Timing is measured diagnostically and requires operator
+disposition. There is no measured speedup or passing reduced-program receipt yet.
+P1 publication and P3 issue/release messaging retain their separate authorization.
+
+## Boss 2.2.40 source inventory amendment — 2026-10-19
+
+The scoped UAR 1.1.1 source now binds frozen Liter 2.3.0 commit
+`31c7e63236aa96914fccae2a5c25c4cda9ffa430`, its authorized
+`versions.toml` pin, Cargo lockfile, catalog/provenance, selected historical
+qualification repairs and function-first fixtures. The operator-approved
+identity command produced production tree
+`sha256:d41e765337e653766f3afedd95b674b47359cf702704fc132103cfd9ccfac351`
+and fixture tree
+`sha256:fd6ae4bf47dd85435104f1bc6c9662b6b6894d8eb757e1262a5d74d2679d81de`.
+The proposed 36-row parent/child/repair inventory is
+`implementation-inventory-function-first.json`. Its child view and three
+non-executable gate templates bind the same trees. This amendment changes no
+historical receipt or supervisor identity: retained identity-06 and earlier
+inventories bind older bytes.
+
+The lead reviews the inventory and owns canonical parent 8.8/L11 and child
+FC5 state transitions. Generated task/progress/waypoint files remain
+untouched here. Parent 6.2 and 7.1–7.3, child FC6–FC9, fresh same-image
+supervisor qualification, independent review and functional acceptance remain
+open. The operator lock remains **CLOSED** except for the already completed
+source identity command; each further build, preparation, review or gate
+command requires its own exact instruction.

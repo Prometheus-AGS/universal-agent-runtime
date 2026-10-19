@@ -1,5 +1,10 @@
 # Exclusive source ownership and handoff map
 
+> Current certification authority: the 2026-10-17 function-first amendment at
+> the end of this document supersedes older gate-opening and full published-group
+> instructions. Historical task states and receipts are preserved. Gate CLOSED.
+
+
 Phase: uar-outstanding-issues-v1-1-1. Stage: Plan. Date: 2026-10-16.
 All assignments below are for future Execute. Existing paths were source-inspected
 or located by the named domain author; NEW paths are explicit planned deliverables.
@@ -279,3 +284,31 @@ open. #388–#396 and #386 are queued, not silently assigned to R11. All
 teammates share one checkout, preserve other writers' edits, and run no early
 test, compiler, build or external gate. Handoffs name changed files,
 unresolved decisions, source state and unverified behavior.
+
+
+## Function-first child single-writer assignment — 2026-10-17
+
+The root lead assigns the following cohort paths after prior handback. This is
+coordination, not a native security boundary. Others share the checkout; preserve
+their edits. Gate CLOSED: source inspection and assigned documentation/source
+writing only; no tests/checks/builds/import probes/acceptance or external gates.
+
+| Writer | Exact current assignment |
+| --- | --- |
+| uar-runtime / FC2 | `scripts/release/uar_1_1_1_runtime.py`, `scripts/release/uar_1_1_1_support.py`, `tests/fixtures/uar_1_1_1_provider.py`, child `handoffs/FC2.md` |
+| uar-trust-tools / FC3 | `scripts/release/uar_1_1_1_credentials.py`, `scripts/release/uar_1_1_1_compiler.py`, `scripts/release/uar_1_1_1_recovery.py`, child `handoffs/FC3.md`; recovery is explicitly assigned here for this cohort |
+| uar-lead / FC1 and FC4–FC9 | Exact contracts/docs/canonical coordination and acceptance runner/schema/example paths enumerated in child plan; sole later image/build/staging/gate writer |
+| uar-verifier / FC7 | `.agent-team/uar-core/reviews/function-first-release-certification/implementation-findings.md`, plus the single corrective findings path allowed by child plan; no production file |
+
+FC2 hands distinct-provider messages-facade assertions to FC3; neither edits the
+other's file. FC4 consumes both handoffs and owns final docs/runner reconciliation.
+FC1's documentation writer hands the assigned documents back before FC4 edits.
+No Rust composition root, dependency pin, submodule, workflow or foreign checkout
+is assigned. Exact additional files require a new single-writer assignment.
+
+At most four active agents including lead; default lead, one specialist and the
+reserved independent judge. Fresh-context review receives final artifacts only
+and requires explicit operator instruction under the lock. Source handoffs are
+not runtime evidence. Image identity, real qualification and consumable fresh
+physical exclusion proof are separate requirements, however inconvenient staging
+is. Parent old ownership rows remain historical outside this exact cohort.

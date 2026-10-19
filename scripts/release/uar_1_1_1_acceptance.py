@@ -36,6 +36,9 @@ NATIVE_CASES = {
                     ("credentials_api_integration_test",
                      "phase_memory_credential_migration_uses_real_http_and_atomic_store")),
 }
+PUBLISHED_GROUPS = ("streams", "recovery")
+PUBLISHED_OMISSIONS = ("budget refusal", "compiler profile restriction",
+                       "credential migration", "MCP failure handling")
 
 
 def digest_bytes(value):
@@ -152,7 +155,8 @@ def inspect_image(resources, manifest):
     if manifest["stage"] == "published":
         provenance = verify_publication(resources, manifest)
         require("@sha256:" in manifest["image"], "published UAR requires an immutable child digest")
-        resources.docker("pull", "--platform", manifest["platform"], manifest["image"], timeout=1800)
+        if manifest.get("image_preparation") != "prebuilt":
+            resources.docker("pull", "--platform", manifest["platform"], manifest["image"], timeout=1800)
         repository = manifest["image"].split("@", 1)[0]
         index = json.loads(resources.docker("buildx", "imagetools", "inspect", "--raw",
                                            repository + "@" + manifest["index_digest"]).stdout)
@@ -169,13 +173,33 @@ def inspect_image(resources, manifest):
                     "released index does not contain the publishing run's exact children")
     else:
         require("@" not in manifest["image"], "local candidate must use an explicit local image label")
-        resources.docker("buildx", "build", "--load", "--platform", manifest["platform"],
-                         "--tag", manifest["image"], "--file", "Dockerfile", ".", timeout=14400)
+        if manifest.get("image_preparation") != "prebuilt":
+            resources.docker("buildx", "build", "--load", "--platform", manifest["platform"],
+                             "--tag", manifest["image"], "--file", "Dockerfile", ".", timeout=14400)
     data = json.loads(resources.docker("image", "inspect", manifest["image"]).stdout)[0]
     actual = data["Os"] + "/" + data["Architecture"]
     require(actual == manifest["platform"], "runtime image architecture mismatch")
+    preparation = None
+    if manifest.get("image_preparation") == "prebuilt":
+        reference = manifest["image_preparation_receipt"]
+        raw = Path(reference["path"]).read_bytes()
+        require(digest_bytes(raw) == reference["digest"], "image preparation receipt changed")
+        preparation = json.loads(raw)
+        require(preparation.get("schema_version") == 1, "invalid image preparation receipt")
+        for key in ("image", "platform", "source_tree", "fixture_tree"):
+            require(preparation.get(key) == manifest[key], "prepared image/source identity mismatch: " + key)
+        require(preparation.get("image_id") == manifest["prepared_image_id"] == data["Id"],
+                "prepared image bytes differ from installed candidate")
+        if manifest["stage"] == "published":
+            require(manifest["image"] in data.get("RepoDigests", []),
+                    "locally prepared child does not match published digest")
     return {"image_id": data["Id"], "repo_digests": data.get("RepoDigests", []), "platform": actual,
-            "publication_provenance": provenance}
+            "publication_provenance": provenance, "image_preparation": manifest.get("image_preparation", "legacy"),
+            "image_preparation_receipt": manifest.get("image_preparation_receipt"),
+            "prepared_identity": None if preparation is None else {
+                "image": preparation["image"], "platform": preparation["platform"],
+                "source_tree": preparation["source_tree"], "fixture_tree": preparation["fixture_tree"],
+                "image_id": preparation["image_id"]}}
 
 
 def check_result(group, module, result):
@@ -222,22 +246,49 @@ def read_manifest(path):
     require(value.get("stage") in ("local", "published"), "explicit execution stage required")
     require(value.get("platform") in ("linux/arm64", "linux/amd64"), "unsupported runtime platform")
     groups = value.get("groups")
-    if groups != list(GROUPS):
-        require(isinstance(groups, list) and len(groups) == 1 and groups[0] in GROUPS,
-                "select all phase groups or one previously failed group")
+    program = list(GROUPS if value["stage"] == "local" else PUBLISHED_GROUPS)
+    if groups != program:
+        require(isinstance(groups, list) and len(groups) == 1 and groups[0] in program,
+                "select the complete stage program or one previously failed group")
         parent = value.get("repair_parent")
         require(parent, "repair rerun requires the retained parent receipt")
-        receipt = json.loads(Path(parent["path"]).read_text())
-        require(digest_bytes(Path(parent["path"]).read_bytes()) == parent["digest"], "parent receipt digest changed")
+        parent_raw = Path(parent["path"]).read_bytes()
+        require(digest_bytes(parent_raw) == parent["digest"], "parent receipt digest changed")
+        receipt = json.loads(parent_raw)
         require(all(receipt.get(key) == value.get(key)
                     for key in ("phase", "version", "stage", "platform", "image")),
                 "repair parent belongs to another execution artifact")
+        require(receipt.get("selected_program") == program,
+                "repair parent did not declare this stage's complete program")
+        if value.get("image_preparation") == "prebuilt":
+            previous_image_id = receipt.get("artifact", {}).get("image_id")
+            require(previous_image_id == value.get("prepared_image_id") or value.get("repair_source_change"),
+                    "repair must disclose prepared image changes")
         require(receipt.get("source_tree") == value["source_tree"] or value.get("repair_source_change"),
                 "repair must disclose source changes")
         require(receipt.get("fixture_tree") == value["fixture_tree"] or value.get("repair_source_change"),
                 "repair must disclose fixture changes")
         require(receipt.get("groups", {}).get(groups[0], {}).get("status") in ("failed", "blocked", "interrupted"),
                 "repair selection is not a failed parent gate")
+    else:
+        require(not value.get("repair_parent"), "complete stage program cannot claim a repair parent")
+    mode = value.get("image_preparation")
+    require(mode in (None, "prebuilt"), "unsupported image preparation mode")
+    if mode == "prebuilt":
+        require(isinstance(value.get("prepared_image_id"), str)
+                and value["prepared_image_id"].startswith("sha256:")
+                and len(value["prepared_image_id"]) == 71,
+                "prebuilt image content ID required")
+        preparation_ref = value.get("image_preparation_receipt")
+        require(isinstance(preparation_ref, dict) and isinstance(preparation_ref.get("path"), str)
+                and Path(preparation_ref["path"]).is_absolute()
+                and isinstance(preparation_ref.get("digest"), str)
+                and preparation_ref["digest"].startswith("sha256:")
+                and len(preparation_ref["digest"]) == 71,
+                "absolute hashed image preparation receipt required")
+    else:
+        require(not value.get("prepared_image_id") and not value.get("image_preparation_receipt"),
+                "prepared image fields require prebuilt mode")
     for key in ("resource_root", "evidence_root", "infrastructure_file"):
         require(Path(value[key]).is_absolute(), "absolute private manifest paths required")
     inventory_ref = value["implementation_inventory"]
@@ -246,7 +297,9 @@ def read_manifest(path):
     inventory = json.loads(raw)
     require(inventory.get("phase") == PHASE and inventory.get("implementation_complete") is True,
             "entire phase implementation is not complete")
-    require(inventory.get("boundary") == "open" and inventory.get("source_tree") == value["source_tree"]
+    boundary = (inventory.get("implementation_boundary") == "complete" if mode == "prebuilt"
+                else inventory.get("boundary") == "open")
+    require(boundary and inventory.get("source_tree") == value["source_tree"]
             and inventory.get("fixture_tree") == value["fixture_tree"], "candidate/inventory identity mismatch")
     require(inventory.get("items") and all(item.get("implemented") is True and not item.get("unresolved")
                                         for item in inventory["items"]), "unfinished implementation item")
@@ -277,6 +330,11 @@ def main():
                    source_commit=manifest["source_commit"], source_tree=manifest["source_tree"],
                    fixture_tree=manifest["fixture_tree"], stage=manifest["stage"], image=manifest["image"],
                    platform=manifest["platform"], index_digest=manifest.get("index_digest"),
+                   selected_program=list(GROUPS if manifest["stage"] == "local" else PUBLISHED_GROUPS),
+                   selected_groups=manifest["groups"],
+                   omitted_architecture_observations=list(PUBLISHED_OMISSIONS) if manifest["stage"] == "published" else [],
+                   image_preparation=manifest.get("image_preparation", "legacy"),
+                   image_preparation_receipt=manifest.get("image_preparation_receipt"),
                    repair_parent=manifest.get("repair_parent"),
                    repair_source_change=manifest.get("repair_source_change"),
                    groups={}, execution_mode=None)

@@ -98,6 +98,7 @@ pub(super) async fn migrate(db: &Surreal<Any>) -> Result<()> {
     super::accounting_records::initialize(db).await?;
     db.query(include_str!("../../../../migrations/surrealdb/a2a_bindings.surql")).await?.check()?;
     db.query(include_str!("../../../../migrations/surrealdb/agui_runs.surql")).await?.check()?;
+    db.query(include_str!("../../../../migrations/surrealdb/run_history.surql")).await?.check()?;
     db.query(include_str!("../../../../migrations/surrealdb/mcp_elicitations.surql")).await?.check()?;
 
     Ok(())

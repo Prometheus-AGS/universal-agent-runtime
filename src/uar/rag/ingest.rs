@@ -2,6 +2,7 @@ use crate::uar::domain::knowledge::{ANONYMOUS_KNOWLEDGE_OWNER, KnowledgeChunk};
 use crate::uar::persistence::PersistenceLayer;
 use crate::uar::rag::chunking::{Chunker, ChunkingStrategy};
 use crate::uar::rag::embeddings::EmbeddingBackend;
+use crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend;
 use anyhow::{Result, anyhow};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -11,8 +12,8 @@ use walkdir::WalkDir;
 
 pub struct IngestService {
     persistence: Arc<dyn PersistenceLayer>,
-    embedding_backend: Arc<dyn EmbeddingBackend>,
-    chunker: Chunker,
+    embedding_backend: Arc<SwappableEmbeddingBackend>,
+    strategy: ChunkingStrategy,
     // Track processed files to avoid re-ingesting identical content (naive check by path/mtime)
     // For MVP, we just ingest everything on startup or change.
     // Ideally store tracking info in DB.
@@ -23,7 +24,7 @@ impl std::fmt::Debug for IngestService {
         f.debug_struct("IngestService")
             .field("persistence", &"<dyn PersistenceLayer>")
             .field("embedding_backend", &self.embedding_backend)
-            .field("chunker", &self.chunker)
+            .field("strategy", &self.strategy)
             .finish()
     }
 }
@@ -34,22 +35,41 @@ impl IngestService {
         embedding_backend: Arc<dyn EmbeddingBackend>,
         strategy: ChunkingStrategy,
     ) -> Self {
-        let chunker = Chunker::new(strategy, Some(Arc::clone(&embedding_backend)));
+        Self::new_shared(
+            persistence,
+            Arc::new(SwappableEmbeddingBackend::new(embedding_backend)),
+            strategy,
+        )
+    }
+
+    /// Share the live backend slot with the runtime's query path.
+    pub fn new_shared(
+        persistence: Arc<dyn PersistenceLayer>,
+        embedding_backend: Arc<SwappableEmbeddingBackend>,
+        strategy: ChunkingStrategy,
+    ) -> Self {
         Self {
             persistence,
             embedding_backend,
-            chunker,
+            strategy,
         }
     }
 
     /// Record the KB's embedding space on its first ingest, or refuse to mix
     /// a different space into chunks that were already written. Queries check
-    /// the same record (see `KnowledgeBase::ensure_embedding_space`).
-    async fn bind_embedding_space(&self, owner_id: &str, kb_id: &str) -> Result<()> {
+    /// the same record (see `KnowledgeBase::ensure_embedding_space`). The
+    /// caller passes the job's pinned backend so the recorded space always
+    /// matches the vectors the same job writes.
+    async fn bind_embedding_space(
+        &self,
+        owner_id: &str,
+        kb_id: &str,
+        backend: &Arc<dyn EmbeddingBackend>,
+    ) -> Result<()> {
         let Some(mut kb) = self.persistence.get_knowledge_base(owner_id, kb_id).await? else {
             return Ok(());
         };
-        let active = self.embedding_backend.fingerprint();
+        let active = backend.fingerprint();
         kb.ensure_embedding_space(&active)?;
         if kb.config.indexed_embedding.is_none() {
             kb.config.indexed_embedding = Some(active);
@@ -61,19 +81,23 @@ impl IngestService {
     /// Chunk `text` with the strategy stored on the knowledge base, so the
     /// KB's `config.chunk_strategy` decides how its documents are split. When
     /// the KB cannot be found the service-wide strategy still applies, as it
-    /// did before per-KB strategies were honoured.
-    async fn chunk_for_kb(&self, owner_id: &str, kb_id: &str, text: &str) -> Result<Vec<String>> {
-        match self.persistence.get_knowledge_base(owner_id, kb_id).await? {
-            Some(kb) => {
-                Chunker::new(
-                    kb.config.chunk_strategy,
-                    Some(Arc::clone(&self.embedding_backend)),
-                )
-                .chunk(text)
-                .await
-            }
-            None => self.chunker.chunk(text).await,
-        }
+    /// did before per-KB strategies were honoured. The chunker is built from
+    /// the job's pinned backend, so semantic chunking embeds in the same
+    /// space as the document embeddings that follow.
+    async fn chunk_for_kb(
+        &self,
+        owner_id: &str,
+        kb_id: &str,
+        text: &str,
+        backend: &Arc<dyn EmbeddingBackend>,
+    ) -> Result<Vec<String>> {
+        let strategy = match self.persistence.get_knowledge_base(owner_id, kb_id).await? {
+            Some(kb) => kb.config.chunk_strategy,
+            None => self.strategy.clone(),
+        };
+        Chunker::new(strategy, Some(Arc::clone(backend)))
+            .chunk(text)
+            .await
     }
 
     /// Process a single file
@@ -93,9 +117,14 @@ impl IngestService {
 
         tracing::info!("Ingesting processed file: {}", filename);
 
+        // ONE pinned backend for the whole job: chunking, document embeds,
+        // and the KB space binding all observe the same embedding space even
+        // if a live `llm.embedding.*` swap lands mid-job.
+        let backend = self.embedding_backend.pin();
+
         // 1. Chunking
         let chunks = self
-            .chunk_for_kb(ANONYMOUS_KNOWLEDGE_OWNER, kb_id, &content)
+            .chunk_for_kb(ANONYMOUS_KNOWLEDGE_OWNER, kb_id, &content, &backend)
             .await?;
 
         if chunks.is_empty() {
@@ -104,8 +133,8 @@ impl IngestService {
 
         // 2. Embedding
         let refs: Vec<&str> = chunks.iter().map(|s| s.as_str()).collect();
-        let embeddings = self.embedding_backend.embed(&refs).await?;
-        self.bind_embedding_space(ANONYMOUS_KNOWLEDGE_OWNER, kb_id)
+        let embeddings = backend.embed(&refs).await?;
+        self.bind_embedding_space(ANONYMOUS_KNOWLEDGE_OWNER, kb_id, &backend)
             .await?;
 
         // 3. Storage
@@ -167,8 +196,13 @@ impl IngestService {
         document_id: String,
         extra_metadata: HashMap<String, serde_json::Value>,
     ) -> Result<usize> {
+        // ONE pinned backend for the whole job (see ingest_file).
+        let backend = self.embedding_backend.pin();
+
         // 1. Chunking
-        let chunks = self.chunk_for_kb(owner_id, kb_id, content).await?;
+        let chunks = self
+            .chunk_for_kb(owner_id, kb_id, content, &backend)
+            .await?;
 
         if chunks.is_empty() {
             return Ok(0);
@@ -176,8 +210,8 @@ impl IngestService {
 
         // 2. Embedding
         let refs: Vec<&str> = chunks.iter().map(|s| s.as_str()).collect();
-        let embeddings = self.embedding_backend.embed(&refs).await?;
-        self.bind_embedding_space(owner_id, kb_id).await?;
+        let embeddings = backend.embed(&refs).await?;
+        self.bind_embedding_space(owner_id, kb_id, &backend).await?;
 
         // 3. Storage
         for (i, segment) in chunks.iter().enumerate() {
@@ -224,12 +258,19 @@ impl IngestService {
         job.validate_namespace()?;
         let kb = self.persistence.get_knowledge_base(&job.owner_id, &job.kb_id).await?
             .ok_or(IngestionStoreError::Revoked)?;
-        let fingerprint = self.embedding_backend.fingerprint();
+        // ONE pinned backend for fingerprint check, chunking, and embeds.
+        let backend = self.embedding_backend.pin();
+        // Bind the KB's embedding space on its first successful ingest so the
+        // query-side guard (`ensure_embedding_space`) is never vacuous for
+        // API-uploaded KBs either — a later backend swap must refuse this KB
+        // explicitly instead of scoring against another space's vectors.
+        self.bind_embedding_space(&job.owner_id, &job.kb_id, &backend).await?;
+        let fingerprint = backend.fingerprint();
         kb.ensure_embedding_space(&fingerprint)?;
-        let segments = Chunker::new(kb.config.chunk_strategy, Some(Arc::clone(&self.embedding_backend)))
+        let segments = Chunker::new(kb.config.chunk_strategy, Some(Arc::clone(&backend)))
             .chunk(content).await?;
         let refs: Vec<&str> = segments.iter().map(String::as_str).collect();
-        let embeddings = if refs.is_empty() { Vec::new() } else { self.embedding_backend.embed(&refs).await? };
+        let embeddings = if refs.is_empty() { Vec::new() } else { backend.embed(&refs).await? };
         anyhow::ensure!(segments.len() == embeddings.len(), "embedding result count differs from chunk count");
         let created_at = chrono::Utc::now().to_rfc3339();
         let chunks = segments.into_iter().zip(embeddings).enumerate().map(|(index, (content, embedding))| {

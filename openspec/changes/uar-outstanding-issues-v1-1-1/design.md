@@ -157,19 +157,21 @@ permits absent SKILL.md version; no speculative bulk edit or compiler relaxation
 is planned. New causal evidence would require a scope revision before the full
 implementation boundary.
 
-### One full-phase gate, then immutable publication
+### Whole-phase implementation, authorized preparation, then immutable publication
 
 `verification.md` defines the new L3 local runner interface and complete group
 inventory. R5/T4/S4 author reusable real-process fixtures; L3 integrates black-box
-observations against the candidate and both published images. Native-source tests
+observations against the candidate and the selected published-image paths. Native-source tests
 are separate evidence. A published run must never rebuild or replace UAR source.
 Use the production Dockerfile and existing deployment workflow; no workflow change
 is selected. Version bump is limited to the runtime Cargo package/lock entry and
 required release documentation.
 
-After the complete implementation inventory, isolated artifact review and the
-serialized local program must succeed before source/tag publication. Both
-published children must pass the full selected black-box groups. Record index,
+After the complete implementation inventory, separately authorized image and
+qualified-supervisor preparation, isolated artifact review and the serialized
+six-group local program must succeed before source/tag publication. Both
+published children must pass streams/recovery after their own authorized
+same-image preparation. Record index,
 child digests, source/workflow identity and native/emulated execution. Failed
 published acceptance withholds success; never silently move the tag. Issue
 reconciliation preserves v1.1.0 history, actual #385 recovery limits and #382
@@ -255,8 +257,53 @@ suggestions do not override the repository's full-phase boundary.
 On 2026-10-16 the operator explicitly limited final verification to real
 integration of known scenarios supported by this phase. References above to
 seven groups, the full historical Kubo program or broad source validation are
-superseded. The six phase groups in verification.md run on the local candidate
-and both published architectures. Production behavior remains fully specified;
+superseded. The original six-group published repetition is additionally superseded
+by the 2026-10-17 function-first amendment below. Production behavior remains fully specified;
 no production requirement is deferred. Internal SDK seams use real provider/store
 integration, and no unit-only, lint, schema or feature-matrix sweep is acceptance.
 Full implementation, required fixtures/docs and L4 still precede every gate.
+
+## Function-first certification amendment — 2026-10-17
+
+The child plan is the current implementation sequence: FC1–FC5 complete all
+contracts, adapters, fixtures, runner/schema integration and whole-phase inventory;
+FC6 separately prepares the image and fresh qualified supervisor state; FC7 is
+authorized independent review; FC8 is authorized local acceptance and operator
+timing disposition; FC9 hands back to parent V2/P1–P3. The operator gate remains
+CLOSED throughout partial implementation and never opens merely from inventory.
+
+Use the existing runner and five release adapters for six groups. Local acceptance keeps all six groups
+and four native host/SDK/memory supplements. Published acceptance selects exactly
+streams/recovery on each immutable child. No architecture-specific credential
+migration, budget refusal, compiler restriction or MCP failure claim is inferred
+from those two groups; those outcomes are certified on the local candidate only.
+Both published children retain durable owner isolation and qualified supervisor
+recovery. Missing genuine qualification is a blocker, not removable metadata.
+
+The controlled provider must derive its answer from both a unique user prompt
+and the enabled attached skill's unique overlay. Fully assembled public SSE,
+AG-UI and persisted answer text must equal that answer exactly. A disabled skill
+remains eligible but yields the existing disabled activation failure; its overlay
+and unique dependencies stay absent while ordinary prompting may continue.
+Record client admission/first-content/terminal timing and peer receive/write
+durations without subtracting unrelated monotonic epochs. The operator explicitly
+accepts the measured timing or requires investigation; no numeric SLO or real-model
+quality claim is invented.
+
+FC4 authors a closed `image_preparation: "prebuilt"` manifest mode with
+`prepared_image_id` and hashed `image_preparation_receipt`. The function-first
+acceptance invocation inspects and uses that exact image; it cannot build, pull
+or silently replace it. A prior image-bound supervisor receipt is invalid after
+source/fixture edits. FC6 builds/inspects the local candidate under separate exact
+instructions, stages real queued/active predecessor work with an operator-qualified
+controller, performs the separately authorized physical boot transition, and
+records a fresh distinct replacement fence on the same image. Each local/published
+recovery run consumes its own fresh proof; no previous reclaim is replayed.
+Published children require separate authorized pull/inspection and equivalent
+fresh staging after P1 supplies actual digests. Image identity is not controller
+qualification. FC5's published manifests remain non-executable templates until
+those receipts exist. This design adds no kernel write or alternate authority.
+
+The uncomfortable limit is the deliberately smaller per-architecture observation
+set and unmeasured timing. Label consolidation is not evidence of fewer requests;
+the child disposition records actual removed loops/restarts separately.

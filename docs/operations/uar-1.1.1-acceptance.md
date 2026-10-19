@@ -4,13 +4,14 @@ This program exercises the known outstanding-issues phase scenarios through the
 real runtime, authenticated routes, provider and MCP wire peers and durable
 stores. It is run locally after all production source, migrations, fixtures,
 configuration and required docs are implemented and the latest whole-phase
-inventory is recorded. For the R11 repair cohort that inventory is L9;
-historical L4/L8 inventories do not authorize its gates. Missing prerequisites are blocked, not
+inventory is recorded. The function-first child requires a new FC5 inventory;
+historical L4–L11 inventories do not certify edited fixtures. The operator
+verification gate is CLOSED until the exact action is explicitly instructed. Missing prerequisites are blocked, not
 skipped. No unit, formatting, lint, schema-validation or broad historical
 conformance sweep is part of this phase program.
 
-The six required groups are binding, streams, mcp-outcomes, credentials, recovery
-and combined. Their exact observable controls are in the phase verification.md
+The six local required groups are binding, streams, mcp-outcomes, credentials,
+recovery and combined. Each published architecture runs exactly streams/recovery. Their exact observable controls are in the phase verification.md
 and adapter REQUIRED_SCENARIOS inventories. Controlled peers measure runtime
 protocol behavior; they do not establish external-model quality or customer
 cluster recovery. Local source integration for internal SDK seams must retain
@@ -35,7 +36,9 @@ or architecture qualification credit.
 ## Private inputs and ownership
 
 Copy scripts/release/uar_1_1_1_manifest.example.json into the phase evidence/gates
-location, remove its template-only fields, and populate real values after L9.
+location and populate local selection/configuration after FC5. Fill fresh
+image/supervisor bindings only from authorized FC6 preparation. Published inputs
+stay templates until P1 and each child’s separately authorized preparation.
 The template is intentionally non-executable. The accompanying schema is a field
 reference, not an authorization to run a validator. Runtime checks bind the actual
 inventory digest, source/fixture identity, stage, architecture and required groups.
@@ -48,8 +51,8 @@ containers/volumes on its own Docker network; these are not live endpoint inputs
 Keep the file outside public receipts with mode 0600. The resource root must be a
 new private directory; the evidence root is a separate new retained directory.
 No real user credential store, know-me database or deployment namespace is used.
-The disposable fixture disables request throttling for its exhaustive sequential
-framing matrix. Authentication and run authority remain enabled. Rate-limit
+The disposable fixture disables request throttling for its serial functional
+observations; exhaustive framing permutations are no longer release-mandatory. Authentication and run authority remain enabled. Rate-limit
 qualification is outside this phase's selected scenarios.
 
 The required qualified-supervisor case additionally needs a disposable isolated
@@ -93,15 +96,24 @@ separate evidence; a readiness timeout alone does not prove database failure.
 From the repository root, the selected invocations are:
 
 ```text
-python3 scripts/release/uar_1_1_1_acceptance.py --manifest .kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/gates/local.json
-python3 scripts/release/uar_1_1_1_acceptance.py --manifest .kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/gates/arm64.json
-python3 scripts/release/uar_1_1_1_acceptance.py --manifest .kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/gates/amd64.json
+python3 scripts/release/uar_1_1_1_acceptance.py --manifest .kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/gates/function-first-local.json
+python3 scripts/release/uar_1_1_1_acceptance.py --manifest .kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/gates/function-first-arm64.json
+python3 scripts/release/uar_1_1_1_acceptance.py --manifest .kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/gates/function-first-amd64.json
 ```
 
-The local stage builds through the production Dockerfile and exercises the new
-image. Published stage pulls the immutable child, verifies membership/platform
-in the released index and repeats all six groups without rebuilding UAR or
-mounting replacement runtime binaries. Record the tag source commit, workflow
+The manifest supports closed `image_preparation: "prebuilt"`,
+`prepared_image_id` and `image_preparation_receipt: {path,digest}` fields.
+The preparation receipt is JSON schema version 1 and records `image`,
+`platform`, `source_tree`, `fixture_tree` and the inspected `image_id`.
+The function-first runner uses the prepared image unchanged and refuses mismatches
+without build or pull fallback. A single-group repair must reference a retained
+receipt that declared the complete program for its stage and recorded that
+group as failed, blocked or interrupted. A pre-build receipt with no group
+result cannot serve as a repair parent. Local preparation builds through the production Dockerfile;
+published preparation pulls the immutable child. Both are separately authorized
+actions before the functional command, which retains image/source/platform and
+publication-provenance checks. The published program runs only streams/recovery
+and never mounts a replacement runtime binary. Record the tag source commit, workflow
 commit/run, index and both child digests. Companion images need not match UAR's
 architecture; never set a global Docker platform override. Receipt labels
 native/emulated execution from the Docker host and actual image architecture.
@@ -114,7 +126,7 @@ the file's `sha256:` digest. The referenced JSON contains `schema_version: 1`,
 `linux/arm64` and `linux/amd64`. Children are complete `sha256:` digests;
 artifact IDs are the actual GitHub Actions digest-export artifact IDs.
 
-Before pulling the image, the runner independently reads the remote annotated
+During published acceptance, the runner independently reads the remote annotated
 tag and its commit, then verifies the successful push run of
 `.github/workflows/deploy.yml` has that exact source commit and run attempt.
 It downloads that run's `digests-linux-arm64` and `digests-linux-amd64` artifacts
@@ -132,7 +144,8 @@ Source identity hashes tracked and new source/build inputs, including immutable
 submodule commits. Fixture identity hashes tests and release scenario sources.
 Both use sorted path plus content digests. The latest whole-phase inventory binds those values to the
 complete implementation. Changed source/fixtures invalidate the freeze; update
-the inventory and run affected integration again. No historical receipt certifies
+the inventory, obtain renewed exact preparation/gate instructions, stage fresh
+same-image supervisor state, and run only the authorized affected integration. No historical receipt certifies
 new source.
 
 Each group writes a retained observation result with mandatory scenario IDs,
@@ -173,3 +186,38 @@ container/image/volume pruning is authorized.
 
 These repairs are source implementation only until R9 and renewed L7 are complete.
 Original local-02 receipts remain failed and immutable.
+
+
+## Function-first assertion and preparation limits — 2026-10-17
+
+The intended local inventory is 65 labels, with consequential assertions retained
+when labels fold. The controlled provider derives its answer from unique user
+input and the enabled attached skill overlay. Assembled SSE, AG-UI and persisted
+answer text each must exactly equal the expected answer. The disabled attachment
+control remains eligible, reports `disabled`, omits its unique overlay/dependencies
+and permits ordinary prompt contact. It must not widen policy. This proves explicit
+attachment propagation, not model-selected skill quality or real-provider latency.
+
+The opt-in stream observer records actual first parsed content arrival rather
+than buffered EOF timing. Report client and peer durations within their clock
+domains and disclose network/polling uncertainty. The operator must explicitly
+accept measured timing or request investigation before V2/release acceptance;
+there is no invented numeric SLO and no author-selected automatic performance pass.
+
+After FC5, separately request exact candidate build/inspection, controller staging,
+and disposable physical boot/replacement commands. Preserve a genuinely qualified
+controller record independently of image identity. Stage fresh real queued/active
+predecessor work, retain journal registration, perform the authorized physical boot,
+and capture a distinct replacement fence on identical image bytes. Each recovery
+run consumes a fresh proof; later runs and each published architecture need their
+own fresh preparation. Never reuse an old identity by editing its digest. Missing
+qualification blocks acceptance. The child preparation runbook supplies exact
+rendered commands/private inputs before any execution; this document grants none.
+
+The uncomfortable loss of assurance: published children do not directly repeat
+budget refusal, compiler restriction, credential migration or MCP failure handling.
+Those remain mandatory local observations. Both children still exercise the full
+retained recovery group, including genuine qualified supervisor exclusion. Ten
+rather than eighteen group executions is source arithmetic, not measured speedup.
+The reduced runner and adapters remain unverified until the exact
+operator-authorized preparation/review/functional sequence completes.

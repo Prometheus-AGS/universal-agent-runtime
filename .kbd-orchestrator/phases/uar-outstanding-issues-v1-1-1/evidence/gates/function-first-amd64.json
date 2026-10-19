@@ -1,0 +1,34 @@
+{
+  "__template": "NON-EXECUTABLE: source and fixture identities recorded; parent mismatch guard NOT READY; operator gate CLOSED",
+  "schema_version": 1,
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "version": "1.1.1",
+  "source_commit": "38f0b5d85960e3cb8445607750538ca500efdf17",
+  "source_tree": "sha256:7c14facb2a2e8f6e7aca230bb7e30581ed4b01abe0d8ea2bd09bdad0f4ec1d41",
+  "fixture_tree": "sha256:4de62ff30d467ab9da134ad7f988c04d167fb15c95e89da7e7706739e5b42025",
+  "image_preparation": "prebuilt",
+  "prepared_image_id": null,
+  "image_preparation_receipt": {
+    "path": null,
+    "digest": null
+  },
+  "implementation_inventory": {
+    "path": "/Users/gqadonis/.claude/worktrees/uar-liter-boss-2240/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/implementation-inventory-function-first.json",
+    "digest": null
+  },
+  "stage": "published",
+  "image": null,
+  "platform": "linux/amd64",
+  "index_digest": null,
+  "publication_receipt": {
+    "path": null,
+    "digest": null
+  },
+  "groups": [
+    "streams",
+    "recovery"
+  ],
+  "resource_root": "/tmp/uar111-resources-function-first-amd64-boss-2240",
+  "evidence_root": "/Users/gqadonis/.claude/worktrees/uar-liter-boss-2240/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/acceptance/function-first-amd64-boss-2240",
+  "infrastructure_file": "/Users/gqadonis/.local/state/uar-v1.1.1/acceptance/infrastructure-function-first-amd64.json"
+}

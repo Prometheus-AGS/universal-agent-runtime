@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "kind": "administrative_setup_receipt",
+  "recorded_at": "2026-10-16T20:57:23.671Z",
+  "approval": {
+    "source": "operator reply 2026-10-16",
+    "text": "Approve dedicated guest setup and guest-only reboots",
+    "scope": [
+      "dedicated disposable guest",
+      "guest-only reboot"
+    ],
+    "excluded": [
+      "Mac reboot",
+      "know-me production",
+      "paid infrastructure",
+      "cancelled Dot matrix"
+    ]
+  },
+  "guest": {
+    "name": "dot17-linux-qualification",
+    "architecture": "aarch64",
+    "vm_type": "qemu",
+    "cpus": 4,
+    "memory_gib": 8,
+    "disk_gib": 24,
+    "host_mounts": false,
+    "configuration_sha256": "sha256:432d844b4bfd4df05e87cafcf15d1dc5b815c1a3939c150f57276670d1616078",
+    "lima_executable_sha256": "sha256:4636491d6758a95211a5a857a07ddb6b1c034375bdede18a5bdae32643cbd553",
+    "creation": {
+      "terminal_exit": 0,
+      "session": 46756
+    },
+    "start": {
+      "terminal_exit": 0,
+      "session": 16225
+    }
+  },
+  "controller": {
+    "candidate": true,
+    "production_qualified": false,
+    "source_sha256": "sha256:7f6b629276b8a17dc0726522a8eaa897c4c07c59b01934471eafc8cf66c57cb5",
+    "journal_guest_path": "/var/lib/uar-supervisor/exclusions.sqlite3",
+    "service_installed": true,
+    "service_enabled": true,
+    "service_probe_run": false
+  },
+  "runtime": {
+    "service_installed": true,
+    "artifact_installed": false,
+    "started": false,
+    "source_bound_image_pending": true
+  },
+  "reboot_performed": false,
+  "physical_qualification_passed": false,
+  "acceptance_credit": false,
+  "private_admin_receipts": [
+    {
+      "name": "guest-install-receipt.json",
+      "sha256": "sha256:2d5948b6b1489a358b76bdf11a750dab22f686894f69a85f3f06fd721e589766"
+    },
+    {
+      "name": "guest-peer-setup-receipt.json",
+      "sha256": "sha256:78509f09c1b792cb32bf60f0d002325625cd30c48b3ed83276e81a38babc1c42"
+    }
+  ],
+  "limitations": [
+    "Setup receipts establish administrative preparation only. No health observation, runtime admission, physical exclusion, or acceptance result is claimed.",
+    "Guest PKI and scoped credentials remain private; their values are not copied into KBD records."
+  ]
+}

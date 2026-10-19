@@ -2161,3 +2161,17 @@ The `uar-core` source-only audit found no other missing code in the selected
 authoring remains the documented successor scope. Inventory14 is obsolete
 after R13's source edit. L11 must renew the whole-phase inventory, and the
 operator lock stays closed; no test or build was used to make this decision.
+
+## 2026-10-19 — Frozen Liter 2.3.0 source for Boss 2.2.40
+
+The operator selected fork commit `31c7e63236aa96914fccae2a5c25c4cda9ffa430`
+as the UAR dependency for the Boss 2.2.40 release. The UAR gitlink,
+`versions.toml`, offline-resolved `Cargo.lock`, and generated provider catalog
+now agree on that source. The catalog contains 358 providers and the exact
+GPT-6.1 Sol entry from Liter's current schemas, so its prior fallback is
+dormant. The isolated source also carries the observed Surreal concurrent
+credential-migration journal repair and the bounded 1.1.1 qualification
+scripts/fixture. The uncomfortable fact is that no current source/fixture
+inventory or acceptance result certifies this assembled candidate. The
+operator verification gate remains CLOSED; exact qualification and publication
+must wait for whole-phase reconciliation and explicit commands.

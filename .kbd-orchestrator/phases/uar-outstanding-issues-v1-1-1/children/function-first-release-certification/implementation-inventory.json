@@ -1,0 +1,258 @@
+{
+  "document_kind": "child_implementation_inventory",
+  "phase": "uar-outstanding-issues-v1-1-1::function-first-release-certification",
+  "parent_inventory": "/Users/gqadonis/.claude/worktrees/uar-liter-boss-2240/.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/implementation-inventory-function-first.json",
+  "parent_inventory_digest": null,
+  "implementation_boundary": "startup_config_source_identified_parent_guard_not_ready",
+  "implementation_complete": false,
+  "source_commit": "38f0b5d85960e3cb8445607750538ca500efdf17",
+  "source_tree": "sha256:7c14facb2a2e8f6e7aca230bb7e30581ed4b01abe0d8ea2bd09bdad0f4ec1d41",
+  "fixture_tree": "sha256:4de62ff30d467ab9da134ad7f988c04d167fb15c95e89da7e7706739e5b42025",
+  "child_items": [
+    {
+      "id": "child:1.1",
+      "stable_id": "FC1",
+      "owner": "uar-lead",
+      "required_deliverable": "Adopt reduced functional assurance, reconcile OpenSpec and parent contracts, assign exact child scope and team ownership.",
+      "files": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/scope.json",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/plan.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/handoffs/FC1.md",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/proposal.md",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/design.md",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/tasks.md",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/verification.md",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/specs/model-path-resiliency/spec.md",
+        "openspec/changes/uar-outstanding-issues-v1-1-1/specs/knowledge-rag-product-certification/spec.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/plan.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/ownership.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/spec/runtime-contracts.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/spec/trust-contracts.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/spec/state-contracts.md",
+        "docs/operations/uar-1.1.1-acceptance.md",
+        "docs/releases/v1.1.1.md"
+      ],
+      "source_handoff": "children/function-first-release-certification/handoffs/FC1.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed_for_current_source": false
+    },
+    {
+      "id": "child:2.1",
+      "stable_id": "FC2",
+      "owner": "uar-runtime",
+      "required_deliverable": "Implement prompt/explicit skill/output and timing oracle, reduced runtime scenarios, native messages fold and controlled provider trace.",
+      "files": [
+        "scripts/release/uar_1_1_1_runtime.py",
+        "scripts/release/uar_1_1_1_support.py",
+        "tests/fixtures/uar_1_1_1_provider.py"
+      ],
+      "source_handoff": "children/function-first-release-certification/handoffs/FC2.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed_for_current_source": false
+    },
+    {
+      "id": "child:2.2",
+      "stable_id": "FC3",
+      "owner": "uar-trust-tools",
+      "required_deliverable": "Fold credential, compiler and recovery labels while retaining each consequential backend, authority and durability assertion.",
+      "files": [
+        "scripts/release/uar_1_1_1_credentials.py",
+        "scripts/release/uar_1_1_1_compiler.py",
+        "scripts/release/uar_1_1_1_recovery.py"
+      ],
+      "source_handoff": "children/function-first-release-certification/handoffs/FC3.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed_for_current_source": false
+    },
+    {
+      "id": "child:3.1",
+      "stable_id": "FC4",
+      "owner": "uar-lead",
+      "required_deliverable": "Integrate closed prebuilt-image runner/schema, all scenario dispositions, supervisor preparation procedure and final release/contract documentation.",
+      "files": [
+        "scripts/release/uar_1_1_1_acceptance.py",
+        "scripts/release/uar_1_1_1_manifest.schema.json",
+        "scripts/release/uar_1_1_1_manifest.example.json",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/scenario-disposition.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/supervisor-preparation.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/handoffs/FC4.md",
+        ".prometheus/decisions.md"
+      ],
+      "source_handoff": "children/function-first-release-certification/handoffs/FC4.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed_for_current_source": false
+    },
+    {
+      "id": "child:3.2",
+      "stable_id": "FC5",
+      "owner": "uar-lead",
+      "required_deliverable": "Record exact whole-phase source/fixture identity, reconcile all implementation items and canonical state, and prepare concrete non-executable manifests and operator decision packet.",
+      "files": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/implementation-inventory-function-first.json",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/implementation-inventory.json",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/operator-gate-decision.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/handoffs/FC5.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/gates/function-first-local.json",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/gates/function-first-arm64.json",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/evidence/gates/function-first-amd64.json"
+      ],
+      "source_handoff": "children/function-first-release-certification/handoffs/FC5.md",
+      "implemented": true,
+      "unresolved": [],
+      "verification_executed_for_current_source": false
+    },
+    {
+      "id": "child:startup-config-lifecycle-root-cause",
+      "stable_id": "CFG1",
+      "owner": "uar-release-source",
+      "required_deliverable": "Integrate the receipt-backed v1-v4 startup configuration lifecycle repairs: persisted provider credential boot seeding and keyless mutation, live/persisted embedding activation with per-ingest binding and shared vector backend, descriptive RAG versus restart-required chunking, persisted memory boot wiring, and compatibility constructors/settings test literals required by those interfaces. The child finite diagnosis is PASS, but the parent query-time embedding-space mismatch guard remains NOT READY because a second supported credentialed embedding space is unavailable. No current assembled-source acceptance.",
+      "files": [
+        "src/embedded.rs",
+        "src/server.rs",
+        "src/uar/api/knowledge.rs",
+        "src/uar/api/providers.rs",
+        "src/uar/api/settings.rs",
+        "src/uar/rag/embeddings/mod.rs",
+        "src/uar/rag/embeddings/swappable.rs",
+        "src/uar/rag/ingest.rs",
+        "src/uar/runtime/matching/vector.rs",
+        "src/uar/settings/manager.rs",
+        "tests/settings_persistence.rs",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/children/startup-config-lifecycle-root-cause/ANALYZE.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/children/startup-config-lifecycle-root-cause/ASSESS.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/children/startup-config-lifecycle-root-cause/EXECUTE.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/children/startup-config-lifecycle-root-cause/EXIT-CONTRACT.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/children/startup-config-lifecycle-root-cause/PLAN.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/children/startup-config-lifecycle-root-cause/goals.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/children/startup-config-lifecycle-root-cause/handoff-in.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/children/startup-config-lifecycle-root-cause/handoff-out.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/children/startup-config-lifecycle-root-cause/reflection.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/children/startup-config-lifecycle-root-cause/scope.json",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/config-lifecycle-map-2026-10-19.md"
+      ],
+      "source_handoff": "children/function-first-release-certification/children/startup-config-lifecycle-root-cause/handoff-out.md",
+      "implemented": true,
+      "unresolved": [
+        "Parent query-time embedding-space mismatch guard NOT READY; no second supported credentialed embedding provider was available for the controlled switch.",
+        "Current production/fixture identity recorded after transfer; no current-source behavior verification."
+      ],
+      "verification_executed_for_current_source": false
+    }
+  ],
+  "repair_items": [
+    {
+      "id": "repair:qualification-1",
+      "stable_id": "RQ1",
+      "owner": "uar-lead",
+      "required_deliverable": "Qualification repair round: B1 binding service_instance fixture, B2 skills no-slash fixture, B3 configurable bounded admission (resilience.admission_timeout_ms; bounded harness/resilience/presentation reads, bounded credential store reads, whole-admission backstop with persistence_unavailable terminal failure), B4 cold-boot port refresh; coverage additions: A2A/ACP/A2UI contract checks, accounting retention across cold restart, grounded-retrieval citation, embedding fingerprint. WASM packaged capability denial and memory-service isolation recorded NOT_EXERCISED (substantial new infrastructure excluded by scope freeze). FC7 corrective review fix: accounting readback route /api/uar/accounting/scopes/session/<id> (was /api/accounting, 404 via catch-all), byte-length key idiom.",
+      "files": [
+        "scripts/release/uar_1_1_1_recovery.py",
+        "scripts/release/uar_1_1_1_runtime.py",
+        "src/config.rs",
+        "src/server.rs",
+        "src/uar/runtime/manager.rs",
+        "src/uar/security/credentials/mod.rs",
+        "src/uar/security/credentials/resolver.rs",
+        "tests/settings_persistence.rs"
+      ],
+      "implemented": true,
+      "unresolved": []
+    },
+    {
+      "id": "repair:qualification-2",
+      "stable_id": "RQ2",
+      "owner": "uar-lead",
+      "required_deliverable": "Qualification repair round 2 (operator-authorized, narrowly scoped): (1) restart durability - durable run history records and per-published-event write-through on the existing PersistenceLayer abstraction with SurrealDB and PostgreSQL provider implementations (migrations 20261018000000_run_history.sql, surrealdb/run_history.surql), run record persisted at admission and on terminal transition, durable read fallbacks in get_run_for_context/history_since on active_runs miss with namespace-key ownership predicate, preserving event ordering, tenant isolation, and /events response semantics across restart; (2) recovery fixture - embedding fingerprint assertion moved to post-indexing _committed call sites only (indexed flag), assertion and planned restart sequence preserved so B4 cold-boot port refresh executes; (3) SurrealKV metadata sidecar fixture predicate - health probe asserts HTTP 200 via return_status=True (pinned image returns 200 with empty body, which Http.request maps to falsy None), pinned SurrealDB 3.3.0 image kept after demonstrated fixture root cause (live A/B).",
+      "files": [
+        "src/uar/persistence/run_history.rs",
+        "src/uar/persistence/mod.rs",
+        "src/uar/persistence/providers/run_history/surreal.rs",
+        "src/uar/persistence/providers/run_history/postgres.rs",
+        "src/uar/persistence/providers/surreal_host.rs",
+        "src/uar/runtime/manager.rs",
+        "migrations/20261018000000_run_history.sql",
+        "migrations/surrealdb/run_history.surql",
+        "scripts/release/uar_1_1_1_credentials.py",
+        "scripts/release/uar_1_1_1_recovery.py",
+        "src/uar/persistence/providers/postgres.rs",
+        "src/uar/persistence/providers/surreal.rs"
+      ],
+      "implemented": true,
+      "unresolved": []
+    },
+    {
+      "id": "repair:qualification-3",
+      "stable_id": "RQ3",
+      "owner": "uar-lead",
+      "required_deliverable": "Qualification repair round 3 (operator-authorized, bounded): fixture-only repairs of the three demonstrated round-2 causes. (1) Failure diagnostics: RuntimeLease capture_container now retains the redacted launch command, container state/exit status, and the health-probe result alongside the container logs before any cleanup, in both the health-failure and finally paths. (2) Credential runtime startup: atomic config replacement (stage+fsync+os.replace) with a directory mount so a (re)starting process cannot observe a partial config - round-2 root cause was a restarted runtime reading EOF mid-string at column 1355 of a valid 1458-byte config written in place. (3) PostgreSQL recovery backend: provision the pinned Supabase image per its designed bootstrap identity (POSTGRES_USER=supabase_admin; migrate.sh then creates the postgres role with the same password) and require durable readiness plus host TCP reachability through the published endpoint before the backend is consumed - round-2 root cause was migrate.sh FATAL on missing supabase_admin -> container exit 2 -> bindings torn down -> 'no public port'. Pinned image digest kept; product source unchanged.",
+      "files": [
+        "scripts/release/uar_1_1_1_support.py",
+        "scripts/release/uar_1_1_1_credentials.py",
+        "scripts/release/uar_1_1_1_compiler.py"
+      ],
+      "implemented": true,
+      "unresolved": []
+    },
+    {
+      "id": "repair:qualification-4",
+      "stable_id": "RQ4",
+      "owner": "uar-lead",
+      "required_deliverable": "Qualification repair round 4 (fixture-only): (1) local-backend store verification authenticates as the credential the SurrealKV store was initialized with (product defaults root/root), correcting the temp-host auth identity that caused POST /sql 401; (2) content-versioned config filenames (config-<sha12>.json, atomic stage+fsync+os.replace) with recreate-on-config-change, eliminating the transient stale file-view class; startup retries removed and every failure records intended-vs-visible config hashes.",
+      "files": [
+        "scripts/release/uar_1_1_1_credentials.py",
+        "scripts/release/uar_1_1_1_support.py",
+        "scripts/release/uar_1_1_1_compiler.py"
+      ],
+      "implemented": true,
+      "unresolved": []
+    },
+    {
+      "id": "repair:qualification-6",
+      "stable_id": "RQ6",
+      "owner": "uar-lead",
+      "required_deliverable": "Qualification repair round 6 (concurrent replay defect): the Surreal persistent migrate_legacy lacked the post-collision journal-replay fallback its Postgres counterpart has (ON CONFLICT loser -> replay of the winner's immutable receipt). Racing identical If-Match requests both passed preflight and collided on the journal CREATE, surfacing 503 credential_migration_unavailable. The Surreal loser path now re-reads the journal and replays it (authorization and preconditions revalidated; typed rejections keep priority; no retries, no serialized concurrency). Fixture permanently captures bounded redacted error codes on HTTP failures (Http._error_code).",
+      "files": [
+        "src/uar/security/credentials/principal_store.rs",
+        "scripts/release/uar_1_1_1_support.py"
+      ],
+      "implemented": true,
+      "unresolved": []
+    },
+    {
+      "id": "repair:qualification-5",
+      "stable_id": "RQ5",
+      "owner": "uar-lead",
+      "required_deliverable": "Qualification repair round 5 (product, exact value-conversion defect): unwrap_surreal_value maps the surrealdb Value::None missing-value sentinel (and Value::Null) to JSON null so typed Option fields such as MigrationRowMetadata.row_revision deserialize as None instead of Some(\"None\") which made the migration preview invent historical revisions; tagged string content (String/Datetime/Uuid) is emitted literally so legitimate strings \"None\"/\"Null\" remain strings. Bounded regression coverage in tests/surreal_value_conversion.rs (sentinel, null, legitimate strings, real revision, nested collections, extraction boundary).",
+      "files": [
+        "src/uar/persistence/providers/surreal.rs",
+        "tests/surreal_value_conversion.rs"
+      ],
+      "implemented": true,
+      "unresolved": []
+    }
+  ],
+  "operator_lock": "CLOSED",
+  "remaining_nonimplementation_tasks": [
+    "lead-owned inventory/canonical reconciliation for the newly identified isolated source",
+    "parent query-time embedding-space mismatch guard qualification with a second supported credentialed embedding space; presently NOT READY",
+    "child FC6/4.1",
+    "child FC7/4.2",
+    "child FC8/4.3",
+    "child FC9/5.1",
+    "parent V2/6.2",
+    "parent P1/7.1",
+    "parent P2/7.2",
+    "parent P3/7.3"
+  ],
+  "canonical_transition": "Lead-owned; primary child canonical completion does not certify this isolated source. Identity is recorded; reconcile parent 8.8/FC5 against CFG1.",
+  "verification_executed_for_current_source": false,
+  "prior_identity": {
+    "source_tree": "sha256:d41e765337e653766f3afedd95b674b47359cf702704fc132103cfd9ccfac351",
+    "fixture_tree": "sha256:fd6ae4bf47dd85435104f1bc6c9662b6b6894d8eb757e1262a5d74d2679d81de"
+  },
+  "parent_query_time_mismatch_guard": "NOT READY: second supported credentialed embedding space unavailable"
+}

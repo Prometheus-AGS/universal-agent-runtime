@@ -31,6 +31,12 @@ pub struct SettingsApiState {
     /// When false, protected handlers do not require `X-UAR-Admin-Key` (local dev only).
     pub settings_mutation_auth_required: bool,
     pub settings_admin_key: Option<secrecy::SecretString>,
+    /// Live embedding handle + the boot embedding config (source of the
+    /// fields that are not settings-mutable: api_key, base_url, dimensions).
+    /// Present whenever the server was built with vector retrieval support.
+    pub embedding_backend:
+        Option<Arc<crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend>>,
+    pub embedding_base_config: Option<crate::uar::rag::embeddings::EmbeddingConfig>,
 }
 
 impl std::fmt::Debug for SettingsApiState {
@@ -49,6 +55,10 @@ impl std::fmt::Debug for SettingsApiState {
             .field(
                 "settings_admin_key",
                 &self.settings_admin_key.as_ref().map(|_| "***redacted***"),
+            )
+            .field(
+                "embedding_backend",
+                &self.embedding_backend.as_ref().map(|_| "attached"),
             )
             .finish()
     }
@@ -324,6 +334,9 @@ enum ApiError {
         expected: String,
         current: String,
     },
+    /// The mutation is understood but not supported or not buildable —
+    /// nothing was persisted (explicit rejection contract).
+    Validation { key: String, message: String },
     Internal(String),
 }
 
@@ -354,6 +367,14 @@ impl IntoResponse for ApiError {
             ApiError::Internal(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({"error": e})),
+            ).into_response(),
+            ApiError::Validation { key, message } => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(json!({
+                    "error": "unsupported_setting",
+                    "key": key,
+                    "message": message
+                })),
             ).into_response(),
         }
     }
@@ -733,6 +754,183 @@ async fn update_presentation_policy(
     }
 }
 
+/// `rag.embedding_*` rows are descriptive metadata, not selectors — the
+/// operative embedding keys are `llm.embedding.*`. Reject mutations that
+/// would otherwise persist with no consumer (explicit rejection contract).
+fn rejected_unsupported(key: &str) -> Option<ApiError> {
+    match key {
+        "rag.embedding_provider" | "rag.embedding_model" => Some(ApiError::Validation {
+            key: key.to_string(),
+            message: format!(
+                "'{key}' is descriptive only and has no runtime consumer; mutate \
+                 'llm.embedding.backend' / 'llm.embedding.model' to change the embedding space"
+            ),
+        }),
+        _ => None,
+    }
+}
+
+/// Keys whose mutation is persisted and applied to the service built at next
+/// boot (startup reads effective rows) but cannot be activated in this
+/// process. Reported honestly in mutation responses.
+fn restart_required_activation(key: &str) -> Option<&'static str> {
+    if key.starts_with("memory.") {
+        return Some("restart_required");
+    }
+    match key {
+        "rag.chunking_strategy" | "rag.chunk_size" | "rag.chunk_tokens"
+        | "rag.semantic_threshold" => Some("restart_required"),
+        _ => None,
+    }
+}
+
+/// Candidate embedding config for validation/activation: boot config supplies
+/// the non-mutable fields (api_key, base_url, dimension, batch size,
+/// models_dir); persisted rows supply the mutable ones unless a proposal
+/// overrides them.
+async fn candidate_embedding_config(
+    state: &SettingsApiState,
+    mgr: &SettingsManager,
+    proposed_backend: Option<&str>,
+    proposed_model: Option<&str>,
+) -> Option<crate::uar::rag::embeddings::EmbeddingConfig> {
+    let base = state.embedding_base_config.clone()?;
+    let mut candidate = base.clone();
+    candidate.backend = match proposed_backend {
+        Some(b) => b.to_string(),
+        None => mgr
+            .get_typed::<String>("llm.embedding.backend")
+            .await
+            .ok()
+            .flatten()
+            .filter(|v| !v.trim().is_empty())
+            .unwrap_or_else(|| base.backend.clone()),
+    };
+    candidate.model = match proposed_model {
+        Some(m) => m.to_string(),
+        None => mgr
+            .get_typed::<String>("llm.embedding.model")
+            .await
+            .ok()
+            .flatten()
+            .filter(|v| !v.trim().is_empty())
+            .unwrap_or_else(|| base.model.clone()),
+    };
+    Some(candidate)
+}
+
+/// Validate a proposed `llm.embedding.*` mutation BEFORE anything persists:
+/// the candidate backend must build, or the request is rejected and the
+/// active backend keeps serving.
+async fn prevalidate_embedding_mutation(
+    state: &SettingsApiState,
+    mgr: &SettingsManager,
+    proposed_backend: Option<&str>,
+    proposed_model: Option<&str>,
+) -> Result<(), ApiError> {
+    if proposed_backend.is_none() && proposed_model.is_none() {
+        return Ok(());
+    }
+    let Some(candidate) =
+        candidate_embedding_config(state, mgr, proposed_backend, proposed_model).await
+    else {
+        // This build has no swappable embedding support; nothing to validate.
+        return Ok(());
+    };
+    let built = crate::uar::rag::embeddings::build_backend(&candidate).map_err(|error| {
+        ApiError::Validation {
+            key: "llm.embedding".to_string(),
+            message: format!(
+                "embedding backend cannot be built from the proposed configuration: {error}; \
+                 nothing was persisted and the active backend is unchanged"
+            ),
+        }
+    })?;
+    ensure_backend_honors_candidate(&candidate, built.as_ref())
+}
+
+/// A backend that BUILDS is not necessarily a backend that HONORS the
+/// requested values: `FastEmbedBackend` serves the packaged bge-small assets
+/// and silently ignores `config.model` (see its `model_id`). Accepting such a
+/// mutation would report `live` activation for a value no consumer applies —
+/// exactly what the configuration-lifecycle gate forbids. Reject instead, so
+/// REST never persists an embedding value this build cannot serve.
+fn ensure_backend_honors_candidate(
+    candidate: &crate::uar::rag::embeddings::EmbeddingConfig,
+    built: &dyn crate::uar::rag::embeddings::EmbeddingBackend,
+) -> Result<(), ApiError> {
+    if built.backend_name() != candidate.backend {
+        return Err(ApiError::Validation {
+            key: "llm.embedding.backend".to_string(),
+            message: format!(
+                "embedding backend '{}' was canonicalized to '{}' by this build; the proposed \
+                 value has no consumer, nothing was persisted and the active backend is unchanged",
+                candidate.backend,
+                built.backend_name()
+            ),
+        });
+    }
+    if built.model_id() != candidate.model {
+        return Err(ApiError::Validation {
+            key: "llm.embedding.model".to_string(),
+            message: format!(
+                "embedding model '{}' is not honored by the '{}' backend in this build, which \
+                 serves the packaged '{}' model only; the mutation was rejected, nothing was \
+                 persisted and the active backend is unchanged",
+                candidate.model,
+                candidate.backend,
+                built.model_id()
+            ),
+        });
+    }
+    Ok(())
+}
+
+/// After a successful persist of `llm.embedding.*`, rebuild from the
+/// effective rows and swap the shared handle so the NEXT embed call uses the
+/// new space. The KB space guard refuses old spaces explicitly; the in-memory
+/// skill index re-indexes (derived data).
+async fn activate_embedding_if_touched(
+    state: &SettingsApiState,
+    mgr: &SettingsManager,
+    touched_keys: &[String],
+) -> Option<&'static str> {
+    if !touched_keys
+        .iter()
+        .any(|k| matches!(k.as_str(), "llm.embedding.backend" | "llm.embedding.model"))
+    {
+        return None;
+    }
+    let Some(handle) = state.embedding_backend.as_ref() else {
+        return Some("persisted_restart_required");
+    };
+    let candidate = candidate_embedding_config(state, mgr, None, None).await?;
+    match crate::uar::rag::embeddings::build_backend(&candidate) {
+        Ok(backend) => {
+            let (name, model, dimension) = (
+                backend.backend_name().to_string(),
+                backend.model_id().to_string(),
+                backend.vector_dimension(),
+            );
+            handle.swap(backend);
+            tracing::info!(
+                backend = %name,
+                model = %model,
+                dimension,
+                "Embedding backend hot-swapped from llm.embedding settings"
+            );
+            Some("live")
+        }
+        Err(error) => {
+            tracing::error!(
+                error = %error,
+                "Persisted embedding settings failed to build after update; previous backend still active"
+            );
+            Some("persisted_restart_required")
+        }
+    }
+}
+
 async fn update_setting(
     State(state): State<Arc<SettingsApiState>>,
     Path(key): Path<String>,
@@ -742,20 +940,43 @@ async fn update_setting(
     require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
     let namespace = key.split('.').next().unwrap_or("").to_string();
+    // Explicit rejection for settings with no consumer, and pre-persist
+    // validation for live-activated embedding changes.
+    if let Some(error) = rejected_unsupported(&key) {
+        return Err(error);
+    }
+    match key.as_str() {
+        "llm.embedding.backend" => {
+            prevalidate_embedding_mutation(&state, mgr, payload.value.as_str(), None).await?
+        }
+        "llm.embedding.model" => {
+            prevalidate_embedding_mutation(&state, mgr, None, payload.value.as_str()).await?
+        }
+        _ => {}
+    }
     let value = preserve_masked_sensitive_value(mgr, &key, payload.value).await?;
     mgr.set_value_if_revision(&key, value, &payload.expected_revision)
         .await
         .map_err(map_revision_error)?;
+    let activation = activate_embedding_if_touched(&state, mgr, std::slice::from_ref(&key))
+        .await
+        .or_else(|| restart_required_activation(&key));
     let updated = mgr
         .get_with_meta(&key)
         .await
         .ok_or_else(|| ApiError::NotFound(key.clone()))?;
-    Ok(Json(json!({
+    let mut response = json!({
         "status": "updated",
         "key": key,
         "namespace": namespace,
         "setting": masked_response(updated, mgr).await
-    })))
+    });
+    if let Some(activation) = activation {
+        let mut activation_map = serde_json::Map::new();
+        activation_map.insert(key.clone(), json!(activation));
+        response["activation"] = Value::Object(activation_map);
+    }
+    Ok(Json(response))
 }
 
 async fn reset_setting(
@@ -765,6 +986,26 @@ async fn reset_setting(
 ) -> Result<Json<Value>, ApiError> {
     require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
+    // Same contract as updates: reject settings with no consumer, and
+    // pre-validate the reset target for live-activated embedding keys (the
+    // config-derived default must build, or nothing is persisted).
+    if let Some(error) = rejected_unsupported(&key) {
+        return Err(error);
+    }
+    if matches!(key.as_str(), "llm.embedding.backend" | "llm.embedding.model")
+        && let Some(base) = state.embedding_base_config.clone()
+    {
+        crate::uar::rag::embeddings::build_backend(&base).map_err(|error| {
+            ApiError::Validation {
+                key: key.clone(),
+                message: format!(
+                    "reset target (the config-derived default embedding backend) cannot be built: \
+                     {error}; nothing was reset and the active backend is unchanged"
+                ),
+            }
+        })
+        .and_then(|built| ensure_backend_honors_candidate(&base, built.as_ref()))?;
+    }
     let expected = headers
         .get("if-match")
         .and_then(|value| value.to_str().ok())
@@ -772,7 +1013,18 @@ async fn reset_setting(
     mgr.reset_to_default_if_revision(&key, expected)
         .await
         .map_err(map_revision_error)?;
-    Ok(Json(json!({"status": "reset", "key": key})))
+    // Activate the reset value exactly like an update: recompute from the
+    // effective rows (now the defaults) and swap, or report restart-required.
+    let activation = activate_embedding_if_touched(&state, mgr, std::slice::from_ref(&key))
+        .await
+        .or_else(|| restart_required_activation(&key));
+    let mut response = json!({"status": "reset", "key": key});
+    if let Some(activation) = activation {
+        let mut activation_map = serde_json::Map::new();
+        activation_map.insert(key.clone(), json!(activation));
+        response["activation"] = Value::Object(activation_map);
+    }
+    Ok(Json(response))
 }
 
 // =============================================================================
@@ -902,6 +1154,26 @@ async fn update_namespace(
     let mut updated = Vec::new();
     let mut errors = Vec::new();
 
+    // Explicit rejection for settings with no consumer, and pre-persist
+    // validation for live-activated embedding changes. Either failure rejects
+    // the whole request before anything persists.
+    let mut proposed_backend: Option<&str> = None;
+    let mut proposed_model: Option<&str> = None;
+    for (field, value) in &payload.data {
+        let key = format!("{type_key}.{field}");
+        if let Some(error) = rejected_unsupported(&key) {
+            return Err(error);
+        }
+        match key.as_str() {
+            "llm.embedding.backend" => proposed_backend = value.as_str(),
+            "llm.embedding.model" => proposed_model = value.as_str(),
+            _ => {}
+        }
+    }
+    prevalidate_embedding_mutation(&state, mgr, proposed_backend, proposed_model).await?;
+
+    let mut touched_keys: Vec<String> = Vec::new();
+
     for (field, value) in payload.data {
         let key = format!("{type_key}.{field}");
         let Some(expected_revision) = payload.expected_revisions.get(&field) else {
@@ -924,6 +1196,7 @@ async fn update_namespace(
             .await
         {
             Ok(()) => {
+                touched_keys.push(key.clone());
                 if let Some(row) = mgr.get_with_meta(&key).await {
                     updated.push(masked_response(row, mgr).await);
                 }
@@ -942,15 +1215,45 @@ async fn update_namespace(
         }
     }
 
+    // Activate what was actually persisted: embedding swaps go live; service
+    // config without a live path is reported as restart-required.
+    let mut activation_map = serde_json::Map::new();
+    if let Some(activation) = activate_embedding_if_touched(&state, mgr, &touched_keys).await {
+        for key in touched_keys
+            .iter()
+            .filter(|k| matches!(k.as_str(), "llm.embedding.backend" | "llm.embedding.model"))
+        {
+            activation_map.insert(key.clone(), json!(activation));
+        }
+    }
+    for key in &touched_keys {
+        if let Some(activation) = restart_required_activation(key) {
+            activation_map.insert(key.clone(), json!(activation));
+        }
+    }
+    let activation = if activation_map.is_empty() {
+        None
+    } else {
+        Some(Value::Object(activation_map))
+    };
+
     if !errors.is_empty() {
-        return Ok(Json(json!({
+        let mut response = json!({
             "status": "partial",
             "updated": updated,
             "errors": errors
-        })));
+        });
+        if let Some(activation) = activation {
+            response["activation"] = activation;
+        }
+        return Ok(Json(response));
     }
 
-    Ok(Json(json!({"status": "updated", "updated": updated})))
+    let mut response = json!({"status": "updated", "updated": updated});
+    if let Some(activation) = activation {
+        response["activation"] = activation;
+    }
+    Ok(Json(response))
 }
 
 fn map_revision_error(error: SettingRevisionConflict) -> ApiError {
@@ -975,6 +1278,9 @@ fn api_error_message(error: ApiError) -> String {
         ApiError::NotFound(key) => format!("Setting '{key}' not found"),
         ApiError::Forbidden => "Administration authority is required".to_string(),
         ApiError::Conflict { key, .. } => format!("Setting '{key}' changed"),
+        ApiError::Validation { key, message } => {
+            format!("Setting '{key}' is unsupported or unbuildable: {message}")
+        }
         ApiError::Internal(message) => message,
     }
 }
@@ -1030,6 +1336,8 @@ mod prompt_caching_authorization_tests {
             governance_status: None,
             settings_mutation_auth_required: true,
             settings_admin_key: Some("configured-admin-key".to_string().into()),
+            embedding_backend: None,
+            embedding_base_config: None,
         }
     }
 

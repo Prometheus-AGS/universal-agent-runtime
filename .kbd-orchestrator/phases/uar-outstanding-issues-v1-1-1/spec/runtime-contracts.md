@@ -1,5 +1,10 @@
 # Runtime contracts — proposed acceptance fragment
 
+> Current certification authority: the 2026-10-17 function-first amendment at
+> the end of this document supersedes older gate-opening and full published-group
+> instructions. Historical task states and receipts are preserved. Gate CLOSED.
+
+
 Phase: `uar-outstanding-issues-v1-1-1`  
 Stage: Spec  
 Status: proposed; no production implementation, fixture, runner, or gate has run.
@@ -72,3 +77,38 @@ python3 scripts/release/uar_1_1_1_acceptance.py --manifest /Users/gqadonis/Proje
 ```
 
 `local.json` is the completed-production local integration manifest. `arm64.json` and `amd64.json` select the corresponding published immutable image digests. Each manifest and receipt SHALL record candidate or published digest, exact source/fixture identities, isolated resources, negative controls, observed output, and exit code. A missing runner, manifest, prerequisite, isolation boundary, or receipt is BLOCKED, not a passing gate. Historical v1.1.0 receipts remain historical evidence only and do not certify v1.1.1.
+
+
+## Function-first runtime acceptance amendment — 2026-10-17
+
+This amendment changes release observations, not the production framing/terminal
+contract. Child FC2 retains eight binding, six stream, four MCP and one combined
+labels. Fold qualified durable control into the real 16k refusal journey and move
+distinct-provider messages-facade assertions into credentials via handoff. Keep
+successful settlement/restart, exact refusals and zero denied effects. Four local
+native supplements remain separate from image evidence.
+
+Replace exhaustive release partition/field loops with public prompt plus explicit
+enabled-skill attachment. A controlled provider derives the exact answer from
+both unique input and overlay; assembled SSE, AG-UI and persisted answer text must
+each equal it exactly. A second prompt changes the answer. A disabled eligible
+attachment reports `disabled` and omits its overlay/unique dependencies while
+ordinary prompting may continue. Do not widen policy or assert zero contact.
+Retain representative text/pending-tool EOF, malformed data, overflow, invalid
+UTF-8, post-terminal and valid unknown-event outcomes, tool success, cancellation
+and approved graph delegation. Preserve MCP failure/uncertainty no-replay and
+immutable receipts; only repeated successful/omitted restart controls are removed.
+Combined later success stays a distinct receipt with the original failure intact.
+
+The opt-in observer measures first parsed content during delivery, not buffered
+EOF. Client/peer durations respect clock domains and disclose uncertainty; operator
+timing disposition is required before acceptance. No model-selected skill quality,
+real-provider latency or measured speedup is claimed. Existing parser regression
+sources remain; none has been run for this child.
+
+Current local gate is `function-first-local.json` under parent `evidence/gates/`;
+published gates are `function-first-arm64.json` then `function-first-amd64.json`.
+Use the exact commands in child plan/verification.md only after whole-phase
+implementation, fresh same-image qualified preparation, explicit review and gate
+instructions. Local keeps all six groups; published runs streams/recovery only.
+The uncomfortable loss is no direct per-child binding or MCP-failure re-observation.

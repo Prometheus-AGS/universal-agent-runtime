@@ -165,6 +165,7 @@ fn minimal_config() -> AppConfig {
             timeout_disabled: false,
             requests_per_second: 5.0,
             burst_size: 10.0,
+            admission_timeout_ms: 8_000,
             request_timeout_ms: 30_000,
             stream_start_timeout_ms: 15_000,
             stream_idle_timeout_ms: 30_000,
@@ -845,6 +846,8 @@ async fn prompt_caching_admin_namespace_has_no_generic_read_bypass() -> Result<(
         governance_status: None,
         settings_mutation_auth_required: true,
         settings_admin_key: Some("test-admin-key".to_string().into()),
+        embedding_backend: None,
+        embedding_base_config: None,
     }));
 
     let list_response = app
@@ -1126,7 +1129,7 @@ async fn mgr_provider_upsert_load_and_hydrate_registry() -> Result<()> {
         models: vec![],
         enabled: true,
     };
-    mgr.upsert_provider_config(&pc).await?;
+    mgr.upsert_provider_config(&pc, true).await?;
 
     let loaded = mgr.load_provider_configs_from_db().await?;
     assert!(
@@ -1400,6 +1403,8 @@ async fn governance_api_returns_per_key_results_and_authoritative_status_token()
         governance_status: Some(status),
         settings_mutation_auth_required: false,
         settings_admin_key: None,
+        embedding_backend: None,
+        embedding_base_config: None,
     }));
 
     let response = app
@@ -1568,6 +1573,8 @@ async fn governance_status_api_reports_mutation_unavailable_as_fail_closed() -> 
         governance_status: Some(status),
         settings_mutation_auth_required: false,
         settings_admin_key: None,
+        embedding_backend: None,
+        embedding_base_config: None,
     }));
 
     let response = app

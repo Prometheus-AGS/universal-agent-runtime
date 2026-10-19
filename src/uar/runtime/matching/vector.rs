@@ -1,40 +1,69 @@
+use crate::uar::domain::knowledge::EmbeddingFingerprint;
 use crate::uar::domain::matching::{MatchReason, SkillMatch, SkillMatcher};
+use crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend;
 use crate::uar::rag::embeddings::{EmbeddingBackend, EmbeddingConfig};
 use crate::uar::runtime::matching::cosine_similarity;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use std::sync::Arc;
-use tokio::sync::Mutex;
-use tracing::info;
+use tokio::sync::RwLock;
+use tracing::{info, warn};
 
 type EmbeddingCache = Vec<(String, Vec<f32>)>;
 
+/// Derived in-memory skill index plus the embedding space it was built in.
+/// Space and vectors are guarded by ONE lock, and every job pins its backend
+/// once, so a query can never be compared against vectors from another space
+/// even when a live `llm.embedding.*` swap lands mid-flight.
+#[derive(Debug, Default)]
+struct SkillIndex {
+    space: Option<EmbeddingFingerprint>,
+    vectors: EmbeddingCache,
+}
+
 /// Real local or hosted embedding inference wrapped behind a unified backend.
 /// Replaces the former FastEmbed-only implementation.
+///
+/// The backend handle is swappable (`llm.embedding.*` settings are live). The
+/// in-memory skill index is derived data: whenever the active embedding space
+/// no longer matches the space the index was built in, the index is rebuilt —
+/// a query is never compared against vectors from another space.
 #[derive(Debug)]
 pub struct VectorMatcher {
-    backend: Arc<dyn EmbeddingBackend>,
-    embeddings: Arc<Mutex<EmbeddingCache>>,
+    backend: Arc<SwappableEmbeddingBackend>,
+    index: Arc<RwLock<SkillIndex>>,
     threshold: f32,
 }
 
 impl VectorMatcher {
+    /// Preserve the existing fixed-backend constructor for embedded callers
+    /// and fixtures; the server shares its live slot through `new_shared`.
     pub fn new(backend: Arc<dyn EmbeddingBackend>, threshold: f32) -> Self {
+        Self::new_shared(Arc::new(SwappableEmbeddingBackend::new(backend)), threshold)
+    }
+
+    pub fn new_shared(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
         Self {
             backend,
-            embeddings: Arc::new(Mutex::new(Vec::new())),
+            index: Arc::new(RwLock::new(SkillIndex::default())),
             threshold,
         }
     }
 
-    /// The backend every embedding in this process is produced with — the
-    /// one built from `llm.embedding`, shared with ingestion.
-    pub fn embedding_backend(&self) -> &Arc<dyn EmbeddingBackend> {
-        &self.backend
+    /// Pin the current backend as one coherent snapshot for a job (a query or
+    /// an index rebuild). The pin is what makes a concurrent backend swap
+    /// safe: the job finishes in the space it started in.
+    pub fn pin_embedding(&self) -> Arc<dyn EmbeddingBackend> {
+        self.backend.pin()
     }
 
-    /// The embedding space queries are produced in.
-    pub fn embedding_fingerprint(&self) -> crate::uar::domain::knowledge::EmbeddingFingerprint {
+    /// Return one pinned backend for knowledge-base retrieval.
+    pub fn embedding_backend(&self) -> Arc<dyn EmbeddingBackend> {
+        self.pin_embedding()
+    }
+
+    /// The embedding space the next pinned job would produce vectors in.
+    pub fn embedding_fingerprint(&self) -> EmbeddingFingerprint {
         self.backend.fingerprint()
     }
 
@@ -57,67 +86,72 @@ impl VectorMatcher {
         if texts.is_empty() {
             return Ok(vec![]);
         }
+        let backend = self.backend.pin();
         let refs: Vec<&str> = texts.iter().map(|s| s.as_str()).collect();
-        self.backend
+        backend
             .embed(&refs)
             .await
             .context("embedding backend failed")
+    }
+
+    /// Embed `texts` with one pinned backend and return the vectors plus the
+    /// space they were produced in — the pair is published or discarded
+    /// together, never mixed.
+    async fn embed_with_space(
+        backend: &Arc<dyn EmbeddingBackend>,
+        texts: Vec<String>,
+    ) -> Result<(EmbeddingFingerprint, Vec<Vec<f32>>)> {
+        if texts.is_empty() {
+            return Ok((backend.fingerprint(), Vec::new()));
+        }
+        let refs: Vec<&str> = texts.iter().map(|s| s.as_str()).collect();
+        let vectors = backend
+            .embed(&refs)
+            .await
+            .context("embedding backend failed")?;
+        Ok((backend.fingerprint(), vectors))
+    }
+
+    fn skill_texts(
+        registry: &crate::uar::runtime::skills::SkillRegistry,
+    ) -> (Vec<String>, Vec<String>) {
+        let skills = registry.list();
+        let ids = skills.iter().map(|s| s.skill_id.clone()).collect();
+        let texts = skills
+            .iter()
+            .map(|s| format!("{}: {}", s.title, s.description))
+            .collect();
+        (ids, texts)
     }
 
     pub async fn index_skills(
         &self,
         registry: &crate::uar::runtime::skills::SkillRegistry,
     ) -> Result<()> {
-        let skills = registry.list();
-        if skills.is_empty() {
-            return Ok(());
-        }
-
-        let texts: Vec<String> = skills
-            .iter()
-            .map(|s| format!("{}: {}", s.title, s.description))
-            .collect();
-
-        let embeddings = self.embed_batch(texts).await?;
-
-        let mut cache = self.embeddings.lock().await;
-        cache.clear();
-        for (i, emb) in embeddings.into_iter().enumerate() {
-            cache.push((skills[i].skill_id.clone(), emb));
-        }
-        info!(
-            "Skill vector index built ({}).",
-            self.backend.backend_name()
-        );
-
+        // ONE pin for the whole rebuild: the recorded space always describes
+        // the vectors it is stored with, even if a swap lands mid-embed.
+        let backend = self.backend.pin();
+        let (ids, texts) = Self::skill_texts(registry);
+        let (space, vectors) = Self::embed_with_space(&backend, texts).await?;
+        let mut index = self.index.write().await;
+        index.vectors.clear();
+        index
+            .vectors
+            .extend(ids.into_iter().zip(vectors.into_iter()));
+        index.space = Some(space);
+        info!("Skill vector index built ({}).", backend.backend_name());
         Ok(())
     }
-}
 
-#[async_trait]
-impl SkillMatcher for VectorMatcher {
-    async fn match_skills(
+    fn score_index(
         &self,
-        query: &str,
+        index: &SkillIndex,
+        q_emb: &[f32],
         registry: &crate::uar::runtime::skills::SkillRegistry,
-    ) -> Result<Vec<SkillMatch>> {
-        let res = self.embed_batch(vec![query.to_string()]).await?;
-        let q_emb = res.into_iter().next().context("No embedding")?;
-
-        // Re-index if empty
-        {
-            let cache = self.embeddings.lock().await;
-            if cache.is_empty() {
-                drop(cache);
-                self.index_skills(registry).await?;
-            }
-        }
-
-        let cache = self.embeddings.lock().await;
+    ) -> Vec<SkillMatch> {
         let mut matches = Vec::new();
-
-        for (skill_id, emb) in cache.iter() {
-            let score = cosine_similarity(&q_emb, emb);
+        for (skill_id, emb) in index.vectors.iter() {
+            let score = cosine_similarity(q_emb, emb);
             if score >= self.threshold
                 && let Some(skill) = registry.get(skill_id)
             {
@@ -130,7 +164,60 @@ impl SkillMatcher for VectorMatcher {
             }
         }
         matches.sort_by(|a, b| b.score.total_cmp(&a.score));
-        Ok(matches)
+        matches
+    }
+}
+
+#[async_trait]
+impl SkillMatcher for VectorMatcher {
+    async fn match_skills(
+        &self,
+        query: &str,
+        registry: &crate::uar::runtime::skills::SkillRegistry,
+    ) -> Result<Vec<SkillMatch>> {
+        // Each pass pins the backend once and only compares when the index
+        // space equals the pin's space, so a swap can never interleave into a
+        // cross-space comparison. A rebuild publishes vectors+space under one
+        // write guard. The loop converges because swaps are operator-rare.
+        loop {
+            let backend = self.backend.pin();
+            let space = backend.fingerprint();
+            {
+                let index = self.index.read().await;
+                if index.space.as_ref() == Some(&space) {
+                    // Compare under the read guard: a rebuild (writer) cannot
+                    // interleave, and the query vector comes from the same pin.
+                    let res = backend
+                        .embed(&[query])
+                        .await
+                        .context("embedding backend failed")?;
+                    let q_emb = res.into_iter().next().context("No embedding")?;
+                    return Ok(self.score_index(&index, &q_emb, registry));
+                }
+            }
+            // Slow path: (re)build the index for our pinned space under the
+            // write guard. Re-check after acquiring: another task may have
+            // already rebuilt for this space.
+            let mut index = self.index.write().await;
+            if index.space.as_ref() == Some(&space) {
+                continue;
+            }
+            if let Some(previous) = index.space.as_ref() {
+                warn!(
+                    indexed = ?previous,
+                    active = ?space,
+                    "Embedding space changed; rebuilding in-memory skill vector index"
+                );
+            }
+            let (ids, texts) = Self::skill_texts(registry);
+            let (built_space, vectors) = Self::embed_with_space(&backend, texts).await?;
+            index.vectors.clear();
+            index
+                .vectors
+                .extend(ids.into_iter().zip(vectors.into_iter()));
+            index.space = Some(built_space);
+            drop(index);
+        }
     }
 }
 

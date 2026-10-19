@@ -179,4 +179,5 @@ pub mod cohere;
 #[cfg(feature = "local-models")]
 pub mod fastembed;
 pub mod openai;
+pub mod swappable;
 pub mod voyage;

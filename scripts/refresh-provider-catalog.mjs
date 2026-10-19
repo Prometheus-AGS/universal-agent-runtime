@@ -116,7 +116,7 @@ for (const [id, provider] of Object.entries(modelsDev)) {
 }
 
 // Primary-source supplement for the observed TEAM_MODEL_PRICING_UNAVAILABLE
-// failure: pinned Liter catalog metadata predates this exact model identity.
+// failure. The 2.3.0 Liter pin contains this exact model, so this branch is dormant.
 // Source: https://developers.openai.com/api/docs/models/gpt-6.1-sol
 // Accessed: 2026-10-05. USD per 1M tokens, Standard short-context only.
 // This flat format does not represent >272K context or processing-tier premiums.

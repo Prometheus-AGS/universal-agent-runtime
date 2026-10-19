@@ -1,5 +1,10 @@
 # State contracts and production acceptance
 
+> Current certification authority: the 2026-10-17 function-first amendment at
+> the end of this document supersedes older gate-opening and full published-group
+> instructions. Historical task states and receipts are preserved. Gate CLOSED.
+
+
 Phase: `uar-outstanding-issues-v1-1-1`. Stage: Spec. Date: 2026-10-16.
 
 This contract defines future production acceptance. It authorizes no database
@@ -171,3 +176,33 @@ proof scenarios are enumerated in that contract’s `recovery` group.
 Acceptance starts only after the lead
 records every production implementation, fixture, configuration, and
 documentation item as complete for this phase.
+
+
+## Function-first durable-state acceptance amendment — 2026-10-17
+
+Local acceptance retains all six groups and each supported credential-store
+transaction/journal path. Each published architecture now runs streams/recovery;
+this supersedes earlier S1–S3 full published-observation wording. Both supported
+recovery backends retain owner-qualified upload/restart/retrieve, unchanged legacy
+inventories and denied cross-owner retrieve/retry/adopt. Fold the legacy-cold-readback
+label into attested-upload-owner-isolation without dropping its assertions. Keep
+unattested refusal, joined quiesce and genuine qualified supervisor reclaim.
+
+No image identity receipt can establish physical qualification. After complete
+implementation/inventory, separately authorized preparation must bind exact
+image/platform/source/fixture identity and stage fresh queued/active predecessor
+work through real APIs, actual journal registration, a physical guest boot and
+same-image distinct replacement fence under the genuine operator-qualified
+controller. The functional runner uses that unchanged prebuilt image and consumes
+a fresh proof. Every recovery run, including each published child and affected
+rerun, needs its own fresh sequence. Never synthesize journal/catalog rows, reuse
+consumed proofs, infer settled effects or adopt customer data. Missing qualification
+blocks acceptance regardless of timing or desire to release.
+
+FC5 supplies local selection/configuration and published templates. FC6 seals local
+image/proof bindings only after authorized preparation; P1 plus per-child preparation
+supplies actual published manifests. Current gate names are function-first-local.json,
+function-first-arm64.json and function-first-amd64.json in parent evidence/gates.
+Use only exact separately authorized commands from verification.md; no preflight
+is implied. The uncomfortable reduction is no direct per-child credential migration
+or budget-refusal evidence; durability/recovery observations themselves stay mandatory.

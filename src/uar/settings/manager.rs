@@ -913,6 +913,7 @@ impl SettingsManager {
     pub async fn seed_providers_from_registry(
         &self,
         registry: &crate::llm::registry::ProviderRegistry,
+        preserve_api_key: bool,
     ) -> Result<usize> {
         // The `provider` settings type is created by initialize(); bail clearly
         // if it isn't present rather than silently writing orphan rows.
@@ -932,7 +933,13 @@ impl SettingsManager {
                 continue;
             }
             let mut persisted = config.clone();
-            persisted.api_key = None;
+            // When the protected credential store is unavailable
+            // (CREDENTIAL_ENCRYPTION_KEY unset), the settings row is the only
+            // durable credential location: stripping the key here would lose
+            // the credential on the very first hydration.
+            if !preserve_api_key {
+                persisted.api_key = None;
+            }
             let data = serde_json::to_value(&persisted).context("serialize ProviderConfig")?;
             let now = Utc::now();
             let setting = Settings {
@@ -986,6 +993,7 @@ impl SettingsManager {
     pub async fn upsert_provider_config(
         &self,
         config: &crate::llm::registry::ProviderConfig,
+        preserve_existing_api_key: bool,
     ) -> Result<()> {
         let st = self
             .persistence
@@ -996,11 +1004,28 @@ impl SettingsManager {
             })?;
 
         let key = format!("provider.{}", config.id);
+        let existing = self.persistence.get_setting(&key).await?;
         let mut persisted = config.clone();
-        persisted.api_key = None;
+        if preserve_existing_api_key {
+            // No protected credential store: the settings row is the only
+            // durable credential location. Keep a key the caller carries
+            // (e.g. the update path's carry-over of the effective
+            // credential), and for a keyless mutation fall back to the key
+            // already stored — stripping either would schedule credential
+            // loss on the next restart.
+            if persisted.api_key.is_none()
+                && let Some(existing) = existing.as_ref()
+                && let Some(existing_key) = existing.data.get("api_key").and_then(|v| v.as_str())
+                && !existing_key.trim().is_empty()
+            {
+                persisted.api_key = Some(existing_key.to_string());
+            }
+        } else {
+            // The protected store owns the credential; rows never hold it.
+            persisted.api_key = None;
+        }
         let data = serde_json::to_value(&persisted).context("serialize ProviderConfig")?;
 
-        let existing = self.persistence.get_setting(&key).await?;
         let now = Utc::now();
         let setting = Settings {
             id: existing.as_ref().map(|e| e.id).unwrap_or_else(Uuid::new_v4),
@@ -2722,6 +2747,19 @@ fn build_core_schema(
                     "title": "Default LLM Provider ID",
                     "description": "Which registered provider is default (e.g. openai). Persisted with provider settings.",
                     "x-control": "text"
+                },
+                "embedding.backend": {
+                    "type": "string",
+                    "title": "Embedding Backend",
+                    "description": "Operative embedding backend. A validated mutation hot-swaps the shared backend immediately and persists across restarts. Previously indexed knowledge bases keep their recorded space and refuse the new one explicitly.",
+                    "enum": ["fastembed", "candle", "openai", "voyage", "cohere"],
+                    "x-control": "select"
+                },
+                "embedding.model": {
+                    "type": "string",
+                    "title": "Embedding Model",
+                    "description": "Model identifier within the selected embedding backend. Changing the model changes the embedding space.",
+                    "x-control": "text"
                 }
             },
             "required": ["model"]
@@ -2792,6 +2830,23 @@ fn build_core_schema(
                 "llm.default_provider",
                 "Default LLM Provider ID",
                 json!(default_provider_seed),
+            ),
+            // Operative embedding-space selectors. These are the ONLY
+            // REST-mutable embedding keys with a live consumer: a validated
+            // mutation hot-swaps the shared backend (next embed call) and is
+            // applied from the persisted rows at every boot. The rag.*
+            // embedding fields stay descriptive metadata.
+            make_setting(
+                &st,
+                "llm.embedding.backend",
+                "Embedding Backend",
+                json!(config.llm.embedding.backend),
+            ),
+            make_setting(
+                &st,
+                "llm.embedding.model",
+                "Embedding Model",
+                json!(config.llm.embedding.model),
             ),
         ];
         result.push((st, settings));

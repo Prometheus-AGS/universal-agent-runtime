@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "kind": "source_and_configuration_authoring",
+  "phase": "uar-outstanding-issues-v1-1-1",
+  "observations": [
+    "rc03 startup failed before registration",
+    "actual service UID65532 group1001",
+    "settings timeout4000 outside1..600",
+    "PEM/backend mismatch source inference; actual builder chain unavailable"
+  ],
+  "changes": [
+    "private supervisor explicitly rustls",
+    "supported timeout600/provider delay601 guidance",
+    "root:uar restricted private paths",
+    "fresh disposable DB selected; failed store untouched",
+    "network diagnostic drop-in removed"
+  ],
+  "private_configuration": {
+    "sha256": "sha256:35c32471adaf44ee89a1f74a6a2049a5ffc2b75aff97726ea3b218e7ae9a2d67",
+    "installed": true,
+    "started": false
+  },
+  "private_install_receipt": {
+    "sha256": "sha256:77ce3896d7382b62019bc0a7f2a40e0a7d7dc4a37cd50b1228857791022817fa"
+  },
+  "early_process_violation": {
+    "command": "git diff --check",
+    "stdout": "",
+    "acceptance_credit": false
+  },
+  "physical_qualification_passed": false,
+  "recorded_at": "2026-10-16T21:40:56.179Z"
+}

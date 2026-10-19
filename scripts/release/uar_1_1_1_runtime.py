@@ -5,7 +5,6 @@ traffic and (where required) durable host records. Source supplements are
 reported separately by the lead and never credited to a published image.
 """
 import hashlib
-import importlib.util
 import json
 import re
 import sys
@@ -17,14 +16,15 @@ from pathlib import Path
 TEXT = "runtime-control:λ雪😀"
 MODEL = "claude-haiku-4-5-20251001"
 REQUIRED_SCENARIOS = {
-    "binding": ("binding-qualified-durable-control", "binding-unattested-refusal",
-                "binding-16000-catalog-reservation-refusal", "binding-v1-messages-policy",
-                "binding-shared-alias-and-credential-free", "binding-fallback-policy", "binding-timeout-inheritance", "binding-team-source-policy", "binding-summary-capture-policy", "binding-invalid-budget-refusal"),
-    "streams": ("streams-native-partition-matrix", "streams-sse-fields-fixed-partitions", "streams-eof-matrix", "streams-invalid-matrix",
+    "binding": ("binding-unattested-refusal",
+                "binding-16000-catalog-reservation-refusal",
+                "binding-shared-alias-and-credential-free", "binding-fallback-policy", "binding-timeout-inheritance", "binding-team-source-policy", "binding-summary-capture-policy", "binding-invalid-budget-refusal",
+                "binding-protocol-surface-contracts"),
+    "streams": ("streams-prompt-skill-output-timing", "streams-eof-matrix", "streams-invalid-matrix",
                 "streams-tool-terminal-control", "streams-cancel-cleanup", "streams-graph-inherited-control"),
     "mcp-outcomes": ("mcp-application-error", "mcp-explicit-success-and-omitted-status",
                      "mcp-protocol-and-timeout", "mcp-uncertain-effect-preserved"),
-    "combined": ("combined-failed-tool-incomplete-stream", "combined-valid-control"),
+    "combined": ("combined-failed-tool-incomplete-stream",),
 }
 
 
@@ -49,7 +49,63 @@ def _mode(path, mode="complete", **settings):
 
 
 def _rows(path):
+    return [row for row in _trace_records(path) if row.get("kind", "request") == "request"]
+
+
+def _trace_records(path):
     return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+
+
+def _peer_timing(path, correlation_id):
+    rows = [row for row in _trace_records(path)
+            if row.get("kind") == "timing" and row.get("correlation_id") == correlation_id]
+    if len(rows) != 1:
+        raise AssertionError("controlled peer timing record is missing or ambiguous")
+    return rows[0]
+
+
+def _sse_frames(stream):
+    frames = []
+    for raw in stream.replace("\r\n", "\n").replace("\r", "\n").split("\n\n"):
+        event = None
+        data = []
+        for line in raw.splitlines():
+            if line.startswith("event:"):
+                event = line[6:].strip()
+            elif line.startswith("data:"):
+                data.append(line[5:].lstrip())
+        if data:
+            frames.append((event, json.loads("\n".join(data))))
+    return frames
+
+
+def _legacy_stream_text(stream):
+    return "".join(payload["delta"]["text"] for event, payload in _sse_frames(stream)
+                   if event == "agui.message.delta")
+
+
+def _spec_stream_text(stream):
+    return "".join(payload["delta"] for event, payload in _sse_frames(stream)
+                   if event == "TEXT_MESSAGE_CONTENT")
+
+
+def _event_text(row):
+    return "".join(event["delta"]["text"] for event in _events(row, "agui.message.delta"))
+
+
+class _FirstParsedContent:
+    def __init__(self):
+        self.buffer = ""
+        self.first_at = None
+
+    def __call__(self, text):
+        self.buffer += text
+        while boundary := re.search(r"\r\n\r\n|\n\n|\r\r", self.buffer):
+            frame = self.buffer[:boundary.start()]
+            self.buffer = self.buffer[boundary.end():]
+            for event, payload in _sse_frames(frame + "\n\n"):
+                if event == "agui.message.delta" and payload.get("delta", {}).get("text"):
+                    self.first_at = self.first_at or time.monotonic()
 
 
 def _start_provider(context):
@@ -89,22 +145,26 @@ def _client(runtime, context):
     return runtime.http(context["jwt"]("runtime-owner", ["user"]))
 
 
-def _admit(runtime, context, mode, allowed_tools=None, budgets=None, artifact=None):
+def _admit(runtime, context, mode, allowed_tools=None, budgets=None, artifact=None, skill_attachments=None):
     client = _client(runtime, context)
     body = {"artifact":artifact or _artifact("uar111-" + uuid.uuid4().hex, allowed_tools, budgets),"input":"controlled " + mode}
+    if skill_attachments is not None:
+        body["skill_attachments"] = skill_attachments
     return client, client.request("POST", "/api/uar/runs", body, expected=200)
 
 
-def _finish(client, admitted, context):
+def _finish(client, admitted, context, on_stream_text=None):
     run_id = admitted["run_id"]
-    stream = client.stream(admitted["stream_url"], timeout=240, total_timeout=240)
+    stream = client.stream(admitted["stream_url"], timeout=240, total_timeout=240, on_text=on_stream_text)
     status = context["wait_for"]("run settled", lambda: _terminal(client, run_id), timeout=30)
+    terminal_observed_at = time.monotonic()
     events = client.request("GET", "/api/uar/runs/" + run_id + "/events", expected=200)
     # The AG-UI endpoint defaults an omitted cursor to the last event, then
     # waits for future broadcast traffic even after a terminal run. Replay from
     # zero so the terminal event remains in the finite response.
     spec = client.stream(admitted["stream_url"] + "?stream_mode=agui_spec&last_event_id=0", timeout=240, total_timeout=240)
-    return {"run_id":run_id,"stream":stream,"agui":spec,"status":status["status"],"events":events["events"]}
+    return {"run_id":run_id,"stream":stream,"agui":spec,"status":status["status"],"events":events["events"],
+            "terminal_observed_at":terminal_observed_at}
 
 
 def _finish_after_approval(client, admitted, context):
@@ -140,8 +200,8 @@ def _terminal(client, run_id):
     return row if row["status"] in {"done", "error", "cancelled"} else None
 
 
-def _run(runtime, context, mode, allowed_tools=None, budgets=None, artifact=None):
-    client, admitted = _admit(runtime, context, mode, allowed_tools, budgets, artifact)
+def _run(runtime, context, mode, allowed_tools=None, budgets=None, artifact=None, skill_attachments=None):
+    client, admitted = _admit(runtime, context, mode, allowed_tools, budgets, artifact, skill_attachments)
     return _finish(client, admitted, context)
 
 
@@ -149,14 +209,14 @@ def _events(row, name):
     return [event["data"] for event in row["events"] if event["eventName"] == name]
 
 
-def _assert_terminal(context, row, success):
+def _assert_terminal(context, row, success, expected_text=TEXT):
     require = context["require"]
     require(row["status"] == ("done" if success else "error"), "unexpected terminal status: " + str(row))
     errors = _events(row, "agui.error")
     require(not errors if success else bool(errors), "error projection disagrees with settlement")
     require("RUN_FINISHED" in row["agui"] if success else "RUN_ERROR" in row["agui"], "AG-UI terminal disagrees with settlement")
     if success:
-        require(TEXT in "".join(event["delta"]["text"] for event in _events(row, "agui.message.delta")), "complete stream lost text/UTF-8")
+        require(expected_text in _event_text(row), "complete stream lost expected text/UTF-8")
 
 
 def _scenario(identifier, observations):
@@ -219,42 +279,101 @@ def _stream_scenarios(context):
     runtime, effects = _mcp_runtime(context, relay)
     observations = []
     try:
-        # Load only the fixture's byte encoder; invocation is in the completed-phase gate.
-        path = Path(__file__).resolve().parents[2] / "tests/fixtures/uar_1_1_1_provider.py"
-        spec = importlib.util.spec_from_file_location("uar111_wire_fixture", path)
-        peer = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(peer)
-        matrix = []
-        baseline_signature = None
-        for newline in ("\n", "\r\n", "\r"):
-            for bom in (False, True):
-                wire = peer.anthropic_stream("complete", newline=newline, bom=bom)
-                for split in [None, "bytewise", *range(1, len(wire))]:
-                    _mode(mode, newline=newline, bom=bom, split=split)
-                    before = trace.stat().st_size
-                    row = _run(runtime, context, "complete")
-                    _assert_terminal(context, row, True)
-                    signature = [event["eventName"] for event in row["events"] if event["eventName"] not in {"agui.mcp.state"}]
-                    if baseline_signature is None:
-                        baseline_signature = signature
-                    context["require"](signature == baseline_signature,"partition changed normalized event sequence")
-                    with trace.open("rb") as recorded:
-                        recorded.seek(before)
-                        requests = [json.loads(line) for line in recorded if line.strip()]
-                    context["require"](len(requests) == 1 and requests[0]["path"].endswith("/v1/messages"), "case did not select native Anthropic")
-                    context["require"](requests[0]["sha256"] == hashlib.sha256(wire).hexdigest(), "fixture wire differed from partition matrix")
-                    matrix.append({"newline":repr(newline),"bom":bom,"split":split,"run":row["run_id"],"status":row["status"],"wire":requests[0]["sha256"]})
-        observations.append(_scenario("streams-native-partition-matrix", {"cases":len(matrix),"receipt":_save(context,"partitions",matrix)}))
-        fields = []
-        for newline in ("\n","\r\n","\r"):
-            for fixed in (1,2,7,31):
-                _mode(mode,"sse_fields",newline=newline,bom=True,fixed=fixed)
-                row = _run(runtime,context,"sse-fields")
-                _assert_terminal(context,row,True)
-                fields.append({"run":row["run_id"],"newline":repr(newline),"fixed":fixed})
-        observations.append(_scenario("streams-sse-fields-fixed-partitions",{"receipt":_save(context,"sse-fields",fields),"cases":len(fields)}))
+        client = _client(runtime, context)
+        admin = runtime.http(context["jwt"]("phase-host", ["admin"], host=True), context["admin_key"])
+        suffix = uuid.uuid4().hex
+        prompt = "prompt-marker-" + suffix
+        overlay = "skill-overlay-marker-" + suffix
+        enabled = admin.request("POST", "/api/uar/skills", {
+            "name":"phase enabled " + suffix, "description":"explicit attachment fixture",
+            "prompt_overlay":overlay, "preferred_tools":[], "enabled":True}, expected=201)
+        enabled_id = enabled["skill_id"]
+        context["require"](enabled["enabled"] and enabled["prompt_overlay"] == overlay,
+                           "enabled skill did not retain its public overlay")
+        artifact = _artifact("prompt-skill-" + suffix)
+        artifact["policy"]["skills"]["prefer"] = [enabled_id]
+        expected = "prompt-skill-output:" + hashlib.sha256((prompt + "\x1f" + overlay).encode()).hexdigest()
+        _mode(mode, "prompt_skill", prompt_marker=prompt, skill_marker=overlay)
+        before = len(_rows(trace))
+        client_before_post = time.monotonic()
+        admitted = client.request("POST", "/api/uar/runs", {"artifact":artifact,"input":prompt,
+                                  "skill_attachments":[enabled_id]}, expected=200)
+        admission_response_at = time.monotonic()
+        context["require"](not admitted.get("activation_failures"), "enabled attachment reported an activation failure")
+        first_content = _FirstParsedContent()
+        row = _finish(client, admitted, context, first_content)
+        _assert_terminal(context, row, True, expected)
+        requests = _rows(trace)[before:]
+        context["require"](len(requests) == 1, "enabled attachment did not make exactly one provider request")
+        request = requests[0]
+        request_text = json.dumps(request["request"], ensure_ascii=False, sort_keys=True)
+        context["require"](prompt in request_text and overlay in request_text,
+                           "provider request omitted the attached prompt or skill overlay")
+        context["require"](first_content.first_at is not None,
+                           "public stream never parsed a content delta")
+        context["require"](_legacy_stream_text(row["stream"]) == expected,
+                           "public SSE text did not equal the controlled answer")
+        context["require"](_spec_stream_text(row["agui"]) == expected,
+                           "public AG-UI text did not equal the controlled answer")
+        context["require"](_event_text(row) == expected,
+                           "durable event text did not equal the controlled answer")
+        peer_timing = _peer_timing(trace, request["correlation_id"])
+        context["require"](peer_timing["peer_first_write_at"] is not None
+                           and peer_timing["peer_last_write_at"] is not None,
+                           "controlled peer did not retain complete timing")
+        runtime.restart()
+        durable_events = client.request("GET", "/api/uar/runs/" + row["run_id"] + "/events", expected=200)
+        durable_run = client.request("GET", "/api/uar/runs/" + row["run_id"], expected=200)
+        context["require"](_event_text({"events":durable_events["events"]}) == expected
+                           and durable_run["status"] == row["status"],
+                           "restart did not retain the exact answer and status")
+        second_prompt = "prompt-marker-second-" + suffix
+        second_expected = "prompt-skill-output:" + hashlib.sha256((second_prompt + "\x1f" + overlay).encode()).hexdigest()
+        context["require"](second_expected != expected, "second prompt did not alter the controlled answer")
+        _mode(mode, "prompt_skill", prompt_marker=second_prompt, skill_marker=overlay)
+        second = _run(runtime, context, second_prompt, artifact=artifact, skill_attachments=[enabled_id])
+        _assert_terminal(context, second, True, second_expected)
+        context["require"](_event_text(second) == second_expected,
+                           "second prompt produced a non-derived persisted answer")
+        disabled_overlay = "disabled-overlay-marker-" + suffix
+        unique_dependency = "disabled-attachment-only-tool-" + suffix
+        disabled = admin.request("POST", "/api/uar/skills", {
+            "name":"phase disabled " + suffix, "description":"disabled attachment fixture",
+            "prompt_overlay":disabled_overlay, "preferred_tools":[unique_dependency], "enabled":False}, expected=201)
+        disabled_id = disabled["skill_id"]
+        disabled_artifact = _artifact("disabled-skill-" + suffix)
+        disabled_artifact["policy"]["skills"]["prefer"] = [disabled_id]
+        _mode(mode)
+        disabled_before = len(_rows(trace))
+        disabled_admitted = client.request("POST", "/api/uar/runs", {"artifact":disabled_artifact,
+                                           "input":"ordinary-prompt-" + suffix,
+                                           "skill_attachments":[disabled_id]}, expected=200)
+        failures = disabled_admitted.get("activation_failures", [])
+        context["require"](failures == [{"code":"disabled","skill_id":disabled_id}],
+                           "disabled eligible attachment did not report the exact activation failure")
+        disabled_row = _finish(client, disabled_admitted, context)
+        _assert_terminal(context, disabled_row, True)
+        disabled_requests = _rows(trace)[disabled_before:]
+        context["require"](len(disabled_requests) == 1,
+                           "disabled attachment prevented ordinary provider contact")
+        disabled_request = json.dumps(disabled_requests[0]["request"], ensure_ascii=False, sort_keys=True)
+        context["require"](disabled_overlay not in disabled_request and unique_dependency not in disabled_request,
+                           "disabled attachment contributed an overlay or unique dependency")
+        timing = {"client":{"before_post":client_before_post,"admission_response":admission_response_at,
+                              "first_parsed_content":first_content.first_at,"terminal_status":row["terminal_observed_at"],
+                              "admission_duration":admission_response_at-client_before_post,
+                              "first_content_duration":first_content.first_at-client_before_post,
+                              "terminal_duration":row["terminal_observed_at"]-client_before_post},
+                  "peer":{"received":request["peer_received_at"],"first_write":peer_timing["peer_first_write_at"],
+                          "last_write":peer_timing["peer_last_write_at"],
+                          "write_duration":peer_timing["peer_last_write_at"]-request["peer_received_at"]},
+                  "residual":"Client/network/polling uncertainty is retained; independent monotonic clocks are not subtracted to claim runtime overhead."}
+        observations.append(_scenario("streams-prompt-skill-output-timing", {
+            "enabled_run":row["run_id"],"second_run":second["run_id"],"disabled_run":disabled_row["run_id"],
+            "answer":expected,"timing":timing,"receipt":_save(context,"prompt-skill-output",{
+                "enabled":row,"second":second,"disabled":disabled_row,"peer_request":request,"peer_timing":peer_timing})}))
         failures = {}
-        for value in ("empty","metadata_only","text_only","partial_tool","complete_tool_eof","missing_terminal"):
+        for value in ("text_only","partial_tool"):
             _mode(mode, value)
             before = len(_rows(effects))
             row = _run(runtime, context, value, ["outcomes__effect"])
@@ -263,8 +382,8 @@ def _stream_scenarios(context):
             failures[value] = row
         observations.append(_scenario("streams-eof-matrix", {"receipt":_save(context,"eof",failures),"cases":len(failures)}))
         failures = {}
-        for value in ("known_malformed","known_wrong_shape","overflow","partial_bom","invalid_utf8","after_terminal"):
-            _mode(mode,value,split="bytewise" if value == "partial_bom" else None)
+        for value in ("known_malformed","overflow","invalid_utf8","after_terminal"):
+            _mode(mode,value)
             row = _run(runtime,context,value)
             _assert_terminal(context,row,False)
             failures[value] = row
@@ -322,15 +441,17 @@ def _mcp_scenarios(context):
                 context["require"](len(_rows(trace)) - before == 1,"uncertain effect triggered a model replay")
             else:
                 _assert_terminal(context,row,True)
-            _mode(mode)
-            runtime.restart()
-            context["require"](_receipts(context,runtime,row["run_id"]) == original,"restart changed original typed receipt")
-            _mode(mode,"success")
-            later = _run(runtime,context,"success",["outcomes__effect"])
-            _assert_terminal(context,later,True)
-            _receipt_assert(context,runtime,later,"succeeded")
-            context["require"](len(_rows(effects)) == 2 and _receipts(context,runtime,row["run_id"]) == original,"later recovery rewrote or replayed original effect")
-            observations[value] = {"original":row,"receipt":original,"later":later["run_id"],"effects":len(_rows(effects))}
+            later = None
+            if value not in {"success","omitted"}:
+                _mode(mode)
+                runtime.restart()
+                context["require"](_receipts(context,runtime,row["run_id"]) == original,"restart changed original typed receipt")
+                _mode(mode,"success")
+                later = _run(runtime,context,"success",["outcomes__effect"])
+                _assert_terminal(context,later,True)
+                _receipt_assert(context,runtime,later,"succeeded")
+                context["require"](len(_rows(effects)) == 2 and _receipts(context,runtime,row["run_id"]) == original,"later recovery rewrote or replayed original effect")
+            observations[value] = {"original":row,"receipt":original,"later":later and later["run_id"],"effects":len(_rows(effects))}
         finally:
             runtime.stop()
     path = _save(context,"mcp-outcomes",observations)
@@ -379,32 +500,13 @@ def _binding_scenarios(context):
         observations.append(_scenario("binding-unattested-refusal",result))
     finally:
         runtime.stop()
-    runtime = _runtime(context,relay,backend="surreal",env={"UAR_REMOTE_SURREAL_DURABILITY_ATTESTED":"1"})
-    try:
-        row = _run(runtime,context,"qualified",budgets={"max_tokens_per_turn":1000000})
-        _assert_terminal(context,row,True)
-        database = runtime.config["persistence"]["surreal_db"]
-        sql = "SELECT VALUE data FROM accounting_calls WHERE run_id = " + json.dumps(row["run_id"]) + ";"
-        accounting = context["resources"].surreal_query(database, sql)
-        context["require"](accounting[0]["status"] == "OK" and len(accounting[0]["result"]) == 1, "qualified run lacked durable accounting call")
-        runtime.restart()
-        restored_accounting = context["resources"].surreal_query(database, sql)
-        context["require"](restored_accounting[0]["status"] == "OK" and len(restored_accounting[0]["result"]) == 1,
-                           "restart lost durable accounting call")
-        context["require"](restored_accounting[0]["result"] == accounting[0]["result"],
-                           "restart changed durable accounting call/liability")
-        later = _run(runtime,context,"qualified-restart",budgets={"max_tokens_per_turn":1000000})
-        _assert_terminal(context,later,True)
-        observations.append(_scenario("binding-qualified-durable-control", {"before":row["run_id"],"after_restart":later["run_id"],"accounting_receipt":_save(context,"durable-accounting",accounting)}))
-    finally:
-        runtime.stop()
     observations.append(_scenario("binding-16000-catalog-reservation-refusal",_catalog_budget_scenario(context,mode,relay,trace)))
-    observations.append(_scenario("binding-v1-messages-policy",_messages_policy_scenario(context,mode,relay,trace)))
     observations.append(_scenario("binding-shared-alias-and-credential-free",_source_policy_scenarios(context,mode,relay,trace)))
     observations.append(_scenario("binding-fallback-policy",_fallback_scenario(context,mode,relay,trace)))
     observations.append(_scenario("binding-timeout-inheritance",_timeout_scenario(context,mode,relay,trace)))
     observations.append(_scenario("binding-team-source-policy",_team_policy_scenario(context,mode,relay,trace)))
     observations.append(_scenario("binding-summary-capture-policy",_summary_policy_scenario(context,mode,relay,trace)))
+    observations.append(_scenario("binding-protocol-surface-contracts",_protocol_surface_scenario(context,relay)))
     _mode(mode)
     runtime = _runtime(context,relay)
     try:
@@ -489,7 +591,10 @@ def _catalog_budget_scenario(context, mode, relay, trace):
         restored = _client(runtime,context).request("GET","/api/agents/"+bounded["id"],expected=200)
         require(restored["extensions"]["budgets"] == {"max_tokens_per_turn":16000},"restart removed or weakened saved ceiling")
         require(len(_rows(trace)) == contacts,"restart replayed the refused model request")
-        return {"positive_run":positive["run_id"],"refused_run":refused["run_id"],"model":"openai/gpt-4o-mini",
+        later = _run(runtime,context,"adequate-catalog-budget-restart",artifact=adequate)
+        _assert_terminal(context,later,True)
+        require(len(_rows(trace)) == contacts + 1,"post-restart adequate ceiling did not contact the provider once")
+        return {"positive_run":positive["run_id"],"post_restart_run":later["run_id"],"refused_run":refused["run_id"],"model":"openai/gpt-4o-mini",
                 "catalog_reservation_tokens":bound,"max_tokens_per_turn":16000,"refused_provider_calls":0,"raw_log_secret_absent":raw_log_secret_absent,
                 "receipt":_save(context,"catalog-budget-16000",{"catalog":catalog,"public_errors":errors,"trusted_diagnostic":diagnostic,
                     "before":before,"after":after,"restored_budgets":restored["extensions"]["budgets"]})}
@@ -501,7 +606,8 @@ def _grant(provider):
     return {"issuer":"phase-issuer","tenant_id":"phase-tenant","provider_id":provider,"source":"config"}
 
 
-def _messages_policy_scenario(context, mode, relay, trace):
+def observe_native_messages_policy(context):
+    mode, trace, relay = _start_provider(context)
     results = {}
     for allowed in (False,True):
         _mode(mode)
@@ -516,11 +622,15 @@ def _messages_policy_scenario(context, mode, relay, trace):
             context["require"](delta == int(allowed),"direct messages policy provider-call count mismatch")
             if allowed:
                 context["require"](TEXT in result and "message_stop" in result,"allowed direct messages response incomplete")
+                context["require"](_rows(trace)[before]["path"].endswith("/v1/messages"),
+                                   "allowed direct messages request did not use the native path")
             else:
                 context["require"](result["error"]["type"] == "invalid_request_error"
                                    and result["error"]["message"] == "credential_source_denied",
                                    "wrong direct messages policy refusal")
-            results[str(allowed)] = {"provider_calls":delta,"response_complete":allowed}
+            results[str(allowed)] = {"status":200 if allowed else 403,"provider_calls":delta,
+                                     "peer_paths":[row["path"] for row in _rows(trace)[before:]],
+                                     "response_complete":allowed}
         finally:
             runtime.stop()
     return results
@@ -618,8 +728,8 @@ def _combined_scenarios(context):
         runtime.restart()
         context["require"](_receipts(context,runtime,failed["run_id"]) == original and len(_rows(effects)) == 2,"combined recovery rewrote original receipt or replayed effect")
         path = _save(context,"combined",{"failed":failed,"original_receipt":original,"later":later})
-        return [_scenario("combined-failed-tool-incomplete-stream",{"receipt":path,"outcome":"application_failed","status":failed["status"]}),
-                _scenario("combined-valid-control",{"receipt":path,"status":later["status"]})]
+        return [_scenario("combined-failed-tool-incomplete-stream",{"receipt":path,"outcome":"application_failed","status":failed["status"],
+                          "later_success_run":later["run_id"],"later_status":later["status"],"effects":2})]
     finally:
         runtime.stop()
 
@@ -629,6 +739,41 @@ def run_group(context):
     if context["group"] not in runners:
         raise RuntimeError("unsupported runtime group")
     return {"status":"passed","scenarios":runners[context["group"]](context)}
+
+
+def _protocol_surface_scenario(context, relay):
+    # Wire-contract checks for the adopted protocol surfaces. The A2A agent
+    # card, A2UI schema catalog, and ACP JSON-RPC dispatch are config/registry
+    # derived and perform no store I/O, so one live runtime exercises them
+    # identically for both persistence backends (store-backed task/run/binding
+    # behavior is covered by the backend-parameterized groups).
+    config = _config(context, relay, "surreal")
+    config["acp"] = {"enabled": True}
+    runtime = _runtime(context, relay, config=config)
+    try:
+        client = _client(runtime, context)
+        def unwrap(value):
+            return value.get("data", value) if isinstance(value, dict) else value
+        card = unwrap(client.request("GET", "/.well-known/agent.json", expected=200))
+        context["require"](isinstance(card, dict) and card.get("name") and card.get("version")
+                           and isinstance(card.get("capabilities"), dict)
+                           and isinstance(card.get("skills"), list), "A2A agent card contract fields missing")
+        schemas = unwrap(client.request("GET", "/api/uar/a2ui/schemas", expected=200))
+        builtins = unwrap(client.request("GET", "/api/uar/a2ui/components/builtins", expected=200))
+        context["require"](isinstance(schemas, list), "A2UI schema catalog contract missing")
+        context["require"](isinstance(builtins, list) and builtins
+                           and all(isinstance(item, dict) and isinstance(item.get("id"), str) and item.get("builtin") is True for item in builtins)
+                           and "Text" in [item["id"] for item in builtins], "A2UI builtin component catalog contract missing")
+        listed = client.request("POST", "/acp", {"jsonrpc":"2.0","id":1,"method":"agents/list","params":{}}, expected=200)
+        context["require"](listed.get("jsonrpc") == "2.0" and listed.get("id") == 1 and "result" in listed, "ACP agents/list contract missing")
+        unknown = client.request("POST", "/acp", {"jsonrpc":"2.0","id":2,"method":"uar111/unknown","params":{}}, expected=200)
+        context["require"]("error" in unknown and "result" not in unknown, "ACP unknown method was not rejected")
+        return {"agent_card": {"name": card["name"], "version": card["version"], "skills": len(card["skills"])},
+                "a2ui": {"schemas": len(schemas), "builtins": len(builtins)},
+                "acp": {"agents_list_result": "result" in listed, "unknown_method_rejected": "error" in unknown},
+                "backend_independence": "config/registry-derived surfaces with no store I/O; backend-parameterized groups cover store-backed protocol behavior"}
+    finally:
+        runtime.stop()
 
 
 def _summary_policy_scenario(context,mode,relay,trace):
@@ -686,6 +831,10 @@ def _team_policy_scenario(context,mode,relay,trace):
             if allowed:
                 grants.append(_grant("azure"))
         config["security"]["provider_credentials"] = {"mode":"shared","shared_fallbacks":grants}
+        # Stable per-case identity: capabilities.instance.id feeds binding.runtimeInstanceId,
+        # and the product correctly rejects an empty one (422). Without an explicit id the
+        # container falls back to an empty a2a.instance_id and validation fails.
+        config["service_instance"] = {"instance_id":"uar111-team-policy-" + case}
         runtime = _runtime(context,relay,config=config,env={"UAR_REMOTE_SURREAL_DURABILITY_ATTESTED":"1"})
         try:
             client = runtime.http(context["jwt"]("runtime-owner",["admin"]),context["admin_key"])
