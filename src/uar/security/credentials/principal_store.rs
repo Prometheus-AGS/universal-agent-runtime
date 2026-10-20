@@ -465,7 +465,7 @@ impl PrincipalCredentialStore for SurrealCredentialStore {
         let old_table = if authorization.source_owner_key.is_some() { "provider_principal_credentials" } else { "provider_credentials" };
         let old_id = if let Some(owner) = &authorization.source_owner_key { serde_json::json!([owner, next.scope.as_str(), next.legacy_scope_id, next.provider_id]).to_string() } else { SurrealCredentialStore::record_id(next.scope, &next.legacy_scope_id, &next.provider_id) };
         let compare_revision = authorization.if_match.is_some() || authorization.required_revision.is_some();
-        let mut response = self.db.query("BEGIN TRANSACTION;
+        let transaction = self.db.query("BEGIN TRANSACTION;
             LET $journal = (SELECT * FROM type::record('provider_credential_owner_migrations', $source))[0];
             IF $journal != NONE {
                 IF $journal.destination_owner_key != $owner OR $journal.destination_scope_id != $destination_scope OR $journal.approval_id != $approval OR ($source_owner != NONE AND ($journal.source_owner_key != $source_owner OR $journal.source_revision != $required_revision)) { THROW 'uar_credential_mapping_conflict'; };
@@ -489,9 +489,41 @@ impl PrincipalCredentialStore for SurrealCredentialStore {
             .bind(("source_owner", authorization.source_owner_key.clone())).bind(("required_revision", authorization.required_revision.clone()))
             .bind(("condition", authorization.if_match.clone())).bind(("compare_revision", compare_revision))
             .bind(("revision", next.source_revision.clone())).bind(("destination_revision", next.destination_revision.clone()))
-            .bind(("receipt", to_db_value(&next)?)).await.map_err(migration_query_error)?;
-        let errors = response.take_errors();
-        if !errors.is_empty() { return Err(errors.into_values().map(migration_query_error).find(|error| error.downcast_ref::<CredentialMigrationError>().is_some()).unwrap_or_else(|| anyhow::anyhow!("credential migration persistence failed"))); }
+            .bind(("receipt", to_db_value(&next)?)).await;
+        let outcome = match transaction {
+            Ok(mut response) => {
+                let errors = response.take_errors();
+                if errors.is_empty() {
+                    Ok(())
+                } else {
+                    Err(errors.into_values().map(migration_query_error)
+                        .find(|error| error.downcast_ref::<CredentialMigrationError>().is_some())
+                        .unwrap_or_else(|| anyhow::anyhow!("credential migration persistence failed")))
+                }
+            }
+            Err(error) => Err(migration_query_error(error)),
+        };
+        if let Err(error) = outcome {
+            if error.downcast_ref::<CredentialMigrationError>().is_some() {
+                return Err(error);
+            }
+            // Concurrent-attempt fallback mirroring the Postgres impl's
+            // ON CONFLICT loser path: a racing writer may have committed the
+            // journal first. Re-read it and replay the immutable receipt;
+            // replay() revalidates authorization and preconditions. Typed
+            // rejections above keep priority; without a journal the original
+            // error stands.
+            let mut raced = self.db.query("SELECT * FROM type::record('provider_credential_owner_migrations', $source)")
+                .bind(("source", source.clone())).await?.check()?;
+            let values: Vec<surrealdb::types::Value> = raced.take(0)?;
+            if let Some(value) = values.into_iter().next() {
+                let previous: CredentialMigrationReceipt =
+                    serde_json::from_value(surreal_to_json(value)?)
+                        .map_err(|_| anyhow::anyhow!("invalid credential migration receipt"))?;
+                return replay(&previous, &next, authorization);
+            }
+            return Err(error);
+        }
         let mut response = self.db.query("SELECT * FROM type::record('provider_credential_owner_migrations', $source)").bind(("source", source)).await?.check()?;
         let values: Vec<surrealdb::types::Value> = response.take(0)?;
         let value = values.into_iter().next().ok_or_else(|| anyhow::anyhow!("credential migration receipt missing"))?;

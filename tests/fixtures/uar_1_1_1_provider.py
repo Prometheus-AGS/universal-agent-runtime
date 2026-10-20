@@ -32,7 +32,21 @@ def has_result(request):
     return False
 
 
-def anthropic_stream(mode, request=None, newline="\n", bom=False):
+def prompt_skill_answer(request, prompt_marker, skill_marker):
+    received = json.dumps(request, ensure_ascii=False, sort_keys=True)
+    if prompt_marker not in received or skill_marker not in received:
+        return "prompt-skill-marker-missing"
+    return "prompt-skill-output:" + hashlib.sha256(
+        (prompt_marker + "\x1f" + skill_marker).encode()).hexdigest()
+
+
+def response_text(mode, request, prompt_marker=None, skill_marker=None):
+    if mode == "prompt_skill":
+        return prompt_skill_answer(request, prompt_marker or "", skill_marker or "")
+    return "general-purpose" if mode == "graph" and "Route" in json.dumps(request) else TEXT
+
+
+def anthropic_stream(mode, request=None, newline="\n", bom=False, prompt_marker=None, skill_marker=None):
     request = request or {}
     if mode == "empty":
         return b""
@@ -45,7 +59,7 @@ def anthropic_stream(mode, request=None, newline="\n", bom=False):
         frames += [sse({"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"call-uar111","name":"outcomes__effect","input":{}}}, "content_block_start", newline),
                    sse({"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":json.dumps({"mode":tool_mode}) if mode != "partial_tool" else '{"mode":'}}, "content_block_delta", newline)]
     else:
-        text = "general-purpose" if mode == "graph" and "Route" in json.dumps(request) else TEXT
+        text = response_text(mode, request, prompt_marker, skill_marker)
         frames += [sse({"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}, "content_block_start", newline),
                    sse({"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":text}}, "content_block_delta", newline)]
     if mode == "text_only" or mode == "partial_tool":
@@ -87,7 +101,7 @@ def anthropic_stream(mode, request=None, newline="\n", bom=False):
     return (b"\xef\xbb\xbf" if bom else b"") + body
 
 
-def openai_stream(mode, request):
+def openai_stream(mode, request, prompt_marker=None, skill_marker=None):
     if mode == "empty":
         return b""
     tool = mode in TOOL_MODES and not has_result(request)
@@ -95,7 +109,7 @@ def openai_stream(mode, request):
         tool_mode = "application" if mode == "combined" else mode
         delta = {"tool_calls":[{"index":0,"id":"call-uar111","type":"function","function":{"name":"outcomes__effect","arguments":json.dumps({"mode":tool_mode})}}]}
     else:
-        delta = {"content":TEXT}
+        delta = {"content":response_text(mode, request, prompt_marker, skill_marker)}
     def frame(delta, finish):
         return sse({"id":"uar111","object":"chat.completion.chunk","created":0,"model":"gpt-4o-mini","choices":[{"index":0,"delta":delta,"finish_reason":finish}]})
     result = frame(delta, None) + frame({}, "tool_calls" if tool else "stop")
@@ -130,17 +144,20 @@ def main():
             self.wfile.write(body)
         def do_POST(self):
             request = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))))
+            received_at = time.monotonic()
             settings = json.loads(args.mode_file.read_text())
             mode = settings.get("mode", "complete")
-            body = anthropic_stream(mode, request, settings.get("newline", "\n"), settings.get("bom", False)) if self.path.endswith("/messages") else openai_stream(mode, request)
+            body = anthropic_stream(mode, request, settings.get("newline", "\n"), settings.get("bom", False),
+                                    settings.get("prompt_marker"), settings.get("skill_marker")) if self.path.endswith("/messages") else openai_stream(mode, request, settings.get("prompt_marker"), settings.get("skill_marker"))
             split = settings.get("split")
             fixed = settings.get("fixed")
             pieces = [body[index:index+fixed] for index in range(0,len(body),fixed)] if fixed else [bytes([byte]) for byte in body] if split == "bytewise" else [body[:split], body[split:]] if isinstance(split, int) else [body]
+            correlation_id = hashlib.sha256(json.dumps(request, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
             with lock, args.trace.open("a", encoding="utf-8") as trace:
                 # Credentials are synthetic; store only equality labels, never header bytes.
                 key = self.headers.get("x-api-key", self.headers.get("Authorization", ""))
                 source = "empty" if not key or key == "Bearer " else "fixture" if key in {"runtime-fixture-key", "Bearer runtime-fixture-key"} else "other"
-                trace.write(json.dumps({"path":self.path,"mode":mode,"request":request,"credential_source":source,"sha256":hashlib.sha256(body).hexdigest(),"chunks":[len(part) for part in pieces],"time":time.monotonic()}) + "\n")
+                trace.write(json.dumps({"kind":"request","correlation_id":correlation_id,"path":self.path,"mode":mode,"request":request,"credential_source":source,"sha256":hashlib.sha256(body).hexdigest(),"chunks":[len(part) for part in pieces],"peer_received_at":received_at,"time":received_at}) + "\n")
                 trace.flush()
                 os.fsync(trace.fileno())
             if settings.get("delay"):
@@ -149,19 +166,31 @@ def main():
             self.send_header("Content-Type", "text/event-stream")
             self.send_header("Transfer-Encoding", "chunked")
             self.end_headers()
+            first_write_at = None
+            last_write_at = None
             try:
                 for piece in pieces:
                     if piece:
+                        first_write_at = first_write_at or time.monotonic()
                         self.wfile.write(f"{len(piece):x}\r\n".encode() + piece + b"\r\n")
                         self.wfile.flush()
+                        last_write_at = time.monotonic()
                         if split is not None or fixed:
                             time.sleep(0.001)
                 if mode == "cancel":
                     time.sleep(120)
                 self.wfile.write(b"0\r\n\r\n")
                 self.wfile.flush()
+                last_write_at = time.monotonic()
             except (BrokenPipeError, ConnectionResetError):
                 pass
+            finally:
+                with lock, args.trace.open("a", encoding="utf-8") as trace:
+                    trace.write(json.dumps({"kind":"timing","correlation_id":correlation_id,
+                                              "peer_first_write_at":first_write_at,
+                                              "peer_last_write_at":last_write_at}) + "\n")
+                    trace.flush()
+                    os.fsync(trace.fileno())
 
     server = ThreadingHTTPServer(("0.0.0.0", 0), Handler)
     server.daemon_threads = True

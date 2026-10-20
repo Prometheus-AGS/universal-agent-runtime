@@ -1108,7 +1108,12 @@ mod tests {
         let backend = Arc::new(RecordingEmbeddingBackend {
             batch_sizes: Arc::clone(&batch_sizes),
         });
-        let matcher = Arc::new(VectorMatcher::new(backend, 0.75));
+        let matcher = Arc::new(VectorMatcher::new(
+            Arc::new(crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
+                backend,
+            )),
+            0.75,
+        ));
         let database_directory = tempfile::tempdir().unwrap();
         let endpoint = format!(
             "surrealkv://{}",

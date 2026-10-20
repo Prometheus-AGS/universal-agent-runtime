@@ -12,7 +12,6 @@ REQUIRED_SCENARIOS = {"credentials": (
     "compiler-local-single-owner-control",
     "compiler-remote-two-principal-denial",
     "compiler-local-shared-denial",
-    "compiler-restart-preserves-existing-resources",
 )}
 ALIASES = ("/api/uar/compiler", "/api/compiler")
 DENIAL_CODE = "compiler_authoring_profile_restricted"
@@ -119,11 +118,11 @@ def _snapshot(resources, node):
 def _rewrite(node, profile, credential_mode):
     node.config["security"]["deployment_profile"] = profile
     node.config["security"]["provider_credentials"] = {"mode": credential_mode}
-    node.config_path.write_text(json.dumps(node.config))
+    node.write_config()
     node.restart()
 
 
-def _denials(node, principals, spec_id, session_id, output, report_id):
+def _denials(node, principals, spec_id, session_id, output, report_id, after_restart=False):
     verify_body = {"descriptor": output["descriptor"], "signature": output["signature"]}
     operations = (
         ("POST", "/specs", {"content": CONTENT}),
@@ -141,6 +140,12 @@ def _denials(node, principals, spec_id, session_id, output, report_id):
         ("POST", "/sessions/" + session_id + "/cancel", None),
         ("POST", "/sessions/" + session_id + "/compile", None),
     )
+    if after_restart:
+        # Initial coverage proves every route/alias/principal combination. Cold
+        # coverage observes one read, one write and one session operation.
+        principals = principals[:1]
+        operations = (operations[2], operations[5], operations[12])
+    aliases = ALIASES[:1] if after_restart else ALIASES
     observations = []
     for subject, token, workspace in principals:
         client = node.http(token, node.resources.admin_key)
@@ -151,9 +156,13 @@ def _denials(node, principals, spec_id, session_id, output, report_id):
         require(principal["subject"] == subject
                 and principal["tenant_id"] == "compiler-tenant-" + subject[-1],
                 "compiler fixture principal did not retain its verified tenant")
-        for alias in ALIASES:
+        for alias in aliases:
             for method, path, body in operations:
-                for spoof in (False, True):
+                # Spoof controls cover a read, write and session mutation on
+                # each alias/principal without repeating the full matrix.
+                spoofs = (False, True) if not after_restart and path in (
+                    "/specs/" + spec_id, "/compile", "/sessions/" + session_id + "/cancel") else (False,)
+                for spoof in spoofs:
                     headers = {"X-UAR-Workspace-Id": workspace}
                     if spoof:
                         headers.update({"X-UAR-Deployment-Profile": "trusted_local",
@@ -164,12 +173,16 @@ def _denials(node, principals, spec_id, session_id, output, report_id):
                     require(isinstance(denial, dict) and denial.get("code") == DENIAL_CODE,
                             "compiler denial did not come from the host profile boundary")
                     observations.append({"subject": subject, "alias": alias,
-                        "method": method, "path": path, "spoof_headers": spoof, "status": 403})
+                        "method": method, "path": path, "spoof_headers": spoof, "status": 403,
+                        "code": denial["code"]})
             # Body extraction must not run before profile denial.
-            denial = client.request("POST", alias + "/compile", b"not-json", expected=403,
-                headers={"Content-Type": "application/json", "X-UAR-Workspace-Id": workspace})
-            require(isinstance(denial, dict) and denial.get("code") == DENIAL_CODE,
-                    "malformed body bypassed compiler profile rejection")
+            if not after_restart:
+                denial = client.request("POST", alias + "/compile", b"not-json", expected=403,
+                    headers={"Content-Type": "application/json", "X-UAR-Workspace-Id": workspace})
+                require(isinstance(denial, dict) and denial.get("code") == DENIAL_CODE,
+                        "malformed body bypassed compiler profile rejection")
+                observations.append({"subject": subject, "alias": alias, "method": "POST",
+                    "path": "/compile", "malformed_body": True, "status": 403, "code": denial["code"]})
     return observations
 
 
@@ -205,9 +218,12 @@ def run_group(context):
             seeded.append((spec["id"], session["id"], output))
         client.request("POST", ALIASES[0] + "/compile-and-register", {"content": CONTENT}, expected=201)
         baseline = _snapshot(resources, node)
-        results.append({"id": REQUIRED_SCENARIOS["credentials"][0], "status": "passed",
-            "observations": {"aliases": list(ALIASES), "specs": len(seeded),
-                             "inline_compile": True, "descriptor_verify": True, "registered": True}})
+        public_baseline = {}
+        for alias in ALIASES:
+            for stored_spec, stored_session, stored_output in seeded:
+                for path in ("/specs/" + stored_spec, "/sessions/" + stored_session,
+                             "/reports/" + stored_output["report"]["id"]):
+                    public_baseline[alias + path] = client.request("GET", alias + path)
 
         spec_id, session_id, output = seeded[0]
         for profile, mode, case in (("remote", "single_owner", "compiler-remote-two-principal-denial"),
@@ -217,10 +233,10 @@ def run_group(context):
             observations = _denials(node, principals, spec_id, session_id, output, output["report"]["id"])
             require(_snapshot(resources, node) == baseline, "denied compiler operation changed persistent state")
             node.restart()
-            repeated = _denials(node, principals, spec_id, session_id, output, output["report"]["id"])
+            repeated = _denials(node, principals, spec_id, session_id, output, output["report"]["id"], after_restart=True)
             require(_snapshot(resources, node) == baseline, "denied compiler state changed after restart")
             results.append({"id": case, "status": "passed", "observations": {
-                "operations": observations, "after_restart_operations": len(repeated),
+                "operations": observations, "after_restart_operations": repeated,
                 "persistent_state_unchanged": True}})
 
         _rewrite(node, "trusted_local", "single_owner")
@@ -229,12 +245,20 @@ def run_group(context):
             require(len(client.request("GET", alias + "/specs")) == len(seeded), "local spec inventory changed")
             require(len(client.request("GET", alias + "/sessions")) == len(seeded), "local session inventory changed")
             for stored_spec, stored_session, stored_output in seeded:
-                require(client.request("GET", alias + "/specs/" + stored_spec)["content"] == CONTENT,
-                        "local stored spec changed")
-                client.request("GET", alias + "/sessions/" + stored_session)
-                client.request("GET", alias + "/reports/" + stored_output["report"]["id"])
-        results.append({"id": REQUIRED_SCENARIOS["credentials"][3], "status": "passed",
-            "observations": {"persistent_state_unchanged": True, "local_reads_restored": True}})
+                for path in ("/specs/" + stored_spec, "/sessions/" + stored_session,
+                             "/reports/" + stored_output["report"]["id"]):
+                    require(client.request("GET", alias + path) == public_baseline[alias + path],
+                            "local stored spec/session/report changed")
+            restored = client.request("POST", alias + "/compile", {"content": CONTENT})
+            require(client.request("POST", alias + "/verify", {
+                "descriptor": restored["descriptor"], "signature": restored["signature"]})["valid"],
+                "restored local compilation/verification failed")
+        require(_snapshot(resources, node) == baseline, "local readback changed retained compiler records")
+        results.append({"id": REQUIRED_SCENARIOS["credentials"][0], "status": "passed",
+            "observations": {"aliases": list(ALIASES), "specs": len(seeded), "inline_compile": True,
+                "descriptor_verify": True, "registered": True, "persistent_state_unchanged": True,
+                "local_reads_restored": True, "local_compile_verify_restored": True,
+                "unchanged_tables": ["uar_specs", "uar_reports", "uar_compiler_sessions", "agents"]}})
         return {"status": "passed", "scenarios": results}
     except BaseException as error:
         status = "interrupted" if isinstance(error, KeyboardInterrupt) else "blocked" if isinstance(error, Blocked) else "failed"

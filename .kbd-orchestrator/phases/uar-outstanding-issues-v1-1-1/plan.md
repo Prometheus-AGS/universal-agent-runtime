@@ -1,5 +1,10 @@
 # PLAN: uar-outstanding-issues-v1-1-1
 
+> Current certification authority: the 2026-10-17 function-first amendment at
+> the end of this document supersedes older gate-opening and full published-group
+> instructions. Historical task states and receipts are preserved. Gate CLOSED.
+
+
 Project: Universal Agent Runtime. Date: 2026-10-16. Stage: Plan.
 OpenSpec backend: existing change `uar-outstanding-issues-v1-1-1`.
 Changes: **one coordinated change, 22 pending tasks**. Baseline
@@ -567,3 +572,38 @@ they cannot certify or execute the changed bytes. L11 records exact current
 source/fixture identity only after every phase implementation handoff. The
 operator lock remains **CLOSED**. No source identity check, Docker preflight,
 test, build, compiler/import probe or gate is selected during code authoring.
+
+
+## Function-first child execution amendment — 2026-10-17
+
+The accepted child plan is `children/function-first-release-certification/plan.md`.
+Its exact FC1–FC9 ledger and ownership control this certification cohort; original
+parent task completions remain historical. Canonical KBD registration/transitions
+belong to the root lead through the actual CLI. No generated task/progress/waypoint
+file is edited by this amendment.
+
+FC1–FC5 finish all revised implementation, fixtures/configuration and required
+docs, including a closed prebuilt-image runner contract, then a fresh whole-parent/
+child inventory. FC6 separately requests exact image build/inspection and genuine
+qualified supervisor staging/physical-boot commands. FC7 requires explicitly
+authorized independent artifact review. FC8 requires the exact local functional
+command and explicit operator timing disposition. FC9 supplies the parent handoff.
+A completed inventory is not permission; all verification remains CLOSED pending
+the exact instruction. Later implementation edits invalidate prior preparation
+and require renewed inventory and instructions.
+
+V2 retains all six reduced local groups and four native supplements. P2 selects
+exactly streams/recovery on each immutable architecture child after separately
+authorized pull/inspection and fresh same-image supervisor preparation for that
+child. The functional invocation must not rebuild/pull or replace prepared UAR.
+Every recovery attempt needs fresh real predecessor work, journal registration,
+physical boot, distinct replacement fence and unconsumed qualified proof. Image
+identity does not establish controller qualification. FC5 published manifests
+remain templates until P1 and those preparation receipts exist.
+
+The uncomfortable tradeoff is lost direct per-child budget refusal, compiler
+restriction, credential-migration and MCP-failure evidence; these remain local
+release blockers. Explicit attachment/output equality is certified, not a model's
+skill-selection quality. Timing is measured diagnostically and requires operator
+disposition. There is no measured speedup or passing reduced-program receipt yet.
+P1 publication and P3 issue/release messaging retain their separate authorization.

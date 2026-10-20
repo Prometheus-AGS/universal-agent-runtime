@@ -31,10 +31,14 @@ async fn manager_with_run(captured: bool) -> RunManager {
         sessions,
         Arc::new(RwLock::new(SkillRegistry::default())),
         Arc::new(crate::uar::runtime::matching::VectorMatcher::new(
-            Arc::new(UnavailableEmbeddingBackend::new(
-                384,
-                "this history test performs no embedding inference",
-            )),
+            Arc::new(
+                crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(Arc::new(
+                    UnavailableEmbeddingBackend::new(
+                        384,
+                        "this history test performs no embedding inference",
+                    ),
+                )),
+            ),
             0.75,
         )),
         None,
@@ -73,6 +77,12 @@ async fn manager_with_run(captured: bool) -> RunManager {
             })),
             completion: None,
             delegation: None,
+            tool_admission: None,
+            actor_spawn_descriptor: None,
+            actor_tool_approval: None,
+            started_at: Instant::now(),
+            terminal_at: None,
+            last_detached_at: None,
         },
     );
     manager

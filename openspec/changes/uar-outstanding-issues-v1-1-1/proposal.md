@@ -14,7 +14,8 @@ Issue #385 reports a deployed chat outage whose model-binding cause is erased, p
 - Extend atomic credential migration with fixed-local sources and a trusted-host-only non-secret preview; document backup, quiescence, cutover and safe rollback.
 - Document authenticated KB reupload, legacy retention, qualified team recovery and missing evidence. No privileged KB import, forced takeover, blind durability attestation or bulk skill-pack edit.
 - Restrict the ownerless compiler REST subtree on both aliases when ingress is remote or credential policy is shared. Keep local single-owner authoring, disclose the profile limit and defer full owner-scoped authoring under open #387.
-- Publish immutable v1.1.1 only after the full implementation boundary and local production acceptance; run the full program against both published architecture digests. Reconcile #379/#383 with existing v1.1.0 evidence and retain #382 external ownership.
+- Publish immutable v1.1.1 only after complete implementation, separately authorized same-image preparation, independent review and local production acceptance. Run all six reduced groups locally and exactly streams/recovery on each published architecture digest. Reconcile #379/#383 with existing v1.1.0 evidence and retain #382 external ownership.
+- Add a controlled public prompt/explicit-skill journey with exact answer equality and diagnostic timing. Preserve distinct refusal, tool, credential, compiler and recovery outcomes while folding duplicate receipt labels and removing exhaustive release-only stream partitions.
 
 ## Capabilities
 
@@ -25,13 +26,13 @@ None. Reuse the existing capability boundaries.
 ### Modified Capabilities
 
 - `provider-diagnostic-status`: safe origin categories for run binding, separate from provider catalog status.
-- `model-path-resiliency`: manager completion evidence and precise native Anthropic framing/forward-compatibility behavior.
+- `model-path-resiliency`: manager completion evidence, precise native Anthropic framing/forward-compatibility behavior and public prompt/explicit-attachment/output certification.
 - `tool-call-protocol`: exact MCP application/transport/uncertain outcome preservation and no-replay controls.
 - `tenant-isolation`: credential-local installation identity, shared fallback policy and authorized migration/preview.
 - `compiler-authoring-isolation`: block ownerless REST authoring in remote and shared profiles until owner-scoped storage and sessions are implemented.
 - `dot-durable-budgets`: actionable durable eligibility refusal without discarding explicit budgets or liabilities.
 - `dot-durable-ingestion`: safe eligibility diagnostics while preserving durable acceptance.
-- `knowledge-rag-product-certification`: supported owner-qualified upgrade reupload and explicit preservation limits.
+- `knowledge-rag-product-certification`: supported owner-qualified upgrade reupload, explicit preservation limits and bounded local/published release-evidence scope.
 - `kubo-runtime-conformance`: immutable patch-release evidence, both architecture acceptance and honest issue dispositions.
 
 ## Impact
@@ -42,4 +43,25 @@ Runtime UX gains actionable safe error messages and truthful completion; public 
 
 KBD remains authoritative: this proposal belongs only to phase `uar-outstanding-issues-v1-1-1`; Spec is followed by Plan. Tasks, fixtures and required documentation all belong to one full-phase implementation boundary. Product checks and isolated review are deferred until that inventory is complete; product checks never run in GitHub Actions. No cluster mutation or kill-switch access is authorized by this specification.
 
-The uncomfortable limit: better diagnostics do not prove the reported backing store is durable or recover original KB sources. Actual deployment recovery remains evidence-dependent even when equivalent product acceptance passes.
+## Function-first certification amendment — 2026-10-17
+
+The active child `function-first-release-certification` narrows mandatory release
+observations; it does not weaken production parser, credential, budget or recovery
+requirements. Its accepted plan specifies 65 labels across the six local groups,
+four unchanged native source supplements and two groups per published child.
+Receipt-label folding retains the consequential assertions. Ten group executions
+replace eighteen; execution-time improvement has not been measured.
+
+Published-child certification no longer directly repeats budget refusal, compiler
+restriction, credential migration or MCP failure handling on each architecture.
+Those remain local release blockers. Every published child still requires public
+prompt/skill/stream/tool completion and owner-qualified durable restart/recovery,
+including genuine supervisor exclusion. Preparation, review, acceptance and
+publication each require their applicable explicit operator instruction; the
+verification gate is CLOSED until the named instruction exists.
+
+The uncomfortable limit: better diagnostics do not prove customer storage
+durability or recover missing sources. Controlled attachment activation does not
+certify model-selected skill quality, external-model latency or reasoning. The
+smaller published program accepts less architecture-specific authority/failure
+evidence. Timing requires the operator's explicit disposition before release.

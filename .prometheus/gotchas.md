@@ -1913,3 +1913,76 @@ standalone checks or probes. Source inspection and authored preparation may
 continue while closed; each executable preflight requires its own named
 instruction or must already be inside the approved gate command. This entry
 does not retroactively certify any acceptance result.
+
+## 2026-10-17 Pre-build failure is not a group repair parent
+
+The local09 binding receipt stopped at Docker network creation and records
+`groups={}`. The acceptance runner's single-group manifest contract requires
+the selected `repair_parent.groups[group].status` to be failed, blocked or
+interrupted. Therefore the local09 receipt cannot be the binding group's
+`repair_parent`, despite L10's proposed wording. The last failed binding
+group receipt is local08; use that as the single-group repair parent, disclose
+all later source changes, and retain local09 separately as an infrastructure
+failure. This was found by source inspection during L11 preparation. No gate
+was run to establish the corrected manifest behavior.
+
+## 2026-10-18 — Acceptance fixtures must capture failure diagnostics and prove dependency readiness before expensive qualification runs
+
+**Follow-up for the skills packages (recorded, NOT implemented in this phase).**
+No matching follow-up existed before this entry (checked
+`evidence/open-issues.json`, this file, and `docs/proactive-followups.md`).
+
+**Observed behavior.** UAR 1.1.1 round-2 qualification lost two groups to
+undifferentiated `Blocked`/`failed` dispositions: 33 credential scenarios
+reported only "runtime exited before health", and the recovery PostgreSQL leg
+reported "no public port published". The round-2 report even claimed "no log
+was captured" when captures existed in the evidence root but were not
+consulted. Round-3 added a `.diag.json` sidecar per capture (redacted launch
+command, container state/exit code, health-probe result, attempt number) and
+the root causes were named within minutes: a shared host file view serving a
+stale config generation (runtime read EOF at column 1355 of a valid 1458-byte
+file), and a dependency init window where `pg_isready` passed while the
+Supabase entrypoint was still running migrations and cycling its temporary
+server (published endpoint accepted TCP then dropped handshakes).
+
+**Lesson.** Before an expensive qualification run: (1) every fixture failure
+path must retain the launch command (secrets redacted), exit status,
+stdout/stderr, dependency logs, and probe results BEFORE cleanup; (2)
+dependency readiness must be established through the real consumption path —
+an authenticated end-to-end query that is stable across the dependency's own
+init/restart windows — not an internal liveness probe that a half-initialized
+dependency can pass. Consult retained captures before declaring evidence
+missing.
+
+**Stakes.** Without this, qualification rounds burn their whole budget on
+symptom-level reruns; with it, round 3 named and repaired both causes inside
+one bounded allowance.
+
+## 2026-10-18 — Readiness must establish authenticated dependency access, correct configuration, and candidate/build identity before expensive acceptance begins
+
+**Recorded for the skills packages; implementation left to the skills project.**
+(Second of the two qualification lessons; the round-3 lesson covered failure
+diagnostics and dependency readiness probes.)
+
+**Observed behavior.** UAR 1.1.1 rounds 3–4 burned acceptance and near-
+acceptance cycles on three conditions that readiness should have settled
+first: (1) the fixture authenticated to a re-opened SurrealKV store with a
+random password while the store carried its initialization credential
+(401 at the first store call); (2) containers started against a shared file
+view that transiently served a stale config generation (parse EOF at the
+previous version's length), which post-mortem probes could not observe; (3)
+the candidate's frozen source trees did not match the identity embedded in an
+un-rebuilt image (FC6 failed closed).
+
+**Lesson.** Before any expensive acceptance: prove **authenticated dependency
+access** with the real consumption path (not merely that a dependency
+process is up), prove **correct configuration** at the container's own view
+(content-addressed config names remove the staleness class; record
+intended-vs-visible hashes on failure; retries must never paper over the
+difference), and prove **candidate/build identity** by rebuilding from the
+exact frozen content manifest and reading the embedded identity back before
+the run. A readiness gate that checks liveness but not authenticated access,
+config visibility, or identity defers all three costs into the acceptance run.
+
+**Stakes.** Each condition cost a full or partial qualification cycle; all
+three are cheap to settle in minutes with the right readiness checks.

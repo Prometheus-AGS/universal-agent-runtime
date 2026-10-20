@@ -165,3 +165,39 @@ MCP servers despite mounted config, requiring fixture/policy tracing first.
 MCP relay readiness failed before requests, and combined Docker startup timed
 out. These observations do not justify speculative MCP, stream framing or
 state repair.
+
+## 2026-10-18 — Round 2 closeout authorization (operator)
+
+Operator accepted the round-1 FAIL report
+(`release-qualification-report-1.1.1-function-first.md`, receipt
+`de04c3e6...`) and authorized a narrowly scoped closeout attempt on the
+Kimi coding plan only. Ceilings (not estimates): 120 minutes, 80 tool
+calls, 2 repair cycles, no-progress limit 2; reserve time for the existing
+final program; no silent extensions.
+
+Authorized corrections, exactly three:
+1. Restart durability (product): persist/retrieve run metadata and events
+   via the existing storage abstraction and PostgreSQL/SurrealDB providers
+   per the adopted restart-durability contract; `/events` must resolve
+   required runs after restart; ordering, tenant isolation, response
+   semantics preserved; terminal snapshot alone is insufficient where the
+   contract covers pre-termination acknowledged events; no new event
+   platform or architectural rewrite; the requirement must not be
+   redefined away.
+2. Recovery fixture: move the fingerprint assertion to after indexing has
+   legitimately completed; preserve the assertion and planned restart
+   sequence; B4 must actually execute (review evidence is not execution
+   evidence).
+3. SurrealKV sidecar: inspect startup logs, exit status, configuration,
+   volume state, health probe; repair only a demonstrated fixture fault;
+   keep the pinned version unless a specific incompatibility is established
+   and explicitly approved; 15-minute diagnosis limit, then report the
+   blocker instead of cycling speculative changes.
+
+Then: focused boundary checks per repair; reseal; run the existing final
+acceptance program once (must exercise previously blocked migration cases,
+both recovery backends, B4); no NOT_EXERCISED-as-PASS, no weakened
+criteria. Outcome: scoped qualification report only if every mandatory
+criterion passes; otherwise name the smallest specific remaining defect and
+stop. No broad audit, feature expansion, new test framework, commits,
+pushes, or publication.

@@ -41,7 +41,7 @@ use universal_agent_runtime::config_manager::ConfigManager;
 use universal_agent_runtime::server;
 use universal_agent_runtime::uar;
 use universal_agent_runtime::uar::security::sidecar_guard::{
-    InvalidLaunchToken, SidecarLaunchToken,
+    InvalidBoundPrincipal, InvalidLaunchToken, SidecarBoundPrincipal, SidecarLaunchToken,
 };
 
 /// Longest accepted token line: 64 hex characters, `\r`, `\n`.
@@ -49,6 +49,46 @@ const MAX_TOKEN_LINE_BYTES: u64 = 66;
 
 /// Exit status when the launch token is missing or malformed.
 const INVALID_TOKEN_EXIT_STATUS: i32 = 2;
+
+/// Launch-environment variable naming the one owner of a launch-bound sidecar.
+/// Read only from the process environment set by the launching host.
+const BOUND_PRINCIPAL_ENV: &str = "UAR_SIDECAR_BOUND_PRINCIPAL";
+
+/// Exit status when the bound principal is present but not a valid subject.
+const INVALID_BOUND_PRINCIPAL_EXIT_STATUS: i32 = 3;
+
+/// Parse the optional launch-bound principal from its raw environment value.
+///
+/// Absent means the shared sidecar. A present value must be UTF-8 and satisfy
+/// the `x-uar-principal` rule; an empty or invalid value fails closed.
+///
+/// # Errors
+///
+/// Returns [`InvalidBoundPrincipal`] for a non-UTF-8 or invalid value.
+fn bound_principal_from_env(
+    raw: Option<&std::ffi::OsStr>,
+) -> Result<Option<SidecarBoundPrincipal>, InvalidBoundPrincipal> {
+    raw.map(|value| {
+        value
+            .to_str()
+            .ok_or(InvalidBoundPrincipal)
+            .and_then(SidecarBoundPrincipal::parse)
+    })
+    .transpose()
+}
+
+/// Settings forced off because they can mix content across host sessions.
+///
+/// Skill evolution is always off. Memory is forced off only for the shared
+/// sidecar, where one process serves many host sessions and owners. A
+/// launch-bound sidecar has exactly one owner, so memory follows configuration.
+fn forced_session_mixing_env(launch_bound: bool) -> &'static [(&'static str, &'static str)] {
+    if launch_bound {
+        &[("UAR_SKILL_EVOLUTION__ENABLED", "false")]
+    } else {
+        &[("UAR_SKILL_EVOLUTION__ENABLED", "false"), ("UAR_MEMORY__ENABLED", "false")]
+    }
+}
 
 /// Read the launch token from the first stdin line.
 ///
@@ -109,6 +149,7 @@ fn should_disable_sidecar_jwt(
 struct SidecarBootstrap {
     cli: Cli,
     token: SidecarLaunchToken,
+    bound_principal: Option<SidecarBoundPrincipal>,
     listener: std::net::TcpListener,
 }
 
@@ -157,6 +198,17 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
     let session_retention_unconfigured = std::env::var_os("UAR_SESSIONS__IDLE_TIMEOUT_SECS")
         .is_none()
         && std::env::var_os("UAR_SESSIONS__MAX_RETAINED").is_none();
+    // Fail closed before any socket is bound; never echo the rejected value.
+    let bound_principal =
+        match bound_principal_from_env(std::env::var_os(BOUND_PRINCIPAL_ENV).as_deref()) {
+            Ok(principal) => principal,
+            Err(_) => {
+                eprintln!(
+                    "UAR sidecar refused to start: {BOUND_PRINCIPAL_ENV} is not a valid host principal"
+                );
+                std::process::exit(INVALID_BOUND_PRINCIPAL_EXIT_STATUS);
+            }
+        };
 
     // Force loopback-only binding and JSON logs before config is loaded so the
     // config layer picks them up via env-var overrides.
@@ -188,10 +240,14 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
             std::env::set_var("UAR_SESSIONS__IDLE_TIMEOUT_SECS", "1800");
             std::env::set_var("UAR_SESSIONS__MAX_RETAINED", "1000");
         }
-        // One sidecar serves every host session. Features that mix content
-        // across sessions stay off regardless of configuration files.
-        std::env::set_var("UAR_SKILL_EVOLUTION__ENABLED", "false");
-        std::env::set_var("UAR_MEMORY__ENABLED", "false");
+        // A shared sidecar serves every host session, so features that mix
+        // content across sessions stay off regardless of configuration files.
+        // Skill evolution is off in every mode. Memory is forced off only when
+        // no principal is bound; a launch-bound sidecar serves exactly one
+        // owner, so its memory follows configuration.
+        for (key, value) in forced_session_mixing_env(bound_principal.is_some()) {
+            std::env::set_var(key, value);
+        }
     }
 
     let token = match read_launch_token() {
@@ -223,6 +279,7 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
     Ok(SidecarBootstrap {
         cli,
         token,
+        bound_principal,
         listener,
     })
 }
@@ -299,7 +356,12 @@ async fn run_sidecar(bootstrap: SidecarBootstrap) {
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel();
     let process_shutdown = tokio_util::sync::CancellationToken::new();
     let server = server::start_server_sidecar(
-        config_manager, listener, bootstrap.token, ready_tx, Some(process_shutdown.clone()),
+        config_manager,
+        listener,
+        bootstrap.token,
+        bootstrap.bound_principal,
+        ready_tx,
+        Some(process_shutdown.clone()),
     );
     tokio::pin!(server);
     let ready_addr = match await_server_readiness(ready_rx, server.as_mut()).await {
@@ -346,8 +408,71 @@ async fn run_sidecar(bootstrap: SidecarBootstrap) {
 
 #[cfg(test)]
 mod tests {
-    use super::should_disable_sidecar_jwt;
+    use super::{
+        InvalidBoundPrincipal, bound_principal_from_env, forced_session_mixing_env,
+        should_disable_sidecar_jwt,
+    };
     use std::ffi::OsStr;
+
+    #[test]
+    fn bound_principal_absent_keeps_shared_mode() {
+        assert_eq!(bound_principal_from_env(None), Ok(None));
+    }
+
+    #[test]
+    fn bound_principal_accepts_a_valid_subject() {
+        let bound = bound_principal_from_env(Some(OsStr::new("alice")))
+            .expect("valid subject must parse")
+            .expect("present subject must bind");
+        assert_eq!(bound.as_str(), "alice");
+        let longest = "a".repeat(128);
+        assert!(bound_principal_from_env(Some(OsStr::new(&longest))).is_ok());
+    }
+
+    #[test]
+    fn bound_principal_rejects_anonymous_empty_overlong_and_bad_charset() {
+        let overlong = "a".repeat(129);
+        for rejected in [
+            "anonymous",
+            "ANONYMOUS",
+            "",
+            overlong.as_str(),
+            "-alice",
+            "alice bob",
+            "alice/bob",
+            "alice\n",
+        ] {
+            assert_eq!(
+                bound_principal_from_env(Some(OsStr::new(rejected))),
+                Err(InvalidBoundPrincipal),
+                "a malformed bound principal must fail closed"
+            );
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn bound_principal_rejects_non_utf8() {
+        use std::os::unix::ffi::OsStrExt as _;
+        assert_eq!(
+            bound_principal_from_env(Some(OsStr::from_bytes(&[0x61, 0xff]))),
+            Err(InvalidBoundPrincipal)
+        );
+    }
+
+    #[test]
+    fn bound_principal_mode_lets_memory_follow_configuration() {
+        let forced = forced_session_mixing_env(true);
+        assert!(!forced.iter().any(|(key, _)| *key == "UAR_MEMORY__ENABLED"));
+        assert!(forced.contains(&("UAR_SKILL_EVOLUTION__ENABLED", "false")));
+    }
+
+    #[test]
+    fn bound_principal_shared_mode_still_forces_memory_off() {
+        let forced = forced_session_mixing_env(false);
+        assert!(forced.contains(&("UAR_MEMORY__ENABLED", "false")));
+        assert!(forced.contains(&("UAR_SKILL_EVOLUTION__ENABLED", "false")));
+    }
 
     #[test]
     fn disables_jwt_when_operator_expressed_no_opinion() {

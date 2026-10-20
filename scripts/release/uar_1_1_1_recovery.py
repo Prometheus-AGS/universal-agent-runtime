@@ -13,7 +13,7 @@ from uar_1_1_1_support import Blocked, require
 
 REQUIRED_SCENARIOS = {"recovery": (
     "unattested_remote_upload_refusal", "attested_upload_restart_owner_isolation",
-    "legacy_principal_namespace_cold_readback", "joined_quiesce_reclaim_controls",
+    "joined_quiesce_reclaim_controls",
     "qualified_supervisor_reclaim_controls",
 )}
 SOURCE = b"UAR v1.1.1 durable recovery fixture source."
@@ -146,7 +146,7 @@ def _seed_legacy(context, backend, config, base):
     return document, snapshot
 
 
-def _committed(context, backend, config, kb, document, owner):
+def _committed(context, backend, config, kb, document, owner, indexed=False):
     rows = _snapshot(context, backend, config, principal=True)
     require(len(rows[TABLES[0]]) == len(rows[TABLES[1]]) == len(rows[TABLES[3]]) == 1, "upload must retain one KB, document and job")
     doc, job = rows[TABLES[1]][0], rows[TABLES[3]][0]
@@ -156,7 +156,42 @@ def _committed(context, backend, config, kb, document, owner):
     require(source == SOURCE, "atomic upload source bytes changed")
     data = json.loads(job["data"]) if isinstance(job["data"], str) else job["data"]
     require(data["document_id"] == document and data["owner_id"] == owner and data["namespace"] == "principal_v1", "job provenance changed")
+    # Embedding fingerprint: every persisted chunk vector must equal the exact
+    # vector the configured model returned; a silent model/dimension change or
+    # a rewrite across restart changes the fingerprint. Asserted only after
+    # indexing has legitimately completed: before the planned restart the peer
+    # deliberately withholds the embedding response, so chunks cannot exist yet.
+    fingerprint = [1.0] + [0.0] * 383
+    chunks = rows[TABLES[2]]
+    if indexed:
+        require(chunks, "committed principal chunks missing")
+        for row in chunks:
+            vector = row.get("embedding")
+            vector = json.loads(vector) if isinstance(vector, str) else vector
+            require(isinstance(vector, list) and [float(component) for component in vector] == fingerprint,
+                    "persisted embedding fingerprint differs from the configured model's vector")
     return rows, data
+
+
+def _seed_accounting(context, backend, config, owner):
+    # Same durable-seed pattern as _seed_legacy, for the accounting store's own
+    # table. The record identity uses the exact verified principal key.
+    scope_id = "acct-" + uuid.uuid4().hex
+    identity = {"owner": owner, "scope": "session", "scope_id": scope_id}
+    key = "%d:%s:%d:%s:%s" % (len(owner.encode()), owner, len("session"), "session", scope_id)
+    record = dict(identity=identity, revision=0, generation=1,
+                  limits={"cost_usd": 0.25, "tokens": 1000}, settled_cost_usd=0.0,
+                  settled_tokens=0, reserved_cost_usd=0.0, reserved_tokens=0,
+                  unknown_calls=0, pending_calls=0, reconciled=True, reconciliation_evidence=None)
+    if backend == "surreal":
+        _sql(context, backend, config, "CREATE type::record('accounting_scopes', %s) SET data=%s;" % (
+            _literal(key, backend), _literal(json.dumps(record), backend)))
+    else:
+        _sql(context, backend, config, "INSERT INTO accounting_scopes(key,data) VALUES(%s,%s::jsonb);" % (
+            _literal(key, backend), _literal(json.dumps(record), backend)))
+    found = _rows(context, backend, config, "accounting_scopes")
+    require(len(found) == 1, "accounting scope seed did not persist")
+    return scope_id, record
 
 
 def _embedding(context, config):
@@ -177,6 +212,8 @@ def _cold_boot(context, runtime, backend):
     db = resources.ensure_backend(backend)
     resources.docker("restart", db["name"])
     if backend == "surreal":
+        # restart reassigns the ephemeral published port; the cached host_url is stale
+        db["host_url"] = "http://" + resources.docker("port", db["name"], "8000/tcp").stdout.strip()
         context["wait_for"]("restarted Surreal", lambda: context["http"](db["host_url"]).request("GET", "/health", return_status=True)[0] == 200)
     else:
         context["wait_for"]("restarted PostgreSQL", lambda: resources.docker("exec", db["name"], "pg_isready", "-U", db["username"], check=False).returncode == 0)
@@ -193,6 +230,11 @@ def _attested(context, backend, owner, outsiders):
         kb = _kb(http, "attested-" + backend + "-" + uuid.uuid4().hex)
         base = _snapshot(context, backend, config, principal=True)[TABLES[0]][0]
         legacy_document, legacy_before = _seed_legacy(context, backend, config, base)
+        # Accounting retention is proven against the accounting store's own
+        # table and the authoritative accounting API, across the cold boot.
+        accounting_scope_id, accounting_record = _seed_accounting(context, backend, config, base["owner_id"])
+        readback = http.request("GET", "/api/uar/accounting/scopes/session/" + accounting_scope_id, expected=200)
+        require(readback == accounting_record, "accounting scope API readback differs from the seeded record")
         for suffix, method, body in (("", "GET", None), ("/ingestion", "GET", None), ("/retry", "POST", {})):
             http.request(method, "/api/knowledge/%s/documents/%s%s" % (kb, legacy_document, suffix), body, expected=404)
         document = _upload(http, kb, 202)["id"]
@@ -215,6 +257,7 @@ def _attested(context, backend, owner, outsiders):
         require(job["generation"] == initial_job["generation"], "restart created a replacement job")
         found = _data(http.request("POST", "/api/knowledge/%s/search" % kb, {"query": SOURCE.decode(), "limit": 5, "min_score": 0.0}))
         require(any(row.get("document_id") == document and SOURCE.decode() in row.get("content", "") for row in found["results"]), "same owner retrieval missing")
+        require(all(isinstance(row.get("document_id"), str) and row["document_id"] for row in found["results"]), "grounded retrieval result missing its document citation")
         require(all("legacy-private" not in row.get("content", "") for row in found["results"]), "legacy content was adopted")
         denials = {}
         for label, token, status in outsiders:
@@ -224,18 +267,35 @@ def _attested(context, backend, owner, outsiders):
                 values.append(outsider.request(method, "/api/knowledge/%s/documents/%s%s" % (kb, document, suffix), body, expected=status, return_status=True)[0])
             values.append(outsider.request("POST", "/api/knowledge/%s/search" % kb, {"query": "recovery", "limit": 5, "min_score": 0.0}, expected=status, return_status=True)[0])
             denials[label] = values
-        after, cold_job = _committed(context, backend, config, kb, document, base["owner_id"])
+        after, cold_job = _committed(context, backend, config, kb, document, base["owner_id"], indexed=True)
         require(cold_job["state"] == "indexed" and after[TABLES[2]], "cold principal publication missing")
         require(_snapshot(context, backend, config, owner=base["owner_id"]) == legacy_before, "legacy rows changed during restart/reupload")
         # Repeat cold boot after publication: observe retained final state, not a
         # digest sampled before the claimed restart.
+        accounting_before = _rows(context, backend, config, "accounting_scopes")
         _cold_boot(context, runtime, backend)
-        final, final_job = _committed(context, backend, config, kb, document, base["owner_id"])
+        http = runtime.http(owner)
+        final, final_job = _committed(context, backend, config, kb, document, base["owner_id"], indexed=True)
         require(final == after and final_job == cold_job, "indexed principal state changed across cold restart")
         legacy_after = _snapshot(context, backend, config, owner=base["owner_id"])
         require(legacy_after == legacy_before, "legacy rows changed on cold readback")
-        return ({"backend": backend, "document": document, "job_generation": job["generation"], "job_state": final_job["state"], "source_digest": _digest(SOURCE), "denials": denials, "committed_inventory": _inventory(before), "cold_inventory": _inventory(final)},
-                {"backend": backend, "legacy_document": legacy_document, "before": _inventory(legacy_before), "after_cold_boot": _inventory(legacy_after), "unchanged": True})
+        accounting_after = _rows(context, backend, config, "accounting_scopes")
+        require(accounting_after == accounting_before, "accounting scopes changed across cold restart")
+        retained = http.request("GET", "/api/uar/accounting/scopes/session/" + accounting_scope_id, expected=200)
+        require(retained == accounting_record, "accounting scope API readback changed across cold restart")
+        accounting_denials = {}
+        for label, token, status in outsiders:
+            accounting_denials[label] = runtime.http(token).request("GET", "/api/uar/accounting/scopes/session/" + accounting_scope_id, expected=status, return_status=True)[0]
+        return {"backend": backend, "document": document, "job_generation": job["generation"],
+                "job_state": final_job["state"], "source_digest": _digest(SOURCE), "denials": denials,
+                "committed_inventory": _inventory(before), "cold_inventory": _inventory(final),
+                "embedding_fingerprint": "sha256:" + hashlib.sha256(json.dumps([1.0] + [0.0] * 383).encode()).hexdigest(),
+                "grounded_citation": "every retrieval result carried its source document_id",
+                "accounting_retention": {"scope": accounting_scope_id, "rows_unchanged_across_cold_boot": True,
+                    "api_readback_unchanged": True, "outsider_denials": accounting_denials},
+                "legacy_cold_readback": {"backend": backend, "legacy_document": legacy_document,
+                    "before": _inventory(legacy_before), "after_cold_boot": _inventory(legacy_after),
+                    "unchanged": True}}
     finally:
         runtime.stop()
 
@@ -498,20 +558,18 @@ def run_group(context):
         ("other_issuer", context["jwt"]("recovery-owner", ["user"], issuer="other-phase-issuer", tenant=tenant), (401, 404)),
     ]
     refusal = _unattested(context, owner)
-    uploads, legacy = [], []
+    uploads = []
     for backend in ("surreal", "postgres"):
-        upload, retained = _attested(context, backend, owner, outsiders)
-        uploads.append(upload)
-        legacy.append(retained)
+        uploads.append(_attested(context, backend, owner, outsiders))
     joined = _joined(context, owner)
-    observations = (refusal, uploads, legacy, joined)
-    scenarios = [{"id": name, "status": "passed", "observations": observation} for name, observation in zip(REQUIRED_SCENARIOS["recovery"][:4], observations)]
+    observations = (refusal, uploads, joined)
+    scenarios = [{"id": name, "status": "passed", "observations": observation} for name, observation in zip(REQUIRED_SCENARIOS["recovery"][:3], observations)]
     try:
         supervisor = _qualified_supervisor(context, owner)
     except Blocked as error:
-        scenarios.append({"id": REQUIRED_SCENARIOS["recovery"][4], "status": "blocked", "observations": {"reason": str(error)}})
+        scenarios.append({"id": REQUIRED_SCENARIOS["recovery"][3], "status": "blocked", "observations": {"reason": str(error)}})
         return {"status": "blocked", "scenarios": scenarios}
-    scenarios.append({"id": REQUIRED_SCENARIOS["recovery"][4], "status": "passed", "observations": supervisor})
+    scenarios.append({"id": REQUIRED_SCENARIOS["recovery"][3], "status": "passed", "observations": supervisor})
     return {"status": "passed", "scenarios": scenarios}
 
 

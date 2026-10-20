@@ -1,5 +1,10 @@
 # Credential authority contracts
 
+> Current certification authority: the 2026-10-17 function-first amendment at
+> the end of this document supersedes older gate-opening and full published-group
+> instructions. Historical task states and receipts are preserved. Gate CLOSED.
+
+
 Phase: `uar-outstanding-issues-v1-1-1`; stage: **Spec**; date: 2026-10-16.
 Owner: `uar-trust-tools`. Authoritative behavior delta:
 `openspec/changes/uar-outstanding-issues-v1-1-1/specs/tenant-isolation/spec.md`.
@@ -357,3 +362,32 @@ model probe or independent review gate. Behavioral implementation, backend
 transaction guarantees, migration upgrade feasibility and every acceptance result
 remain unverified until the complete-phase boundary. Source inspection is not
 runtime or independent acceptance evidence.
+
+
+## Function-first authority acceptance amendment — 2026-10-17
+
+Credential, compiler and combined authority observations run on the local candidate;
+the published streams/recovery program does not directly repeat them. This narrows
+architecture-specific evidence, not any production credential/tenant/compiler
+requirement. The reduced credentials inventory retains nine common labels and ten
+migration labels on each local/Surreal/PostgreSQL backend. Fold preview pagination,
+authority and secret-redaction assertions into that backend's legacy copy journey;
+fold status assertions into drift/conflict/rotation/historical journeys. Retain exact
+HTTP status, journal decisions, stale cursor/counts, quarantine, missing and changed
+source behavior, replay/concurrency and raw-log secret exclusion. Only common malformed
+query formatting is sampled once; backend transactional behavior is never waived.
+
+FC3 consumes FC2's distinct-provider `/v1/messages` assertion handoff. All primary,
+fallback, team, graph, summary, inherited and SDK authority seams remain observed.
+Compiler retains both aliases, every operation, two admitted remote principals,
+local shared mode, representative spoof/malformed controls and exact profile denial
+before effects. After restart, representative read/write/session denials plus full
+persistent-state comparison replace the repeated cross-product. Fold restored local
+operations/readback into local-single-owner control; #387 remains open.
+
+The gate stays CLOSED through FC1–FC5. New exact source/fixture inventory and separate
+operator preparation/review/acceptance instructions precede the function-first local
+manifest invocation in verification.md. The unchanged native SDK and memory cases
+are local source supplements, never published-image evidence. No historical receipt
+certifies the revised adapters. The uncomfortable limit is retained full local
+credential assurance with no new direct published-child migration/compiler result.

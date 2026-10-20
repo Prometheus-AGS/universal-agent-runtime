@@ -16,6 +16,7 @@ use crate::uar::domain::policy::{
 };
 use crate::uar::persistence::agent_threads::PersistedAgentThread;
 
+use super::limits::AgentLimitError;
 use super::messages::InterAgentMessage;
 use super::policy_intersection::{ThreadPolicy, ThreadToolBinding};
 use super::spawn::{AgentSpawnRequest, RemoteAgentSpawnRequest};
@@ -263,8 +264,18 @@ pub enum AgentControlError {
     InvalidHostResult,
     #[error("agent thread observation ended before a terminal result")]
     ObservationClosed,
-    #[error("agent host operation failed")]
+    #[error("{}", host_failure_label(.0))]
     Host(#[source] anyhow::Error),
+}
+
+/// Closed model-facing label: the tree limit kind only, never counts or backend text.
+fn host_failure_label(error: &anyhow::Error) -> &'static str {
+    match error.chain().find_map(|cause| cause.downcast_ref::<AgentLimitError>()) {
+        Some(AgentLimitError::ConcurrentChildren { .. }) => "agent_tree_limit_exceeded: max_concurrent_children",
+        Some(AgentLimitError::Depth { .. }) => "agent_tree_limit_exceeded: max_depth",
+        Some(AgentLimitError::TotalChildren { .. }) => "agent_tree_limit_exceeded: max_total_children",
+        _ => "agent host operation failed",
+    }
 }
 
 /// One live parent turn's tool authority. Construct a fresh registry for each

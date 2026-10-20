@@ -11,7 +11,7 @@ use mimalloc::MiMalloc;
 static GLOBAL: MiMalloc = MiMalloc;
 
 use clap::Parser as _;
-use dotenvy::{dotenv, from_path};
+use dotenvy::from_path;
 use std::path::PathBuf;
 use universal_agent_runtime::config::{Cli, Command, CredentialAction, LogFormat};
 use universal_agent_runtime::config_manager::ConfigManager;
@@ -28,8 +28,12 @@ fn main() {
 }
 
 async fn run_main() {
-    let _ = dotenv();
-
+    // .env is NOT loaded implicitly. An unconditional dotenv() here silently
+    // promoted a checkout-local .env over the operator's explicit --config /
+    // UAR_LLM__* environment (issue #419): dotenvy ran before clap, clap's
+    // `env = "LLM_MODEL"` binding captured it, and the CLI tier applied it as a
+    // set_override that no YAML or UAR_* source could beat. Load env files only
+    // through the explicit path below.
     if let Some(path) = selected_env_file() {
         if let Err(error) = from_path(&path) {
             eprintln!(

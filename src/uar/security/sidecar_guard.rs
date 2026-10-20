@@ -31,14 +31,111 @@ impl HostAuthenticated {
     }
 }
 
+/// Request marker for a launch-bound sidecar. It is installed only by
+/// [`enforce`] on a launch-token match, never on the delegation-grant path, and
+/// it can be constructed only in this module.
+#[derive(Debug, Clone)]
+pub struct HostBoundPrincipal {
+    subject: SidecarBoundPrincipal,
+}
+
+impl HostBoundPrincipal {
+    /// The single owner this sidecar process was launched for.
+    #[must_use]
+    pub(crate) fn subject(&self) -> &str {
+        self.subject.as_str()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn for_test(subject: &str) -> Self {
+        Self { subject: SidecarBoundPrincipal::parse(subject).expect("test subject must be valid") }
+    }
+}
+
+#[cfg(test)]
+impl HostAuthenticated {
+    pub(crate) fn for_test() -> Self {
+        Self { _private: () }
+    }
+}
+
+/// Whether `value` is a subject a launching host may assert for a sidecar
+/// request: 1-128 bytes, ASCII alphanumeric first, then alphanumerics or
+/// `.`, `_`, `:` and `-`, and never `anonymous` in any case.
+///
+/// This is the single rule for both the `x-uar-principal` header and the
+/// launch-bound principal.
+#[must_use]
+pub(crate) fn is_valid_host_principal(value: &str) -> bool {
+    !value.eq_ignore_ascii_case("anonymous")
+        && (1..=128).contains(&value.len())
+        && value
+            .as_bytes()
+            .iter()
+            .copied()
+            .enumerate()
+            .all(|(index, byte)| {
+                byte.is_ascii_alphanumeric()
+                    || (index > 0 && matches!(byte, b'.' | b'_' | b':' | b'-'))
+            })
+}
+
+/// The one owner a launch-bound sidecar serves for its whole lifetime.
+///
+/// Supplied only by the launching host through the sidecar's launch
+/// environment, never by configuration or a request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SidecarBoundPrincipal(String);
+
+/// The launch-bound principal was not a valid host principal.
+///
+/// Deliberately carries no detail: the rejected value must never be echoed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[error("sidecar bound principal is malformed")]
+pub struct InvalidBoundPrincipal;
+
+impl SidecarBoundPrincipal {
+    /// Validate a bound subject with the same rule as `x-uar-principal`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`InvalidBoundPrincipal`] for `anonymous`, an empty or overlong
+    /// value, or a value outside the permitted character set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use universal_agent_runtime::uar::security::sidecar_guard::SidecarBoundPrincipal;
+    /// assert!(SidecarBoundPrincipal::parse("alice").is_ok());
+    /// assert!(SidecarBoundPrincipal::parse("anonymous").is_err());
+    /// ```
+    pub fn parse(value: &str) -> Result<Self, InvalidBoundPrincipal> {
+        if is_valid_host_principal(value) {
+            Ok(Self(value.to_owned()))
+        } else {
+            Err(InvalidBoundPrincipal)
+        }
+    }
+
+    /// The validated subject.
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
 /// Length of the hex-encoded token: 256 bits.
 const TOKEN_HEX_LEN: usize = 64;
 
-/// The token the host handed the sidecar over stdin.
+/// The token the host handed the sidecar over stdin, plus the optional
+/// principal the same host bound the process to at launch.
 ///
 /// Held only in memory: it has no `Display` or `Serialize`, its `Debug` output
 /// is redacted, and the secret is zeroized on drop.
-pub struct SidecarLaunchToken(SecretString);
+pub struct SidecarLaunchToken {
+    secret: SecretString,
+    bound_principal: Option<SidecarBoundPrincipal>,
+}
 
 impl std::fmt::Debug for SidecarLaunchToken {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -81,7 +178,15 @@ impl SidecarLaunchToken {
             return Err(InvalidLaunchToken);
         }
         let text = std::str::from_utf8(body).ok().ok_or(InvalidLaunchToken)?;
-        Ok(Self(SecretString::from(text.to_owned())))
+        Ok(Self { secret: SecretString::from(text.to_owned()), bound_principal: None })
+    }
+
+    /// Bind every launch-token-authenticated request to one principal.
+    /// `None` keeps the shared sidecar behavior.
+    #[must_use]
+    pub fn with_bound_principal(mut self, principal: Option<SidecarBoundPrincipal>) -> Self {
+        self.bound_principal = principal;
+        self
     }
 }
 
@@ -89,16 +194,19 @@ impl SidecarLaunchToken {
 #[derive(Debug)]
 pub struct SidecarGuard {
     token: Option<SecretString>,
+    bound_principal: Option<SidecarBoundPrincipal>,
     allowed_authorities: [String; 2],
     delegation_grants: Option<Arc<super::delegation_grants::DelegationGrantAuthority>>,
 }
 
 impl SidecarGuard {
-    /// Guard the sidecar listening on `127.0.0.1:{port}`.
+    /// Guard the sidecar listening on `127.0.0.1:{port}`. A principal bound to
+    /// the token at launch follows every launch-token match.
     #[must_use]
     pub fn new(token: SidecarLaunchToken, port: u16) -> Self {
         Self {
-            token: Some(token.0),
+            token: Some(token.secret),
+            bound_principal: token.bound_principal,
             allowed_authorities: [format!("127.0.0.1:{port}"), format!("localhost:{port}")],
             delegation_grants: None,
         }
@@ -188,6 +296,10 @@ pub async fn enforce(
         }
         request.headers_mut().remove(header::AUTHORIZATION);
         request.extensions_mut().insert(HostAuthenticated { _private: () });
+        // Only the launch token carries the launch binding; grants below never do.
+        if let Some(subject) = &guard.bound_principal {
+            request.extensions_mut().insert(HostBoundPrincipal { subject: subject.clone() });
+        }
         return next.run(request).await;
     }
     let delegated = bearer_token(&request)
@@ -207,4 +319,133 @@ pub async fn enforce(
         "missing_token"
     };
     reject(StatusCode::UNAUTHORIZED, reason)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::{Router, body::Body, routing::get};
+    use tower::ServiceExt as _;
+
+    const PORT: u16 = 32_211;
+
+    fn token() -> SidecarLaunchToken {
+        SidecarLaunchToken::from_line(format!("{}\n", "b".repeat(64)).as_bytes())
+            .expect("fixture token must parse")
+    }
+
+    /// Reports the bound subject the guard installed, or `shared`.
+    fn app(bound: Option<SidecarBoundPrincipal>) -> Router {
+        Router::new()
+            .route(
+                "/probe",
+                get(|request: Request| async move {
+                    assert!(request.extensions().get::<HostAuthenticated>().is_some());
+                    request
+                        .extensions()
+                        .get::<HostBoundPrincipal>()
+                        .map_or_else(|| "shared".to_owned(), |bound| bound.subject().to_owned())
+                }),
+            )
+            .layer(axum::middleware::from_fn_with_state(
+                Arc::new(SidecarGuard::new(token().with_bound_principal(bound), PORT)),
+                enforce,
+            ))
+    }
+
+    fn request() -> axum::http::request::Builder {
+        axum::http::Request::builder()
+            .uri("/probe")
+            .header(header::HOST, format!("127.0.0.1:{PORT}"))
+    }
+
+    async fn body_text(response: Response) -> String {
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("probe body must be readable");
+        String::from_utf8(bytes.to_vec()).expect("probe body must be UTF-8")
+    }
+
+    #[tokio::test]
+    async fn sidecar_bound_token_match_installs_bound_marker() {
+        let bound = SidecarBoundPrincipal::parse("alice").expect("valid subject");
+        let response = app(Some(bound))
+            .oneshot(
+                request()
+                    .header(header::AUTHORIZATION, format!("Bearer {}", "b".repeat(64)))
+                    .body(Body::empty())
+                    .expect("request must build"),
+            )
+            .await
+            .expect("router must respond");
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(body_text(response).await, "alice");
+    }
+
+    #[tokio::test]
+    async fn sidecar_bound_shared_guard_installs_no_bound_marker() {
+        let response = app(None)
+            .oneshot(
+                request()
+                    .header(header::AUTHORIZATION, format!("Bearer {}", "b".repeat(64)))
+                    .body(Body::empty())
+                    .expect("request must build"),
+            )
+            .await
+            .expect("router must respond");
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(body_text(response).await, "shared");
+    }
+
+    #[tokio::test]
+    async fn sidecar_bound_mode_keeps_host_origin_and_token_checks() {
+        let bound = || Some(SidecarBoundPrincipal::parse("alice").expect("valid subject"));
+        let missing = app(bound())
+            .oneshot(request().body(Body::empty()).expect("request must build"))
+            .await
+            .expect("router must respond");
+        assert_eq!(missing.status(), StatusCode::UNAUTHORIZED);
+        let origin = app(bound())
+            .oneshot(
+                request()
+                    .header(header::ORIGIN, "http://evil.example")
+                    .header(header::AUTHORIZATION, format!("Bearer {}", "b".repeat(64)))
+                    .body(Body::empty())
+                    .expect("request must build"),
+            )
+            .await
+            .expect("router must respond");
+        assert_eq!(origin.status(), StatusCode::FORBIDDEN);
+        let wrong_host = app(bound())
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/probe")
+                    .header(header::HOST, "127.0.0.1:1")
+                    .header(header::AUTHORIZATION, format!("Bearer {}", "b".repeat(64)))
+                    .body(Body::empty())
+                    .expect("request must build"),
+            )
+            .await
+            .expect("router must respond");
+        assert_eq!(wrong_host.status(), StatusCode::FORBIDDEN);
+    }
+
+    #[test]
+    fn sidecar_bound_principal_uses_the_host_principal_rule() {
+        assert!(SidecarBoundPrincipal::parse("alice").is_ok());
+        assert!(SidecarBoundPrincipal::parse("user:alice.dev_1-x").is_ok());
+        assert!(SidecarBoundPrincipal::parse(&"a".repeat(128)).is_ok());
+        for rejected in [
+            String::new(),
+            "anonymous".to_owned(),
+            "Anonymous".to_owned(),
+            "a".repeat(129),
+            "-alice".to_owned(),
+            "alice bob".to_owned(),
+            "alice/bob".to_owned(),
+            "élise".to_owned(),
+        ] {
+            assert_eq!(SidecarBoundPrincipal::parse(&rejected), Err(InvalidBoundPrincipal));
+        }
+    }
 }

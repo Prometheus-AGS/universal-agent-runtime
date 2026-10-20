@@ -569,22 +569,30 @@ async fn run_server_with_listener(
     let mut ingest_service: Option<Arc<IngestService>> = None;
     let embedding_config =
         crate::uar::rag::embeddings::EmbeddingConfig::from(&config.llm.embedding);
-    let embedding_backend = match crate::uar::rag::embeddings::build_backend(&embedding_config) {
-        Ok(b) => b,
-        Err(e) => {
-            warn!(
-                backend = %embedding_config.backend,
-                error = %e,
-                "Embedding backend is unavailable; chat and agent interfaces will start without vector retrieval"
-            );
-            Arc::new(
-                crate::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
-                    embedding_config.vector_dimension,
-                    e.to_string(),
-                ),
-            )
-        }
-    };
+    // The shared handle is swappable: persisted `llm.embedding.*` settings are
+    // authoritative after first boot (ADR-010) and a validated REST mutation
+    // repoints this handle without a restart. Consumers pin a coherent
+    // backend+metadata snapshot per job (see embeddings/swappable.rs).
+    let embedding_backend = Arc::new(
+        crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
+            match crate::uar::rag::embeddings::build_backend(&embedding_config) {
+                Ok(b) => b,
+                Err(e) => {
+                    warn!(
+                        backend = %embedding_config.backend,
+                        error = %e,
+                        "Embedding backend is unavailable; chat and agent interfaces will start without vector retrieval"
+                    );
+                    Arc::new(
+                        crate::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
+                            embedding_config.vector_dimension,
+                            e.to_string(),
+                        ),
+                    )
+                }
+            },
+        ),
+    );
     let vector_matcher = Arc::new(VectorMatcher::new(
         Arc::clone(&embedding_backend),
         config.models.vector_threshold,
@@ -829,13 +837,299 @@ async fn run_server_with_listener(
     let mut effective_a2a_config = config.a2a.clone();
     effective_a2a_config.instance_id = service_instance.descriptor().instance.id.clone();
 
+    // Settings manager, provider registry seed, and credential services initialize
+    // BEFORE ingest/memory construction so those services are built from the
+    // effective (persisted) configuration, not the boot snapshot (ADR-010).
+    let mut hydrate_mcp_from_settings = false;
+
+    // Initialize Provider Registry
+    let provider_registry = Arc::new(crate::llm::ProviderRegistry::new());
+    info!(name: "startup.step", step = 7, stage = "provider_registry_seed", "UAR startup progress");
+    provider_registry.set_llm_defaults(&llm_config).await;
+    provider_registry.seed_from_llm_config(&llm_config).await;
+    if !config.providers.is_empty() {
+        provider_registry
+            .seed_from_configs(config.providers.clone())
+            .await;
+    }
+
+    // Credential source authority is independent of encrypted-service availability.
+    let credential_policy = Arc::new(
+        uar::security::credentials::CredentialTenancyPolicy::from_config(
+            config.security.provider_credentials.clone(),
+        ).map_err(|_| anyhow::anyhow!("Provider credential policy configuration is invalid"))?,
+    );
+    let provider_service: Option<Arc<uar::security::credentials::ProviderService>> = {
+        let store: Arc<dyn uar::security::credentials::CredentialStore> =
+            credential_store.clone().unwrap_or_else(|| {
+                Arc::new(uar::security::credentials::InMemoryCredentialStore::new())
+            });
+        match uar::security::credentials::ProviderService::from_env(store) {
+            Ok(Some(svc)) => {
+                tracing::info!("Multi-tenant provider credentials enabled");
+                Some(Arc::new(svc.with_policy(Arc::clone(&credential_policy))
+                    .map_err(|_| anyhow::anyhow!("Provider credential policy configuration is invalid"))?
+                    .with_store_timeout(std::time::Duration::from_millis(config.resilience.admission_timeout_ms))))
+            }
+            Ok(None) => None,
+            Err(_) => {
+                anyhow::bail!("Provider credential encryption or owner mapping configuration is invalid");
+            }
+        }
+    };
+
+    // Resolve the durable governance preference only after the bound ingress
+    // inventory is sealed, and before RunManager or any serve loop is exposed.
+    let settings_manager: Option<Arc<crate::uar::settings::manager::SettingsManager>> =
+        if let Some(p) = &persistence {
+            let mgr = crate::uar::settings::manager::SettingsManager::new(Arc::clone(p))
+                .with_governance_runtime(governance_mutation.clone(), governance_status.clone())
+                .with_realtime_bus(live_bus.clone());
+            let mgr = Arc::new(if sidecar_mode {
+                mgr.with_sidecar_feature_locks()
+            } else {
+                mgr
+            });
+            let governance_bootstrap = async {
+                let persisted = mgr
+                    .load_optional_persisted_value("governance.enabled")
+                    .await?
+                    .map(|value| {
+                        value.as_bool().ok_or_else(|| {
+                            anyhow::anyhow!("persisted governance.enabled is not a boolean")
+                        })
+                    })
+                    .transpose()?;
+                let plan = governance_mutation.preference_plan(persisted)?;
+                mgr.apply_governance_preference_plan(&plan).await?;
+                let stats = mgr
+                    .initialize_with_governance_default(&config, plan.target_enabled)
+                    .await?;
+                governance_mutation.finalize_preference(&plan)?;
+                Ok::<_, anyhow::Error>(stats)
+            }
+            .await;
+
+            match governance_bootstrap {
+                Ok(stats) => {
+                    info!(
+                        seeded = stats.seeded,
+                        updated = stats.updated,
+                        drift = stats.drift_count,
+                        types = stats.types_upserted,
+                        "Settings bootstrapped from config into DB"
+                    );
+                    if let Err(e) = mgr
+                        .seed_providers_from_registry(
+                            provider_registry.as_ref(),
+                            provider_service.is_none(),
+                        )
+                        .await
+                    {
+                        tracing::error!(error = ?e, "Failed to seed configured providers into the settings DB");
+                    }
+                    if let Some(service) = provider_service.as_ref()
+                        && let Err(e) = mgr
+                            .protect_provider_credentials(
+                                provider_registry.as_ref(),
+                                service.as_ref(),
+                            )
+                            .await
+                    {
+                        tracing::error!(error = ?e, "Failed to protect provider credentials");
+                    }
+                    if let Err(e) = crate::uar::settings::hydrate_provider_registry_from_settings(
+                        provider_registry.as_ref(),
+                        mgr.as_ref(),
+                    )
+                    .await
+                    {
+                        tracing::error!(error = ?e, "Failed to hydrate provider registry from settings database");
+                    }
+                    hydrate_mcp_from_settings = true;
+
+                    // ADR-010 §1a (c). Audited HERE, after hydration, because
+                    // this is the first moment the registry reflects the
+                    // settings database -- the authoritative source. Auditing
+                    // the config file instead is what let an enabled `openai`
+                    // at api.openai.com sit in a "local-only" deployment while
+                    // a config-file test stayed green.
+                    if crate::llm::local_only::enabled() {
+                        let resolved = provider_registry.list().await;
+                        let rows: Vec<(&str, &str, bool)> = resolved
+                            .iter()
+                            .map(|p| (p.id.as_str(), p.base_url.as_str(), p.enabled))
+                            .collect();
+                        let offenders = crate::llm::local_only::audit_providers(rows);
+                        if offenders.is_empty() {
+                            info!(
+                                providers = resolved.len(),
+                                "local-only inference verified: every enabled provider is loopback"
+                            );
+                        } else {
+                            for o in &offenders {
+                                tracing::error!(
+                                    provider = %o.id,
+                                    base_url = %o.base_url,
+                                    "local-only inference is on but this enabled provider is not loopback"
+                                );
+                            }
+                            anyhow::bail!(
+                                "{} is set but {} enabled provider(s) are not loopback: {}. \
+                                 Refusing to start: a run could send the user's code context \
+                                 off this machine.",
+                                crate::llm::local_only::ENV_LOCAL_ONLY,
+                                offenders.len(),
+                                offenders
+                                    .iter()
+                                    .map(|o| format!("{} -> {}", o.id, o.base_url))
+                                    .collect::<Vec<_>>()
+                                    .join(", ")
+                            );
+                        }
+                    }
+                }
+                Err(error) => finalize_failed_governance_bootstrap(&governance_mutation, &error)?,
+            }
+            Some(mgr)
+        } else {
+            governance_mutation.finalize_mutation_unavailable()?;
+            info!("No persistence layer — settings manager disabled");
+            None
+        };
+
+    // Apply persisted `llm.embedding.*` over the boot embedding config. The
+    // settings DB is authoritative after first boot (ADR-010); the shared
+    // swappable handle repoints every consumer atomically. An overlay that
+    // fails to build keeps the config-built backend and is logged — the same
+    // degradation contract as initial backend construction.
+    if let Some(mgr) = settings_manager.as_ref() {
+        let persisted_backend = mgr
+            .get_typed::<String>("llm.embedding.backend")
+            .await
+            .ok()
+            .flatten();
+        let persisted_model = mgr
+            .get_typed::<String>("llm.embedding.model")
+            .await
+            .ok()
+            .flatten();
+        let mut effective = embedding_config.clone();
+        if let Some(b) = persisted_backend
+            && !b.trim().is_empty()
+        {
+            effective.backend = b;
+        }
+        if let Some(m) = persisted_model
+            && !m.trim().is_empty()
+        {
+            effective.model = m;
+        }
+        if effective.backend != embedding_config.backend
+            || effective.model != embedding_config.model
+        {
+            match crate::uar::rag::embeddings::build_backend(&effective) {
+                Ok(backend)
+                    if backend.backend_name() == effective.backend
+                        && backend.model_id() == effective.model =>
+                {
+                    let (name, model, dimension) = (
+                        backend.backend_name().to_string(),
+                        backend.model_id().to_string(),
+                        backend.vector_dimension(),
+                    );
+                    let provenance = backend.provenance();
+                    embedding_backend.swap(backend);
+                    info!(
+                        backend = %name,
+                        model = %model,
+                        dimension,
+                        provenance_source = provenance.as_ref().map(|p| p.source_dir.as_str()),
+                        provenance_manifest = provenance
+                            .as_ref()
+                            .map(|p| p.asset_manifest_sha256.as_str()),
+                        "Embedding backend applied from persisted llm.embedding settings"
+                    );
+                }
+                Ok(backend) => {
+                    // The rows request a value this build canonicalizes away
+                    // (e.g. fastembed ignores `model` and always serves the
+                    // packaged bge-small). REST rejects such mutations; rows
+                    // like this can only predate the contract or be written
+                    // out-of-band — keep the config-built backend and say so.
+                    warn!(
+                        backend = %effective.backend,
+                        model = %effective.model,
+                        served_model = %backend.model_id(),
+                        "Persisted embedding settings are not honored by this build; keeping config-built backend"
+                    );
+                }
+                Err(error) => {
+                    warn!(
+                        backend = %effective.backend,
+                        model = %effective.model,
+                        error = %error,
+                        "Persisted embedding settings failed to build; keeping config-built backend"
+                    );
+                }
+            }
+        }
+    }
+
+    // Truthful instance status at boot: which asset directory is serving and
+    // its manifest digest, regardless of whether an overlay was applied.
+    if let Some(p) = embedding_backend.provenance() {
+        info!(
+            source_dir = %p.source_dir,
+            asset_manifest = %p.asset_manifest_sha256,
+            "Serving embedding instance provenance"
+        );
+    }
+
+    // The ingest strategy comes from effective `rag.chunking_*` settings so a
+    // persisted mutation applies after restart. Live re-chunking of queued
+    // jobs is not supported; mutations report restart-required activation.
+    let ingest_strategy = match settings_manager.as_ref() {
+        Some(mgr) => {
+            let strategy_name = mgr
+                .get_typed::<String>("rag.chunking_strategy")
+                .await
+                .ok()
+                .flatten();
+            let chunk_size = mgr
+                .get_typed::<u64>("rag.chunk_size")
+                .await
+                .ok()
+                .flatten()
+                .map(|v| v as usize);
+            let semantic_threshold = mgr
+                .get_typed::<f32>("rag.semantic_threshold")
+                .await
+                .ok()
+                .flatten();
+            match (strategy_name.as_deref(), chunk_size, semantic_threshold) {
+                (Some(name), size, threshold) => {
+                    let mut strategy = uar::api::knowledge::parse_chunk_strategy(Some(name), size);
+                    if let (uar::rag::chunking::ChunkingStrategy::Semantic { .. }, Some(t)) =
+                        (&mut strategy, threshold)
+                    {
+                        strategy = uar::rag::chunking::ChunkingStrategy::Semantic { threshold: t };
+                    }
+                    strategy
+                }
+                (None, _, _) => ChunkingStrategy::Semantic { threshold: 0.5 },
+            }
+        }
+        None => ChunkingStrategy::Semantic { threshold: 0.5 },
+    };
+
     // Initialize Ingest Service if persistence is available
     let mut ingestion_watcher = None;
     if let Some(p) = &persistence {
         let ingest = Arc::new(IngestService::new(
             Arc::clone(p),
             Arc::clone(&embedding_backend),
-            ChunkingStrategy::Semantic { threshold: 0.5 },
+            ingest_strategy,
         ));
         ingest_service = Some(Arc::clone(&ingest));
 
@@ -895,15 +1189,55 @@ async fn run_server_with_listener(
         info!("Persistence and RAG enabled.");
     }
 
-    // Initialise the memory system if enabled in config.
-    let memory_service: Option<Arc<MemoryService>> = if config.memory.enabled {
-        match MemoryService::new(config.memory.clone()).await {
+    // Initialise the memory system from the EFFECTIVE memory configuration:
+    // persisted `memory.*` settings rows overlay the boot config (ADR-010 —
+    // the settings DB is authoritative after first boot). Live reconfiguration
+    // of the memory service is not supported; REST mutations of `memory.*`
+    // persist and are reported as restart-required.
+    let mut effective_memory = config.memory.clone();
+    if let Some(mgr) = settings_manager.as_ref() {
+        if let Ok(Some(v)) = mgr.get_typed::<bool>("memory.enabled").await {
+            effective_memory.enabled = v;
+        }
+        if let Ok(Some(v)) = mgr.get_typed::<String>("memory.db_path").await
+            && !v.trim().is_empty()
+        {
+            effective_memory.db_path = v;
+        }
+        if let Ok(Some(v)) = mgr.get_typed::<String>("memory.embedding_provider").await
+            && !v.trim().is_empty()
+        {
+            effective_memory.embedding_provider = v;
+        }
+        if let Ok(Some(v)) = mgr.get_typed::<String>("memory.embedding_model").await
+            && !v.trim().is_empty()
+        {
+            effective_memory.embedding_model = v;
+        }
+        if let Ok(Some(v)) = mgr.get_typed::<bool>("memory.auto_capture").await {
+            effective_memory.auto_capture = v;
+        }
+        if let Ok(Some(v)) = mgr.get_typed::<bool>("memory.inject_context").await {
+            effective_memory.inject_context = v;
+        }
+        if let Ok(Some(v)) = mgr.get_typed::<u32>("memory.max_context_tokens").await {
+            effective_memory.max_context_tokens = v;
+        }
+        if let Ok(Some(v)) = mgr.get_typed::<f32>("memory.vector_weight").await {
+            effective_memory.vector_weight = v;
+        }
+        if let Ok(Some(v)) = mgr.get_typed::<f32>("memory.bm25_weight").await {
+            effective_memory.bm25_weight = v;
+        }
+    }
+    let memory_service: Option<Arc<MemoryService>> = if effective_memory.enabled {
+        match MemoryService::new(effective_memory.clone()).await {
             Ok(svc) => {
                 info!(
                     "MemoryService initialized (embedding_provider={}, auto_capture={}, inject_context={})",
-                    config.memory.embedding_provider,
-                    config.memory.auto_capture,
-                    config.memory.inject_context
+                    effective_memory.embedding_provider,
+                    effective_memory.auto_capture,
+                    effective_memory.inject_context
                 );
                 Some(Arc::new(svc))
             }
@@ -1005,6 +1339,13 @@ async fn run_server_with_listener(
     );
 
     let mcp = Arc::new(mcp_registry);
+    if hydrate_mcp_from_settings
+        && let Some(mgr) = settings_manager.as_ref()
+    {
+        crate::uar::api::mcp_admin::hydrate_registry(&mcp, mgr)
+            .await
+            .map_err(|error| anyhow::anyhow!("Failed to establish effective MCP destination policy: {error:#}"))?;
+    }
     let mcp_environment = Arc::new(crate::mcp::binding_cache::McpBindingEnvironment::new(
         std::env::current_dir()?,
         std::env::vars_os().collect(),
@@ -1107,158 +1448,6 @@ async fn run_server_with_listener(
         }
     }
 
-    // Initialize Provider Registry
-    let provider_registry = Arc::new(crate::llm::ProviderRegistry::new());
-    info!(name: "startup.step", step = 7, stage = "provider_registry_seed", "UAR startup progress");
-    provider_registry.set_llm_defaults(&llm_config).await;
-    provider_registry.seed_from_llm_config(&llm_config).await;
-    if !config.providers.is_empty() {
-        provider_registry
-            .seed_from_configs(config.providers.clone())
-            .await;
-    }
-
-    // Credential source authority is independent of encrypted-service availability.
-    let credential_policy = Arc::new(
-        uar::security::credentials::CredentialTenancyPolicy::from_config(
-            config.security.provider_credentials.clone(),
-        ).map_err(|_| anyhow::anyhow!("Provider credential policy configuration is invalid"))?,
-    );
-    let provider_service: Option<Arc<uar::security::credentials::ProviderService>> = {
-        let store: Arc<dyn uar::security::credentials::CredentialStore> =
-            credential_store.clone().unwrap_or_else(|| {
-                Arc::new(uar::security::credentials::InMemoryCredentialStore::new())
-            });
-        match uar::security::credentials::ProviderService::from_env(store) {
-            Ok(Some(svc)) => {
-                tracing::info!("Multi-tenant provider credentials enabled");
-                Some(Arc::new(svc.with_policy(Arc::clone(&credential_policy))
-                    .map_err(|_| anyhow::anyhow!("Provider credential policy configuration is invalid"))?))
-            }
-            Ok(None) => None,
-            Err(_) => {
-                anyhow::bail!("Provider credential encryption or owner mapping configuration is invalid");
-            }
-        }
-    };
-
-    // Resolve the durable governance preference only after the bound ingress
-    // inventory is sealed, and before RunManager or any serve loop is exposed.
-    let settings_manager: Option<Arc<crate::uar::settings::manager::SettingsManager>> =
-        if let Some(p) = &persistence {
-            let mgr = crate::uar::settings::manager::SettingsManager::new(Arc::clone(p))
-                .with_governance_runtime(governance_mutation.clone(), governance_status.clone())
-                .with_realtime_bus(live_bus.clone());
-            let mgr = Arc::new(if sidecar_mode {
-                mgr.with_sidecar_feature_locks()
-            } else {
-                mgr
-            });
-            let governance_bootstrap = async {
-                let persisted = mgr
-                    .load_optional_persisted_value("governance.enabled")
-                    .await?
-                    .map(|value| {
-                        value.as_bool().ok_or_else(|| {
-                            anyhow::anyhow!("persisted governance.enabled is not a boolean")
-                        })
-                    })
-                    .transpose()?;
-                let plan = governance_mutation.preference_plan(persisted)?;
-                mgr.apply_governance_preference_plan(&plan).await?;
-                let stats = mgr
-                    .initialize_with_governance_default(&config, plan.target_enabled)
-                    .await?;
-                governance_mutation.finalize_preference(&plan)?;
-                Ok::<_, anyhow::Error>(stats)
-            }
-            .await;
-
-            match governance_bootstrap {
-                Ok(stats) => {
-                    info!(
-                        seeded = stats.seeded,
-                        updated = stats.updated,
-                        drift = stats.drift_count,
-                        types = stats.types_upserted,
-                        "Settings bootstrapped from config into DB"
-                    );
-                    if let Err(e) = mgr
-                        .seed_providers_from_registry(provider_registry.as_ref())
-                        .await
-                    {
-                        tracing::error!(error = ?e, "Failed to seed configured providers into the settings DB");
-                    }
-                    if let Some(service) = provider_service.as_ref()
-                        && let Err(e) = mgr
-                            .protect_provider_credentials(
-                                provider_registry.as_ref(),
-                                service.as_ref(),
-                            )
-                            .await
-                    {
-                        tracing::error!(error = ?e, "Failed to protect provider credentials");
-                    }
-                    if let Err(e) = crate::uar::settings::hydrate_provider_registry_from_settings(
-                        provider_registry.as_ref(),
-                        mgr.as_ref(),
-                    )
-                    .await
-                    {
-                        tracing::error!(error = ?e, "Failed to hydrate provider registry from settings database");
-                    }
-                    crate::uar::api::mcp_admin::hydrate_registry(&mcp, &mgr).await
-                        .map_err(|error| anyhow::anyhow!("Failed to establish effective MCP destination policy: {error:#}"))?;
-
-                    // ADR-010 §1a (c). Audited HERE, after hydration, because
-                    // this is the first moment the registry reflects the
-                    // settings database -- the authoritative source. Auditing
-                    // the config file instead is what let an enabled `openai`
-                    // at api.openai.com sit in a "local-only" deployment while
-                    // a config-file test stayed green.
-                    if crate::llm::local_only::enabled() {
-                        let resolved = provider_registry.list().await;
-                        let rows: Vec<(&str, &str, bool)> = resolved
-                            .iter()
-                            .map(|p| (p.id.as_str(), p.base_url.as_str(), p.enabled))
-                            .collect();
-                        let offenders = crate::llm::local_only::audit_providers(rows);
-                        if offenders.is_empty() {
-                            info!(
-                                providers = resolved.len(),
-                                "local-only inference verified: every enabled provider is loopback"
-                            );
-                        } else {
-                            for o in &offenders {
-                                tracing::error!(
-                                    provider = %o.id,
-                                    base_url = %o.base_url,
-                                    "local-only inference is on but this enabled provider is not loopback"
-                                );
-                            }
-                            anyhow::bail!(
-                                "{} is set but {} enabled provider(s) are not loopback: {}. \
-                                 Refusing to start: a run could send the user's code context \
-                                 off this machine.",
-                                crate::llm::local_only::ENV_LOCAL_ONLY,
-                                offenders.len(),
-                                offenders
-                                    .iter()
-                                    .map(|o| format!("{} -> {}", o.id, o.base_url))
-                                    .collect::<Vec<_>>()
-                                    .join(", ")
-                            );
-                        }
-                    }
-                }
-                Err(error) => finalize_failed_governance_bootstrap(&governance_mutation, &error)?,
-            }
-            Some(mgr)
-        } else {
-            governance_mutation.finalize_mutation_unavailable()?;
-            info!("No persistence layer — settings manager disabled");
-            None
-        };
     if settings_manager.is_none() && !sidecar_mode {
         for (name, entry) in mcp.server_entries() {
             mcp.upsert_server(name, entry).await?;
@@ -1356,6 +1545,7 @@ async fn run_server_with_listener(
         .with_resilience_policy(uar::settings::resilience_policy::ResiliencePolicy::from(
             &config.resilience,
         ))
+        .with_admission_timeout(std::time::Duration::from_millis(config.resilience.admission_timeout_ms))
         .with_global_cost_budget(config.llm.budget.as_ref())
         .await;
         if let Some(ref manager) = settings_manager {
@@ -1554,7 +1744,7 @@ async fn run_server_with_listener(
         run_manager,
         ingest_service,
         vector_matcher: Arc::clone(&vector_matcher),
-        embedding_backend,
+        embedding_backend: Arc::clone(&embedding_backend),
         persistence: persistence.clone(),
         rate_limiter,
         config: config_manager.current(),
@@ -1911,6 +2101,8 @@ async fn run_server_with_listener(
                         .security
                         .settings_mutation_auth_required,
                     settings_admin_key: config.security.settings_admin_key.clone(),
+                    embedding_backend: Some(Arc::clone(&embedding_backend)),
+                    embedding_base_config: Some(embedding_config.clone()),
                 },
             )),
         )
@@ -2478,6 +2670,10 @@ async fn bind_companion_listener(host: &str, port: u16) -> Option<tokio::net::Tc
 /// A2A gRPC listener, serves no operator SPA or CORS headers, keeps tool
 /// governance mandatory, and keeps the global MCP server list empty.
 ///
+/// `bound_principal`, when present, binds every launch-token-authenticated
+/// request to that one subject for the life of the process; `None` keeps the
+/// shared sidecar behavior.
+///
 /// # Errors
 ///
 /// Returns an error when runtime initialization or serving fails, or when the
@@ -2486,6 +2682,7 @@ pub async fn start_server_sidecar(
     config_manager: Arc<ConfigManager>,
     listener: tokio::net::TcpListener,
     launch_token: SidecarLaunchToken,
+    bound_principal: Option<uar::security::sidecar_guard::SidecarBoundPrincipal>,
     ready: tokio::sync::oneshot::Sender<std::net::SocketAddr>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
 ) -> anyhow::Result<()> {
@@ -2498,7 +2695,7 @@ pub async fn start_server_sidecar(
         http_shutdown.clone(),
         http_shutdown,
         true,
-        Some(launch_token),
+        Some(launch_token.with_bound_principal(bound_principal)),
     )
     .await
 }

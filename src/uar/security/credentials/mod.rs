@@ -43,13 +43,23 @@ pub struct ProviderService {
     pub(super) legacy_owner_mappings: Arc<Vec<LegacyCredentialOwnerMapping>>,
     pub(super) principal_owner_mappings: Arc<Vec<PrincipalCredentialOwnerMapping>>,
     policy: Arc<CredentialTenancyPolicy>,
+    /// Per-read store bound handed to every resolver this service builds,
+    /// sourced from `resilience.admission_timeout_ms`.
+    store_timeout: std::time::Duration,
 }
 
 impl ProviderService {
     /// Construct from a store and an explicit encryption handle.
     #[must_use]
     pub fn new(store: Arc<dyn CredentialStore>, encryption: Arc<CredentialEncryption>) -> Self {
-        Self { store, encryption, legacy_owner_mappings: Arc::new(Vec::new()), principal_owner_mappings: Arc::new(Vec::new()), policy: Arc::new(CredentialTenancyPolicy::default()) }
+        Self { store, encryption, legacy_owner_mappings: Arc::new(Vec::new()), principal_owner_mappings: Arc::new(Vec::new()), policy: Arc::new(CredentialTenancyPolicy::default()), store_timeout: std::time::Duration::from_millis(10_000) }
+    }
+
+    /// Bound each credential-store read performed during run admission.
+    #[must_use]
+    pub fn with_store_timeout(mut self, timeout: std::time::Duration) -> Self {
+        self.store_timeout = timeout.max(std::time::Duration::from_millis(500));
+        self
     }
 
     /// Construct from a store, reading the encryption key from
@@ -75,6 +85,7 @@ impl ProviderService {
     #[must_use]
     pub fn resolver(&self) -> CredentialResolver {
         CredentialResolver::new(Arc::clone(&self.store), Arc::clone(&self.encryption))
+            .with_store_timeout(self.store_timeout)
     }
 
     #[must_use]

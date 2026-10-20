@@ -1,0 +1,52 @@
+{
+  "state": ".agent-team/uar-core/state.json",
+  "expectedRevision": 47,
+  "cwd": "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
+  "handoff": {
+    "taskId": "uar111-ff-qual",
+    "owner": "uar-lead",
+    "expectedTaskRevision": 1,
+    "toOwner": "uar-lead",
+    "toHarness": "claude",
+    "context": "UAR 1.1.1 function-first local qualification on T7: execute the frozen R1-R23 contract (function-first-local-qualification-contract.md) natively with real per-row evidence on candidate v4 sha256 96bf486872c57d22071596be6d81af42d3dfe7dee801a40226e507caf4225154 (preserved binary at /private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/opencode/uar-r14/uar-v4-preserved.bin). Parent phase function-first-release-certification is active; nested child embedding-primary-backup-lifecycle is closed (blocked, NOT READY). A parallel operator-directed security repair of the llm.api_key plaintext exposure is COMPLETE and proven (patch in src/uar/settings/manager.rs + src/uar/api/settings.rs, uncommitted; receipts bind to patched dev binary sha256 0ecff6b2fbcceb643de09af217e55f7ecbf1835c3543f61998a4c59fa2f64d8d, source HEAD 38f0b5d8 + dirty tree). HARD CONSTRAINTS: only authenticated kimi-for-coding/k3 for agent calls (no pay-as-you-go, no fallback, no new credentials, never route to ambient OPENAI_API_KEY, never call Mistral); never read or print real secret values (operator-supplied facts only); synthetic sentinels only in fixtures; 1907/1908 running instances untouched; no release/publication/commit/push; preserve v4 as candidate of record; KBD waypoint changes only via canonical typed events. CALL LEDGER: ceiling 1232 (base 632 + ext#1 +100 + ext#2 +200 + ext#3 +100 + ext#4 +100 + ext#5 +100), operator count 1110/1132 at 19:33Z; additive allowance as needed already authorized; record the next extension BEFORE crossing the ceiling with actual date -u timestamps. LEDGER OF RECORD: r-ledger-reconciliation-2026-10-19.md (rev4 grades + all addenda). Current whole-row grades: PASS (A) R1,R5,R6,R12,R14,R16,R17,R18*(flagged for operator review),R19,R20; subcriterion PASS R2(a)/R2(b)/R2(c) leg1; PARTIAL R10,R22; R11 = PARTIAL (agent + MCP-server legs PASS on a disposable v4 fixture 18:29Z; tool leg NOT SATISFIED - no standalone tool-definition REST create/configure surface exists, operator ruling: MCP auto-discovery insufficient); INCOMPLETE R3,R4,R15; FAIL R2(d)/R7/R8/R9/R13 (verified-principal/anonymous contract gaps, demonstrated); UNVERIFIED R2(c) leg2, R21; BLOCKED R23. NEXT CONCRETE ACTION: the R4 lane (auto-capture + assembled-input capture) - see remaining list and the R3/R4 lane-investigation addendum in the ledger. Fixture assets staged at /private/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/opencode/uar-r14/ (mock_llm.py, mcp_stdio_fixture.py, configs, probe scripts, evidence dirs). Model-verification prerequisite: POST /api/uar/providers/{id}/test writes the ModelVerification record; chat 422s model_not_verified without it.",
+    "evidence": [
+      ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r-ledger-reconciliation-2026-10-19.md",
+      ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r11-regrade-2026-10-19.md",
+      ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/security-repair-llm-apikey-2026-10-19.md",
+      ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r14-r20-receipts-2026-10-19.md",
+      ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/function-first-local-qualification-contract.md"
+    ],
+    "remaining": [
+      "R4: run the auto-capture + assembled-input-capture lane on a disposable memory-enabled v4 fixture with the loopback mock LLM; assert the entry written in turn 1 is present in turn 2's captured assembled input and the reply reflects recall; report entry provenance (history vs injected memory block) honestly",
+      "R3 working-loop leg: blocked on the anonymous approval channel (memory_save is ApprovalClass::Required via effect-derived classification at runtime/native_skill.rs:81-88; manager.rs:6635-6641 shows run-policy Auto cannot bypass a Required descriptor) - same external governance family as R2(d)/R7; do NOT retry tool_approval:auto as a bypass",
+      "R2(c) leg2 and R23: external verified-principal / run-creation governance blocker (r3101 family)",
+      "R21: trim geometry unreachable within limits",
+      "R11 tool leg: no standalone tool-definition REST create/configure surface exists (route enumeration evidence in r11-regrade receipt) - operator decision required before any new-endpoint work",
+      "Operator decisions pending: R18 flagged grade; Kimi credential rotation after the plaintext exposure (agent must NOT rotate); R15 storage-legs-only sufficiency (turn leg would touch 1908); R10 callback state-change leg",
+      "Patch is uncommitted; candidate identity must stay honest (v4 = candidate of record; patched dev binary proven for the settings-masking family only)"
+    ],
+    "memoryRefs": [
+      ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r-ledger-reconciliation-2026-10-19.md",
+      ".prometheus/session-log.md",
+      ".prometheus/gotchas.md"
+    ],
+    "provenance": {
+      "sourceFiles": [
+        "src/uar/settings/manager.rs",
+        "src/uar/api/settings.rs",
+        "src/uar/api/a2a/handler.rs",
+        "src/uar/runtime/presentation_history_tests.rs",
+        "src/uar/runtime/thread/service_tests.rs",
+        "src/uar/runtime/thread/approval_tests.rs",
+        "src/uar/rag/chunking.rs"
+      ],
+      "evidenceFiles": [
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r-ledger-reconciliation-2026-10-19.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/r11-regrade-2026-10-19.md",
+        ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/receipts/security-repair-llm-apikey-2026-10-19.md"
+      ],
+      "karpathyFiles": [],
+      "memoryIds": []
+    }
+  }
+}

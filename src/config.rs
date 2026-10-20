@@ -42,20 +42,22 @@ pub struct Cli {
     #[arg(long, env = "EXTERNAL_CACHE_ENABLED")]
     pub external_cache_enabled: Option<bool>,
 
-    /// Default LLM model (provider/model format, e.g., "openai/gpt-4o")
-    #[arg(long, env = "LLM_MODEL")]
+    /// Default LLM model (provider/model format, e.g., "openai/gpt-4o").
+    /// CLI flag only — the LLM_MODEL env var is handled as a lower-priority
+    /// legacy source in load_with_cli so UAR_LLM__MODEL outranks it (#419).
+    #[arg(long)]
     pub llm_model: Option<String>,
 
-    /// LLM API key
-    #[arg(long, env = "LLM_API_KEY")]
+    /// LLM API key (CLI flag only; LLM_API_KEY env is a legacy source, see #419)
+    #[arg(long)]
     pub llm_api_key: Option<String>,
 
-    /// LLM base URL override
-    #[arg(long, env = "LLM_BASE_URL")]
+    /// LLM base URL override (CLI flag only; LLM_BASE_URL env is a legacy source, see #419)
+    #[arg(long)]
     pub llm_base_url: Option<String>,
 
-    /// LLM protocol (auto, chat, responses)
-    #[arg(long, env = "LLM_PROTOCOL")]
+    /// LLM protocol (auto, chat, responses) (CLI flag only; LLM_PROTOCOL env is a legacy source, see #419)
+    #[arg(long)]
     pub llm_protocol: Option<String>,
 
     /// LLM budget limit (USD)
@@ -862,6 +864,11 @@ pub struct ResilienceConfig {
     pub timeout_disabled: bool,
     pub requests_per_second: f32,
     pub burst_size: f32,
+    /// Timeout applied to credential and admission store lookups. Defaults to
+    /// `request_timeout_ms / 8` (clamped to a minimum of 500 ms) so existing
+    /// configs that pre-date this field behave as before.
+    #[serde(default = "ResilienceConfig::default_admission_timeout_ms")]
+    pub admission_timeout_ms: u64,
     #[serde(default = "ResilienceConfig::default_request_timeout_ms")]
     pub request_timeout_ms: u64,
     #[serde(default = "ResilienceConfig::default_stream_start_timeout_ms")]
@@ -891,6 +898,13 @@ pub struct ResilienceConfig {
 }
 
 impl ResilienceConfig {
+    fn default_admission_timeout_ms() -> u64 {
+        // Honor `with_store_timeout` calls (provider_credentials store and
+        // authentication resolver). Keep below the request-timeout bound so a
+        // single slow store lookup does not consume the whole request budget.
+        8_000
+    }
+
     fn default_request_timeout_ms() -> u64 {
         30_000
     }
@@ -1356,17 +1370,52 @@ pub struct MemoryConfig {
     #[serde(default = "MemoryConfig::default_db_path")]
     pub db_path: String,
     /// Embedding provider: "local" (default) | "openai" | "cohere".
+    ///
+    /// This is the legacy discriminator. The more general `embedding_api` (below)
+    /// supersedes it when both are set. The legacy field is retained for
+    /// backward compatibility with existing configs.
     #[serde(default = "MemoryConfig::default_embedding_provider")]
     pub embedding_provider: String,
     /// Embedding model identifier (provider-specific).
     #[serde(default = "MemoryConfig::default_embedding_model")]
     pub embedding_model: String,
-    /// OpenAI API key for embeddings (used when embedding_provider = "openai").
+    /// Embedding API discriminator — supersedes `embedding_provider` when set.
+    /// Supported values: "openai" | "anthropic" | "mistral" | "local".
+    /// Env var: UAR_MEMORY__EMBEDDING_API.
+    #[serde(default)]
+    pub embedding_api: Option<String>,
+    /// Generic API key for the embedding service. Used by all adapter types
+    /// when set; otherwise each adapter falls back to its own provider-specific
+    /// env var (e.g. OPENAI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY) or to
+    /// `memory.<adapter>_api_key` for the legacy path.
+    /// Env var: UAR_MEMORY__EMBEDDING_API_KEY.
+    #[serde(default)]
+    pub embedding_api_key: Option<String>,
+    /// Base URL for the embedding endpoint. Defaults to the adapter's standard
+    /// endpoint when unset. Env var: UAR_MEMORY__EMBEDDING_BASE_URL.
+    #[serde(default)]
+    pub embedding_base_url: Option<String>,
+    /// Explicit vector dimension override. Use when the runtime does not know
+    /// the chosen model's dimensions (most third-party or vendor-specific models).
+    /// Env var: UAR_MEMORY__EMBEDDING_DIM.
+    #[serde(default)]
+    pub embedding_dim: Option<u32>,
+    /// OpenAI API key for embeddings (used when embedding_api == "openai").
+    /// Env var: OPENAI_API_KEY.
     #[serde(default)]
     pub openai_api_key: Option<String>,
-    /// Cohere API key for embeddings (used when embedding_provider = "cohere").
+    /// Cohere API key for embeddings (used when embedding_api == "cohere").
+    /// Env var: COHERE_API_KEY.
     #[serde(default)]
     pub cohere_api_key: Option<String>,
+    /// Anthropic API key for embeddings (used when embedding_api == "anthropic").
+    /// Env var: ANTHROPIC_API_KEY.
+    #[serde(default)]
+    pub anthropic_api_key: Option<String>,
+    /// Mistral API key for embeddings (used when embedding_api == "mistral").
+    /// Env var: MISTRAL_API_KEY.
+    #[serde(default)]
+    pub mistral_api_key: Option<String>,
     /// Auto-capture memories from conversations after each assistant turn.
     #[serde(default = "MemoryConfig::default_auto_capture")]
     pub auto_capture: bool,
@@ -1479,8 +1528,14 @@ impl Default for MemoryConfig {
             db_path: Self::default_db_path(),
             embedding_provider: Self::default_embedding_provider(),
             embedding_model: Self::default_embedding_model(),
+            embedding_api: None,
+            embedding_api_key: None,
+            embedding_base_url: None,
+            embedding_dim: None,
             openai_api_key: None,
             cohere_api_key: None,
+            anthropic_api_key: None,
+            mistral_api_key: None,
             auto_capture: Self::default_auto_capture(),
             vector_weight: Self::default_vector_weight(),
             bm25_weight: Self::default_bm25_weight(),
@@ -1750,13 +1805,34 @@ impl AppConfig {
             builder = builder.set_override("models.models_dir", val)?;
         }
 
-        // 5. Environment Variables (prefixed with UAR_) - for any keys not explicitly overridden above
-        // E.g. UAR_SERVER__PORT=8000, UAR_SECURITY__JWT_SECRET=...
+        // 5b. Legacy LLM_* env vars — demoted from the CLI/clap tier to a source so the
+        // later-added UAR_* Environment source outranks them (issue #419 precedence:
+        // CLI flags > UAR_* env > legacy LLM_* env > config file > compiled defaults).
+        // The legacy vars are read explicitly (not via an `Environment::with_prefix("LLM_")`
+        // source, whose prefix stripping maps LLM_MODEL to a root-level `MODEL` key that
+        // never reaches `llm.model`).
+        let legacy_llm_env: std::collections::HashMap<String, String> = [
+            ("LLM_MODEL", "llm.model"),
+            ("LLM_API_KEY", "llm.api_key"),
+            ("LLM_BASE_URL", "llm.base_url"),
+            ("LLM_PROTOCOL", "llm.protocol"),
+        ]
+        .into_iter()
+        .filter_map(|(var, key)| std::env::var(var).ok().map(|v| (key.to_string(), v)))
+        .collect();
+        if !legacy_llm_env.is_empty() {
+            builder = builder.add_source(config::Config::try_from(&legacy_llm_env)?);
+        }
+
+        // 5. Environment Variables (prefixed with UAR_) — added AFTER legacy LLM_* so
+        // UAR_LLM__* wins on conflict. The Environment source below contains every key
+        // not explicitly overridden above.
         //
-        // prefix_separator("_") is required: config 0.13+ defaults the prefix separator to the
-        // same value as `separator` (i.e. "__"), which would only match "UAR__*" vars.
-        // Setting it to "_" makes the library strip "UAR_" from the front and then split
-        // on "__" for nesting — matching the "UAR_SECTION__KEY" convention used throughout.
+        // (REST-managed settings applied at runtime via /api/uar/settings/{namespace}
+        // take precedence over the static config; see src/uar/settings/manager.rs.)
+        //
+        // Implicit provider override if DB URL looks like a path or ws://?
+        // No, let users set UAR_PERSISTENCE__PROVIDER explicitly.
         builder = builder.add_source(
             Environment::with_prefix("UAR")
                 .prefix_separator("_")
@@ -1766,24 +1842,6 @@ impl AppConfig {
                 .try_parsing(true),
         );
 
-        // Implicit provider override if DB URL looks like a path or ws://?
-        // No, let users set UAR_PERSISTENCE__PROVIDER explicitly.
-
-        // Backward-compat: LLM_* legacy env vars (lower priority than UAR_LLM__* and CLI).
-        // These are kept so existing deployments don't break after migrating to liter-llm.
-        // Precedence: UAR_LLM__* (via Environment source above) > LLM_* (here) > config file > defaults.
-        if let Ok(val) = env::var("LLM_MODEL") {
-            builder = builder.set_override("llm.model", val)?;
-        }
-        if let Ok(val) = env::var("LLM_API_KEY") {
-            builder = builder.set_override("llm.api_key", val)?;
-        }
-        if let Ok(val) = env::var("LLM_BASE_URL") {
-            builder = builder.set_override("llm.base_url", val)?;
-        }
-        if let Ok(val) = env::var("LLM_PROTOCOL") {
-            builder = builder.set_override("llm.protocol", val)?;
-        }
         // Provider-specific API key shortcuts.
         //
         // Each well-known provider env var (OPENAI_API_KEY, ANTHROPIC_API_KEY, …)
@@ -1794,8 +1852,8 @@ impl AppConfig {
         //      (used by the registry / `configured` status) can find it without
         //      knowing which provider is the active default.
         //
-        // `set_default` means UAR_LLM__API_KEY and LLM_API_KEY still win — they
-        // are applied earlier at higher priority tiers.
+        // These are `set_default` — they apply only when the value is unset.
+        // An explicit `set_override` above (CLI, LLM_*, UAR_*) wins over them.
         let provider_key_map: &[(&str, &str)] = &[
             ("OPENAI_API_KEY", "openai"),
             ("ANTHROPIC_API_KEY", "anthropic"),

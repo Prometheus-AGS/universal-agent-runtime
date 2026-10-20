@@ -1,0 +1,22 @@
+{
+  "phase": "uar-outstanding-issues-v1-1-1::function-first-release-certification",
+  "generated_at": "2026-10-17T21:10:00Z",
+  "research_budget": {
+    "max_queries_per_tier": 8,
+    "max_minutes": 20,
+    "queries_used": {}
+  },
+  "gaps_addressed": [
+    "release-scenario-duplication",
+    "prompt-skill-output-installed-proof",
+    "published-artifact-functional-smoke"
+  ],
+  "candidates": [],
+  "build_required": [
+    {
+      "need": "Amend the existing release adapters, controlled provider fixture and acceptance contract",
+      "why_no_candidate": "The work is a repository-specific reduction and one public-path observation; the existing runner and fixture provide the required execution and evidence boundaries.",
+      "capability_gap_id": null
+    }
+  ]
+}

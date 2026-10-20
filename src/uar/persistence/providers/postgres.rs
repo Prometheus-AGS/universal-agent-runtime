@@ -3,6 +3,8 @@ use crate::uar::persistence::knowledge_namespace::KnowledgeNamespace;
 mod a2a_bindings;
 #[path = "agui_runs/postgres.rs"]
 mod agui_runs;
+#[path = "run_history/postgres.rs"]
+mod run_history;
 #[path = "mcp_elicitations/postgres.rs"]
 mod mcp_elicitations;
 #[path = "accounting/postgres.rs"]
@@ -92,6 +94,11 @@ impl PersistenceLayer for PostgresProvider {
     async fn load_agui_run(&self, owner: &str, agent: &str, thread: &str, run: &str) -> Result<Option<crate::uar::persistence::agui_runs::AguiRunBinding>> { agui_runs::load(self,owner,agent,thread,run).await }
     async fn list_agui_runs(&self, owner: &str, agent: &str, thread: &str) -> Result<Vec<crate::uar::persistence::agui_runs::AguiRunBinding>> { agui_runs::list(self,owner,agent,thread).await }
     async fn compare_and_swap_agui_run(&self, before: &crate::uar::persistence::agui_runs::AguiRunBinding, after: &crate::uar::persistence::agui_runs::AguiRunBinding) -> Result<bool> { agui_runs::transition(self,before,after).await }
+    fn supports_durable_run_history(&self) -> bool { true }
+    async fn upsert_run_history_record(&self, record: &crate::uar::persistence::run_history::RunHistoryRecord) -> Result<()> { run_history::upsert_record(self,record).await }
+    async fn load_run_history_record(&self, run_id: &str) -> Result<Option<crate::uar::persistence::run_history::RunHistoryRecord>> { run_history::load_record(self,run_id).await }
+    async fn append_run_history_event(&self, event: &crate::uar::persistence::run_history::RunHistoryEvent) -> Result<()> { run_history::append_event(self,event).await }
+    async fn load_run_history_events(&self, run_id: &str) -> Result<Vec<crate::uar::persistence::run_history::RunHistoryEvent>> { run_history::load_events(self,run_id).await }
     async fn bind_accounting_delegation(&self, link: &accounting::AccountingDelegation) -> Result<()> { accounting_records::bind_delegation(self,link).await }
     async fn get_accounting_delegation(&self, digest: &str) -> Result<Option<accounting::AccountingCall>> { accounting_records::delegation(self,digest).await }
 

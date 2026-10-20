@@ -83,8 +83,13 @@ async fn provider_admin_boundary(
 async fn persist_provider_config(
     state: &ProviderApiState,
     cfg: &ProviderConfig,
+    new_credential: bool,
 ) -> Result<(), String> {
-    if let Some(api_key) = cfg.api_key.as_deref() {
+    // `new_credential` distinguishes a key the operator SENT in this request
+    // from one the update path carried over from the existing registration.
+    // Only an operator-sent key requires the protected store; a carried-over
+    // key on a store-less deployment persists via row preservation below.
+    if new_credential && let Some(api_key) = cfg.api_key.as_deref() {
         let service = state
             .provider_service
             .as_ref()
@@ -107,7 +112,9 @@ async fn persist_provider_config(
         }
     }
     if let Some(m) = state.settings_manager.as_ref() {
-        m.upsert_provider_config(cfg)
+        // Without the protected store, an existing row key is the only durable
+        // credential — preserve it across keyless mutations.
+        m.upsert_provider_config(cfg, state.provider_service.is_none())
             .await
             .map_err(|e| e.to_string())?;
     }
@@ -224,20 +231,40 @@ async fn create_provider(
         }),
     ))?;
 
-    if persist_provider_config(&state, &response).await.is_err() {
+    if let Err(reason) = persist_provider_config(&state, &response, response.api_key.is_some()).await {
         let _ = state.registry.remove(&id).await;
-        return Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse {
-                error: "Provider settings could not be persisted".into(),
-            }),
-        ));
+        return Err(provider_persist_error(&response.id, &reason));
     }
 
     Ok((
         StatusCode::CREATED,
         Json(provider_view(&state, response).await),
     ))
+}
+
+/// Map a persistence failure to an explicit, logged API error. A key-bearing
+/// mutation without the protected credential store is a deployment
+/// capability problem (503 + stable code), not a generic 500; the real reason
+/// is always logged and surfaced (it contains no secrets).
+fn provider_persist_error(id: &str, reason: &str) -> (StatusCode, Json<ErrorResponse>) {
+    tracing::error!(provider = %id, error = %reason, "Provider settings persist failed");
+    if reason.contains("credential storage is unavailable") {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(ErrorResponse {
+                error: format!(
+                    "credential_storage_unavailable: {reason} (set CREDENTIAL_ENCRYPTION_KEY or omit api_key)"
+                ),
+            }),
+        )
+    } else {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
+                error: format!("provider_persist_failed: {reason}"),
+            }),
+        )
+    }
 }
 
 /// Update an existing provider.
@@ -251,6 +278,7 @@ async fn update_provider(
     enrich_provider_config(&mut config);
     let existing = state.registry.get(&config.id).await.ok_or((StatusCode::NOT_FOUND,
         Json(ErrorResponse { error: "Provider not found".into() })))?;
+    let request_had_key = config.api_key.is_some();
     if config.api_key.is_none() { config.api_key.clone_from(&existing.api_key); }
     let response = prepare_provider_update(&existing, config).map_err(|error| {
         let code = error.to_string();
@@ -258,13 +286,8 @@ async fn update_provider(
             Json(ErrorResponse { error: code }))
     })?;
 
-    if persist_provider_config(&state, &response).await.is_err() {
-        return Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse {
-                error: "Provider settings could not be persisted".into(),
-            }),
-        ));
+    if let Err(reason) = persist_provider_config(&state, &response, request_had_key).await {
+        return Err(provider_persist_error(&response.id, &reason));
     }
 
     state.registry.update(response.clone()).await.map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR,

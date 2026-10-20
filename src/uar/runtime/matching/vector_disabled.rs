@@ -6,35 +6,35 @@ use std::sync::Arc;
 
 use crate::uar::{
     domain::matching::{SkillMatch, SkillMatcher},
-    rag::embeddings::EmbeddingBackend,
+    rag::embeddings::{EmbeddingBackend, swappable::SwappableEmbeddingBackend},
     runtime::skills::SkillRegistry,
 };
 
 /// Vector matcher facade for builds without `local-models`.
 #[derive(Debug)]
 pub struct VectorMatcher {
-    backend: Arc<dyn EmbeddingBackend>,
+    backend: Arc<SwappableEmbeddingBackend>,
     _threshold: f32,
 }
 
 impl VectorMatcher {
     /// Create a disabled matcher preserving the runtime construction contract.
     #[must_use]
-    pub fn new(backend: Arc<dyn EmbeddingBackend>, threshold: f32) -> Self {
+    pub fn new(backend: Arc<SwappableEmbeddingBackend>, threshold: f32) -> Self {
         Self {
             backend,
             _threshold: threshold,
         }
     }
 
-    /// The backend built from `llm.embedding`, shared with ingestion. Only
+    /// Pin the current backend as one coherent snapshot for a job. Only
     /// skill matching is disabled in this build; knowledge-base retrieval
     /// embeds through this backend directly, so hosted backends still work.
-    pub fn embedding_backend(&self) -> &Arc<dyn EmbeddingBackend> {
-        &self.backend
+    pub fn pin_embedding(&self) -> Arc<dyn EmbeddingBackend> {
+        self.backend.pin()
     }
 
-    /// The embedding space queries are produced in.
+    /// The embedding space the next pinned job would produce vectors in.
     pub fn embedding_fingerprint(&self) -> crate::uar::domain::knowledge::EmbeddingFingerprint {
         self.backend.fingerprint()
     }

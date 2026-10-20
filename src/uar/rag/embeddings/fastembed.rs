@@ -1,9 +1,12 @@
-use crate::uar::rag::embeddings::{EmbeddingBackend, EmbeddingConfig, EmbeddingError};
+use crate::uar::rag::embeddings::{
+    BackendProvenance, EmbeddingBackend, EmbeddingConfig, EmbeddingError,
+};
 use async_trait::async_trait;
 use fastembed::{
     InitOptionsUserDefined, Pooling, TextEmbedding, TokenizerFiles, UserDefinedEmbeddingModel,
 };
-use std::path::PathBuf;
+use sha2::Digest;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex as StdMutex};
 use tokio::sync::Mutex;
 use tracing::info;
@@ -17,10 +20,25 @@ const MODEL_FILES: [&str; 5] = [
     "tokenizer_config.json",
 ];
 
+fn hex_encode(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
 /// Local FastEmbed/ONNX backend (BGE-small-en-v1.5, 384-dim, CLS-pooled, normalized).
 pub struct FastEmbedBackend {
     models_dir: String,
     vector_dimension: usize,
+    /// Directory the assets were resolved from at construction. Resolved
+    /// eagerly so a missing-assets configuration fails at build/activation
+    /// time (truthful status) instead of the first embed call.
+    resolved_dir: PathBuf,
+    /// Per-file SHA-256 digests (MODEL_FILES order) captured at construction.
+    /// `ensure_initialized` re-verifies the bytes it loads against these, so
+    /// an asset change between build and load is refused outright — the
+    /// reported manifest can never disagree with the vectors being served.
+    asset_digests: Vec<(&'static str, String)>,
+    /// SHA-256 manifest of the five assets in `resolved_dir`.
+    asset_manifest_sha256: String,
     // fastembed 5.x's `TextEmbedding::embed` takes `&mut self`, so the shared
     // engine is wrapped in a std Mutex for exclusive per-call access from the
     // blocking inference thread. The outer async Mutex guards lazy init only.
@@ -38,17 +56,22 @@ impl std::fmt::Debug for FastEmbedBackend {
 
 impl FastEmbedBackend {
     pub fn new(config: &EmbeddingConfig) -> Result<Self, EmbeddingError> {
+        let resolved_dir = Self::resolve_models_dir(&config.models_dir)?;
+        let (asset_digests, asset_manifest_sha256) = Self::hash_assets(&resolved_dir)?;
         Ok(Self {
             models_dir: config.models_dir.clone(),
             vector_dimension: config.vector_dimension,
+            resolved_dir,
+            asset_digests,
+            asset_manifest_sha256,
             engine: Mutex::new(None),
         })
     }
 
-    fn resolve_models_dir(&self) -> Result<PathBuf, EmbeddingError> {
+    fn resolve_models_dir(models_dir: &str) -> Result<PathBuf, EmbeddingError> {
         let candidates = [
             std::env::var("UAR_MODELS_DIR").ok().map(PathBuf::from),
-            Some(PathBuf::from(&self.models_dir)),
+            Some(PathBuf::from(models_dir)),
             Some(PathBuf::from("/app/models")),
             Some(PathBuf::from("src/uar/runtime/matching/models")),
             Some(PathBuf::from("./src/uar/runtime/matching/models")),
@@ -70,19 +93,50 @@ impl FastEmbedBackend {
         )))
     }
 
+    /// SHA-256 over the asset names (MODEL_FILES declaration order) and their
+    /// per-file SHA-256 digests, so byte-identical mirrors produce an
+    /// identical manifest and any single-asset drift produces a different
+    /// one. Returns the per-file digests alongside the manifest.
+    fn hash_assets(dir: &Path) -> Result<(Vec<(&'static str, String)>, String), EmbeddingError> {
+        let mut digests = Vec::with_capacity(MODEL_FILES.len());
+        let mut manifest = sha2::Sha256::new();
+        for name in MODEL_FILES {
+            let bytes = std::fs::read(dir.join(name))
+                .map_err(|e| EmbeddingError::BackendUnavailable(format!("reading {name}: {e}")))?;
+            let hex = hex_encode(&sha2::Sha256::digest(&bytes));
+            manifest.update(name.as_bytes());
+            manifest.update([0u8]);
+            manifest.update(hex.as_bytes());
+            manifest.update([0u8]);
+            digests.push((name, hex));
+        }
+        Ok((digests, hex_encode(&manifest.finalize())))
+    }
+
     async fn ensure_initialized(&self) -> Result<Arc<StdMutex<TextEmbedding>>, EmbeddingError> {
         let mut guard = self.engine.lock().await;
         if let Some(engine) = guard.as_ref() {
             return Ok(Arc::clone(engine));
         }
 
-        let dir = self.resolve_models_dir()?;
+        let dir = self.resolved_dir.clone();
+        let digests = self.asset_digests.clone();
         info!(dir = %dir.display(), "Initializing fastembed engine (bge-small-en-v1.5)…");
 
         let engine = tokio::task::spawn_blocking(move || {
             let read = |name: &str| -> Result<Vec<u8>, EmbeddingError> {
-                std::fs::read(dir.join(name))
-                    .map_err(|e| EmbeddingError::BackendUnavailable(format!("reading {name}: {e}")))
+                let bytes = std::fs::read(dir.join(name))
+                    .map_err(|e| EmbeddingError::BackendUnavailable(format!("reading {name}: {e}")))?;
+                let actual = hex_encode(&sha2::Sha256::digest(&bytes));
+                let expected = digests.iter().find(|(n, _)| *n == name).map(|(_, h)| h);
+                if expected != Some(&actual) {
+                    return Err(EmbeddingError::BackendUnavailable(format!(
+                        "asset {name} changed since backend construction; the reported \
+                         provenance manifest no longer describes the bytes being served — \
+                         refusing to load (rebuild the backend to re-resolve and re-hash)"
+                    )));
+                }
+                Ok(bytes)
             };
             let mut model = UserDefinedEmbeddingModel::new(
                 read("bg-small-en-v1.5.onnx")?,
@@ -125,6 +179,13 @@ impl EmbeddingBackend for FastEmbedBackend {
     // not consulted by this backend.
     fn model_id(&self) -> &str {
         "bge-small-en-v1.5"
+    }
+
+    fn provenance(&self) -> Option<BackendProvenance> {
+        Some(BackendProvenance {
+            source_dir: self.resolved_dir.display().to_string(),
+            asset_manifest_sha256: self.asset_manifest_sha256.clone(),
+        })
     }
 
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {

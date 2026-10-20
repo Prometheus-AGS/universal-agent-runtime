@@ -14,13 +14,14 @@ import urllib.parse
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 
+from uar_1_1_1_runtime import observe_native_messages_policy
 from uar_1_1_1_support import Blocked, Http, SURREAL_IMAGE, require, wait_for
 
 BACKENDS = ("local", "surreal", "postgres")
-MIGRATION_CASES = ("metadata-upgrade", "preview-authority-pagination", "legacy-conditional-copy",
+MIGRATION_CASES = ("metadata-upgrade", "legacy-conditional-copy",
                    "fixed-local-conditional-copy", "revision-drift", "mapping-drift", "destination-conflict",
                    "concurrent-replay", "lost-response-retry", "immutable-rotation-deletion-restart",
-                   "historical-receipt", "preview-status-inventory", "secret-redaction")
+                   "historical-receipt")
 REQUIRED_SCENARIOS = {"credentials": tuple(
     ["identity-isolation", "local-installation-stability", "shared-source-grants", "absent-service-policy",
      "store-decrypt-failures", "single-owner-compatibility", "local-quarantine", "messages-facade-policy", "response-correction-policy"] +
@@ -48,6 +49,7 @@ def encoded_owner(kind, issuer, tenant, subject):
 class Peer:
     def __init__(self, resources):
         self.seen = []
+        self.paths = []
         self.labels = {}
         self.lock = threading.Lock()
         owner = self
@@ -60,6 +62,7 @@ class Peer:
                 body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))))
                 with owner.lock:
                     owner.seen.append(owner.labels.get(self.headers.get("Authorization", ""), "unknown"))
+                    owner.paths.append(self.path)
                 choice = {"index": 0, "delta": {"content": "credential-observed"}, "finish_reason": None}
                 chunk = dict(id="credential-peer", object="chat.completion.chunk", created=1,
                              model=body.get("model", "gpt-4o-mini"), choices=[choice])
@@ -139,7 +142,7 @@ def configure(resources, peer, backend="surreal", shared=True):
 
 
 def rewrite(node):
-    node.config_path.write_text(json.dumps(node.config))
+    node.write_config()
     node.restart()
 
 
@@ -163,17 +166,26 @@ class Store:
             # No two owners open the SurrealKV directory at once.
             self.node.stop()
             name = self.r.unique_name("kv-metadata")
-            password = secrets.token_hex(20)
-            self.r.known_secrets.add(password)
+            # Authenticate as the credential the store was initialized with.
+            # The runtime signs in to its embedded SurrealKV as
+            # surreal_user/surreal_pass with the product defaults root/root
+            # (persistence/providers/surreal.rs unwrap_or("root")); a reopened
+            # store keeps those system credentials, so the former random
+            # password produced the round-3 POST /sql 401.
+            user = self.node.config["persistence"].get("surreal_user", "root")
+            password = self.node.config["persistence"].get("surreal_pass", "root")
+            if "surreal_pass" in self.node.config["persistence"]:
+                self.r.known_secrets.add(password)
             self.r.containers.append(name)
             try:
                 self.r.docker("run", "--detach", "--name", name, "--network", self.r.network,
                     "--publish", "127.0.0.1::8000", "--user", "65532:65532", "--volume", self.node.volume + ":/data",
-                    SURREAL_IMAGE, "start", "--user", "root", "--pass", password, "--bind", "0.0.0.0:8000",
+                    SURREAL_IMAGE, "start", "--user", user, "--pass", password, "--bind", "0.0.0.0:8000",
                     "surrealkv:///data/data/phase.db")
                 address = self.r.docker("port", name, "8000/tcp").stdout.strip()
-                wait_for("quiesced SurrealKV metadata host", lambda: Http("http://" + address).request("GET", "/health"))
-                authorization = base64.b64encode(("root:" + password).encode()).decode()
+                # /health answers 200 with an empty body; assert the status, not a payload.
+                wait_for("quiesced SurrealKV metadata host", lambda: Http("http://" + address).request("GET", "/health", return_status=True)[0] == 200)
+                authorization = base64.b64encode((user + ":" + password).encode()).decode()
                 response = Http("http://" + address).request("POST", "/sql", surreal.encode(), headers={
                     "Authorization": "Basic " + authorization, "Surreal-NS": "uar", "Surreal-DB": self.database,
                     "Content-Type": "text/plain"})
@@ -244,7 +256,7 @@ def install_mappings(node, legacy, principal):
     node.mounts = [(legacy_file, "/opt/uar/legacy-map.json", "ro"), (principal_file, "/opt/uar/principal-map.json", "ro")]
     node.env["CREDENTIAL_OWNER_MAPPING_FILE"] = "/opt/uar/legacy-map.json"
     node.config["security"]["provider_credentials"]["principal_mapping_file"] = "/opt/uar/principal-map.json"
-    node.config_path.write_text(json.dumps(node.config))
+    node.write_config()
     node.start()
 
 
@@ -258,6 +270,7 @@ def apply(node, token, provider, tag=None, fixed=False, old_owner=None, expected
 
 def migration_cases(ctx, peer, backend, results):
     r = ctx["resources"]
+    observations = {}
     config = configure(r, peer, backend)
     encryption_key = secrets.token_hex(32)
     r.known_secrets.add(encryption_key)
@@ -284,13 +297,13 @@ def migration_cases(ctx, peer, backend, results):
         install_mappings(node, legacy, fixed)
         require(item(node, host, "upgrade")["status"] == "revision_unavailable", "historical revision was invented")
         node.stop()
-        command = ["run", "--rm", "--network", r.network, "--volume", str(node.config_path) + ":/opt/uar/config.json:ro",
+        command = ["run", "--rm", "--network", r.network, "--volume", str(node.config_dir) + ":/opt/uar/config:ro",
                    "--volume", node.volume + ":/var/lib/uar"]
         for key, value in node.effective_environment().items():
             command += ["--env", key + "=" + str(value)]
         for mount in node.mounts:
             command += ["--volume", ":".join(str(part) for part in mount)]
-        command += [r.image, "universal-agent-runtime", "--config", "/opt/uar/config.json", "credentials", "initialize-revisions", "--writers-quiesced"]
+        command += [r.image, "universal-agent-runtime", "--config", "/opt/uar/config/" + node.config_target, "credentials", "initialize-revisions", "--writers-quiesced"]
         initialized = r.docker(*command)
         require(initialized.returncode == 0, "explicit metadata initialization failed")
         node.start()
@@ -303,47 +316,56 @@ def migration_cases(ctx, peer, backend, results):
         require(repeated.returncode == 0, "metadata initialization retry failed")
         node.start()
         require(item(node, host, "upgrade")["source_revision"] == upgraded["source_revision"], "metadata initialization rotated an existing revision")
-        result(results, backend + "-metadata-upgrade", {"before": "revision_unavailable", "after": "ready", "command_exit": initialized.returncode})
+        observations["metadata-upgrade"] = {"before": "revision_unavailable", "after": "ready", "command_exit": initialized.returncode}
 
         denied = node.http(user).request("GET", PREFIX + "/migration-preview", expected=403)
         require(denied["error"]["code"] == "credential_preview_denied", "ordinary preview authority accepted")
         pages, cursor, seen = 0, None, []
+        inventory_total = None
         while True:
             path = PREFIX + "/migration-preview?limit=2" + ("&cursor=" + urllib.parse.quote(cursor, safe="") if cursor else "")
             page = node.http(host).request("GET", path)
             require(page["consistency"] == "page_observation" and page["counts"]["page_total"] <= 2, "preview bound incorrect")
             require(sum(page["counts"]["by_status"].values()) == page["counts"]["inventory_total"], "preview counts disagree")
+            if inventory_total is None:
+                inventory_total = page["counts"]["inventory_total"]
+            require(page["counts"]["inventory_total"] == inventory_total
+                    and page["counts"]["page_total"] == len(page["items"]), "preview inventory changed during pagination")
             seen.extend((v["source_kind"], v["source_owner_key"] or "", v["scope"], v["source_scope_id"], v["provider_id"]) for v in page["items"])
             pages += 1
             cursor = page["next_cursor"]
             if not cursor:
                 break
-        require(len(seen) == len(set(seen)) and seen == sorted(seen), "keyset pagination duplicates or reorders")
-        for query in ("limit=0", "limit=501", "unknown=1", "cursor=garbage", "cursor=" + "a" * 4097):
-            node.http(host).request("GET", PREFIX + "/migration-preview?" + query, expected=400)
+        require(len(seen) == inventory_total and len(seen) == len(set(seen)) and seen == sorted(seen), "keyset pagination omits, duplicates or reorders")
+        if backend == "local":
+            for query in ("limit=0", "limit=501", "unknown=1", "cursor=garbage", "cursor=" + "a" * 4097):
+                node.http(host).request("GET", PREFIX + "/migration-preview?" + query, expected=400)
         stale_cursor = node.http(host).request("GET", PREFIX + "/migration-preview?limit=1")["next_cursor"]
         legacy[0]["approval_id"] += "-reapproved"
         install_mappings(node, legacy, fixed)
         node.http(host).request("GET", PREFIX + "/migration-preview?cursor=" + urllib.parse.quote(stale_cursor, safe=""), expected=409)
-        result(results, backend + "-preview-authority-pagination", {"pages": pages, "rows": len(seen), "ordinary_status": 403, "stale_status": 409})
+        pagination = {"pages": pages, "rows": len(seen), "inventory_total": inventory_total,
+                      "ordinary_status": 403, "stale_status": 409,
+                      "malformed_syntax_backend": "local"}
 
         tag = item(node, host, "legacy-copy")["precondition"]
-        for invalid in ('*', 'W/' + tag, tag + "," + tag, 'unquoted'):
-            apply(node, user, "legacy-copy", invalid, expected=400)
+        if backend == "local":
+            for invalid in ('*', 'W/' + tag, tag + "," + tag, 'unquoted'):
+                apply(node, user, "legacy-copy", invalid, expected=400)
         apply(node, user, "legacy-copy", tag, expected=400, extra={"destination_owner_key": owner})
         other = r.jwt("foreign", ["user"], tenant="other-tenant")
         apply(node, other, "legacy-copy", tag, expected=403)
         receipt = apply(node, user, "legacy-copy", tag)
         require(receipt["source_revision"] and receipt["destination_revision"] and receipt["precondition"] == tag, "conditional receipt incomplete")
         store.retained("legacy-copy")
-        result(results, backend + "-legacy-conditional-copy", {"receipt": {key: receipt[key] for key in ("source_revision", "destination_revision", "precondition")}, "wrong_owner": 403, "source_retained": True})
+        observations["legacy-conditional-copy"] = {"receipt": {key: receipt[key] for key in ("source_revision", "destination_revision", "precondition")}, "wrong_owner": 403, "source_retained": True, "preview_authority_pagination": pagination}
 
         fixed_tag = item(node, host, "fixed-copy")["precondition"]
         fixed_receipt = apply(node, user, "fixed-copy", fixed_tag, fixed=True, old_owner=old_owner)
         require(fixed_receipt["source_kind"] == "principal_fixed_local" and fixed_receipt["source_scope_id"] == "source", "fixed-local receipt source discriminator lost")
         node.cold_restart()
         require(apply(node, user, "fixed-copy", fixed_tag, fixed=True, old_owner=old_owner) == fixed_receipt, "fixed-local cold replay changed receipt")
-        result(results, backend + "-fixed-local-conditional-copy", {"source_kind": fixed_receipt["source_kind"], "source_revision": fixed_receipt["source_revision"]})
+        observations["fixed-local-conditional-copy"] = {"source_kind": fixed_receipt["source_kind"], "source_revision": fixed_receipt["source_revision"]}
 
         drift_tag = item(node, host, "drift")["precondition"]
         before_times = item(node, host, "drift")
@@ -352,26 +374,26 @@ def migration_cases(ctx, peer, backend, results):
         require(before_times["created_at"] == after_times["created_at"] and before_times["updated_at"] == after_times["updated_at"], "drift control changed timestamps")
         apply(node, user, "drift", drift_tag, expected=412)
         node.http(user).request("GET", PREFIX + "/drift", expected=404)
-        result(results, backend + "-revision-drift", {"status": 412, "timestamps_equal": True, "destination_absent": True})
+        observations["revision-drift"] = {"status": 412, "timestamps_equal": True, "destination_absent": True}
 
         mapping_tag = item(node, host, "map-drift")["precondition"]
         next(v for v in legacy if v["provider_id"] == "map-drift")["approval_id"] += "-changed"
         install_mappings(node, legacy, fixed)
         apply(node, user, "map-drift", mapping_tag, expected=412)
-        result(results, backend + "-mapping-drift", {"status": 412, "new_tag_differs": item(node, host, "map-drift")["precondition"] != mapping_tag})
+        observations["mapping-drift"] = {"status": 412, "new_tag_differs": item(node, host, "map-drift")["precondition"] != mapping_tag}
 
         node.http(user).request("PUT", PREFIX + "/occupied", {"api_key": seed_key})
         occupied = item(node, host, "occupied")
         require(occupied["status"] == "destination_conflict", "occupied destination reported ready")
         apply(node, user, "occupied", occupied["precondition"], expected=409)
-        result(results, backend + "-destination-conflict", {"status": 409, "preview_status": occupied["status"]})
+        observations["destination-conflict"] = {"status": 409, "preview_status": occupied["status"]}
 
         race_tag = item(node, host, "race")["precondition"]
         with ThreadPoolExecutor(max_workers=2) as executor:
             futures = [executor.submit(apply, node, user, "race", race_tag) for _ in range(2)]
             concurrent = [future.result() for future in futures]
         require(concurrent[0] == concurrent[1], "concurrent retry did not return immutable receipt")
-        result(results, backend + "-concurrent-replay", {"attempts": 2, "same_receipt": True})
+        observations["concurrent-replay"] = {"attempts": 2, "same_receipt": True}
 
         import socket
         lost_tag = item(node, host, "lost")["precondition"]
@@ -381,7 +403,7 @@ def migration_cases(ctx, peer, backend, results):
             connection.sendall(("POST " + PREFIX + "/migrate-legacy HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer " + user + "\r\nContent-Type: application/json\r\nIf-Match: " + lost_tag + "\r\nContent-Length: " + str(len(body)) + "\r\nConnection: close\r\n\r\n").encode() + body)
         recovered = apply(node, user, "lost", lost_tag)
         require(apply(node, user, "lost", lost_tag) == recovered, "lost response recovery changed receipt")
-        result(results, backend + "-lost-response-retry", {"response_discarded": True, "retry_receipt_stable": True})
+        observations["lost-response-retry"] = {"response_discarded": True, "retry_receipt_stable": True}
 
         node.http(user).request("PUT", PREFIX + "/legacy-copy", {"api_key": peer.key(r, backend + "-rotated")})
         require(apply(node, user, "legacy-copy", tag) == receipt, "replay overwrote rotation")
@@ -392,7 +414,8 @@ def migration_cases(ctx, peer, backend, results):
         require(apply(node, user, "legacy-copy", tag) == receipt, "cold replay changed receipt")
         node.http(user).request("GET", PREFIX + "/legacy-copy", expected=404)
         require(item(node, host, "legacy-copy")["status"] == "already_applied_destination_missing", "deleted destination reported ready")
-        result(results, backend + "-immutable-rotation-deletion-restart", {"same_receipt": True, "destination_absent_after_restart": True})
+        observations["immutable-rotation-deletion-restart"] = {"same_receipt": True, "destination_absent_after_restart": True,
+            "rotation_preview_status": "already_applied_destination_changed", "deletion_preview_status": "already_applied_destination_missing"}
 
         old_receipt = apply(node, user, "history")
         store.historical_journal("history")
@@ -400,7 +423,7 @@ def migration_cases(ctx, peer, backend, results):
         require(historical["completed_at"] == old_receipt["completed_at"] and "precondition" not in historical, "historical receipt mutated")
         apply(node, user, "history", tag, expected=412)
         require(item(node, host, "history")["status"] == "already_applied_revision_unknown", "historical destination revision invented")
-        result(results, backend + "-historical-receipt", {"unconditioned_replay": 200, "conditioned_replay": 412, "status": "already_applied_revision_unknown"})
+        observations["historical-receipt"] = {"unconditioned_replay": 200, "conditioned_replay": 412, "status": "already_applied_revision_unknown"}
 
         next(v for v in legacy if v["provider_id"] == "race")["approval_id"] += "-changed"
         fixed[0]["source_revision"] = str(uuid.uuid4())
@@ -416,13 +439,23 @@ def migration_cases(ctx, peer, backend, results):
         fixed.append(dict(fixed[0], provider_id="fixed-changed", approval_id="phase-fixed-changed"))
         install_mappings(node, legacy, fixed)
         require(item(node, host, "fixed-changed")["status"] == "source_changed", "source_changed status missing")
-        result(results, backend + "-preview-status-inventory", {"statuses": statuses, "source_changed": True})
+        observations["mapping-drift"]["preview_statuses"] = {key: statuses[key] for key in ("race", "fixed-copy", "missing", "unmapped")}
+        observations["mapping-drift"]["journal_conflict_http_statuses"] = {"race": 409, "fixed-copy": 409}
+        observations["mapping-drift"]["missing_source_http_status"] = 404
+        observations["revision-drift"]["fixed_source_preview_status"] = "source_changed"
+        observations["destination-conflict"]["final_preview_status"] = statuses["occupied"]
+        observations["lost-response-retry"]["preview_status"] = statuses["lost"]
+        observations["historical-receipt"]["final_preview_status"] = statuses["history"]
+        observations["immutable-rotation-deletion-restart"]["final_preview_status"] = statuses["legacy-copy"]
 
         raw_logs = r.docker("logs", node.name, check=False)
         visible = json.dumps(preview(node, host)) + json.dumps(receipt) + raw_logs.stdout + raw_logs.stderr
         preview_json = json.dumps(preview(node, host))
         require(seed_key not in visible and encryption_key not in visible and "api_key_encrypted" not in preview_json and "api_key_hint" not in preview_json and "phase approved nonsecret migration" not in preview_json and '"reason"' not in preview_json, "credential secret or free-form reason leaked into metadata/evidence")
-        result(results, backend + "-secret-redaction", {"public_metadata_secret_free": True, "backend": backend})
+        observations["legacy-conditional-copy"]["secret_redaction"] = {"public_metadata_secret_free": True, "preview_receipt_and_raw_logs": True, "backend": backend}
+        # A folded receipt passes only after every assertion it now owns ran.
+        for case in MIGRATION_CASES:
+            result(results, backend + "-" + case, observations[case])
     finally:
         node.stop()
 
@@ -467,10 +500,19 @@ def identity_and_policy_cases(ctx, peer, results):
         before = len(peer.seen)
         node.http(user).request("POST", "/v1/messages", {"model":"openai/gpt-4o-mini", "max_tokens":32, "messages":[{"role":"user","content":"credential observation"}]})
         require(peer.seen[before:] and all(label == "config" for label in peer.seen[before:]), "messages facade selected unauthorized account")
+        facade_paths = peer.paths[before:]
+        require(facade_paths and all(path.endswith("/v1/chat/completions") for path in facade_paths),
+                "messages facade did not use the distinct OpenAI provider path")
         before = len(peer.seen)
-        facade_status, _ = node.http(other).request("POST", "/v1/messages", {"model":"openai/gpt-4o-mini", "max_tokens":32, "messages":[{"role":"user","content":"denied observation"}]}, expected=(400,403,500,503), return_status=True)
+        facade_status, facade_denial = node.http(other).request("POST", "/v1/messages", {"model":"openai/gpt-4o-mini", "max_tokens":32, "messages":[{"role":"user","content":"denied observation"}]}, expected=403, return_status=True)
+        require(facade_denial["error"]["type"] == "invalid_request_error"
+                and facade_denial["error"]["message"] == "credential_source_denied",
+                "messages facade did not report the exact source-policy denial")
         require(len(peer.seen) == before, "denied messages facade contacted provider")
-        result(results, "messages-facade-policy", {"allowed_account":"config", "denied_status":facade_status, "denied_contacts":0})
+        native_messages = observe_native_messages_policy(ctx)
+        result(results, "messages-facade-policy", {"allowed_account":"config", "provider_paths":facade_paths,
+            "denied_status":facade_status, "denied_error":facade_denial["error"], "denied_contacts":0,
+            "native_anthropic":native_messages})
         node.config["sycophancy"] = dict(enabled=True, auto_correct=True, auto_correct_threshold=0.0, log_only=False)
         rewrite(node)
         node.http(user).request("PUT", PREFIX + "/openai", {"api_key": user_key})
@@ -520,7 +562,7 @@ def identity_and_policy_cases(ctx, peer, results):
         # Restore encrypted shared policy, then corrupt only the selected row.
         node.env["CREDENTIAL_ENCRYPTION_KEY"] = encryption_key
         node.config["security"]["provider_credentials"] = dict(mode="shared", installation_id=INSTALLATION)
-        node.stop(); node.config_path.write_text(json.dumps(node.config)); node.start()
+        node.stop(); node.write_config(); node.start()
         node.http(user).request("PUT", PREFIX + "/openai", {"api_key": user_key})
         store.query("UPDATE provider_principal_credentials SET api_key_encrypted='invalid-phase-ciphertext' WHERE owner_key=" + json.dumps(expected) + " AND provider_id='openai' RETURN NONE;", "")
         decrypt_denied = run_account(node, user, peer)

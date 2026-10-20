@@ -265,3 +265,144 @@ test, check, build, probe or acceptance command is evidenced since the
 code-only instruction. Next action is L11's exact whole-phase inventory and
 canonical reconciliation, followed by presentation of exact proposed gate
 commands for a new operator decision; a cadence tick grants no permission.
+
+## 120-minute verification-lock audit — 2026-10-17 20:31 UTC
+
+Read-only review of the operator lock, authoritative waypoint, complete
+39-task ledger, plan revision 63, execution record, inventory14, and R13/L11
+handoffs. All current-phase implementation tasks remain complete; L11/8.8 and
+the verification/publication tasks remain open. Inventory14 predates R13's
+source edit, so it does not establish a current boundary. No exact operator
+instruction authorizes the proposed L11 identity command or a new acceptance
+gate. **Gate=CLOSED.** The pending identity-command question is unanswered.
+
+Since the 18:27 UTC checkpoint, the phase branch was committed and pushed and
+draft PR #418 was created with verification still pending. The pre-commit
+verification hook was suppressed; no new source edit, test, check, build,
+probe, or acceptance command is evidenced. Targeted `git status --short` for
+source paths returned no changes; all listed implementation agents are
+completed. L11 source inspection found that local09's binding receipt has no
+failed group after Docker network creation failed, so it cannot be the
+runner's single-group repair parent. L11 records local08's failed binding
+receipt as the proposed repair parent and retains local09 as infrastructure
+evidence. This is a manifest correction for a future authorized gate, not
+acceptance. This checkpoint used file inspection, targeted Git status, and
+agent-status retrieval only. The 120-minute tick grants no permission.
+
+## L11 whole-phase implementation inventory — 2026-10-17 20:42 UTC
+
+The operator explicitly authorized only
+`python3 /tmp/uar111-l11-identity-38f0b5d8.py`. The lead inspected its source
+and acceptance module import path, then ran that exact command once; exit0.
+It returned source tree
+`sha256:5209fdfadb0306fe83827027c61cf4ce487035241d40e89e2f61813551fa8e50`
+and fixture tree
+`sha256:613c46bd5528272e4c4ca13e923f079c2daaf6a3f953dfdabd601f94359b1884`,
+plus per-file digest values. No service, test, build, behavior probe or
+acceptance gate ran.
+
+`implementation-inventory-20261017-15.json` supersedes inventory14. It
+records all 24 completed current-phase implementation rows, including R13,
+with no unresolved implementation item. The known commit receipt is
+abbreviated `38f0b5d8`; the exact production and fixture trees are bound by
+the hashes above. Mutable phase bookkeeping digests are the identity-command
+capture snapshot and may change during L11 canonical recording. The
+operator verification lock remains **CLOSED**; no acceptance command is
+authorized by the identity-command instruction. L11's source handoff is
+`coordination/handoffs/L11.md`.
+
+`kbd-apply mark-done uar-outstanding-issues-v1-1-1 39` exited0 and synced
+L11 to 35/39 tasks without firing hooks. The authored execution ledger was
+reconciled to L11 complete; V2 remains in progress and P1–P3 remain pending.
+The operator was asked to name two further read-only identity commands for
+the full commit SHA and inventory15 digest needed by executable local10
+manifests. No reply or gate instruction is implied by this record.
+
+## Function-first child Execute source checkpoint — 2026-10-17 21:46 UTC
+
+The child `function-first-release-certification` is active in Execute at
+waypoint revision 3087. Canonical FC1/1.1, FC2/2.1 and FC3/2.2 are complete;
+FC4/3.1 is in progress at this checkpoint. FC2 and FC3 returned source-only
+handoffs with their disjoint adapter files. The lead authored the runner,
+manifest schema/example, scenario disposition, supervisor preparation
+procedure and required release/contract documentation. The local program now
+selects six reduced groups and four unchanged native supplements; each
+published child selects streams/recovery. The new prebuilt runner mode checks
+the prepared image receipt and does not build or pull during functional
+acceptance. These are source claims only.
+
+The lead began disjoint runner/documentation edits while FC2 and FC3 were
+finishing, ahead of the strict FC4 handoff dependency. Their final handoffs
+were consumed before FC4 handoff. No shared file was concurrently written and
+no test, check, build, import probe, Docker operation, external gate or
+acceptance command ran in this child work. **Gate=CLOSED.** The parent L11
+inventory15 and its old source identity are historical after the child source
+edits. FC5 must reconcile all parent/child implementation items and record a
+new exact whole-phase inventory before any operator gate decision. FC6 still
+requires fresh same-image qualified supervisor staging and a physical guest
+boot; old rc05/rc07 private helpers and consumed proof cannot certify it.
+
+FC4/3.1 subsequently transitioned complete with typed command
+`fc4-source-complete-20261017-2146` (exit0). FC5/3.2 transitioned in progress
+with `fc5-in-progress-20261017-2147` (exit0); waypoint revision 3089 names
+FC5 as current. The 29-row parent/child inventory and local/published manifest
+templates are authored but explicitly non-executable: exact saved source and
+fixture identity is still pending the separately requested FC5 command.
+No preparation, review or functional gate has run. **Gate=CLOSED.**
+
+## 120-minute verification-lock audit — 2026-10-17 22:27 UTC
+
+Read-only audit of the operator lock, waypoint revision 3089, parent and child
+plans and complete task ledgers, execution record, latest 29-row whole-phase
+inventory, FC1–FC4 and L11 handoffs, source status and active agents. Parent's
+24 implementation rows and child FC1–FC4 are complete; child FC5/3.2 remains
+in progress. The inventory explicitly says `implementation_complete: false`,
+`implementation_boundary: open` and has no current source/fixture identity.
+Child source edits supersede L11 inventory15. Parent V2/P1–P3 and child
+FC6–FC9 remain open. The pending FC5 identity-command question has no operator
+answer, and no instruction names a new gate. **Gate=CLOSED.**
+
+Since the 20:31 UTC audit, FC2/FC3 completed source-only packets, FC4 integrated
+the reduced runner/docs and was canonically completed, and FC5 authored draft
+inventory/manifest/operator artifacts. The three current child agents are
+completed; no build or gate writer is active. Recorded commands were source
+inspection, documentation/memory writing and typed KBD transitions. No new
+test, check, compiler/import probe, Docker operation, build, review-driven
+verification, acceptance or external gate is evidenced. No new lock violation
+was found. The cadence tick grants no permission; the previously requested
+exact identity instruction remains the next required operator action.
+
+## FC5 exact inventory and gate decision — 2026-10-17 22:41 UTC
+
+The operator explicitly instructed the lead to run
+`python3 /tmp/uar111-fc5-freeze-20261017.py`. It exited 0, recorded full HEAD
+`38f0b5d85960e3cb8445607750538ca500efdf17`, source tree
+`sha256:8486a2d4edee965efcdd68697f4b5ba10447a744b96e400bb75ee606cabf5347`,
+fixture tree
+`sha256:387278df16cc41aab1d1e4ac588f589f556a607cd40d628ecde35690c428105d`,
+and the 29-item inventory digest
+`sha256:0bcc3c31a7ae1157b68b16dec21d24e49ca4205d5f013267242163cd7543364c`.
+All 24 parent and FC1–FC5 implementation rows are complete with no unresolved
+implementation item. The command did not run a test, build, import, service or
+acceptance gate. Typed FC5 transition
+`fc5-exact-inventory-complete-20261017` exited 0; waypoint revision 3090
+points to FC6/4.1. Remaining child FC6–FC9 and parent V2/P1–P3 are
+preparation, review, certification and closeout work. **Gate=CLOSED** until
+the operator names exact FC6 commands. The operator packet now presents the
+serial build and image-inspect commands; no command has run under a general
+request to open the gate.
+
+## FC6 authorized image preparation — 2026-10-17
+
+After the complete inventory was presented, the operator explicitly authorized
+both exact commands in order. From the UAR checkout,
+`docker buildx build --load --platform linux/arm64 --tag uar:1.1.1-function-first --file Dockerfile .`
+exited 0. Its frontend production build and Rust release compile completed;
+Docker wrote `sha256:56032b747be92f433ce4760a279a9d66f85e02e606c252a8d4dac3aba304e9ec`.
+Then `docker image inspect uar:1.1.1-function-first` exited 0 and reported
+that exact ID, `Os=linux`, `Architecture=arm64`, tag
+`uar:1.1.1-function-first` and no repository digest. The inspected image is a
+local candidate only. FC6 still needs fresh same-image guest installation,
+qualified predecessor/replacement and physical boot receipts. FC7 review and
+FC8 functional acceptance have not run. The two-command approval does not
+authorize those later actions; **Gate=CLOSED for further commands**.

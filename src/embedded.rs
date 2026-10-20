@@ -23,7 +23,7 @@ use crate::{
         governance::engine::GovernanceEngine,
         memory::service::MemoryService,
         persistence::PersistenceLayer,
-        rag::embeddings::{EmbeddingBackend, UnavailableEmbeddingBackend},
+        rag::embeddings::{EmbeddingBackend, UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend},
         runtime::{
             manager::RunManager,
             matching::VectorMatcher,
@@ -56,7 +56,7 @@ pub struct EmbeddedRuntime {
     native_skills: Arc<NativeSkillRegistry>,
     skill_service: Arc<SkillService>,
     vector_matcher: Arc<VectorMatcher>,
-    embedding_backend: Arc<dyn EmbeddingBackend>,
+    embedding_backend: Arc<SwappableEmbeddingBackend>,
     a2ui_registry: Arc<A2uiRegistry>,
     a2ui_backbone: Arc<InMemoryReplayBackbone>,
     /// Owns a SECOND embedded SurrealKV store, separate from `persistence`.
@@ -158,7 +158,8 @@ impl EmbeddedRuntime {
 
     #[must_use]
     pub fn embedding_backend(&self) -> Arc<dyn EmbeddingBackend> {
-        Arc::clone(&self.embedding_backend)
+        // Pin the current backend: a coherent snapshot of backend + metadata.
+        self.embedding_backend.pin()
     }
 
     /// The agent memory service, when this runtime was built with one.
@@ -379,12 +380,14 @@ impl EmbeddedRuntimeBuilder {
         llm_config.api_key = provider.api_key.clone();
         llm_config.base_url = (!provider.base_url.is_empty()).then(|| provider.base_url.clone());
 
-        let embedding_backend = self.embedding_backend.unwrap_or_else(|| {
-            Arc::new(UnavailableEmbeddingBackend::new(
-                DEFAULT_VECTOR_DIMENSION,
-                "the embedded host did not register an embedding provider",
-            ))
-        });
+        let embedding_backend = Arc::new(SwappableEmbeddingBackend::new(
+            self.embedding_backend.unwrap_or_else(|| {
+                Arc::new(UnavailableEmbeddingBackend::new(
+                    DEFAULT_VECTOR_DIMENSION,
+                    "the embedded host did not register an embedding provider",
+                ))
+            }),
+        ));
         let vector_matcher = Arc::new(VectorMatcher::new(
             Arc::clone(&embedding_backend),
             self.vector_threshold.unwrap_or(DEFAULT_VECTOR_THRESHOLD),

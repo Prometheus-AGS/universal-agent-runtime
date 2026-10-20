@@ -69,6 +69,15 @@ name = "uar-env-probe"
 path = "src/bin/uar-env-probe.rs"
 required-features = ["test-probes"]
 
+# One-shot helper. Authorized on 2026-10-18 against the function-first-local
+# qualification contract: writes a single ModelVerification record at
+# internal.model-verification.<sha256("minimax\0MiniMax-M3")> in the runtime's
+# surrealkv://<UAR_PERSISTENCE_DIR>. See tools/seed-minimax-verification/main.rs.
+[[bin]]
+name = "seed-minimax-verification"
+path = "tools/seed-minimax-verification/main.rs"
+required-features = ["server"]
+
 # Cookbook examples live in docs/cookbook/runtime/ but are built as examples of
 # the runtime crate so they share the workspace build cache.
 [[example]]

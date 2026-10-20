@@ -50,43 +50,100 @@ impl MemoryService {
         );
 
         // Build the embedding provider.
-        let embedding_svc: Arc<dyn EmbeddingService> = match config.embedding_provider.as_str() {
+        //
+        // Precedence:
+        //   memory.embedding_api (set via YAML or UAR_MEMORY__EMBEDDING_API) — preferred
+        //   memory.embedding_provider — legacy discriminator (used as fallback)
+        //
+        // The resolved adapter drives the URL scheme, the auth-header convention, and
+        // the request shape. Unrecognized values produce a hard error rather than
+        // silently selecting a default (the previous `_ =>` arm silently fell back
+        // to `local`, which masked operator intent — see issue #420).
+        let resolved_api = config
+            .embedding_api
+            .clone()
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| config.embedding_provider.clone());
+
+        let embedding_svc: Arc<dyn EmbeddingService> = match resolved_api.as_str() {
             "openai" => {
                 let api_key = config
-                    .openai_api_key
+                    .embedding_api_key
                     .clone()
+                    .or_else(|| config.openai_api_key.clone())
                     .or_else(|| std::env::var("OPENAI_API_KEY").ok())
                     .or_else(|| std::env::var("LLM_API_KEY").ok())
-                    .context("Memory: embedding_provider=openai requires OPENAI_API_KEY, LLM_API_KEY, or memory.openai_api_key config")?;
+                    .context("Memory: embedding_api=openai requires OPENAI_API_KEY, LLM_API_KEY, memory.embedding_api_key, or memory.openai_api_key config")?;
                 let provider = EmbeddingProvider::OpenAI {
                     api_key,
                     model: config.embedding_model.clone(),
+                    base_url: config.embedding_base_url.clone().unwrap_or_default(),
+                    dimensions: config.embedding_dim.map(|n| n as usize),
+                };
+                Arc::from(surreal_memory::embeddings::create_embedding_service(provider).await?)
+            }
+            "anthropic" => {
+                let api_key = config
+                    .embedding_api_key
+                    .clone()
+                    .or_else(|| config.anthropic_api_key.clone())
+                    .or_else(|| std::env::var("ANTHROPIC_API_KEY").ok())
+                    .context("Memory: embedding_api=anthropic requires ANTHROPIC_API_KEY, memory.embedding_api_key, or memory.anthropic_api_key config")?;
+                let provider = EmbeddingProvider::Anthropic {
+                    api_key,
+                    model: config.embedding_model.clone(),
+                    base_url: config.embedding_base_url.clone().unwrap_or_default(),
+                    dimensions: config.embedding_dim.map(|n| n as usize),
+                };
+                Arc::from(surreal_memory::embeddings::create_embedding_service(provider).await?)
+            }
+            "mistral" => {
+                let api_key = config
+                    .embedding_api_key
+                    .clone()
+                    .or_else(|| config.mistral_api_key.clone())
+                    .or_else(|| std::env::var("MISTRAL_API_KEY").ok())
+                    .context("Memory: embedding_api=mistral requires MISTRAL_API_KEY, memory.embedding_api_key, or memory.mistral_api_key config")?;
+                let provider = EmbeddingProvider::Mistral {
+                    api_key,
+                    model: config.embedding_model.clone(),
+                    base_url: config.embedding_base_url.clone().unwrap_or_default(),
+                    dimensions: config.embedding_dim.map(|n| n as usize),
                 };
                 Arc::from(surreal_memory::embeddings::create_embedding_service(provider).await?)
             }
             "cohere" => {
                 let api_key = config
-                    .cohere_api_key
+                    .embedding_api_key
                     .clone()
+                    .or_else(|| config.cohere_api_key.clone())
                     .or_else(|| std::env::var("COHERE_API_KEY").ok())
-                    .context("Memory: embedding_provider=cohere requires COHERE_API_KEY env var or memory.cohere_api_key config")?;
+                    .context("Memory: embedding_api=cohere requires COHERE_API_KEY, memory.embedding_api_key, or memory.cohere_api_key config")?;
                 let provider = EmbeddingProvider::Cohere {
                     api_key,
                     model: config.embedding_model.clone(),
                 };
                 Arc::from(surreal_memory::embeddings::create_embedding_service(provider).await?)
             }
-            _ => {
-                // local / default
+            "local" => {
                 let provider = EmbeddingProvider::Local {
                     model_id: config.embedding_model.clone(),
                     model_path: None,
                 };
                 Arc::from(surreal_memory::embeddings::create_embedding_service(provider).await?)
             }
+            other => {
+                anyhow::bail!(
+                    "Memory: embedding_api={other:?} is not supported. \
+                     Supported values are: openai | anthropic | mistral | cohere | local. \
+                     Set memory.embedding_api (or env UAR_MEMORY__EMBEDDING_API) explicitly."
+                );
+            }
         };
 
         tracing::info!(
+            embedding_api = %resolved_api,
+            embedding_model = %config.embedding_model,
             dimensions = embedding_svc.dimensions(),
             "Memory embedding service ready"
         );

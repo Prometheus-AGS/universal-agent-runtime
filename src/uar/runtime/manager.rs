@@ -109,7 +109,7 @@ impl EventHistory {
         completion: Option<
             &std::sync::Mutex<crate::uar::runtime::thread::execution::RunCompletionCapture>,
         >,
-    ) {
+    ) -> Vec<StreamEvent> {
         let terminal = matches!(
             &event,
             NormalizedEvent::RunDone { .. }
@@ -119,8 +119,9 @@ impl EventHistory {
         );
         // Publication observations follow their actual event. Terminal state
         // precedes the terminal frame, which closes transport subscribers.
+        let mut published = Vec::new();
         if !terminal {
-            self.publish(event.clone(), sender, completion);
+            published.push(self.publish(event.clone(), sender, completion));
         }
         let observation_changed = self.presentation.is_none()
             || terminal
@@ -152,11 +153,92 @@ impl EventHistory {
                         value: Some(value),
                     }],
                 };
-                self.latest_presentation = Some(self.publish(projection, sender, completion));
+                let projected = self.publish(projection, sender, completion);
+                self.latest_presentation = Some(projected.clone());
+                published.push(projected);
             }
         }
         if terminal {
-            self.publish(event, sender, completion);
+            published.push(self.publish(event, sender, completion));
+        }
+        published
+    }
+}
+
+/// Write-through queue for the restart-durable public run history. The
+/// streaming path must not wait on the store; ordering within a run is carried
+/// by the monotonically assigned event ids, and each run's terminal record
+/// upsert is queued after every event already published for that run.
+#[derive(Clone, Debug)]
+struct RunHistoryWriter {
+    sender: tokio::sync::mpsc::UnboundedSender<RunHistoryWrite>,
+}
+
+#[derive(Debug)]
+enum RunHistoryWrite {
+    Record(crate::uar::persistence::run_history::RunHistoryRecord),
+    Event(crate::uar::persistence::run_history::RunHistoryEvent),
+}
+
+impl RunHistoryWriter {
+    fn start(
+        persistence: &Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
+    ) -> Option<Self> {
+        let persistence = persistence
+            .clone()
+            .filter(|layer| layer.supports_durable_run_history())?;
+        let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel();
+        tokio::spawn(async move {
+            while let Some(write) = receiver.recv().await {
+                let result = match &write {
+                    RunHistoryWrite::Record(record) => {
+                        persistence.upsert_run_history_record(record).await
+                    }
+                    RunHistoryWrite::Event(event) => {
+                        persistence.append_run_history_event(event).await
+                    }
+                };
+                // Durable history must not fail the live stream; the read path
+                // still serves the in-process history for this boot.
+                if let Err(error) = result {
+                    tracing::warn!(?error, "durable run history write failed");
+                }
+            }
+        });
+        Some(Self { sender })
+    }
+
+    fn write_record(
+        &self,
+        run: &Run,
+        verified_owner: Option<&crate::uar::runtime::actor::messages::ActorOwner>,
+    ) {
+        let Ok(serialized) = serde_json::to_value(run) else {
+            tracing::warn!("durable run history record serialization failed");
+            return;
+        };
+        let record = crate::uar::persistence::run_history::RunHistoryRecord {
+            owner_key: verified_owner.map(|owner| owner.presentation_owner_key()),
+            run_id: run.run_id.clone(),
+            run: serialized,
+            revision: 1,
+        };
+        let _ = self.sender.send(RunHistoryWrite::Record(record));
+    }
+
+    fn write_events(&self, run_id: &str, events: Vec<StreamEvent>) {
+        for event in events {
+            let Ok(serialized) = serde_json::to_value(&event.event) else {
+                tracing::warn!("durable run history event serialization failed");
+                continue;
+            };
+            let _ = self.sender.send(RunHistoryWrite::Event(
+                crate::uar::persistence::run_history::RunHistoryEvent {
+                    run_id: run_id.to_owned(),
+                    event_id: event.id,
+                    event: serialized,
+                },
+            ));
         }
     }
 }
@@ -275,6 +357,7 @@ struct RunEventEmitter {
     runs: std::sync::Weak<RwLock<ActiveRunMap>>,
     secret_scrubber: crate::uar::runtime::turn::host::RunSecretScrubber,
     admission_projection: Arc<Mutex<crate::uar::runtime::turn::host::AdmissionProjection>>,
+    run_history: Option<RunHistoryWriter>,
 }
 
 impl RunEventEmitter {
@@ -284,28 +367,41 @@ impl RunEventEmitter {
         let presentation_enabled = !projection.suppresses_presentation();
         drop(projection);
         event = projected;
-        if matches!(
+        let terminal = matches!(
             &event,
             NormalizedEvent::RunDone { .. }
                 | NormalizedEvent::RunDoneWithUsage { .. }
                 | NormalizedEvent::Cancelled { .. }
                 | NormalizedEvent::Error { .. }
-        ) && let Some(runs) = self.runs.upgrade()
+        );
+        // Terminal run metadata is final before the terminal frame publishes.
+        let mut terminal_record = None;
+        if terminal
+            && let Some(runs) = self.runs.upgrade()
             && let Some(state) = runs.write().await.get_mut(&self.run_id)
         {
             state.terminal_at.get_or_insert_with(Instant::now);
+            terminal_record = Some((state.run.clone(), state.verified_owner.clone()));
         }
         let event =
             super::a2ui_output::enforce_output_ceiling(event, self.presentations.as_deref());
-        let mut history = self.history.lock().await;
-        history.record(
-            &self.run_id,
-            event,
-            self.presentations.as_deref(),
-            presentation_enabled,
-            &self.sender,
-            self.completion.as_deref(),
-        );
+        let published = {
+            let mut history = self.history.lock().await;
+            history.record(
+                &self.run_id,
+                event,
+                self.presentations.as_deref(),
+                presentation_enabled,
+                &self.sender,
+                self.completion.as_deref(),
+            )
+        };
+        if let Some(writer) = &self.run_history {
+            if let Some((run, owner)) = terminal_record {
+                writer.write_record(&run, owner.as_ref());
+            }
+            writer.write_events(&self.run_id, published);
+        }
     }
 }
 
@@ -332,9 +428,10 @@ impl RetrievalBackend for ChatRagSearchBackend<'_> {
         min_score: f32,
     ) -> anyhow::Result<Vec<crate::uar::domain::knowledge::KnowledgeMatch>> {
         // Same backend as ingestion (`llm.embedding`); see the KB search route.
+        // Pinned once so a concurrent backend swap cannot interleave.
         let query_vec = self
             .vector_matcher
-            .embedding_backend()
+            .pin_embedding()
             .embed_one(sub_query)
             .await?;
         let kb_id_refs = self.kb_ids.iter().map(String::as_str).collect::<Vec<_>>();
@@ -503,6 +600,9 @@ pub struct RunManager {
     world_state_clock: Arc<dyn crate::uar::runtime::world_state::sections::Clock>,
     // Persistence layer (optional)
     pub persistence: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
+    /// Restart-durable public run history write-through; `None` when no
+    /// configured store supports it (behavior stays process-local there).
+    run_history: Option<RunHistoryWriter>,
     /// Skill service for coordinated skill management
     skill_service: Option<Arc<SkillService>>,
     /// Configuration for the Hermes skill auto-creation/evolution post-run hook.
@@ -572,6 +672,11 @@ pub struct RunManager {
     /// cheap no-op warning check).
     cost_budget: crate::uar::runtime::cost_budget::CostBudgetTracker,
     resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy,
+    /// Bounds the persistence operations performed while admitting a run
+    /// (`resilience.admission_timeout_ms`). A hanging store surfaces as an
+    /// availability error instead of stalling admission until the HTTP
+    /// request timeout.
+    admission_timeout: std::time::Duration,
     /// Optional runtime settings source for the Global policy scope
     /// (`run_policy.global`). Built from `persistence` at construction when
     /// persistence is present. When `None`, policy resolution falls back to the
@@ -1052,6 +1157,7 @@ impl RunManager {
             ),
         );
         let approvals = ApprovalBroker::new(persistence.clone(), tool_runtime_epoch.clone());
+        let run_history = RunHistoryWriter::start(&persistence);
         Self {
             graph_roots: Arc::new(
                 crate::uar::runtime::thread::graph_host::GraphRootSupervisor::default(),
@@ -1077,6 +1183,7 @@ impl RunManager {
             world_state_config: Default::default(),
             world_state_clock: Arc::new(crate::uar::runtime::world_state::sections::SystemClock),
             persistence,
+            run_history,
             settings_manager,
             skill_service: None,
             skill_evolution_config: SkillEvolutionConfig::default(),
@@ -1108,6 +1215,7 @@ impl RunManager {
             failover_config: crate::config::FailoverConfig::default(),
             cost_budget: crate::uar::runtime::cost_budget::CostBudgetTracker::new(),
             resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy::default(),
+            admission_timeout: std::time::Duration::from_millis(10_000),
             a2a_peers: Arc::new(crate::uar::api::a2a::peer::TrustedA2APeers::default()),
             run_retention: RunsConfig::default(),
             session_retention: SessionsConfig::default(),
@@ -1457,17 +1565,24 @@ impl RunManager {
         self
     }
 
-    async fn resolved_harness_config(&self) -> crate::config::HarnessConfig {
+    async fn resolved_harness_config(&self, deadline: tokio::time::Instant) -> crate::config::HarnessConfig {
         let mut config = self.harness_config.clone();
         if let Some(settings) = &self.settings_manager {
-            if let Ok(Some(mode)) = settings.get_typed("harness.mode").await {
-                config.mode = mode;
-            }
-            if let Ok(Some(mode)) = settings.get_typed("harness.skill_activation_mode").await {
-                config.skill_activation_mode = mode;
-            }
-            if let Ok(Some(budget)) = settings.get_typed("harness.skill_reattachment").await {
-                config.skill_reattachment = budget;
+            let reads = async {
+                if let Ok(Some(mode)) = settings.get_typed("harness.mode").await {
+                    config.mode = mode;
+                }
+                if let Ok(Some(mode)) = settings.get_typed("harness.skill_activation_mode").await {
+                    config.skill_activation_mode = mode;
+                }
+                if let Ok(Some(budget)) = settings.get_typed("harness.skill_reattachment").await {
+                    config.skill_reattachment = budget;
+                }
+            };
+            if tokio::time::timeout_at(deadline, reads).await.is_err() {
+                // Settings read tolerance is deliberate (defaults apply); only
+                // the unbounded wait is removed.
+                tracing::warn!("harness settings unavailable at run admission; using configured defaults");
             }
         }
         config
@@ -1749,6 +1864,12 @@ impl RunManager {
         policy: crate::uar::settings::resilience_policy::ResiliencePolicy,
     ) -> Self {
         self.resilience_policy = policy;
+        self
+    }
+
+    /// Bound the persistence operations performed while admitting a run.
+    pub fn with_admission_timeout(mut self, timeout: std::time::Duration) -> Self {
+        self.admission_timeout = timeout.max(std::time::Duration::from_millis(500));
         self
     }
 
@@ -2805,28 +2926,56 @@ impl RunManager {
         request: crate::uar::runtime::turn::RunExecutionRequest,
         run_id: String,
     ) -> String {
-        if self.uses_agent_graph(&request.artifact) {
-            let result = self
-                .graph_roots
-                .start(
-                    self.clone(),
-                    request.clone(),
-                    run_id.clone(),
-                    self.root_cancellation.child_token(),
+        let admission = {
+            let request = request.clone();
+            let run_id = run_id.clone();
+            async move {
+                if self.uses_agent_graph(&request.artifact) {
+                    let result = self
+                        .graph_roots
+                        .start(
+                            self.clone(),
+                            request.clone(),
+                            run_id.clone(),
+                            self.root_cancellation.child_token(),
+                        )
+                        .await;
+                    if let Err(error) = &result {
+                        tracing::error!(%run_id, %error, "Graph root could not prepare");
+                    }
+                    if result.is_err() || self.get_run(&run_id).await.is_none() {
+                        self.record_graph_root_failure(&request, &run_id).await;
+                    }
+                    return run_id;
+                }
+                // Keep the large kernel future out of the HTTP admission future's
+                // inline state, as the captured child-run entry point already does.
+                Box::pin(self.execute_request_inner(request, run_id, None, None, None, None))
+                    .await
+            }
+        };
+        // Backstop: bound admission as a whole so an unbounded persistence
+        // read cannot stall the HTTP request until the middleware timeout.
+        // Admission performs its store reads before the run task is spawned,
+        // so a dropped admission future leaves no partial write and no leaked
+        // task; the terminal failure is recorded so stream subscribers observe
+        // an availability error instead of silence.
+        let backstop = self.admission_timeout.saturating_mul(2);
+        match tokio::time::timeout(backstop, admission).await {
+            Ok(run_id) => run_id,
+            Err(_) => {
+                tracing::error!(%run_id, "run admission exceeded the configured admission timeout (persistence unavailable)");
+                self.record_host_admission_failure(
+                    &request,
+                    &run_id,
+                    "persistence_unavailable",
+                    "Run admission exceeded the configured admission timeout; persistence unavailable",
                 )
                 .await;
-            if let Err(error) = &result {
-                tracing::error!(%run_id, %error, "Graph root could not prepare");
+                self.run_cancellations.write().await.remove(&run_id);
+                run_id
             }
-            if result.is_err() || self.get_run(&run_id).await.is_none() {
-                self.record_graph_root_failure(&request, &run_id).await;
-            }
-            return run_id;
         }
-        // Keep the large kernel future out of the HTTP admission future's
-        // inline state, as the captured child-run entry point already does.
-        Box::pin(self.execute_request_inner(request, run_id, None, None, None, None))
-            .await
     }
 
     /// Execute an ordinary agent only after its persisted private binding has
@@ -3081,6 +3230,7 @@ impl RunManager {
                 runs: Arc::downgrade(&self.active_runs),
                 secret_scrubber: request.host_secret_scrubber.clone(),
                 admission_projection: Default::default(),
+                run_history: self.run_history.clone(),
             }
         };
         emitter
@@ -3328,6 +3478,10 @@ impl RunManager {
             guard = self.checkpoint_assemblies.read() => guard,
         };
         if self.root_cancellation.is_cancelled() { return run_id; }
+        // All admission-time store reads below share this deadline so a
+        // hanging backend consumes the configured admission budget exactly
+        // once, rather than once per read.
+        let admission_deadline = tokio::time::Instant::now() + self.admission_timeout;
         let recovered_approval = if request.checkpoint_resume.is_some() {
             let permit = self.checkpoint_resume_admitted.lock().await.remove(&run_id);
             if permit.as_ref().is_none_or(|permit| !permit.accepts(&request, &run_id, &self.tool_runtime_epoch)) {
@@ -3353,7 +3507,7 @@ impl RunManager {
         let plan = crate::uar::runtime::turn::TurnAssemblyPlan::for_request(&request);
         let harness_config = match &inherited {
             Some(bindings) => bindings.harness.clone(),
-            None => self.resolved_harness_config().await,
+            None => self.resolved_harness_config(admission_deadline).await,
         };
         let crate::uar::runtime::turn::RunExecutionRequest {
             mut artifact,
@@ -3435,6 +3589,7 @@ impl RunManager {
             runs: Arc::downgrade(&self.active_runs),
             secret_scrubber: host_secret_scrubber,
             admission_projection: Default::default(),
+            run_history: self.run_history.clone(),
         };
         let completion_guard = crate::uar::runtime::thread::execution::RunCompletionGuard::new(
             emitter.completion.clone(),
@@ -3632,13 +3787,27 @@ impl RunManager {
             .as_ref()
             .map_or(artifact, |bindings| bindings.policy.artifact().clone());
         // Capture committed settings once for this turn, including team members.
-        let (turn_resilience_policy, _) =
+        let (turn_resilience_policy, _) = match tokio::time::timeout_at(
+            admission_deadline,
             crate::uar::settings::persisted_resilience::resolve_persisted_resilience_policy(
                 &self.resilience_policy,
                 self.settings_manager.as_deref(),
                 &artifact.id,
-            )
-            .await;
+            ),
+        )
+        .await
+        {
+            Ok(resolved) => resolved,
+            Err(_) => {
+                // Unavailable settings fall back to the configured policy
+                // (the same default used when no settings manager exists).
+                tracing::warn!("resilience settings unavailable at run admission; using configured policy");
+                (
+                    self.resilience_policy.clone(),
+                    crate::uar::settings::resilience_policy::PolicySource::Global,
+                )
+            }
+        };
         let sandbox = match &inherited {
             Some(bindings) => Ok(bindings.sandbox.clone()),
             None => self
@@ -3967,13 +4136,32 @@ impl RunManager {
         let (presentation_snapshot, presentation_warnings) = match &inherited {
             Some(bindings) => (bindings.presentations.narrow(&effective_policy), Vec::new()),
             None => {
-                super::presentations::RunPresentationSnapshot::capture(
-                    self.persistence.as_ref(),
-                    verified_owner.clone(),
-                    &effective_policy,
-                    presentation_negotiation,
+                let fallback_negotiation = presentation_negotiation.clone();
+                match tokio::time::timeout_at(
+                    admission_deadline,
+                    super::presentations::RunPresentationSnapshot::capture(
+                        self.persistence.as_ref(),
+                        verified_owner.clone(),
+                        &effective_policy,
+                        presentation_negotiation,
+                    ),
                 )
                 .await
+                {
+                    Ok(captured) => captured,
+                    Err(_) => {
+                        // The catalog read hung; admit without persisted
+                        // presentations rather than stalling the request.
+                        tracing::warn!("presentation catalog unavailable at run admission; continuing without presentations");
+                        super::presentations::RunPresentationSnapshot::capture(
+                            None,
+                            verified_owner.clone(),
+                            &effective_policy,
+                            fallback_negotiation,
+                        )
+                        .await
+                    }
+                }
             }
         };
         let presentation_snapshot = Arc::new(presentation_snapshot);
@@ -4041,7 +4229,7 @@ impl RunManager {
                 runs.insert(
                     run_id.clone(),
                     RunStreamState {
-                        run,
+                        run: run.clone(),
                         approval_root_run_id: None,
                         verified_owner: verified_owner.clone(),
                         presentations: Some(Arc::clone(&presentation_snapshot)),
@@ -4058,6 +4246,9 @@ impl RunManager {
                         last_detached_at: None,
                     },
                 );
+            }
+            if let Some(writer) = &self.run_history {
+                writer.write_record(&run, verified_owner.as_ref());
             }
             emitter
                 .emit(NormalizedEvent::Error {
@@ -4146,7 +4337,7 @@ impl RunManager {
             runs.insert(
                 run_id.clone(),
                 RunStreamState {
-                    run,
+                    run: run.clone(),
                     approval_root_run_id: None,
                     verified_owner: verified_owner.clone(),
                     presentations: Some(Arc::clone(&presentation_snapshot)),
@@ -4163,6 +4354,9 @@ impl RunManager {
                     last_detached_at: None,
                 },
             );
+        }
+        if let Some(writer) = &self.run_history {
+            writer.write_record(&run, verified_owner.as_ref());
         }
 
         emitter
@@ -5858,41 +6052,9 @@ impl RunManager {
                 return run_id;
             }
         };
-        let legacy_reduction = if harness_config.mode != crate::config::HarnessMode::Typed {
-            match crate::uar::runtime::context::reduce::reduce_history(
-                messages,
-                &effective_strategy,
-                &context_model,
-                context_limit - world_reserved_tokens,
-                summarization_driver.as_deref(),
-            )
-            .await
-            {
-                Ok(reduction) => Some(reduction),
-                Err(error) => {
-                    if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
-                        state.run.status = RunStatus::Error;
-                    }
-                    activation_context.lock().await.record_outcomes(false);
-                    emitter
-                        .emit(NormalizedEvent::Error {
-                            run_id: run_id.clone(),
-                            code: error.code().into(),
-                            message: error.to_string(),
-                        })
-                        .await;
-                    emitter
-                        .emit(NormalizedEvent::RunDone {
-                            run_id: run_id.clone(),
-                        })
-                        .await;
-                    self.run_cancellations.write().await.remove(&run_id);
-                    return run_id;
-                }
-            }
-        } else {
-            None
-        };
+        // Tool definitions ride on every model call, so their serialized cost
+        // is withheld from the history allowance like world state and the
+        // response reserve. The tool set is resolved before any reduction.
         let (mcp, mcp_preflight, mcp_descriptors, active_for_manifest) = {
             let context = activation_context.lock().await;
             (
@@ -5930,6 +6092,105 @@ impl RunManager {
                     return run_id;
                 }
             };
+        let tool_reserved_tokens = {
+            let (mut definitions, has_deferred) = {
+                let exposure =
+                    crate::mcp::exposure::McpToolExposure::default().project(&authorized_tools);
+                (
+                    exposure
+                        .visible()
+                        .values()
+                        .map(|tool| tool.openai_tool_json())
+                        .collect::<Vec<_>>(),
+                    exposure.has_deferred(),
+                )
+            };
+            // The orchestrator adds the `search_tools` control whenever deferred
+            // tools exist, so the first request carries it: count it here too.
+            if has_deferred {
+                match crate::uar::runtime::context::reduce::search_tools_definition().await {
+                    Some(search) => definitions.push(search),
+                    None => tracing::warn!(
+                        "search_tools control could not be sized at admission; per-step counting applies"
+                    ),
+                }
+            }
+            crate::uar::runtime::context::reduce::tool_definition_tokens(
+                &context_model,
+                &definitions,
+            )
+        };
+        let history_context_limit =
+            match crate::uar::runtime::context::reduce::reserve_fixed_request_tokens(
+                context_limit,
+                world_reserved_tokens,
+                tool_reserved_tokens,
+            ) {
+                Ok(limit) => limit,
+                Err(error) => {
+                    if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                        state.run.status = RunStatus::Error;
+                    }
+                    activation_context.lock().await.record_outcomes(false);
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: run_id.clone(),
+                            code: error.code().into(),
+                            message: error.to_string(),
+                        })
+                        .await;
+                    emitter
+                        .emit(NormalizedEvent::RunDone {
+                            run_id: run_id.clone(),
+                        })
+                        .await;
+                    self.run_cancellations.write().await.remove(&run_id);
+                    return run_id;
+                }
+            };
+        // The window less the admission-time tool cost, for first-turn skill
+        // reattachment and the graph request driver. The orchestrator's own
+        // steps use the unreduced window and count their actual tools.
+        let request_context_limit = context_limit.saturating_sub(tool_reserved_tokens);
+        let legacy_reduction = if harness_config.mode != crate::config::HarnessMode::Typed {
+            match crate::uar::runtime::context::reduce::reduce_history(
+                messages,
+                &effective_strategy,
+                &context_model,
+                history_context_limit,
+                summarization_driver.as_deref(),
+            )
+            .await
+            {
+                Ok(reduction) => Some(reduction),
+                Err(error) => {
+                    if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                        state.run.status = RunStatus::Error;
+                    }
+                    activation_context.lock().await.record_outcomes(false);
+                    let message = crate::uar::runtime::context::reduce::liability_message(
+                        &error,
+                        tool_reserved_tokens.saturating_add(world_reserved_tokens),
+                    );
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: run_id.clone(),
+                            code: error.code().into(),
+                            message,
+                        })
+                        .await;
+                    emitter
+                        .emit(NormalizedEvent::RunDone {
+                            run_id: run_id.clone(),
+                        })
+                        .await;
+                    self.run_cancellations.write().await.remove(&run_id);
+                    return run_id;
+                }
+            }
+        } else {
+            None
+        };
         if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
             state.actor_spawn_descriptor = authorized_tools.get("spawn_agent").cloned();
         }
@@ -5963,12 +6224,12 @@ impl RunManager {
                     ..PromptBudgets::default()
                 },
             };
-            let mut registry = crate::uar::runtime::turn::builtin::registry(
+            let mut registry = crate::uar::runtime::turn::builtin::registry_with_tool_tokens(
                 crate::uar::runtime::turn::builtin::ContextStage {
                     model: context_model.clone(),
                     context_limit,
                     strategy: effective_strategy.clone(),
-                    reserved_tokens: world_reserved_tokens,
+                    reserved_tokens: world_reserved_tokens.saturating_add(tool_reserved_tokens),
                     options: render_options,
                     skill_budget: harness_config.skill_reattachment,
                     driver: summarization_driver.clone(),
@@ -5981,6 +6242,7 @@ impl RunManager {
                     // until the trusted host supplies explicit marks.
                     eligible_prose: Vec::new(),
                 },
+                tool_reserved_tokens,
             );
             // Reducer -> world state -> bounded active bodies, in one context stage.
             registry
@@ -5993,11 +6255,26 @@ impl RunManager {
                         state.run.status = RunStatus::Error;
                     }
                     activation_context.lock().await.record_outcomes(false);
+                    // A context-stage reduction failure keeps its stable code
+                    // (context_overflow, ...) and liability text.
+                    let (code, message) = match &error {
+                        crate::uar::runtime::turn::contributors::AssemblyError::ContributorFailed {
+                            name,
+                            message,
+                        } if name.as_str() == "context" => {
+                            crate::uar::runtime::context::reduce::split_assembly_failure(message)
+                                .map_or_else(
+                                    || ("turn_assembly_rejected", error.to_string()),
+                                    |(code, rest)| (code, rest.to_owned()),
+                                )
+                        }
+                        _ => ("turn_assembly_rejected", error.to_string()),
+                    };
                     emitter
                         .emit(NormalizedEvent::Error {
                             run_id: run_id.clone(),
-                            code: "turn_assembly_rejected".into(),
-                            message: error.to_string(),
+                            code: code.into(),
+                            message,
                         })
                         .await;
                     emitter
@@ -6082,7 +6359,7 @@ impl RunManager {
                     &messages,
                     &active_for_manifest,
                     &context_model,
-                    context_limit,
+                    request_context_limit,
                     harness_config.skill_reattachment,
                     RenderOptions {
                         prefers_xml_envelope: prompt_dialect.prefers_xml_envelope(),
@@ -6357,6 +6634,8 @@ impl RunManager {
                     Arc::clone(&activation_context),
                     effective_strategy.clone(),
                     context_model.clone(),
+                    // No tool cost here: the orchestrator withholds each step's
+                    // actual tool definitions itself.
                     context_limit,
                     harness_config.skill_reattachment,
                 )
@@ -6848,7 +7127,7 @@ impl RunManager {
                         inner: primary_driver_for_graph,
                         context: Arc::clone(&activation_context),
                         model: context_model.clone(),
-                        context_limit,
+                        context_limit: request_context_limit,
                         budget: skill_reattachment_budget,
                         cost_tracking: cost_tracking_enabled,
                     });
@@ -7117,13 +7396,18 @@ impl RunManager {
                     }
                 }
                 if !run_failed && let Some(host) = &checkpoint_host {
-                    let state = crate::uar::runtime::graph::GraphState { data: HashMap::new(),
-                        messages: execution_session.messages().iter().map(|message| serde_json::json!(message)).collect(),
-                        iteration: tool_call_count as u32 };
-                    if host.persist("approval_recovered", &state).await.is_err() {
-                        run_failed = true;
-                        emitter.emit(NormalizedEvent::Error { run_id: execute_run_id.clone(),
-                            code: "checkpoint_persistence_failed".into(), message: "Recovered tool result checkpoint could not be persisted".into() }).await;
+                    if host.has_resume_authority() {
+                        let state = crate::uar::runtime::graph::GraphState { data: HashMap::new(),
+                            messages: execution_session.messages().iter().map(|message| serde_json::json!(message)).collect(),
+                            iteration: tool_call_count as u32 };
+                        if host.persist("approval_recovered", &state).await.is_err() {
+                            run_failed = true;
+                            emitter.emit(NormalizedEvent::Error { run_id: execute_run_id.clone(),
+                                code: "checkpoint_persistence_failed".into(), message: "Recovered tool result checkpoint could not be persisted".into() }).await;
+                        }
+                    } else {
+                        tracing::debug!(run_id = %execute_run_id,
+                            "Skipping approval-recovery checkpoint for anonymous run without resume authority");
                     }
                 }
                 Arc::new((*orchestrator).clone().with_recovered_history(messages.clone()))
@@ -7441,7 +7725,16 @@ impl RunManager {
                                 tool_call_count += 1;
 
                                 // The host awaits the atomic checkpoint/envelope write.
-                                if persistence_for_run.is_some() {
+                                // Anonymous runs have no verified checkpoint
+                                // principal: no envelope they produce could ever
+                                // be resumed, so the write is skipped rather than
+                                // treated as a durability failure.
+                                let checkpoint_writable = persistence_for_run.is_some()
+                                    && match &checkpoint_host {
+                                        Some(host) => host.has_resume_authority(),
+                                        None => true, // preserve the existing source-unavailable failure
+                                    };
+                                if checkpoint_writable {
                                     let checkpoint_state = crate::uar::runtime::graph::GraphState {
                                         data: std::collections::HashMap::new(),
                                         messages: execution_session
@@ -7465,6 +7758,9 @@ impl RunManager {
                                             message: "Atomic checkpoint persistence failed".into(),
                                         }).await;
                                     }
+                                } else {
+                                    tracing::debug!(run_id = %execute_run_id,
+                                        "Skipping tool-loop checkpoint for anonymous run without resume authority");
                                 }
                             }
                             // Derive a memory mutation event before consuming the ToolEnd.
@@ -7971,17 +8267,34 @@ impl RunManager {
     pub async fn emit_to_run(&self, run_id: &str, event: NormalizedEvent) {
         let runs = self.active_runs.read().await;
         if let Some(state) = runs.get(run_id) {
+            let terminal = matches!(
+                &event,
+                NormalizedEvent::RunDone { .. }
+                    | NormalizedEvent::RunDoneWithUsage { .. }
+                    | NormalizedEvent::Cancelled { .. }
+                    | NormalizedEvent::Error { .. }
+            );
+            let terminal_record =
+                terminal.then(|| (state.run.clone(), state.verified_owner.clone()));
             let event =
                 super::a2ui_output::enforce_output_ceiling(event, state.presentations.as_deref());
-            let mut history = state.history.lock().await;
-            history.record(
-                run_id,
-                event,
-                state.presentations.as_deref(),
-                true,
-                &state.sender,
-                None,
-            );
+            let published = {
+                let mut history = state.history.lock().await;
+                history.record(
+                    run_id,
+                    event,
+                    state.presentations.as_deref(),
+                    true,
+                    &state.sender,
+                    None,
+                )
+            };
+            if let Some(writer) = &self.run_history {
+                if let Some((run, owner)) = terminal_record {
+                    writer.write_record(&run, owner.as_ref());
+                }
+                writer.write_events(run_id, published);
+            }
         }
     }
 
@@ -7991,23 +8304,44 @@ impl RunManager {
         last_event_id: Option<u64>,
     ) -> Option<Vec<StreamEvent>> {
         let runs = self.active_runs.read().await;
-        let state = runs.get(run_id)?;
-        let history = state.history.lock().await;
-        let mut events: Vec<_> = history
-            .buffer
-            .iter()
-            .filter(|event| last_event_id.is_none_or(|id| event.id > id))
-            .cloned()
-            .collect();
-        if let Some(projection) = &history.latest_presentation
-            && last_event_id.is_none_or(|id| projection.id > id)
-            && !events.iter().any(|event| event.id == projection.id)
-        {
-            // Retain exactly one full projection beyond the bounded event ring.
-            // Replay snapshot construction still filters by its requested cursor.
-            let index = events.partition_point(|event| event.id < projection.id);
-            events.insert(index, projection.clone());
+        if let Some(state) = runs.get(run_id) {
+            let history = state.history.lock().await;
+            let mut events: Vec<_> = history
+                .buffer
+                .iter()
+                .filter(|event| last_event_id.is_none_or(|id| event.id > id))
+                .cloned()
+                .collect();
+            if let Some(projection) = &history.latest_presentation
+                && last_event_id.is_none_or(|id| projection.id > id)
+                && !events.iter().any(|event| event.id == projection.id)
+            {
+                // Retain exactly one full projection beyond the bounded event ring.
+                // Replay snapshot construction still filters by its requested cursor.
+                let index = events.partition_point(|event| event.id < projection.id);
+                events.insert(index, projection.clone());
+            }
+            return Some(events);
         }
+        drop(runs);
+        // Restart-durable fallback: replay the published events exactly as they
+        // were acknowledged; durable rows already include presentation
+        // projections, so no ring compensation applies here.
+        let persistence = self
+            .persistence
+            .as_ref()
+            .filter(|layer| layer.supports_durable_run_history())?;
+        let rows = persistence.load_run_history_events(run_id).await.ok()?;
+        let mut events: Vec<StreamEvent> = rows
+            .into_iter()
+            .filter_map(|row| {
+                serde_json::from_value::<NormalizedEvent>(row.event)
+                    .ok()
+                    .map(|event| StreamEvent { id: row.event_id, event })
+            })
+            .collect();
+        events.sort_by_key(|event| event.id);
+        events.retain(|event| last_event_id.is_none_or(|id| event.id > id));
         Some(events)
     }
 
@@ -8068,15 +8402,45 @@ impl RunManager {
             )
         };
         let runs = self.active_runs.read().await;
-        let state = runs.get(run_id)?;
-        (state.verified_owner == owner
-            && state
-                .run
+        if let Some(state) = runs.get(run_id) {
+            return (state.verified_owner == owner
+                && state
+                    .run
+                    .user_id
+                    .as_deref()
+                    .unwrap_or(crate::session::ANONYMOUS_SESSION_OWNER)
+                    == user.user_id)
+                .then(|| state.run.clone());
+        }
+        drop(runs);
+        // Restart-durable fallback: the record persists only the ownership
+        // namespace key (`presentation_owner_key`), never a deserialized
+        // principal; recompute the key from the live middleware-verified
+        // context and apply the same ownership predicate as the active path.
+        let persistence = self
+            .persistence
+            .as_ref()
+            .filter(|layer| layer.supports_durable_run_history())?;
+        let record = persistence.load_run_history_record(run_id).await.ok()??;
+        if record.run_id != run_id {
+            return None;
+        }
+        let namespace_matches = match (&owner, &record.owner_key) {
+            (None, None) => true,
+            (Some(live), Some(stored)) => live.presentation_owner_key() == *stored,
+            _ => false,
+        };
+        if !namespace_matches {
+            return None;
+        }
+        let run: Run = serde_json::from_value(record.run).ok()?;
+        (run.run_id == run_id
+            && run
                 .user_id
                 .as_deref()
                 .unwrap_or(crate::session::ANONYMOUS_SESSION_OWNER)
                 == user.user_id)
-            .then(|| state.run.clone())
+            .then_some(run)
     }
 
     /// List runs visible to the exact middleware-verified subject and tenant.

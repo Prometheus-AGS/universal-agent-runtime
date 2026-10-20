@@ -15,26 +15,58 @@ use axum::{
 pub const SIDECAR_PRINCIPAL_HEADER: &str = "x-uar-principal";
 
 fn principal_error(code: &'static str) -> Response {
+    principal_error_with_status(StatusCode::BAD_REQUEST, code)
+}
+
+fn principal_error_with_status(status: StatusCode, code: &'static str) -> Response {
     (
-        StatusCode::BAD_REQUEST,
+        status,
         [(header::CONTENT_TYPE, "application/json")],
         format!(r#"{{"error":{{"code":"{code}"}}}}"#),
     )
         .into_response()
 }
 
+/// Resolve the host-asserted principal for one request.
+///
+/// Without a launch binding this is the shared-sidecar rule: `x-uar-principal`
+/// is honored only after launch-token authentication. A launch-bound sidecar
+/// serves exactly its bound subject. An absent header uses that subject, an
+/// equal header is accepted, and a different subject is refused with 403
+/// `principal_mismatch`. The caller already authenticated with the launch
+/// token, so the refusal is an authorization failure, not a malformed or
+/// unauthenticated request.
+fn resolve_host_principal(
+    asserted: Option<&axum::http::HeaderValue>,
+    host_authenticated: Option<super::sidecar_guard::HostAuthenticated>,
+    bound: Option<&super::sidecar_guard::HostBoundPrincipal>,
+) -> Result<Option<UserContext>, Response> {
+    if asserted.is_some() && host_authenticated.is_none() {
+        return Err(principal_error("principal_header_not_allowed"));
+    }
+    let asserted = asserted
+        .map(|value| {
+            value
+                .to_str()
+                .ok()
+                .and_then(sidecar_principal)
+                .ok_or_else(|| principal_error("principal_invalid"))
+        })
+        .transpose()?;
+    let Some(bound) = bound.filter(|_| host_authenticated.is_some()) else {
+        return Ok(asserted);
+    };
+    match asserted {
+        None => sidecar_principal(bound.subject())
+            .map(Some)
+            .ok_or_else(|| principal_error("principal_invalid")),
+        Some(principal) if principal.user_id == bound.subject() => Ok(Some(principal)),
+        Some(_) => Err(principal_error_with_status(StatusCode::FORBIDDEN, "principal_mismatch")),
+    }
+}
+
 fn sidecar_principal(value: &str) -> Option<UserContext> {
-    let valid = !value.eq_ignore_ascii_case("anonymous")
-        && (1..=128).contains(&value.len())
-        && value
-            .as_bytes()
-            .iter()
-            .copied()
-            .enumerate()
-            .all(|(index, byte)| {
-                byte.is_ascii_alphanumeric()
-                    || (index > 0 && matches!(byte, b'.' | b'_' | b':' | b'-'))
-            });
+    let valid = super::sidecar_guard::is_valid_host_principal(value);
     valid.then(|| UserContext {
         host_authority: None, authority: None,
         user_id: value.to_owned(),
@@ -170,18 +202,11 @@ pub async fn auth_middleware(
         .extensions()
         .get::<super::sidecar_guard::HostAuthenticated>()
         .copied();
-    if asserted_principal.is_some() && host_authenticated.is_none() {
-        return Err(principal_error("principal_header_not_allowed"));
-    }
-    let asserted_principal = asserted_principal
-        .map(|value| {
-            value
-                .to_str()
-                .ok()
-                .and_then(sidecar_principal)
-                .ok_or_else(|| principal_error("principal_invalid"))
-        })
-        .transpose()?;
+    let asserted_principal = resolve_host_principal(
+        asserted_principal.as_ref(),
+        host_authenticated,
+        request.extensions().get::<super::sidecar_guard::HostBoundPrincipal>(),
+    )?;
 
     // The outer grant guard captured this identity at issuance. A grant never
     // becomes a host assertion, nor may another caller header replace its owner.
@@ -624,5 +649,140 @@ mod tests {
             output.contains("JWKS refresh failed"),
             "expected JWKS failure log: {output}"
         );
+    }
+
+    mod sidecar_bound {
+        use super::super::{UserContext, resolve_host_principal};
+        use crate::uar::security::{
+            claims::CredentialPrincipal,
+            sidecar_guard::{HostAuthenticated, HostBoundPrincipal},
+        };
+        use axum::{
+            http::{HeaderValue, StatusCode},
+            response::Response,
+        };
+
+        fn header(value: &str) -> HeaderValue {
+            HeaderValue::from_str(value).expect("fixture header must be valid")
+        }
+
+        async fn error_code(response: Response) -> (StatusCode, String) {
+            let status = response.status();
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .expect("error body must be readable");
+            (status, String::from_utf8(bytes.to_vec()).expect("error body must be UTF-8"))
+        }
+
+        /// Apply the same host proof the middleware applies to every outcome.
+        fn bound_context(mut context: UserContext) -> UserContext {
+            HostAuthenticated::for_test().bind_context(&mut context);
+            context
+        }
+
+        #[test]
+        fn sidecar_bound_absent_header_binds_to_bound_subject() {
+            let bound = HostBoundPrincipal::for_test("alice");
+            let context = resolve_host_principal(None, Some(HostAuthenticated::for_test()), Some(&bound))
+                .expect("bound subject must resolve")
+                .expect("bound mode must produce a principal");
+            let context = bound_context(context);
+            assert_eq!(context.user_id, "alice");
+            assert_eq!(context.claims.sub, "alice");
+            assert_eq!(context.claims.roles, Some(vec!["host-session".to_owned()]));
+            assert_eq!(context.trusted_host_id(), Some("sidecar-launch-host"));
+            assert!(context.verified_identity().is_none());
+            assert_eq!(
+                CredentialPrincipal::from_verified_context(&context)
+                    .expect("launch-bound context must be a credential principal")
+                    .issuer_kind(),
+                "local-host"
+            );
+        }
+
+        #[test]
+        fn sidecar_bound_equal_header_accepted() {
+            let bound = HostBoundPrincipal::for_test("alice");
+            let alice = header("alice");
+            let context = resolve_host_principal(
+                Some(&alice),
+                Some(HostAuthenticated::for_test()),
+                Some(&bound),
+            )
+            .expect("equal header must be accepted")
+            .expect("equal header must produce a principal");
+            assert_eq!(bound_context(context).user_id, "alice");
+        }
+
+        #[tokio::test]
+        async fn sidecar_bound_mismatched_header_is_forbidden() {
+            let bound = HostBoundPrincipal::for_test("alice");
+            let bob = header("bob");
+            let error = resolve_host_principal(
+                Some(&bob),
+                Some(HostAuthenticated::for_test()),
+                Some(&bound),
+            )
+            .expect_err("a different subject must be refused");
+            assert_eq!(
+                error_code(error).await,
+                (StatusCode::FORBIDDEN, r#"{"error":{"code":"principal_mismatch"}}"#.to_owned())
+            );
+        }
+
+        #[tokio::test]
+        async fn sidecar_bound_invalid_header_stays_principal_invalid() {
+            let bound = HostBoundPrincipal::for_test("alice");
+            let anonymous = header("anonymous");
+            let error = resolve_host_principal(
+                Some(&anonymous),
+                Some(HostAuthenticated::for_test()),
+                Some(&bound),
+            )
+            .expect_err("an invalid subject must be refused");
+            assert_eq!(
+                error_code(error).await,
+                (StatusCode::BAD_REQUEST, r#"{"error":{"code":"principal_invalid"}}"#.to_owned())
+            );
+        }
+
+        #[test]
+        fn sidecar_bound_shared_mode_uses_header_subject() {
+            let bob = header("bob");
+            let context = resolve_host_principal(Some(&bob), Some(HostAuthenticated::for_test()), None)
+                .expect("shared mode must accept a valid header")
+                .expect("shared mode header must produce a principal");
+            assert_eq!(bound_context(context).user_id, "bob");
+        }
+
+        #[test]
+        fn sidecar_bound_shared_mode_absent_header_is_unchanged() {
+            let resolved = resolve_host_principal(None, Some(HostAuthenticated::for_test()), None)
+                .expect("absent header must not fail in shared mode");
+            assert!(resolved.is_none(), "shared mode must fall through to normal resolution");
+        }
+
+        #[tokio::test]
+        async fn sidecar_bound_header_without_host_proof_is_refused() {
+            let bound = HostBoundPrincipal::for_test("alice");
+            let alice = header("alice");
+            let error = resolve_host_principal(Some(&alice), None, Some(&bound))
+                .expect_err("a header without launch authentication must be refused");
+            assert_eq!(
+                error_code(error).await,
+                (
+                    StatusCode::BAD_REQUEST,
+                    r#"{"error":{"code":"principal_header_not_allowed"}}"#.to_owned()
+                )
+            );
+        }
+
+        #[test]
+        fn sidecar_bound_marker_without_host_proof_grants_nothing() {
+            let bound = HostBoundPrincipal::for_test("alice");
+            let resolved = resolve_host_principal(None, None, Some(&bound))
+                .expect("absent header without host proof must not fail");
+            assert!(resolved.is_none(), "a bound marker alone must not create identity");
+        }
     }
 }

@@ -101,7 +101,7 @@ pub struct AppState {
     /// Vector Matcher (for embeddings)
     pub vector_matcher: Arc<VectorMatcher>,
     /// Embedding backend shared by RAG, memory, and matching.
-    pub embedding_backend: Arc<dyn crate::uar::rag::embeddings::EmbeddingBackend>,
+    pub embedding_backend: Arc<crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend>,
     /// Persistence Layer
     pub persistence: Option<Arc<dyn PersistenceLayer>>,
     /// Global Rate Limiter

@@ -2161,3 +2161,26 @@ The `uar-core` source-only audit found no other missing code in the selected
 authoring remains the documented successor scope. Inventory14 is obsolete
 after R13's source edit. L11 must renew the whole-phase inventory, and the
 operator lock stays closed; no test or build was used to make this decision.
+
+## 2026-10-17 — Function-first UAR 1.1.1 release evidence
+
+The operator asked to reduce certification to behavior that matters to users:
+prompt handling, explicit skill activation, truthful stream/tool outcomes,
+reliable owner-qualified durability and actionable timing. The child Assess
+and Analyze stages received isolated adversarial reviews and corrected their
+findings before Plan. The adopted plan consolidates the mandatory local
+scenario inventory from 80 historical labels to 65, removes exhaustive
+framing partitions and repeated successful controls, and selects six local
+groups plus streams/recovery on each published architecture. Four native
+source supplements remain. Each removed label has a named destination and
+retained assertion in the child scenario disposition.
+
+This intentionally gives up per-published-child re-observation of budget
+refusal, compiler restriction, credential migration and MCP failure handling;
+they remain local release blockers. Both child images still need user prompt,
+explicit skill, stream/tool completion and real durable recovery observations.
+The controlled provider cannot prove model-selected skill quality or paid
+model latency. Timing is diagnostic until the operator disposes of the
+observed result. Source inspection and authored code are not acceptance;
+`AGENTS.md` keeps the verification gate CLOSED until every implementation
+item, new whole-phase inventory and exact operator instructions exist.

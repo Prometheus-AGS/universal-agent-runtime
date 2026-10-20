@@ -5,7 +5,9 @@ use sha2::{Digest, Sha256};
 
 #[cfg(feature = "local-embeddings")]
 pub mod candle;
+pub mod anthropic;
 pub mod cohere;
+pub mod mistral;
 pub mod openai;
 
 pub type Embedding = Vec<f32>;
@@ -56,6 +58,33 @@ pub enum EmbeddingProvider {
     OpenAI {
         api_key: String,
         model: String,
+        /// Endpoint base URL. When empty, defaults to OpenAI's standard URL.
+        #[serde(default)]
+        base_url: String,
+        /// Override for the returned vector dimension. Required when the host
+        /// doesn't accept the `dimensions` request parameter.
+        #[serde(default)]
+        dimensions: Option<usize>,
+    },
+    /// OpenAI-compatible Anthropic embeddings endpoint.
+    /// `base_url` defaults to `https://api.anthropic.com/v1`.
+    Anthropic {
+        api_key: String,
+        model: String,
+        #[serde(default)]
+        base_url: String,
+        #[serde(default)]
+        dimensions: Option<usize>,
+    },
+    /// OpenAI-compatible Mistral embeddings endpoint.
+    /// `base_url` defaults to `https://api.mistral.ai/v1`.
+    Mistral {
+        api_key: String,
+        model: String,
+        #[serde(default)]
+        base_url: String,
+        #[serde(default)]
+        dimensions: Option<usize>,
     },
     Cohere {
         api_key: String,
@@ -148,8 +177,44 @@ pub async fn create_embedding_service(
     provider: EmbeddingProvider,
 ) -> Result<Box<dyn EmbeddingService>> {
     match provider {
-        EmbeddingProvider::OpenAI { api_key, model } => {
-            Ok(Box::new(openai::OpenAIEmbeddings::new(api_key, model)))
+        EmbeddingProvider::OpenAI {
+            api_key,
+            model,
+            base_url,
+            dimensions,
+        } => {
+            Ok(Box::new(openai::OpenAIEmbeddings::with_base_url(
+                api_key,
+                model,
+                base_url,
+                dimensions,
+            )))
+        }
+        EmbeddingProvider::Anthropic {
+            api_key,
+            model,
+            base_url,
+            dimensions,
+        } => {
+            Ok(Box::new(anthropic::AnthropicEmbeddings::with_base_url(
+                api_key,
+                model,
+                base_url,
+                dimensions,
+            )))
+        }
+        EmbeddingProvider::Mistral {
+            api_key,
+            model,
+            base_url,
+            dimensions,
+        } => {
+            Ok(Box::new(mistral::MistralEmbeddings::with_base_url(
+                api_key,
+                model,
+                base_url,
+                dimensions,
+            )))
         }
         EmbeddingProvider::Cohere { api_key, model } => {
             Ok(Box::new(cohere::CohereEmbeddings::new(api_key, model)))

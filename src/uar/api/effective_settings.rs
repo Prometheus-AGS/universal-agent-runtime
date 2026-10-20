@@ -57,7 +57,8 @@ async fn read_effective(
             json!({"provider_host":host, "model":config.embedding_model})
         }
     };
-    let embedder = &app.embedding_backend;
+    // Pin the active backend once for this diagnostics snapshot.
+    let embedder = app.embedding_backend.pin();
     let embedding_host = match embedder.endpoint() {
         Some(endpoint) => endpoint_host(endpoint)?,
         None => match embedder.backend_name() {

@@ -6,6 +6,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use crate::{config::SecurityConfig, uar::{domain::events::NormalizedEvent, persistence::{agui_runs::{AguiRunBinding, AguiTerminal}, approval_decisions::{ApprovalRecordView, ApprovalState}}, security::{authority::authorize_context, claims::{CredentialPrincipal, UserContext}, credential_capture::AuthenticatedCredentialCapture, sidecar_guard::HostAuthenticated}}};
+use anyhow::Context as _;
 use super::routes::{self, RunApiState};
 
 #[derive(Clone)]
@@ -261,13 +262,13 @@ async fn seal(state: &RunApiState,row: &AguiRunBinding,terminal: AguiTerminal) -
 }
 async fn reconcile(state: &RunApiState,user: &UserContext,row: AguiRunBinding) -> anyhow::Result<AguiRunBinding> {
     if row.terminal.is_some() { return Ok(row); }
-    let db = state.manager.persistence.as_ref().ok_or_else(||anyhow::anyhow!("persistence unavailable"))?;
-    let row = db.load_agui_run(&row.owner,&row.agent_id,&row.thread_id,&row.wire_run_id).await?.ok_or_else(||anyhow::anyhow!("run correlation unavailable"))?;
+    let db = state.manager.persistence.as_ref().ok_or_else(||anyhow::anyhow!("agui reconcile: persistence unavailable"))?;
+    let row = db.load_agui_run(&row.owner,&row.agent_id,&row.thread_id,&row.wire_run_id).await.context("agui reconcile: load_agui_run")?.ok_or_else(||anyhow::anyhow!("run correlation unavailable")).context("agui reconcile: run correlation unavailable")?;
     if row.terminal.is_some() { return Ok(row); }
     let history = state.manager.history_since(&row.native_run_id,Some(row.start_cursor)).await.unwrap_or_default();
     let cursor = history.last().map_or(row.start_cursor,|event|event.id);
-    let views = pending(state,user,&row).await?;
-    let elicitations = pending_elicitations(state,user,&row).await?;
+    let views = pending(state,user,&row).await.context("agui reconcile: pending approvals")?;
+    let elicitations = pending_elicitations(state,user,&row).await.context("agui reconcile: pending elicitations")?;
     if !views.is_empty() || !elicitations.is_empty() {
         let ids = views.iter().map(|view|view.record.challenge_id.clone()).chain(elicitations.iter().map(|view|view.record.id.clone())).collect();
         let mut interrupts: Vec<_> = views.iter().map(|view|json!({"id":view.record.challenge_id,"reason":"tool_approval","message":format!("Approve {}",view.record.tool_name),"toolCallId":view.record.tool_call_id,"expiresAt":view.record.expires_at.to_rfc3339(),"responseSchema":{"type":"object","properties":{"approved":{"type":"boolean"}},"required":["approved"],"additionalProperties":false}})).collect();
@@ -277,7 +278,7 @@ async fn reconcile(state: &RunApiState,user: &UserContext,row: AguiRunBinding) -
             if let Some(schema) = request.get("requestedSchema") { properties["content"] = schema.clone(); }
             interrupts.push(json!({"id":view.record.id,"reason":"mcp_elicitation","message":request.get("message").and_then(Value::as_str).unwrap_or("MCP server requires input"),"expiresAt":view.record.expires_at.to_rfc3339(),"responseSchema":{"type":"object","properties":properties,"required":["action"],"additionalProperties":false},"metadata":{"uar":{"serverName":view.record.server_name,"request":request,"resolvable":view.resolvable}}}));
         }
-        return seal(state,&row,AguiTerminal {source_cursor:cursor,event:finished(&row,json!({"type":"interrupt","interrupts":interrupts})),interrupt_ids:ids}).await;
+        return seal(state,&row,AguiTerminal {source_cursor:cursor,event:finished(&row,json!({"type":"interrupt","interrupts":interrupts})),interrupt_ids:ids}).await.context("agui reconcile: seal");
     }
     let Some(status) = state.manager.settled_run_status_for_context(user,&row.native_run_id).await else { return Ok(row); };
     if status == crate::uar::domain::runs::RunStatus::Error {
@@ -285,7 +286,7 @@ async fn reconcile(state: &RunApiState,user: &UserContext,row: AguiRunBinding) -
             NormalizedEvent::Error {code,message,..} => Some((event.id,json!({"type":"RUN_ERROR","code":code,"message":message}))),
             _ => None,
         }).unwrap_or_else(||(cursor,json!({"type":"RUN_ERROR","code":"host_cleanup_unconfirmed","message":"The host did not confirm successful cleanup"})));
-        return seal(state,&row,AguiTerminal {source_cursor,event,interrupt_ids:Vec::new()}).await;
+        return seal(state,&row,AguiTerminal {source_cursor,event,interrupt_ids:Vec::new()}).await.context("agui reconcile: seal");
     }
     for event in &history {
         let terminal = match &event.event {
@@ -294,7 +295,7 @@ async fn reconcile(state: &RunApiState,user: &UserContext,row: AguiRunBinding) -
             NormalizedEvent::Error {code,message,..} => Some(json!({"type":"RUN_ERROR","code":code,"message":message})),
             _ => None,
         };
-        if let Some(terminal) = terminal { return seal(state,&row,AguiTerminal {source_cursor:event.id,event:terminal,interrupt_ids:Vec::new()}).await; }
+        if let Some(terminal) = terminal { return seal(state,&row,AguiTerminal {source_cursor:event.id,event:terminal,interrupt_ids:Vec::new()}).await.context("agui reconcile: seal"); }
     }
     Ok(row)
 }
@@ -302,7 +303,7 @@ fn observe(state: Arc<RunApiState>,user: UserContext,row: AguiRunBinding) {
     tokio::spawn(async move {
         let shutdown = state.manager.root_cancellation_token();
         loop {
-            match reconcile(&state,&user,row.clone()).await { Ok(row) if row.terminal.is_some() => return, Err(error) => tracing::warn!(%error,"AG-UI terminal projection remains pending"), _ => {} }
+            match reconcile(&state,&user,row.clone()).await { Ok(row) if row.terminal.is_some() => return, Err(error) => tracing::warn!(error = %format!("{error:#}"),"AG-UI terminal projection remains pending"), _ => {} }
             tokio::select! { _ = shutdown.cancelled() => return, _ = tokio::time::sleep(Duration::from_millis(100)) => {} }
         }
     });
@@ -322,6 +323,9 @@ impl Projector {
             NormalizedEvent::ToolStart {tool_call_id,tool,input,..} if !row.resumed_tool_ids.contains(tool_call_id) && self.tools.insert(tool_call_id.clone()) => vec![json!({"type":"TOOL_CALL_START","toolCallId":tool_call_id,"toolCallName":tool}),json!({"type":"TOOL_CALL_ARGS","toolCallId":tool_call_id,"delta":input.to_string()}),json!({"type":"TOOL_CALL_END","toolCallId":tool_call_id})],
             NormalizedEvent::ToolCallApprovalRequired {tool_call_id,name,arguments_json,..} if self.tools.insert(tool_call_id.clone()) => vec![json!({"type":"TOOL_CALL_START","toolCallId":tool_call_id,"toolCallName":name}),json!({"type":"TOOL_CALL_ARGS","toolCallId":tool_call_id,"delta":arguments_json}),json!({"type":"TOOL_CALL_END","toolCallId":tool_call_id})],
             NormalizedEvent::ToolEnd {tool_call_id,output,..} if self.tools.contains(tool_call_id) || row.resumed_tool_ids.contains(tool_call_id) => vec![json!({"type":"TOOL_CALL_RESULT","messageId":format!("{}:result:{}",row.wire_run_id,tool_call_id),"toolCallId":tool_call_id,"role":"tool","content":output.to_string()})],
+            // Mirrors adapters.rs:134 (`uar.skill.activated`): same CUSTOM `name` and `value` shape. The adapter's closure is not callable
+            // here, and its `runId`/`threadId` carry the native run id, whereas this stream's identity is the wire thread/run (as RUN_STARTED).
+            NormalizedEvent::SkillActivated {skill_id,title,selection_method,..} => vec![json!({"type":"CUSTOM","name":"uar.skill.activated","value":{"skill":{"id":skill_id,"title":title},"selectionMethod":selection_method},"threadId":row.thread_id,"runId":row.wire_run_id,"agentId":row.agent_id})],
             _ => Vec::new(),
         }
     }
@@ -348,7 +352,7 @@ async fn stream(state: Arc<RunApiState>,user: UserContext,row: AguiRunBinding,he
         let mut cursor = row.start_cursor;
         if after.is_none() { yield Ok::<Event,Infallible>(frame(&row,cursor,0,json!({"type":"RUN_STARTED","threadId":row.thread_id,"runId":row.wire_run_id,"protocolVersion":"1.0"}))); }
         loop {
-            row = match reconcile(&state,&user,row.clone()).await { Ok(row) => row, Err(_) => { yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"projection_unavailable","message":"Durable stream projection is unavailable"}))); break; } };
+            row = match reconcile(&state,&user,row.clone()).await { Ok(row) => row, Err(error) => { tracing::warn!(error = %format!("{error:#}"), native_run_id = %row.native_run_id, cursor, "AG-UI stream projection read failed"); yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"projection_unavailable","message":"Durable stream projection is unavailable"}))); break; } };
             let history = state.manager.history_since(&row.native_run_id,Some(cursor)).await;
             if let Some(history) = history {
                 if history.first().is_some_and(|event|event.id > cursor.saturating_add(1)) {

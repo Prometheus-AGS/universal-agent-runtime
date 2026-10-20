@@ -19,6 +19,31 @@ use crate::uar::persistence::PersistenceLayer;
 use crate::uar::api::a2a::contract::{UarUsageGrant, UarUsageReceipt};
 use crate::uar::runtime::thread::policy_intersection::ThreadBudgets;
 
+/// Closed, field-free storage classification for admission diagnostics; never exposes error text.
+fn storage_error_kind(error: &anyhow::Error) -> &'static str {
+    #[cfg(feature = "surreal-backend")]
+    for cause in error.chain() {
+        if let Some(storage) = cause.downcast_ref::<surrealdb::Error>() {
+            return if matches!(storage.query_details(), Some(surrealdb::types::QueryError::TransactionConflict)) { "transaction_conflict" } else { "other_storage_error" };
+        }
+    }
+    if error.chain().any(|cause| cause.is::<AccountingError>()) { "accounting_error" } else { "non_storage" }
+}
+
+/// Closed SurrealDB error-kind label ("Outer" or "Outer<-Innermost"), built only from `&'static str` kinds.
+fn storage_error_detail(error: &anyhow::Error) -> String {
+    #[cfg(feature = "surreal-backend")]
+    for cause in error.chain() {
+        if let Some(storage) = cause.downcast_ref::<surrealdb::Error>() {
+            let mut innermost = storage;
+            while let Some(inner) = innermost.cause() { innermost = inner; }
+            return if std::ptr::eq(innermost, storage) { storage.kind_str().to_owned() } else { format!("{}<-{}", storage.kind_str(), innermost.kind_str()) };
+        }
+    }
+    let _ = error;
+    "none".to_owned()
+}
+
 /// Budget-owned failure provenance, independent of provider response content.
 #[derive(Debug, Clone, Copy, thiserror::Error)]
 pub(crate) enum BudgetFailureOrigin {
@@ -41,6 +66,18 @@ impl BudgetFailureOrigin {
             Self::UsageAccounting => "budget_usage_accounting_failed",
         }
     }
+}
+
+/// Closed client-facing `(code, message)` for a budget-owned refusal: the category plus the
+/// `AccountingError` cause. Typed provider failures keep their own code; no error text is used.
+pub(crate) fn client_failure(error: &anyhow::Error) -> Option<(&'static str, String)> {
+    if crate::llm::ProviderError::from_anyhow(error).is_some() { return None; }
+    let category = error.downcast_ref::<BudgetFailureOrigin>()?.category();
+    let message = match error.chain().find_map(|cause| cause.downcast_ref::<AccountingError>()) {
+        Some(cause) => format!("{category}: {cause}"),
+        None => category.to_owned(),
+    };
+    Some((category, message))
 }
 
 /// The dimension a budget / spend record is keyed on.
@@ -1522,7 +1559,8 @@ impl ModelCallBudget {
             scopes: durable.scopes.clone(), reserved_cost_usd: cost, reserved_tokens: tokens,
             source_reservation: durable.source_reservation.clone() }).await.map_err(|error| {
                 // Only this closed, field-free error enum may supply a cause.
-                // Provider/storage error chains and request content stay private.
+                // Provider/storage error chains and request content stay private;
+                // `storage_error_kind` is a closed label derived from the chain, never its text.
                 let cause = error.downcast_ref::<AccountingError>()
                     .map(ToString::to_string)
                     .unwrap_or_else(|| "accounting_admission_unavailable".to_owned());
@@ -1532,6 +1570,8 @@ impl ModelCallBudget {
                     stage = "model_call_admission",
                     category = BudgetFailureOrigin::Admission.category(),
                     cause,
+                    storage_error_kind = storage_error_kind(&error),
+                    storage_error_detail = storage_error_detail(&error),
                     diagnostic_reference = %reference,
                     reservation_source = if request.budget_contract.is_some() { "final_wire_contract" } else { "catalog_context_and_output" },
                     reserved_tokens = ?tokens,

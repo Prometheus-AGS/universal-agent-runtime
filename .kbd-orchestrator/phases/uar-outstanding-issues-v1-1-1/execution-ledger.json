@@ -1,10 +1,10 @@
 {
   "phase": "uar-outstanding-issues-v1-1-1",
   "change_id": "uar-outstanding-issues-v1-1-1",
-  "status": "local08_terminal_failed_operator_verification_lock_closed",
+  "status": "implementation_complete_operator_verification_lock_closed",
   "baseline": "91a091d647fe2ce63651c07140172aba2c6c6302",
   "source_of_status": "canonical KBD task events; this file defines dependencies, ownership and stable identity mapping",
-  "boundary": "closed_pending_R13_L11_and_new_operator_instruction",
+  "boundary": "implementation_open_operator_gate_closed_pending_new_instruction",
   "tasks": [
     {
       "id": "1.1",
@@ -629,7 +629,7 @@
       "depends_on": [
         "R13"
       ],
-      "status": "pending",
+      "status": "complete",
       "kind": "boundary",
       "verification_allowed": false,
       "handoff": "coordination/handoffs/L11.md"

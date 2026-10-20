@@ -46,13 +46,70 @@ fn request(
 ) -> tokio::task::JoinHandle<ApprovalOutcome> {
     let call = call.to_owned();
     tokio::spawn(async move {
+        let invocation =
+            crate::uar::runtime::tool_admission::PreparedToolInvocation {
+                representation_effect: crate::uar::tools::descriptor::ToolEffect::Unknown,
+                admission_owner:
+                    crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost,
+                version: 1,
+                execution_kind:
+                    crate::uar::runtime::tool_admission::ToolExecutionKind::HostMcp,
+                invocation_id: "fixture-invocation".to_owned(),
+                model_tool_call_id: call.clone(),
+                attempt: 0,
+                root_run_id: "root".to_owned(),
+                executing_run_id: "root".to_owned(),
+                owner_id: "operator".to_owned(),
+                principal_id: "operator".to_owned(),
+                workspace: "default".to_owned(),
+                runtime_epoch: "test".to_owned(),
+                host_epoch: "test".to_owned(),
+                catalog_revision: "test".to_owned(),
+                mounted_server_id: "fixture".to_owned(),
+                native_tool_name: "write".to_owned(),
+                provider_tool_name: "write".to_owned(),
+                run_policy_revision: "test".to_owned(),
+                governance_policy_revision: "test".to_owned(),
+                tool_policy_revision: "test".to_owned(),
+                resource_revision: "test".to_owned(),
+                payload_revision: "test".to_owned(),
+                grant_revision: "test".to_owned(),
+                lease_revision: "test".to_owned(),
+                budget_revision: "test".to_owned(),
+                lease: crate::uar::runtime::tool_admission::EffectLeaseFacts {
+                    lease_id: String::new(),
+                    task: String::new(),
+                    attempt: 0,
+                    epoch: String::new(),
+                    holder: String::new(),
+                    expires_at: 0,
+                    active: false,
+                },
+                budget_reservation:
+                    crate::uar::runtime::tool_admission::EffectBudgetReservationFacts {
+                        reservation_id: String::new(),
+                        budget_id: String::new(),
+                        revision: String::new(),
+                        amount: 0,
+                        unit: String::new(),
+                        expires_at: 0,
+                        active: false,
+                    },
+                authority_revision: "test".to_owned(),
+                approval_class: crate::uar::tools::descriptor::ApprovalClass::Required,
+                call_index: 0,
+                validated_arguments: serde_json::json!({"path":"scoped"}),
+            };
         channel
-            .request(
-                Some("prepared-admission".to_owned()),
-                0,
-                call,
-                "write".to_owned(),
-                r#"{"path":"scoped"}"#.to_owned(),
+            .request_tool(
+                crate::uar::runtime::tool_admission::ToolApprovalRequest {
+                    invocation: std::sync::Arc::new(invocation),
+                    admission_id: "prepared-admission".to_owned(),
+                    host_requires_approval: false,
+                    action_display: serde_json::json!({"path":"scoped"}),
+                    checkpoint_history: None,
+                },
+                crate::uar::persistence::tool_admission::AdmissionOwner::PairedHost,
                 "write effect".to_owned(),
                 &cancellation,
             )

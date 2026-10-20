@@ -1033,6 +1033,9 @@ impl Orchestrator {
                 code: Some(diagnostic.code),
             };
         }
+        if let Some((code, message)) = crate::uar::runtime::cost_budget::client_failure(error) {
+            return NormalizedEvent::Error { message, code: Some(code.to_owned()) };
+        }
         NormalizedEvent::Error {
             message: self.secret_scrubber.scrub(&error.to_string()),
             code: Some(super::ProviderError::from_anyhow(error)
@@ -1884,6 +1887,7 @@ impl Orchestrator {
                 let mut skill_usage = crate::uar::runtime::skills::usage::SkillRequestUsage::new(
                     orchestrator.llm_config.model.clone(), Vec::new(), orchestrator.llm_config.cost_tracking,
                 );
+                let mut active_skills = Vec::new();
                 if let Some(activation) = &orchestrator.skill_activation {
                     let (mcp, preflight, active) = {
                         let context = activation.context.lock().await;
@@ -1893,83 +1897,11 @@ impl Orchestrator {
                     active_bodies = active.iter().map(|entry| entry.fragment()).collect();
                     orchestrator.mcp = Arc::new(mcp);
                     if let Some(preflight) = preflight { orchestrator.mcp_preflight = Some(preflight); }
-                    let history = match serde_json::from_value::<Vec<Message>>(serde_json::Value::Array(message_json.clone())) {
-                        Ok(history) => history,
-                        Err(error) => {
-                            yield NormalizedEvent::Error {
-                                message: error.to_string(),
-                                code: Some("HISTORY_NORMALIZATION_FAILED".to_string()),
-                            };
-                            break;
-                        }
-                    };
-                    // Initial history was already reduced by the run manager.
-                    // Later steps reduce body-free history before reattachment.
-                    let world_contributor = if iteration > 1 {
-                        match &orchestrator.world_state {
-                            Some(world_state) => Some(world_state.contributor(false).await),
-                            None => None,
-                        }
-                    } else { None };
-                    let world_reserved_tokens = if let Some(contributor) = &world_contributor {
-                        match contributor.reserved_tokens(&history, &activation.model) {
-                            Ok(tokens) if tokens.saturating_add(1_000) < activation.context_limit => tokens,
-                            result => {
-                                let message = match result {
-                                    Ok(tokens) => format!("World state requires {tokens} tokens and does not fit the model context budget"),
-                                    Err(error) => error.to_string(),
-                                };
-                                yield NormalizedEvent::Error { message, code: Some("WORLD_STATE_BUDGET_EXCEEDED".into()) };
-                                break;
-                            }
-                        }
-                    } else { 0 };
-                    let (mut history, rewritten) = if iteration > 1 {
-                        match crate::uar::runtime::context::reduce::reduce_history(
-                            history, &activation.strategy, &activation.model,
-                            activation.context_limit - world_reserved_tokens, Some(orchestrator.driver.as_ref()),
-                        ).await {
-                            Ok((history, report)) => (history, report.history_rewritten),
-                            Err(error) => {
-                                yield NormalizedEvent::Error {
-                                    message: error.to_string(),
-                                    code: Some(error.code().to_ascii_uppercase()),
-                                };
-                                break;
-                            }
-                        }
-                    } else {
-                        (history, false)
-                    };
-                    if let (Some(world_state), Some(contributor)) = (&orchestrator.world_state, &world_contributor) {
-                        match contributor.baseline.prepare(&contributor.snapshot, &history, rewritten) {
-                            Ok(update) => {
-                                history.extend(update.messages.iter().cloned());
-                                step_fragments.extend(update.fragments.iter().cloned());
-                                world_state.commit(&update).await;
-                            }
-                            Err(error) => {
-                                yield NormalizedEvent::Error {
-                                    message: error.to_string(), code: Some("WORLD_STATE_ASSEMBLY_FAILED".into()),
-                                };
-                                break;
-                            }
-                        }
-                    }
-                    let dialect = super::prompt_dialect::PromptDialect::detect(&orchestrator.llm_config.model);
-                    let (attached, skill_fragments) = crate::uar::runtime::skills::retention::reattach_skills(
-                        &history, &active, &activation.model, activation.context_limit,
-                        activation.budget,
-                        crate::uar::runtime::prompt::RenderOptions {
-                            prefers_xml_envelope: dialect.prefers_xml_envelope(),
-                            markdown_averse: dialect.markdown_averse(),
-                        },
-                    );
-                    step_fragments.extend(skill_fragments);
-                    message_json = history.iter().map(|message| serde_json::json!(message)).collect();
-                    request_messages = attached.iter().map(|message| serde_json::json!(message)).collect();
+                    active_skills = active;
                 }
 
+                // The request's tool list is projected before history is reduced so
+                // that reduction and refusal use the tools actually sent this step.
                 let projected = async {
                     use crate::uar::runtime::native_skills::search_tools::{SEARCH_TOOLS_NAME, SearchToolsTool};
                     let mut current = orchestrator.assembled_descriptors().await?;
@@ -2006,6 +1938,131 @@ impl Orchestrator {
                 // Execution consults this same frozen visible map, so a search
                 // cannot authorize another call in the current model batch.
                 let tools = descriptors.values().map(|tool| tool.openai_tool_json()).collect::<Vec<_>>();
+
+                if let Some(activation) = &orchestrator.skill_activation {
+                    let active = active_skills;
+                    // The window carries no tool cost; this step's actual tool
+                    // definitions are withheld here, on every iteration.
+                    let tool_tokens = crate::uar::runtime::context::reduce::tool_definition_tokens(&activation.model, &tools);
+                    let history = match serde_json::from_value::<Vec<Message>>(serde_json::Value::Array(message_json.clone())) {
+                        Ok(history) => history,
+                        Err(error) => {
+                            yield NormalizedEvent::Error {
+                                message: error.to_string(),
+                                code: Some("HISTORY_NORMALIZATION_FAILED".to_string()),
+                            };
+                            break;
+                        }
+                    };
+                    // Initial history was already reduced by the run manager.
+                    // Later steps reduce body-free history before reattachment.
+                    let world_contributor = if iteration > 1 {
+                        match &orchestrator.world_state {
+                            Some(world_state) => Some(world_state.contributor(false).await),
+                            None => None,
+                        }
+                    } else { None };
+                    let world_reserved_tokens = if let Some(contributor) = &world_contributor {
+                        match contributor.reserved_tokens(&history, &activation.model) {
+                            Ok(tokens) if tokens.saturating_add(1_000) < activation.context_limit => tokens,
+                            result => {
+                                let message = match result {
+                                    Ok(tokens) => format!("World state requires {tokens} tokens and does not fit the model context budget"),
+                                    Err(error) => error.to_string(),
+                                };
+                                yield NormalizedEvent::Error { message, code: Some("WORLD_STATE_BUDGET_EXCEEDED".into()) };
+                                break;
+                            }
+                        }
+                    } else { 0 };
+                    // Refuse before any provider call when this step's tools, world
+                    // state and the response reserve already fill the window.
+                    let history_limit = match crate::uar::runtime::context::reduce::reserve_fixed_request_tokens(
+                        activation.context_limit, world_reserved_tokens, tool_tokens,
+                    ) {
+                        Ok(limit) => limit,
+                        Err(error) => {
+                            // New refusals use the lowercase code the run manager emits for
+                            // the same condition; no layer between here and the client
+                            // normalizes case.
+                            yield NormalizedEvent::Error {
+                                message: error.to_string(),
+                                code: Some(error.code().to_string()),
+                            };
+                            break;
+                        }
+                    };
+                    let (mut history, rewritten) = if iteration > 1 {
+                        match crate::uar::runtime::context::reduce::reduce_history(
+                            history, &activation.strategy, &activation.model,
+                            history_limit, Some(orchestrator.driver.as_ref()),
+                        ).await {
+                            Ok((history, report)) => (history, report.history_rewritten),
+                            Err(error) => {
+                                yield NormalizedEvent::Error {
+                                    message: crate::uar::runtime::context::reduce::liability_message(
+                                        &error, world_reserved_tokens.saturating_add(tool_tokens),
+                                    ),
+                                    code: Some(error.code().to_ascii_uppercase()),
+                                };
+                                break;
+                            }
+                        }
+                    } else {
+                        (history, false)
+                    };
+                    if let (Some(world_state), Some(contributor)) = (&orchestrator.world_state, &world_contributor) {
+                        match contributor.baseline.prepare(&contributor.snapshot, &history, rewritten) {
+                            Ok(update) => {
+                                history.extend(update.messages.iter().cloned());
+                                step_fragments.extend(update.fragments.iter().cloned());
+                                world_state.commit(&update).await;
+                            }
+                            Err(error) => {
+                                yield NormalizedEvent::Error {
+                                    message: error.to_string(), code: Some("WORLD_STATE_ASSEMBLY_FAILED".into()),
+                                };
+                                break;
+                            }
+                        }
+                    }
+                    let dialect = super::prompt_dialect::PromptDialect::detect(&orchestrator.llm_config.model);
+                    let (attached, skill_fragments) = crate::uar::runtime::skills::retention::reattach_skills(
+                        &history, &active, &activation.model, activation.context_limit.saturating_sub(tool_tokens),
+                        activation.budget,
+                        crate::uar::runtime::prompt::RenderOptions {
+                            prefers_xml_envelope: dialect.prefers_xml_envelope(),
+                            markdown_averse: dialect.markdown_averse(),
+                        },
+                    );
+                    step_fragments.extend(skill_fragments);
+                    if iteration == 1 {
+                        // The first step is not reduced here, so measure the request
+                        // actually about to be sent instead of trusting admission.
+                        let measured = crate::uar::runtime::context::token_service::TokenService::count_messages(
+                            &activation.model, &attached,
+                        );
+                        let required_tokens = measured.saturating_add(tool_tokens);
+                        let input_allowance = activation.context_limit
+                            .saturating_sub(crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS);
+                        if required_tokens > input_allowance {
+                            let error = crate::uar::runtime::context::reduce::ReduceHistoryError::ContextOverflow {
+                                required_tokens, input_allowance,
+                            };
+                            yield NormalizedEvent::Error {
+                                message: format!(
+                                    "{error}; the request holds {measured} message tokens and {tool_tokens} tool-definition tokens against a {}-token context with a {}-token response reserve",
+                                    activation.context_limit,
+                                    crate::uar::runtime::context::reduce::RESPONSE_RESERVE_TOKENS,
+                                ),
+                                code: Some(error.code().to_string()),
+                            };
+                            break;
+                        }
+                    }
+                    message_json = history.iter().map(|message| serde_json::json!(message)).collect();
+                    request_messages = attached.iter().map(|message| serde_json::json!(message)).collect();
+                }
 
                 // Per-step run progress: this iteration is beginning.
                 yield NormalizedEvent::RuntimeStep {
@@ -2404,7 +2461,8 @@ impl Orchestrator {
                                 } else {
                                     fallback_errors.join("; ")
                                 };
-                                yield if orchestrator.endpoint_settings_profiles.is_empty() {
+                                yield if orchestrator.endpoint_settings_profiles.is_empty()
+                                    && crate::uar::runtime::cost_budget::client_failure(&e).is_none() {
                                     NormalizedEvent::Error {
                                         message: format!("primary: {e}; fallbacks: {fallback_detail}"),
                                         code: Some(super::ProviderError::from_anyhow(&e)

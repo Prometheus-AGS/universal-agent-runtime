@@ -30,10 +30,32 @@ pub trait EmbeddingBackend: Send + Sync + Debug {
         None
     }
 
+    /// Operator-visible provenance of the serving INSTANCE (where its assets
+    /// were resolved from, plus their digest). This is instance identity, not
+    /// space identity: two byte-identical asset copies are one embedding
+    /// space served by two instances, and a failover between them must stay
+    /// visible in status surfaces instead of silent. Defaults to `None` for
+    /// backends without local assets.
+    fn provenance(&self) -> Option<BackendProvenance> {
+        None
+    }
+
     /// Embed a batch of texts. The returned outer vector has the same length as
     /// `texts` (unless `texts` is empty, in which case an empty vector is
     /// returned). Each inner vector has `vector_dimension()` elements.
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError>;
+}
+
+/// Instance provenance for status surfaces. Deliberately NOT part of
+/// `EmbeddingFingerprint`: an instance change is not a space change, so the
+/// KB space guard must never compare these fields.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct BackendProvenance {
+    /// Directory the serving assets were resolved from.
+    pub source_dir: String,
+    /// SHA-256 over the sorted asset filenames and their per-file SHA-256
+    /// digests. Byte-identical mirrors produce an identical manifest.
+    pub asset_manifest_sha256: String,
 }
 
 /// Non-fatal placeholder used when an optional embedding implementation is
@@ -179,4 +201,5 @@ pub mod cohere;
 #[cfg(feature = "local-models")]
 pub mod fastembed;
 pub mod openai;
+pub mod swappable;
 pub mod voyage;

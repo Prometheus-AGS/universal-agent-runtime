@@ -609,9 +609,11 @@ impl RetrievalBackend for KbSearchBackend<'_> {
     ) -> anyhow::Result<Vec<KnowledgeMatch>> {
         // Embed with the same backend ingestion used (`llm.embedding`), not
         // the skill-matching facade, which is disabled without `local-models`.
+        // The pin is one coherent snapshot; a mid-request backend swap cannot
+        // interleave into this sub-query.
         let query_vec = self
             .vector_matcher
-            .embedding_backend()
+            .pin_embedding()
             .embed_one(sub_query)
             .await?;
         self.persistence
@@ -840,7 +842,7 @@ fn merge_kb_config(mut existing: KbConfig, req: KbConfigRequest) -> KbConfig {
     existing
 }
 
-fn parse_chunk_strategy(strategy: Option<&str>, size: Option<usize>) -> ChunkingStrategy {
+pub(crate) fn parse_chunk_strategy(strategy: Option<&str>, size: Option<usize>) -> ChunkingStrategy {
     let size = size.unwrap_or(1024);
     match strategy {
         Some("fixed") => ChunkingStrategy::FixedSize { size },

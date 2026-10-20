@@ -111,7 +111,40 @@ historical completed work.
 ## Local09 pre-build infrastructure repair and code-complete boundary
 
 - [x] 8.7 R13: after the retained local09 binding command failed at Docker network creation, classify the absent isolated Docker prerequisite as blocked before image/group work and skip cleanup of a network never created. Preserve the failed receipt; source-only audit the current phase's #385, #387 and local08 implementation for actual missing code. No check, test, build or product probe during authoring.
-- [ ] 8.8 L11: after R13 and every phase implementation item, renew the whole-phase source/fixture inventory and record any unresolved implementation item explicitly. No inventory, clock tick or earlier instruction authorizes a gate; present exact commands and await a new instruction.
+- [x] 8.8 L11: after R13 and every phase implementation item, renew the whole-phase source/fixture inventory and record any unresolved implementation item explicitly. No inventory, clock tick or earlier instruction authorizes a gate; present exact commands and await a new instruction.
 
 The previous inventory and all local09 manifests are historical or fail closed
 after the R13 source edit. V2/6.2 and P1–P3 remain open.
+# Current certification amendment — function-first child, 2026-10-17
+
+Existing checkbox states and historical cohorts below are retained. The active
+child plan at `.kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/plan.md`
+controls new certification work and supersedes earlier full published-program
+and automatic post-inventory gate instructions. Child task identity includes its
+full phase ID; the IDs below do not reopen or renumber parent tasks.
+
+| Child ID | Stable | Implementation/evidence deliverable |
+| --- | --- | --- |
+| 1.1 | FC1 | Scope, ownership and foundational acceptance/spec amendments. |
+| 2.1 | FC2 | Runtime/provider/timing reader and reduced functional scenarios. |
+| 2.2 | FC3 | Credential/compiler/recovery scenario consolidation with retained assertions. |
+| 3.1 | FC4 | Closed prebuilt runner/schema integration, exact preparation runbook and final docs. |
+| 3.2 | FC5 | Whole parent/child implementation inventory; local preparation selection and published templates. |
+| 4.1 | FC6 | Separately authorized image preparation and fresh same-image qualified supervisor staging. |
+| 4.2 | FC7 | Explicitly authorized independent artifact review. |
+| 4.3 | FC8 | Exact authorized local command and operator timing disposition; parent V2 evidence. |
+| 5.1 | FC9 | Reflection and parent V2/P1–P3 handoff with separate completion states. |
+
+Only FC1–FC5 are implementation work. The root lead owns canonical task events;
+this table is a scope mapping, not completion evidence. Gate CLOSED: no tests,
+checks, builds, import/compiler probes, acceptance or external gates while
+implementation is incomplete or the exact operator instruction is absent.
+
+Parent V2 now requires all six reduced local groups and the four unchanged native
+supplements against the prepared image; parent P2 requires streams/recovery on
+each separately prepared immutable child. Their omitted per-child budget,
+compiler, credential-migration and MCP-failure assurance must be disclosed.
+Every recovery run needs fresh real predecessor/replacement/physical boot state
+and an unconsumed proof from the genuine qualified controller. FC4 completes
+runner/docs integration before FC5; historical L11 cannot certify edited fixtures.
+
