@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 102,
+  "revision": 103,
   "team": {
     "schemaVersion": 1,
     "id": "uar-core",
@@ -880,15 +880,14 @@
       "title": "Bind Boss candidate to immutable lifecycle UAR source with provenance",
       "owner": "uar-lead",
       "harness": "codex",
-      "status": "running",
-      "revision": 1,
+      "status": "complete",
+      "revision": 2,
       "dependsOn": [],
       "evidence": [
-        "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md"
+        "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
+        "UAR actual committed pin ad557b0d00134c003bf0e87d248d1aef2e9ce4e5; source only; CLOSED"
       ],
-      "remaining": [
-        "Source implementation in progress; verification CLOSED"
-      ]
+      "remaining": []
     }
   ],
   "handoffs": [
@@ -2905,6 +2904,27 @@
         "evidence": [
           "docs/operations/lifecycle-embedding-fixture-handoff.md",
           "Authored source only; all behavior unverified; gate CLOSED"
+        ],
+        "remaining": []
+      }
+    },
+    {
+      "id": "068c1165-03ce-4ecc-bbf4-c649c4f4a657",
+      "at": "2026-10-21T00:54:36.209Z",
+      "kind": "task.complete",
+      "detail": {
+        "taskId": "lifecycle-boss-immutable-payload",
+        "previousRevision": 1,
+        "taskRevision": 2,
+        "previousOwner": "uar-lead",
+        "previousHarness": "codex",
+        "previousStatus": "running",
+        "owner": "uar-lead",
+        "harness": "codex",
+        "status": "complete",
+        "evidence": [
+          "/Volumes/T7/Projects/prometheus/the-boss/.agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
+          "UAR actual committed pin ad557b0d00134c003bf0e87d248d1aef2e9ce4e5; source only; CLOSED"
         ],
         "remaining": []
       }

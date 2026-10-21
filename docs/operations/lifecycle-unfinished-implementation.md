@@ -1,7 +1,7 @@
 # Lifecycle work still outstanding
 
 Execute: `uar-outstanding-issues-v1-1-1::function-first-release-certification`.
-Waypoint3157, plan70. Verification **CLOSED**.
+Waypoint3158, plan70. Verification **CLOSED**.
 
 The unified lifecycle source tasks1.1–8.1 and follow-ups5.2/5.3/5.4 remain
 source-complete. Runtime6.2 and real-model fixture8.2 now have collected source
@@ -9,15 +9,18 @@ handoffs and canonical source-complete transitions. They have never been
 compiled or executed. The renewed inventory separates those claims from
 remaining implementation and evidence.
 
-## Remaining implementation/publication
+## Source completion and remaining delivery
 
-- Lifecycle8.3: finalize Boss's exact UAR source pin after an actual source
-  commit exists. Producer/consumer integrity source is authored. The old pin
-  must not be treated as current.
-- Lifecycle9.3: scoped commit/push/draft PR updates and requested Docker image
-  publication. UAR's installed commit hook conflicts with the closed gate and
-  mandatory policy-validator rule; explicit operator resolution is pending.
-  No hook has run or been disabled. No new published image is claimed.
+Lifecycle8.3 now records source completion: Boss pins UAR `ad557b0d00134c003bf0e87d248d1aef2e9ce4e5`, both
+repositories are pushed, and draft PR418 (UAR) and PR74 (Boss) are published.
+All planned production/fixture source and required handoffs are authored.
+This is a source-only statement, not compiled or accepted behavior.
+
+Lifecycle9.3 remains in progress until the requested Docker deployment build
+publishes its actual digest. The live run is https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909. Both architecture jobs
+are active; no available image is claimed. The operator explicitly approved
+source-only hook exceptions, preserving the closed routine-verification gate.
+No stored hook configuration changed and no normal validator/check was run.
 
 ## Remaining canonical evidence and handoff
 

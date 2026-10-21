@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "recorded_at": "2026-10-21T00:41:41.487437+00:00",
+  "recorded_at": "2026-10-21T01:00:15.786074+00:00",
   "purpose": "Saved source inventory authoring; no acceptance/identity gate imported or executed",
   "phase_id": "uar-outstanding-issues-v1-1-1::function-first-release-certification",
   "change": "deterministic-lifecycle-management",
-  "waypoint_revision": 3157,
+  "waypoint_revision": 3158,
   "plan_revision": 70,
   "canonical_run_counter": {
     "completed": 137,
@@ -13,6 +13,20 @@
   },
   "verification_gate": "CLOSED",
   "verification_commands_executed": [],
+  "source_publication": {
+    "operator_hook_exception": "Explicit source-only LEFTHOOK=0 commits and required documentation follow-ups; routine verification CLOSED",
+    "uar_implementation_commit": "ad557b0d00134c003bf0e87d248d1aef2e9ce4e5",
+    "uar_draft_pr": "https://github.com/Prometheus-AGS/universal-agent-runtime/pull/418",
+    "boss_draft_pr": "https://github.com/Prometheus-AGS/the-boss/pull/74",
+    "deployment_run": "https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909",
+    "deployment_status": "in_progress at implementation commit; no available image or digest claimed",
+    "delivery_commands_executed": [
+      "git commit/push (scoped source only)",
+      "gh draft PR creation/update",
+      "/opt/homebrew/bin/gh workflow run deploy.yml --repo Prometheus-AGS/universal-agent-runtime --ref codex/uar-1-1-1-implementation"
+    ],
+    "routine_verification": "CLOSED; deployment build is an explicit narrow delivery exception"
+  },
   "implementation": {
     "lifecycle_work_packages": "source_integrated",
     "task_ids": [
@@ -30,24 +44,25 @@
       "5.3",
       "5.4",
       "6.2",
-      "8.2"
+      "8.2",
+      "8.3"
     ],
-    "unfinished_implementation_task_ids": [
-      "8.3",
+    "all_planned_production_fixture_source_authored": true,
+    "unfinished_source_implementation_task_ids": [],
+    "unfinished_delivery_task_ids": [
       "9.3"
     ],
-    "unfinished_implementation": [
-      "Actual immutable UAR source commit and matching Boss pin",
-      "Scoped commit/push/draft PR and requested deployment image publication"
+    "unfinished_delivery": [
+      "Actual requested deployment image publication and digest receipt"
     ],
     "continuation_handoffs_collected": true,
     "continuation_source_limit": "Authored and integrated source only; no compiler or runtime evidence",
     "whole_phase_complete": false,
-    "whole_phase_limit": "Actual immutable Boss pin and scoped publication remain; preparation, independent review, functional acceptance, reflection and every frozen embedding receipt remain. No inventory grants gate permission"
+    "whole_phase_limit": "Source and matching Boss pin are published as draft; actual image delivery, preparation, independent review, functional acceptance, reflection and every frozen embedding receipt remain. No inventory grants gate permission"
   },
   "uar_source": {
     "root": "/Volumes/T7/Projects/prometheus/universal-agent-runtime",
-    "head": "98b50f6e882d758038410d21467fb5b5827460e8",
+    "head": "ad557b0d00134c003bf0e87d248d1aef2e9ce4e5",
     "scope": [
       "src",
       "Cargo.toml",
@@ -77,8 +92,8 @@
       "openspec/changes/uar-outstanding-issues-v1-1-1"
     ],
     "method": "SHA-256 of saved per-file bytes; aggregate of sorted compact JSON records; excludes this inventory itself",
-    "file_count": 29280,
-    "saved_records_digest": "sha256:75991809500579445b0397f2ee7688373ede71bc5ced2573d9a6c702814c63b4",
+    "file_count": 29281,
+    "saved_records_digest": "sha256:00aa90742e2d7c2c46459b7ca6d7e7dd0913fa87119f52cc45af81043939a7af",
     "acceptance_runner_source_tree": null,
     "acceptance_runner_identity_limit": "No existing source_identity() or freeze/check helper invoked; fresh prepared manifest binding pending",
     "gitlinks": [
@@ -75008,8 +75023,8 @@
       {
         "path": "docs/operations/lifecycle-implementation-inventory-2026-10-20.md",
         "kind": "file",
-        "bytes": 9088,
-        "sha256": "sha256:1d739d28f439b83df21267c32688199adfa8274ebeca8dda23ca2aa7cf593938"
+        "bytes": 10424,
+        "sha256": "sha256:ee9ea4c0238980de086bde025052a5552d0c254a9358207d7f2a256cb979bf8d"
       },
       {
         "path": "docs/operations/lifecycle-lead-handoff.md",
@@ -75056,8 +75071,8 @@
       {
         "path": "docs/operations/lifecycle-publication-approval.md",
         "kind": "file",
-        "bytes": 3283,
-        "sha256": "sha256:042bce8bd4d7cfa2456cab9381dd8f7637d7d195978e1f348dea4d364f1fa032"
+        "bytes": 3658,
+        "sha256": "sha256:3e50ae734c97c4ac1e5076eea481cb25b5713f4017213182f4725e05d2c7bea9"
       },
       {
         "path": "docs/operations/lifecycle-publication-scope-2026-10-20.txt",
@@ -75110,14 +75125,14 @@
       {
         "path": "docs/operations/lifecycle-unfinished-implementation.md",
         "kind": "file",
-        "bytes": 3045,
-        "sha256": "sha256:2e4d548e2c043f104d5b4541ca1df0a70af46571008d6c294cc31ab5fcc89d7a"
+        "bytes": 3345,
+        "sha256": "sha256:319d4c88c87a3dcd8e047ffa1c972c795f738df856c9e80b8ac27ae62dec8c59"
       },
       {
         "path": "docs/operations/lifecycle-verification-command-proposal.md",
         "kind": "file",
-        "bytes": 6687,
-        "sha256": "sha256:08a3d4810a220375b8c55b1be6b74ed45e2d4da7008c232056a97fa349353be5"
+        "bytes": 6812,
+        "sha256": "sha256:fc22f308f29365a9d6027ce174703fbcdd0c06f0d29ac00267dd72d8c7c451b2"
       },
       {
         "path": "docs/operations/lifecycle-watcher-order-handoff.md",
@@ -75550,6 +75565,12 @@
         "kind": "file",
         "bytes": 37327,
         "sha256": "sha256:f77a0bc228719547a96c086ca9a2b478f4eca41cd8eabfea18142825f277fae9"
+      },
+      {
+        "path": "docs/solutions/uar-post-lifecycle-verifiable-punch-list.md",
+        "kind": "file",
+        "bytes": 18137,
+        "sha256": "sha256:78c7f253f7dff25e6f79d3ee735ddc49c018567f083eaec44fefcf23893e5b9c"
       },
       {
         "path": "docs/standards/rfc-aap-001.html",
@@ -130845,7 +130866,7 @@
         "path": "openspec/changes/deterministic-lifecycle-management/tasks.md",
         "kind": "file",
         "bytes": 1516,
-        "sha256": "sha256:14cb8bb76186b08de6034954b3e279d77e5a38935c0bb4053bdcdeff64acf24f"
+        "sha256": "sha256:20d0c11860ed96558a0a692b18e63d0fc7bfc2b425be45f736a3352d329c7da9"
       },
       {
         "path": "openspec/changes/uar-outstanding-issues-v1-1-1/.openspec.yaml",
@@ -175833,9 +175854,9 @@
   },
   "boss_source": {
     "root": "/Volumes/T7/Projects/prometheus/the-boss",
-    "head": "54d0911846ccbc0078c25493bb84ca8d5a0429fc",
+    "head": "7e7ff9f696e7f32f69c223a9aaa49b815134a23b",
     "scope": "Assigned launcher, candidate binding/pin/preparer, dependency manifests and three lifecycle handoffs only",
-    "candidate_source_pin_status": "Old revision retained until an actual new UAR source commit exists; not acceptance",
+    "candidate_source_pin_status": "Actual UAR implementation commit ad557b0d00134c003bf0e87d248d1aef2e9ce4e5; no candidate/native package executed",
     "full_customer_build_identity": "Pending actual authorized preparation; do not infer from this subset",
     "files": [
       {
@@ -175871,14 +175892,14 @@
       {
         "path": ".agent-team/boss-core/handoffs/2026-10-20-uar-lifecycle-payload-binding.md",
         "kind": "file",
-        "bytes": 6130,
-        "sha256": "sha256:92ce596b97effe12594920f784f483bd5e41570c799c581b2893b4f59bf91e40"
+        "bytes": 7446,
+        "sha256": "sha256:8f867254ff10bce1f78bb41f0501349dba844be6a7d0f5a04c929bad0b17b5e3"
       },
       {
         "path": "build/local-uar-source.json",
         "kind": "file",
         "bytes": 371,
-        "sha256": "sha256:9bb9832014b8bea5340b447dedd7953917224c70a30d709abead278926e960f4"
+        "sha256": "sha256:f16e0a773bfb8e1e65f3eb73bbe1060fb6865a57742af558344b5b72930dec1a"
       },
       {
         "path": "scripts/uar-candidate-binding.cjs",
@@ -175897,6 +175918,24 @@
         "kind": "file",
         "bytes": 398,
         "sha256": "sha256:192e5081b086048cf434765bd93f03ca5484d18d33e281de191000260e9e9a95"
+      },
+      {
+        "path": ".agents/notes/proposed/architecture/2026-10-20-uar-lifecycle-payload.md",
+        "kind": "file",
+        "bytes": 2754,
+        "sha256": "sha256:9c28ac31cc49924b315b8983c28bb9bb05ea5419e0c90595410b8bb907d8153b"
+      },
+      {
+        "path": ".agents/notes/proposed/architecture/2026-10-20-uar-lifecycle-payload.zh.md",
+        "kind": "file",
+        "bytes": 2623,
+        "sha256": "sha256:516bdb84976487f3a127240c7797520e20620707af8ace45b1b3860807db3b37"
+      },
+      {
+        "path": ".agents/notes/proposed/architecture/2026-10-20-uar-lifecycle-payload.i18n.yaml",
+        "kind": "file",
+        "bytes": 340,
+        "sha256": "sha256:ac94b951ef2f391fe21ffe1db8ee12982d653cefc107a36127bbd6ab51816d68"
       }
     ]
   },
@@ -175993,7 +176032,7 @@
   "canonical_ledgers": [
     {
       "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/tasks.md",
-      "sha256": "sha256:3577ddf1084941c51dd6910bfce614bc51ede26ce769774f31881817d62b6c55",
+      "sha256": "sha256:f88ed8f88b462c72032f842f41ce92a418f32a49482539fc5a943b92c46540a6",
       "recorded_rows": [
         "- [x] 1.1 \u2014 Record exclusive ownership and complete-phase inventory (COMPLETE)",
         "- [x] 3.1 \u2014 Capture durable-store eligibility (COMPLETE)",
@@ -176038,7 +176077,7 @@
     },
     {
       "path": ".kbd-orchestrator/phases/uar-outstanding-issues-v1-1-1/children/function-first-release-certification/tasks.md",
-      "sha256": "sha256:7faa47d9d1c5662401b22e15afa917a91507e9cd049c8b14c90010907920af98",
+      "sha256": "sha256:18f39de8118465d3f5f8e4abb2d332b21bf1a5f8ca222b5f4d5e38232df732ba",
       "recorded_rows": [
         "- [x] 1.1 \u2014 Resource inventory and transition diagnostics (COMPLETE)",
         "- [x] 2.1 \u2014 Supervisor task scopes and history drain (COMPLETE)",
@@ -176053,7 +176092,7 @@
         "- [x] 8.1 \u2014 Deterministic fixtures and sidecar finalization (COMPLETE)",
         "- [x] 6.2 \u2014 Local-only compatible embedding live failover and recovery (COMPLETE)",
         "- [x] 8.2 \u2014 Real local-model failover and incompatible-space fixture source (COMPLETE)",
-        "- [ ] 8.3 \u2014 Bind Boss candidate payload to immutable lifecycle source (IN_PROGRESS)",
+        "- [x] 8.3 \u2014 Bind Boss candidate payload to immutable lifecycle source (COMPLETE)",
         "- [ ] 9.3 \u2014 Publish scoped implementation branch and draft PR with deployment image path (IN_PROGRESS)",
         "- [x] 1.1 \u2014 Scope and contract amendment (COMPLETE)",
         "- [x] 2.1 \u2014 Runtime prompt skill and stream observations (COMPLETE)",

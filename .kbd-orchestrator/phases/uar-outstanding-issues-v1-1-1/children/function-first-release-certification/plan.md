@@ -674,3 +674,18 @@ commit pin. Task9.3 publication awaits resolution of the installed Git hook
 conflict. Scoped source staging does not run hooks. No hooks are bypassed and
 no deployment workflow is dispatched. Exact later commands and current saved
 source inventory are documented. Existing unrelated dirty files remain.
+
+
+## Authorized source publication — 2026-10-21T00:56:54.084929+00:00
+
+Operator explicitly approved source-only commits/hook exception and requested
+Docker deployment build while keeping routine verification CLOSED. UAR source
+ad557b0d00134c003bf0e87d248d1aef2e9ce4e5 is committed/pushed; Boss pins that actual source and its signed
+launcher/candidate source is pushed. UAR draft PR418 and Boss draft PR74 are
+published and attached. Lifecycle8.3 is source-complete at waypoint
+3158;9.3 remains in progress until image publication. Workflow
+https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909 is confirmed running at the pinned source, with native architecture
+jobs active. Dispatch is not image availability or acceptance. No routine
+tests/checks/lint/typecheck/format/build/package/review/validator ran. The Docker
+delivery build is the explicit narrow exception, not a gate opening. Unrelated
+dirty source, personal configuration and Boss skills gitlink remain untouched.

@@ -13,7 +13,7 @@
 - [x] 8.1 WP8: Deterministic fixtures and sidecar finalization
 - [x] 6.2 Local-only compatible embedding live failover and recovery
 - [x] 8.2 Real local-model failover and incompatible-space fixture source
-- [ ] 8.3 Bind Boss candidate payload to immutable lifecycle source
+- [x] 8.3 Bind Boss candidate payload to immutable lifecycle source
 - [ ] 9.3 Publish scoped implementation branch and draft PR with deployment image path
 
 Implementation checkboxes record authored production/fixture/documentation

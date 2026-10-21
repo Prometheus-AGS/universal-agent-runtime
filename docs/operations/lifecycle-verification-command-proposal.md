@@ -1,6 +1,8 @@
 # Lifecycle command proposal — verification CLOSED
 
-These commands have not run. Source completion does not authorize them. Run
+The verification and native-preparation commands below have not run. The final
+section separately records the authorized Docker delivery command that was
+dispatched. Source completion does not authorize verification. Run
 only commands the operator explicitly approves, serially, after the renewed
 whole-phase inventory and immutable payload pin are reconciled. Approval for
 one row does not authorize another row or any extra preflight.
@@ -56,17 +58,15 @@ WASM, every remote transport or a physical engine-close fault.
 ## Fresh Boss payload and local customer package
 
 Prerequisite: an actual UAR source commit is published and the Boss schema-2
-pin names that commit. The existing old pin is not sufficient. Until source
-publication resolves the commit-hook conflict, this prerequisite remains
-unfinished. The command reads the committed consumer pin rather than inventing
-a future SHA. The producer itself refuses a selected commit whose producer
-bytes do not match.
+pin names that commit. The existing old pin is not sufficient. This source prerequisite now exists: Boss pins `ad557b0d00134c003bf0e87d248d1aef2e9ce4e5`.
+The producer refuses a selected commit whose producer bytes do not match.
+No candidate artifact exists merely because its source pin is now recorded.
 
 From `/Volumes/T7/Projects/prometheus/universal-agent-runtime`, on native Apple
-Silicon, propose this exact build command, including its pin read:
+Silicon, propose this exact build command, using the actual pinned source:
 
 ```sh
-node scripts/build-boss-candidate.mjs "$(node -p "require('/Volumes/T7/Projects/prometheus/the-boss/build/local-uar-source.json').revision")" /Volumes/T7/uar-boss-lifecycle-candidate-20261021-01
+node scripts/build-boss-candidate.mjs ad557b0d00134c003bf0e87d248d1aef2e9ce4e5 /Volumes/T7/uar-boss-lifecycle-candidate-20261021-01
 ```
 
 The output directory must be new. The command exports committed Git objects
@@ -109,10 +109,10 @@ The historical 503 body and individual sidecar traces remain missing.
 
 ## Source publication and image delivery
 
-Source publication was requested by the operator. Normal UAR commit hooks
-would run forbidden verification; `lifecycle-publication-approval.md` records
-the exact conflict and pending decision. No hook exception is assumed here.
-After the scoped commit and push, the existing deployment workflow command is:
+Source publication was requested by the operator. The operator explicitly approved source-only hook exceptions and the
+requested deployment build. Scoped source commits and draft PRs are published;
+`lifecycle-publication-approval.md` records the exact narrow authorization.
+The following workflow command was dispatched, with routine verification still CLOSED:
 
 ```sh
 /opt/homebrew/bin/gh workflow run deploy.yml --repo Prometheus-AGS/universal-agent-runtime --ref codex/uar-1-1-1-implementation

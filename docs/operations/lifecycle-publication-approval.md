@@ -1,61 +1,66 @@
 # Source publication while verification is closed
 
-Operator authorization on 2026-10-20 covers scoped commits, push, a PR and a
-Docker deployment image build when appropriate. Verification remains CLOSED.
-The existing UAR branch is `codex/uar-1-1-1-implementation`; its existing draft
-PR is https://github.com/Prometheus-AGS/universal-agent-runtime/pull/418.
+Operator decision, October20,2026 (America/Chicago): **Allow source-only commits;
+keep verification closed.** This explicitly authorizes `LEFTHOOK=0` for the
+scoped implementation commit and necessary documentation follow-ups, overriding
+the repository policy-validator prohibition only for those commits. Stored
+hook/validator configuration is unchanged. No policy compliance result is claimed.
 
-## Concrete hook conflict
+## Actual delivery
 
-UAR's installed `.git/hooks/pre-commit` invokes Lefthook. Checked-in
-`lefthook.yml` runs `pnpm github-actions-policy:validate`, and stages touching
-frontend TypeScript also run frontend lint and typecheck. Its commit-message
-hook invokes Commitlint. These are verification commands; committing normally
-would run them indirectly while the gate is closed.
+- UAR implementation source commit: `ad557b0d00134c003bf0e87d248d1aef2e9ce4e5`, pushed to
+  `codex/uar-1-1-1-implementation`.
+- UAR draft PR: https://github.com/Prometheus-AGS/universal-agent-runtime/pull/418.
+- Boss draft PR: https://github.com/Prometheus-AGS/the-boss/pull/74 on
+  `codex/uar-lifecycle-payload`. Its schema2 local candidate pin names the exact
+  UAR source commit above. Published Boss commit
+  `7e7ff9f696e7f32f69c223a9aaa49b815134a23b` is signed and DCO-signed off;
+  GitHub reports its signature verified with reason `valid`. The final commit
+  uses the already registered Boss release key and account noreply identity
+  through per-command options. No account key or stored identity setting changed.
+  Signature status is recorded separately from product acceptance.
+- Requested deployment-image workflow: https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/39523808909, confirmed running at source
+  `ad557b0d00134c003bf0e87d248d1aef2e9ce4e5`. Both native architecture jobs are active. **No image digest or
+  available image is claimed until publication completes.**
 
-`AGENTS.md` says “Never skip, disable, weaken, or route around that validator.”
-The operator has also kept verification closed. No hook has been executed or
-disabled for this continuation. Source implementation continues independently.
-Once the complete scoped source is ready, the lead must obtain an explicit
-operator resolution of this conflict before making the UAR source commit.
-An authorized source-only hook exception would not change the stored hook or
-validator, certify policy compliance, or authorize any later verification.
+The UAR source commit used exactly:
 
-The Boss currently has `core.hooksPath=/dev/null`; this was observed rather than
-changed by this task. No promise is made that either repository passed checks.
+```sh
+LEFTHOOK=0 git commit --file /tmp/uar-lifecycle-source-commit-message.txt
+```
 
-## Deployment path
+Normal pre-commit would execute policy validation and frontend lint/typecheck;
+Commitlint runs in the message hook. Those checks were not run. The Boss's
+pre-existing `core.hooksPath=/dev/null` setting was observed and preserved. No
+personal credentials, runtime settings or unrelated skills gitlink was changed.
 
-The UAR existing `deploy.yml` supports `workflow_dispatch` on a pushed ref.
-The non-sidecar path builds native linux/amd64 and linux/arm64 Docker images,
-publishes their digests, assembles a manifest, and publishes a long-SHA tag.
-Its Dockerfile runs Vite build and Cargo build, not product tests or routine
-lint/typechecks. This is the operator-requested image delivery path; it does
-not open local verification or certify image behavior. No workflow or existing
-workflow-invoked script is edited by this continuation.
+## Deployment exception and exact command
 
-After an actual scoped commit and push, the exact workflow command uses the
-existing branch:
+The operator requested Docker image delivery and then explicitly approved the
+source-only publication path and requested Docker deployment build. The existing
+unchanged deployment workflow was dispatched with:
 
-```text
+```sh
 /opt/homebrew/bin/gh workflow run deploy.yml --repo Prometheus-AGS/universal-agent-runtime --ref codex/uar-1-1-1-implementation
 ```
 
-The published image must be reported with the observed immutable digest and
-run URL. Dispatch success alone establishes only that a build was requested.
-Do not label a queued, running or failed build as an available usable image.
-The draft PR must retain the verification-closed status and source limitations.
+This is the narrow image-delivery exception. It does not open routine tests,
+lint, formatting, typecheck, compiler probes, local/native builds, packaging,
+policy validation, independent review or acceptance. The workflow builds native
+linux/amd64 and linux/arm64 images, publishes digests and assembles a long-SHA
+tag. Its Vite/Cargo builds are delivery steps, not product-test evidence. No
+workflow or existing workflow-invoked script was edited for this continuation.
+Metadata observations may record job progress and the actual published digest;
+dispatch alone never establishes image availability.
 
-## Boss candidate path
+## Boss candidate boundary
 
-The new standalone `scripts/build-boss-candidate.mjs` prepares a native Apple
-Silicon candidate from exact committed Git objects in an isolated directory.
-It is not run while verification is closed. The Boss candidate pin cannot be
-finalized before that UAR source commit actually exists. Its new explicit
-candidate-record mode validates immutable commit/tree, platform, features,
-protocol and artifact/log digests without consuming unrelated dirty worktree
-files. Legacy local and public release integrity checks remain separate.
+The standalone native producer is pinned to actual committed source. It exports
+immutable root/gitlink objects and uses a fresh target directory; unrelated dirty
+worktree files are excluded. Neither that producer nor local/public customer
+packaging has run. The exact deferred command packet remains separate.
+Public and other-platform release payloads are not relabeled. The proposed
+bilingual Boss design note stays proposed because acceptance is unexecuted.
 
-No prior release or other platform's binary is relabeled to this source. A
-fresh native candidate build, customer package and Windows evidence still need
-their own later exact-command approval.
+Verification remains CLOSED. No silent source inventory, task transition,
+signature status or successful deployment build can authorize routine verification.

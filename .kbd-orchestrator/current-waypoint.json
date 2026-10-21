@@ -2,11 +2,11 @@
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 3157,
-  "derivedRevision": 3157,
+  "sourceRevision": 3158,
+  "derivedRevision": 3158,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 2626,
-    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 127,
+    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 128,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -36,7 +36,7 @@
   "parentPhase": "uar-outstanding-issues-v1-1-1",
   "childPointer": "function-first-release-certification",
   "change": "deterministic-lifecycle-management",
-  "currentTask": "8.3",
+  "currentTask": "9.3",
   "status": "ready",
   "lifecycle": "ready",
   "stageId": "execute-lifecycle",
@@ -45,9 +45,9 @@
   "implementationCompleted": 137,
   "implementationTotal": 153,
   "planRevision": 70,
-  "revision": 3157,
+  "revision": 3158,
   "exactNextCommand": "Implement local-only embedding runtime and real-model fixtures, bind Boss to immutable UAR candidate, collect handoffs and renew inventory. Publish scoped draft PR/deployment image path without routine verification.",
   "nextChange": "deterministic-lifecycle-management",
-  "nextTask": "8.3",
-  "updatedAt": "2026-10-21T00:38:11.156423Z"
+  "nextTask": "9.3",
+  "updatedAt": "2026-10-21T00:54:35.868972Z"
 }
